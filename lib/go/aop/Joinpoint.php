@@ -53,7 +53,7 @@ class Joinpoint {
             Advice::AROUND => array($closure),
             Advice::AFTER  => array(),
         );
-        $this->invoker = $this->getAroundInvoker();
+        $this->invoker = $closure;
     }
 
     /**
