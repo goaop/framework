@@ -12,13 +12,13 @@ namespace go\aop;
  * Meta class to support AOP terminology in IDE
  *
  * This meta class describe an action taken by the AOP framework at a particular joinpoint. Different types of advice
- * include "around," "before" and "throws" advice, but at the moment only "around" advice is supported.
+ * include "around", "before" and "after" advice.
  *
- *   Around advice is an advice that surrounds a joinpoint such as a method invocation. This is the most powerful kind
+ *  Around advice is an advice that surrounds a joinpoint such as a method invocation. This is the most powerful kind
  * of advice. Around advices will perform custom behavior before and after the method invocation. They are responsible
  * for choosing whether to proceed to the joinpoint or to shortcut executing by returning their own return value or
  * throwing an exception.
- *
+ *  After and before advices are simple closures that will be invoked after and before main invocation.
  * Framework model an advice as an PHP-closure interceptor, maintaining a chain of interceptors "around" the joinpoint:
  *   function($params, Joinpoint $joinPoint) {
  *      echo 'Before action';
