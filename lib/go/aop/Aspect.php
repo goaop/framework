@@ -88,6 +88,17 @@ class Aspect extends \go\core\Object {
     protected static $joinPoints = array();
 
     /**
+     * Returns list of fields which values will be initialized from config
+     *
+     * @return array
+     */
+    protected static function getAutoConfigFields()
+    {
+        return array('around', 'before', 'after', 'pointcut');
+    }
+
+
+    /**
      * Registers current aspect and enable advice processing for pointcut
      *
      * This function registers pointcut(s) defined in current aspect to global list of pointcuts and maps aspect to them.
@@ -120,7 +131,7 @@ class Aspect extends \go\core\Object {
      */
     final public static function getJoinPoints(\go\core\AspectObject $aspectObject)
     {
-        $className = $aspectObject->getClass();
+        $className = get_class($aspectObject);
         if (empty(self::$joinPoints[$className])) {
             $joinPoints = array();
             $aspectObjectClosures = $aspectObject->getClosures();

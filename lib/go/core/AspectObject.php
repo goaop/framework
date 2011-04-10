@@ -18,6 +18,7 @@ abstract class AspectObject extends Object
 {
     protected function init()
     {
+        parent::init();
         $joinPointAdvices = Aspect::getJoinPoints($this);
         foreach($joinPointAdvices as $pointName => $joinPoint) {
             $this->$pointName = $joinPoint;

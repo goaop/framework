@@ -9,58 +9,56 @@
 namespace go\core;
 
 /**
+ * General object for framework
+ *
  * @package go
  * @subpackage core
  */
 class Object
 {
-    /** @var Config Configuration for class */
-    protected static $classConfig = null;
+    /** @var array Configuration for this instance */
+    protected $_config = array();
 
-    function __construct($param = null)
+    function __construct(array $config = array())
     {
-        $className = $this->getClass();
-        if (empty(static::$classConfig[$className])) {
-            static::$classConfig[$className] = new Config(static::getClassConfig($this));
+        $classConfig   = static::getClassConfig();
+        $this->_config = array_replace_recursive($classConfig, $config);
+        if ($this->_config['init']) {
+            $this->init();
         }
-        foreach (static::$classConfig[$className]->object as $fieldName => $fieldValue) {
-            $this->$fieldName = $fieldValue;
-        }
-        if (static::$classConfig[$className]->init !== false) {
-            $this->init($param);
-        }
-    }
-
-    public function getClass()
-    {
-        return get_called_class();
-    }
-
-    protected function init($param = null) {}
-
-    /**
-     * Returns general configuration for class
-     *
-     * @static
-     * @param object $object
-     * @return array
-     */
-    protected static function getClassConfig($object)
-    {
-        return array(
-            'object' => static::getObjectConfig($object)
-        );
     }
 
     /**
-     * Returns default configuration for object
+     * Returns general configuration for current class
      *
-     * @static
-     * @param object $object
      * @return array
      */
-    protected static function getObjectConfig($object)
+    protected static function getClassConfig()
+    {
+        return array('init' => true);
+    }
+
+    /**
+     * Returns list of fields which values will be initialized from config
+     *
+     * @return array
+     */
+    protected static function getAutoConfigFields()
     {
         return array();
+    }
+
+    /**
+     * Initialization of current object
+     *
+     * This method will be called if value for "init" key in the config is not false.
+     *
+     * @return void
+     */
+    protected function init()
+    {
+        foreach (static::getAutoConfigFields() as $fieldName) {
+            $this->$fieldName = $this->_config[$fieldName];
+        }
     }
 }
