@@ -9,10 +9,10 @@
 namespace go\aop;
 
 /**
- * Meta class to support AOP terminology in IDE
+ * Advice class
  *
- * This meta class describe an action taken by the AOP framework at a particular joinpoint. Different types of advice
- * include "around", "before" and "after" advice.
+ * This class describe an action taken by the AOP framework at a particular joinpoint. Different types of advice
+ * include "around", "before" and "after" advices.
  *
  *  Around advice is an advice that surrounds a joinpoint such as a method invocation. This is the most powerful kind
  * of advice. Around advices will perform custom behavior before and after the method invocation. They are responsible
@@ -41,4 +41,34 @@ class Advice {
 
     /** After advice */
     const AFTER = 'after';
+
+    /** @var \Closure|string Callback for advice*/
+    protected $advice = null;
+
+    /**
+     * Constructs an advice object, which will be applied to joinpoint
+     *
+     * @param \Closure|string $advice Code of advice or global function name
+     * @throws \InvalidArgumentException If $advice param is not callable
+     */
+    public function __construct($advice)
+    {
+        if (!is_callable($advice)) {
+            throw new \InvalidArgumentException("Advice should be callable.");
+        }
+        $this->advice = $advice;
+    }
+
+    /**
+     * Advice invoker
+     *
+     * @param array $params Associative array of params
+     * @param Joinpoint|null $joinpoint
+     * @return mixed
+     */
+    public function __invoke(array $params = array(), Joinpoint $joinpoint = null)
+    {
+        $advice = $this->advice;
+        return $advice($params, $joinpoint, $this);
+    }
 }
