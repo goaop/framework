@@ -31,16 +31,7 @@ namespace go\aop;
  * @package go
  * @subpackage aop
  */
-class AdviceContainer {
-
-    /** Before advice */
-    const BEFORE = 'before';
-
-    /** Around advice */
-    const AROUND = 'around';
-
-    /** After advice */
-    const AFTER = 'after';
+class AdviceContainer implements Advice{
 
     /** @var \Closure|string Callback for advice*/
     protected $advice = null;
