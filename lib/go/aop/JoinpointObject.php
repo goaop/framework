@@ -24,7 +24,7 @@ namespace go\aop;
  * @property-write Advice $before Write-only property to assign new 'before' advices
  * @property-write Advice $after Write-only property to assign new 'after' advices
  */
-class JoinpointObject {
+class JoinpointObject implements Joinpoint {
 
     /**
      * Advices for joinpoint
@@ -104,7 +104,7 @@ class JoinpointObject {
      * @param Joinpoint $joinPoint Current instance of join point
      * @return mixed
      */
-    public function proceed($params, Joinpoint $joinPoint)
+    public function proceed(array $params, Joinpoint $joinPoint)
     {
         $next = next($this->advices[Advice::AROUND]);
         return $next($params, $joinPoint);
