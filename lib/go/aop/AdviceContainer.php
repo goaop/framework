@@ -9,7 +9,7 @@
 namespace go\aop;
 
 /**
- * Advice class
+ * AdviceContainer class
  *
  * This class describe an action taken by the AOP framework at a particular joinpoint. Different types of advice
  * include "around", "before" and "after" advices.
@@ -31,7 +31,7 @@ namespace go\aop;
  * @package go
  * @subpackage aop
  */
-class Advice {
+class AdviceContainer {
 
     /** Before advice */
     const BEFORE = 'before';
@@ -60,7 +60,7 @@ class Advice {
     }
 
     /**
-     * Advice invoker
+     * AdviceContainer invoker
      *
      * @param array $params Associative array of params
      * @param Joinpoint|null $joinpoint
