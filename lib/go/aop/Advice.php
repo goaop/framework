@@ -13,6 +13,9 @@ namespace go\aop;
  *
  * @package go
  * @subpackage aop
+ *
+ * @author Rod Johnson
+ * @author Lissachenko Alexander
  */
 interface Advice
 {
