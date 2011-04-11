@@ -136,7 +136,7 @@ class Aspect extends \go\core\Object {
             $joinPoints = array();
             $aspectObjectClosures = $aspectObject->getClosures();
             foreach($aspectObjectClosures as $name => $closure) {
-                $joinPoints[$name] = new Joinpoint($closure);
+                $joinPoints[$name] = new JoinpointObject($closure);
             }
             foreach(self::$aspects as $pointcut) {
                 foreach(self::$aspects[$pointcut] as $aspect) {

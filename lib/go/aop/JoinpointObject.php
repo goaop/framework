@@ -24,7 +24,7 @@ namespace go\aop;
  * @property-write Advice $before Write-only property to assign new 'before' advices
  * @property-write Advice $after Write-only property to assign new 'after' advices
  */
-class Joinpoint {
+class JoinpointObject {
 
     /**
      * Advices for joinpoint
