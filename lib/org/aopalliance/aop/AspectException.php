@@ -6,15 +6,16 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace go\aop;
+namespace org\aopalliance\aop;
 
 /**
- * Invocation base interface
+ * Superclass for all AOP infrastructure exceptions
  *
- * @package go
- * @subpackage aop
+ * @author Rod Johnson
+ * @author Bob Lee
+ * @author Lissachenko Alexander
  */
-interface Invocation extends Joinpoint
+class AspectException extends \RuntimeException
 {
 
 }

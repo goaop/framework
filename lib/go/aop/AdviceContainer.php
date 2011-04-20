@@ -8,6 +8,8 @@
 
 namespace go\aop;
 
+use org\aopalliance\intercept\Joinpoint;
+
 /**
  * AdviceContainer class
  *
@@ -31,7 +33,7 @@ namespace go\aop;
  * @package go
  * @subpackage aop
  */
-class AdviceContainer implements Advice{
+class AdviceContainer implements \org\aopalliance\aop\Advice {
 
     /** @var \Closure|string Callback for advice*/
     protected $advice = null;
@@ -41,6 +43,7 @@ class AdviceContainer implements Advice{
      *
      * @param \Closure|string $advice Code of advice or global function name
      * @throws \InvalidArgumentException If $advice param is not callable
+     * @return \go\aop\AdviceContainer
      */
     public function __construct($advice)
     {
@@ -54,7 +57,7 @@ class AdviceContainer implements Advice{
      * AdviceContainer invoker
      *
      * @param array $params Associative array of params
-     * @param Joinpoint|null $joinpoint
+     * @param $joinpoint \org\aopalliance\intercept\Joinpoint|null
      * @return mixed
      */
     public function __invoke(array $params = array(), Joinpoint $joinpoint = null)

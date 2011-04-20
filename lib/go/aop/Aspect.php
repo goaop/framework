@@ -127,7 +127,7 @@ class Aspect extends \go\core\Object {
      * points and all aspects will be applied before returning result.
      *
      * @param \go\core\AspectObject $aspectObject
-     * @return Joinpoint[]
+     * @return \org\aopalliance\intercept\Joinpoint[]
      */
     final public static function getJoinPoints(\go\core\AspectObject $aspectObject)
     {

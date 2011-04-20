@@ -8,6 +8,9 @@
 
 namespace go\aop;
 
+use org\aopalliance\aop\Advice;
+use org\aopalliance\intercept\Joinpoint;
+
 /**
  * Joinpoint realization for PHP
  *
@@ -24,7 +27,7 @@ namespace go\aop;
  * @property-write Advice $before Write-only property to assign new 'before' advices
  * @property-write Advice $after Write-only property to assign new 'after' advices
  */
-class JoinpointObject implements Joinpoint {
+class JoinpointObject implements \org\aopalliance\intercept\Joinpoint {
 
     /**
      * Advices for joinpoint

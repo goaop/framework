@@ -32,7 +32,7 @@ class Pointcut {
 
     /**
      * @param string $className Name of class to check for
-     * @param Joinpoint[] $joinPoints
+     * @param \org\aopalliance\intercept\Joinpoint[] $joinPoints
      * @param Aspect $aspect
      * @return void
      */

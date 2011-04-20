@@ -6,13 +6,10 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace go\aop;
+namespace org\aopalliance\aop;
 
 /**
- * Base interface for Advice
- *
- * @package go
- * @subpackage aop
+ * Tag interface for Advice. Implementations can be any type of advice, such as Interceptors.
  *
  * @author Rod Johnson
  * @author Lissachenko Alexander
