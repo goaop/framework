@@ -16,7 +16,7 @@ namespace org\aopalliance\intercept;
  *
  * @see FieldInterceptor
  */
-public interface FieldAccess extends Joinpoint {
+interface FieldAccess extends Joinpoint {
 
     /** The read access type (see {@link getAccessType()}). */
     const READ = 0;
