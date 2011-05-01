@@ -74,13 +74,16 @@ class ClassLoader extends \php_user_filter implements \go\instrument\classloadin
      */
     protected function transformCode($code)
     {
-        $soureTokens = token_get_all($code);
-        foreach (self::$transformers as $transformer) {
-            $soureTokens = $transformer->transform($this->className, $soureTokens);
+        $transformedSourceCode = $code;
+        if (self::$transformers) {
+            $sourceTokens = token_get_all($code);
+            foreach (self::$transformers as $transformer) {
+                $sourceTokens = $transformer->transform($this->className, $sourceTokens);
+            }
+            $transformedSourceCode = array_reduce($sourceTokens, function ($code, $token) {
+                return $code . (is_array($token) ? $token[1] : $token);
+            }, '');
         }
-        $transformedSourceCode = array_reduce($soureTokens, function ($code, $token) {
-            return $code . (is_array($token) ? $token[1] : $token);
-        }, '');
         return $transformedSourceCode;
     }
 }
