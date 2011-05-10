@@ -28,18 +28,6 @@ namespace org\aopalliance\intercept;
 interface Joinpoint {
 
     /**
-     * Proceed to the next interceptor in the Chain
-     *
-     * Typically this method is called inside previous closure, as instance of Joinpoint is passed to callback
-     * Do not call this method directly, only inside callback closures.
-     *
-     * @param array $params Parameters for calling
-     * @param Joinpoint $joinPoint Current instance of join point
-     * @return mixed
-     */
-    public function proceed(array $params, Joinpoint $joinPoint);
-
-    /**
      * Proceeds to the next interceptor in the chain.
      *
      * <p>The implementation and the semantics of this method depends
@@ -47,7 +35,7 @@ interface Joinpoint {
      *
      * @return mixed see the children interfaces' proceed definition.
      */
-    //public function proceed();
+    public function proceed();
 
     /**
      * Returns the object that holds the current joinpoint's static
