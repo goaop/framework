@@ -20,6 +20,7 @@ class Autoload
     {
         spl_autoload_register(self::getLoader());
         stream_filter_register(self::CLASS_LOADER_FILTER_PREFIX . '*', __NAMESPACE__ . '\\'. 'ClassLoader') or die('bad');
+        ClassLoader::addTransformer(new \go\instrument\transformer\AopProxyTransformer());
     }
 
     protected static function getLoader()
