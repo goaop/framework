@@ -1,0 +1,3 @@
+[submodule "vendor/andrewsville/php-token-reflection"]
+	path = vendor/andrewsville/php-token-reflection
+	url = https://github.com/Andrewsville/PHP-Token-Reflection.git
