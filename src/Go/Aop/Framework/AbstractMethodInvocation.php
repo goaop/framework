@@ -1,0 +1,110 @@
+<?php
+/**
+ * Go! OOP&AOP PHP framework
+ *
+ * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
+ * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ */
+
+namespace Go\Aop\Framework;
+
+use Go\AopAlliance\Intercept\MethodInvocation;
+use go\reflection\ReflectionMethod;
+
+/**
+ * Abstract method invocation implementation
+ *
+ * @see Go\AopAlliance\Intercept\MethodInvocation
+ * @package go
+ */
+abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
+{
+    /** @var string Class name of method */
+    protected $className = '';
+
+    /** @var string Name of invoked method */
+    protected $methodName = '';
+
+    /** @var object Instance of object for invoking or null */
+    protected $instance = null;
+
+    /** @var null|\go\reflection\ReflectionMethod */
+    protected $reflectionMethod = null;
+
+    /**
+     * Constructor for method invocation
+     *
+     * @param string|object $classNameOrObject Class name or object instance
+     * @param string $methodName Method to invoke
+     * @param $advices array List of advices for this invocation
+     */
+    public function __construct($classNameOrObject, $methodName, array $advices)
+    {
+        $isObject = is_object($classNameOrObject);
+        $this->className  = $isObject ? get_parent_class($classNameOrObject) : $classNameOrObject;
+        $this->instance   = $isObject ? $classNameOrObject : null;
+        $this->methodName = $methodName;
+        parent::__construct($advices);
+    }
+
+    /**
+     * Proceed to the next interceptor in the Chain
+     *
+     * Typically this method is called inside previous closure, as instance of Joinpoint is passed to callback
+     * Do not call this method directly, only inside callback closures.
+     *
+     * @return mixed
+     */
+    final public function proceed()
+    {
+        /** @var $currentInterceptor \Go\AopAlliance\Intercept\MethodInterceptor */
+        $currentInterceptor = current($this->advices);
+        if (!$currentInterceptor) {
+            return $this->invokeOriginalMethod();
+        }
+        next($this->advices);
+        return $currentInterceptor->invoke($this);
+    }
+
+    /**
+     * Invokes current method invocation with all interceptors
+     *
+     * @param mixed $a,... List of arguments(up to 9)
+     * @return mixed
+     */
+    final public function __invoke(&$a = null, &$b = null, &$c = null,
+                                   &$d = null, &$e = null, &$f = null,
+                                   &$g = null, &$h = null, &$j = null)
+    {
+        $this->arguments = array_slice(
+            array(&$a, &$b, &$c, &$d, &$e, &$f, &$g, &$h, &$j),
+            0,
+            func_num_args()
+        );
+        reset($this->advices);
+        return $this->proceed();
+    }
+
+    /**
+     * Invokes original method and return result from it
+     *
+     * @return mixed
+     */
+    abstract protected function invokeOriginalMethod();
+
+    /**
+     * Gets the method being called.
+     *
+     * <p>This method is a frienly implementation of the
+     * {@link Joinpoint::getStaticPart()} method (same result).
+     *
+     * @return \go\reflection\ReflectionMethod the method being called.
+     */
+    public function getMethod()
+    {
+        $this->reflectionMethod = $this->reflectionMethod ?: new ReflectionMethod(
+            $this->className, $this->methodName
+        );
+        return $this->reflectionMethod;
+    }
+}
