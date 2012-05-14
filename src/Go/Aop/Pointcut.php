@@ -18,28 +18,21 @@ namespace Go\Aop;
  * @package go
  * @subpackage aop
  */
-class Pointcut {
-
-    protected $processor = null;
-
-    public function __construct($processor)
-    {
-        if (!is_callable($processor)) {
-            throw new \InvalidArgumentException('Processor should be callable');
-        }
-        $this->processor = $processor;
-    }
+interface Pointcut
+{
+    /**
+     * Return the ClassFilter for this pointcut.
+     *
+     * @return ClassFilter
+     */
+    public function getClassFilter();
 
     /**
-     * @param string $className Name of class to check for
-     * @param \Go\AopAlliance\Intercept\Joinpoint[] $joinPoints
-     * @param Aspect $aspect
-     * @return void
+     * Return the PointFilter for this pointcut.
+     *
+     * This can be method filter, property filter.
+     *
+     * @return PointFilter
      */
-    function __invoke($className, array $joinPoints, Aspect $aspect)
-    {
-        $processor = $this->processor;
-        $processor($className, $joinPoints, $aspect);
-    }
-
+    public function getPointFilter();
 }
