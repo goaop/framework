@@ -9,9 +9,11 @@
 namespace Go\Aop\Framework;
 
 use Exception;
+
+use Go\Aop\AdviceAfter;
 use Go\AopAlliance\Intercept\MethodInvocation;
 use Go\AopAlliance\Intercept\MethodInterceptor;
-use Go\Aop\AdviceAfter;
+
 
 /**
  * @package go

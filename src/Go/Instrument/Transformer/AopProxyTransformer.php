@@ -8,11 +8,14 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Instrument\ClassFileTransformer;
+
 /**
  * @package go
  */
-class AopProxyTransformer implements \Go\Instrument\ClassFileTransformer
+class AopProxyTransformer implements ClassFileTransformer
 {
+
     /** Suffix, that will be added to all proxied class names */
     const AOP_PROXIED_SUFFIX = '__AopProxied';
 

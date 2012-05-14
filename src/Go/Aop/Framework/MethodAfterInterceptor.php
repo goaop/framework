@@ -9,9 +9,11 @@
 namespace Go\Aop\Framework;
 
 use Exception;
+
+use Go\Aop\AdviceAfter;
 use Go\AopAlliance\Intercept\MethodInvocation;
 use Go\AopAlliance\Intercept\MethodInterceptor;
-use Go\Aop\AdviceAfter;
+
 
 /**
  * @package go
@@ -30,7 +32,9 @@ class MethodAfterInterceptor extends BaseInterceptor implements MethodIntercepto
         $result = null;
         try {
             $result = $invocation->proceed();
-        } catch (Exception $invocationException) {/* this is need for finally emulation in PHP */}
+        } catch (Exception $invocationException) {
+            // this is need for finally emulation in PHP
+        }
         $this->invokeAdviceForJoinpoint($invocation);
         if (isset($invocationException)) {
             throw $invocationException;

@@ -8,11 +8,12 @@
 
 namespace Go\Aop\Framework;
 
-use Go\AopAlliance\Intercept\Joinpoint;
-use Go\Aop\Framework\BaseAdvice;
 use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceBefore;
 use Go\Aop\AdviceAround;
+use Go\AopAlliance\Aop\Advice;
+use Go\AopAlliance\Intercept\Joinpoint;
+
 
 /**
  *  Abstract joinpoint for framework
@@ -27,14 +28,15 @@ use Go\Aop\AdviceAround;
  */
 abstract class AbstractJoinpoint implements Joinpoint
 {
-    /** @var array|\Go\Aop\Advice[] */
+    /** @var array|Advice[] */
     protected $advices = array();
 
     /**
      * Initializes list of advices for current joinpoint
      *
-     * @param array|\Go\Aop\Advice[] $advices
-     * @return \Go\Aop\Framework\AbstractJoinpoint
+     * @param array $advices
+     *
+     * @return AbstractJoinpoint
      */
     protected function __construct(array $advices)
     {
@@ -44,8 +46,8 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * Sorts advices by priority
      *
-     * @param array|\Go\Aop\Framework\BaseAdvice[] $advices
-     * @return array|\Go\Aop\Framework\BaseAdvice[] Sorted list of advices
+     * @param array|BaseAdvice[] $advices
+     * @return array|BaseAdvice[] Sorted list of advices
      */
     static protected function sortAdvices(array $advices)
     {

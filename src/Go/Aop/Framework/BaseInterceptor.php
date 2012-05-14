@@ -8,10 +8,11 @@
 
 namespace Go\Aop\Framework;
 
-use Go\AopAlliance\Intercept\Interceptor;
-use Go\AopAlliance\Intercept\Joinpoint;
 use Go\Aop\Pointcut;
 use Go\Aop\Framework\BaseAdvice;
+use Go\AopAlliance\Intercept\Interceptor;
+use Go\AopAlliance\Intercept\Joinpoint;
+
 
 /**
  * @package go
@@ -21,7 +22,7 @@ class BaseInterceptor extends BaseAdvice implements Interceptor
     /** @var string Name of the aspect */
     public $aspectName = '';
 
-    /** @var null|\Go\Aop\Pointcut */
+    /** @var null|Pointcut */
     public $pointcut = null;
 
     /** @var null|\Closure In Spring it's ReflectionMethod, but this will be slowly */
@@ -37,7 +38,7 @@ class BaseInterceptor extends BaseAdvice implements Interceptor
     /**
      * Invokes advice method for joinpoint
      *
-     * @param \Go\AopAlliance\Intercept\Joinpoint $joinPoint
+     * @param Joinpoint $joinPoint
      * @return mixed Result of invoking of advice
      */
     protected function invokeAdviceForJoinpoint(Joinpoint $joinPoint)

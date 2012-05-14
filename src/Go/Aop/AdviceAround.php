@@ -8,11 +8,13 @@
 
 namespace Go\Aop;
 
+use Go\AopAlliance\Aop\Advice;
+
 /**
  * Tag class for all around advices either for field access or method calling
  * @author Lissachenko Alexander
  */
-interface AdviceAround extends \org\aopalliance\aop\Advice
+interface AdviceAround extends Advice
 {
 
 }

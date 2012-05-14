@@ -8,6 +8,8 @@
 
 namespace Go\AopAlliance\Aop;
 
+use RuntimeException;
+
 /**
  * Superclass for all AOP infrastructure exceptions
  *
@@ -15,7 +17,7 @@ namespace Go\AopAlliance\Aop;
  * @author Bob Lee
  * @author Lissachenko Alexander
  */
-class AspectException extends \RuntimeException
+class AspectException extends RuntimeException
 {
 
 }

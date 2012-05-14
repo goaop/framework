@@ -8,7 +8,7 @@
 
 namespace Go\AopAlliance\Intercept;
 
-use org\aopalliance\aop\Advice;
+use Go\AopAlliance\Aop\Advice;
 
 /**
  * This interface represents a generic interceptor.
@@ -55,5 +55,7 @@ use org\aopalliance\aop\Advice;
  *
  * @see Joinpoint
  */
-interface Interceptor extends Advice {
+interface Interceptor extends Advice
+{
+
 }

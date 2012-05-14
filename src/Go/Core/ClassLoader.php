@@ -8,7 +8,10 @@
 
 namespace Go\Core;
 
-use go\instrument\ClassFileTransformer;
+use php_user_filter as PhpStreamFilter;
+
+use Go\Instrument\ClassFileTransformer;
+use Go\Instrument\ClassLoading\LoadTimeWeaver;
 
 /**
  * Php class loader filter for processing php code
@@ -16,26 +19,48 @@ use go\instrument\ClassFileTransformer;
  * @package go
  * @subpackage core
  */
-class ClassLoader extends \php_user_filter implements \go\instrument\classloading\LoadTimeWeaver
+class ClassLoader extends PhpStreamFilter implements LoadTimeWeaver
 {
-    /** @var string String buffer */
+    /**
+     * String buffer
+     *
+     * @var string
+     */
     protected $data = '';
 
-    /** @var null|resource */
+    /**
+     * Filter bucket resource
+     *
+     * @var null|resource
+     */
     protected $bucket = null;
 
-    /** @var string Name of class to load  */
+    /**
+     * Name of class to load
+     *
+     * @var string
+     */
     protected $className = '';
 
-    /** @var array|\go\instrument\ClassFileTransformer[] */
+    /**
+     * List of transformers
+     *
+     * @var array|ClassFileTransformer[]
+     */
     protected static $transformers = array();
 
+    /**
+     * {@inheritdoc}
+     */
     public function onCreate()
     {
         $filterPathElements = explode('.', $this->filtername);
-        $this->className = isset($filterPathElements[3]) ? $filterPathElements[3] : '\__PHP_Incomplete_Class';
+        $this->className    = isset($filterPathElements[3]) ? $filterPathElements[3] : '\__PHP_Incomplete_Class';
     }
 
+    /**
+     * {@inheridoc}
+     */
     public function filter($in, $out, &$consumed, $closing)
     {
         while ($bucket = stream_bucket_make_writeable($in)) {
@@ -43,6 +68,7 @@ class ClassLoader extends \php_user_filter implements \go\instrument\classloadin
             $this->bucket = $bucket;
             $consumed = 0;
         }
+
         if ($closing) {
             $consumed += strlen($this->data);
             $this->bucket->data = $this->transformCode($this->data);
@@ -52,13 +78,15 @@ class ClassLoader extends \php_user_filter implements \go\instrument\classloadin
             }
             return PSFS_PASS_ON;
         }
+
         return PSFS_FEED_ME;
     }
 
     /**
      * Adds a ClassFileTransformer to be applied by this LoadTimeWeaver.
      *
-     * @param $transformer \go\instrument\ClassFileTransformer Transformer for source code
+     * @param $transformer ClassFileTransformer Transformer for source code
+     *
      * @return void
      */
     public static function addTransformer(ClassFileTransformer $transformer)
@@ -70,6 +98,7 @@ class ClassLoader extends \php_user_filter implements \go\instrument\classloadin
      * Transforms source code by passing it through all transformers
      *
      * @param string $code Source code
+     *
      * @return string Transformed source code
      */
     protected function transformCode($code)

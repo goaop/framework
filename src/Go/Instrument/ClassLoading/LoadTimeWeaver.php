@@ -16,6 +16,7 @@ use Go\Instrument\ClassFileTransformer;
  */
 interface LoadTimeWeaver
 {
+
     /**
      * Adds a ClassFileTransformer to be applied by this LoadTimeWeaver.
      *

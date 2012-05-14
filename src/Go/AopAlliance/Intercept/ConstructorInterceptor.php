@@ -32,6 +32,7 @@ namespace Go\AopAlliance\Intercept;
 
 interface ConstructorInterceptor extends Interceptor
 {
+
     /**
      * Implement this method to perform extra treatments before and
      * after the consrution of a new object. Polite implementations

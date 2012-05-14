@@ -38,6 +38,7 @@ namespace Go\AopAlliance\Intercept;
  */
 interface FieldInterceptor extends Interceptor
 {
+
     /**
      * Do the stuff you want to do before and after the
      * field is getted.
@@ -46,6 +47,7 @@ interface FieldInterceptor extends Interceptor
      * {@link Joinpoint::proceed()}.
      *
      * @param FieldAccess $fieldRead the joinpoint that corresponds to the field read
+     *
      * @return mixed the result of the field read {@link Joinpoint::proceed()}, might be intercepted by the
      * interceptor.
      */
@@ -59,7 +61,8 @@ interface FieldInterceptor extends Interceptor
      * {@link Joinpoint::proceed()}.
      *
      * @param FieldAccess $fieldWrite the joinpoint that corresponds to the field write
-     * @return the result of the field set {@link Joinpoint::proceed()}, might be intercepted by the
+     *
+     * @return mixed the result of the field set {@link Joinpoint::proceed()}, might be intercepted by the
      * interceptor.
      */
     public function set(FieldAccess $fieldWrite);

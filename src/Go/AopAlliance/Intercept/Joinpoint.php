@@ -25,7 +25,8 @@ namespace Go\AopAlliance\Intercept;
  *
  * @see Interceptor
  */
-interface Joinpoint {
+interface Joinpoint
+{
 
     /**
      * Proceeds to the next interceptor in the chain.

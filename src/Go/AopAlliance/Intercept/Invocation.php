@@ -17,12 +17,14 @@ namespace Go\AopAlliance\Intercept;
  * @author Rod Johnson
  * @author Lissachenko Alexander
  */
-interface Invocation extends Joinpoint {
+interface Invocation extends Joinpoint
+{
 
     /**
      * Get the arguments as an array object.
      * It is possible to change element values within this array to change the arguments
      *
-     * @return array the arguments of the invocation */
+     * @return array the arguments of the invocation
+     */
     public function getArguments();
 }

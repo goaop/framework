@@ -29,7 +29,8 @@ namespace Go\AopAlliance\Intercept;
  * }
  * </pre>
  */
-interface MethodInterceptor extends Interceptor {
+interface MethodInterceptor extends Interceptor
+{
 
     /**
      * Implement this method to perform extra treatments before and

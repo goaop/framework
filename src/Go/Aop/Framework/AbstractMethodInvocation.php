@@ -8,8 +8,10 @@
 
 namespace Go\Aop\Framework;
 
+use ReflectionMethod;
+
 use Go\AopAlliance\Intercept\MethodInvocation;
-use go\reflection\ReflectionMethod;
+use Go\AopAlliance\Intercept\MethodInterceptor;
 
 /**
  * Abstract method invocation implementation
@@ -28,7 +30,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /** @var object Instance of object for invoking or null */
     protected $instance = null;
 
-    /** @var null|\go\reflection\ReflectionMethod */
+    /** @var null|ReflectionMethod */
     protected $reflectionMethod = null;
 
     /**
@@ -57,7 +59,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      */
     final public function proceed()
     {
-        /** @var $currentInterceptor \Go\AopAlliance\Intercept\MethodInterceptor */
+        /** @var $currentInterceptor MethodInterceptor */
         $currentInterceptor = current($this->advices);
         if (!$currentInterceptor) {
             return $this->invokeOriginalMethod();
@@ -98,7 +100,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      * <p>This method is a frienly implementation of the
      * {@link Joinpoint::getStaticPart()} method (same result).
      *
-     * @return \go\reflection\ReflectionMethod the method being called.
+     * @return ReflectionMethod the method being called.
      */
     public function getMethod()
     {

@@ -8,6 +8,8 @@
 
 namespace Go\AopAlliance\Intercept;
 
+use ReflectionProperty;
+
 /**
  * This interface represents a field access in the program.
  *
@@ -16,11 +18,17 @@ namespace Go\AopAlliance\Intercept;
  *
  * @see FieldInterceptor
  */
-interface FieldAccess extends Joinpoint {
+interface FieldAccess extends Joinpoint
+{
 
-    /** The read access type (see {@link getAccessType()}). */
+    /**
+     * The read access type (see {@link getAccessType()}).
+     */
     const READ = 0;
-    /** The write access type (see {@link getAccessType()}). */
+
+    /**
+     * The write access type (see {@link getAccessType()}).
+     */
     const WRITE = 1;
 
     /**
@@ -29,7 +37,8 @@ interface FieldAccess extends Joinpoint {
      * <p>This method is a frienly implementation of the
      * {@link Joinpoint::getStaticPart()} method (same result).
      *
-     * @return \ReflectionProperty the field being accessed.  */
+     * @return ReflectionProperty the field being accessed.
+     */
     public function getField();
 
     /**
@@ -37,6 +46,7 @@ interface FieldAccess extends Joinpoint {
      *
      * <p>This value can be intercepted and changed by a field
      * interceptor.
+     *
      * @return mixed
      */
     public function getValueToSet();

@@ -8,9 +8,10 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\AdviceBefore;
 use Go\AopAlliance\Intercept\FieldAccess;
 use Go\AopAlliance\Intercept\FieldInterceptor;
-use Go\Aop\AdviceBefore;
+
 
 /**
  * @package go
@@ -42,7 +43,7 @@ class FieldBeforeInterceptor extends BaseInterceptor implements FieldInterceptor
      * {@link Joinpoint::proceed()}.
      *
      * @param FieldAccess $fieldWrite the joinpoint that corresponds to the field write
-     * @return the result of the field set {@link Joinpoint::proceed()}, might be intercepted by the
+     * @return mixed the result of the field set {@link Joinpoint::proceed()}, might be intercepted by the
      * interceptor.
      */
     public function set(FieldAccess $fieldWrite)

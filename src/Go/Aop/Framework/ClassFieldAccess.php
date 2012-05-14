@@ -60,7 +60,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * <p>This method is a frienly implementation of the
      * {@link Joinpoint::getStaticPart()} method (same result).
      *
-     * @return \ReflectionProperty the field being accessed.  */
+     * @return ReflectionProperty the field being accessed.  */
     public function getField()
     {
         $this->reflectionProperty = $this->reflectionProperty ?: new ReflectionProperty(
@@ -91,12 +91,13 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     final public function proceed()
     {
-        /** @var $currentInterceptor \Go\AopAlliance\Intercept\FieldAccess */
-        $currentInterceptor = current($this->advices);
-        if (!$currentInterceptor) {
-            return $this->invokeOriginalMethod();
-        }
-        next($this->advices);
-        return $currentInterceptor->invoke($this);
+        // TODO: implement logic of field access
+//        /** @var $currentInterceptor FieldAccess */
+//        $currentInterceptor = current($this->advices);
+//        if (!$currentInterceptor) {
+//            return $this->invokeOriginalMethod();
+//        }
+//        next($this->advices);
+//        return $currentInterceptor->invoke($this);
     }
 }

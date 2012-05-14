@@ -8,6 +8,8 @@
 
 namespace Go\AopAlliance\Intercept;
 
+use ReflectionMethod;
+
 /**
  * Description of an invocation to a method, given to an interceptor
  * upon method-call.
@@ -17,7 +19,8 @@ namespace Go\AopAlliance\Intercept;
  *
  * @see MethodInterceptor
  */
-interface MethodInvocation extends Invocation {
+interface MethodInvocation extends Invocation
+{
 
     /**
      * Gets the method being called.
@@ -25,7 +28,7 @@ interface MethodInvocation extends Invocation {
      * <p>This method is a frienly implementation of the
      * {@link Joinpoint::getStaticPart()} method (same result).
      *
-     * @return \ReflectionMethod the method being called.
+     * @return ReflectionMethod the method being called.
      */
     public function getMethod();
 }

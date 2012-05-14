@@ -14,6 +14,7 @@ namespace Go\Instrument;
  */
 interface ClassFileTransformer
 {
+
     /**
      * This method may transform the supplied class file and return a new replacement class file
      *
