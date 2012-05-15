@@ -12,6 +12,7 @@ use Go\Aop\MethodMatcher;
 use Go\Aop\Pointcut;
 use Go\Aop\ClassFilter;
 use Go\Aop\PointFilter;
+use Go\Aop\TrueClassFilter;
 
 /**
  * Convenient abstract superclass for static method matchers, which don't care about arguments at runtime.
@@ -45,6 +46,9 @@ abstract class StaticMethodMatcherPointcut extends StaticMethodMatcher implement
      */
     public function getClassFilter()
     {
+        if (!$this->classFilter) {
+            $this->classFilter = TrueClassFilter::getInstance();
+        }
         return $this->classFilter;
     }
 
