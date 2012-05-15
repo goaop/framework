@@ -8,11 +8,11 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Advice;
 use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceBefore;
 use Go\Aop\AdviceAround;
-use Go\AopAlliance\Aop\Advice;
-use Go\AopAlliance\Intercept\Joinpoint;
+use Go\Intercept\Joinpoint;
 
 
 /**

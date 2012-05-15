@@ -5,7 +5,7 @@
  * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
-namespace Go\AopAlliance\Intercept;
+namespace Go\Intercept;
 
 /**
  * This interface represents a generic runtime joinpoint (in the AOP

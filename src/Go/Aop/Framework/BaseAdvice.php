@@ -8,7 +8,7 @@
 
 namespace Go\Aop\Framework;
 
-use Go\AopAlliance\Aop\Advice;
+use Go\Aop\Advice;
 
 /**
  * Base class for all framework advices implementations

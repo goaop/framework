@@ -6,9 +6,9 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\AopAlliance\Intercept;
+namespace Go\Intercept;
 
-use Go\AopAlliance\Aop\Advice;
+use Go\Aop\Advice;
 
 /**
  * This interface represents a generic interceptor.

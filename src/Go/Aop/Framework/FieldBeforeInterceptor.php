@@ -9,8 +9,8 @@
 namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceBefore;
-use Go\AopAlliance\Intercept\FieldAccess;
-use Go\AopAlliance\Intercept\FieldInterceptor;
+use Go\Intercept\FieldAccess;
+use Go\Intercept\FieldInterceptor;
 
 
 /**

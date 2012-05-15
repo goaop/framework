@@ -9,8 +9,8 @@
 namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceBefore;
-use Go\AopAlliance\Intercept\MethodInvocation;
-use Go\AopAlliance\Intercept\MethodInterceptor;
+use Go\Intercept\MethodInvocation;
+use Go\Intercept\MethodInterceptor;
 
 /**
  * @package go

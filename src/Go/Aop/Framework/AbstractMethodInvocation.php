@@ -10,13 +10,13 @@ namespace Go\Aop\Framework;
 
 use ReflectionMethod;
 
-use Go\AopAlliance\Intercept\MethodInvocation;
-use Go\AopAlliance\Intercept\MethodInterceptor;
+use Go\Intercept\MethodInvocation;
+use Go\Intercept\MethodInterceptor;
 
 /**
  * Abstract method invocation implementation
  *
- * @see Go\AopAlliance\Intercept\MethodInvocation
+ * @see Go\Intercept\MethodInvocation
  * @package go
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation

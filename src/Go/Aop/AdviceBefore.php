@@ -8,7 +8,7 @@
 
 namespace Go\Aop;
 
-use Go\AopAlliance\Aop\Advice;
+use Go\Aop\Advice;
 
 /**
  * Tag class for all before advices either for field access or method calling

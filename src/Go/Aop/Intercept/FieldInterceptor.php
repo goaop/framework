@@ -6,7 +6,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\AopAlliance\Intercept;
+namespace Go\Intercept;
 
 /**
  * Intercepts field access on a target object.
