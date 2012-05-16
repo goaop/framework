@@ -6,7 +6,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Intercept;
+namespace Go\Aop\Intercept;
 
 use ReflectionProperty;
 

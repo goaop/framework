@@ -12,7 +12,7 @@ use Go\Aop\Advice;
 use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceBefore;
 use Go\Aop\AdviceAround;
-use Go\Intercept\Joinpoint;
+use Go\Aop\Intercept\Joinpoint;
 
 
 /**

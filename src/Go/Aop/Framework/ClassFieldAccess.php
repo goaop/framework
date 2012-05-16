@@ -10,7 +10,7 @@ namespace Go\Aop\Framework;
 
 use ReflectionProperty;
 
-use Go\Intercept\FieldAccess;
+use Go\Aop\Intercept\FieldAccess;
 
 /**
  * @package go

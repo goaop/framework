@@ -8,14 +8,14 @@
 
 namespace Go\Aop\Framework;
 
-use Go\Intercept\Invocation;
+use Go\Aop\Intercept\Invocation;
 
 /**
  * Abstract class for all invocations joinpoints
  *
- * It is an implementation of Go\Intercept\Invocation interface
+ * It is an implementation of Go\Aop\Intercept\Invocation interface
  *
- * @see Go\Intercept\Invocation
+ * @see Go\Aop\Intercept\Invocation
  * @package go
  */
 abstract class AbstractInvocation extends AbstractJoinpoint implements Invocation

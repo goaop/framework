@@ -10,8 +10,8 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Pointcut;
 use Go\Aop\Framework\BaseAdvice;
-use Go\Intercept\Interceptor;
-use Go\Intercept\Joinpoint;
+use Go\Aop\Intercept\Interceptor;
+use Go\Aop\Intercept\Joinpoint;
 
 
 /**
