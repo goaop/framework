@@ -8,17 +8,17 @@
 
 namespace Go\Aop;
 
-use Reflector;
-use ReflectionClass;
-
-use Go\Aop\ClassFilter;
+use Go\Aop\TrueClassFilter;
+use Go\Aop\TruePointFilter;
 
 /**
- * Canonical ClassFilter instance that matches all classes.
+ * Canonical Pointcut instance that always matches.
+ *
+ * @package go
+ * @subpackage aop
  */
-class TrueClassFilter implements ClassFilter
+class TruePointcut implements Pointcut
 {
-
     /**
      * Private class constructor
      */
@@ -30,7 +30,7 @@ class TrueClassFilter implements ClassFilter
     /**
      * Singleton pattern
      *
-     * @return TrueClassFilter
+     * @return TruePointcut
      */
     public static function getInstance()
     {
@@ -42,15 +42,24 @@ class TrueClassFilter implements ClassFilter
     }
 
     /**
-     * Performs matching of class
+     * Return the ClassFilter for this pointcut.
      *
-     * @param Reflector|ReflectionClass $class Class instance
-     *
-     * @return bool
+     * @return ClassFilter
      */
-    public function matches(Reflector $class)
+    public function getClassFilter()
     {
-        // Is check for a ReflectionClass class is needed here?
-        return true;
+        return TrueClassFilter::getInstance();
+    }
+
+    /**
+     * Return the PointFilter for this pointcut.
+     *
+     * This can be method filter, property filter.
+     *
+     * @return PointFilter
+     */
+    public function getPointFilter()
+    {
+        return TruePointFilter::getInstance();
     }
 }

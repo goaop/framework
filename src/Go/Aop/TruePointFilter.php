@@ -9,16 +9,12 @@
 namespace Go\Aop;
 
 use Reflector;
-use ReflectionClass;
-
-use Go\Aop\ClassFilter;
 
 /**
- * Canonical ClassFilter instance that matches all classes.
+ * Canonical PointFilter instance that matches all points.
  */
-class TrueClassFilter implements ClassFilter
+class TruePointFilter implements PointFilter
 {
-
     /**
      * Private class constructor
      */
@@ -30,7 +26,7 @@ class TrueClassFilter implements ClassFilter
     /**
      * Singleton pattern
      *
-     * @return TrueClassFilter
+     * @return TruePointFilter
      */
     public static function getInstance()
     {
@@ -42,15 +38,14 @@ class TrueClassFilter implements ClassFilter
     }
 
     /**
-     * Performs matching of class
+     * Performs matching of point of code
      *
-     * @param Reflector|ReflectionClass $class Class instance
+     * @param Reflector $point Specific part of code, can be any Reflection class
      *
      * @return bool
      */
-    public function matches(Reflector $class)
+    public function matches(Reflector $point)
     {
-        // Is check for a ReflectionClass class is needed here?
         return true;
     }
 }
