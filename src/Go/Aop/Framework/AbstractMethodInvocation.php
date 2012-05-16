@@ -43,7 +43,11 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     public function __construct($classNameOrObject, $methodName, array $advices)
     {
         $isObject = is_object($classNameOrObject);
-        $this->className  = $isObject ? get_parent_class($classNameOrObject) : $classNameOrObject;
+
+        // TODO: Check for proxy classes to determine parent class
+        // $this->className  = $isObject ? get_parent_class($classNameOrObject) : $classNameOrObject;
+
+        $this->className  = $isObject ? get_class($classNameOrObject) : $classNameOrObject;
         $this->instance   = $isObject ? $classNameOrObject : null;
         $this->methodName = $methodName;
         parent::__construct($advices);
@@ -71,18 +75,11 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Invokes current method invocation with all interceptors
      *
-     * @param mixed $a,... List of arguments(up to 9)
      * @return mixed
      */
-    final public function __invoke(&$a = null, &$b = null, &$c = null,
-                                   &$d = null, &$e = null, &$f = null,
-                                   &$g = null, &$h = null, &$j = null)
+    final public function __invoke()
     {
-        $this->arguments = array_slice(
-            array(&$a, &$b, &$c, &$d, &$e, &$f, &$g, &$h, &$j),
-            0,
-            func_num_args()
-        );
+        $this->arguments = func_get_args();
         reset($this->advices);
         return $this->proceed();
     }
