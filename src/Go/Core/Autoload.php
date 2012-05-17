@@ -8,19 +8,20 @@
 
 namespace Go\Core;
 
+use Go\Instrument\ClassLoading\SourceTransformingLoader;
+
 /**
  * @package go
  * @subpackage core
  */
 class Autoload
 {
-    const CLASS_LOADER_FILTER_PREFIX = 'go.core.classloader.';
-
+    /**
+     * Will be deprecated soon or used only for Go classes
+     */
     static function init()
     {
         spl_autoload_register(self::getLoader());
-        stream_filter_register(self::CLASS_LOADER_FILTER_PREFIX . '*', __NAMESPACE__ . '\\'. 'ClassLoader') or die('bad');
-        ClassLoader::addTransformer(new \go\instrument\transformer\AopProxyTransformer());
     }
 
     protected static function getLoader()
@@ -38,14 +39,14 @@ class Autoload
 
             $resolvedFileName = $fileName;//stream_resolve_include_path($fileName);
             if ($resolvedFileName) {
-                $isCore = strpos($namespace, 'Go\Core') === 0;
-                if (!$isCore) {
-                    require "php://filter/read=".Autoload::CLASS_LOADER_FILTER_PREFIX."$originalClassName/resource=$resolvedFileName";
+                $isGo = strpos($namespace, 'Go\\') === 0;
+                if (!$isGo) {
+                    SourceTransformingLoader::load($resolvedFileName);
                 } else {
                     require $resolvedFileName;
                 }
             }
-            return (bool)$resolvedFileName;
+            return (bool) $resolvedFileName;
         };
     }
 
