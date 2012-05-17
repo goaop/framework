@@ -39,7 +39,7 @@ class Autoload
 
             $resolvedFileName = $fileName;//stream_resolve_include_path($fileName);
             if ($resolvedFileName) {
-                $isGo = strpos($namespace, 'Go\\') === 0;
+                $isGo = strpos($originalClassName, 'Go\\') === 0 || strpos($originalClassName, 'TokenReflection\\') === 0;
                 if (!$isGo) {
                     SourceTransformingLoader::load($resolvedFileName);
                 } else {

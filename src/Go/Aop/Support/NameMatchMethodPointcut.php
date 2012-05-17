@@ -12,6 +12,8 @@ use Reflector;
 use ReflectionClass;
 use ReflectionMethod;
 
+use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
+
 use Go\Aop\MethodMatcher;
 use Go\Aop\Pointcut;
 use Go\Aop\ClassFilter;
@@ -76,10 +78,10 @@ class NameMatchMethodPointcut extends StaticMethodMatcherPointcut
     /**
      * {@inheritdoc}
      */
-    public function matches(Reflector $method, ReflectionClass $targetClass = null, array $args = null)
+    public function matches($method, $targetClass = null, array $args = null)
     {
-        /** @var $method ReflectionMethod */
-        if (!$method instanceof ReflectionMethod) {
+        /** @var $method ReflectionMethod|ParsedReflectionMethod */
+        if (!$method instanceof ReflectionMethod && !$method instanceof ParsedReflectionMethod) {
             return false;
         }
 

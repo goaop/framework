@@ -12,6 +12,9 @@ use Reflector;
 use ReflectionClass;
 use ReflectionMethod;
 
+use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
+use TokenReflection\ReflectionClass as ParsedReflectionClass;
+
 use Go\Aop\MethodMatcher;
 use Go\Aop\Pointcut;
 use Go\Aop\ClassFilter;
@@ -111,17 +114,17 @@ class RegexpMethodPointcut extends StaticMethodMatcherPointcut
      * If this returns false or if the isRuntime() method returns false, no runtime check
      * (i.e. no. matches(ReflectionMethod, ReflectionClass, $args) call) will be made.
      *
-     * @param Reflector|ReflectionMethod $method The candidate method
-     * @param ReflectionClass $targetClass The target class
+     * @param ReflectionMethod|ParsedReflectionMethod $method The candidate method
+     * @param ReflectionClass|ParsedReflectionClass $targetClass The target class
      * (may be null, in which case the candidate class must be taken to be the method's declaring class)
      * @param array $args Arguments to the method
      * (may be null, for statical matching)
      *
      * @return bool whether or not this method matches
      */
-    public function matches(Reflector $method, ReflectionClass $targetClass = null, array $args = null)
+    public function matches($method, $targetClass = null, array $args = null)
     {
-        if (!$method instanceof ReflectionMethod) {
+        if (!$method instanceof ReflectionMethod && !$method instanceof ParsedReflectionMethod) {
             return false;
         }
         /** @var $methodClass ReflectionClass */

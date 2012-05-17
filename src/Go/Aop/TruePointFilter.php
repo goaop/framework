@@ -8,8 +8,6 @@
 
 namespace Go\Aop;
 
-use Reflector;
-
 /**
  * Canonical PointFilter instance that matches all points.
  */
@@ -40,11 +38,11 @@ class TruePointFilter implements PointFilter
     /**
      * Performs matching of point of code
      *
-     * @param Reflector $point Specific part of code, can be any Reflection class
+     * @param mixed $point Specific part of code, can be any Reflection class
      *
      * @return bool
      */
-    public function matches(Reflector $point)
+    public function matches($point)
     {
         return true;
     }

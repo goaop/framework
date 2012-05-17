@@ -10,6 +10,7 @@ namespace Go\Aop;
 
 use Reflector;
 use ReflectionClass;
+use TokenReflection\ReflectionClass as ParsedReflectionClass;
 
 use Go\Aop\ClassFilter;
 
@@ -44,11 +45,11 @@ class TrueClassFilter implements ClassFilter
     /**
      * Performs matching of class
      *
-     * @param Reflector|ReflectionClass $class Class instance
+     * @param ReflectionClass|ParsedReflectionClass $class Class instance
      *
      * @return bool
      */
-    public function matches(Reflector $class)
+    public function matches($class)
     {
         // Is check for a ReflectionClass class is needed here?
         return true;
