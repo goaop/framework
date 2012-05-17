@@ -10,6 +10,7 @@ namespace Go\Instrument\ClassLoading;
 
 use php_user_filter as PhpStreamFilter;
 
+use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\SourceTransformer;
 
 /**
@@ -109,9 +110,9 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
             $consumed += strlen($this->data);
 
             // $this->stream contains pointer to the source
-            $metadata = stream_get_meta_data($this->stream);
+            $metadata = new StreamMetaData($this->stream);
 
-            $this->bucket->data    = $this->transformCode($this->data);
+            $this->bucket->data    = $this->transformCode($this->data, $metadata);
             $this->bucket->datalen = strlen($this->bucket->data);
             if (!empty($this->bucket->data)) {
                 stream_bucket_append($out, $this->bucket);
@@ -150,15 +151,16 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      * Transforms source code by passing it through all transformers
      *
      * @param string $code Source code
+     * @param StreamMetaData|null $metadata Metadata from stream
      *
      * @return string Transformed source code
      */
-    protected function transformCode($code)
+    protected function transformCode($code, StreamMetaData $metadata = null)
     {
         $transformedSourceCode = $code;
         if (self::$transformers) {
             foreach (self::$transformers as $transformer) {
-                $transformedSourceCode = $transformer->transform($transformedSourceCode);
+                $transformedSourceCode = $transformer->transform($transformedSourceCode, $metadata);
             }
         }
         return $transformedSourceCode;

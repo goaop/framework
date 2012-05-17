@@ -99,10 +99,11 @@ class FilterInjectorTransformer implements SourceTransformer
      * Wrap all includes into rewrite filter
      *
      * @param string $source Source for class
+     * @param StreamMetaData $metadata Metadata for source
      *
      * @return string Transformed source
      */
-    public function transform($source)
+    public function transform($source, StreamMetaData $metadata = null)
     {
         static $pattern = '/\b(include|include_once|require|require_once)([^;]*)/i';
         return preg_replace($pattern, '$1 ' . get_called_class() . '::rewrite($2)', $source);

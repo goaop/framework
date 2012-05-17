@@ -18,13 +18,14 @@ class AopProxyTransformer implements SourceTransformer
     const AOP_PROXIED_SUFFIX = '__AopProxied';
 
     /**
-     * This method may transform the supplied class file and return a new replacement class file
+     * This method may transform the supplied source and return a new replacement for it
      *
-     * @param string $source List of tokens for class
+     * @param string $source Source for class
+     * @param StreamMetaData $metadata Metadata for source
      *
      * @return string Transformed source
      */
-    public function transform($source)
+    public function transform($source, StreamMetaData $metadata = null)
     {
     }
 
