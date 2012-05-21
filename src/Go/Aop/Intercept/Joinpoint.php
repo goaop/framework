@@ -47,14 +47,14 @@ interface Joinpoint
      * @return object|null the object (can be null if the accessible object is
      * static).
      */
-    //public function getThis();
+    public function getThis();
 
     /**
      * Returns the static part of this joinpoint.
      *
      * <p>The static part is an accessible object on which a chain of
      * interceptors are installed.
-     * @return AccessibleObject
+     * @return object
      */
-     //public function getStaticPart();
+     public function getStaticPart();
 }

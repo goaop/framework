@@ -103,6 +103,32 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     }
 
     /**
+     * Returns the object that holds the current joinpoint's static
+     * part.
+     *
+     * <p>For instance, the target object for an invocation.
+     *
+     * @return object|null the object (can be null if the accessible object is
+     * static).
+     */
+    public function getThis()
+    {
+        return $this->instance;
+    }
+
+    /**
+     * Returns the static part of this joinpoint.
+     *
+     * <p>The static part is an accessible object on which a chain of
+     * interceptors are installed.
+     * @return object
+     */
+     public function getStaticPart()
+     {
+         return $this->getMethod();
+     }
+
+    /**
      * Invokes current method invocation with all interceptors
      *
      * @return mixed
