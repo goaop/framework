@@ -8,6 +8,8 @@
 
 namespace Go\Instrument\Transformer;
 
+use ReflectionProperty as Property;
+
 use TokenReflection\Broker;
 use TokenReflection\ReflectionClass;
 use TokenReflection\ReflectionMethod;
@@ -60,16 +62,33 @@ class AopProxyTransformer implements SourceTransformer
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
                 if ($classFilter->matches($class)) {
-                    echo "Matching class ", $class->getName(), "<br>\n";
+                    // echo "Matching class ", $class->getName(), "<br>\n";
+
+                    $child  = new \Go\Aop\Support\AbstractChildCreator($class, $class->getShortName());
+                    $source = preg_replace('/class\s+(' . $class->getShortName() . ')/i', 'class $1_Proxied', $source);
+
+                    $child->setProperty(Property::IS_PRIVATE | Property::IS_STATIC, '__joinPoints', 'array()');
+                    $child->setParentName($class->getShortName() . '_Proxied');
+
                     $methodMatcher = $this->advisor->getPointcut()->getPointFilter();
 
                     /** @var $methods ReflectionMethod[] */
                     $methods = $class->getMethods();
                     foreach ($methods as $method) {
                         if ($methodMatcher->matches($method)) {
-                            echo "Matching method ", $method->getName(), "<br>\n";
+
+                            // echo "Matching method ", $method->getName(), "<br>\n";
+                            $link = $method->isStatic() ? 'null' : '$this';
+                            $args = join(', ', array_map(function ($param) {
+                                return '$' . $param->getName();
+                            }, $method->getParameters()));
+                            $body = "return self::\$__joinPoints[__FUNCTION__]->__invoke($link, $args);";
+                            $child->override($method->getName(), $body);
                         }
                     }
+
+                    $source .= $child;
+                    $source .= '\Go\Aop\Support\AdvisorRegistry::injectAdvices("\\' . $class->getName() . '", "\\' . $class->getName() . '_Proxied");';
                 }
             }
         }
