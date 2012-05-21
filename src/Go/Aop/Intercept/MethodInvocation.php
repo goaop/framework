@@ -31,4 +31,11 @@ interface MethodInvocation extends Invocation
      * @return ReflectionMethod the method being called.
      */
     public function getMethod();
+
+    /**
+     * Invokes current method invocation with all interceptors
+     *
+     * @return mixed
+     */
+    public function __invoke();
 }

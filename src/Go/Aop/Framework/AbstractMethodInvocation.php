@@ -21,17 +21,33 @@ use Go\Aop\Intercept\MethodInterceptor;
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
-    /** @var string Class name of method */
-    protected $className = '';
+    /**
+     * Class name of method
+     *
+     * @var string
+     */
+    protected $classOrObject = '';
 
-    /** @var string Name of invoked method */
+    /**
+     * Name of invoked method
+     *
+     * @var string
+     */
     protected $methodName = '';
 
-    /** @var object Instance of object for invoking or null */
+    /**
+     * Instance of object for invoking or null
+     *
+     * @var object
+     */
     protected $instance = null;
 
-    /** @var null|ReflectionMethod */
-    protected $reflectionMethod = null;
+    /**
+     * Instance of reflection method for class
+     *
+     * @var null|ReflectionMethod
+     */
+    private $reflectionMethod = null;
 
     /**
      * Constructor for method invocation
@@ -42,14 +58,8 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      */
     public function __construct($classNameOrObject, $methodName, array $advices)
     {
-        $isObject = is_object($classNameOrObject);
-
-        // TODO: Check for proxy classes to determine parent class
-        // $this->className  = $isObject ? get_parent_class($classNameOrObject) : $classNameOrObject;
-
-        $this->className  = $isObject ? get_class($classNameOrObject) : $classNameOrObject;
-        $this->instance   = $isObject ? $classNameOrObject : null;
-        $this->methodName = $methodName;
+        $this->classOrObject = $classNameOrObject;
+        $this->methodName    = $methodName;
         parent::__construct($advices);
     }
 
@@ -73,6 +83,26 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     }
 
     /**
+     * Gets the method being called.
+     *
+     * <p>This method is a frienly implementation of the
+     * {@link Joinpoint::getStaticPart()} method (same result).
+     *
+     * @return ReflectionMethod the method being called.
+     */
+    public function getMethod()
+    {
+        if (!$this->reflectionMethod) {
+            $this->reflectionMethod = new ReflectionMethod($this->classOrObject, $this->methodName);
+            // Give an access to call protected method
+            if ($this->reflectionMethod->isProtected()) {
+                $this->reflectionMethod->setAccessible(true);
+            }
+        }
+        return $this->reflectionMethod;
+    }
+
+    /**
      * Invokes current method invocation with all interceptors
      *
      * @return mixed
@@ -80,6 +110,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     final public function __invoke()
     {
         $this->arguments = func_get_args();
+        $this->instance  = array_shift($this->arguments);
         reset($this->advices);
         return $this->proceed();
     }
@@ -90,20 +121,4 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      * @return mixed
      */
     abstract protected function invokeOriginalMethod();
-
-    /**
-     * Gets the method being called.
-     *
-     * <p>This method is a frienly implementation of the
-     * {@link Joinpoint::getStaticPart()} method (same result).
-     *
-     * @return ReflectionMethod the method being called.
-     */
-    public function getMethod()
-    {
-        $this->reflectionMethod = $this->reflectionMethod ?: new ReflectionMethod(
-            $this->className, $this->methodName
-        );
-        return $this->reflectionMethod;
-    }
 }

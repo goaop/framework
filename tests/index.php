@@ -61,6 +61,6 @@ if ($classFilter->matches($refClass)) {
     if ($pointFilter->matches($refClass->getMethod('hello'))) {
 
         $invocation = new \Go\Aop\Framework\ReflectionMethodInvocation($class, 'hello', array($advisor->getAdvice()));
-        return $invocation('test');
+        $invocation($class, 'test');
     };
 }
