@@ -105,7 +105,7 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public function transform($source, StreamMetaData $metadata = null)
     {
-        static $pattern = '/\b(include|include_once|require|require_once)([^;]*)/i';
+        static $pattern = '/\b(include_once|require_once|include|require)([^;]*)/i';
         return preg_replace($pattern, '$1 ' . get_called_class() . '::rewrite($2)', $source);
     }
 }
