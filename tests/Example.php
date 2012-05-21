@@ -11,5 +11,11 @@ class Example
     public function hello($message)
     {
         echo $message, "<br>\n";
+        static::show($message);
+    }
+
+    public static function show($message)
+    {
+        echo "Static call! $message", "<br>\n";
     }
 }

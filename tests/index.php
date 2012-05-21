@@ -7,6 +7,12 @@
  */
 
 use Go\Core\Autoload;
+use Go\Aop\Support\AdvisorRegistry;
+use Go\Aop\Support\DefaultPointcutAdvisor;
+use Go\Aop\Support\NameMatchMethodPointcut;
+use Go\Aop\Framework\MethodBeforeInterceptor;
+use Go\Aop\Intercept\MethodInvocation;
+
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\Transformer\AopProxyTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
@@ -22,11 +28,20 @@ Autoload::init();
  *                             ASPECT BLOCK
 **********************************************************************************/
 
-$pointcut = new \Go\Aop\Support\NameMatchMethodPointcut();
-$pointcut->setMappedName('*el*');
+$pointcut = new NameMatchMethodPointcut();
+$pointcut->setMappedName('*');
 
-$advice = new \Go\Aop\Framework\MethodBeforeInterceptor(function() {echo 'Hello';}, $pointcut);
-$advisor = new \Go\Aop\Support\DefaultPointcutAdvisor($pointcut, $advice);
+$advice = new MethodBeforeInterceptor(function(MethodInvocation $invocation) {
+    echo 'Calling Before Interceptor for method: ',
+         $invocation->getMethod()->getName(),
+         ' with arguments: ',
+         json_encode($invocation->getArguments()),
+         "<br>\n";
+}, $pointcut);
+
+$advisor = new DefaultPointcutAdvisor($pointcut, $advice);
+
+AdvisorRegistry::register($advisor);
 
 /*********************************************************************************
  *                             CONFIGURATION FOR TRANSFORMERS BLOCK
@@ -52,15 +67,5 @@ foreach ($sourceTransformers as $sourceTransformer) {
  * Remark: SourceTransformingLoader::load('app_autoload.php') should be here later
 **********************************************************************************/
 
-$class       = new Example();
-$refClass    = new ReflectionClass($class);
-$classFilter = $advisor->getPointcut()->getClassFilter();
-
-if ($classFilter->matches($refClass)) {
-    $pointFilter = $advisor->getPointcut()->getPointFilter();
-    if ($pointFilter->matches($refClass->getMethod('hello'))) {
-
-        $invocation = new \Go\Aop\Framework\ReflectionMethodInvocation($class, 'hello', array($advisor->getAdvice()));
-        $invocation($class, 'test');
-    };
-}
+$class = new Example();
+$class->hello('Welcome!');
