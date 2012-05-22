@@ -82,7 +82,8 @@ class AopProxyTransformer implements SourceTransformer
                             $args = join(', ', array_map(function ($param) {
                                 return '$' . $param->getName();
                             }, $method->getParameters()));
-                            $body = "return self::\$__joinPoints[__FUNCTION__]->__invoke($link, $args);";
+                            $args = $link . ($args ? ", $args" : '');
+                            $body = "return self::\$__joinPoints[__FUNCTION__]->__invoke($args);";
                             $child->override($method->getName(), $body);
                         }
                     }
