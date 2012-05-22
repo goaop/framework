@@ -79,16 +79,10 @@ class AopProxyTransformer implements SourceTransformer
                     /** @var $methods ReflectionMethod[] */
                     $methods = $class->getMethods();
                     foreach ($methods as $method) {
-                        if ($methodMatcher->matches($method)) {
+                        if ($methodMatcher->matches($method) && !$method->isFinal() /* temporary disable override of final methods */) {
 
                             // echo "Matching method ", $method->getName(), "<br>\n";
-                            $link = $method->isStatic() ? 'null' : '$this';
-                            $args = join(', ', array_map(function ($param) {
-                                return '$' . $param->getName();
-                            }, $method->getParameters()));
-                            $args = $link . ($args ? ", $args" : '');
-                            $body = "return self::\$__joinPoints[__FUNCTION__]->__invoke($args);";
-                            $child->override($method->getName(), $body);
+                            $child->override($method->getName(), $this->getMethodBody($method));
                         }
                     }
 
@@ -98,6 +92,25 @@ class AopProxyTransformer implements SourceTransformer
             }
         }
         return $source;
+    }
+
+    /**
+     * Creates definition for method body
+     *
+     * @param ReflectionMethod $method Method reflection
+     *
+     * @return string new method body
+     */
+    private function getMethodBody($method)
+    {
+        $link = $method->isStatic() ? 'null' : '$this';
+        $args = join(', ', array_map(function ($param) {
+            return '$' . $param->getName();
+        }, $method->getParameters()));
+
+        $args = $link . ($args ? ", $args" : '');
+        $body = "return self::\$__joinPoints[__FUNCTION__]->__invoke($args);";
+        return $body;
     }
 
 }
