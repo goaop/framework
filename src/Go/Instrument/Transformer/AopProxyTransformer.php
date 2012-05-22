@@ -61,11 +61,15 @@ class AopProxyTransformer implements SourceTransformer
             /** @var $classes ReflectionClass[] */
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
-                if ($classFilter->matches($class)) {
+                if ($classFilter->matches($class) && !$class->isInterface()) {
                     // echo "Matching class ", $class->getName(), "<br>\n";
 
                     $child  = new \Go\Aop\Support\AbstractChildCreator($class, $class->getShortName());
                     $source = preg_replace('/class\s+(' . $class->getShortName() . ')/i', 'class $1_Proxied', $source);
+                    if ($class->isFinal()) {
+                        // Remove final from class
+                        $source = str_replace('final class', 'class', $source);
+                    }
 
                     $child->setProperty(Property::IS_PRIVATE | Property::IS_STATIC, '__joinPoints', 'array()');
                     $child->setParentName($class->getShortName() . '_Proxied');
