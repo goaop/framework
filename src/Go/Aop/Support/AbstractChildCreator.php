@@ -181,7 +181,9 @@ class AbstractChildCreator
      */
     public function __toString()
     {
-        $code = sprintf("class %s extends %s%s\n{\n%s\n%s}",
+        $prefix = join(' ', Reflection::getModifierNames($this->class->getModifiers()));
+        $code = sprintf("%sclass %s extends %s%s\n{\n%s\n%s}",
+            $prefix ? "$prefix " : '',
             $this->name,
             $this->parentClassName,
             $this->interfaces ? ' implements ' . join(', ', $this->interfaces) : '',
@@ -258,7 +260,7 @@ class AbstractChildCreator
         if ($parameter->isArray()) {
             $type = 'array';
         } elseif ($parameter->getClass()) {
-            $type = $parameter->getClass()->getName();
+            $type = '\\' . $parameter->getClass()->getName();
         }
         $defaultValue = null;
         $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();
