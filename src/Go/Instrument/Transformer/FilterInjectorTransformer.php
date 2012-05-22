@@ -105,7 +105,21 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public function transform($source, StreamMetaData $metadata = null)
     {
-        static $pattern = '/\b(include_once|require_once|include|require)([^;]*)/i';
-        return preg_replace($pattern, '$1 \\' . get_called_class() . '::rewrite($2)', $source);
+        static $lookFor = array(T_INCLUDE, T_INCLUDE_ONCE, T_REQUIRE, T_REQUIRE_ONCE);
+        $tokenStream = token_get_all($source);
+        $transformedSource = '';
+        $isWaitingEnd = false;
+        foreach ($tokenStream as $token) {
+            if ($isWaitingEnd && $token === ';') {
+                $isWaitingEnd = false;
+                $transformedSource .= ')';
+            }
+            $transformedSource .= (is_array($token) ? $token[1] : $token);
+            if (!$isWaitingEnd && is_array($token) && in_array($token[0], $lookFor)) {
+                $isWaitingEnd = true;
+                $transformedSource  .= ' \\' . get_called_class() . '::rewrite(';
+            }
+        }
+        return $transformedSource;
     }
 }
