@@ -10,7 +10,10 @@ use Go\Core\Autoload;
 use Go\Aop\Support\AdvisorRegistry;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Aop\Support\NameMatchMethodPointcut;
+use Go\Aop\Framework\FieldBeforeInterceptor;
+use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\MethodBeforeInterceptor;
+use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\MethodInvocation;
 
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
@@ -67,5 +70,8 @@ foreach ($sourceTransformers as $sourceTransformer) {
  * Remark: SourceTransformingLoader::load('app_autoload.php') should be here later
 **********************************************************************************/
 
-$class = new Example();
-$class->hello('Welcome!');
+//$class = new Example();
+//$class->hello('Welcome!');
+
+$class = new ExampleField();
+$class->hello('welcome');
