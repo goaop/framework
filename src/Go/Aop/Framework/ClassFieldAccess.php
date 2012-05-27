@@ -11,37 +11,84 @@ namespace Go\Aop\Framework;
 use ReflectionProperty;
 
 use Go\Aop\Intercept\FieldAccess;
+use Go\Aop\Intercept\FieldInterceptor;
 
 /**
  * @package go
  */
 class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 {
-    /** @var object|string Name of the class*/
-    protected $className = '';
 
-    /** @var string Name of field */
+    /**
+     * Mapping of access type with method to invoke for interceptor
+     *
+     * @var array
+     */
+    private static $interceptorMethodMapping = array(
+        self::READ  => 'get',
+        self::WRITE => 'set'
+    );
+
+    /**
+     * Name of the class
+     *
+     * @var object|string
+     */
+    protected $classOrObject = null;
+
+    /**
+     * Name of the field
+     *
+     * @var string
+     */
     protected $fieldName = '';
 
-    /** @var object Instance of object for accessing or null */
+    /**
+     * Instance of object for accessing
+     *
+     * @var object
+     */
     protected $instance = null;
 
-    /** @var null|\ReflectionProperty */
+    /**
+     * Instance of reflection property
+     *
+     * @var null|\ReflectionProperty
+     */
     protected $reflectionProperty = null;
+
+    /**
+     * New value to set
+     *
+     * @var mixed
+     */
+    protected $newValue = null;
+
+    /**
+     * Access type for field access
+     *
+     * @var null|integer
+     */
+    private $accessType = null;
+
+    /**
+     * Copy of the original value of property
+     *
+     * @var mixed
+     */
+    private $value = null;
 
     /**
      * Constructor for field access
      *
      * @param string|object $classNameOrObject Class name or object instance
-     * @param string $methodName Field name
+     * @param string $fieldName Field name
      * @param $advices array List of advices for this invocation
      */
-    public function __construct($classNameOrObject, $methodName, array $advices)
+    public function __construct($classNameOrObject, $fieldName, array $advices)
     {
-        $isObject = is_object($classNameOrObject);
-        $this->className = $isObject ? get_parent_class($classNameOrObject) : $classNameOrObject;
-        $this->instance  = $isObject ? $classNameOrObject : null;
-        $this->fieldName = $methodName;
+        $this->classOrObject = $classNameOrObject;
+        $this->fieldName     = $fieldName;
         parent::__construct($advices);
     }
 
@@ -52,7 +99,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     public function getAccessType()
     {
-        // TODO: Implement getAccessType() method.
+        return $this->accessType;
     }
 
     /**
@@ -61,12 +108,17 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * <p>This method is a frienly implementation of the
      * {@link Joinpoint::getStaticPart()} method (same result).
      *
-     * @return ReflectionProperty the field being accessed.  */
+     * @return ReflectionProperty the field being accessed.
+     */
     public function getField()
     {
-        $this->reflectionProperty = $this->reflectionProperty ?: new ReflectionProperty(
-            $this->className, $this->fieldName
-        );
+        if (!$this->reflectionProperty) {
+            $this->reflectionProperty = new ReflectionProperty($this->classOrObject, $this->fieldName);
+            // Give an access to protected field
+            if ($this->reflectionProperty->isProtected()) {
+                $this->reflectionProperty->setAccessible(true);
+            }
+        }
         return $this->reflectionProperty;
     }
 
@@ -79,7 +131,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     public function getValueToSet()
     {
-        // TODO: Implement getValueToSet() method.
+        return $this->newValue;
     }
 
     /**
@@ -92,13 +144,62 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     final public function proceed()
     {
-        // TODO: implement logic of field access
-//        /** @var $currentInterceptor FieldAccess */
-//        $currentInterceptor = current($this->advices);
-//        if (!$currentInterceptor) {
-//            return $this->invokeOriginalMethod();
-//        }
-//        next($this->advices);
-//        return $currentInterceptor->invoke($this);
+        /** @var $currentInterceptor FieldInterceptor */
+        $currentInterceptor = current($this->advices);
+        if (!$currentInterceptor) {
+            if ($this->accessType === self::READ) {
+                return $this->value;
+            } else {
+                return $this->getValueToSet();
+            }
+        }
+        next($this->advices);
+        return $currentInterceptor->{self::$interceptorMethodMapping[$this->accessType]}($this);
+    }
+
+    /**
+     * Invokes current field access with all interceptors
+     *
+     * @param object $instance Instance of object
+     * @param integer $accessType Type of access: READ or WRITE
+     * @param mixed $originalValue Original value of property
+     * @param mixed $newValue New value to set
+     *
+     * @return mixed
+     */
+    final public function __invoke($instance, $accessType, $originalValue, $newValue = NAN)
+    {
+        $this->instance   = $instance;
+        $this->accessType = $accessType;
+        $this->value      = $originalValue;
+        $this->newValue   = $newValue;
+        reset($this->advices);
+        return $this->proceed();
+    }
+
+    /**
+     * Returns the object that holds the current joinpoint's static
+     * part.
+     *
+     * <p>For instance, the target object for an invocation.
+     *
+     * @return object|null the object (can be null if the accessible object is
+     * static).
+     */
+    final public function getThis()
+    {
+        return $this->instance;
+    }
+
+    /**
+     * Returns the static part of this joinpoint.
+     *
+     * <p>The static part is an accessible object on which a chain of
+     * interceptors are installed.
+     * @return object
+     */
+    final public function getStaticPart()
+    {
+        return $this->getField();
     }
 }

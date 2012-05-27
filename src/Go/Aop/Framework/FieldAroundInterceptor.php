@@ -2,13 +2,13 @@
 /**
  * Go! OOP&AOP PHP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\AdviceBefore;
+use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldInterceptor;
 
@@ -16,7 +16,7 @@ use Go\Aop\Intercept\FieldInterceptor;
 /**
  * @package go
  */
-class FieldBeforeInterceptor extends BaseInterceptor implements FieldInterceptor, AdviceBefore
+class FieldAroundInterceptor extends BaseInterceptor implements FieldInterceptor, AdviceAround
 {
     /**
      * Do the stuff you want to do before and after the
@@ -31,8 +31,7 @@ class FieldBeforeInterceptor extends BaseInterceptor implements FieldInterceptor
      */
     public function get(FieldAccess $fieldRead)
     {
-        $this->invokeAdviceForJoinpoint($fieldRead);
-        return $fieldRead->proceed();
+        return $this->invokeAdviceForJoinpoint($fieldRead);
     }
 
     /**
@@ -48,7 +47,6 @@ class FieldBeforeInterceptor extends BaseInterceptor implements FieldInterceptor
      */
     public function set(FieldAccess $fieldWrite)
     {
-        $this->invokeAdviceForJoinpoint($fieldWrite);
-        return $fieldWrite->proceed();
+        return $this->invokeAdviceForJoinpoint($fieldWrite);
     }
 }
