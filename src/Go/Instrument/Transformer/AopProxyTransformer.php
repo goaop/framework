@@ -10,6 +10,8 @@ namespace Go\Instrument\Transformer;
 
 use ReflectionProperty as Property;
 
+use Go\Aop\Support\AbstractChildCreator;
+
 use TokenReflection\Broker;
 use TokenReflection\ReflectionClass;
 use TokenReflection\ReflectionMethod;
@@ -64,15 +66,19 @@ class AopProxyTransformer implements SourceTransformer
                 if ($classFilter->matches($class) && !$class->isInterface()) {
                     // echo "Matching class ", $class->getName(), "<br>\n";
 
-                    $child  = new \Go\Aop\Support\AbstractChildCreator($class, $class->getShortName());
-                    $source = preg_replace('/class\s+(' . $class->getShortName() . ')/i', 'class $1_Proxied', $source);
+                    $child  = new AbstractChildCreator($class, $class->getShortName());
+                    $source = preg_replace(
+                        '/class\s+(' . $class->getShortName() . ')/i',
+                        'class $1' . self::AOP_PROXIED_SUFFIX,
+                        $source
+                    );
                     if ($class->isFinal()) {
                         // Remove final from class
                         $source = str_replace('final class', 'class', $source);
                     }
 
                     $child->setProperty(Property::IS_PRIVATE | Property::IS_STATIC, '__joinPoints', 'array()');
-                    $child->setParentName($class->getShortName() . '_Proxied');
+                    $child->setParentName($class->getShortName() . self::AOP_PROXIED_SUFFIX);
 
                     $methodMatcher = $this->advisor->getPointcut()->getPointFilter();
 
@@ -87,7 +93,7 @@ class AopProxyTransformer implements SourceTransformer
                     }
 
                     $source .= $child;
-                    $source .= '\Go\Aop\Support\AdvisorRegistry::injectAdvices("\\' . $class->getName() . '", "\\' . $class->getName() . '_Proxied");';
+                    $source .= '\Go\Aop\Support\AdvisorRegistry::injectAdvices("\\' . $class->getName() . '", "\\' . $class->getName() . self::AOP_PROXIED_SUFFIX . '");';
                 }
             }
         }
@@ -109,7 +115,7 @@ class AopProxyTransformer implements SourceTransformer
         }, $method->getParameters()));
 
         $args = $link . ($args ? ", $args" : '');
-        $body = "return self::\$__joinPoints[__FUNCTION__]->__invoke($args);";
+        $body = "return self::\$__joinPoints['method:' . __FUNCTION__]->__invoke($args);";
         return $body;
     }
 
