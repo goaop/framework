@@ -77,7 +77,7 @@ class AdvisorRegistry
                 $pointcut = $advisor->getPointcut();
                 if ($pointcut->getClassFilter()->matches($class)) {
                     $pointFilter = $pointcut->getPointFilter();
-                    $classAdvices = array_merge($classAdvices, self::getClassAdvices($class, $advisor, $pointFilter));
+                    $classAdvices = array_merge_recursive($classAdvices, self::getClassAdvices($class, $advisor, $pointFilter));
                 }
             }
         }
