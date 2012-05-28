@@ -10,7 +10,8 @@ namespace Go\Instrument\Transformer;
 
 use ReflectionProperty as Property;
 
-use Go\Aop\Support\AbstractChildCreator;
+use Go\Aop\Support\AdvisorRegistry;
+use Go\Aop\Support\AopChildFactory;
 
 use TokenReflection\Broker;
 use TokenReflection\ReflectionClass;
@@ -35,10 +36,9 @@ class AopProxyTransformer implements SourceTransformer
      */
     protected $broker;
 
-    public function __construct(Broker $broker, \Go\Aop\PointcutAdvisor $advisor)
+    public function __construct(Broker $broker)
     {
         $this->broker = $broker;
-        $this->advisor = $advisor;
     }
 
     /**
@@ -53,9 +53,6 @@ class AopProxyTransformer implements SourceTransformer
     {
         $parsedSource = $this->broker->processString($source, $metadata->getResourceUri(), true);
 
-        // TODO: this code only for debug, will be refactored
-        $classFilter = $this->advisor->getPointcut()->getClassFilter();
-
         /** @var $namespaces ReflectionFileNamespace[] */
         $namespaces = $parsedSource->getNamespaces();
         foreach ($namespaces as $namespace) {
@@ -63,36 +60,25 @@ class AopProxyTransformer implements SourceTransformer
             /** @var $classes ReflectionClass[] */
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
-                if ($classFilter->matches($class) && !$class->isInterface()) {
-                    // echo "Matching class ", $class->getName(), "<br>\n";
 
-                    $child  = new AbstractChildCreator($class, $class->getShortName());
-                    $source = preg_replace(
-                        '/class\s+(' . $class->getShortName() . ')/i',
-                        'class $1' . self::AOP_PROXIED_SUFFIX,
-                        $source
-                    );
-                    if ($class->isFinal()) {
-                        // Remove final from class
-                        $source = str_replace('final class', 'class', $source);
-                    }
+                $joinpoints = AdvisorRegistry::advise($class);
 
-                    $child->setProperty(Property::IS_PRIVATE | Property::IS_STATIC, '__joinPoints', 'array()');
-                    $child->setParentName($class->getShortName() . self::AOP_PROXIED_SUFFIX);
+                if ($joinpoints && !$class->isInterface()) {
+                    // Prepare new parent name
+                    $newParentName = $class->getShortName() . self::AOP_PROXIED_SUFFIX;
 
-                    $methodMatcher = $this->advisor->getPointcut()->getPointFilter();
+                    // Replace original class name with new
+                    $source = $this->adjustOriginalClass($class, $source, $newParentName);
 
-                    /** @var $methods ReflectionMethod[] */
-                    $methods = $class->getMethods();
-                    foreach ($methods as $method) {
-                        if ($methodMatcher->matches($method) && !$method->isFinal() /* temporary disable override of final methods */) {
+                    // Prepare child Aop proxy
+                    $child  = AopChildFactory::generate($class, $joinpoints);
 
-                            // echo "Matching method ", $method->getName(), "<br>\n";
-                            $child->override($method->getName(), $this->getMethodBody($method));
-                        }
-                    }
+                    // Set new parent name instead of original
+                    $child->setParentName($newParentName);
 
+                    // Add child to source
                     $source .= $child;
+
                     $source .= '\Go\Aop\Support\AdvisorRegistry::injectAdvices("\\' . $class->getName() . '", "\\' . $class->getName() . self::AOP_PROXIED_SUFFIX . '");';
                 }
             }
@@ -101,22 +87,25 @@ class AopProxyTransformer implements SourceTransformer
     }
 
     /**
-     * Creates definition for method body
+     * Adjust definition of original class source to enable extending
      *
-     * @param ReflectionMethod $method Method reflection
+     * @param ReflectionClass $class Instance of class reflection
+     * @param string $source Source code
+     * @param string $newParentName New name for the parent class
      *
-     * @return string new method body
+     * @return string Replaced code for class
      */
-    private function getMethodBody($method)
+    private function adjustOriginalClass($class, $source, $newParentName)
     {
-        $link = $method->isStatic() ? 'null' : '$this';
-        $args = join(', ', array_map(function ($param) {
-            return '$' . $param->getName();
-        }, $method->getParameters()));
-
-        $args = $link . ($args ? ", $args" : '');
-        $body = "return self::\$__joinPoints['method:' . __FUNCTION__]->__invoke($args);";
-        return $body;
+        $source = preg_replace(
+            '/class\s+(' . $class->getShortName() . ')/i',
+            "class $newParentName",
+            $source
+        );
+        if ($class->isFinal()) {
+            // Remove final from class, child will be final instead
+            $source = str_replace('final class', 'class', $source);
+        }
+        return $source;
     }
-
 }

@@ -81,7 +81,7 @@ class AdvisorRegistry
                 }
             }
         }
-        return self::wrapWithJoinpoints($classAdvices, $class);
+        return $classAdvices ? self::wrapWithJoinpoints($classAdvices, $class) : array();
     }
 
     /**
