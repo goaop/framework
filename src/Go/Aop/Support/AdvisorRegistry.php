@@ -62,7 +62,7 @@ class AdvisorRegistry
      *
      * @param string|ReflectionClass|ParsedReflectionClass $class Class to advise
      *
-     * @return array|Joinpoint[] List of joinpoints for class
+     * @return array|Advice[] List of advices for class
      */
     public static function advise($class)
     {
@@ -81,51 +81,7 @@ class AdvisorRegistry
                 }
             }
         }
-        return $classAdvices ? self::wrapWithJoinpoints($classAdvices, $class) : array();
-    }
-
-    /**
-     * Wrap advices with joinpoint object
-     *
-     * @param array|Advice[] $classAdvices Advices for specific class
-     * @param ReflectionClass|ParsedReflectionClass $class Instance of reflection of class
-     *
-     * @return array|Joinpoint[] returns list of joinpoint ready to use
-     */
-    protected static function wrapWithJoinpoints($classAdvices, $class)
-    {
-        $className  = $class->getName();
-        $joinpoints = array();
-        foreach ($classAdvices as $name => $advices) {
-
-            // Fields use prop:$name format, so use this information
-            if (strpos($name, self::PROPERTY_PREFIX) === 0) {
-                $propertyName      = substr($name, strlen(self::PROPERTY_PREFIX));
-                $joinpoints[$name] = new ClassFieldAccess($className, $propertyName, $advices);
-            } elseif (strpos($name, self::METHOD_PREFIX) === 0) {
-                $methodName        = substr($name, strlen(self::METHOD_PREFIX));
-                $joinpoints[$name] = new ReflectionMethodInvocation($className, $methodName, $advices);
-            }
-        }
-        return $joinpoints;
-    }
-
-    /**
-     * Inject advices into given class
-     *
-     * @param ReflectionClass|ParsedReflectionClass|string $class Class to inject advices
-     *
-     * @return void
-     */
-    public static function injectAdvices($proxyClass, $target)
-    {
-        if (!$proxyClass instanceof ReflectionClass && !$proxyClass instanceof ParsedReflectionClass) {
-            $proxyClass = new ReflectionClass($proxyClass);
-        }
-        /** @var $prop ReflectionProperty|ParsedReflectionProperty */
-        $prop = $proxyClass->getProperty('__joinPoints');
-        $prop->setAccessible(true);
-        $prop->setValue(self::advise($target));
+        return $classAdvices;
     }
 
     /**

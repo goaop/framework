@@ -8,14 +8,11 @@
 
 namespace Go\Instrument\Transformer;
 
-use ReflectionProperty as Property;
-
 use Go\Aop\Support\AdvisorRegistry;
 use Go\Aop\Support\AopChildFactory;
 
 use TokenReflection\Broker;
 use TokenReflection\ReflectionClass;
-use TokenReflection\ReflectionMethod;
 use TokenReflection\ReflectionFileNamespace;
 
 /**
@@ -36,6 +33,11 @@ class AopProxyTransformer implements SourceTransformer
      */
     protected $broker;
 
+    /**
+     * Constructs AOP Proxy transformer
+     *
+     * @param Broker $broker Instance of reflection broker to use
+     */
     public function __construct(Broker $broker)
     {
         $this->broker = $broker;
@@ -61,9 +63,10 @@ class AopProxyTransformer implements SourceTransformer
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
 
-                $joinpoints = AdvisorRegistry::advise($class);
+                $advices = AdvisorRegistry::advise($class);
 
-                if ($joinpoints && !$class->isInterface()) {
+                if ($advices && !$class->isInterface()) {
+
                     // Prepare new parent name
                     $newParentName = $class->getShortName() . self::AOP_PROXIED_SUFFIX;
 
@@ -71,15 +74,13 @@ class AopProxyTransformer implements SourceTransformer
                     $source = $this->adjustOriginalClass($class, $source, $newParentName);
 
                     // Prepare child Aop proxy
-                    $child  = AopChildFactory::generate($class, $joinpoints);
+                    $child  = AopChildFactory::generate($class, $advices);
 
                     // Set new parent name instead of original
                     $child->setParentName($newParentName);
 
                     // Add child to source
                     $source .= $child;
-
-                    $source .= '\Go\Aop\Support\AdvisorRegistry::injectAdvices("\\' . $class->getName() . '", "\\' . $class->getName() . self::AOP_PROXIED_SUFFIX . '");';
                 }
             }
         }
