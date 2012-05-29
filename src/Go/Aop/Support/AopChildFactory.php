@@ -17,6 +17,7 @@ use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Support\AdvisorRegistry;
 use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\ReflectionMethodInvocation;
+use Go\Aop\Framework\ClosureMethodInvocation;
 
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
@@ -48,6 +49,7 @@ class AopChildFactory extends AbstractChildCreator
                 list ($type, $name) = explode(':', $name);
                 switch ($type) {
                     case 'method':
+                    case 'static':
                         $aopChild->overrideMethod($parent->getMethod($name));
                         break;
                 }
@@ -100,9 +102,37 @@ class AopChildFactory extends AbstractChildCreator
             } elseif (strpos($name, AdvisorRegistry::METHOD_PREFIX) === 0) {
                 $methodName        = substr($name, strlen(AdvisorRegistry::METHOD_PREFIX));
                 $joinpoints[$name] = new ReflectionMethodInvocation($className, $methodName, $advices);
+            } elseif (strpos($name, AdvisorRegistry::STATIC_METHOD_PREFIX) === 0) {
+                $methodName  = substr($name, strlen(AdvisorRegistry::STATIC_METHOD_PREFIX));
+
+                // For PHP5.4 we can use ClosureMethodInvocation to preserve LSB during method interception
+                if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+                    $staticInvoker     = self::getStaticInvoker();
+                    $joinpoints[$name] = new ClosureMethodInvocation($staticInvoker, $className, $methodName, $advices);
+                } else {
+                    // Add BC for calling static method without LSB for PHP < 5.4
+                    $joinpoints[$name] = new ReflectionMethodInvocation($className, $methodName, $advices);
+                }
             }
         }
         return $joinpoints;
+    }
+
+    /**
+     * Static method invoker
+     *
+     * TODO: Move this function to separate class
+     * @return Closure
+     */
+    private static function getStaticInvoker()
+    {
+        static $invoker = null;
+        if (!$invoker) {
+            $invoker = function ($parentClass, $method, array $args) {
+                return forward_static_call_array(array($parentClass, $method), $args);
+            };
+        }
+        return $invoker;
     }
 
     /**
@@ -141,13 +171,16 @@ class AopChildFactory extends AbstractChildCreator
      */
     protected function getJoinpointInvocationBody($method)
     {
-        $link = $method->isStatic() ? 'null' : '$this';
+        $isStatic = $method->isStatic();
+        $scope    = $isStatic ? 'get_called_class()' : '$this';
+        $prefix   = $isStatic ? 'static' : 'method';
+
         $args = join(', ', array_map(function ($param) {
             return '$' . $param->getName();
         }, $method->getParameters()));
 
-        $args = $link . ($args ? ", $args" : '');
-        $body = "return self::\$__joinPoints['method:' . __FUNCTION__]->__invoke($args);";
+        $args = $scope . ($args ? ", $args" : '');
+        $body = "return self::\$__joinPoints['$prefix:' . __FUNCTION__]->__invoke($args);";
         return $body;
     }
 

@@ -20,6 +20,8 @@ class ReflectionMethodInvocation extends AbstractMethodInvocation
      */
     protected function invokeOriginalMethod()
     {
-        return $this->getMethod()->invokeArgs($this->instance, $this->arguments);
+        // Due to bug https://bugs.php.net/bug.php?id=60968 instance shouldn't be a string
+        $instance = is_string($this->instance) ? null : $this->instance;
+        return $this->getMethod()->invokeArgs($instance, $this->arguments);
     }
 }

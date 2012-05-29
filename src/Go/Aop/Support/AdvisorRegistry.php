@@ -41,6 +41,11 @@ class AdvisorRegistry
     const METHOD_PREFIX = "method:";
 
     /**
+     * Prefix for static method interceptor name
+     */
+    const STATIC_METHOD_PREFIX = "static:";
+
+    /**
      * List of advisors (aspects)
      *
      * @var array|Advisor[]
@@ -99,7 +104,8 @@ class AdvisorRegistry
         foreach ($class->getMethods() as $method) {
             /** @var $method ReflectionMethod| */
             if ($filter->matches($method)) {
-                $classAdvices[self::METHOD_PREFIX . $method->getName()][] = $advisor->getAdvice();
+                $prefix = $method->isStatic() ? self::STATIC_METHOD_PREFIX : self::METHOD_PREFIX;
+                $classAdvices[$prefix . $method->getName()][] = $advisor->getAdvice();
             }
         }
 

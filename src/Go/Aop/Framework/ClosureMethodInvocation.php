@@ -13,11 +13,23 @@ namespace Go\Aop\Framework;
  */
 class ClosureMethodInvocation extends AbstractMethodInvocation
 {
-    /** @var null|\Closure */
-    protected $closureToCall = null;
+    /**
+     * Closure to use
+     *
+     * @var null|\Closure
+     */
+    private $closureToCall = null;
+
+    /**
+     * Name of the parent class to use
+     *
+     * @var string
+     */
+    private $parentClass = '';
 
     public function __construct($closureToCall, $classNameOrObject, $methodName, array $advices)
     {
+        $this->parentClass   = get_parent_class($classNameOrObject);
         $this->closureToCall = $closureToCall;
         parent::__construct($classNameOrObject, $methodName, $advices);
     }
@@ -29,7 +41,8 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
      */
     protected function invokeOriginalMethod()
     {
-        $closureToCall = $this->closureToCall;
-        return $closureToCall($this->methodName, $this->arguments);
+        // Bind closure to correct scope for preserving LSB
+        $closureToCall = $this->closureToCall->bindTo(null, $this->instance);
+        return $closureToCall($this->parentClass, $this->methodName, $this->arguments);
     }
 }
