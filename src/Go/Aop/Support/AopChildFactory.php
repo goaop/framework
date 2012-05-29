@@ -70,7 +70,7 @@ class AopChildFactory extends AbstractChildCreator
     {
         $originalClass = $aopChildClass;
         $advices       = AdvisorRegistry::advise($originalClass);
-        $joinPoints    = static::wrapWithJoinPoints($advices, $parentClassName);
+        $joinPoints    = static::wrapWithJoinPoints($advices, $aopChildClass);
 
         $aopChildClass = new ReflectionClass($aopChildClass);
 

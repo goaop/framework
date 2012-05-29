@@ -93,7 +93,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     public function getMethod()
     {
         if (!$this->reflectionMethod) {
-            $this->reflectionMethod = new ReflectionMethod($this->classOrObject, $this->methodName);
+            $this->reflectionMethod = new ReflectionMethod(get_parent_class($this->classOrObject), $this->methodName);
             // Give an access to call protected method
             if ($this->reflectionMethod->isProtected()) {
                 $this->reflectionMethod->setAccessible(true);
