@@ -181,6 +181,8 @@ class AbstractChildCreator
      */
     public function __toString()
     {
+        ksort($this->methodsCode);
+        ksort($this->propertiesCode);
         $prefix = join(' ', Reflection::getModifierNames($this->class->getModifiers()));
         $code = sprintf("%sclass %s extends %s%s\n{\n%s\n%s\n}",
             $prefix ? "$prefix " : '',
