@@ -34,13 +34,21 @@ class AopProxyTransformer implements SourceTransformer
     protected $broker;
 
     /**
+     * List of include paths to process
+     *
+     * @var array
+     */
+    protected $includePaths = array();
+
+    /**
      * Constructs AOP Proxy transformer
      *
      * @param Broker $broker Instance of reflection broker to use
      */
-    public function __construct(Broker $broker)
+    public function __construct(Broker $broker, $includePaths = array())
     {
-        $this->broker = $broker;
+        $this->broker       = $broker;
+        $this->includePaths = $includePaths;
     }
 
     /**
@@ -53,7 +61,21 @@ class AopProxyTransformer implements SourceTransformer
      */
     public function transform($source, StreamMetaData $metadata = null)
     {
-        $parsedSource = $this->broker->processString($source, $metadata->getResourceUri(), true);
+        $fileName = realpath($metadata->getResourceUri());
+        if ($this->includePaths) {
+            $found = false;
+            foreach ($this->includePaths as $includePath) {
+                if (strpos($fileName, $includePath) === 0) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                return $source;
+            }
+        }
+
+        $parsedSource = $this->broker->processString($source, $fileName, true);
 
         /** @var $namespaces ReflectionFileNamespace[] */
         $namespaces = $parsedSource->getNamespaces();
