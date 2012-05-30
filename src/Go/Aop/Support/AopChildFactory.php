@@ -15,6 +15,7 @@ use ReflectionProperty as Property;
 use Go\Aop\Advice;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Support\AdvisorRegistry;
+use Go\Aop\Support\Invoker;
 use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\ReflectionMethodInvocation;
 use Go\Aop\Framework\ClosureMethodInvocation;
@@ -64,11 +65,10 @@ class AopChildFactory extends AbstractChildCreator
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
      *
      * @param string $aopChildClass Aop child proxy class
-     * @param string $parentClassName Parent class name to inject advices
      *
      * @return void
      */
-    public static function injectJoinpoints($aopChildClass, $parentClassName)
+    public static function injectJoinpoints($aopChildClass)
     {
         $originalClass = $aopChildClass;
         $advices       = AdvisorRegistry::advise($originalClass);
@@ -101,13 +101,19 @@ class AopChildFactory extends AbstractChildCreator
                 $joinpoints[$name] = new ClassFieldAccess($className, $propertyName, $advices);
             } elseif (strpos($name, AdvisorRegistry::METHOD_PREFIX) === 0) {
                 $methodName        = substr($name, strlen(AdvisorRegistry::METHOD_PREFIX));
-                $joinpoints[$name] = new ReflectionMethodInvocation($className, $methodName, $advices);
+
+                if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+                    $dynamicInvoker    = Invoker::getDynamicParent();
+                    $joinpoints[$name] = new ClosureMethodInvocation($dynamicInvoker, $className, $methodName, $advices);
+                } else {
+                    // Add BC for calling static method without LSB for PHP < 5.4
+                    $joinpoints[$name] = new ReflectionMethodInvocation($className, $methodName, $advices);
+                }
             } elseif (strpos($name, AdvisorRegistry::STATIC_METHOD_PREFIX) === 0) {
                 $methodName  = substr($name, strlen(AdvisorRegistry::STATIC_METHOD_PREFIX));
 
-                // For PHP5.4 we can use ClosureMethodInvocation to preserve LSB during method interception
                 if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-                    $staticInvoker     = self::getStaticInvoker();
+                    $staticInvoker     = Invoker::getStatic();
                     $joinpoints[$name] = new ClosureMethodInvocation($staticInvoker, $className, $methodName, $advices);
                 } else {
                     // Add BC for calling static method without LSB for PHP < 5.4
@@ -116,23 +122,6 @@ class AopChildFactory extends AbstractChildCreator
             }
         }
         return $joinpoints;
-    }
-
-    /**
-     * Static method invoker
-     *
-     * TODO: Move this function to separate class
-     * @return Closure
-     */
-    private static function getStaticInvoker()
-    {
-        static $invoker = null;
-        if (!$invoker) {
-            $invoker = function ($parentClass, $method, array $args) {
-                return forward_static_call_array(array($parentClass, $method), $args);
-            };
-        }
-        return $invoker;
     }
 
     /**
@@ -190,7 +179,7 @@ class AopChildFactory extends AbstractChildCreator
         return parent::__toString()
             // Inject advices on call
             . PHP_EOL
-            . '\\' . $self . '::injectJoinpoints("' . $this->name . '", "' . $this->parentClassName . '");';
+            . '\\' . $self . '::injectJoinpoints("' . $this->name . '");';
     }
 
 

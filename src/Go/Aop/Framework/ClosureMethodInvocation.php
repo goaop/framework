@@ -41,8 +41,11 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
      */
     protected function invokeOriginalMethod()
     {
-        // Bind closure to correct scope for preserving LSB
-        $closureToCall = $this->closureToCall->bindTo(null, $this->instance);
+        if (is_string($this->instance)) {
+            $closureToCall = $this->closureToCall->bindTo(null, $this->instance);
+        } else {
+            $closureToCall = $this->closureToCall->bindTo($this->instance, $this->classOrObject);
+        }
         return $closureToCall($this->parentClass, $this->methodName, $this->arguments);
     }
 }
