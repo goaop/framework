@@ -59,12 +59,36 @@ $after = new MethodAfterInterceptor(function(MethodInvocation $invocation) {
          "<br>\n";
 }, $pointcut);
 
+$fieldPointcut = new \Go\Aop\Support\NameMatchPropertyPointcut();
+$fieldPointcut->setMappedName('*');
+$fieldAdvice = new \Go\Aop\Framework\FieldAroundInterceptor(function (FieldAccess $property) {
+    $type = $property->getAccessType() === FieldAccess::READ ? 'read' : 'write';
+    $value = $property->proceed();
+    echo
+        "Calling Around Interceptor for field: ",
+        get_class($property->getThis()),
+        "->",
+        $property->getField()->getName(),
+        ", access: $type",
+        ", value: ",
+        json_encode($value),
+        "<br>\n";
+
+    // Let's have a fun and change the value of property :))
+    if ($property->getAccessType() === FieldAccess::WRITE) {
+        return 'WRITE';
+    }
+    return $value;
+});
+
 
 $beforeAdvisor = new DefaultPointcutAdvisor($pointcut, $before);
 $afterAdvisor  = new DefaultPointcutAdvisor($pointcut, $after);
+$fieldAdvisor = new DefaultPointcutAdvisor($fieldPointcut, $fieldAdvice);
 
 AdvisorRegistry::register($beforeAdvisor);
 AdvisorRegistry::register($afterAdvisor);
+AdvisorRegistry::register($fieldAdvisor);
 
 /*********************************************************************************
  *                             CONFIGURATION FOR TRANSFORMERS BLOCK
@@ -94,5 +118,5 @@ $class->hello('Welcome!');
 
 echo "=========================================<br>\n";
 
-$class = new ExampleField();
-$class->hello('welcome');
+//$class = new ExampleField();
+//$class->hello('welcome');
