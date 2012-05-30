@@ -11,7 +11,6 @@ namespace Go\Aop\Support;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
-use SplObjectStorage;
 
 use Go\Aop\Advisor;
 use Go\Aop\ClassFilter;

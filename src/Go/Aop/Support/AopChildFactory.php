@@ -32,6 +32,20 @@ class AopChildFactory extends AbstractChildCreator
 {
 
     /**
+     * Flag to determine if we need to add a code for property interceptors
+     *
+     * @var bool
+     */
+    private $isFieldsIntercepted = false;
+
+    /**
+     * List of intercepted properties names
+     *
+     * @var array
+     */
+    private $interceptedProperties = array();
+
+    /**
      * Generates an child code by parent class reflection and joinpoints for it
      *
      * @param ReflectionClass|ParsedReflectionClass $parent Parent class reflection
@@ -47,12 +61,19 @@ class AopChildFactory extends AbstractChildCreator
 
             foreach ($advices as $name => $value) {
 
-                list ($type, $name) = explode(':', $name);
+                list ($type, $pointName) = explode(':', $name);
                 switch ($type) {
                     case 'method':
                     case 'static':
-                        $aopChild->overrideMethod($parent->getMethod($name));
+                        $aopChild->overrideMethod($parent->getMethod($pointName));
                         break;
+
+                    case 'prop':
+                        $aopChild->interceptProperty($parent->getProperty($pointName));
+                        break;
+
+                    default:
+                        throw new \InvalidArgumentException("Unsupported point $pointName");
                 }
             }
         }
@@ -173,8 +194,23 @@ class AopChildFactory extends AbstractChildCreator
         return $body;
     }
 
+    /**
+     * Makes property intercepted
+     *
+     * @param Property|ParsedReflectionProperty $property Reflection of property to intercept
+     */
+    protected function interceptProperty($property)
+    {
+        $this->interceptedProperties[] = is_object($property) ? $property->getName() : $property;
+        $this->isFieldsIntercepted = true;
+    }
+
     public function __toString()
     {
+        $ctor = $this->class->getConstructor();
+        if ($this->isFieldsIntercepted && (!$ctor || !$ctor->isPrivate())) {
+            $this->addFieldInterceptorsCode();
+        }
         $self = get_called_class();
         return parent::__toString()
             // Inject advices on call
@@ -182,5 +218,86 @@ class AopChildFactory extends AbstractChildCreator
             . '\\' . $self . '::injectJoinpoints("' . $this->name . '");';
     }
 
+    protected function addFieldInterceptorsCode()
+    {
+        $this->setProperty(Property::IS_PRIVATE, '__properties', 'array()');
+        $this->setMethod(ReflectionMethod::IS_PUBLIC, '__get', $this->getMagicGetterBody(), '$name');
+        $this->setMethod(ReflectionMethod::IS_PUBLIC, '__set', $this->getMagicSetterBody(), '$name, $value');
+        $this->isFieldsIntercepted = true;
+        if ($this->class->hasMethod('__construct')) {
+            $this->override('__construct', $this->getConstructorBody(true));
+        } else {
+            $this->setMethod(ReflectionMethod::IS_PUBLIC, '__construct', $this->getConstructorBody(false), '');
+        }
+    }
 
+    /**
+     * Returns a code for magic getter to perform interception
+     *
+     * @return string
+     */
+    private function getMagicGetterBody()
+    {
+        return <<<'GETTER'
+if (array_key_exists($name, $this->__properties)) {
+    return self::$__joinPoints["prop:$name"]->__invoke(
+        $this,
+        \Go\Aop\Intercept\FieldAccess::READ,
+        $this->__properties[$name]
+    );
+} elseif (method_exists(get_parent_class(), __FUNCTION__)) {
+    return parent::__get($name);
+} else {
+    trigger_error("Trying to access undeclared property {$name}");
+    return null;
+}
+GETTER;
+    }
+
+    /**
+     * Returns a code for magic setter to perform interception
+     *
+     * @return string
+     */
+    private function getMagicSetterBody()
+    {
+        return <<<'SETTER'
+if (array_key_exists($name, $this->__properties)) {
+    $this->__properties[$name] = self::$__joinPoints["prop:$name"]->__invoke(
+        $this,
+        \Go\Aop\Intercept\FieldAccess::WRITE,
+        $this->__properties[$name],
+        $value
+    );
+} elseif (method_exists(get_parent_class(), __FUNCTION__)) {
+    parent::__set($name, $value);
+} else {
+    trigger_error("Trying to set undeclared property {$name}");
+    $this->$name = $value;
+}
+SETTER;
+    }
+
+    private function getConstructorBody($isCallParent)
+    {
+        $assocProperties = array();
+        $listProperties  = array();
+        foreach ($this->interceptedProperties as $propertyName) {
+            $assocProperties[] = "'$propertyName' => \$this->$propertyName";
+            $listProperties[]  = "\$this->$propertyName";
+        }
+        $assocProperties = $this->indent(join(',' . PHP_EOL, $assocProperties));
+        $listProperties  = $this->indent(join(',' . PHP_EOL, $listProperties));
+
+        $parentCall = $isCallParent ? "call_user_func_array(array('parent', __FUNCTION__), func_get_args())" : '';
+        return <<<CTOR
+\$this->__properties = array(
+$assocProperties
+);
+unset(
+$listProperties
+);
+$parentCall
+CTOR;
+    }
 }
