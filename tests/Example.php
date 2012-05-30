@@ -35,5 +35,6 @@ class Example
     public static function show($message)
     {
         echo "Static call! $message", "<br>\n";
+        echo "Scope is: ", get_called_class(), "<br>\n";
     }
 }
