@@ -12,6 +12,7 @@ use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Aop\Support\NameMatchMethodPointcut;
 use Go\Aop\Framework\FieldBeforeInterceptor;
 use Go\Aop\Framework\ClassFieldAccess;
+use Go\Aop\Framework\MethodAfterInterceptor;
 use Go\Aop\Framework\MethodBeforeInterceptor;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\MethodInvocation;
@@ -34,17 +35,36 @@ Autoload::init();
 $pointcut = new NameMatchMethodPointcut();
 $pointcut->setMappedName('*');
 
-$advice = new MethodBeforeInterceptor(function(MethodInvocation $invocation) {
+$before = new MethodBeforeInterceptor(function(MethodInvocation $invocation) {
+    $obj = $invocation->getThis();
     echo 'Calling Before Interceptor for method: ',
+         is_object($obj) ? get_class($obj) : $obj,
+         $invocation->getMethod()->isStatic() ? '::' : '->',
          $invocation->getMethod()->getName(),
+         '()',
          ' with arguments: ',
          json_encode($invocation->getArguments()),
          "<br>\n";
 }, $pointcut);
 
-$advisor = new DefaultPointcutAdvisor($pointcut, $advice);
+$after = new MethodAfterInterceptor(function(MethodInvocation $invocation) {
+    $obj = $invocation->getThis();
+    echo 'Calling After Interceptor for method: ',
+         is_object($obj) ? get_class($obj) : $obj,
+         $invocation->getMethod()->isStatic() ? '::' : '->',
+         $invocation->getMethod()->getName(),
+         '()',
+         ' with arguments: ',
+         json_encode($invocation->getArguments()),
+         "<br>\n";
+}, $pointcut);
 
-AdvisorRegistry::register($advisor);
+
+$beforeAdvisor = new DefaultPointcutAdvisor($pointcut, $before);
+$afterAdvisor  = new DefaultPointcutAdvisor($pointcut, $after);
+
+AdvisorRegistry::register($beforeAdvisor);
+AdvisorRegistry::register($afterAdvisor);
 
 /*********************************************************************************
  *                             CONFIGURATION FOR TRANSFORMERS BLOCK
@@ -56,8 +76,7 @@ $sourceTransformers = array(
     new AopProxyTransformer(
         new TokenReflection\Broker(
             new TokenReflection\Broker\Backend\Memory()
-        ),
-        $advisor
+        )
     ),
 );
 
@@ -70,8 +89,10 @@ foreach ($sourceTransformers as $sourceTransformer) {
  * Remark: SourceTransformingLoader::load('app_autoload.php') should be here later
 **********************************************************************************/
 
-//$class = new Example();
-//$class->hello('Welcome!');
+$class = new Example();
+$class->hello('Welcome!');
+
+echo "=========================================<br>\n";
 
 $class = new ExampleField();
 $class->hello('welcome');

@@ -43,6 +43,8 @@ class ExampleField extends Example
             $value = $property->proceed();
             echo
                 "Calling Around Interceptor for field: ",
+                get_class($property->getThis()),
+                "->",
                 $property->getField()->getName(),
                 ", access: $type",
                 ", value: ",
