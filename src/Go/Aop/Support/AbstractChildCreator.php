@@ -272,6 +272,8 @@ class AbstractChildCreator
             } else {
                 $defaultValue = var_export($parameter->getDefaultValue());
             }
+        } elseif ($parameter->allowsNull()) {
+            $defaultValue = 'null';
         }
         $code = sprintf('%s%s$%s%s',
             $type ? "$type " : '',
