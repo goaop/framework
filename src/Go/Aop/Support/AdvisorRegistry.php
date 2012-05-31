@@ -100,7 +100,8 @@ class AdvisorRegistry
     private static function getClassAdvices($class, PointcutAdvisor $advisor, PointFilter $filter)
     {
         $classAdvices = array();
-        foreach ($class->getMethods() as $method) {
+        $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED | ReflectionMethod::IS_STATIC;
+        foreach ($class->getMethods($mask) as $method) {
             /** @var $method ReflectionMethod| */
             if ($filter->matches($method)) {
                 $prefix = $method->isStatic() ? self::STATIC_METHOD_PREFIX : self::METHOD_PREFIX;
