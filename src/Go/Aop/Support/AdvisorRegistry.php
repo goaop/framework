@@ -103,7 +103,7 @@ class AdvisorRegistry
         $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED | ReflectionMethod::IS_STATIC;
         foreach ($class->getMethods($mask) as $method) {
             /** @var $method ReflectionMethod| */
-            if ($filter->matches($method)) {
+            if ($method->getDeclaringClass()->getName() == $class->getName() && $filter->matches($method)) {
                 $prefix = $method->isStatic() ? self::STATIC_METHOD_PREFIX : self::METHOD_PREFIX;
                 $classAdvices[$prefix . $method->getName()][] = $advisor->getAdvice();
             }
