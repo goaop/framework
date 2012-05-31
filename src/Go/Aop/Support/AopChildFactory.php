@@ -10,6 +10,7 @@ namespace Go\Aop\Support;
 
 use ReflectionClass;
 use ReflectionMethod;
+use ReflectionParameter;
 use ReflectionProperty as Property;
 
 use Go\Aop\Advice;
@@ -22,6 +23,7 @@ use Go\Aop\Framework\ClosureMethodInvocation;
 
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
+use TokenReflection\ReflectionParameter as ParsedReflectionParameter;
 use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
 
 
@@ -167,9 +169,25 @@ class AopChildFactory extends AbstractChildCreator
     protected function overrideMethod($method)
     {
         // temporary disable override of final methods
-        if (!$method->isFinal()) {
+        if (!$method->isFinal() && !$method->isAbstract() && !$this->hasParametersByReference($method)) {
             $this->override($method->getName(), $this->getJoinpointInvocationBody($method));
         }
+    }
+
+    /**
+     * Checks if method has parameters by reference
+     *
+     * @param ReflectionMethod|ParsedReflectionMethod $method Method reflection
+     *
+     * @return bool true if method uses parameters by reference
+     */
+    private function hasParametersByReference($method)
+    {
+        $paramsByReference = array_filter($method->getParameters(), function ($param) {
+            /** @var $param ReflectionParameter|ParsedReflectionParameter */
+            return $param->isPassedByReference();
+        });
+        return (bool) $paramsByReference;
     }
 
     /**
