@@ -215,7 +215,7 @@ class AopChildFactory extends AbstractChildCreator
         return parent::__toString()
             // Inject advices on call
             . PHP_EOL
-            . '\\' . $self . '::injectJoinpoints("' . $this->name . '");';
+            . '\\' . $self . "::injectJoinpoints('" . $this->class->name . "');";
     }
 
     protected function addFieldInterceptorsCode()
