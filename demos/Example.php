@@ -6,8 +6,12 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
+/**
+ * Example class to test aspects
+ */
 class Example
 {
+
     /**
      * Message for example
      *
@@ -16,25 +20,75 @@ class Example
     protected $message = '';
 
     /**
-     * Hello, aspect!
+     * Public message to read/write
      *
-     * @param string $message Message for hello
+     * @var string
      */
-    public function hello($message)
+    public $publicMessage = '';
+
+    /**
+     * Constructs example class
+     *
+     * @param string $message Message to show
+     */
+    public function __construct($message)
     {
         $this->message = $message;
-        echo $this->message, "<br>\n";
-        static::show($this->message);
+    }
+
+    /**
+     * Protected method that shows hello
+     */
+    protected function protectedHello()
+    {
+        echo 'Hello, you have a protected message: ', $this->message, "<br>", PHP_EOL;
+    }
+
+    /**
+     * Public method that shows hello
+     */
+    public function publicHello()
+    {
+        echo 'Hello, you have a public message: ', $this->message, "<br>", PHP_EOL;
+    }
+
+    /**
+     * Public method to test interception of protected method
+     */
+    public function runProtectedHello()
+    {
+        echo 'Calling protected method...', "<br>", PHP_EOL;
+        $this->protectedHello();
+    }
+
+    /**
+     * Protected method to return the value of message
+     *
+     * @return string
+     */
+    protected function getProtectedMessage()
+    {
+        return $this->message;
+    }
+
+    /**
+     * Executes a protected method to read the message and show it
+     */
+    public function showProtectedMessage()
+    {
+        echo 'Getting value from protected method...', "<br>", PHP_EOL;
+        $message = $this->getProtectedMessage();
+        echo 'Hello, have you read that message: ', $message, "<br>", PHP_EOL;
     }
 
     /**
      * Test function for static method inter
      *
-     * @param $message
+     * @param string $message Message to show
      */
-    public static function show($message)
+    public static function showStaticMessage($message)
     {
-        echo "Static call! $message", "<br>\n";
-        echo "Scope is: ", get_called_class(), "<br>\n";
+        echo "Static message is: ", $message, "<br>", PHP_EOL;
+        echo "Scope is: ", get_called_class(), "<br>", PHP_EOL;
     }
 }
