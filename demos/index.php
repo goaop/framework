@@ -113,8 +113,8 @@ foreach ($sourceTransformers as $sourceTransformer) {
  * Remark: SourceTransformingLoader::load('app_autoload.php') should be here later
 **********************************************************************************/
 
-$class = new Example();
-$class->hello('Welcome!');
+$class = new Example('test');
+$class->publicHello();
 
 echo "=========================================<br>\n";
 
