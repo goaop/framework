@@ -227,7 +227,7 @@ class AopChildFactory extends AbstractChildCreator
     {
         $ctor = $this->class->getConstructor();
         if ($this->isFieldsIntercepted && (!$ctor || !$ctor->isPrivate())) {
-            $this->addFieldInterceptorsCode();
+            $this->addFieldInterceptorsCode($ctor);
         }
         $self = get_called_class();
         return parent::__toString()
@@ -236,16 +236,26 @@ class AopChildFactory extends AbstractChildCreator
             . '\\' . $self . "::injectJoinpoints('" . $this->class->name . "');";
     }
 
-    protected function addFieldInterceptorsCode()
+    /**
+     * Add code for intercepting properties
+     *
+     * @param null|ReflectionMethod|ParsedReflectionMethod $constructor Constructor reflection or null
+     */
+    protected function addFieldInterceptorsCode($constructor = null)
     {
         $this->setProperty(Property::IS_PRIVATE, '__properties', 'array()');
         $this->setMethod(ReflectionMethod::IS_PUBLIC, '__get', $this->getMagicGetterBody(), '$name');
         $this->setMethod(ReflectionMethod::IS_PUBLIC, '__set', $this->getMagicSetterBody(), '$name, $value');
         $this->isFieldsIntercepted = true;
-        if ($this->class->hasMethod('__construct')) {
-            $this->override('__construct', $this->getConstructorBody(true));
+        if ($constructor) {
+            $this->override('__construct', $this->getConstructorBody($constructor, true));
         } else {
-            $this->setMethod(ReflectionMethod::IS_PUBLIC, '__construct', $this->getConstructorBody(false), '');
+            $this->setMethod(
+                ReflectionMethod::IS_PUBLIC,
+                '__construct',
+                $this->getConstructorBody($constructor, false),
+                ''
+            );
         }
     }
 
@@ -296,7 +306,15 @@ if (array_key_exists($name, $this->__properties)) {
 SETTER;
     }
 
-    private function getConstructorBody($isCallParent)
+    /**
+     * Returns constructor code
+     *
+     * @param ParsedReflectionMethod|ReflectionMethod|null $constructor Constructor reflection
+     * @param bool $isCallParent Is there is a need to call parent code
+     *
+     * @return string
+     */
+    private function getConstructorBody($constructor, $isCallParent)
     {
         $assocProperties = array();
         $listProperties  = array();
@@ -306,8 +324,13 @@ SETTER;
         }
         $assocProperties = $this->indent(join(',' . PHP_EOL, $assocProperties));
         $listProperties  = $this->indent(join(',' . PHP_EOL, $listProperties));
-
-        $parentCall = $isCallParent ? "call_user_func_array(array('parent', __FUNCTION__), func_get_args())" : '';
+        if (isset($this->methodsCode['__construct'])) {
+            $parentCall = $this->getJoinpointInvocationBody($constructor);
+        } elseif ($isCallParent) {
+            $parentCall = "call_user_func_array(array('parent', __FUNCTION__), func_get_args());";
+        } else {
+            $parentCall = '';
+        }
         return <<<CTOR
 \$this->__properties = array(
 $assocProperties
