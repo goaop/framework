@@ -9,6 +9,8 @@
 use Go\Aop\Support\AdvisorRegistry;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Aop\Support\NameMatchMethodPointcut;
+use Go\Aop\Support\NameMatchPropertyPointcut;
+use Go\Aop\Framework\FieldAroundInterceptor;
 use Go\Aop\Framework\FieldBeforeInterceptor;
 use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\MethodAfterInterceptor;
@@ -18,6 +20,26 @@ use Go\Aop\Intercept\MethodInvocation;
 
 include 'aspect_loader.php';
 
+/**
+ * Temporary function to return closure from aspect
+ *
+ * @param object $aspect Aspect instance
+ * @param string $methodName Method name for callback
+ *
+ * @return closure
+ */
+function getCallback($aspect, $methodName)
+{
+    if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+        $refClass = new ReflectionClass($aspect);
+        return $refClass->getMethod($methodName)->getClosure($aspect);
+    } else {
+        return function () use ($aspect, $methodName) {
+            return call_user_func_array(array($aspect, $methodName), func_get_args());
+        };
+    }
+}
+
 /*********************************************************************************
  *                             ASPECT BLOCK
 **********************************************************************************/
@@ -25,59 +47,23 @@ include 'aspect_loader.php';
 $pointcut = new NameMatchMethodPointcut();
 $pointcut->setMappedName('*');
 
-$before = new MethodBeforeInterceptor(function(MethodInvocation $invocation) {
-    $obj = $invocation->getThis();
-    echo 'Calling Before Interceptor for method: ',
-         is_object($obj) ? get_class($obj) : $obj,
-         $invocation->getMethod()->isStatic() ? '::' : '->',
-         $invocation->getMethod()->getName(),
-         '()',
-         ' with arguments: ',
-         json_encode($invocation->getArguments()),
-         "<br>\n";
-}, $pointcut);
+$aspect        = new Aspect\DebugAspect('ASPECT!');
 
-$after = new MethodAfterInterceptor(function(MethodInvocation $invocation) {
-    $obj = $invocation->getThis();
-    echo 'Calling After Interceptor for method: ',
-         is_object($obj) ? get_class($obj) : $obj,
-         $invocation->getMethod()->isStatic() ? '::' : '->',
-         $invocation->getMethod()->getName(),
-         '()',
-         ' with arguments: ',
-         json_encode($invocation->getArguments()),
-         "<br>\n";
-}, $pointcut);
-
-$fieldPointcut = new \Go\Aop\Support\NameMatchPropertyPointcut();
-$fieldPointcut->setMappedName('*');
-$fieldAdvice = new \Go\Aop\Framework\FieldAroundInterceptor(function (FieldAccess $property) {
-    $type = $property->getAccessType() === FieldAccess::READ ? 'read' : 'write';
-    $value = $property->proceed();
-    echo
-        "Calling Around Interceptor for field: ",
-        get_class($property->getThis()),
-        "->",
-        $property->getField()->getName(),
-        ", access: $type",
-        ", value: ",
-        json_encode($value),
-        "<br>\n";
-
-    // Let's have a fun and change the value of property :))
-    if ($property->getAccessType() === FieldAccess::WRITE) {
-        return 'WRITE';
-    }
-    return $value;
-});
-
-
+// Register before advisor
+$before        = new MethodBeforeInterceptor(getCallback($aspect, 'beforeMethodExecution'));
 $beforeAdvisor = new DefaultPointcutAdvisor($pointcut, $before);
-$afterAdvisor  = new DefaultPointcutAdvisor($pointcut, $after);
-$fieldAdvisor = new DefaultPointcutAdvisor($fieldPointcut, $fieldAdvice);
-
 AdvisorRegistry::register($beforeAdvisor);
+
+// Register after advisor
+$after        = new MethodAfterInterceptor(getCallback($aspect, 'afterMethodExecution'));
+$afterAdvisor = new DefaultPointcutAdvisor($pointcut, $after);
 AdvisorRegistry::register($afterAdvisor);
+
+// Register around field advisor
+$fieldPointcut = new NameMatchPropertyPointcut();
+$fieldPointcut->setMappedName('*');
+$fieldAdvice  = new FieldAroundInterceptor(getCallback($aspect, 'aroundFieldAccess'));
+$fieldAdvisor = new DefaultPointcutAdvisor($fieldPointcut, $fieldAdvice);
 AdvisorRegistry::register($fieldAdvisor);
 
 /*********************************************************************************

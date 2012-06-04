@@ -8,12 +8,14 @@
 
 namespace Aspect;
 
+use Go\Aop\Aspect;
+use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\MethodInvocation;
 
 /**
  * Debug aspect
  */
-class DebugAspect
+class DebugAspect implements Aspect
 {
     /**
      * Message to show when calling the method
@@ -37,11 +39,58 @@ class DebugAspect
      *
      * @param MethodInvocation $invocation Invocation
      */
-    public function beforeMethodCall(MethodInvocation $invocation)
+    public function beforeMethodExecution(MethodInvocation $invocation)
     {
-        $method = $invocation->getMethod()->getName();
-        $args   = json_encode($invocation->getArguments());
-        echo "Calling {$method} with {$args}", "<br>\n";
-        echo $this->message, "<br>\n";
+        $obj = $invocation->getThis();
+        echo 'Calling Before Interceptor for method: ',
+             is_object($obj) ? get_class($obj) : $obj,
+             $invocation->getMethod()->isStatic() ? '::' : '->',
+             $invocation->getMethod()->getName(),
+             '()',
+             ' with arguments: ',
+             json_encode($invocation->getArguments()),
+             "<br>\n";
+    }
+
+    /**
+     * Method that should be called after real method
+     *
+     * @param MethodInvocation $invocation Invocation
+     */
+    public function afterMethodExecution(MethodInvocation $invocation)
+    {
+        $obj = $invocation->getThis();
+        echo 'Calling After Interceptor for method: ',
+             is_object($obj) ? get_class($obj) : $obj,
+             $invocation->getMethod()->isStatic() ? '::' : '->',
+             $invocation->getMethod()->getName(),
+             '()',
+             ' with arguments: ',
+             json_encode($invocation->getArguments()),
+             "<br>\n";
+    }
+
+    /**
+     * Method that should be called around property
+     *
+     * @param FieldAccess $property Joinpoint
+     *
+     * @return mixed
+     */
+    public function aroundFieldAccess(FieldAccess $property)
+    {
+        $type = $property->getAccessType() === FieldAccess::READ ? 'read' : 'write';
+        $value = $property->proceed();
+        echo
+            "Calling Around Interceptor for field: ",
+            get_class($property->getThis()),
+            "->",
+            $property->getField()->getName(),
+            ", access: $type",
+            ", value: ",
+            json_encode($value),
+            "<br>\n";
+
+        return $value;
     }
 }
