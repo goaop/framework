@@ -8,14 +8,19 @@
 
 namespace Aspect;
 
-use Go\Aop\Aspect;
+use Go\Lang\Annotation\Aspect;
+use Go\Lang\Annotation\After;
+use Go\Lang\Annotation\Before;
+use Go\Lang\Annotation\Around;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\MethodInvocation;
 
 /**
  * Debug aspect
+ *
+ * @Aspect
  */
-class DebugAspect implements Aspect
+class DebugAspect
 {
     /**
      * Message to show when calling the method
@@ -38,6 +43,7 @@ class DebugAspect implements Aspect
      * Method that should be called before real method
      *
      * @param MethodInvocation $invocation Invocation
+     * @Before(execution(public Example->*(*)))
      */
     public function beforeMethodExecution(MethodInvocation $invocation)
     {
@@ -56,6 +62,7 @@ class DebugAspect implements Aspect
      * Method that should be called after real method
      *
      * @param MethodInvocation $invocation Invocation
+     * @After(execution(public Example->*(*)))
      */
     public function afterMethodExecution(MethodInvocation $invocation)
     {
@@ -74,6 +81,9 @@ class DebugAspect implements Aspect
      * Method that should be called around property
      *
      * @param FieldAccess $property Joinpoint
+     *
+     * @Around(get(* Example->*))
+     * @Around(set(* Example->*))
      *
      * @return mixed
      */
