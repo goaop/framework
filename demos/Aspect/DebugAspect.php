@@ -12,6 +12,7 @@ use Go\Lang\Annotation\Aspect;
 use Go\Lang\Annotation\After;
 use Go\Lang\Annotation\Before;
 use Go\Lang\Annotation\Around;
+use Go\Lang\Annotation\Pointcut;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\MethodInvocation;
 
@@ -38,6 +39,13 @@ class DebugAspect
     {
         $this->message = $message;
     }
+
+    /**
+     * Pointcut for example class
+     *
+     * @Pointcut(execution(public Example->*(*)))
+     */
+    protected function examplePublicMethods() {}
 
     /**
      * Method that should be called before real method
