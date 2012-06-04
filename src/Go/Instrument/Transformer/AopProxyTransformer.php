@@ -79,15 +79,29 @@ class AopProxyTransformer implements SourceTransformer
 
         /** @var $namespaces ReflectionFileNamespace[] */
         $namespaces = $parsedSource->getNamespaces();
+        assert('count($namespaces) == 1; /* Only one namespace per file is supported */');
+
         foreach ($namespaces as $namespace) {
 
             /** @var $classes ReflectionClass[] */
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
 
+                // Skip interfaces
+                if ($class->isInterface()) {
+                    continue;
+                }
+
+                // Look for aspects
+                if ($class->hasAnnotation('Aspect') || in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
+                    // Here we will create an aspect advisor and register aspect
+                    // AdvisorRegistry::register($class);
+                    continue;
+                }
+
                 $advices = AdvisorRegistry::advise($class);
 
-                if ($advices && !$class->isInterface()) {
+                if ($advices) {
 
                     // Prepare new parent name
                     $newParentName = $class->getShortName() . self::AOP_PROXIED_SUFFIX;
