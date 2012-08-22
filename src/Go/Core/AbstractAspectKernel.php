@@ -32,6 +32,13 @@ abstract class AbstractAspectKernel
     protected $options = array();
 
     /**
+     * Single instance of kernel
+     *
+     * @var null|static
+     */
+    protected static $instance = null;
+
+    /**
      * Protected constructor is used to prevent direct creation, but allows customization if needed
      */
     protected function __construct() {}
@@ -43,11 +50,10 @@ abstract class AbstractAspectKernel
      */
     public static function getInstance()
     {
-        static $instance = null;
-        if (!$instance) {
-            $instance = new static();
+        if (!self::$instance) {
+            self::$instance = new static();
         }
-        return $instance;
+        return self::$instance;
     }
 
     /**
