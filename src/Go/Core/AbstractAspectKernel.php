@@ -58,14 +58,16 @@ abstract class AbstractAspectKernel
     public function init(array $options = array())
     {
         $this->options = array_merge_recursive($this->options, $options);
-
         $this->initLibraryLoader();
 
-        SourceTransformingLoader::registerFilter();
-        foreach ($this->registerTransformers() as $sourceTransformer) {
-            SourceTransformingLoader::addTransformer($sourceTransformer);
+        $sourceLoaderFilter = new SourceTransformingLoader();
+        $sourceLoaderFilter->register();
+
+        foreach ($this->registerTransformers($sourceLoaderFilter) as $sourceTransformer) {
+            $sourceLoaderFilter->addTransformer($sourceTransformer);
         }
-        SourceTransformingLoader::load($this->getApplicationLoaderPath());
+
+        $sourceLoaderFilter->load($this->getApplicationLoaderPath());
     }
 
     /**
@@ -78,12 +80,14 @@ abstract class AbstractAspectKernel
     /**
      * Returns list of source transformers, that will be applied to the PHP source
      *
+     * @param SourceTransformingLoader $sourceLoader Instance of source loader for information
+     *
      * @return array|SourceTransformer[]
      */
-    protected function registerTransformers()
+    protected function registerTransformers(SourceTransformingLoader $sourceLoader)
     {
         return array(
-            new FilterInjectorTransformer(__DIR__, __DIR__, SourceTransformingLoader::getId()),
+            new FilterInjectorTransformer(__DIR__, __DIR__, $sourceLoader->getId()),
             new AopProxyTransformer(
                 new TokenReflection\Broker(
                     new TokenReflection\Broker\Backend\Memory()
@@ -113,7 +117,7 @@ abstract class AbstractAspectKernel
          * Separate class loader for core should be used to load classes,
          * so UniversalClassLoader is moved to the custom namespace
          */
-        require_once __DIR__ . '../Instrument/ClassLoading/UniversalClassLoader.php';
+        require_once __DIR__ . '/../Instrument/ClassLoading/UniversalClassLoader.php';
 
         $loader = new UniversalClassLoader();
         $loader->registerNamespaces($options['autoload']);

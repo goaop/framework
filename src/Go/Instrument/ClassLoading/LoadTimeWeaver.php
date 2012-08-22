@@ -24,5 +24,5 @@ interface LoadTimeWeaver
      *
      * @return void
      */
-    public static function addTransformer(SourceTransformer $transformer);
+    public function addTransformer(SourceTransformer $transformer);
 }

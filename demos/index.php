@@ -69,11 +69,6 @@ $fieldAdvice  = new FieldAroundInterceptor(getCallback($aspect, 'aroundFieldAcce
 $fieldAdvisor = new DefaultPointcutAdvisor($fieldPointcut, $fieldAdvice);
 AdvisorRegistry::register($fieldAdvisor);
 
-/*********************************************************************************
- *                             TEST CODE BLOCK
- * Remark: SourceTransformingLoader::load('app_autoload.php') should be here later
-**********************************************************************************/
-
 $class = new Example('test');
 $class->publicHello();
 

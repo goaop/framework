@@ -57,24 +57,17 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
     protected static $filterId;
 
     /**
-     * Private constructor to prevent direct creation of filter
-     */
-    private function __construct()
-    {
-
-    }
-
-    /**
      * Register current loader as stream filter in PHP
      *
      * @param string $filterId Identifier for the filter
      * @throws \RuntimeException If registration was failed
      */
-    public static function registerFilter($filterId = self::FILTER_IDENTIFIER)
+    public function register($filterId = self::FILTER_IDENTIFIER)
     {
         if (!empty(self::$filterId)) {
             throw new \RuntimeException('Stream filter already registered');
         }
+
         $result = stream_filter_register($filterId, __CLASS__);
         if (!$result) {
             throw new \RuntimeException('Stream filter was not registered');
@@ -85,9 +78,10 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
     /**
      * Returns the name of registered filter
      *
+     * @throws \RuntimeException if filter was not registered
      * @return string
      */
-    public static function getId()
+    public function getId()
     {
         if (empty(self::$filterId)) {
             throw new \RuntimeException('Stream filter was not registered');
@@ -130,7 +124,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      *
      * @return void
      */
-    public static function addTransformer(SourceTransformer $transformer)
+    public function addTransformer(SourceTransformer $transformer)
     {
         self::$transformers[] = $transformer;
     }
@@ -142,9 +136,9 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      *
      * @return mixed
      */
-    public static function load($source)
+    public function load($source)
     {
-        return include self::PHP_FILTER_READ . self::$filterId . "/resource=" . $source;
+        return include self::PHP_FILTER_READ . $this->getId() . "/resource=" . $source;
     }
 
     /**
@@ -158,10 +152,8 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
     protected function transformCode($code, StreamMetaData $metadata = null)
     {
         $transformedSourceCode = $code;
-        if (self::$transformers) {
-            foreach (self::$transformers as $transformer) {
-                $transformedSourceCode = $transformer->transform($transformedSourceCode, $metadata);
-            }
+        foreach (self::$transformers as $transformer) {
+            $transformedSourceCode = $transformer->transform($transformedSourceCode, $metadata);
         }
         return $transformedSourceCode;
     }
