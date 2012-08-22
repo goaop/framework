@@ -18,7 +18,10 @@ use Go\Aop\Framework\MethodBeforeInterceptor;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\MethodInvocation;
 
-include 'aspect_loader.php';
+include '../src/Go/Core/AbstractAspectKernel.php';
+include 'DemoAspectKernel.php';
+
+DemoAspectKernel::getInstance()->init();
 
 /**
  * Temporary function to return closure from aspect
