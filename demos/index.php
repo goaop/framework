@@ -6,7 +6,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-use Go\Aop\Support\AdvisorRegistry;
+use Go\Core\AspectContainer;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Aop\Support\NameMatchMethodPointcut;
 use Go\Aop\Support\NameMatchPropertyPointcut;
@@ -55,19 +55,19 @@ $aspect        = new Aspect\DebugAspect('ASPECT!');
 // Register before advisor
 $before        = new MethodBeforeInterceptor(getCallback($aspect, 'beforeMethodExecution'));
 $beforeAdvisor = new DefaultPointcutAdvisor($pointcut, $before);
-AdvisorRegistry::register($beforeAdvisor);
+AspectContainer::register($beforeAdvisor);
 
 // Register after advisor
 $after        = new MethodAfterInterceptor(getCallback($aspect, 'afterMethodExecution'));
 $afterAdvisor = new DefaultPointcutAdvisor($pointcut, $after);
-AdvisorRegistry::register($afterAdvisor);
+AspectContainer::register($afterAdvisor);
 
 // Register around field advisor
 $fieldPointcut = new NameMatchPropertyPointcut();
 $fieldPointcut->setMappedName('*');
 $fieldAdvice  = new FieldAroundInterceptor(getCallback($aspect, 'aroundFieldAccess'));
 $fieldAdvisor = new DefaultPointcutAdvisor($fieldPointcut, $fieldAdvice);
-AdvisorRegistry::register($fieldAdvisor);
+AspectContainer::register($fieldAdvisor);
 
 $class = new Example('test');
 $class->publicHello();

@@ -8,7 +8,7 @@
 
 namespace Go\Instrument\Transformer;
 
-use Go\Aop\Support\AdvisorRegistry;
+use Go\Core\AspectContainer;
 use Go\Aop\Support\AopChildFactory;
 
 use TokenReflection\Broker;
@@ -95,11 +95,11 @@ class AopProxyTransformer implements SourceTransformer
                 // Look for aspects
                 if ($class->hasAnnotation('Aspect') || in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
                     // Here we will create an aspect advisor and register aspect
-                    // AdvisorRegistry::register($class);
+                    // AspectContainer::register($class);
                     continue;
                 }
 
-                $advices = AdvisorRegistry::advise($class);
+                $advices = AspectContainer::advise($class);
 
                 if ($advices) {
 

@@ -6,7 +6,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop\Support;
+namespace Go\Core;
 
 use ReflectionClass;
 use ReflectionMethod;
@@ -27,7 +27,7 @@ use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
 /**
  * Advisor registry contains list of all pointcuts
  */
-class AdvisorRegistry
+class AspectContainer
 {
     /**
      * Prefix for properties interceptor name

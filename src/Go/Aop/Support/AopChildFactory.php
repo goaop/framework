@@ -13,9 +13,9 @@ use ReflectionMethod;
 use ReflectionParameter;
 use ReflectionProperty as Property;
 
+use Go\Core\AspectContainer;
 use Go\Aop\Advice;
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Support\AdvisorRegistry;
 use Go\Aop\Support\Invoker;
 use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\ReflectionMethodInvocation;
@@ -94,7 +94,7 @@ class AopChildFactory extends AbstractChildCreator
     public static function injectJoinpoints($aopChildClass)
     {
         $originalClass = $aopChildClass;
-        $advices       = AdvisorRegistry::advise($originalClass);
+        $advices       = AspectContainer::advise($originalClass);
         $joinPoints    = static::wrapWithJoinPoints($advices, $aopChildClass);
 
         $aopChildClass = new ReflectionClass($aopChildClass);
@@ -119,11 +119,11 @@ class AopChildFactory extends AbstractChildCreator
         foreach ($classAdvices as $name => $advices) {
 
             // Fields use prop:$name format, so use this information
-            if (strpos($name, AdvisorRegistry::PROPERTY_PREFIX) === 0) {
-                $propertyName      = substr($name, strlen(AdvisorRegistry::PROPERTY_PREFIX));
+            if (strpos($name, AspectContainer::PROPERTY_PREFIX) === 0) {
+                $propertyName      = substr($name, strlen(AspectContainer::PROPERTY_PREFIX));
                 $joinpoints[$name] = new ClassFieldAccess($className, $propertyName, $advices);
-            } elseif (strpos($name, AdvisorRegistry::METHOD_PREFIX) === 0) {
-                $methodName        = substr($name, strlen(AdvisorRegistry::METHOD_PREFIX));
+            } elseif (strpos($name, AspectContainer::METHOD_PREFIX) === 0) {
+                $methodName        = substr($name, strlen(AspectContainer::METHOD_PREFIX));
 
                 if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
                     $dynamicInvoker    = Invoker::getDynamicParent();
@@ -132,8 +132,8 @@ class AopChildFactory extends AbstractChildCreator
                     // Add BC for calling static method without LSB for PHP < 5.4
                     $joinpoints[$name] = new ReflectionMethodInvocation($className, $methodName, $advices);
                 }
-            } elseif (strpos($name, AdvisorRegistry::STATIC_METHOD_PREFIX) === 0) {
-                $methodName  = substr($name, strlen(AdvisorRegistry::STATIC_METHOD_PREFIX));
+            } elseif (strpos($name, AspectContainer::STATIC_METHOD_PREFIX) === 0) {
+                $methodName  = substr($name, strlen(AspectContainer::STATIC_METHOD_PREFIX));
 
                 if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
                     $staticInvoker     = Invoker::getStatic();
