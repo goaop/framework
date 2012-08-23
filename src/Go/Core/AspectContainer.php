@@ -62,6 +62,40 @@ class AspectContainer
     protected $advisors = array();
 
     /**
+     * List of services in the container
+     *
+     * @var array|object[]
+     */
+    protected $services = array();
+
+    /**
+     * Set a service into the container
+     *
+     * @param string $id Key for service
+     * @param object $service Service to store
+     */
+    public function set($id, $service)
+    {
+        $this->services[$id] = $service;
+    }
+
+    /**
+     * Return a service from the container
+     *
+     * @param string $id Service key
+     *
+     * @return object
+     * @throws \OutOfBoundsException if service was not found
+     */
+    public function get($id)
+    {
+        if (is_numeric($id) || !isset($this->services[$id])) {
+            throw new \OutOfBoundsException("Unknown service {$id}");
+        }
+        return $this->services[$id];
+    }
+
+    /**
      * Returns a pointcut by identifier
      *
      * @param string $id Pointcut identifier

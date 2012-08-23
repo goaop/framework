@@ -73,9 +73,11 @@ abstract class AspectKernel
         $this->options = array_merge_recursive($this->options, $options);
         $this->initLibraryLoader();
 
-
         $containerClass  = $this->getContainerClassName();
-        $this->container = new $containerClass;
+
+        /** @var $container AspectContainer */
+        $container = $this->container = new $containerClass;
+        $container->set('kernel', $this);
 
         $sourceLoaderFilter = new SourceTransformingLoader();
         $sourceLoaderFilter->register();
@@ -84,7 +86,11 @@ abstract class AspectKernel
             $sourceLoaderFilter->addTransformer($sourceTransformer);
         }
 
+        // Load application configurator
         $sourceLoaderFilter->load($this->getApplicationLoaderPath());
+
+        // Register all AOP configuration in the container
+        $this->configureAop($container);
     }
 
     /**
@@ -103,6 +109,15 @@ abstract class AspectKernel
      * @return string
      */
     abstract protected function getApplicationLoaderPath();
+
+    /**
+     * Configure an AspectContainer with advisors, aspects and pointcuts
+     *
+     * @param AspectContainer $container
+     *
+     * @return void
+     */
+    abstract protected function configureAop(AspectContainer $container);
 
     /**
      * Return the name for the container class
