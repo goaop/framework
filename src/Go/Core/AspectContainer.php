@@ -12,20 +12,23 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
 
+use Go\Aop\Advice;
 use Go\Aop\Advisor;
 use Go\Aop\ClassFilter;
 use Go\Aop\Pointcut;
 use Go\Aop\PointcutAdvisor;
 use Go\Aop\PointFilter;
 use Go\Aop\Framework\ClassFieldAccess;
-use Go\Aop\Framework\ReflectionMethodInvocation;
+use Go\Aop\PropertyMatcher;
+use Go\Aop\MethodMatcher;
+
 
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
 
 /**
- * Advisor registry contains list of all pointcuts
+ * Aspect container contains list of all pointcuts and advisors
  */
 class AspectContainer
 {
@@ -45,43 +48,108 @@ class AspectContainer
     const STATIC_METHOD_PREFIX = "static:";
 
     /**
-     * List of advisors (aspects)
+     * List of named pointcuts in the container
+     *
+     * @var array|Pointcut[]
+     */
+    protected $pointcuts = array();
+
+    /**
+     * List of named and indexed advisors in the container
      *
      * @var array|Advisor[]
      */
-    protected static $advisors = array();
+    protected $advisors = array();
 
     /**
-     * Register an advisor in registry
+     * Returns a pointcut by identifier
      *
-     * @param Advisor $advisor Instance of advisor with advice
+     * @param string $id Pointcut identifier
+     *
+     * @return Pointcut
+     *
+     * @throws \OutOfBoundsException if pointcut key is invalid
      */
-    public static function register(Advisor $advisor)
+    public function getPointcut($id)
     {
-        self::$advisors[] = $advisor;
+        if (is_numeric($id) || !isset($this->pointcuts[$id])) {
+            throw new \OutOfBoundsException("Unknown pointcut {$id}");
+        }
+        return $this->pointcuts[$id];
     }
 
     /**
-     * Make an advise for a class and return list of joinpoints with correct advices at that points
+     * Store the pointcut in the container
+     *
+     * @param Pointcut $pointcut Instance
+     * @param string $id Key for pointcut
+     */
+    public function registerPointcut(Pointcut $pointcut, $id = null)
+    {
+        if ($id) {
+            $this->pointcuts[$id] = $pointcut;
+        } else {
+            $this->pointcuts[] = $pointcut;
+        }
+    }
+
+    /**
+     * Returns an advisor by identifier
+     *
+     * @param string $id Advisor identifier
+     *
+     * @return Advisor
+     *
+     * @throws \OutOfBoundsException if advisor key is invalid
+     */
+    public function getAdvisor($id)
+    {
+        if (is_numeric($id) || !isset($this->advisors[$id])) {
+            throw new \OutOfBoundsException("Unknown advisor {$id}");
+        }
+        return $this->advisors[$id];
+    }
+
+    /**
+     * Store the advisor in the container
+     *
+     * @param Advisor $advisor Instance
+     * @param string $id Key for advisor
+     */
+    public function registerAdvisor(Advisor $advisor, $id = null)
+    {
+        if ($id) {
+            $this->advisors[$id] = $advisor;
+        } else {
+            $this->advisors[] = $advisor;
+        }
+    }
+
+    /**
+     * Return list of advices for class
      *
      * @param string|ReflectionClass|ParsedReflectionClass $class Class to advise
      *
      * @return array|Advice[] List of advices for class
      */
-    public static function advise($class)
+    public function getAdvicesForClass($class)
     {
         $classAdvices = array();
         if (!$class instanceof ReflectionClass && !$class instanceof ParsedReflectionClass) {
             $class = new ReflectionClass($class);
         }
-        foreach (self::$advisors as $advisor) {
+
+        foreach ($this->advisors as $advisor) {
+
             if ($advisor instanceof PointcutAdvisor) {
-                /** @var $advisor PointcutAdvisor */
-                /** @var $pointcut Pointcut */
+
                 $pointcut = $advisor->getPointcut();
                 if ($pointcut->getClassFilter()->matches($class)) {
-                    $pointFilter = $pointcut->getPointFilter();
-                    $classAdvices = array_merge_recursive($classAdvices, self::getClassAdvices($class, $advisor, $pointFilter));
+                    $pointFilter  = $pointcut->getPointFilter();
+                    $classAdvices = array_merge_recursive(
+                        $classAdvices,
+                        $this->getAdvicesFromAdvisor($class, $advisor, $pointFilter)
+                    );
                 }
             }
         }
@@ -89,7 +157,7 @@ class AspectContainer
     }
 
     /**
-     * Returns list of advices for joinpoints
+     * Returns list of advices from advisor and point filter
      *
      * @param ReflectionClass|ParsedReflectionClass|string $class Class to inject advices
      * @param PointcutAdvisor $advisor Advisor for class
@@ -97,24 +165,35 @@ class AspectContainer
      *
      * @return array
      */
-    private static function getClassAdvices($class, PointcutAdvisor $advisor, PointFilter $filter)
+    private function getAdvicesFromAdvisor($class, PointcutAdvisor $advisor, PointFilter $filter)
     {
         $classAdvices = array();
-        $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED | ReflectionMethod::IS_STATIC;
-        foreach ($class->getMethods($mask) as $method) {
-            /** @var $method ReflectionMethod| */
-            if ($method->getDeclaringClass()->getName() == $class->getName() && $filter->matches($method)) {
-                $prefix = $method->isStatic() ? self::STATIC_METHOD_PREFIX : self::METHOD_PREFIX;
-                $classAdvices[$prefix . $method->getName()][] = $advisor->getAdvice();
+
+        // Check methods in class only for MethodMatcher filters
+        if ($filter instanceof MethodMatcher) {
+
+            $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
+            foreach ($class->getMethods($mask) as $method) {
+                /** @var $method ReflectionMethod| */
+                if ($method->getDeclaringClass()->getName() == $class->getName() && $filter->matches($method)) {
+                    $prefix = $method->isStatic() ? self::STATIC_METHOD_PREFIX : self::METHOD_PREFIX;
+                    $classAdvices[$prefix . $method->getName()][] = $advisor->getAdvice();
+                }
             }
         }
 
-        foreach ($class->getProperties() as $property) {
-            /** @var $property ReflectionProperty */
-            if ($filter->matches($property)) {
-                $classAdvices[self::PROPERTY_PREFIX . $property->getName()][] = $advisor->getAdvice();
+        // Check properties in class only for PropertyMatcher filters
+        if ($filter instanceof PropertyMatcher) {
+            $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED;
+            foreach ($class->getProperties($mask) as $property) {
+                /** @var $property ReflectionProperty */
+                if ($filter->matches($property)) {
+                    $classAdvices[self::PROPERTY_PREFIX . $property->getName()][] = $advisor->getAdvice();
+                }
             }
         }
+
         return $classAdvices;
     }
+
 }

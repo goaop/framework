@@ -18,10 +18,12 @@ use Go\Aop\Framework\MethodBeforeInterceptor;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\MethodInvocation;
 
-include '../src/Go/Core/AbstractAspectKernel.php';
+include '../src/Go/Core/AspectKernel.php';
 include 'DemoAspectKernel.php';
 
-DemoAspectKernel::getInstance()->init();
+$aspectKernel = DemoAspectKernel::getInstance();
+$aspectKernel->init();
+$aspectContainer = $aspectKernel->getContainer();
 
 /**
  * Temporary function to return closure from aspect
@@ -55,19 +57,19 @@ $aspect        = new Aspect\DebugAspect('ASPECT!');
 // Register before advisor
 $before        = new MethodBeforeInterceptor(getCallback($aspect, 'beforeMethodExecution'));
 $beforeAdvisor = new DefaultPointcutAdvisor($pointcut, $before);
-AspectContainer::register($beforeAdvisor);
+$aspectContainer->registerAdvisor($beforeAdvisor);
 
 // Register after advisor
 $after        = new MethodAfterInterceptor(getCallback($aspect, 'afterMethodExecution'));
 $afterAdvisor = new DefaultPointcutAdvisor($pointcut, $after);
-AspectContainer::register($afterAdvisor);
+$aspectContainer->registerAdvisor($afterAdvisor);
 
 // Register around field advisor
 $fieldPointcut = new NameMatchPropertyPointcut();
 $fieldPointcut->setMappedName('*');
 $fieldAdvice  = new FieldAroundInterceptor(getCallback($aspect, 'aroundFieldAccess'));
 $fieldAdvisor = new DefaultPointcutAdvisor($fieldPointcut, $fieldAdvice);
-AspectContainer::register($fieldAdvisor);
+$aspectContainer->registerAdvisor($fieldAdvisor);
 
 $class = new Example('test');
 $class->publicHello();

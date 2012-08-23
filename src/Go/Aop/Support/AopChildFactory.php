@@ -14,6 +14,7 @@ use ReflectionParameter;
 use ReflectionProperty as Property;
 
 use Go\Core\AspectContainer;
+use Go\Core\AspectKernel;
 use Go\Aop\Advice;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Support\Invoker;
@@ -94,7 +95,8 @@ class AopChildFactory extends AbstractChildCreator
     public static function injectJoinpoints($aopChildClass)
     {
         $originalClass = $aopChildClass;
-        $advices       = AspectContainer::advise($originalClass);
+        $container     = AspectKernel::getInstance()->getContainer();
+        $advices       = $container->getAdvicesForClass($originalClass);
         $joinPoints    = static::wrapWithJoinPoints($advices, $aopChildClass);
 
         $aopChildClass = new ReflectionClass($aopChildClass);

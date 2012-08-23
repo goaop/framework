@@ -9,6 +9,7 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
+use Go\Core\AspectKernel;
 use Go\Aop\Support\AopChildFactory;
 
 use TokenReflection\Broker;
@@ -99,7 +100,8 @@ class AopProxyTransformer implements SourceTransformer
                     continue;
                 }
 
-                $advices = AspectContainer::advise($class);
+                $container = AspectKernel::getInstance()->getContainer();
+                $advices   = $container->getAdvicesForClass($class);
 
                 if ($advices) {
 

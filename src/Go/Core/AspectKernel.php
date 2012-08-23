@@ -22,7 +22,7 @@ use TokenReflection;
  * Realization of this class should return the path for application loader, so when the kernel has finished its work,
  * it will pass the control to the application loader.
  */
-abstract class AbstractAspectKernel
+abstract class AspectKernel
 {
     /**
      * Kernel options
@@ -41,7 +41,7 @@ abstract class AbstractAspectKernel
     /**
      * Aspect container instance
      *
-     * @var null
+     * @var null|AspectContainer
      */
     protected $container = null;
 
@@ -53,7 +53,7 @@ abstract class AbstractAspectKernel
     /**
      * Returns the single instance of kernel
      *
-     * @return AbstractAspectKernel
+     * @return AspectKernel
      */
     public static function getInstance()
     {
@@ -76,6 +76,7 @@ abstract class AbstractAspectKernel
 
         $containerClass  = $this->getContainerClassName();
         $this->container = new $containerClass;
+
         $sourceLoaderFilter = new SourceTransformingLoader();
         $sourceLoaderFilter->register();
 
@@ -84,6 +85,16 @@ abstract class AbstractAspectKernel
         }
 
         $sourceLoaderFilter->load($this->getApplicationLoaderPath());
+    }
+
+    /**
+     * Returns an aspect container
+     *
+     * @return null|AspectContainer
+     */
+    public function getContainer()
+    {
+        return $this->container;
     }
 
     /**

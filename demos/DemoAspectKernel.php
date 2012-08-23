@@ -6,12 +6,12 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-use Go\Core\AbstractAspectKernel;
+use Go\Core\AspectKernel;
 
 /**
  * Demo Aspect Kernel class
  */
-class DemoAspectKernel extends AbstractAspectKernel
+class DemoAspectKernel extends AspectKernel
 {
 
     /**
