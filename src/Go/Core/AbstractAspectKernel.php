@@ -39,6 +39,13 @@ abstract class AbstractAspectKernel
     protected static $instance = null;
 
     /**
+     * Aspect container instance
+     *
+     * @var null
+     */
+    protected $container = null;
+
+    /**
      * Protected constructor is used to prevent direct creation, but allows customization if needed
      */
     protected function __construct() {}
@@ -66,6 +73,9 @@ abstract class AbstractAspectKernel
         $this->options = array_merge_recursive($this->options, $options);
         $this->initLibraryLoader();
 
+
+        $containerClass  = $this->getContainerClassName();
+        $this->container = new $containerClass;
         $sourceLoaderFilter = new SourceTransformingLoader();
         $sourceLoaderFilter->register();
 
@@ -82,6 +92,21 @@ abstract class AbstractAspectKernel
      * @return string
      */
     abstract protected function getApplicationLoaderPath();
+
+    /**
+     * Return the name for the container class
+     *
+     * Override this method to extend container with custom container
+     *
+     * NB. If you use a custom class, then you should include it source before starting the kernel or it won't be
+     * found during loading of the kernel.
+     *
+     * @return string
+     */
+    protected function getContainerClassName()
+    {
+        return __NAMESPACE__ . '\\AspectContainer';
+    }
 
     /**
      * Returns list of source transformers, that will be applied to the PHP source
