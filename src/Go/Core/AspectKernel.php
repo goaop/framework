@@ -14,6 +14,9 @@ use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\AopProxyTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\AnnotationRegistry;
+
 use TokenReflection;
 
 /**
@@ -88,6 +91,13 @@ abstract class AspectKernel
 
         // Load application configurator
         $sourceLoaderFilter->load($this->getApplicationLoaderPath());
+
+        // Register all services in the container
+        $aspectLoader = new AspectLoader($container);
+        $container->set('aspect.loader', $aspectLoader);
+
+        // TODO: use cached annotation reader
+        $container->set('aspect.annotation.reader', new AnnotationReader());
 
         // Register all AOP configuration in the container
         $this->configureAop($container);
@@ -164,8 +174,9 @@ abstract class AspectKernel
         // Default autoload paths for library
         $autoloadOptions = array(
             'autoload' => array(
-                'Go'              => realpath(__DIR__ . '/../../'),
-                'TokenReflection' => realpath(__DIR__ . '/../../../vendor/andrewsville/php-token-reflection/')
+                'Go'               => realpath(__DIR__ . '/../../'),
+                'TokenReflection'  => realpath(__DIR__ . '/../../../vendor/andrewsville/php-token-reflection/'),
+                'Doctrine\\Common' => realpath(__DIR__ . '/../../../vendor/doctrine/common/lib/')
             )
         );
         $options = array_merge_recursive($autoloadOptions, $this->options);
@@ -179,5 +190,12 @@ abstract class AspectKernel
         $loader = new UniversalClassLoader();
         $loader->registerNamespaces($options['autoload']);
         $loader->register();
+
+        // Configure library loader for doctrine annotation loader
+        AnnotationRegistry::registerLoader(function($class) use ($loader) {
+            $loader->loadClass($class);
+            return class_exists($class, false);
+        });
+
     }
 }

@@ -160,6 +160,18 @@ class AspectContainer
     }
 
     /**
+     * Register an aspect in the container
+     *
+     * @param Aop\Aspect $aspect Instance of concrete aspect
+     */
+    public function registerAspect(Aspect $aspect)
+    {
+        /** @var $loader AspectLoader */
+        $loader = $this->get('aspect.loader');
+        $loader->load($aspect);
+    }
+
+    /**
      * Return list of advices for class
      *
      * @param string|ReflectionClass|ParsedReflectionClass $class Class to advise
