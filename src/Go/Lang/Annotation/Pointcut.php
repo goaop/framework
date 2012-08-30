@@ -16,5 +16,10 @@ namespace Go\Lang\Annotation;
  */
 class Pointcut extends BaseAnnotation
 {
-
+    /**
+     * Identifier of pointcut
+     *
+     * @var string
+     */
+    public $id = null;
 }
