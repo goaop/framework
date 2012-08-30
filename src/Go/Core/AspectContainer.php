@@ -12,16 +12,8 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
 
-use Go\Aop\Advice;
-use Go\Aop\Advisor;
-use Go\Aop\ClassFilter;
-use Go\Aop\Pointcut;
-use Go\Aop\PointcutAdvisor;
-use Go\Aop\PointFilter;
+use Go\Aop;
 use Go\Aop\Framework\ClassFieldAccess;
-use Go\Aop\PropertyMatcher;
-use Go\Aop\MethodMatcher;
-
 
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
@@ -50,14 +42,14 @@ class AspectContainer
     /**
      * List of named pointcuts in the container
      *
-     * @var array|Pointcut[]
+     * @var array|Aop\Pointcut[]
      */
     protected $pointcuts = array();
 
     /**
      * List of named and indexed advisors in the container
      *
-     * @var array|Advisor[]
+     * @var array|Aop\Advisor[]
      */
     protected $advisors = array();
 
@@ -100,7 +92,7 @@ class AspectContainer
      *
      * @param string $id Pointcut identifier
      *
-     * @return Pointcut
+     * @return Aop\Pointcut
      *
      * @throws \OutOfBoundsException if pointcut key is invalid
      */
@@ -115,10 +107,10 @@ class AspectContainer
     /**
      * Store the pointcut in the container
      *
-     * @param Pointcut $pointcut Instance
+     * @param Aop\Pointcut $pointcut Instance
      * @param string $id Key for pointcut
      */
-    public function registerPointcut(Pointcut $pointcut, $id = null)
+    public function registerPointcut(Aop\Pointcut $pointcut, $id = null)
     {
         if ($id) {
             $this->pointcuts[$id] = $pointcut;
@@ -132,7 +124,7 @@ class AspectContainer
      *
      * @param string $id Advisor identifier
      *
-     * @return Advisor
+     * @return Aop\Advisor
      *
      * @throws \OutOfBoundsException if advisor key is invalid
      */
@@ -147,10 +139,10 @@ class AspectContainer
     /**
      * Store the advisor in the container
      *
-     * @param Advisor $advisor Instance
+     * @param Aop\Advisor $advisor Instance
      * @param string $id Key for advisor
      */
-    public function registerAdvisor(Advisor $advisor, $id = null)
+    public function registerAdvisor(Aop\Advisor $advisor, $id = null)
     {
         if ($id) {
             $this->advisors[$id] = $advisor;
@@ -164,7 +156,7 @@ class AspectContainer
      *
      * @param Aop\Aspect $aspect Instance of concrete aspect
      */
-    public function registerAspect(Aspect $aspect)
+    public function registerAspect(Aop\Aspect $aspect)
     {
         /** @var $loader AspectLoader */
         $loader = $this->get('aspect.loader');
@@ -176,7 +168,7 @@ class AspectContainer
      *
      * @param string|ReflectionClass|ParsedReflectionClass $class Class to advise
      *
-     * @return array|Advice[] List of advices for class
+     * @return array|Aop\Advice[] List of advices for class
      */
     public function getAdvicesForClass($class)
     {
@@ -187,7 +179,7 @@ class AspectContainer
 
         foreach ($this->advisors as $advisor) {
 
-            if ($advisor instanceof PointcutAdvisor) {
+            if ($advisor instanceof Aop\PointcutAdvisor) {
 
                 $pointcut = $advisor->getPointcut();
                 if ($pointcut->getClassFilter()->matches($class)) {
@@ -206,17 +198,17 @@ class AspectContainer
      * Returns list of advices from advisor and point filter
      *
      * @param ReflectionClass|ParsedReflectionClass|string $class Class to inject advices
-     * @param PointcutAdvisor $advisor Advisor for class
-     * @param PointFilter $filter Filter for points
+     * @param Aop\PointcutAdvisor $advisor Advisor for class
+     * @param Aop\PointFilter $filter Filter for points
      *
      * @return array
      */
-    private function getAdvicesFromAdvisor($class, PointcutAdvisor $advisor, PointFilter $filter)
+    private function getAdvicesFromAdvisor($class, Aop\PointcutAdvisor $advisor, Aop\PointFilter $filter)
     {
         $classAdvices = array();
 
         // Check methods in class only for MethodMatcher filters
-        if ($filter instanceof MethodMatcher) {
+        if ($filter instanceof Aop\MethodMatcher) {
 
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
@@ -229,7 +221,7 @@ class AspectContainer
         }
 
         // Check properties in class only for PropertyMatcher filters
-        if ($filter instanceof PropertyMatcher) {
+        if ($filter instanceof Aop\PropertyMatcher) {
             $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED;
             foreach ($class->getProperties($mask) as $property) {
                 /** @var $property ReflectionProperty */
