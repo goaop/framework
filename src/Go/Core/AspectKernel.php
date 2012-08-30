@@ -99,6 +99,9 @@ abstract class AspectKernel
         // TODO: use cached annotation reader
         $container->set('aspect.annotation.reader', new AnnotationReader());
 
+        // Register general aspect loader extension
+        $aspectLoader->registerLoaderExtension(new GeneralAspectLoaderExtension());
+
         // Register all AOP configuration in the container
         $this->configureAop($container);
     }
