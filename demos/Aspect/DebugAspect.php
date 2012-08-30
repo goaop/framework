@@ -8,20 +8,18 @@
 
 namespace Aspect;
 
-use Go\Lang\Annotation\Aspect;
+use Go\Aop\Aspect;
+use Go\Aop\Intercept\FieldAccess;
+use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\After;
 use Go\Lang\Annotation\Before;
 use Go\Lang\Annotation\Around;
 use Go\Lang\Annotation\Pointcut;
-use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Intercept\MethodInvocation;
 
 /**
  * Debug aspect
- *
- * @Aspect
  */
-class DebugAspect
+class DebugAspect implements Aspect
 {
     /**
      * Message to show when calling the method
@@ -43,7 +41,7 @@ class DebugAspect
     /**
      * Pointcut for example class
      *
-     * @Pointcut(execution(public Example->*(*)))
+     * @Pointcut("execution(public Example->*(*))")
      */
     protected function examplePublicMethods() {}
 
@@ -51,7 +49,7 @@ class DebugAspect
      * Method that should be called before real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before(execution(public Example->*(*)))
+     * @Before("execution(public Example->*(*))")
      */
     public function beforeMethodExecution(MethodInvocation $invocation)
     {
@@ -70,7 +68,7 @@ class DebugAspect
      * Method that should be called after real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @After(execution(public Example->*(*)))
+     * @After("execution(public Example->*(*))")
      */
     public function afterMethodExecution(MethodInvocation $invocation)
     {
@@ -90,8 +88,8 @@ class DebugAspect
      *
      * @param FieldAccess $property Joinpoint
      *
-     * @Around(get(* Example->*))
-     * @Around(set(* Example->*))
+     * Around("get(* Example->*)")
+     * Around("set(* Example->*)")
      *
      * @return mixed
      */
