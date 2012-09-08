@@ -91,4 +91,17 @@ class Example
         echo "Static message is: ", $message, "<br>", PHP_EOL;
         echo "Scope is: ", get_called_class(), "<br>", PHP_EOL;
     }
+
+    /**
+     * Test function for recursive calls
+     *
+     * @param integer $level Level of recursion
+     */
+    public function testRecursion($level)
+    {
+        echo "Recursive call, level is: ", $level, "<br>", PHP_EOL;
+        if ($level > 0) {
+            $this->testRecursion($level - 1);
+        }
+    }
 }
