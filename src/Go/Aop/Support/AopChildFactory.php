@@ -206,11 +206,11 @@ class AopChildFactory extends AbstractChildCreator
         $prefix   = $isStatic ? 'static' : 'method';
 
         $args = join(', ', array_map(function ($param) {
-            return '$' . $param->getName();
+            return '$' . $param->name;
         }, $method->getParameters()));
 
         $args = $scope . ($args ? ", $args" : '');
-        $body = "return self::\$__joinPoints['$prefix:' . __FUNCTION__]->__invoke($args);";
+        $body = "return self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($args);";
         return $body;
     }
 
