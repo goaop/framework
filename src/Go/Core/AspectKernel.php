@@ -73,13 +73,11 @@ abstract class AspectKernel
      */
     public function init(array $options = array())
     {
-        $this->options = array_merge_recursive($this->options, $options);
+        $this->options = array_merge_recursive($this->getDefaultOptions(), $options);
         $this->initLibraryLoader();
 
-        $containerClass  = $this->getContainerClassName();
-
         /** @var $container AspectContainer */
-        $container = $this->container = new $containerClass;
+        $container = $this->container = new $this->options['containerClass'];
         $container->set('kernel', $this);
 
         $sourceLoaderFilter = new SourceTransformingLoader();
@@ -90,7 +88,7 @@ abstract class AspectKernel
         }
 
         // Load application configurator
-        $sourceLoaderFilter->load($this->getApplicationLoaderPath());
+        $sourceLoaderFilter->load($this->options['appLoader']);
 
         // Register all services in the container
         $aspectLoader = new AspectLoader($container);
@@ -114,6 +112,36 @@ abstract class AspectKernel
     public function getContainer()
     {
         return $this->container;
+    }
+
+    /**
+     * Returns default options for kernel
+     *
+     * @return array
+     */
+    protected function getDefaultOptions()
+    {
+        return array_merge_recursive(
+            $this->options,
+            array(
+                // Configuration for autoload namespaces
+                'autoload' => array(
+                    'Go'               => realpath(__DIR__ . '/../../'),
+                    'TokenReflection'  => realpath(__DIR__ . '/../../../vendor/andrewsville/php-token-reflection/'),
+                    'Doctrine\\Common' => realpath(__DIR__ . '/../../../vendor/doctrine/common/lib/')
+                ),
+                // Default application directory
+                'appDir' => __DIR__ . '/../../../',
+                // Cache directory for Go! generated classes
+                'cacheDir' => __DIR__ . '/../../../cache/',
+                // Include paths for aspect weaving
+                'includePaths' => array(),
+                // Name of the class for container
+                'containerClass' => $this->getContainerClassName(),
+                // Application autoloader
+                'appLoader' => $this->getApplicationLoaderPath(),
+            )
+        );
     }
 
     /**
@@ -157,11 +185,16 @@ abstract class AspectKernel
     protected function registerTransformers(SourceTransformingLoader $sourceLoader)
     {
         return array(
-            new FilterInjectorTransformer(__DIR__, __DIR__, $sourceLoader->getId()),
+            new FilterInjectorTransformer(
+                $this->options['appDir'],
+                $this->options['cacheDir'],
+                $sourceLoader->getId()
+            ),
             new AopProxyTransformer(
                 new TokenReflection\Broker(
                     new TokenReflection\Broker\Backend\Memory()
-                )
+                ),
+                $this->options['includePaths']
             ),
         );
     }
@@ -174,16 +207,6 @@ abstract class AspectKernel
      */
     protected function initLibraryLoader()
     {
-        // Default autoload paths for library
-        $autoloadOptions = array(
-            'autoload' => array(
-                'Go'               => realpath(__DIR__ . '/../../'),
-                'TokenReflection'  => realpath(__DIR__ . '/../../../vendor/andrewsville/php-token-reflection/'),
-                'Doctrine\\Common' => realpath(__DIR__ . '/../../../vendor/doctrine/common/lib/')
-            )
-        );
-        $options = array_merge_recursive($autoloadOptions, $this->options);
-
         /**
          * Separate class loader for core should be used to load classes,
          * so UniversalClassLoader is moved to the custom namespace
@@ -191,7 +214,7 @@ abstract class AspectKernel
         require_once __DIR__ . '/../Instrument/ClassLoading/UniversalClassLoader.php';
 
         $loader = new UniversalClassLoader();
-        $loader->registerNamespaces($options['autoload']);
+        $loader->registerNamespaces($this->options['autoload']);
         $loader->register();
 
         // Configure library loader for doctrine annotation loader
