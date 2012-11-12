@@ -71,7 +71,7 @@ class FilterInjectorTransformer implements SourceTransformer
      * @param string $rewriteToPath Path to rewrite to (typically, this will be the cache)
      * @param string $filterName Name of the filter to inject
      */
-    public function configure($rootPath, $rewriteToPath, $filterName)
+    public static function configure($rootPath, $rewriteToPath, $filterName)
     {
         if (self::$configured) {
             throw new \RuntimeException("Filter injector can be configured only once.");
@@ -92,7 +92,19 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public static function rewrite($resource)
     {
-        return self::PHP_FILTER_READ . self::$filterName ."/resource=" . $resource;
+        $relativeToRoot = stream_resolve_include_path($resource);
+        if (strpos($relativeToRoot, self::$rootPath) === 0) {
+            $relativeToRoot = substr($relativeToRoot, strlen(self::$rootPath));
+            $relativeToRoot = self::$rewriteToPath . $relativeToRoot;
+        }
+        $newResource = $relativeToRoot;
+        // TODO: add more accurate cache invalidation, like in Symfony2
+        if (!file_exists($newResource) || filemtime($newResource) < filemtime($resource)) {
+            @mkdir(dirname($newResource), 0770, true);
+            $content = file_get_contents(self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource);
+            file_put_contents($newResource, $content);
+        }
+        return $newResource;
     }
 
     /**
