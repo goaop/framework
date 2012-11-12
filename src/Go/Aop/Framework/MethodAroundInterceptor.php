@@ -29,6 +29,7 @@ class MethodAroundInterceptor extends BaseInterceptor implements MethodIntercept
      */
     final public function invoke(MethodInvocation $invocation)
     {
-        return $this->invokeAdviceForJoinpoint($invocation);
+        $adviceMethod = $this->adviceMethod;
+        return $adviceMethod($invocation);
     }
 }

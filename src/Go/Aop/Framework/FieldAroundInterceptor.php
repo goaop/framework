@@ -31,7 +31,8 @@ class FieldAroundInterceptor extends BaseInterceptor implements FieldInterceptor
      */
     public function get(FieldAccess $fieldRead)
     {
-        return $this->invokeAdviceForJoinpoint($fieldRead);
+        $adviceMethod = $this->adviceMethod;
+        return $adviceMethod($fieldRead);
     }
 
     /**
@@ -47,6 +48,7 @@ class FieldAroundInterceptor extends BaseInterceptor implements FieldInterceptor
      */
     public function set(FieldAccess $fieldWrite)
     {
-        return $this->invokeAdviceForJoinpoint($fieldWrite);
+        $adviceMethod = $this->adviceMethod;
+        return $adviceMethod($fieldWrite);
     }
 }

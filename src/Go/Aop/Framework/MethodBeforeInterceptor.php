@@ -25,7 +25,9 @@ class MethodBeforeInterceptor extends BaseInterceptor implements MethodIntercept
      */
     final public function invoke(MethodInvocation $invocation)
     {
-        $this->invokeAdviceForJoinpoint($invocation);
+        $adviceMethod = $this->adviceMethod;
+        $adviceMethod($invocation);
+
         return $invocation->proceed();
     }
 }

@@ -11,39 +11,46 @@ namespace Go\Aop\Framework;
 use Go\Aop\Pointcut;
 use Go\Aop\Framework\BaseAdvice;
 use Go\Aop\Intercept\Interceptor;
-use Go\Aop\Intercept\Joinpoint;
-
 
 /**
  * @package go
  */
 class BaseInterceptor extends BaseAdvice implements Interceptor
 {
-    /** @var string Name of the aspect */
+    /**
+     * Name of the aspect
+     *
+     * @var string
+     */
     public $aspectName = '';
 
-    /** @var null|Pointcut */
+    /**
+     * Pointcut instance
+     *
+     * @var null|Pointcut
+     */
     public $pointcut = null;
 
-    /** @var null|\Closure In Spring it's ReflectionMethod, but this will be slowly */
+    /**
+     * Advice to call
+     *
+     * In Spring it's ReflectionMethod, but this will be slowly
+     *
+     * @var null|\Closure
+     */
     protected $adviceMethod = null;
 
+    /**
+     * Default constructor for interceptor
+     *
+     * @param callable $adviceMethod Interceptor advice to call
+     * @param Pointcut $pointcut Pointcut instance where interceptor should be called
+     */
     public function __construct($adviceMethod, Pointcut $pointcut = null)
     {
-        assert('!empty($adviceMethod) /* Advice must not be empty */');
-        $this->adviceMethod = $adviceMethod;
-        $this->pointcut = $pointcut;
-    }
+        assert('is_callable($adviceMethod) /* Advice method should be callable */');
 
-    /**
-     * Invokes advice method for joinpoint
-     *
-     * @param Joinpoint $joinPoint
-     * @return mixed Result of invoking of advice
-     */
-    protected function invokeAdviceForJoinpoint(Joinpoint $joinPoint)
-    {
-        $adviceMethod = $this->adviceMethod;
-        return $adviceMethod($joinPoint);
+        $this->adviceMethod = $adviceMethod;
+        $this->pointcut     = $pointcut;
     }
 }

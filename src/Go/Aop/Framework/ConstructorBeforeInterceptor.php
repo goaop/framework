@@ -30,7 +30,9 @@ class ConstructorBeforeInterceptor extends BaseInterceptor implements Constructo
      */
     final public function construct(ConstructorInvocation $invocation)
     {
-        $this->invokeAdviceForJoinpoint($invocation);
+        $adviceMethod = $this->adviceMethod;
+        $adviceMethod($invocation);
+
         return $invocation->proceed();
     }
 }

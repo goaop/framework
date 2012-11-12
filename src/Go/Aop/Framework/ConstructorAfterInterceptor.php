@@ -41,7 +41,10 @@ class ConstructorAfterInterceptor extends BaseInterceptor implements Constructor
         } catch (Exception $invocationException) {
             // this is need for finally emulation in PHP
         }
-        $this->invokeAdviceForJoinpoint($invocation);
+
+        $adviceMethod = $this->adviceMethod;
+        $adviceMethod($invocation);
+
         if (isset($invocationException)) {
             throw $invocationException;
         }

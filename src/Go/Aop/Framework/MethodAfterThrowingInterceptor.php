@@ -33,7 +33,9 @@ class MethodAfterThrowingInterceptor extends BaseInterceptor implements MethodIn
         try {
             $result = $invocation->proceed();
         } catch (Exception $invocationException) {
-            $this->invokeAdviceForJoinpoint($invocation);
+            $adviceMethod = $this->adviceMethod;
+            $adviceMethod($invocation);
+
             throw $invocationException;
         }
         return $result;

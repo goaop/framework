@@ -32,7 +32,10 @@ class FieldAfterInterceptor extends BaseInterceptor implements FieldInterceptor,
     public function get(FieldAccess $fieldRead)
     {
         $value = $fieldRead->proceed();
-        $this->invokeAdviceForJoinpoint($fieldRead);
+
+        $adviceMethod = $this->adviceMethod;
+        $adviceMethod($fieldRead);
+
         return $value;
     }
 
@@ -50,7 +53,10 @@ class FieldAfterInterceptor extends BaseInterceptor implements FieldInterceptor,
     public function set(FieldAccess $fieldWrite)
     {
         $value = $fieldWrite->proceed();
-        $this->invokeAdviceForJoinpoint($fieldWrite);
+
+        $adviceMethod = $this->adviceMethod;
+        $adviceMethod($fieldWrite);
+
         return $value;
     }
 }
