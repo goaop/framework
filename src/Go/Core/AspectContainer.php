@@ -27,17 +27,17 @@ class AspectContainer
     /**
      * Prefix for properties interceptor name
      */
-    const PROPERTY_PREFIX = "prop:";
+    const PROPERTY_PREFIX = "prop";
 
     /**
      * Prefix for method interceptor name
      */
-    const METHOD_PREFIX = "method:";
+    const METHOD_PREFIX = "method";
 
     /**
      * Prefix for static method interceptor name
      */
-    const STATIC_METHOD_PREFIX = "static:";
+    const STATIC_METHOD_PREFIX = "static";
 
     /**
      * List of named pointcuts in the container
@@ -215,7 +215,7 @@ class AspectContainer
                 /** @var $method ReflectionMethod| */
                 if ($method->getDeclaringClass()->getName() == $class->getName() && $filter->matches($method)) {
                     $prefix = $method->isStatic() ? self::STATIC_METHOD_PREFIX : self::METHOD_PREFIX;
-                    $classAdvices[$prefix . $method->getName()][] = $advisor->getAdvice();
+                    $classAdvices[$prefix . ':'. $method->getName()][] = $advisor->getAdvice();
                 }
             }
         }
@@ -226,7 +226,7 @@ class AspectContainer
             foreach ($class->getProperties($mask) as $property) {
                 /** @var $property ReflectionProperty */
                 if ($filter->matches($property)) {
-                    $classAdvices[self::PROPERTY_PREFIX . $property->getName()][] = $advisor->getAdvice();
+                    $classAdvices[self::PROPERTY_PREFIX.':'.$property->getName()][] = $advisor->getAdvice();
                 }
             }
         }

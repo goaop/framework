@@ -12,6 +12,7 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionParameter;
 use ReflectionProperty as Property;
+use UnexpectedValueException;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -25,6 +26,11 @@ use TokenReflection\ReflectionClass as ParsedReflectionClass;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 use TokenReflection\ReflectionParameter as ParsedReflectionParameter;
 use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
+
+/**
+ * Whether or not we have a modern PHP
+ */
+define('IS_MODERN_PHP', version_compare(PHP_VERSION, '5.4.0') >= 0);
 
 
 /**
@@ -119,29 +125,26 @@ class AopChildFactory extends AbstractChildCreator
         $joinpoints = array();
         foreach ($classAdvices as $name => $advices) {
 
-            // Fields use prop:$name format, so use this information
-            if (strpos($name, AspectContainer::PROPERTY_PREFIX) === 0) {
-                $propertyName      = substr($name, strlen(AspectContainer::PROPERTY_PREFIX));
-                $joinpoints[$name] = new ClassFieldAccess($className, $propertyName, $advices);
-            } elseif (strpos($name, AspectContainer::METHOD_PREFIX) === 0) {
-                $methodName        = substr($name, strlen(AspectContainer::METHOD_PREFIX));
+            list ($joinPointType, $joinPointName) = explode(':', $name);
 
-                if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-                    $joinpoints[$name] = new ClosureMethodInvocation($className, $methodName, $advices);
-                } else {
-                    // Add BC for calling static method without LSB for PHP < 5.4
-                    $joinpoints[$name] = new ReflectionMethodInvocation($className, $methodName, $advices);
-                }
-            } elseif (strpos($name, AspectContainer::STATIC_METHOD_PREFIX) === 0) {
-                $methodName  = substr($name, strlen(AspectContainer::STATIC_METHOD_PREFIX));
+            switch ($joinPointType) {
+                case AspectContainer::PROPERTY_PREFIX:
+                    $joinpoints[$name] = new ClassFieldAccess($className, $joinPointName, $advices);
+                    break;
 
-                if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-                    $joinpoints[$name] = new ClosureMethodInvocation($className, $methodName, $advices);
-                } else {
-                    // Add BC for calling static method without LSB for PHP < 5.4
-                    $joinpoints[$name] = new ReflectionMethodInvocation($className, $methodName, $advices);
-                }
+                case AspectContainer::METHOD_PREFIX:
+                case AspectContainer::STATIC_METHOD_PREFIX:
+                    if (IS_MODERN_PHP) {
+                        $joinpoints[$name] = new ClosureMethodInvocation($className, $joinPointName, $advices);
+                    } else {
+                        $joinpoints[$name] = new ReflectionMethodInvocation($className, $joinPointName, $advices);
+                    }
+                    break;
+
+                default:
+                    throw new UnexpectedValueException("Invalid joinpoint `{$joinPointType}` type. Not yet supported.");
             }
+
         }
         return $joinpoints;
     }
