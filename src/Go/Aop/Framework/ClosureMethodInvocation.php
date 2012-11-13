@@ -48,8 +48,8 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
 
         // Rebind the closure if instance was changed since last time
         if ($this->previousInstance !== $this->instance) {
-
-            if (is_string($this->instance)) {
+            // Fastest way to check that $this->instance is string or object
+            if ($this->instance !== (object) $this->instance) {
                 $closureToCall = $closureToCall->bindTo(null, $this->instance);
             } else {
                 $closureToCall = $closureToCall->bindTo($this->instance, $this->classOrObject);
