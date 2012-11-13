@@ -92,6 +92,11 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public static function rewrite($resource)
     {
+        // If cache is disabled, then use on-fly method
+        if (!self::$rewriteToPath) {
+            return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
+        }
+
         $relativeToRoot = stream_resolve_include_path($resource);
         if (strpos($relativeToRoot, self::$rootPath) === 0) {
             $relativeToRoot = substr($relativeToRoot, strlen(self::$rootPath));
