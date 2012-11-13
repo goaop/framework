@@ -37,7 +37,22 @@ class Invoker
         static $invoker = null;
         if (!$invoker) {
             $invoker = function ($parentClass, $method, array $args) {
-                return forward_static_call_array(array($parentClass, $method), $args);
+                switch(count($args)) {
+                    case 0:
+                        return parent::$method();
+                    case 1:
+                        return parent::$method($args[0]);
+                    case 2:
+                        return parent::$method($args[0], $args[1]);
+                    case 3:
+                        return parent::$method($args[0], $args[1], $args[2]);
+                    case 4:
+                        return parent::$method($args[0], $args[1], $args[2], $args[3]);
+                    case 5:
+                        return parent::$method($args[0], $args[1], $args[2], $args[3], $args[4]);
+                    default:
+                        return forward_static_call_array(array($parentClass, $method), $args);
+                }
             };
         }
         return $invoker;
@@ -66,7 +81,22 @@ class Invoker
     private function getDynamicInvoker()
     {
         return function ($parentClass, $method, array $args) {
-            return call_user_func_array(array('parent', $method), $args);
+            switch(count($args)) {
+                case 0:
+                    return parent::$method();
+                case 1:
+                    return parent::$method($args[0]);
+                case 2:
+                    return parent::$method($args[0], $args[1]);
+                case 3:
+                    return parent::$method($args[0], $args[1], $args[2]);
+                case 4:
+                    return parent::$method($args[0], $args[1], $args[2], $args[3]);
+                case 5:
+                    return parent::$method($args[0], $args[1], $args[2], $args[3], $args[4]);
+                default:
+                    return call_user_func_array(array('parent', $method), $args);
+            }
         };
     }
 }
