@@ -21,16 +21,14 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
     private $closureToCall = null;
 
     /**
-     * Name of the parent class to use
+     * Previous instance to call
      *
-     * @var string
+     * @var null
      */
-    private $parentClass = '';
+    private $previousInstance = null;
 
     public function __construct($closureToCall, $classNameOrObject, $methodName, array $advices)
     {
-        $this->parentClass   = get_parent_class($classNameOrObject);
-        $this->closureToCall = $closureToCall;
         parent::__construct($classNameOrObject, $methodName, $advices);
     }
 
@@ -46,11 +44,42 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
             return parent::proceed();
         }
 
-        if (is_string($this->instance)) {
-            $closureToCall = $this->closureToCall->bindTo(null, $this->instance);
-        } else {
-            $closureToCall = $this->closureToCall->bindTo($this->instance, $this->classOrObject);
+        // Fill the closure only once if it's empty
+        if (!$this->closureToCall) {
+            $this->closureToCall = $this->getMethod()->getClosure($this->instance);
         }
-        return $closureToCall($this->parentClass, $this->methodName, $this->arguments);
+
+        $closureToCall = $this->closureToCall;
+
+        // Rebind the closure if instance was changed since last time
+        if ($this->previousInstance !== $this->instance) {
+
+            if (is_string($this->instance)) {
+                $closureToCall = $closureToCall->bindTo(null, $this->instance);
+            } else {
+                $closureToCall = $closureToCall->bindTo($this->instance, $this->classOrObject);
+            }
+            $this->closureToCall    = $closureToCall;
+            $this->previousInstance = $this->instance;
+        }
+
+        $args = $this->arguments;
+        switch(count($args)) {
+            case 0:
+                return $closureToCall();
+            case 1:
+                return $closureToCall($args[0]);
+            case 2:
+                return $closureToCall($args[0], $args[1]);
+            case 3:
+                return $closureToCall($args[0], $args[1], $args[2]);
+            case 4:
+                return $closureToCall($args[0], $args[1], $args[2], $args[3]);
+            case 5:
+                return $closureToCall($args[0], $args[1], $args[2], $args[3], $args[4]);
+            default:
+                return call_user_func_array($closureToCall, $args);
+        }
+
     }
 }
