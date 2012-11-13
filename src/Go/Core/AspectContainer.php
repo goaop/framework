@@ -35,11 +35,6 @@ class AspectContainer
     const METHOD_PREFIX = "method";
 
     /**
-     * Prefix for static method interceptor name
-     */
-    const STATIC_METHOD_PREFIX = "static";
-
-    /**
      * List of named pointcuts in the container
      *
      * @var array|Aop\Pointcut[]
@@ -214,8 +209,7 @@ class AspectContainer
             foreach ($class->getMethods($mask) as $method) {
                 /** @var $method ReflectionMethod| */
                 if ($method->getDeclaringClass()->getName() == $class->getName() && $filter->matches($method)) {
-                    $prefix = $method->isStatic() ? self::STATIC_METHOD_PREFIX : self::METHOD_PREFIX;
-                    $classAdvices[$prefix . ':'. $method->getName()][] = $advisor->getAdvice();
+                    $classAdvices[self::METHOD_PREFIX . ':'. $method->getName()][] = $advisor->getAdvice();
                 }
             }
         }
