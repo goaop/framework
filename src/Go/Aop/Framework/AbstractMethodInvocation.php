@@ -69,18 +69,17 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      * Typically this method is called inside previous closure, as instance of Joinpoint is passed to callback
      * Do not call this method directly, only inside callback closures.
      *
+     * This method should be extended to invoke original method
+     *
      * @return mixed
      */
-    final public function proceed()
+    public function proceed()
     {
-        if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor MethodInterceptor */
-            $currentInterceptor = $this->advices[$this->current];
-            $this->current++;
-            return $currentInterceptor->invoke($this);
-        }
 
-        return $this->invokeOriginalMethod();
+        /** @var $currentInterceptor MethodInterceptor */
+        $currentInterceptor = $this->advices[$this->current];
+        $this->current++;
+        return $currentInterceptor->invoke($this);
     }
 
     /**
@@ -155,11 +154,4 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
         }
         return $result;
     }
-
-    /**
-     * Invokes original method and return result from it
-     *
-     * @return mixed
-     */
-    abstract protected function invokeOriginalMethod();
 }

@@ -39,8 +39,13 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
      *
      * @return mixed
      */
-    protected function invokeOriginalMethod()
+    public function proceed()
     {
+        // Delegate default logic to the parent
+        if (isset($this->advices[$this->current])) {
+            return parent::proceed();
+        }
+
         if (is_string($this->instance)) {
             $closureToCall = $this->closureToCall->bindTo(null, $this->instance);
         } else {
