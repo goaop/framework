@@ -17,7 +17,6 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Aop\Advice;
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Support\Invoker;
 use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\ReflectionMethodInvocation;
 use Go\Aop\Framework\ClosureMethodInvocation;
@@ -128,8 +127,7 @@ class AopChildFactory extends AbstractChildCreator
                 $methodName        = substr($name, strlen(AspectContainer::METHOD_PREFIX));
 
                 if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-                    $dynamicInvoker    = Invoker::getDynamicParent();
-                    $joinpoints[$name] = new ClosureMethodInvocation($dynamicInvoker, $className, $methodName, $advices);
+                    $joinpoints[$name] = new ClosureMethodInvocation($className, $methodName, $advices);
                 } else {
                     // Add BC for calling static method without LSB for PHP < 5.4
                     $joinpoints[$name] = new ReflectionMethodInvocation($className, $methodName, $advices);
@@ -138,8 +136,7 @@ class AopChildFactory extends AbstractChildCreator
                 $methodName  = substr($name, strlen(AspectContainer::STATIC_METHOD_PREFIX));
 
                 if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-                    $staticInvoker     = Invoker::getStatic();
-                    $joinpoints[$name] = new ClosureMethodInvocation($staticInvoker, $className, $methodName, $advices);
+                    $joinpoints[$name] = new ClosureMethodInvocation($className, $methodName, $advices);
                 } else {
                     // Add BC for calling static method without LSB for PHP < 5.4
                     $joinpoints[$name] = new ReflectionMethodInvocation($className, $methodName, $advices);

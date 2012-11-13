@@ -27,11 +27,6 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
      */
     private $previousInstance = null;
 
-    public function __construct($closureToCall, $classNameOrObject, $methodName, array $advices)
-    {
-        parent::__construct($classNameOrObject, $methodName, $advices);
-    }
-
     /**
      * Invokes original method and return result from it
      *
