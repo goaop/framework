@@ -27,6 +27,6 @@ class ReflectionMethodInvocation extends AbstractMethodInvocation
 
         // Due to bug https://bugs.php.net/bug.php?id=60968 instance shouldn't be a string
         $instance = ($this->instance !== (object) $this->instance) ? null : $this->instance;
-        return $this->getMethod()->invokeArgs($instance, $this->arguments);
+        return $this->reflectionMethod->invokeArgs($instance, $this->arguments);
     }
 }

@@ -54,7 +54,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      *
      * @var null|ReflectionMethod
      */
-    private $reflectionMethod = null;
+    protected $reflectionMethod = null;
 
     /**
      * Constructor for method invocation
@@ -68,6 +68,14 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
         $this->classOrObject = $classNameOrObject;
         $this->parentClass   = get_parent_class($classNameOrObject);
         $this->methodName    = $methodName;
+
+        $this->reflectionMethod = $method = new ReflectionMethod($this->parentClass, $this->methodName);
+
+        // Give an access to call protected method
+        if ($method->isProtected()) {
+            $method->setAccessible(true);
+        }
+
         parent::__construct($advices);
     }
 
@@ -100,13 +108,6 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      */
     public function getMethod()
     {
-        if (!$this->reflectionMethod) {
-            $this->reflectionMethod = new ReflectionMethod($this->parentClass, $this->methodName);
-            // Give an access to call protected method
-            if ($this->reflectionMethod->isProtected()) {
-                $this->reflectionMethod->setAccessible(true);
-            }
-        }
         return $this->reflectionMethod;
     }
 

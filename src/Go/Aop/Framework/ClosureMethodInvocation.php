@@ -41,7 +41,7 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
 
         // Fill the closure only once if it's empty
         if (!$this->closureToCall) {
-            $this->closureToCall = $this->getMethod()->getClosure($this->instance);
+            $this->closureToCall = $this->reflectionMethod->getClosure($this->instance);
         }
 
         $closureToCall = $this->closureToCall;
