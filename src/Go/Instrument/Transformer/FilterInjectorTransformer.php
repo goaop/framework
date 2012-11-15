@@ -125,19 +125,26 @@ class FilterInjectorTransformer implements SourceTransformer
         if ((strpos($source, 'include')===false) && (strpos($source, 'require')===false)) {
             return $source;
         }
-        static $lookFor = array(T_INCLUDE, T_INCLUDE_ONCE, T_REQUIRE, T_REQUIRE_ONCE);
-        $tokenStream = token_get_all($source);
+        static $lookFor = array(
+            T_INCLUDE      => true,
+            T_INCLUDE_ONCE => true,
+            T_REQUIRE      => true,
+            T_REQUIRE_ONCE => true
+        );
+        $tokenStream       = token_get_all($source);
+
         $transformedSource = '';
-        $isWaitingEnd = false;
+        $isWaitingEnd      = false;
         foreach ($tokenStream as $token) {
             if ($isWaitingEnd && $token === ';') {
                 $isWaitingEnd = false;
                 $transformedSource .= ')';
             }
-            $transformedSource .= (is_array($token) ? $token[1] : $token);
-            if (!$isWaitingEnd && is_array($token) && in_array($token[0], $lookFor)) {
+            list ($token, $value) = (array) $token + array(1 => $token);
+            $transformedSource .= $value;
+            if (!$isWaitingEnd && isset($lookFor[$token])) {
                 $isWaitingEnd = true;
-                $transformedSource  .= ' \\' . get_called_class() . '::rewrite(';
+                $transformedSource  .= ' \\' . __CLASS__ . '::rewrite(';
             }
         }
         return $transformedSource;
