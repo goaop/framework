@@ -52,7 +52,7 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
             if ($this->instance !== (object) $this->instance) {
                 $closureToCall = $closureToCall->bindTo(null, $this->instance);
             } else {
-                $closureToCall = $closureToCall->bindTo($this->instance, $this->classOrObject);
+                $closureToCall = $closureToCall->bindTo($this->instance, $this->parentClass);
             }
             $this->closureToCall    = $closureToCall;
             $this->previousInstance = $this->instance;
