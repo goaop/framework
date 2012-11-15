@@ -49,7 +49,7 @@ class AopProxyTransformer implements SourceTransformer
     public function __construct(Broker $broker, $includePaths = array())
     {
         $this->broker       = $broker;
-        $this->includePaths = $includePaths;
+        $this->includePaths = array_map('realpath', $includePaths);;
     }
 
     /**
@@ -80,7 +80,7 @@ class AopProxyTransformer implements SourceTransformer
 
         /** @var $namespaces ReflectionFileNamespace[] */
         $namespaces = $parsedSource->getNamespaces();
-        assert('count($namespaces) == 1; /* Only one namespace per file is supported */');
+        assert('count($namespaces) < 2; /* Only one namespace per file is supported */');
 
         foreach ($namespaces as $namespace) {
 

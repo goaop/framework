@@ -73,7 +73,7 @@ abstract class AspectKernel
      */
     public function init(array $options = array())
     {
-        $this->options = array_merge_recursive($this->getDefaultOptions(), $options);
+        $this->options = array_replace_recursive($this->getDefaultOptions(), $options);
         $this->initLibraryLoader();
 
         /** @var $container AspectContainer */
@@ -121,7 +121,7 @@ abstract class AspectKernel
      */
     protected function getDefaultOptions()
     {
-        return array_merge_recursive(
+        return array_replace_recursive(
             $this->options,
             array(
                 // Configuration for autoload namespaces
