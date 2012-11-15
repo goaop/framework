@@ -122,6 +122,9 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public function transform($source, StreamMetaData $metadata = null)
     {
+        if ((strpos($source, 'include')===false) && (strpos($source, 'require')===false)) {
+            return $source;
+        }
         static $lookFor = array(T_INCLUDE, T_INCLUDE_ONCE, T_REQUIRE, T_REQUIRE_ONCE);
         $tokenStream = token_get_all($source);
         $transformedSource = '';
