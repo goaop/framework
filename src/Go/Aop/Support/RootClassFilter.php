@@ -49,7 +49,7 @@ class RootClassFilter implements ClassFilter
         if (!$class instanceof ReflectionClass && !$class instanceof ParsedReflectionClass) {
             return false;
         }
-        $isCurrentClass = $class->getName() == $this->className;
+        $isCurrentClass = $class->name == $this->className;
         return $isCurrentClass || $class->isSubclassOf($this->className);
     }
 }

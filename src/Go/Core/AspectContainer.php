@@ -208,8 +208,8 @@ class AspectContainer
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
                 /** @var $method ReflectionMethod| */
-                if ($method->getDeclaringClass()->getName() == $class->getName() && $filter->matches($method)) {
-                    $classAdvices[self::METHOD_PREFIX . ':'. $method->getName()][] = $advisor->getAdvice();
+                if ($method->getDeclaringClass()->name == $class->name && $filter->matches($method)) {
+                    $classAdvices[self::METHOD_PREFIX . ':'. $method->name][] = $advisor->getAdvice();
                 }
             }
         }
@@ -220,7 +220,7 @@ class AspectContainer
             foreach ($class->getProperties($mask) as $property) {
                 /** @var $property ReflectionProperty */
                 if ($filter->matches($property)) {
-                    $classAdvices[self::PROPERTY_PREFIX.':'.$property->getName()][] = $advisor->getAdvice();
+                    $classAdvices[self::PROPERTY_PREFIX.':'.$property->name][] = $advisor->getAdvice();
                 }
             }
         }

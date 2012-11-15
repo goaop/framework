@@ -85,7 +85,7 @@ class NameMatchMethodPointcut extends StaticMethodMatcherPointcut
             return false;
         }
 
-        $methodName = $method->getName();
+        $methodName = $method->name;
         foreach ($this->mappedNames as $mappedName) {
             if ($mappedName === $methodName || $this->isMatch($methodName, $mappedName)) {
                 return true;

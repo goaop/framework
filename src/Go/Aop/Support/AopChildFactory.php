@@ -170,7 +170,7 @@ class AopChildFactory extends AbstractChildCreator
     {
         // temporary disable override of final methods
         if (!$method->isFinal() && !$method->isAbstract() && !$this->hasParametersByReference($method)) {
-            $this->override($method->getName(), $this->getJoinpointInvocationBody($method));
+            $this->override($method->name, $this->getJoinpointInvocationBody($method));
         }
     }
 
@@ -218,7 +218,7 @@ class AopChildFactory extends AbstractChildCreator
      */
     protected function interceptProperty($property)
     {
-        $this->interceptedProperties[] = is_object($property) ? $property->getName() : $property;
+        $this->interceptedProperties[] = is_object($property) ? $property->name : $property;
         $this->isFieldsIntercepted = true;
     }
 

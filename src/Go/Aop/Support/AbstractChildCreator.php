@@ -149,7 +149,7 @@ class AbstractChildCreator
             if (!$interface->isInterface()) {
                 throw new \InvalidArgumentException("Interface expected to add");
             }
-            $interfaceName = $interface->getName();
+            $interfaceName = $interface->name;
         }
         $this->interfaces[] = $interfaceName;
     }
@@ -210,7 +210,7 @@ class AbstractChildCreator
             "/**\n * {@inheritdoc}\n */\n",
             join(' ', Reflection::getModifierNames($method->getModifiers())),
             $method->returnsReference() ? '&' : '',
-            $method->getName(),
+            $method->name,
             join(', ', $this->getParameters($method->getParameters())),
             $this->indent($body)
         );
@@ -262,7 +262,7 @@ class AbstractChildCreator
         if ($parameter->isArray()) {
             $type = 'array';
         } elseif ($parameter->getClass()) {
-            $type = '\\' . $parameter->getClass()->getName();
+            $type = '\\' . $parameter->getClass()->name;
         }
         $defaultValue = null;
         $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();
@@ -278,7 +278,7 @@ class AbstractChildCreator
         $code = sprintf('%s%s$%s%s',
             $type ? "$type " : '',
             $parameter->isPassedByReference() ? '&' : '',
-            $parameter->getName(),
+            $parameter->name,
             $isDefaultValueAvailable ? (" = " . $defaultValue) : ''
         );
         return $code;

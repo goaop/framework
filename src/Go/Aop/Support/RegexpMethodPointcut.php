@@ -129,7 +129,7 @@ class RegexpMethodPointcut extends StaticMethodMatcherPointcut
         }
         /** @var $methodClass ReflectionClass */
         $methodClass = $targetClass ?: $method->getDeclaringClass();
-        $methodHash  = $methodClass->getName() . "->" . $method->getName();
+        $methodHash  = $methodClass->name . "->" . $method->name;
 
         foreach ($this->patterns as $pattern) {
             if (preg_match("/^{$pattern}$/i", $methodHash)) {

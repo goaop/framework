@@ -126,7 +126,7 @@ class NameMatchPropertyPointcut implements Pointcut, PropertyMatcher
             return false;
         }
 
-        $propertyName = $property->getName();
+        $propertyName = $property->name;
         foreach ($this->mappedNames as $mappedName) {
             if ($mappedName === $propertyName || $this->isMatch($propertyName, $mappedName)) {
                 return true;

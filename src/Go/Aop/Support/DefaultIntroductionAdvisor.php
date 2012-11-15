@@ -68,11 +68,11 @@ class DefaultIntroductionAdvisor implements IntroductionAdvisor, ClassFilter
         assert('!empty($interface); /* Interface must not be empty */');
         if ($interface instanceof ReflectionClass || $interface instanceof ParsedReflectionClass) {
             if ($interface->isInterface()) {
-                $errorMessage = "Specified class [" . $interface->getName() . "] must be an interface";
+                $errorMessage = "Specified class [" . $interface->name . "] must be an interface";
                 throw new InvalidArgumentException($errorMessage);
             }
         }
-        $interfaceName = is_object($interface) ? $interface->getName() : $interface;
+        $interfaceName = is_object($interface) ? $interface->name : $interface;
         $this->interfaces[] = $interfaceName;
     }
 
