@@ -208,7 +208,7 @@ class AspectContainer
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
                 /** @var $method ReflectionMethod| */
-                if ($method->class === $class->name && $filter->matches($method)) {
+                if ($method->getDeclaringClass()->name === $class->name && $filter->matches($method)) {
                     $classAdvices[self::METHOD_PREFIX . ':'. $method->name][] = $advisor->getAdvice();
                 }
             }
