@@ -36,7 +36,7 @@ class FilterInjectorTransformer implements SourceTransformer
      *
      * @var string
      */
-    protected static $rewriteToPath;
+    protected static $rewriteToPath = null;
 
     /**
      * Name of the filter to inject
@@ -76,10 +76,12 @@ class FilterInjectorTransformer implements SourceTransformer
         if (self::$configured) {
             throw new \RuntimeException("Filter injector can be configured only once.");
         }
-        self::$rootPath      = realpath($rootPath);
-        self::$rewriteToPath = realpath($rewriteToPath);
-        self::$filterName    = $filterName;
-        self::$configured    = true;
+        if ($rewriteToPath) {
+            self::$rewriteToPath = realpath($rewriteToPath);
+        }
+        self::$rootPath   = realpath($rootPath);
+        self::$filterName = $filterName;
+        self::$configured = true;
     }
 
     /**
