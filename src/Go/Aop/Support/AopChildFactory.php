@@ -299,7 +299,6 @@ if (array_key_exists($name, $this->__properties)) {
 } elseif (method_exists(get_parent_class(), __FUNCTION__)) {
     parent::__set($name, $value);
 } else {
-    trigger_error("Trying to set undeclared property {$name}");
     $this->$name = $value;
 }
 SETTER;

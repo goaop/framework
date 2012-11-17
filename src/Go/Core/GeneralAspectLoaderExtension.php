@@ -9,11 +9,13 @@
 namespace Go\Core;
 
 use ReflectionMethod;
+use ReflectionProperty;
 
 use Go\Aop\Aspect;
 use Go\Aop\Advisor;
 use Go\Aop\Framework;
 use Go\Aop\MethodMatcher;
+use Go\Aop\PropertyMatcher;
 use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
@@ -26,6 +28,7 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
     /**
      * Mappings of string values to method modifiers
      *
+     * @todo: Move to the pointcut parser
      * @var array
      */
     protected static $methodModifiers = array(
@@ -34,6 +37,18 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
         '::'        => ReflectionMethod::IS_STATIC,
         '*'         => 768 /* PUBLIC | PROTECTED */,
         '->'        => 0,
+    );
+
+    /**
+     * Mappings of string values to property modifiers
+     *
+     * @todo: Move to the pointcut parser
+     * @var array
+     */
+    protected static $propertyModifiers = array(
+        'public'    => ReflectionProperty::IS_PUBLIC,
+        'protected' => ReflectionProperty::IS_PROTECTED,
+        '*'         => 768 /* PUBLIC | PROTECTED */,
     );
 
     /**
@@ -87,8 +102,17 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
         // TODO: use general pointcut parser here instead of hardcoded regular expressions
         $pointcut = $this->parsePointcut($metaInformation);
 
-        if ($pointcut instanceof MethodMatcher) {
-            $advice = $this->getMethodInterceptor($metaInformation, $adviceCallback);
+        switch (true) {
+            case ($pointcut instanceof MethodMatcher):
+                $advice = $this->getMethodInterceptor($metaInformation, $adviceCallback);
+                break;
+
+            case ($pointcut instanceof PropertyMatcher):
+                $advice = $this->getPropertyInterceptor($metaInformation, $adviceCallback);
+                break;
+
+            default:
+                throw new \UnexpectedValueException("Unsupported pointcut class: " . get_class($pointcut));
         }
 
         $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice));
@@ -120,6 +144,28 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
         }
     }
 
+    /**
+     * @param $metaInformation
+     * @param $adviceCallback
+     * @return \Go\Aop\Intercept\FieldAccess
+     * @throws \UnexpectedValueException
+     */
+    protected function getPropertyInterceptor($metaInformation, $adviceCallback)
+    {
+        switch (true) {
+            case ($metaInformation instanceof Annotation\Before):
+                return new Framework\FieldBeforeInterceptor($adviceCallback);
+
+            case ($metaInformation instanceof Annotation\After):
+                return new Framework\FieldAfterInterceptor($adviceCallback);
+
+            case ($metaInformation instanceof Annotation\Around):
+                return new Framework\FieldAroundInterceptor($adviceCallback);
+
+            default:
+                throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
+        }
+    }
 
     /**
      * Returns an advice from aspect
@@ -186,6 +232,26 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
 
         if (preg_match($withinReg, $metaInformation->value, $matches)) {
             $pointcut = new Support\WithinMethodPointcut($matches['class'], (bool) $matches['children']);
+            return $pointcut;
+        }
+
+        // access(public Example\Aspect\*->property*)
+        // access(protected Test\Class*->someProtected*Property)
+        static $propertyReg = '/
+            ^access\(
+                (?P<modifier>public|protected|\*)\s+
+                (?P<class>[\w\\\*]+)
+                ->
+                (?P<property>[\w\*]+)
+            \)$/x';
+
+        if (preg_match($propertyReg, $metaInformation->value, $matches)) {
+            $modifier = self::$propertyModifiers[$matches['modifier']];
+            $pointcut = new Support\SignaturePropertyPointcut($matches['property'], $modifier);
+            if ($matches['class'] !== '*') {
+                $classFilter = new Support\SimpleClassFilter($matches['class']);
+                $pointcut->setClassFilter($classFilter);
+            }
             return $pointcut;
         }
 
