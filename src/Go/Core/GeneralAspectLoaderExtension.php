@@ -10,14 +10,31 @@ namespace Go\Core;
 
 use ReflectionMethod;
 
-
 use Go\Aop\Aspect;
 use Go\Aop\Advisor;
-use Go\Lang\Annotation;
+use Go\Aop\Framework;
+use Go\Aop\MethodMatcher;
+use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
+use Go\Lang\Annotation;
 
+/**
+ * General aspect loader add common support for general advices, declared as annotations
+ */
 class GeneralAspectLoaderExtension implements AspectLoaderExtension
 {
+    /**
+     * Mappings of string values to method modifiers
+     *
+     * @var array
+     */
+    protected static $methodModifiers = array(
+        'public'    => ReflectionMethod::IS_PUBLIC,
+        'protected' => ReflectionMethod::IS_PROTECTED,
+        '::'        => ReflectionMethod::IS_STATIC,
+        '*'         => 768 /* PUBLIC | PROTECTED */,
+        '->'        => 0,
+    );
 
     /**
      * General aspect loader works with annotations from aspect
@@ -32,7 +49,7 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
     }
 
     /**
-     * General aspect loader works only with methods
+     * General aspect loader works only with methods of aspect
      *
      * @return string|array
      */
@@ -71,22 +88,40 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
     {
         $adviceCallback = $this->getAdvice($aspect, $reflection);
 
-        $pointcut = new \Go\Aop\Support\NameMatchMethodPointcut();
-        $pointcut->setMappedName('*');
+        // TODO: use general pointcut parser here instead of hardcoded regular expressions
+        $pointcut = $this->parsePointcut($metaInformation);
 
-        if ($metaInformation instanceof Annotation\Before) {
-            $advice = new \Go\Aop\Framework\MethodBeforeInterceptor($adviceCallback);
-        }
-
-        if ($metaInformation instanceof Annotation\After) {
-            $advice = new \Go\Aop\Framework\MethodAfterInterceptor($adviceCallback);
-        }
-
-        if ($metaInformation instanceof Annotation\Around) {
-            $advice = new \Go\Aop\Framework\MethodAroundInterceptor($adviceCallback);
+        if ($pointcut instanceof MethodMatcher) {
+            $advice = $this->getMethodInterceptor($metaInformation, $adviceCallback);
         }
 
         $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice));
+    }
+
+    /**
+     * @param $metaInformation
+     * @param $adviceCallback
+     * @return \Go\Aop\Intercept\MethodInterceptor
+     * @throws \UnexpectedValueException
+     */
+    protected function getMethodInterceptor($metaInformation, $adviceCallback)
+    {
+        switch (true) {
+            case ($metaInformation instanceof Annotation\Before):
+                return new Framework\MethodBeforeInterceptor($adviceCallback);
+
+            case ($metaInformation instanceof Annotation\After):
+                return new Framework\MethodAfterInterceptor($adviceCallback);
+
+            case ($metaInformation instanceof Annotation\Around):
+                return new Framework\MethodAroundInterceptor($adviceCallback);
+
+            case ($metaInformation instanceof Annotation\AfterThrowing):
+                return new Framework\MethodAfterThrowingInterceptor($adviceCallback);
+
+            default:
+                throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
+        }
     }
 
 
@@ -109,4 +144,40 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
         }
     }
 
+    /**
+     * Temporary method for parsing pointcuts
+     *
+     * @todo Replace this method with pointcut parser
+     * @param Annotation\BaseAnnotation $metaInformation
+     *
+     * @throws \UnexpectedValueException If pointcut can not be parsed
+     * @return \Go\Aop\Pointcut
+     */
+    private function parsePointcut($metaInformation)
+    {
+        // execution(public Example\Aspect\*->method*())
+        // execution(protected Test\Class*::someStatic*Method())
+        static $executionReg = '/
+            ^execution\(
+                (?P<modifier>public|protected|\*)\s+
+                (?P<class>[\w\\\*]+)
+                (?P<type>->|::)
+                (?P<method>[\w\*]+)
+                \(\*?\)
+            \)$/x';
+
+        if (preg_match($executionReg, $metaInformation->value, $matches)) {
+            $classFilter = new Support\SimpleClassFilter($matches['class']);
+            $modifier    = self::$methodModifiers[$matches['modifier']];
+            $modifier   |= self::$methodModifiers[$matches['type']];
+            $pointcut    = new Support\SignatureMethodPointcut(
+                $matches['method'],
+                $modifier
+            );
+            $pointcut->setClassFilter($classFilter);
+            return $pointcut;
+        }
+
+        throw new \UnexpectedValueException("Unsupported pointcut: {$metaInformation->value}");
+    }
 }
