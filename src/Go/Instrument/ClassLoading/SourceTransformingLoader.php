@@ -12,6 +12,7 @@ use php_user_filter as PhpStreamFilter;
 
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\SourceTransformer;
+use Go\Instrument\Transformer\FilterInjectorTransformer;
 
 /**
  * Php class loader filter for processing php code
@@ -138,7 +139,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      */
     public function load($source)
     {
-        return include self::PHP_FILTER_READ . $this->getId() . "/resource=" . $source;
+        return include FilterInjectorTransformer::rewrite($source);
     }
 
     /**
