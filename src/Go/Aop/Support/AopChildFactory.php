@@ -206,7 +206,7 @@ class AopChildFactory extends AbstractChildCreator
             return '$' . $param->name;
         }, $method->getParameters()));
 
-        $args = $scope . ($args ? ", $args" : '');
+        $args = $scope . ($args ? ", array($args)" : '');
         $body = "return self::\$__joinPoints['method:{$method->name}']->__invoke($args);";
         return $body;
     }

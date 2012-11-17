@@ -91,10 +91,8 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      */
     public function proceed()
     {
-
         /** @var $currentInterceptor MethodInterceptor */
-        $currentInterceptor = $this->advices[$this->current];
-        $this->current++;
+        $currentInterceptor = $this->advices[$this->current++];
         return $currentInterceptor->invoke($this);
     }
 
@@ -142,21 +140,21 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      *
      * @return mixed
      */
-    final public function __invoke()
+    final public function __invoke($instance = null, array $arguments = array())
     {
         if ($this->level) {
             array_push($this->stackFrames, array($this->arguments, $this->instance, $this->current));
         }
 
-        $this->level++;
+        ++$this->level;
 
         $this->current   = 0;
-        $this->arguments = func_get_args();
-        $this->instance  = array_shift($this->arguments);
+        $this->instance  = $instance;
+        $this->arguments = $arguments;
 
         $result = $this->proceed();
 
-        $this->level--;
+        --$this->level;
 
         if ($this->level) {
             list($this->arguments, $this->instance, $this->current) = array_pop($this->stackFrames);
