@@ -177,6 +177,22 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
             return $pointcut;
         }
 
+
+        // within(Go\Aspects\Blog\Package\*) : This will match all the methods in all classes of Go\Aspects\Blog\Package.
+        // within(Go\Aspects\Blog\Package\**) : This will match all the methods in all classes of Go\Aspects\Blog\Package and its sub packages. The only difference is the extra dot(.) after package.
+        // within(Go\Aspects\Blog\Package\DemoClass) : This will match all the methods in the DemoClass.
+        // within(DemoInterface+) : This will match all the methods which are in classes which implement DemoInterface.
+        static $withinReg = '/
+            ^within\(
+                (?P<class>[\w\\\*]+)
+                (?P<children>\+?)
+            \)$/x';
+
+        if (preg_match($withinReg, $metaInformation->value, $matches)) {
+            $pointcut = new Support\WithinMethodPointcut($matches['class'], (bool) $matches['children']);
+            return $pointcut;
+        }
+
         throw new \UnexpectedValueException("Unsupported pointcut: {$metaInformation->value}");
     }
 }
