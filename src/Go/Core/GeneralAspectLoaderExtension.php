@@ -167,14 +167,13 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
             \)$/x';
 
         if (preg_match($executionReg, $metaInformation->value, $matches)) {
-            $classFilter = new Support\SimpleClassFilter($matches['class']);
-            $modifier    = self::$methodModifiers[$matches['modifier']];
-            $modifier   |= self::$methodModifiers[$matches['type']];
-            $pointcut    = new Support\SignatureMethodPointcut(
-                $matches['method'],
-                $modifier
-            );
-            $pointcut->setClassFilter($classFilter);
+            $modifier = self::$methodModifiers[$matches['modifier']];
+            $modifier |= self::$methodModifiers[$matches['type']];
+            $pointcut = new Support\SignatureMethodPointcut($matches['method'], $modifier);
+            if ($matches['class'] !== '*') {
+                $classFilter = new Support\SimpleClassFilter($matches['class']);
+                $pointcut->setClassFilter($classFilter);
+            }
             return $pointcut;
         }
 
