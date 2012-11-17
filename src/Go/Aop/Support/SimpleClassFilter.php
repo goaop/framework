@@ -37,8 +37,8 @@ class SimpleClassFilter implements ClassFilter
     {
         $this->className = $className;
         $this->regexp    = strtr(preg_quote($this->className, '/'), array(
-            '\\*'    => '[^\\]+',
-            '\\*\\*' => '.+?',
+            '\\*'    => '[^\\\\]+',
+            '\\*\\*' => '.+',
             '\\?'    => '.'
         ));
     }
@@ -53,6 +53,6 @@ class SimpleClassFilter implements ClassFilter
             return false;
         }
 
-        return ($class->name === $this->className) || (bool) preg_match("/^{$this->regexp}$/i", $this->className);
+        return ($class->name === $this->className) || (bool) preg_match("/^{$this->regexp}$/i", $class->name);
     }
 }
