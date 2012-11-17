@@ -14,7 +14,7 @@ namespace Go\Lang\Annotation;
  * @Annotation
  * @Target("METHOD")
  */
-class AfterThrowing extends BaseAnnotation
+class AfterThrowing extends BaseAnnotation implements Interceptor
 {
 
 }

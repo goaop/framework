@@ -9,12 +9,9 @@
 namespace Go\Lang\Annotation;
 
 /**
- * Before advice annotation
- *
- * @Annotation
- * @Target({ "METHOD", "PROPERTY" })
+ * Interceptor annotation marker
  */
-class Before extends BaseAnnotation implements Interceptor
+interface Interceptor
 {
 
 }
