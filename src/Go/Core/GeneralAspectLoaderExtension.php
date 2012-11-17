@@ -69,11 +69,7 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
      */
     public function supports(Aspect $aspect, $reflection, $metaInformation = null)
     {
-        $isSupported  = false;
-        $isSupported |= $metaInformation instanceof Annotation\After;
-        $isSupported |= $metaInformation instanceof Annotation\Around;
-        $isSupported |= $metaInformation instanceof Annotation\Before;
-        return $isSupported;
+        return $metaInformation instanceof Annotation\Interceptor;
     }
 
     /**
