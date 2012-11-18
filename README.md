@@ -7,6 +7,14 @@ What is Go?!
 Go! is a PHP 5.4 library based on OOP and AOP paradigms.
 It allows developers to add support of AOP to every PHP application.
 
+Go! doesn't require any PECL-extentions, it neither uses any dark magic of Runkit nor evals, the library doesn't use DI-containers.
+The code with weaved aspects is fully readable and native, it can be easily debugged with XDebug.
+You can debug either classes or aspects.
+The main advantage of Go! is that potentially it can be installed in every PHP-application,
+because you don't have to change the application source code at all.
+As an example, with the help of 10-20 lines of code we can intercept all the public, protected and static methods in all the classes
+of application and display the name and the arguments of each method during its execution.
+
 Requirements
 ------------
 
