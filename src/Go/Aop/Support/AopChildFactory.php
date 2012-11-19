@@ -127,16 +127,16 @@ class AopChildFactory extends AbstractChildCreator
             list ($joinPointType, $joinPointName) = explode(':', $name);
 
             switch ($joinPointType) {
-                case AspectContainer::PROPERTY_PREFIX:
-                    $joinpoints[$name] = new ClassFieldAccess($className, $joinPointName, $advices);
-                    break;
-
                 case AspectContainer::METHOD_PREFIX:
                     if (IS_MODERN_PHP) {
                         $joinpoints[$name] = new ClosureMethodInvocation($className, $joinPointName, $advices);
                     } else {
                         $joinpoints[$name] = new ReflectionMethodInvocation($className, $joinPointName, $advices);
                     }
+                    break;
+
+                case AspectContainer::PROPERTY_PREFIX:
+                    $joinpoints[$name] = new ClassFieldAccess($className, $joinPointName, $advices);
                     break;
 
                 default:
