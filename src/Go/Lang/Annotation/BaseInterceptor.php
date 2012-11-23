@@ -9,12 +9,14 @@
 namespace Go\Lang\Annotation;
 
 /**
- * After throwing advice annotation
- *
- * @Annotation
- * @Target("METHOD")
+ * Default interceptor class with common attributes
  */
-class AfterThrowing extends BaseInterceptor
+class BaseInterceptor extends BaseAnnotation implements Interceptor
 {
-
+    /**
+     * Order for advice
+     *
+     * @var integer
+     */
+    public $order = 0;
 }

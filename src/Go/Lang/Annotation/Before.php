@@ -14,7 +14,7 @@ namespace Go\Lang\Annotation;
  * @Annotation
  * @Target({ "METHOD", "PROPERTY" })
  */
-class Before extends BaseAnnotation implements Interceptor
+class Before extends BaseInterceptor
 {
 
 }
