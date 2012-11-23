@@ -44,13 +44,15 @@ class BaseInterceptor extends BaseAdvice implements Interceptor
      * Default constructor for interceptor
      *
      * @param callable $adviceMethod Interceptor advice to call
+     * @param integer $order Order of interceptor
      * @param Pointcut $pointcut Pointcut instance where interceptor should be called
      */
-    public function __construct($adviceMethod, Pointcut $pointcut = null)
+    public function __construct($adviceMethod, $order = self::ORDER_NOT_SET, Pointcut $pointcut = null)
     {
         assert('is_callable($adviceMethod) /* Advice method should be callable */');
 
         $this->adviceMethod = $adviceMethod;
+        $this->order        = $order;
         $this->pointcut     = $pointcut;
     }
 }

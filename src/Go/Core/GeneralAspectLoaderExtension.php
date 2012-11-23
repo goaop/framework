@@ -128,16 +128,16 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
     {
         switch (true) {
             case ($metaInformation instanceof Annotation\Before):
-                return new Framework\MethodBeforeInterceptor($adviceCallback);
+                return new Framework\MethodBeforeInterceptor($adviceCallback, $metaInformation->order);
 
             case ($metaInformation instanceof Annotation\After):
-                return new Framework\MethodAfterInterceptor($adviceCallback);
+                return new Framework\MethodAfterInterceptor($adviceCallback, $metaInformation->order);
 
             case ($metaInformation instanceof Annotation\Around):
-                return new Framework\MethodAroundInterceptor($adviceCallback);
+                return new Framework\MethodAroundInterceptor($adviceCallback, $metaInformation->order);
 
             case ($metaInformation instanceof Annotation\AfterThrowing):
-                return new Framework\MethodAfterThrowingInterceptor($adviceCallback);
+                return new Framework\MethodAfterThrowingInterceptor($adviceCallback, $metaInformation->order);
 
             default:
                 throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
@@ -154,13 +154,13 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
     {
         switch (true) {
             case ($metaInformation instanceof Annotation\Before):
-                return new Framework\FieldBeforeInterceptor($adviceCallback);
+                return new Framework\FieldBeforeInterceptor($adviceCallback, $metaInformation->order);
 
             case ($metaInformation instanceof Annotation\After):
-                return new Framework\FieldAfterInterceptor($adviceCallback);
+                return new Framework\FieldAfterInterceptor($adviceCallback, $metaInformation->order);
 
             case ($metaInformation instanceof Annotation\Around):
-                return new Framework\FieldAroundInterceptor($adviceCallback);
+                return new Framework\FieldAroundInterceptor($adviceCallback, $metaInformation->order);
 
             default:
                 throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
