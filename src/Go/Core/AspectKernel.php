@@ -13,6 +13,7 @@ use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\AopProxyTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
+use Go\Instrument\Transformer\MagicConstantTransformer;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
@@ -189,6 +190,10 @@ abstract class AspectKernel
                 $this->options['appDir'],
                 $this->options['cacheDir'],
                 $sourceLoader->getId()
+            ),
+            new MagicConstantTransformer(
+                $this->options['appDir'],
+                $this->options['cacheDir']
             ),
             new AopProxyTransformer(
                 new TokenReflection\Broker(

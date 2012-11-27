@@ -100,10 +100,8 @@ class FilterInjectorTransformer implements SourceTransformer
         }
 
         $relativeToRoot = stream_resolve_include_path($resource);
-        if (strpos($relativeToRoot, self::$rootPath) === 0) {
-            $relativeToRoot = substr($relativeToRoot, strlen(self::$rootPath));
-            $relativeToRoot = self::$rewriteToPath . $relativeToRoot;
-        }
+        $relativeToRoot = str_replace(self::$rootPath, self::$rewriteToPath, $relativeToRoot);
+
         $newResource = $relativeToRoot;
         // TODO: add more accurate cache invalidation, like in Symfony2
         if (!file_exists($newResource) || filemtime($newResource) < filemtime($resource)) {
