@@ -23,11 +23,6 @@ class AopProxyTransformer implements SourceTransformer
 {
 
     /**
-     * Suffix, that will be added to all proxied class names
-     */
-    const AOP_PROXIED_SUFFIX = '__AopProxied';
-
-    /**
      * Reflection broker instance
      *
      * @var Broker
@@ -106,7 +101,7 @@ class AopProxyTransformer implements SourceTransformer
                 if ($advices) {
 
                     // Prepare new parent name
-                    $newParentName = $class->getShortName() . self::AOP_PROXIED_SUFFIX;
+                    $newParentName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
 
                     // Replace original class name with new
                     $source = $this->adjustOriginalClass($class, $source, $newParentName);

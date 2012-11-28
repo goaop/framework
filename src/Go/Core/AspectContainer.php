@@ -35,6 +35,11 @@ class AspectContainer
     const METHOD_PREFIX = "method";
 
     /**
+     * Suffix, that will be added to all proxied class names
+     */
+    const AOP_PROXIED_SUFFIX = '__AopProxied';
+
+    /**
      * List of named pointcuts in the container
      *
      * @var array|Aop\Pointcut[]
@@ -172,6 +177,14 @@ class AspectContainer
             $class = new ReflectionClass($class);
         }
 
+        $parentClass = $class->getParentClass();
+
+        if ($parentClass && preg_match('/' . self::AOP_PROXIED_SUFFIX . '$/', $parentClass->name)) {
+            $originalClass = $parentClass;
+        } else {
+            $originalClass = $class;
+        }
+
         foreach ($this->advisors as $advisor) {
 
             if ($advisor instanceof Aop\PointcutAdvisor) {
@@ -181,7 +194,7 @@ class AspectContainer
                     $pointFilter  = $pointcut->getPointFilter();
                     $classAdvices = array_merge_recursive(
                         $classAdvices,
-                        $this->getAdvicesFromAdvisor($class, $advisor, $pointFilter)
+                        $this->getAdvicesFromAdvisor($originalClass, $advisor, $pointFilter)
                     );
                 }
             }
