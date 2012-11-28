@@ -3,3 +3,6 @@ vendor/
 
 # Lock file
 composer.lock
+
+# PhpUnit working configuration file
+phpunit.xml
