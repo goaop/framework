@@ -15,6 +15,8 @@ because you don't have to change the application source code at all.
 As an example, with the help of 10-20 lines of code we can intercept all the public, protected and static methods in all the classes
 of application and display the name and the arguments of each method during its execution.
 
+[![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
+
 Requirements
 ------------
 
