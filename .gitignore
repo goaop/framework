@@ -1,0 +1,5 @@
+# Exclude vendor files
+vendor/
+
+# Lock file
+composer.lock
