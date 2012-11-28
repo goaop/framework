@@ -88,9 +88,7 @@ class DebugAspect implements Aspect
      *
      * @param FieldAccess $property Joinpoint
      *
-     * Around("get(* Example->*)")
-     * Around("set(* Example->*)")
-     *
+     * @Around("access(* Example->*)")
      * @return mixed
      */
     public function aroundFieldAccess(FieldAccess $property)
