@@ -55,4 +55,14 @@ class BaseInterceptor extends BaseAdvice implements Interceptor
         $this->order        = $order;
         $this->pointcut     = $pointcut;
     }
+
+    /**
+     * Getter for extracting the advice closure from Interceptor
+     *
+     * @return callable|null
+     */
+    public function getRawAdvice()
+    {
+        return $this->adviceMethod;
+    }
 }
