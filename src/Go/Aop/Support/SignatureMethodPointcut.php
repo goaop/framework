@@ -32,6 +32,21 @@ class SignatureMethodPointcut extends StaticMethodMatcherPointcut
     protected $modifier;
 
     /**
+     * Bit mask:
+     *
+     * const IS_STATIC = 1
+     * const IS_ABSTRACT = 2
+     * const IS_FINAL = 4
+     * const IS_PUBLIC = 256
+     * const IS_PROTECTED = 512
+     * const IS_PRIVATE = 1024
+     *
+     * @var integer|null
+     */
+    protected static $bitMask = 0x0701; // STATIC + PUBLIC + PROTECTED + PRIVATE
+
+
+    /**
      * Signature method matcher constructor
      *
      * @param string $methodName Name of the method to match or glob pattern
@@ -61,7 +76,8 @@ class SignatureMethodPointcut extends StaticMethodMatcherPointcut
             return false;
         }
 
-        if (!($method->getModifiers() & $this->modifier)) {
+        $modifiers = $method->getModifiers();
+        if (!($modifiers & $this->modifier) || ((self::$bitMask - $this->modifier) & $modifiers)) {
             return false;
         }
 
