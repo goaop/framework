@@ -48,6 +48,18 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
     protected $modifier;
 
     /**
+     * Bit mask:
+     *
+     *  const IS_STATIC = 1;
+     *  const IS_PUBLIC = 256;
+     *  const IS_PROTECTED = 512;
+     *  const IS_PRIVATE = 1024;
+     *
+     * @var integer|null
+     */
+    protected static $bitMask = 0x0701;
+
+    /**
      * Signature property matcher constructor
      *
      * @param string $propertyName Name of the property to match or glob pattern
@@ -110,7 +122,8 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
             return false;
         }
 
-        if (!($property->getModifiers() & $this->modifier)) {
+        $modifiers = $property->getModifiers();
+        if (!($modifiers & $this->modifier) || ((self::$bitMask - $this->modifier) & $modifiers)) {
             return false;
         }
 
