@@ -57,13 +57,12 @@ class FilterInjectorTransformer implements SourceTransformer
     /**
      * Class constructor
      *
-     * @param string $rootPath Path to the root of site
-     * @param string $rewriteToPath Path to rewrite to (typically, this will be the cache)
+     * @param array $options Configuration options from kernel
      * @param string $filterName Name of the filter to inject
      */
-    public function __construct($rootPath, $rewriteToPath, $filterName)
+    public function __construct(array $options, $filterName)
     {
-        self::configure($rootPath, $rewriteToPath, $filterName);
+        self::configure($options, $filterName);
     }
 
     /**
@@ -73,15 +72,17 @@ class FilterInjectorTransformer implements SourceTransformer
      * @param string $rewriteToPath Path to rewrite to (typically, this will be the cache)
      * @param string $filterName Name of the filter to inject
      */
-    public static function configure($rootPath, $rewriteToPath, $filterName)
+    public static function configure(array $options, $filterName)
     {
+
         if (self::$configured) {
             throw new \RuntimeException("Filter injector can be configured only once.");
         }
+        $rewriteToPath = $options['cacheDir'];
         if ($rewriteToPath) {
             self::$rewriteToPath = realpath($rewriteToPath);
         }
-        self::$rootPath   = realpath($rootPath);
+        self::$rootPath   = realpath($options['appDir']);
         self::$filterName = $filterName;
         self::$configured = true;
     }

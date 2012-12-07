@@ -34,13 +34,12 @@ class MagicConstantTransformer implements SourceTransformer
     /**
      * Class constructor
      *
-     * @param string $rootPath Path to the root of site
-     * @param string $rewriteToPath Path to rewrite to (typically, this will be the cache)
+     * @param array $options Configuration options from kernel
      */
-    public function __construct($rootPath, $rewriteToPath)
+    public function __construct(array $options)
     {
-        self::$rootPath      = realpath($rootPath);
-        self::$rewriteToPath = realpath($rewriteToPath);
+        self::$rootPath      = realpath($options['appDir']);
+        self::$rewriteToPath = realpath($options['cacheDir']);
     }
 
     /**

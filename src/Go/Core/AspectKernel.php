@@ -190,19 +190,17 @@ abstract class AspectKernel
     {
         return array(
             new FilterInjectorTransformer(
-                $this->options['appDir'],
-                $this->options['cacheDir'],
+                $this->options,
                 $sourceLoader->getId()
             ),
             new MagicConstantTransformer(
-                $this->options['appDir'],
-                $this->options['cacheDir']
+                $this->options
             ),
             new AopProxyTransformer(
+                $this->options,
                 new TokenReflection\Broker(
                     new TokenReflection\Broker\Backend\Memory()
-                ),
-                $this->options['includePaths']
+                )
             ),
         );
     }

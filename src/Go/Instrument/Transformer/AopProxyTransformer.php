@@ -41,10 +41,10 @@ class AopProxyTransformer implements SourceTransformer
      *
      * @param Broker $broker Instance of reflection broker to use
      */
-    public function __construct(Broker $broker, $includePaths = array())
+    public function __construct(array $options, Broker $broker)
     {
         $this->broker       = $broker;
-        $this->includePaths = array_map('realpath', $includePaths);;
+        $this->includePaths = array_map('realpath', $options['includePaths']);
     }
 
     /**
