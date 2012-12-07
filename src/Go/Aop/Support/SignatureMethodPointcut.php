@@ -77,7 +77,7 @@ class SignatureMethodPointcut extends StaticMethodMatcherPointcut
         }
 
         $modifiers = $method->getModifiers();
-        if (($modifiers & $this->modifier) !== $this->modifier || ((self::$bitMask - $this->modifier) & $modifiers)) {
+        if (!($modifiers & $this->modifier) || ((self::$bitMask - $this->modifier) & $modifiers)) {
             return false;
         }
 
