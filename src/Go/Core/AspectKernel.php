@@ -101,6 +101,9 @@ abstract class AspectKernel
         // Register general aspect loader extension
         $aspectLoader->registerLoaderExtension(new GeneralAspectLoaderExtension());
 
+        // Register kernel resources in the container
+        $this->addKernelResourcesToContainer($container);
+
         // Register all AOP configuration in the container
         $this->configureAop($container);
     }
@@ -228,5 +231,19 @@ abstract class AspectKernel
             return class_exists($class, false);
         });
 
+    }
+
+    /**
+     * Add resources for kernel
+     *
+     * @param AspectContainer $container
+     */
+    protected function addKernelResourcesToContainer(AspectContainer $container)
+    {
+        $trace    = debug_backtrace();
+        $refClass = new \ReflectionObject($this);
+
+        $container->addResource($trace[1]['file']);
+        $container->addResource($refClass->getFileName());
     }
 }

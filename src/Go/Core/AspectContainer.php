@@ -61,6 +61,20 @@ class AspectContainer
     protected $services = array();
 
     /**
+     * List of resources for application
+     *
+     * @var array
+     */
+    protected $resources = array();
+
+    /**
+     * Cached timestamp for resources
+     *
+     * @var integer
+     */
+    protected $maxTimestamp = 0;
+
+    /**
      * Set a service into the container
      *
      * @param string $id Key for service
@@ -161,6 +175,34 @@ class AspectContainer
         /** @var $loader AspectLoader */
         $loader = $this->get('aspect.loader');
         $loader->load($aspect);
+    }
+
+    /**
+     * Add an resource for container
+     *
+     * TODO: use symfony/config component for creating the cache
+     *
+     * Resources is used to check the freshness of cache
+     */
+    public function addResource($resource)
+    {
+        $this->resources[]  = $resource;
+        $this->maxTimestamp = 0;
+    }
+
+    /**
+     * Checks the freshness of container
+     *
+     * @param integer $timestamp
+     *
+     * @return bool Whether or not container is fresh
+     */
+    public function isFresh($timestamp)
+    {
+        if (!$this->maxTimestamp && $this->resources) {
+            $this->maxTimestamp = max(array_map('filemtime', $this->resources));
+        }
+        return $this->maxTimestamp < $timestamp;
     }
 
     /**

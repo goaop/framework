@@ -14,6 +14,8 @@ namespace Go\Instrument\Transformer;
  * @package go
  * @subpackage instrument
  */
+use Go\Core\AspectKernel;
+
 class FilterInjectorTransformer implements SourceTransformer
 {
 
@@ -103,8 +105,14 @@ class FilterInjectorTransformer implements SourceTransformer
         $relativeToRoot = str_replace(self::$rootPath, self::$rewriteToPath, $relativeToRoot);
 
         $newResource = $relativeToRoot;
+
+        // TODO: decide how to inject container in more friendly way
+        $container     = AspectKernel::getInstance()->getContainer();
+        $lastModified  = filemtime($resource);
+        $cacheModified = file_exists($newResource) ? filemtime($newResource) : 0;
+
         // TODO: add more accurate cache invalidation, like in Symfony2
-        if (!file_exists($newResource) || filemtime($newResource) < filemtime($resource)) {
+        if ($cacheModified < $lastModified || !$container->isFresh($cacheModified)) {
             @mkdir(dirname($newResource), 0770, true);
             $content = file_get_contents(self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource);
             file_put_contents($newResource, $content);

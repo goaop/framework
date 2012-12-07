@@ -62,6 +62,9 @@ class AspectLoader
     {
         $refAspect = new \ReflectionClass($aspect);
 
+        // Register dependency resource for aspect
+        $this->container->addResource($refAspect->getFileName());
+
         if (!empty($this->loaders[AspectLoaderExtension::TARGET_CLASS])) {
             $this->loadFrom($aspect, $refAspect, $this->loaders[AspectLoaderExtension::TARGET_CLASS]);
         }
