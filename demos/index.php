@@ -23,6 +23,7 @@ DemoAspectKernel::getInstance()->init(array(
     'cacheDir' => null, //__DIR__ . '/../cache',
     // Include paths for aspect weaving
     'includePaths' => array(),
+    'debug' => true
 ));
 
 $class = new Example('test');

@@ -12,6 +12,7 @@ use Go\Instrument\ClassLoading\UniversalClassLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\AopProxyTransformer;
+use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 
@@ -134,6 +135,8 @@ abstract class AspectKernel
                     'TokenReflection'  => realpath(__DIR__ . '/../../../vendor/andrewsville/php-token-reflection/'),
                     'Doctrine\\Common' => realpath(__DIR__ . '/../../../vendor/doctrine/common/lib/')
                 ),
+                //Debug mode
+                'debug' => false,
                 // Default application directory
                 'appDir' => __DIR__ . '/../../../',
                 // Cache directory for Go! generated classes
@@ -188,7 +191,7 @@ abstract class AspectKernel
      */
     protected function registerTransformers(SourceTransformingLoader $sourceLoader)
     {
-        return array(
+        $sourceTransformers = array(
             new FilterInjectorTransformer(
                 $this->options,
                 $sourceLoader->getId()
@@ -201,7 +204,14 @@ abstract class AspectKernel
                 new TokenReflection\Broker(
                     new TokenReflection\Broker\Backend\Memory()
                 )
-            ),
+            )
+        );
+
+        return array(
+            new CachingTransformer(
+                $this->options,
+                $sourceTransformers
+            )
         );
     }
 
