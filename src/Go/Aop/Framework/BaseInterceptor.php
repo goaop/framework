@@ -8,6 +8,8 @@
 
 namespace Go\Aop\Framework;
 
+use Serializable;
+
 use Go\Aop\Pointcut;
 use Go\Aop\Framework\BaseAdvice;
 use Go\Aop\Intercept\Interceptor;
@@ -15,7 +17,7 @@ use Go\Aop\Intercept\Interceptor;
 /**
  * @package go
  */
-class BaseInterceptor extends BaseAdvice implements Interceptor
+class BaseInterceptor extends BaseAdvice implements Interceptor, Serializable
 {
     /**
      * Name of the aspect
@@ -64,5 +66,32 @@ class BaseInterceptor extends BaseAdvice implements Interceptor
     public function getRawAdvice()
     {
         return $this->adviceMethod;
+    }
+
+    /**
+     * Serializes an interceptor into string representation
+     *
+     * @return string the string representation of the object or null
+     */
+    public function serialize()
+    {
+        $vars = get_object_vars($this);
+        $vars['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
+        return serialize($vars);
+    }
+
+    /**
+     * Unserialize an interceptor from the string
+     *
+     * @param string $serialized The string representation of the object.
+     * @return void
+     */
+    public function unserialize($serialized)
+    {
+        $vars = unserialize($serialized);
+        $vars['adviceMethod'] = static::unserializeAdvice($vars['adviceMethod']);
+        foreach ($vars as $key=>$value) {
+            $this->$key = $value;
+        }
     }
 }

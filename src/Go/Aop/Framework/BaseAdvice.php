@@ -8,7 +8,12 @@
 
 namespace Go\Aop\Framework;
 
+use ReflectionFunction;
+use ReflectionMethod;
+
 use Go\Aop\Advice;
+use Go\Aop\Aspect;
+use Go\Core\AspectKernel;
 
 /**
  * Base class for all framework advices implementations
@@ -37,18 +42,85 @@ use Go\Aop\Advice;
  */
 abstract class BaseAdvice implements Advice
 {
-    /** Constant for undefined order */
+    /**
+     * Constant for undefined order
+     */
     const ORDER_NOT_SET = -1;
 
-    /** @var int Advice order */
+    /**
+     * Advice order
+     *
+     * @var int
+     */
     protected $order = self::ORDER_NOT_SET;
 
     /**
      * Returns the advice order
+     *
      * @return int
      */
     public function getAdviceOrder()
     {
         return $this->order;
+    }
+
+    /**
+     * Serialize advice method into array
+     *
+     * @param callable|\Closure $adviceMethod An advice for aspect
+     *
+     * @return array
+     */
+    public static function serializeAdvice($adviceMethod)
+    {
+        $refAdvice = new ReflectionFunction($adviceMethod);
+        if (IS_MODERN_PHP) {
+            $method = $refAdvice;
+            $aspect = $refAdvice->getClosureThis();
+        } else {
+            $vars   = $refAdvice->getStaticVariables();
+            $method = $vars['refMethod'];
+            $aspect = $vars['aspect'];
+        }
+        return array(
+            'method' => $method->name,
+            'aspect' => get_class($aspect)
+        );
+    }
+
+    /**
+     * Unserialize an advice
+     *
+     * @param array $adviceData Information about advice
+     *
+     * @return callable|\Closure
+     */
+    public static function unserializeAdvice($adviceData)
+    {
+        $aspectName = $adviceData['aspect'];
+        $methodName = $adviceData['method'];
+
+        $refMethod = new ReflectionMethod($aspectName, $methodName);
+        $aspect    = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
+        return static::fromAspectReflection($aspect, $refMethod);
+    }
+
+    /**
+     * Returns an advice from aspect method reflection
+     *
+     * @param Aspect $aspect Instance of aspect
+     * @param ReflectionMethod $refMethod Reflection method of aspect
+     *
+     * @return callable|object
+     */
+    public static function fromAspectReflection(Aspect $aspect, ReflectionMethod $refMethod)
+    {
+        if (IS_MODERN_PHP) {
+            return $refMethod->getClosure($aspect);
+        } else {
+            return function () use ($aspect, $refMethod) {
+                return $refMethod->invokeArgs($aspect, func_get_args());
+            };
+        }
     }
 }

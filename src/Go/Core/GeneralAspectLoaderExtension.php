@@ -97,7 +97,7 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
      */
     public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
     {
-        $adviceCallback = $this->getAdvice($aspect, $reflection);
+        $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);
 
         // TODO: use general pointcut parser here instead of hardcoded regular expressions
         $pointcut = $this->parsePointcut($metaInformation);
@@ -164,25 +164,6 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
 
             default:
                 throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
-        }
-    }
-
-    /**
-     * Returns an advice from aspect
-     *
-     * @param Aspect $aspect Aspect instance
-     * @param ReflectionMethod $refMethod Reflection method of aspect
-     *
-     * @return callable Advice to call
-     */
-    private function getAdvice(Aspect $aspect, ReflectionMethod $refMethod)
-    {
-        if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
-            return $refMethod->getClosure($aspect);
-        } else {
-            return function () use ($aspect, $refMethod) {
-                return $refMethod->invokeArgs($aspect, func_get_args());
-            };
         }
     }
 

@@ -61,6 +61,13 @@ class AspectContainer
     protected $services = array();
 
     /**
+     * List of registered aspects
+     *
+     * @var array
+     */
+    protected $aspects = array();
+
+    /**
      * List of resources for application
      *
      * @var array
@@ -166,15 +173,42 @@ class AspectContainer
     }
 
     /**
+     * Returns an aspect by id or class name
+     *
+     * @param string $aspectName Aspect name
+     *
+     * @throws \OutOfBoundsException If aspect is unknown
+     *
+     * @return Aop\Aspect
+     */
+    public function getAspect($aspectName)
+    {
+        if (!isset($this->aspects[$aspectName])) {
+            throw new \OutOfBoundsException("Unknown aspect {$aspectName}");
+        }
+        return $this->aspects[$aspectName];
+    }
+
+    /**
      * Register an aspect in the container
      *
      * @param Aop\Aspect $aspect Instance of concrete aspect
+     * @param string $id Key for aspect
+     *
+     * @throws \LogicException if aspect was already registered
      */
     public function registerAspect(Aop\Aspect $aspect)
     {
+        $aspectName = get_class($aspect);
+        if (!empty($this->aspects[$aspectName])) {
+            throw new \LogicException("Only one instance of single aspect can be registered at once");
+        }
+
         /** @var $loader AspectLoader */
         $loader = $this->get('aspect.loader');
         $loader->load($aspect);
+
+        $this->aspects[$aspectName] = $aspect;
     }
 
     /**

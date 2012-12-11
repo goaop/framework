@@ -28,12 +28,6 @@ use TokenReflection\ReflectionParameter as ParsedReflectionParameter;
 use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
 
 /**
- * Whether or not we have a modern PHP
- */
-define('IS_MODERN_PHP', version_compare(PHP_VERSION, '5.4.0') >= 0);
-
-
-/**
  * AOP Factory that is used to generate child code from joinpoints
  */
 class AopChildFactory extends AbstractChildCreator

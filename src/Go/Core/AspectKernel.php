@@ -22,6 +22,12 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
 use TokenReflection;
 
 /**
+ * Whether or not we have a modern PHP
+ */
+define('IS_MODERN_PHP', version_compare(PHP_VERSION, '5.4.0') >= 0);
+
+
+/**
  * Abstract aspect kernel is used to prepare an application to work with aspects.
  *
  * Realization of this class should return the path for application loader, so when the kernel has finished its work,
