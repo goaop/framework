@@ -27,11 +27,11 @@ class CachingTransformer implements SourceTransformer
     protected $rootPath = '';
 
     /**
-     * Path to rewrite to (cache directory)
+     * Cache directory
      *
      * @var string
      */
-    protected $rewriteToPath = '';
+    protected $cachePath = '';
 
     /**
      * @var array|SourceTransformer[]
@@ -46,9 +46,12 @@ class CachingTransformer implements SourceTransformer
      */
     public function __construct(array $options, array $transformers)
     {
-        $this->rootPath      = realpath($options['appDir']);
-        $this->rewriteToPath = realpath($options['cacheDir']);
-        $this->transformers  = $transformers;
+        if ($options['cacheDir']) {
+            $this->cachePath = realpath($options['cacheDir']);
+        }
+
+        $this->rootPath     = realpath($options['appDir']);
+        $this->transformers = $transformers;
     }
 
     /**
@@ -61,14 +64,14 @@ class CachingTransformer implements SourceTransformer
      */
     public function transform($source, StreamMetaData $metadata = null)
     {
-        // Make the job only when we use cache directory
-        if (!$this->rewriteToPath) {
-            return $source;
+        // Do not create a cache
+        if (!$this->cachePath) {
+            return $this->processTransformers($source, $metadata);
         }
 
         $originalUri = $metadata->getResourceUri();
         $cacheUri    = stream_resolve_include_path($originalUri);
-        $cacheUri    = str_replace($this->rootPath, $this->rewriteToPath, $cacheUri);
+        $cacheUri    = str_replace($this->rootPath, $this->cachePath, $cacheUri);
 
         // TODO: decide how to inject container in more friendly way
         $container     = AspectKernel::getInstance()->getContainer();
@@ -78,14 +81,28 @@ class CachingTransformer implements SourceTransformer
         // TODO: add more accurate cache invalidation, like in Symfony2
         if ($cacheModified < $lastModified || !$container->isFresh($cacheModified)) {
             @mkdir(dirname($cacheUri), 0770, true);
-            foreach ($this->transformers as $transformer) {
-                $source = $transformer->transform($source, $metadata);
-            }
+            $source = $this->processTransformers($source, $metadata);
             file_put_contents($cacheUri, $source);
         } else {
             $source = file_get_contents($cacheUri);
         }
 
+        return $source;
+    }
+
+    /**
+     * Iterates over transformers
+     *
+     * @param string $source Source code
+     * @param StreamMetaData $metadata Metadata for source code
+     *
+     * @return string
+     */
+    private function processTransformers($source, StreamMetaData $metadata)
+    {
+        foreach ($this->transformers as $transformer) {
+            $source = $transformer->transform($source, $metadata);
+        }
         return $source;
     }
 }
