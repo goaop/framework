@@ -79,7 +79,11 @@ class MagicConstantTransformer implements SourceTransformer
 
         if ($hasReflecitionFilename) {
             // TODO: need to make more reliable solution
-            $source = preg_replace('/([\w\$\-\>\:]*?getFileName\(\))/', '\\' . __CLASS__ . '::resolveFileName(\1)', $source);
+            $source = preg_replace(
+                '/\$([\w\$\-\>\:\(\)]*?getFileName\(\))/',
+                '\\' . __CLASS__ . '::resolveFileName(\$\1)',
+                $source
+            );
         }
 
         return $source;
