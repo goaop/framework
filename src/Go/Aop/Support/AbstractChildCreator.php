@@ -184,7 +184,8 @@ class AbstractChildCreator
         ksort($this->methodsCode);
         ksort($this->propertiesCode);
         $prefix = join(' ', Reflection::getModifierNames($this->class->getModifiers()));
-        $code = sprintf("%sclass %s extends %s%s\n{\n%s\n%s\n}",
+        $code = sprintf("%s\n%sclass %s extends %s%s\n{\n%s\n%s\n}",
+            $this->class->getDocComment(),
             $prefix ? "$prefix " : '',
             $this->name,
             $this->parentClassName,
@@ -207,7 +208,7 @@ class AbstractChildCreator
     protected function getOverriddenMethod($method, $body)
     {
         $code = sprintf("%s%s function %s%s(%s)\n{\n%s\n}\n",
-            "/**\n * {@inheritdoc}\n */\n",
+            $method->getDocComment() ."\n",
             join(' ', Reflection::getModifierNames($method->getModifiers())),
             $method->returnsReference() ? '&' : '',
             $method->name,
