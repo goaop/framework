@@ -143,7 +143,7 @@ class FilterInjectorTransformer implements SourceTransformer
         $transformedSource = '';
         $isWaitingEnd      = false;
         foreach ($tokenStream as $token) {
-            if ($isWaitingEnd && $token === ';') {
+            if ($isWaitingEnd && ($token === ';' || $token === ',')) {
                 $isWaitingEnd = false;
                 $transformedSource .= ')';
             }
