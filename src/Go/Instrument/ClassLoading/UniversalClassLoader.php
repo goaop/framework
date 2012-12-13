@@ -246,7 +246,7 @@ class UniversalClassLoader
      */
     public function loadClass($class)
     {
-        if ($file = $this->findFile($class)) {
+        if ($file = $this->findOriginalFile($class)) {
             require $file;
         }
     }
@@ -258,7 +258,7 @@ class UniversalClassLoader
      *
      * @return string|null The path, if found
      */
-    public function findFile($class)
+    public function findOriginalFile($class)
     {
         if ('\\' == $class[0]) {
             $class = substr($class, 1);
