@@ -21,19 +21,6 @@ use Go\Aop\Intercept\MethodInterceptor;
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
-    /**
-     * Class name of method
-     *
-     * @var string
-     */
-    protected $classOrObject = '';
-
-    /**
-     * Name of invoked method
-     *
-     * @var string
-     */
-    protected $methodName = '';
 
     /**
      * Instance of object for invoking or null
@@ -65,11 +52,8 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      */
     public function __construct($classNameOrObject, $methodName, array $advices)
     {
-        $this->classOrObject = $classNameOrObject;
-        $this->parentClass   = get_parent_class($classNameOrObject);
-        $this->methodName    = $methodName;
-
-        $this->reflectionMethod = $method = new ReflectionMethod($this->parentClass, $this->methodName);
+        $this->parentClass      = get_parent_class($classNameOrObject);
+        $this->reflectionMethod = $method = new ReflectionMethod($this->parentClass, $methodName);
 
         // Give an access to call protected method
         if ($method->isProtected()) {
