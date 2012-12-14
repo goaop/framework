@@ -132,7 +132,7 @@ class AopProxyTransformer implements SourceTransformer
     private function adjustOriginalClass($class, $source, $newParentName)
     {
         $source = preg_replace(
-            '/class\s+(' . $class->getShortName() . ')/i',
+            '/class\s+(' . $class->getShortName() . ')/iS',
             "class $newParentName",
             $source
         );
