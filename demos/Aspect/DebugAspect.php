@@ -41,7 +41,7 @@ class DebugAspect implements Aspect
     /**
      * Pointcut for example class
      *
-     * @Pointcut("execution(public Example->*(*))")
+     * @Pointcut(value="execution(public Example->*(*))", id="test")
      */
     protected function examplePublicMethods() {}
 
@@ -49,7 +49,7 @@ class DebugAspect implements Aspect
      * Method that should be called before real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before("execution(public Example->*(*))")
+     * @Before(pointcut="test")
      */
     public function beforeMethodExecution(MethodInvocation $invocation)
     {
@@ -68,7 +68,7 @@ class DebugAspect implements Aspect
      * Method that should be called after real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @After("execution(public Example->*(*))")
+     * @After(pointcut="test")
      */
     public function afterMethodExecution(MethodInvocation $invocation)
     {

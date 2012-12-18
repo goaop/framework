@@ -19,4 +19,11 @@ class BaseInterceptor extends BaseAnnotation implements Interceptor
      * @var integer
      */
     public $order = 0;
+
+    /**
+     * Name of the pointcut to use
+     *
+     * @var string
+     */
+    public $pointcut = null;
 }
