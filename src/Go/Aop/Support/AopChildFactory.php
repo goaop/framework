@@ -57,7 +57,7 @@ class AopChildFactory extends AbstractChildCreator
      */
     public static function generate($parent, array $advices)
     {
-        $aopChild = new static($parent, $parent->getShortName());
+        $aopChild = new static($parent, $parent->getShortName(), $advices);
         if (!empty($advices)) {
             $aopChild->addJoinpointsProperty($aopChild);
 
@@ -90,13 +90,15 @@ class AopChildFactory extends AbstractChildCreator
      *
      * @return void
      */
-    public static function injectJoinpoints($aopChildClass)
+    public static function injectJoinpoints($aopChildClass, array $advices = array())
     {
         $originalClass = $aopChildClass;
-        $container     = AspectKernel::getInstance()->getContainer();
-        $advices       = $container->getAdvicesForClass($originalClass);
-        $joinPoints    = static::wrapWithJoinPoints($advices, $aopChildClass);
+        if (!$advices) {
+            $container = AspectKernel::getInstance()->getContainer();
+            $advices   = $container->getAdvicesForClass($originalClass);
+        }
 
+        $joinPoints    = static::wrapWithJoinPoints($advices, $aopChildClass);
         $aopChildClass = new ReflectionClass($aopChildClass);
 
         /** @var $prop Property */
@@ -208,11 +210,12 @@ class AopChildFactory extends AbstractChildCreator
         if ($this->isFieldsIntercepted && (!$ctor || !$ctor->isPrivate())) {
             $this->addFieldInterceptorsCode($ctor);
         }
-        $self = get_called_class();
+        $self       = get_called_class();
+        $serialized = serialize($this->advices);
         return parent::__toString()
             // Inject advices on call
             . PHP_EOL
-            . '\\' . $self . "::injectJoinpoints('" . $this->class->name . "');";
+            . '\\' . $self . "::injectJoinpoints('" . $this->class->name . "', unserialize('{$serialized}'));";
     }
 
     /**

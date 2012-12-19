@@ -70,20 +70,29 @@ class AbstractChildCreator
     protected $propertiesCode = array();
 
     /**
+     * List of advices that are used for generation of child
+     *
+     * @var array
+     */
+    protected $advices = array();
+
+    /**
      * Constructs abstract child class from Reflection
      *
      * @param ReflectionClass|ParsedReflectionClass $parentClass Reflection
      * @param string $thisName Name of the child class
+     * @param array $advices List of advices
      *
      * @throws \InvalidArgumentException for invalid classes
      */
-    public function __construct($parentClass, $thisName)
+    public function __construct($parentClass, $thisName, array $advices = array())
     {
         if (!$parentClass instanceof ReflectionClass && !$parentClass instanceof ParsedReflectionClass) {
             throw new \InvalidArgumentException("Invalid argument for class");
         }
-        $this->class = $parentClass;
-        $this->name  = $thisName;
+        $this->advices = $advices;
+        $this->class   = $parentClass;
+        $this->name    = $thisName;
 
         $this->parentClassName = $parentClass->getShortName();
     }
