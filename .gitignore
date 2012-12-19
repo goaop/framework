@@ -1,6 +1,9 @@
 # Exclude vendor files
 vendor/
 
+# Exclude ide metadatas
+nbproject/
+
 # Lock file
 composer.lock
 
