@@ -57,16 +57,16 @@ class CachingTransformer implements SourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
-     * @param string $source Source for class
      * @param StreamMetaData $metadata Metadata for source
      *
      * @return string Transformed source
      */
-    public function transform($source, StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata)
     {
         // Do not create a cache
         if (!$this->cachePath) {
-            return $this->processTransformers($source, $metadata);
+            $this->processTransformers($metadata);
+            return;
         }
 
         $originalUri = $metadata->getResourceUri();
@@ -81,28 +81,25 @@ class CachingTransformer implements SourceTransformer
         // TODO: add more accurate cache invalidation, like in Symfony2
         if ($cacheModified < $lastModified || !$container->isFresh($cacheModified)) {
             @mkdir(dirname($cacheUri), 0770, true);
-            $source = $this->processTransformers($source, $metadata);
-            file_put_contents($cacheUri, $source);
-        } else {
-            $source = file_get_contents($cacheUri);
+            $metadata->source = $this->processTransformers($metadata->source, $metadata);
+            file_put_contents($cacheUri, $metadata->source);
+            return;
         }
-
-        return $source;
+        $metadata->source = file_get_contents($cacheUri);
     }
 
     /**
      * Iterates over transformers
      *
-     * @param string $source Source code
      * @param StreamMetaData $metadata Metadata for source code
      *
      * @return string
      */
-    private function processTransformers($source, StreamMetaData $metadata)
+    private function processTransformers(StreamMetaData $metadata)
     {
         foreach ($this->transformers as $transformer) {
-            $source = $transformer->transform($source, $metadata);
+            $transformer->transform($metadata);
         }
-        return $source;
+        return $metadata;
     }
 }

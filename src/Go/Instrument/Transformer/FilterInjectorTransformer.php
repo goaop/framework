@@ -121,15 +121,14 @@ class FilterInjectorTransformer implements SourceTransformer
     /**
      * Wrap all includes into rewrite filter
      *
-     * @param string $source Source for class
      * @param StreamMetaData $metadata Metadata for source
      *
      * @return string Transformed source
      */
-    public function transform($source, StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata)
     {
-        if ((strpos($source, 'include')===false) && (strpos($source, 'require')===false)) {
-            return $source;
+        if ((strpos($metadata->source, 'include')===false) && (strpos($metadata->source, 'require')===false)) {
+            return;
         }
         static $lookFor = array(
             T_INCLUDE      => true,
@@ -137,7 +136,7 @@ class FilterInjectorTransformer implements SourceTransformer
             T_REQUIRE      => true,
             T_REQUIRE_ONCE => true
         );
-        $tokenStream       = token_get_all($source);
+        $tokenStream       = token_get_all($metadata->source);
 
         $transformedSource = '';
         $isWaitingEnd      = false;
@@ -153,6 +152,6 @@ class FilterInjectorTransformer implements SourceTransformer
                 $transformedSource  .= ' \\' . __CLASS__ . '::rewrite(';
             }
         }
-        return $transformedSource;
+        $metadata->source = $transformedSource;
     }
 }

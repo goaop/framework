@@ -45,31 +45,30 @@ class MagicConstantTransformer implements SourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
-     * @param string $source Source for class
      * @param StreamMetaData $metadata Metadata for source
      *
      * @return string Transformed source
      */
-    public function transform($source, StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata)
     {
         // Make the job only when we use cache directory
         if (!self::$rewriteToPath) {
-            return $source;
+            return;
         }
 
-        $hasReflecitionFilename = strpos($source, 'getFileName') !== false;
-        $notHasMagicConsts      = (strpos($source, '__DIR__') === false) && (strpos($source, '__FILE__') === false);
+        $hasReflecitionFilename = strpos($metadata->source, 'getFileName') !== false;
+        $notHasMagicConsts      = (strpos($metadata->source, '__DIR__') === false) && (strpos($metadata->source, '__FILE__') === false);
 
         if ($notHasMagicConsts && !$hasReflecitionFilename) {
-            return $source;
+            return;
         }
 
         // Resolve magic constanst
         if (!$notHasMagicConsts) {
             $originalUri = $metadata->getResourceUri();
 
-            $source = strtr(
-                $source,
+            $metadata->source = strtr(
+                $metadata->source,
                 array(
                     '__DIR__'  => "'" . dirname($originalUri) . "'",
                     '__FILE__' => "'" . $originalUri . "'",
@@ -79,14 +78,14 @@ class MagicConstantTransformer implements SourceTransformer
 
         if ($hasReflecitionFilename) {
             // TODO: need to make more reliable solution
-            $source = preg_replace(
+            $metadata->source = preg_replace(
                 '/\$([\w\$\-\>\:\(\)]*?getFileName\(\))/S',
                 '\\' . __CLASS__ . '::resolveFileName(\$\1)',
-                $source
+                $metadata->source
             );
         }
 
-        return $source;
+        return;
     }
 
     /**

@@ -29,13 +29,8 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      */
     const FILTER_IDENTIFIER = 'go.source.transforming.loader';
 
-    /**
-     * String buffer
-     *
-     * @var string
-     */
     protected $data = '';
-
+    
     /**
      * Filter bucket resource
      *
@@ -106,8 +101,9 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
 
             // $this->stream contains pointer to the source
             $metadata = new StreamMetaData($this->stream);
+            $metadata->source = $this->data;
 
-            $this->bucket->data    = $this->transformCode($this->data, $metadata);
+            $this->bucket->data    = $this->transformCode($metadata);
             $this->bucket->datalen = strlen($this->bucket->data);
             if (!empty($this->bucket->data)) {
                 stream_bucket_append($out, $this->bucket);
@@ -145,17 +141,15 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
     /**
      * Transforms source code by passing it through all transformers
      *
-     * @param string $code Source code
      * @param StreamMetaData|null $metadata Metadata from stream
      *
      * @return string Transformed source code
      */
-    protected function transformCode($code, StreamMetaData $metadata = null)
+    protected function transformCode(StreamMetaData $metadata)
     {
-        $transformedSourceCode = $code;
         foreach (self::$transformers as $transformer) {
-            $transformedSourceCode = $transformer->transform($transformedSourceCode, $metadata);
+            $transformer->transform($metadata);
         }
-        return $transformedSourceCode;
+        return $metadata->source;
     }
 }

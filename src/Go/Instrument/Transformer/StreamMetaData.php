@@ -35,10 +35,13 @@ class StreamMetaData extends ArrayObject
      *
      * @throws \InvalidArgumentException for invalid stream
      */
-    public function __construct($stream)
+    public function __construct($stream, $source = null)
     {
         if (!is_resource($stream)) {
             throw new InvalidArgumentException("Stream should be valid resource");
+        }
+        if($source) {
+            $this->source = $source;
         }
         $metadata = stream_get_meta_data($stream);
         parent::__construct($metadata, ArrayObject::ARRAY_AS_PROPS);
