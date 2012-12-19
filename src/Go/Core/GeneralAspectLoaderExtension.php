@@ -12,7 +12,6 @@ use ReflectionMethod;
 use ReflectionProperty;
 
 use Go\Aop\Aspect;
-use Go\Aop\Advisor;
 use Go\Aop\Framework;
 use Go\Aop\MethodMatcher;
 use Go\Aop\PropertyMatcher;

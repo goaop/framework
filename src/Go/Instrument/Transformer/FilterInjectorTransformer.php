@@ -14,7 +14,6 @@ namespace Go\Instrument\Transformer;
  * @package go
  * @subpackage instrument
  */
-use Go\Core\AspectKernel;
 
 class FilterInjectorTransformer implements SourceTransformer
 {
