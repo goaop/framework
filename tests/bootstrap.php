@@ -29,6 +29,18 @@ if (defined("AUTOLOAD_PATH")) {
                 return false;
             }
             return true;
+        } else if (0 === strpos($class, 'TokenReflection\\')) {
+            $path = __DIR__ . '/../vendor/andrewsville/php-token-reflection/' . implode('/', (explode('\\', $class))).'.php';
+            if (!file_exists($path)) {
+                return false;
+            }
+
+            require $path;
+
+            if (!class_exists($class) && !interface_exists($class)) {
+                return false;
+            }
+            return true;
         }
         return false;
     });
