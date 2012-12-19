@@ -23,5 +23,5 @@ interface SourceTransformer
      *
      * @return string Transformed source
      */
-    public function transform($source, StreamMetaData $metadata = null);
+    public function transform($source, StreamMetaData $metadata);
 }

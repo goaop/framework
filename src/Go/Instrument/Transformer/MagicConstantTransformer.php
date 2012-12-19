@@ -50,7 +50,7 @@ class MagicConstantTransformer implements SourceTransformer
      *
      * @return string Transformed source
      */
-    public function transform($source, StreamMetaData $metadata = null)
+    public function transform($source, StreamMetaData $metadata)
     {
         // Make the job only when we use cache directory
         if (!self::$rewriteToPath) {
