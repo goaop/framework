@@ -13,11 +13,8 @@ use ReflectionMethod;
 use ReflectionProperty;
 
 use Go\Aop;
-use Go\Aop\Framework\ClassFieldAccess;
 
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
-use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
-use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
 
 /**
  * Aspect container contains list of all pointcuts and advisors
