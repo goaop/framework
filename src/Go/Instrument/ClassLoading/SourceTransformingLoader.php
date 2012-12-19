@@ -29,6 +29,11 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      */
     const FILTER_IDENTIFIER = 'go.source.transforming.loader';
 
+    /**	
+     * String buffer
+     *
+     * @var string
+     */
     protected $data = '';
     
     /**
