@@ -74,11 +74,12 @@ class FilterInjectorTransformer implements SourceTransformer
     /**
      * Static configurator for filter
      *
-     * @param string $rootPath Path to the root of site
-     * @param string $rewriteToPath Path to rewrite to (typically, this will be the cache)
+     * @param array $options Kernel options
      * @param string $filterName Name of the filter to inject
+     *
+     * @throws \RuntimeException if filter was configured early
      */
-    public static function configure(array $options, $filterName)
+    protected static function configure(array $options, $filterName)
     {
         if (self::$configured) {
             throw new \RuntimeException("Filter injector can be configured only once.");
