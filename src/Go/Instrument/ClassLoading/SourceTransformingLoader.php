@@ -150,7 +150,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      *
      * @return string Transformed source code
      */
-    protected function transformCode($code, StreamMetaData $metadata = null)
+    protected function transformCode($code, StreamMetaData $metadata)
     {
         $transformedSourceCode = $code;
         foreach (self::$transformers as $transformer) {
