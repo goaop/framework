@@ -3,68 +3,76 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Instrument\Transformer\FilterInjectorTransformer;
+use Go\Instrument\Transformer\StreamMetaData;
 
 class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
 {
-    protected static $transformer;
+    protected $metadata;
+    protected static $instance;
+    protected $transformer;
 
+    protected static function getInstance()
+    {
+        if(null === self::$instance) {
+            self::$instance = new FilterInjectorTransformer(array(
+                'cacheDir' => null,
+                'appDir' => '',
+                'debug' => false,
+            ), '');
+        }
+        return self::$instance;
+    }
+    
     public function setUp()
     {
-        if(null != self::$transformer) {
-            return;
-        }
-        self::$transformer = new FilterInjectorTransformer(array(
-            'cacheDir' => null,
-            'appDir' => '',
-            'debug' => false,
-        ), '');
+        $this->transformer = self::getInstance();
+        $this->metadata = new StreamMetaData(fopen('php://input', 'r'));
     }
 
     public function testCanTransformeWithoutInclusion()
     {
-        $source = '<?php echo "simple test, include" . $include; ?>';
-        $output = $source;
-        $source = self::$transformer->transform($source);
-        $this->assertEquals($source, $output);
+        $this->metadata->source = '<?php echo "simple test, include" . $include; ?>';
+        $output = $this->metadata->source;
+        $this->transformer->transform($this->metadata);
+        $this->assertEquals($this->metadata->source, $output);
     }
     
     public function testCanTransformeInclude()
     {
-        $source = '<?php include $class; ?>';
-        $source = self::$transformer->transform($source);
-        $output = '<?php include \\' . get_class(self::$transformer) . '::rewrite( $class); ?>';
-        $this->assertEquals($source, $output);
+        $this->metadata->source = '<?php include $class; ?>';
+        $this->transformer->transform($this->metadata);
+        $output = '<?php include \\' . get_class($this->transformer) . '::rewrite( $class); ?>';
+        $this->assertEquals($this->metadata->source, $output);
     }
 
     public function testCanTransformeIncludeOnce()
     {
-        $source = '<?php include_once $class; ?>';
-        $source = self::$transformer->transform($source);
-        $output = '<?php include_once \\' . get_class(self::$transformer) . '::rewrite( $class); ?>';
-        $this->assertEquals($source, $output);
+        $this->metadata->source = '<?php include_once $class; ?>';
+        $this->transformer->transform($this->metadata);
+        $output = '<?php include_once \\' . get_class($this->transformer) . '::rewrite( $class); ?>';
+        $this->assertEquals($this->metadata->source, $output);
     }
 
     public function testCanTransformeRequire()
     {
-        $source = '<?php require $class; ?>';
-        $source = self::$transformer->transform($source);
-        $output = '<?php require \\' . get_class(self::$transformer) . '::rewrite( $class); ?>';
-        $this->assertEquals($source, $output);
+        $this->metadata->source = '<?php require $class; ?>';
+        $this->transformer->transform($this->metadata);
+        $output = '<?php require \\' . get_class($this->transformer) . '::rewrite( $class); ?>';
+        $this->assertEquals($this->metadata->source, $output);
     }
 
     public function testCanTransformeRequireOnce()
     {
-        $source = '<?php require_once $class; ?>';
-        $source = self::$transformer->transform($source);
-        $output = '<?php require_once \\' . get_class(self::$transformer) . '::rewrite( $class); ?>';
-        $this->assertEquals($source, $output);
+        $this->metadata->source = '<?php require_once $class; ?>';
+        $this->transformer->transform($this->metadata);
+        $output = '<?php require_once \\' . get_class($this->transformer) . '::rewrite( $class); ?>';
+        $this->assertEquals($this->metadata->source, $output);
     }
 
     public function testCanRewriteWithFilter()
     {
-        $transformer = self::$transformer;
-        $source = $transformer::rewrite('/path/to/my/class.php');
-        $output = $transformer::PHP_FILTER_READ . '/resource=/path/to/my/class.php';
-        $this->assertEquals($source, $output);
+        $this->metadata->source = FilterInjectorTransformer::rewrite('/path/to/my/class.php');
+        $output = FilterInjectorTransformer::PHP_FILTER_READ . '/resource=/path/to/my/class.php';
+        $this->assertEquals($this->metadata->source, $output);
     }
 }
