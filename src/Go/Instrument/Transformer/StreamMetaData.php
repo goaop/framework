@@ -25,6 +25,7 @@ use InvalidArgumentException;
  * @property string mode the type of access required for this stream
  * @property bool seekable whether the current stream can be seeked.
  * @property string uri the URI/filename associated with this stream.
+ * @property source source of the stream.
  */
 class StreamMetaData extends ArrayObject
 {
@@ -40,10 +41,10 @@ class StreamMetaData extends ArrayObject
         if (!is_resource($stream)) {
             throw new InvalidArgumentException("Stream should be valid resource");
         }
-        if($source) {
-            $this->source = $source;
-        }
         $metadata = stream_get_meta_data($stream);
+        if($source) {
+            $metadata['source'] = $source;
+        }
         parent::__construct($metadata, ArrayObject::ARRAY_AS_PROPS);
     }
 

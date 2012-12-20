@@ -19,8 +19,7 @@ interface SourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     *
-     * @return string Transformed source
+     * @return void
      */
     public function transform(StreamMetaData $metadata);
 }

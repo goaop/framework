@@ -58,8 +58,7 @@ class CachingTransformer implements SourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     *
-     * @return string Transformed source
+     * @return void
      */
     public function transform(StreamMetaData $metadata)
     {
@@ -81,7 +80,7 @@ class CachingTransformer implements SourceTransformer
         // TODO: add more accurate cache invalidation, like in Symfony2
         if ($cacheModified < $lastModified || !$container->isFresh($cacheModified)) {
             @mkdir(dirname($cacheUri), 0770, true);
-            $metadata->source = $this->processTransformers($metadata->source, $metadata);
+            $this->processTransformers($metadata);
             file_put_contents($cacheUri, $metadata->source);
             return;
         }
@@ -92,14 +91,12 @@ class CachingTransformer implements SourceTransformer
      * Iterates over transformers
      *
      * @param StreamMetaData $metadata Metadata for source code
-     *
-     * @return string
+     * @return void
      */
     private function processTransformers(StreamMetaData $metadata)
     {
         foreach ($this->transformers as $transformer) {
             $transformer->transform($metadata);
         }
-        return $metadata;
     }
 }
