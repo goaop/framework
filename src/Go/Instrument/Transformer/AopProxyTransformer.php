@@ -50,12 +50,10 @@ class AopProxyTransformer implements SourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
-     * @param string $source Source for class
      * @param StreamMetaData $metadata Metadata for source
-     *
-     * @return string Transformed source
+     * @return void
      */
-    public function transform($source, StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata)
     {
         $fileName = realpath($metadata->getResourceUri());
         if ($this->includePaths) {
@@ -67,11 +65,11 @@ class AopProxyTransformer implements SourceTransformer
                 }
             }
             if (!$found) {
-                return $source;
+                return;
             }
         }
 
-        $parsedSource = $this->broker->processString($source, $fileName, true);
+        $parsedSource = $this->broker->processString($metadata->source, $fileName, true);
 
         /** @var $namespaces ReflectionFileNamespace[] */
         $namespaces = $parsedSource->getNamespaces();
@@ -104,7 +102,7 @@ class AopProxyTransformer implements SourceTransformer
                     $newParentName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
 
                     // Replace original class name with new
-                    $source = $this->adjustOriginalClass($class, $source, $newParentName);
+                    $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
 
                     // Prepare child Aop proxy
                     $child  = AopChildFactory::generate($class, $advices);
@@ -113,11 +111,10 @@ class AopProxyTransformer implements SourceTransformer
                     $child->setParentName($newParentName);
 
                     // Add child to source
-                    $source .= $child;
+                    $metadata->source .= $child;
                 }
             }
         }
-        return $source;
     }
 
     /**
