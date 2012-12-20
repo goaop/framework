@@ -108,7 +108,8 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
             $metadata = new StreamMetaData($this->stream);
             $metadata->source = $this->data;
 
-            $this->bucket->data    = $this->transformCode($metadata);
+            $this->transformCode($metadata);
+            $this->bucket->data = $metadata->source;
             $this->bucket->datalen = strlen($this->bucket->data);
             if (!empty($this->bucket->data)) {
                 stream_bucket_append($out, $this->bucket);
@@ -147,14 +148,12 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      * Transforms source code by passing it through all transformers
      *
      * @param StreamMetaData|null $metadata Metadata from stream
-     *
-     * @return string Transformed source code
+     * @return void
      */
     protected function transformCode(StreamMetaData $metadata)
     {
         foreach (self::$transformers as $transformer) {
             $transformer->transform($metadata);
         }
-        return $metadata->source;
     }
 }
