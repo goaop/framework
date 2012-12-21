@@ -60,4 +60,33 @@ class First
     {
         return get_called_class();
     }
+
+    // Pass by reference
+    public function passByReference(&$valueByReference)
+    {
+        $valueByReference = null;
+        return $valueByReference;
+    }
+
+    // Recursion test
+    public function recursion($value, $level = 0)
+    {
+        if ($level > 0) {
+            $value += $this->recursion($value, $level-1);
+        }
+        return $value;
+    }
+
+    /**
+     * Method for checking invocation with any number of arguments
+     *
+     * NB: Real proxy use the method definition to prepare invocation proxy, so variable number of arguments
+     * will not work at all!
+     *
+     * @return string
+     */
+    public function variableArgsTest()
+    {
+        return join('', func_get_args());
+    }
 }
