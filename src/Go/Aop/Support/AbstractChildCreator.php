@@ -217,7 +217,7 @@ class AbstractChildCreator
     protected function getOverriddenMethod($method, $body)
     {
         $code = sprintf("%s%s function %s%s(%s)\n{\n%s\n}\n",
-            $method->getDocComment() ."\n",
+            preg_replace('/ {4}|\t/', '', $method->getDocComment()) ."\n",
             join(' ', Reflection::getModifierNames($method->getModifiers())),
             $method->returnsReference() ? '&' : '',
             $method->name,
