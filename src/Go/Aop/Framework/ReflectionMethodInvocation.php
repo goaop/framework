@@ -8,6 +8,8 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Intercept\MethodInterceptor;
+
 /**
  * @package go
  */
@@ -20,9 +22,10 @@ class ReflectionMethodInvocation extends AbstractMethodInvocation
      */
     public function proceed()
     {
-        // Delegate default logic to the parent
         if (isset($this->advices[$this->current])) {
-            return parent::proceed();
+            /** @var $currentInterceptor MethodInterceptor */
+            $currentInterceptor = $this->advices[$this->current++];
+            return $currentInterceptor->invoke($this);
         }
 
         // Due to bug https://bugs.php.net/bug.php?id=60968 instance shouldn't be a string

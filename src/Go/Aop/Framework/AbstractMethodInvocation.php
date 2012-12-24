@@ -73,12 +73,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      *
      * @return mixed
      */
-    public function proceed()
-    {
-        /** @var $currentInterceptor MethodInterceptor */
-        $currentInterceptor = $this->advices[$this->current++];
-        return $currentInterceptor->invoke($this);
-    }
+    abstract public function proceed();
 
     /**
      * Gets the method being called.

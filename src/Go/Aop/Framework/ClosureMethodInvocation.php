@@ -8,6 +8,8 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Intercept\MethodInterceptor;
+
 /**
  * @package go
  */
@@ -34,9 +36,10 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
      */
     public function proceed()
     {
-        // Delegate default logic to the parent
         if (isset($this->advices[$this->current])) {
-            return parent::proceed();
+            /** @var $currentInterceptor MethodInterceptor */
+            $currentInterceptor = $this->advices[$this->current++];
+            return $currentInterceptor->invoke($this);
         }
 
         // Fill the closure only once if it's empty
