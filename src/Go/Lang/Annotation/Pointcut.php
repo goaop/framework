@@ -15,16 +15,10 @@ namespace Go\Lang\Annotation;
  * @Target("METHOD")
  *
  * @Attributes({
- *   @Attribute("id", type = "string", required=true),
  *   @Attribute("value", type = "string", required=true)
  * })
  */
 class Pointcut extends BaseAnnotation
 {
-    /**
-     * Identifier of pointcut
-     *
-     * @var string
-     */
-    public $id = null;
+
 }

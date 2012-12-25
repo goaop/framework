@@ -98,23 +98,24 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
     public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
     {
         // TODO: use general pointcut parser here instead of hardcoded regular expressions
-        $pointcut       = $this->parsePointcut($container, $metaInformation);
+        $pointcut       = $this->parsePointcut($container, $reflection, $metaInformation);
+        $methodId       = sprintf("%s->%s()", $reflection->class, $reflection->name);
         $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);
 
         switch (true) {
             // Register a pointcut by its name
             case ($metaInformation instanceof Annotation\Pointcut):
-                $container->registerPointcut($pointcut, $metaInformation->id);
+                $container->registerPointcut($pointcut, $methodId);
                 break;
 
             case ($pointcut instanceof MethodMatcher):
                 $advice = $this->getMethodInterceptor($metaInformation, $adviceCallback);
-                $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice));
+                $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
                 break;
 
             case ($pointcut instanceof PropertyMatcher):
                 $advice = $this->getPropertyInterceptor($metaInformation, $adviceCallback);
-                $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice));
+                $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
                 break;
 
             default:
@@ -178,17 +179,26 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
      *
      * @param AspectContainer $container Container
      * @param Annotation\BaseAnnotation|Annotation\BaseInterceptor $metaInformation
+     * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      *
      * @throws \UnexpectedValueException If pointcut can not be parsed
      * @return \Go\Aop\Pointcut
      */
-    private function parsePointcut(AspectContainer $container, $metaInformation)
+    private function parsePointcut(AspectContainer $container, $reflection, $metaInformation)
     {
         if (isset($metaInformation->pointcut)) {
             if ($metaInformation->value) {
                 throw new \UnexpectedValueException("Can not use both `value` and `pointcut` properties");
             }
-            return $container->getPointcut($metaInformation->pointcut);
+
+            try {
+                // FQDN
+                return $container->getPointcut($metaInformation->pointcut);
+            } catch (\OutOfBoundsException $e) {
+                // By method name for class
+                $pointcutId = sprintf("%s->%s", $reflection->class, $metaInformation->pointcut);
+                return $container->getPointcut($pointcutId);
+            }
         }
 
         // execution(public Example\Aspect\*->method*())
