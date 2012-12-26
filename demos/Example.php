@@ -6,6 +6,8 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
+use Annotation\Cacheable;
+
 /**
  * Example class to test aspects
  */
@@ -103,5 +105,19 @@ class Example
         if ($level > 0) {
             $this->testRecursion($level - 1);
         }
+    }
+
+    /**
+     * Test cacheable by annotation
+     *
+     * @Cacheable
+     * @param float $timeToSleep Amount of time to sleep
+     *
+     * @return string
+     */
+    public function cacheMe($timeToSleep)
+    {
+        usleep($timeToSleep * 1e6);
+        return 'Yeah';
     }
 }

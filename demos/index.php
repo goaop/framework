@@ -6,6 +6,8 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
+use Doctrine\Common\Annotations\AnnotationRegistry;
+
 include '../src/Go/Core/AspectKernel.php';
 include 'DemoAspectKernel.php';
 
@@ -26,5 +28,10 @@ DemoAspectKernel::getInstance()->init(array(
     'debug' => true
 ));
 
+AnnotationRegistry::registerFile('./Annotation/Cacheable.php');
+
 $class = new Example('test');
 $class->publicHello();
+for ($i=10; $i--; ) {
+    $class->cacheMe(1);
+}
