@@ -223,6 +223,19 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
             return $pointcut;
         }
 
+        // @annotation(First\Second\Annotation\Class)
+        static $annotationReg = '/
+            ^@annotation\(
+                (?P<annotation>[\w\\\*]+)
+            \)$/x';
+
+        if (preg_match($annotationReg, $metaInformation->value, $matches)) {
+            // TODO: use single annotation reader
+            $reader   = $container->get('aspect.annotation.raw.reader');
+            $pointcut = new Support\AnnotationMethodPointcut($reader, $matches['annotation']);
+            return $pointcut;
+        }
+
 
         // within(Go\Aspects\Blog\Package\*) : This will match all the methods in all classes of Go\Aspects\Blog\Package.
         // within(Go\Aspects\Blog\Package\**) : This will match all the methods in all classes of Go\Aspects\Blog\Package and its sub packages. The only difference is the extra dot(.) after package.
