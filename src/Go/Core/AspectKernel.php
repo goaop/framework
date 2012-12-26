@@ -8,6 +8,7 @@
 
 namespace Go\Core;
 
+use Go\Instrument\RawAnnotationReader;
 use Go\Instrument\ClassLoading\UniversalClassLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\Transformer\SourceTransformer;
@@ -104,6 +105,7 @@ abstract class AspectKernel
 
         // TODO: use cached annotation reader
         $container->set('aspect.annotation.reader', new AnnotationReader());
+        $container->set('aspect.annotation.raw.reader', new RawAnnotationReader());
 
         // Register general aspect loader extension
         $aspectLoader->registerLoaderExtension(new GeneralAspectLoaderExtension());
