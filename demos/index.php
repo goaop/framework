@@ -22,7 +22,7 @@ DemoAspectKernel::getInstance()->init(array(
     // Default application directory
     'appDir' => __DIR__ . '/../demos',
     // Cache directory for Go! generated classes
-    'cacheDir' => null, //__DIR__ . '/../cache',
+    'cacheDir' => __DIR__ . '/cache',
     // Include paths for aspect weaving
     'includePaths' => array(),
     'debug' => true
