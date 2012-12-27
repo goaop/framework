@@ -38,8 +38,11 @@ class MagicConstantTransformer implements SourceTransformer
      */
     public function __construct(array $options)
     {
-        self::$rootPath      = realpath($options['appDir']);
-        self::$rewriteToPath = realpath($options['cacheDir']);
+        self::$rootPath = realpath($options['appDir']);
+        $rewriteToPath  = $options['cacheDir'];
+        if ($rewriteToPath) {
+            self::$rewriteToPath = realpath($rewriteToPath);
+        }
     }
 
     /**
