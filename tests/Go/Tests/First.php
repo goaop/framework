@@ -68,11 +68,27 @@ class First
         return $valueByReference;
     }
 
+    // Pass by reference
+    public static function staticPassByReference(&$valueByReference)
+    {
+        $valueByReference = null;
+        return $valueByReference;
+    }
+
     // Recursion test
     public function recursion($value, $level = 0)
     {
         if ($level > 0) {
             $value += $this->recursion($value, $level-1);
+        }
+        return $value;
+    }
+
+    // Recursion test
+    public static function staticLsbRecursion($value, $level = 0)
+    {
+        if ($level > 0) {
+            $value += static::staticLsbRecursion($value, $level-1);
         }
         return $value;
     }
@@ -89,4 +105,18 @@ class First
     {
         return join('', func_get_args());
     }
+
+    /**
+     * Method for checking invocation with any number of arguments
+     *
+     * NB: Real proxy use the method definition to prepare invocation proxy, so variable number of arguments
+     * will not work at all!
+     *
+     * @return string
+     */
+    public static function staticVariableArgsTest()
+    {
+        return join('', func_get_args());
+    }
+
 }

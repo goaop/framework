@@ -66,6 +66,7 @@ class AopChildFactory extends AbstractChildCreator
                 list ($type, $pointName) = explode(':', $name);
                 switch ($type) {
                     case AspectContainer::METHOD_PREFIX:
+                    case AspectContainer::STATIC_METHOD_PREFIX:
                         $aopChild->overrideMethod($parent->getMethod($pointName));
                         break;
 
@@ -124,6 +125,10 @@ class AopChildFactory extends AbstractChildCreator
 
             switch ($joinPointType) {
                 case AspectContainer::METHOD_PREFIX:
+                    $joinpoints[$name] = new ReflectionMethodInvocation($className, $joinPointName, $advices);
+                    break;
+
+                case AspectContainer::STATIC_METHOD_PREFIX:
                     if (IS_MODERN_PHP) {
                         $joinpoints[$name] = new ClosureMethodInvocation($className, $joinPointName, $advices);
                     } else {
@@ -181,6 +186,7 @@ class AopChildFactory extends AbstractChildCreator
     {
         $isStatic = $method->isStatic();
         $scope    = $isStatic ? 'get_called_class()' : '$this';
+        $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $args = join(', ', array_map(function ($param) {
             /** @var $param ReflectionParameter|ParsedReflectionParameter */
@@ -189,7 +195,7 @@ class AopChildFactory extends AbstractChildCreator
         }, $method->getParameters()));
 
         $args = $scope . ($args ? ", array($args)" : '');
-        $body = "return self::\$__joinPoints['method:{$method->name}']->__invoke($args);";
+        $body = "return self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($args);";
         return $body;
     }
 

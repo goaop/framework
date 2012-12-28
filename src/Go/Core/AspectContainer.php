@@ -22,14 +22,19 @@ use TokenReflection\ReflectionClass as ParsedReflectionClass;
 class AspectContainer
 {
     /**
-     * Prefix for properties interceptor name
+     * Prefix for properties interceptor
      */
     const PROPERTY_PREFIX = "prop";
 
     /**
-     * Prefix for method interceptor name
+     * Prefix for method interceptor
      */
     const METHOD_PREFIX = "method";
+
+    /**
+     * Prefix for static method interceptor
+     */
+    const STATIC_METHOD_PREFIX = "static";
 
     /**
      * Suffix, that will be added to all proxied class names
@@ -294,8 +299,9 @@ class AspectContainer
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
                 /** @var $method ReflectionMethod| */
-                if ($method->getDeclaringClass()->name === $class->name && $filter->matches($method)) {
-                    $classAdvices[self::METHOD_PREFIX . ':'. $method->name][] = $advisor->getAdvice();
+                if ($method->getDeclaringClass()->name == $class->name && $filter->matches($method)) {
+                    $prefix = $method->isStatic() ? self::STATIC_METHOD_PREFIX : self::METHOD_PREFIX;
+                    $classAdvices[$prefix . ':'. $method->name][] = $advisor->getAdvice();
                 }
             }
         }

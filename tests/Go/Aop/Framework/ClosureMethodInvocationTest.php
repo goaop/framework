@@ -29,20 +29,6 @@ class ClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Tests dynamic method invocations
-     *
-     * @dataProvider dynamicMethodsBatch
-     */
-    public function testDynamicMethodInvocation($methodName, $expectedResult)
-    {
-        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new ClosureMethodInvocation(get_class($child), $methodName, array());
-
-        $result = $invocation($child);
-        $this->assertEquals($expectedResult, $result);
-    }
-
-    /**
      * Tests static method invocations with self
      *
      * @dataProvider staticSelfMethodsBatch
@@ -87,7 +73,7 @@ class ClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testValueChangedByReference()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new ClosureMethodInvocation(get_class($child), 'passByReference', array());
+        $invocation = new ClosureMethodInvocation(get_class($child), 'staticPassByReference', array());
 
         $value  = 'test';
         $result = $invocation($child, array(&$value));
@@ -97,17 +83,18 @@ class ClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
     public function testRecursionWorks()
     {
-        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('recursion'));
-        $invocation = new ClosureMethodInvocation(get_class($child), 'recursion', array());
+        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('staticLsbRecursion'));
+        $invocation = new ClosureMethodInvocation(get_class($child), 'staticLsbRecursion', array());
 
-        $child->expects($this->exactly(5))->method('recursion')->will($this->returnCallback(
+        $child->staticExpects($this->exactly(5))->method('staticLsbRecursion')->will($this->returnCallback(
             function ($value, $level) use ($child, $invocation) {
                 return $invocation($child, array($value, $level));
             }
         ));
 
-        $this->assertEquals(5, $child->recursion(5,0));
-        $this->assertEquals(20, $child->recursion(5,3));
+        $childClass = get_class($child);
+        $this->assertEquals(5, $childClass::staticLsbRecursion(5,0));
+        $this->assertEquals(20, $childClass::staticLsbRecursion(5,3));
     }
 
     public function testAdviceIsCalledForInvocation()
@@ -118,7 +105,7 @@ class ClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
             $value = 'ok';
         });
 
-        $invocation = new ClosureMethodInvocation(get_class($child), 'publicMethod', array($advice));
+        $invocation = new ClosureMethodInvocation(get_class($child), 'staticSelfPublic', array($advice));
 
         $result = $invocation($child, array());
         $this->assertEquals('ok', $value);
@@ -128,7 +115,7 @@ class ClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testInvocationWithDynamicArguments()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new ClosureMethodInvocation(get_class($child), 'variableArgsTest', array());
+        $invocation = new ClosureMethodInvocation(get_class($child), 'staticVariableArgsTest', array());
 
         $args     = array();
         $expected = '';
@@ -138,15 +125,6 @@ class ClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
             $result   = $invocation($child, $args);
             $this->assertEquals($expected, $result);
         }
-    }
-
-    public function dynamicMethodsBatch()
-    {
-        return array(
-            array('publicMethod', T_PUBLIC),
-            array('protectedMethod', T_PROTECTED),
-            array('privateMethod', T_PRIVATE),
-        );
     }
 
     public function staticSelfMethodsBatch()
