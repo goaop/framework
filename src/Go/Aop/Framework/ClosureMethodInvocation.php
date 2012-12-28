@@ -18,16 +18,33 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
     /**
      * Closure to use
      *
-     * @var null|\Closure
+     * @var \Closure
      */
     private $closureToCall = null;
 
     /**
-     * Previous instance to call
+     * Previous scope of invocation
      *
      * @var null
      */
-    private $previousInstance = null;
+    private $previousScope = null;
+
+    /**
+     * Shortcut for ReflectionMethod->name
+     *
+     * @var string
+     */
+    private $methodName = '';
+
+    /**
+     * {@inheritdoc}
+     */
+    public function __construct($classNameOrObject, $methodName, array $advices)
+    {
+        parent::__construct($classNameOrObject, $methodName, $advices);
+        $this->methodName    = $methodName;
+        $this->closureToCall = $this->getStaticInvoker();
+    }
 
     /**
      * Invokes original method and return result from it
@@ -42,42 +59,45 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
             return $currentInterceptor->invoke($this);
         }
 
-        // Fill the closure only once if it's empty
-        if (!$this->closureToCall) {
-            $this->closureToCall = $this->reflectionMethod->getClosure($this->instance);
+        // Rebind the closure if scope (class name) was changed since last time
+        if ($this->previousScope !== $this->instance) {
+            $this->closureToCall = $this->closureToCall->bindTo(null, $this->instance);
+            $this->previousScope = $this->instance;
         }
 
         $closureToCall = $this->closureToCall;
 
-        // Rebind the closure if instance was changed since last time
-        if ($this->previousInstance !== $this->instance) {
-            // Fastest way to check that $this->instance is string or object
-            if ($this->instance !== (object) $this->instance) {
-                $closureToCall = $closureToCall->bindTo(null, $this->instance);
-            } else {
-                $closureToCall = $closureToCall->bindTo($this->instance, $this->parentClass);
-            }
-            $this->closureToCall    = $closureToCall;
-            $this->previousInstance = $this->instance;
-        }
-
-        $args = $this->arguments;
-        switch(count($args)) {
-            case 0:
-                return $closureToCall();
-            case 1:
-                return $closureToCall($args[0]);
-            case 2:
-                return $closureToCall($args[0], $args[1]);
-            case 3:
-                return $closureToCall($args[0], $args[1], $args[2]);
-            case 4:
-                return $closureToCall($args[0], $args[1], $args[2], $args[3]);
-            case 5:
-                return $closureToCall($args[0], $args[1], $args[2], $args[3], $args[4]);
-            default:
-                return call_user_func_array($closureToCall, $args);
-        }
+        return $closureToCall($this->parentClass, $this->methodName, $this->arguments);
 
     }
-}
+
+    /**
+     * Returns static method invoker
+     *
+     * @return callable
+     */
+    private static function getStaticInvoker()
+    {
+        static $invoker = null;
+        if (!$invoker) {
+            $invoker = function ($parentClass, $method, array $args) {
+                switch(count($args)) {
+                    case 0:
+                        return parent::$method();
+                    case 1:
+                        return parent::$method($args[0]);
+                    case 2:
+                        return parent::$method($args[0], $args[1]);
+                    case 3:
+                        return parent::$method($args[0], $args[1], $args[2]);
+                    case 4:
+                        return parent::$method($args[0], $args[1], $args[2], $args[3]);
+                    case 5:
+                        return parent::$method($args[0], $args[1], $args[2], $args[3], $args[4]);
+                    default:
+                        return forward_static_call_array(array($parentClass, $method), $args);
+                }
+            };
+        }
+        return $invoker;
+    }}
