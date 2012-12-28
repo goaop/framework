@@ -21,6 +21,7 @@ use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\ReflectionMethodInvocation;
 use Go\Aop\Framework\ClosureStaticMethodInvocation;
+use Go\Aop\Framework\ClosureDynamicMethodInvocation;
 
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
@@ -125,24 +126,29 @@ class AopChildFactory extends AbstractChildCreator
 
             switch ($joinPointType) {
                 case AspectContainer::METHOD_PREFIX:
-                    $joinpoints[$name] = new ReflectionMethodInvocation($className, $joinPointName, $advices);
+                    if (IS_MODERN_PHP) {
+                        $joinpoint = new ClosureDynamicMethodInvocation($className, $joinPointName, $advices);
+                    } else {
+                        $joinpoint = new ReflectionMethodInvocation($className, $joinPointName, $advices);
+                    }
                     break;
 
                 case AspectContainer::STATIC_METHOD_PREFIX:
                     if (IS_MODERN_PHP) {
-                        $joinpoints[$name] = new ClosureStaticMethodInvocation($className, $joinPointName, $advices);
+                        $joinpoint = new ClosureStaticMethodInvocation($className, $joinPointName, $advices);
                     } else {
-                        $joinpoints[$name] = new ReflectionMethodInvocation($className, $joinPointName, $advices);
+                        $joinpoint = new ReflectionMethodInvocation($className, $joinPointName, $advices);
                     }
                     break;
 
                 case AspectContainer::PROPERTY_PREFIX:
-                    $joinpoints[$name] = new ClassFieldAccess($className, $joinPointName, $advices);
+                    $joinpoint = new ClassFieldAccess($className, $joinPointName, $advices);
                     break;
 
                 default:
                     throw new UnexpectedValueException("Invalid joinpoint `{$joinPointType}` type. Not yet supported.");
             }
+            $joinpoints[$name] = $joinpoint;
 
         }
         return $joinpoints;
