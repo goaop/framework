@@ -15,7 +15,7 @@ use Go\Aop\Intercept\MethodInterceptor;
  *
  * @package go
  */
-class ClosureMethodInvocation extends AbstractMethodInvocation
+class ClosureStaticMethodInvocation extends AbstractMethodInvocation
 {
     /**
      * Closure to use

@@ -20,7 +20,7 @@ use Go\Aop\Advice;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\ReflectionMethodInvocation;
-use Go\Aop\Framework\ClosureMethodInvocation;
+use Go\Aop\Framework\ClosureStaticMethodInvocation;
 
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
@@ -130,7 +130,7 @@ class AopChildFactory extends AbstractChildCreator
 
                 case AspectContainer::STATIC_METHOD_PREFIX:
                     if (IS_MODERN_PHP) {
-                        $joinpoints[$name] = new ClosureMethodInvocation($className, $joinPointName, $advices);
+                        $joinpoints[$name] = new ClosureStaticMethodInvocation($className, $joinPointName, $advices);
                     } else {
                         $joinpoints[$name] = new ReflectionMethodInvocation($className, $joinPointName, $advices);
                     }
