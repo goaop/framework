@@ -69,7 +69,7 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
 
         $closureToCall = $this->closureToCall;
 
-        return $closureToCall($this->parentClass, $this->methodName, $this->arguments);
+        return $closureToCall($this->methodName, $this->arguments);
 
     }
 
@@ -82,7 +82,7 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
     {
         static $invoker = null;
         if (!$invoker) {
-            $invoker = function ($parentClass, $method, array $args) {
+            $invoker = function ($method, array $args) {
                 switch(count($args)) {
                     case 0:
                         return parent::$method();
@@ -97,7 +97,7 @@ class ClosureMethodInvocation extends AbstractMethodInvocation
                     case 5:
                         return parent::$method($args[0], $args[1], $args[2], $args[3], $args[4]);
                     default:
-                        return forward_static_call_array(array($parentClass, $method), $args);
+                        return forward_static_call_array(array('parent', $method), $args);
                 }
             };
         }
