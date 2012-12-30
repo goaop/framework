@@ -32,20 +32,12 @@ class ClosureStaticMethodInvocation extends AbstractMethodInvocation
     private $previousScope = null;
 
     /**
-     * Shortcut for ReflectionMethod->name
-     *
-     * @var string
-     */
-    private $methodName = '';
-
-    /**
      * {@inheritdoc}
      */
     public function __construct($classNameOrObject, $methodName, array $advices)
     {
         parent::__construct($classNameOrObject, $methodName, $advices);
-        $this->methodName    = $methodName;
-        $this->closureToCall = $this->getStaticInvoker();
+        $this->closureToCall = $this->getStaticInvoker($this->parentClass, $methodName);
     }
 
     /**
@@ -69,37 +61,22 @@ class ClosureStaticMethodInvocation extends AbstractMethodInvocation
 
         $closureToCall = $this->closureToCall;
 
-        return $closureToCall($this->methodName, $this->arguments);
+        return $closureToCall($this->arguments);
 
     }
 
     /**
      * Returns static method invoker
      *
+     * @param string $parent Parent class name to forward request
+     * @param string $method Method name to call
+     *
      * @return callable
      */
-    private static function getStaticInvoker()
+    protected static function getStaticInvoker($parent, $method)
     {
-        static $invoker = null;
-        if (!$invoker) {
-            $invoker = function ($method, array $args) {
-                switch(count($args)) {
-                    case 0:
-                        return parent::$method();
-                    case 1:
-                        return parent::$method($args[0]);
-                    case 2:
-                        return parent::$method($args[0], $args[1]);
-                    case 3:
-                        return parent::$method($args[0], $args[1], $args[2]);
-                    case 4:
-                        return parent::$method($args[0], $args[1], $args[2], $args[3]);
-                    case 5:
-                        return parent::$method($args[0], $args[1], $args[2], $args[3], $args[4]);
-                    default:
-                        return forward_static_call_array(array('parent', $method), $args);
-                }
-            };
-        }
-        return $invoker;
-    }}
+        return function (array $args) use ($parent, $method) {
+            return forward_static_call_array(array($parent, $method), $args);
+        };
+    }
+}
