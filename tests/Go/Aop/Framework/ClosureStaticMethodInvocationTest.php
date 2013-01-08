@@ -132,7 +132,7 @@ class ClosureStaticMethodInvocationTest extends \PHPUnit_Framework_TestCase
         return array(
             array('staticSelfPublic', T_PUBLIC),
             array('staticSelfProtected', T_PROTECTED),
-            // array('staticSelfPrivate', T_PRIVATE), // This will give a Fatal Error for scope
+            array('staticSelfPublicAccessPrivate', T_PRIVATE),
         );
     }
 
