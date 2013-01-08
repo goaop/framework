@@ -19,6 +19,16 @@ class ClosureDynamicMethodInvocationTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * {@inheritdoc}
+     */
+    protected function setUp()
+    {
+        if (version_compare(PHP_VERSION, '5.4.0') < 0) {
+            $this->markTestSkipped("Closure Method Invocation works only on PHP 5.4 and greater");
+        }
+    }
+
+    /**
      * Tests dynamic method invocations
      *
      * @dataProvider dynamicMethodsBatch
