@@ -169,7 +169,7 @@ class AopChildFactory extends AbstractChildCreator
     }
 
     /**
-     * Override parent method with joinjpoint invocation
+     * Override parent method with joinpoint invocation
      *
      * @param ReflectionMethod|ParsedReflectionMethod $method Method reflection
      */

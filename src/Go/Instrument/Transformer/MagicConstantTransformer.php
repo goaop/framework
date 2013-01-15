@@ -58,14 +58,14 @@ class MagicConstantTransformer implements SourceTransformer
             return;
         }
 
-        $hasReflecitionFilename = strpos($metadata->source, 'getFileName') !== false;
-        $notHasMagicConsts      = (strpos($metadata->source, '__DIR__') === false) && (strpos($metadata->source, '__FILE__') === false);
+        $hasReflectionFilename = strpos($metadata->source, 'getFileName') !== false;
+        $notHasMagicConsts     = (strpos($metadata->source, '__DIR__') === false) && (strpos($metadata->source, '__FILE__') === false);
 
-        if ($notHasMagicConsts && !$hasReflecitionFilename) {
+        if ($notHasMagicConsts && !$hasReflectionFilename) {
             return;
         }
 
-        // Resolve magic constanst
+        // Resolve magic constants
         if (!$notHasMagicConsts) {
             $originalUri = $metadata->getResourceUri();
 
@@ -78,7 +78,7 @@ class MagicConstantTransformer implements SourceTransformer
             );
         }
 
-        if ($hasReflecitionFilename) {
+        if ($hasReflectionFilename) {
             // TODO: need to make more reliable solution
             $metadata->source = preg_replace(
                 '/\$([\w\$\-\>\:\(\)]*?getFileName\(\))/S',

@@ -47,7 +47,7 @@ abstract class BaseAnnotation
     /**
      * Error handler for unknown property mutator in Annotation class.
      *
-     * @param string $name Unkown property name
+     * @param string $name Unknown property name
      * @param mixed $value Property value
      */
     public function __set($name, $value)
