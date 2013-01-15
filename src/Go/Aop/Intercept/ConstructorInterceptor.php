@@ -35,7 +35,7 @@ interface ConstructorInterceptor extends Interceptor
 
     /**
      * Implement this method to perform extra treatments before and
-     * after the consrution of a new object. Polite implementations
+     * after the construction of a new object. Polite implementations
      * would certainly like to invoke {@link Joinpoint::proceed()}.
      *
      * @param ConstructorInvocation $invocation the construction joinpoint
