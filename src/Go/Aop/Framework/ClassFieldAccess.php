@@ -105,7 +105,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Gets the field being accessed.
      *
-     * <p>This method is a frienly implementation of the
+     * <p>This method is a friendly implementation of the
      * {@link Joinpoint::getStaticPart()} method (same result).
      *
      * @return ReflectionProperty the field being accessed.

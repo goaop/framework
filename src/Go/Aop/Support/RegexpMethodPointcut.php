@@ -36,7 +36,7 @@ class RegexpMethodPointcut extends StaticMethodMatcherPointcut
     private $patterns = array();
 
     /**
-     * Regaular expressions <b>not</b> to match
+     * Regular expressions <b>not</b> to match
      *
      * @var array
      */

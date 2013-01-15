@@ -246,7 +246,7 @@ class AbstractChildCreator
     /**
      * Returns list of string representation of parameters
      *
-     * @param array|ReflectionParamter[]|ParsedReflectionParameter[] $parameters List of parameters
+     * @param array|ReflectionParameter[]|ParsedReflectionParameter[] $parameters List of parameters
      *
      * @return array
      */

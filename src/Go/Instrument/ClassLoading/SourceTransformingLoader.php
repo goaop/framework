@@ -91,7 +91,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
     }
 
     /**
-     * {@inheridoc}
+     * {@inheritdoc}
      */
     public function filter($in, $out, &$consumed, $closing)
     {
