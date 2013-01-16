@@ -79,7 +79,7 @@ class AspectLoader
         if (!empty($this->loaders[AspectLoaderExtension::TARGET_PROPERTY])) {
             $refProperties = $refAspect->getProperties();
             foreach ($refProperties as $refProperty) {
-                $this->loadFrom($aspect, $refProperty, $this->loaders[AspectLoaderExtension::TARGET_METHOD]);
+                $this->loadFrom($aspect, $refProperty, $this->loaders[AspectLoaderExtension::TARGET_PROPERTY]);
             }
         }
     }

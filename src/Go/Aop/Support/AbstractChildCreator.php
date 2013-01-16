@@ -63,6 +63,13 @@ class AbstractChildCreator
     protected $interfaces = array();
 
     /**
+     * List of additional traits for using
+     *
+     * @var array
+     */
+    protected $traits = array();
+
+    /**
      * Source code for properties
      *
      * @var array Name of property => source code for it
@@ -164,6 +171,22 @@ class AbstractChildCreator
     }
 
     /**
+     * Add a trait for child
+     *
+     * @param string|ReflectionClass|ParsedReflectionClass $trait
+     */
+    public function addTrait($trait)
+    {
+        $traitName = $trait;
+        if ($trait instanceof ReflectionClass || $trait instanceof ParsedReflectionClass) {
+            if (!$trait->isTrait()) {
+                throw new \InvalidArgumentException("Trait expected to add");
+            }
+            $traitName = $trait->name;
+        }
+        $this->traits[] = $traitName;
+    }
+    /**
      * Creates a property
      *
      * @param int $propFlags See ReflectionProperty modifiers
@@ -193,12 +216,13 @@ class AbstractChildCreator
         ksort($this->methodsCode);
         ksort($this->propertiesCode);
         $prefix = join(' ', Reflection::getModifierNames($this->class->getModifiers()));
-        $code = sprintf("%s\n%sclass %s extends %s%s\n{\n%s\n%s\n}",
+        $code = sprintf("%s\n%sclass %s extends %s%s\n{\n%s\n\n%s\n%s\n}",
             $this->class->getDocComment(),
             $prefix ? "$prefix " : '',
             $this->name,
             $this->parentClassName,
             $this->interfaces ? ' implements ' . join(', ', $this->interfaces) : '',
+            $this->traits ? $this->indent('use ' . join(', ', $this->traits) .';') : '',
             $this->indent(join("\n", $this->propertiesCode)),
             $this->indent(join("\n", $this->methodsCode))
         );

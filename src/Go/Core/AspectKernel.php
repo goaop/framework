@@ -111,6 +111,7 @@ abstract class AspectKernel
 
         // Register general aspect loader extension
         $aspectLoader->registerLoaderExtension(new GeneralAspectLoaderExtension());
+        $aspectLoader->registerLoaderExtension(new IntroductionAspectExtension());
 
         // Register kernel resources in the container
         $this->addKernelResourcesToContainer($container);

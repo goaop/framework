@@ -37,6 +37,11 @@ class AspectContainer
     const STATIC_METHOD_PREFIX = "static";
 
     /**
+     * Trait introduction prefix
+     */
+    const INTRODUCTION_TRAIT_PREFIX = "introduction";
+
+    /**
      * Suffix, that will be added to all proxied class names
      */
     const AOP_PROXIED_SUFFIX = '__AopProxied';
@@ -276,6 +281,15 @@ class AspectContainer
                     );
                 }
             }
+
+            if ($advisor instanceof Aop\IntroductionAdvisor) {
+                if ($advisor->getClassFilter()->matches($class)) {
+                    $classAdvices = array_merge_recursive(
+                        $classAdvices,
+                        $this->getIntroductionFromAdvisor($originalClass, $advisor)
+                    );
+                }
+            }
         }
         return $classAdvices;
     }
@@ -320,4 +334,21 @@ class AspectContainer
         return $classAdvices;
     }
 
+    /**
+     * Returns list of introduction advices from advisor
+     *
+     * @param ReflectionClass|ParsedReflectionClass|string $class Class to inject advices
+     * @param Aop\IntroductionAdvisor $advisor Advisor for class
+     *
+     * @return array
+     */
+    private function getIntroductionFromAdvisor($class, $advisor)
+    {
+        /** @var $advice Aop\IntroductionInfo */
+        $advice = $advisor->getAdvice();
+
+        return array(
+            self::INTRODUCTION_TRAIT_PREFIX.':'.join(':', $advice->getInterfaces()) => $advice
+        );
+    }
 }

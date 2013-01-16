@@ -17,6 +17,7 @@ use UnexpectedValueException;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Aop\Advice;
+use Go\Aop\IntroductionInfo;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\ReflectionMethodInvocation;
@@ -64,7 +65,7 @@ class AopChildFactory extends AbstractChildCreator
 
             foreach ($advices as $name => $value) {
 
-                list ($type, $pointName) = explode(':', $name);
+                list ($type, $pointName) = explode(':', $name, 2);
                 switch ($type) {
                     case AspectContainer::METHOD_PREFIX:
                     case AspectContainer::STATIC_METHOD_PREFIX:
@@ -75,8 +76,18 @@ class AopChildFactory extends AbstractChildCreator
                         $aopChild->interceptProperty($parent->getProperty($pointName));
                         break;
 
+                    case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
+                        /** @var $value IntroductionInfo */
+                        foreach ($value->getInterfaces() as $interface) {
+                            $aopChild->addInterface($interface);
+                        }
+                        foreach ($value->getTraits() as $trait) {
+                            $aopChild->addTrait($trait);
+                        }
+                        break;
+
                     default:
-                        throw new \InvalidArgumentException("Unsupported point $pointName");
+                        throw new \InvalidArgumentException("Unsupported point `$type`");
                 }
             }
         }
@@ -144,6 +155,9 @@ class AopChildFactory extends AbstractChildCreator
                 case AspectContainer::PROPERTY_PREFIX:
                     $joinpoint = new ClassFieldAccess($className, $joinPointName, $advices);
                     break;
+
+                case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
+                    continue;
 
                 default:
                     throw new UnexpectedValueException("Invalid joinpoint `{$joinPointType}` type. Not yet supported.");
