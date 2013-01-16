@@ -13,6 +13,12 @@ namespace Go\Lang\Annotation;
  *
  * @Annotation
  * @Target("PROPERTY")
+ *
+ * @Attributes({
+ *   @Attribute("value", type = "string", required=true),
+ *   @Attribute("interface", type = "string", required=true),
+ *   @Attribute("defaultImpl", type = "string", required=true)
+ * })
  */
 class DeclareParents extends BaseAnnotation
 {
