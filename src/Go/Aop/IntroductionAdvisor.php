@@ -16,7 +16,7 @@ namespace Go\Aop;
  *
  * Introduction is the implementation of additional interfaces (not implemented by a target) via AOP advice.
  */
-interface IntroductionAdvisor extends Advisor, IntroductionInfo
+interface IntroductionAdvisor extends Advisor
 {
 
     /**
