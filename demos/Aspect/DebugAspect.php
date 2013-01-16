@@ -15,6 +15,7 @@ use Go\Lang\Annotation\After;
 use Go\Lang\Annotation\Before;
 use Go\Lang\Annotation\Around;
 use Go\Lang\Annotation\Pointcut;
+use Go\Lang\Annotation\DeclareParents;
 
 /**
  * Debug aspect
@@ -27,6 +28,13 @@ class DebugAspect implements Aspect
      * @var string
      */
     protected $message = '';
+
+    /**
+     * @DeclareParents(value="Example", interface="Serializable", defaultImpl="Aspect\Introduce\SerializableImpl")
+     *
+     * @var null
+     */
+    protected $introduction = null;
 
     /**
      * Aspect constructor
