@@ -31,6 +31,13 @@ DemoAspectKernel::getInstance()->init(array(
 AnnotationRegistry::registerFile('./Annotation/Cacheable.php');
 
 $class = new Example('test');
+if ($class instanceof Serializable) {
+    echo "Yeah, Example is serializable!", "<br>", PHP_EOL;
+    $ref = new ReflectionClass('Example');
+    var_dump($ref->getTraitNames(), $ref->getInterfaceNames());
+} else {
+    echo "Ooops, Example isn't serializable!", "<br>", PHP_EOL;
+}
 $class->publicHello();
 for ($i=10; $i--; ) {
     $class->cacheMe(1);
