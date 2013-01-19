@@ -28,19 +28,30 @@ use Go\Aop\Intercept\Joinpoint;
  */
 abstract class AbstractJoinpoint implements Joinpoint
 {
-    /** @var array|Advice[] */
+    /**
+     * List of advices
+     *
+     * @var array|Advice[]
+     */
     protected $advices = array();
+
+    /**
+     * Name of the invocation class
+     *
+     * @var string
+     */
+    protected $className = '';
 
     /**
      * Initializes list of advices for current joinpoint
      *
-     * @param array $advices
-     *
-     * @return AbstractJoinpoint
+     * @param string $className Name of the class
+     * @param array $advices List of advices
      */
-    protected function __construct(array $advices)
+    protected function __construct($className, array $advices)
     {
-        $this->advices = static::sortAdvices($advices);
+        $this->className = $className;
+        $this->advices   = static::sortAdvices($advices);
     }
 
     /**

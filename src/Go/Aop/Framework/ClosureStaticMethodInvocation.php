@@ -34,10 +34,10 @@ class ClosureStaticMethodInvocation extends AbstractMethodInvocation
     /**
      * {@inheritdoc}
      */
-    public function __construct($classNameOrObject, $methodName, array $advices)
+    public function __construct($className, $methodName, array $advices)
     {
-        parent::__construct($classNameOrObject, $methodName, $advices);
-        $this->closureToCall = $this->getStaticInvoker($this->parentClass, $methodName);
+        parent::__construct($className, $methodName, $advices);
+        $this->closureToCall = $this->getStaticInvoker($this->className, $methodName);
     }
 
     /**
@@ -68,15 +68,15 @@ class ClosureStaticMethodInvocation extends AbstractMethodInvocation
     /**
      * Returns static method invoker
      *
-     * @param string $parent Parent class name to forward request
+     * @param string $className Class name to forward request
      * @param string $method Method name to call
      *
-     * @return callable
+     * @return \Closure
      */
-    protected static function getStaticInvoker($parent, $method)
+    protected static function getStaticInvoker($className, $method)
     {
-        return function (array $args) use ($parent, $method) {
-            return forward_static_call_array(array($parent, $method), $args);
+        return function (array $args) use ($className, $method) {
+            return forward_static_call_array(array($className, $method), $args);
         };
     }
 }

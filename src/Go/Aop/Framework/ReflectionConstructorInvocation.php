@@ -15,7 +15,7 @@ use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\ConstructorInterceptor;
 
 /**
- * Abstract constructor invocation implementation
+ * Reflection constructor invocation implementation
  *
  * @see Go\Aop\Intercept\ConstructorInvocation
  * @package go
@@ -39,13 +39,13 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Constructor for constructor invocation :)
      *
-     * @param string|object $classNameOrObject Class name or object instance
+     * @param string $className Class name
      * @param $advices array List of advices for this invocation
      */
-    public function __construct($classNameOrObject, array $advices)
+    public function __construct($className, array $advices)
     {
-        $this->class = new ReflectionClass($classNameOrObject);
-        parent::__construct($advices);
+        $this->class = new ReflectionClass($className);
+        parent::__construct($className, $advices);
     }
 
     /**

@@ -32,22 +32,6 @@ class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
     private $previousInstance = null;
 
     /**
-     * Shortcut for ReflectionMethod->name
-     *
-     * @var string
-     */
-    private $methodName = '';
-
-    /**
-     * {@inheritdoc}
-     */
-    public function __construct($classNameOrObject, $methodName, array $advices)
-    {
-        parent::__construct($classNameOrObject, $methodName, $advices);
-        $this->methodName    = $methodName;
-    }
-
-    /**
      * Invokes original method and return result from it
      *
      * @return mixed
@@ -67,7 +51,7 @@ class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
 
         // Rebind the closure if instance was changed since last time
         if ($this->previousInstance !== $this->instance) {
-            $this->closureToCall    = $this->closureToCall->bindTo($this->instance, $this->parentClass);
+            $this->closureToCall    = $this->closureToCall->bindTo($this->instance, $this->className);
             $this->previousInstance = $this->instance;
         }
 
