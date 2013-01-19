@@ -30,13 +30,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     );
 
     /**
-     * Name of the class
-     *
-     * @var object|string
-     */
-    protected $classOrObject = null;
-
-    /**
      * Name of the field
      *
      * @var string
@@ -81,15 +74,14 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Constructor for field access
      *
-     * @param string|object $classNameOrObject Class name or object instance
+     * @param string $className Class name
      * @param string $fieldName Field name
      * @param $advices array List of advices for this invocation
      */
-    public function __construct($classNameOrObject, $fieldName, array $advices)
+    public function __construct($className, $fieldName, array $advices)
     {
-        $this->classOrObject = $classNameOrObject;
-        $this->fieldName     = $fieldName;
-        parent::__construct($advices);
+        parent::__construct($className, $advices);
+        $this->fieldName = $fieldName;
     }
 
     /**
@@ -113,7 +105,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function getField()
     {
         if (!$this->reflectionProperty) {
-            $this->reflectionProperty = new ReflectionProperty($this->classOrObject, $this->fieldName);
+            $this->reflectionProperty = new ReflectionProperty($this->className, $this->fieldName);
             // Give an access to protected field
             if ($this->reflectionProperty->isProtected()) {
                 $this->reflectionProperty->setAccessible(true);

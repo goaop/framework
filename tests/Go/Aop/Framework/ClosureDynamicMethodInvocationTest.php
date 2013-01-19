@@ -36,7 +36,7 @@ class ClosureDynamicMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testDynamicMethodInvocation($methodName, $expectedResult)
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new ClosureDynamicMethodInvocation(get_class($child), $methodName, array());
+        $invocation = new ClosureDynamicMethodInvocation(self::FIRST_CLASS_NAME, $methodName, array());
 
         $result = $invocation($child);
         $this->assertEquals($expectedResult, $result);
@@ -45,7 +45,7 @@ class ClosureDynamicMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testValueChangedByReference()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new ClosureDynamicMethodInvocation(get_class($child), 'passByReference', array());
+        $invocation = new ClosureDynamicMethodInvocation(self::FIRST_CLASS_NAME, 'passByReference', array());
 
         $value  = 'test';
         $result = $invocation($child, array(&$value));
@@ -56,7 +56,7 @@ class ClosureDynamicMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testRecursionWorks()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('recursion'));
-        $invocation = new ClosureDynamicMethodInvocation(get_class($child), 'recursion', array());
+        $invocation = new ClosureDynamicMethodInvocation(self::FIRST_CLASS_NAME, 'recursion', array());
 
         $child->expects($this->exactly(5))->method('recursion')->will($this->returnCallback(
             function ($value, $level) use ($child, $invocation) {
@@ -76,7 +76,7 @@ class ClosureDynamicMethodInvocationTest extends \PHPUnit_Framework_TestCase
             $value = 'ok';
         });
 
-        $invocation = new ClosureDynamicMethodInvocation(get_class($child), 'publicMethod', array($advice));
+        $invocation = new ClosureDynamicMethodInvocation(self::FIRST_CLASS_NAME, 'publicMethod', array($advice));
 
         $result = $invocation($child, array());
         $this->assertEquals('ok', $value);
