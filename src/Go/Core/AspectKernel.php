@@ -98,8 +98,6 @@ abstract class AspectKernel
 
         // Load application configurator
         $sourceLoaderFilter->load($this->options['appLoader']);
-        // Go! loader should be first to prevent errors with class loading
-        $this->ensureLibraryAutoloaderIsFirst();
 
         // Register all services in the container
         $aspectLoader = new AspectLoader($container);
@@ -264,29 +262,5 @@ abstract class AspectKernel
 
         $container->addResource($trace[1]['file']);
         $container->addResource($refClass->getFileName());
-    }
-
-    /**
-     * Ensures that autoloader of Go! library is first in the stack of autoloaders
-     *
-     * This fix problems with autoloaders that was prepended, for example, composer.
-     *
-     * @return void
-     */
-    private function ensureLibraryAutoloaderIsFirst()
-    {
-        $loaders    = spl_autoload_functions();
-        $newLoaders = array();
-        foreach ($loaders as $loader) {
-            spl_autoload_unregister($loader);
-            if (is_array($loader) && ($loader[0] instanceof UniversalClassLoader)) {
-                array_unshift($newLoaders, $loader);
-            } else {
-                array_push($newLoaders, $loader);
-            }
-        }
-        foreach ($newLoaders as $loader) {
-            spl_autoload_register($loader);
-        }
     }
 }
