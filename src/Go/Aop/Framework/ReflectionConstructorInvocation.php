@@ -58,13 +58,14 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      */
     final public function proceed()
     {
-        /** @var $currentInterceptor ConstructorInterceptor */
-        $currentInterceptor = current($this->advices);
-        if (!$currentInterceptor) {
-            return $this->constructOriginal();
+        if (isset($this->advices[$this->current])) {
+            /** @var $currentInterceptor ConstructorInterceptor */
+            $currentInterceptor = $this->advices[$this->current];
+            $this->current++;
+            return $currentInterceptor->construct($this);
         }
-        next($this->advices);
-        return $currentInterceptor->construct($this);
+
+        return $this->constructOriginal();
     }
 
 
@@ -108,10 +109,10 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      * interceptors are installed.
      * @return object
      */
-     public function getStaticPart()
-     {
-         return $this->getConstructor();
-     }
+    public function getStaticPart()
+    {
+        return $this->getConstructor();
+    }
 
     /**
      * Invokes current constructor invocation with all interceptors
@@ -120,8 +121,9 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      */
     final public function __invoke()
     {
+        // TODO: add support for recursion in constructors
+        $this->current   = 0;
         $this->arguments = func_get_args();
-        reset($this->advices);
         return $this->proceed();
     }
 
