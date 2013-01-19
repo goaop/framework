@@ -105,14 +105,13 @@ class AopChildFactory extends AbstractChildCreator
      */
     public static function injectJoinpoints($aopChildClass, array $advices = array())
     {
-        $originalClass = $aopChildClass;
         if (!$advices) {
             $container = AspectKernel::getInstance()->getContainer();
-            $advices   = $container->getAdvicesForClass($originalClass);
+            $advices   = $container->getAdvicesForClass($aopChildClass);
         }
 
-        $joinPoints    = static::wrapWithJoinPoints($advices, $aopChildClass);
         $aopChildClass = new ReflectionClass($aopChildClass);
+        $joinPoints    = static::wrapWithJoinPoints($advices, $aopChildClass->getParentClass()->name);
 
         /** @var $prop Property */
         $prop = $aopChildClass->getProperty('__joinPoints');

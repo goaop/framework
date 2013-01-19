@@ -50,7 +50,7 @@ class ClosureStaticMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticSelfNotOverridden($methodName, $expectedResult)
     {
         $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array($methodName));
-        $invocation = new ClosureStaticMethodInvocation($childClass, $methodName, array());
+        $invocation = new ClosureStaticMethodInvocation(self::FIRST_CLASS_NAME, $methodName, array());
 
         $result = $invocation($childClass);
         $this->assertEquals($expectedResult, $result);
@@ -64,7 +64,7 @@ class ClosureStaticMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticLsbIsWorking($methodName)
     {
         $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array($methodName));
-        $invocation = new ClosureStaticMethodInvocation($childClass, $methodName, array());
+        $invocation = new ClosureStaticMethodInvocation(self::FIRST_CLASS_NAME, $methodName, array());
 
         $result = $invocation($childClass);
         $this->assertEquals($childClass, $result);
@@ -73,7 +73,7 @@ class ClosureStaticMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testValueChangedByReference()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new ClosureStaticMethodInvocation(get_class($child), 'staticPassByReference', array());
+        $invocation = new ClosureStaticMethodInvocation(self::FIRST_CLASS_NAME, 'staticPassByReference', array());
 
         $value  = 'test';
         $result = $invocation($child, array(&$value));
@@ -84,7 +84,7 @@ class ClosureStaticMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testRecursionWorks()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('staticLsbRecursion'));
-        $invocation = new ClosureStaticMethodInvocation(get_class($child), 'staticLsbRecursion', array());
+        $invocation = new ClosureStaticMethodInvocation(self::FIRST_CLASS_NAME, 'staticLsbRecursion', array());
 
         $child->staticExpects($this->exactly(5))->method('staticLsbRecursion')->will($this->returnCallback(
             function ($value, $level) use ($child, $invocation) {
@@ -105,7 +105,7 @@ class ClosureStaticMethodInvocationTest extends \PHPUnit_Framework_TestCase
             $value = 'ok';
         });
 
-        $invocation = new ClosureStaticMethodInvocation(get_class($child), 'staticSelfPublic', array($advice));
+        $invocation = new ClosureStaticMethodInvocation(self::FIRST_CLASS_NAME, 'staticSelfPublic', array($advice));
 
         $result = $invocation($child, array());
         $this->assertEquals('ok', $value);
@@ -115,7 +115,7 @@ class ClosureStaticMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testInvocationWithDynamicArguments()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new ClosureStaticMethodInvocation(get_class($child), 'staticVariableArgsTest', array());
+        $invocation = new ClosureStaticMethodInvocation(self::FIRST_CLASS_NAME, 'staticVariableArgsTest', array());
 
         $args     = array();
         $expected = '';

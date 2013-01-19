@@ -15,7 +15,7 @@ use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\ConstructorInterceptor;
 
 /**
- * Abstract constructor invocation implementation
+ * Reflection constructor invocation implementation
  *
  * @see Go\Aop\Intercept\ConstructorInvocation
  * @package go
@@ -39,13 +39,13 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Constructor for constructor invocation :)
      *
-     * @param string|object $classNameOrObject Class name or object instance
+     * @param string $className Class name
      * @param $advices array List of advices for this invocation
      */
-    public function __construct($classNameOrObject, array $advices)
+    public function __construct($className, array $advices)
     {
-        $this->class = new ReflectionClass($classNameOrObject);
-        parent::__construct($advices);
+        $this->class = new ReflectionClass($className);
+        parent::__construct($className, $advices);
     }
 
     /**
@@ -58,13 +58,14 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      */
     final public function proceed()
     {
-        /** @var $currentInterceptor ConstructorInterceptor */
-        $currentInterceptor = current($this->advices);
-        if (!$currentInterceptor) {
-            return $this->constructOriginal();
+        if (isset($this->advices[$this->current])) {
+            /** @var $currentInterceptor ConstructorInterceptor */
+            $currentInterceptor = $this->advices[$this->current];
+            $this->current++;
+            return $currentInterceptor->construct($this);
         }
-        next($this->advices);
-        return $currentInterceptor->construct($this);
+
+        return $this->constructOriginal();
     }
 
 
@@ -108,10 +109,10 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      * interceptors are installed.
      * @return object
      */
-     public function getStaticPart()
-     {
-         return $this->getConstructor();
-     }
+    public function getStaticPart()
+    {
+        return $this->getConstructor();
+    }
 
     /**
      * Invokes current constructor invocation with all interceptors
@@ -120,8 +121,9 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      */
     final public function __invoke()
     {
+        // TODO: add support for recursion in constructors
+        $this->current   = 0;
         $this->arguments = func_get_args();
-        reset($this->advices);
         return $this->proceed();
     }
 

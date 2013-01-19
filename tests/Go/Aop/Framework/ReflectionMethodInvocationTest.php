@@ -26,7 +26,7 @@ class ReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testDynamicMethodInvocation($methodName, $expectedResult)
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new ReflectionMethodInvocation(get_class($child), $methodName, array());
+        $invocation = new ReflectionMethodInvocation(self::FIRST_CLASS_NAME, $methodName, array());
 
         $result = $invocation($child);
         $this->assertEquals($expectedResult, $result);
@@ -54,7 +54,7 @@ class ReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticSelfNotOverridden($methodName, $expectedResult)
     {
         $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array($methodName));
-        $invocation = new ReflectionMethodInvocation($childClass, $methodName, array());
+        $invocation = new ReflectionMethodInvocation(self::FIRST_CLASS_NAME, $methodName, array());
 
         $result = $invocation($childClass);
         $this->assertEquals($expectedResult, $result);
@@ -78,7 +78,7 @@ class ReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testValueChangedByReference()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new ReflectionMethodInvocation(get_class($child), 'passByReference', array());
+        $invocation = new ReflectionMethodInvocation(self::FIRST_CLASS_NAME, 'passByReference', array());
 
         $value  = 'test';
         $result = $invocation($child, array(&$value));
@@ -89,7 +89,7 @@ class ReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testRecursionWorks()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('recursion'));
-        $invocation = new ReflectionMethodInvocation(get_class($child), 'recursion', array());
+        $invocation = new ReflectionMethodInvocation(self::FIRST_CLASS_NAME, 'recursion', array());
 
         $child->expects($this->exactly(5))->method('recursion')->will($this->returnCallback(
             function ($value, $level) use ($child, $invocation) {
@@ -109,7 +109,7 @@ class ReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
             $value = 'ok';
         });
 
-        $invocation = new ReflectionMethodInvocation(get_class($child), 'publicMethod', array($advice));
+        $invocation = new ReflectionMethodInvocation(self::FIRST_CLASS_NAME, 'publicMethod', array($advice));
 
         $result = $invocation($child, array());
         $this->assertEquals('ok', $value);
