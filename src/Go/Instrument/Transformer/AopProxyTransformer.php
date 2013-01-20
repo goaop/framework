@@ -37,6 +37,13 @@ class AopProxyTransformer implements SourceTransformer
     protected $includePaths = array();
 
     /**
+     * List of exclude paths to process
+     *
+     * @var array
+     */
+    protected $excludePaths = array();
+
+    /**
      * Constructs AOP Proxy transformer
      *
      * @param Broker $broker Instance of reflection broker to use
@@ -45,6 +52,7 @@ class AopProxyTransformer implements SourceTransformer
     {
         $this->broker       = $broker;
         $this->includePaths = array_map('realpath', $options['includePaths']);
+        $this->excludePaths = array_map('realpath', $options['autoload']);
     }
 
     /**
@@ -68,6 +76,13 @@ class AopProxyTransformer implements SourceTransformer
                 return;
             }
         }
+
+        foreach ($this->excludePaths as $excludePath) {
+            if (strpos($fileName, $excludePath) === 0) {
+                return;
+            }
+        }
+
 
         $parsedSource = $this->broker->processString($metadata->source, $fileName, true);
 
