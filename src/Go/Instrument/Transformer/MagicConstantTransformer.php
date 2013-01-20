@@ -59,23 +59,16 @@ class MagicConstantTransformer implements SourceTransformer
         }
 
         $hasReflectionFilename = strpos($metadata->source, 'getFileName') !== false;
-        $notHasMagicConsts     = (strpos($metadata->source, '__DIR__') === false) && (strpos($metadata->source, '__FILE__') === false);
+        $hasMagicConstants     = (strpos($metadata->source, '__DIR__') !== false) ||
+            (strpos($metadata->source, '__FILE__') !== false);
 
-        if ($notHasMagicConsts && !$hasReflectionFilename) {
+        if (!$hasMagicConstants && !$hasReflectionFilename) {
             return;
         }
 
         // Resolve magic constants
-        if (!$notHasMagicConsts) {
-            $originalUri = $metadata->getResourceUri();
-
-            $metadata->source = strtr(
-                $metadata->source,
-                array(
-                    '__DIR__'  => "'" . dirname($originalUri) . "'",
-                    '__FILE__' => "'" . $originalUri . "'",
-                )
-            );
+        if ($hasMagicConstants) {
+            $this->replaceMagicConstants($metadata);
         }
 
         if ($hasReflectionFilename) {
@@ -98,5 +91,30 @@ class MagicConstantTransformer implements SourceTransformer
     public static function resolveFileName($fileName)
     {
         return str_replace(self::$rewriteToPath, self::$rootPath, $fileName);
+    }
+
+    /**
+     * Replace only magic constants in the code
+     *
+     * @param StreamMetaData $metadata
+     */
+    private function replaceMagicConstants(StreamMetaData $metadata)
+    {
+        $originalUri = $metadata->getResourceUri();
+        $replacement = array(
+            T_FILE => $originalUri,
+            T_DIR  => dirname($originalUri)
+        );
+        $tokenStream = token_get_all($metadata->source);
+
+        $transformedSource = '';
+        foreach ($tokenStream as $token) {
+            list ($token, $value) = (array) $token + array(1 => $token);
+            if (isset($replacement[$token])) {
+                $value = "'" . $replacement[$token] . "'";
+            }
+            $transformedSource .= $value;
+        }
+        $metadata->source = $transformedSource;
     }
 }

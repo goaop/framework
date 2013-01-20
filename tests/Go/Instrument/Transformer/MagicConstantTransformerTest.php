@@ -56,6 +56,14 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($expected, $this->metadata->source);
     }
 
+    public function testTransformerDoesNotReplaceStringWithConst()
+    {
+        $expected = '<?php echo "__FILE__"; ?>';
+        $this->metadata->source = $expected;
+        $this->transformer->transform($this->metadata);
+        $this->assertEquals($expected, $this->metadata->source);
+    }
+
     public function testTransformerWrapsReflectionFileName()
     {
         $this->metadata->source = '<?php $class = new ReflectionClass("stdClass"); echo $class->getFileName(); ?>';
