@@ -6,18 +6,18 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop\Support;
+namespace Go\Proxy;
 
 use Reflection;
 use ReflectionClass;
-use ReflectionParameter;
-use ReflectionMethod;
+use ReflectionParameter as Parameter;
+use ReflectionMethod as Method;
 
-use TokenReflection\ReflectionClass as ParsedReflectionClass;
-use TokenReflection\ReflectionParameter as ParsedReflectionParameter;
-use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
+use TokenReflection\ReflectionClass as ParsedClass;
+use TokenReflection\ReflectionParameter as ParsedParameter;
+use TokenReflection\ReflectionMethod as ParsedMethod;
 
-class AbstractChildCreator
+abstract class AbstractProxy
 {
 
     /**
@@ -30,7 +30,7 @@ class AbstractChildCreator
     /**
      * Parent class reflection
      *
-     * @var null|ReflectionClass|ParsedReflectionClass
+     * @var null|ReflectionClass|ParsedClass
      */
     protected $class = null;
 
@@ -86,7 +86,7 @@ class AbstractChildCreator
     /**
      * Constructs abstract child class from Reflection
      *
-     * @param ReflectionClass|ParsedReflectionClass $parentClass Reflection
+     * @param ReflectionClass|ParsedClass $parentClass Reflection
      * @param string $thisName Name of the child class
      * @param array $advices List of advices
      *
@@ -94,7 +94,7 @@ class AbstractChildCreator
      */
     public function __construct($parentClass, $thisName, array $advices = array())
     {
-        if (!$parentClass instanceof ReflectionClass && !$parentClass instanceof ParsedReflectionClass) {
+        if (!$parentClass instanceof ReflectionClass && !$parentClass instanceof ParsedClass) {
             throw new \InvalidArgumentException("Invalid argument for class");
         }
         $this->advices = $advices;
@@ -109,7 +109,7 @@ class AbstractChildCreator
      *
      * @param string $newParentName New class name
      *
-     * @return AbstractChildCreator
+     * @return AbstractProxy
      */
     public function setParentName($newParentName)
     {
@@ -123,7 +123,7 @@ class AbstractChildCreator
      * @param string $methodName Method name to override
      * @param string $body New body for method
      *
-     * @return AbstractChildCreator
+     * @return AbstractProxy
      */
     public function override($methodName, $body)
     {
@@ -139,7 +139,7 @@ class AbstractChildCreator
      * @param string $body Body of method
      * @param string $parameters Definition of parameters
      *
-     * @return AbstractChildCreator
+     * @return AbstractProxy
      */
     public function setMethod($methodFlags, $methodName, $body, $parameters)
     {
@@ -156,12 +156,14 @@ class AbstractChildCreator
     /**
      * Add an interface for child
      *
-     * @param string|ReflectionClass|ParsedReflectionClass $interface
+     * @param string|ReflectionClass|ParsedClass $interface
+     *
+     * @throws \InvalidArgumentException If object is not an interface
      */
     public function addInterface($interface)
     {
         $interfaceName = $interface;
-        if ($interface instanceof ReflectionClass || $interface instanceof ParsedReflectionClass) {
+        if ($interface instanceof ReflectionClass || $interface instanceof ParsedClass) {
             if (!$interface->isInterface()) {
                 throw new \InvalidArgumentException("Interface expected to add");
             }
@@ -173,12 +175,14 @@ class AbstractChildCreator
     /**
      * Add a trait for child
      *
-     * @param string|ReflectionClass|ParsedReflectionClass $trait
+     * @param string|ReflectionClass|ParsedClass $trait
+     *
+     * @throws \InvalidArgumentException If object is not a trait
      */
     public function addTrait($trait)
     {
         $traitName = $trait;
-        if ($trait instanceof ReflectionClass || $trait instanceof ParsedReflectionClass) {
+        if ($trait instanceof ReflectionClass || $trait instanceof ParsedClass) {
             if (!$trait->isTrait()) {
                 throw new \InvalidArgumentException("Trait expected to add");
             }
@@ -193,7 +197,7 @@ class AbstractChildCreator
      * @param string $propName Name of the property
      * @param null|string $defaultText Default value, should be string text!
      *
-     * @return AbstractChildCreator
+     * @return AbstractProxy
      */
     public function setProperty($propFlags, $propName, $defaultText = null)
     {
@@ -211,30 +215,13 @@ class AbstractChildCreator
      *
      * @return string
      */
-    public function __toString()
-    {
-        ksort($this->methodsCode);
-        ksort($this->propertiesCode);
-        $prefix = join(' ', Reflection::getModifierNames($this->class->getModifiers()));
-        $code = sprintf("%s\n%sclass %s extends %s%s\n{\n%s\n\n%s\n%s\n}",
-            $this->class->getDocComment(),
-            $prefix ? "$prefix " : '',
-            $this->name,
-            $this->parentClassName,
-            $this->interfaces ? ' implements ' . join(', ', $this->interfaces) : '',
-            $this->traits ? $this->indent('use ' . join(', ', $this->traits) .';') : '',
-            $this->indent(join("\n", $this->propertiesCode)),
-            $this->indent(join("\n", $this->methodsCode))
-        );
-        return $code;
-    }
+    abstract public function __toString();
 
     /**
      * Creates a method code from Reflection
      *
-     * @param ReflectionMethod|ParsedReflectionMethod $method Reflection for method
+     * @param Method|ParsedMethod $method Reflection for method
      * @param string $body Body of method
-     * @param int $indent Spaces to indent
      *
      * @return string
      */
@@ -255,7 +242,7 @@ class AbstractChildCreator
      * Indent block of code
      *
      * @param string $text Non-indented text
-     * @param integer $spaces Number of spaces for indentation
+     *
      * @return string Indented text
      */
     protected function indent($text)
@@ -270,7 +257,7 @@ class AbstractChildCreator
     /**
      * Returns list of string representation of parameters
      *
-     * @param array|ReflectionParameter[]|ParsedReflectionParameter[] $parameters List of parameters
+     * @param array|Parameter[]|ParsedParameter[] $parameters List of parameters
      *
      * @return array
      */
@@ -286,7 +273,7 @@ class AbstractChildCreator
     /**
      * Return string representation of parameter
      *
-     * @param ReflectionParameter|ParsedReflectionParameter $parameter Reflection parameter
+     * @param Parameter|ParsedParameter $parameter Reflection parameter
      *
      * @return string
      */
@@ -301,7 +288,7 @@ class AbstractChildCreator
         $defaultValue = null;
         $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();
         if ($isDefaultValueAvailable) {
-            if ($parameter instanceof ParsedReflectionParameter) {
+            if ($parameter instanceof ParsedParameter) {
                 $defaultValue = $parameter->getDefaultValueDefinition();
             } else {
                 $defaultValue = var_export($parameter->getDefaultValue());
