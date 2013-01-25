@@ -49,7 +49,7 @@ class DebugAspect implements Aspect
     /**
      * Pointcut for example class
      *
-     * @Pointcut("execution(public Example->public*(*))")
+     * @Pointcut("execution(public *->*(*))")
      */
     protected function examplePublicMethods() {}
 
