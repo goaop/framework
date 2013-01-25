@@ -6,16 +6,15 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop\Support;
+namespace Go\Proxy;
 
+use Reflection;
 use ReflectionClass;
-use ReflectionMethod;
-use ReflectionParameter;
+use ReflectionMethod as Method;
+use ReflectionParameter as Parameter;
 use ReflectionProperty as Property;
 use UnexpectedValueException;
 
-use Go\Core\AspectContainer;
-use Go\Core\AspectKernel;
 use Go\Aop\Advice;
 use Go\Aop\IntroductionInfo;
 use Go\Aop\Intercept\Joinpoint;
@@ -24,15 +23,18 @@ use Go\Aop\Framework\ReflectionMethodInvocation;
 use Go\Aop\Framework\ClosureStaticMethodInvocation;
 use Go\Aop\Framework\ClosureDynamicMethodInvocation;
 
-use TokenReflection\ReflectionClass as ParsedReflectionClass;
-use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
-use TokenReflection\ReflectionParameter as ParsedReflectionParameter;
-use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
+use Go\Core\AspectContainer;
+use Go\Core\AspectKernel;
+
+use TokenReflection\ReflectionClass as ParsedClass;
+use TokenReflection\ReflectionMethod as ParsedMethod;
+use TokenReflection\ReflectionParameter as ParsedParameter;
+use TokenReflection\ReflectionProperty as ParsedProperty;
 
 /**
  * AOP Factory that is used to generate child code from joinpoints
  */
-class AopChildFactory extends AbstractChildCreator
+class ClassProxy extends AbstractProxy
 {
 
     /**
@@ -52,14 +54,14 @@ class AopChildFactory extends AbstractChildCreator
     /**
      * Generates an child code by parent class reflection and joinpoints for it
      *
-     * @param ReflectionClass|ParsedReflectionClass $parent Parent class reflection
+     * @param ReflectionClass|ParsedClass $parent Parent class reflection
      * @param array|Advice[] $advices List of advices for
      *
-     * @return AopChildFactory
+     * @return ClassProxy
      */
     public static function generate($parent, array $advices)
     {
-        $aopChild = new static($parent, $parent->getShortName(), $advices);
+        $aopChild = new self($parent, $parent->getShortName(), $advices);
         if (!empty($advices)) {
             $aopChild->addJoinpointsProperty($aopChild);
 
@@ -99,22 +101,23 @@ class AopChildFactory extends AbstractChildCreator
      *
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
      *
-     * @param string $aopChildClass Aop child proxy class
+     * @param string $className Aop child proxy class
+     * @param array|Advice[] $advices List of advices to inject into class
      *
      * @return void
      */
-    public static function injectJoinpoints($aopChildClass, array $advices = array())
+    public static function injectJoinPoints($className, array $advices = array())
     {
         if (!$advices) {
             $container = AspectKernel::getInstance()->getContainer();
-            $advices   = $container->getAdvicesForClass($aopChildClass);
+            $advices   = $container->getAdvicesForClass($className);
         }
 
-        $aopChildClass = new ReflectionClass($aopChildClass);
-        $joinPoints    = static::wrapWithJoinPoints($advices, $aopChildClass->getParentClass()->name);
+        $className  = new ReflectionClass($className);
+        $joinPoints = static::wrapWithJoinPoints($advices, $className->getParentClass()->name);
 
         /** @var $prop Property */
-        $prop = $aopChildClass->getProperty('__joinPoints');
+        $prop = $className->getProperty('__joinPoints');
         $prop->setAccessible(true);
         $prop->setValue($joinPoints);
     }
@@ -125,46 +128,70 @@ class AopChildFactory extends AbstractChildCreator
      * @param array|Advice[] $classAdvices Advices for specific class
      * @param string $className Name of the original class to use
      *
+     * @throws \UnexpectedValueException If joinPoint type is unknown
+     *
+     * @todo Extension should be responsible for wrapping advice with join point.
+     *
      * @return array|Joinpoint[] returns list of joinpoint ready to use
      */
     protected static function wrapWithJoinPoints($classAdvices, $className)
     {
-        $joinpoints = array();
+        $joinPoints = array();
         foreach ($classAdvices as $name => $advices) {
 
-            list ($joinPointType, $joinPointName) = explode(':', $name);
-
-            switch ($joinPointType) {
-                case AspectContainer::METHOD_PREFIX:
-                    if (IS_MODERN_PHP) {
-                        $joinpoint = new ClosureDynamicMethodInvocation($className, $joinPointName, $advices);
-                    } else {
-                        $joinpoint = new ReflectionMethodInvocation($className, $joinPointName, $advices);
-                    }
-                    break;
-
-                case AspectContainer::STATIC_METHOD_PREFIX:
-                    if (IS_MODERN_PHP) {
-                        $joinpoint = new ClosureStaticMethodInvocation($className, $joinPointName, $advices);
-                    } else {
-                        $joinpoint = new ReflectionMethodInvocation($className, $joinPointName, $advices);
-                    }
-                    break;
-
-                case AspectContainer::PROPERTY_PREFIX:
-                    $joinpoint = new ClassFieldAccess($className, $joinPointName, $advices);
-                    break;
-
-                case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
-                    continue;
-
-                default:
-                    throw new UnexpectedValueException("Invalid joinpoint `{$joinPointType}` type. Not yet supported.");
+            $joinPoint = static::wrapSingleJoinPoint($className, $name, $advices);
+            if ($joinPoint) {
+                $joinPoints[$name] = $joinPoint;
             }
-            $joinpoints[$name] = $joinpoint;
 
         }
-        return $joinpoints;
+        return $joinPoints;
+    }
+
+    /**
+     * Wrap advices with single join point
+     *
+     * @param string $className Name of the original class to use
+     * @param string $name Unique joinpoint name
+     * @param array|Advice[] $advices Advices for specific class
+     *
+     * @throws \UnexpectedValueException
+     *
+     * @return array|Joinpoint[] returns list of joinpoint ready to use
+     */
+    protected static function wrapSingleJoinPoint($className, $name, $advices)
+    {
+        list ($joinPointType, $joinPointName) = explode(':', $name);
+        $joinPoint = null;
+        switch ($joinPointType) {
+            case AspectContainer::METHOD_PREFIX:
+                if (IS_MODERN_PHP) {
+                    $joinPoint = new ClosureDynamicMethodInvocation($className, $joinPointName, $advices);
+                } else {
+                    $joinPoint = new ReflectionMethodInvocation($className, $joinPointName, $advices);
+                }
+                break;
+
+            case AspectContainer::STATIC_METHOD_PREFIX:
+                if (IS_MODERN_PHP) {
+                    $joinPoint = new ClosureStaticMethodInvocation($className, $joinPointName, $advices);
+                } else {
+                    $joinPoint = new ReflectionMethodInvocation($className, $joinPointName, $advices);
+                }
+                break;
+
+            case AspectContainer::PROPERTY_PREFIX:
+                $joinPoint = new ClassFieldAccess($className, $joinPointName, $advices);
+                break;
+
+            case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
+                // Nothing to create here
+                break;
+
+            default:
+                throw new UnexpectedValueException("Invalid joinpoint `{$joinPointType}` type. Not yet supported.");
+        }
+        return $joinPoint;
     }
 
     /**
@@ -184,7 +211,7 @@ class AopChildFactory extends AbstractChildCreator
     /**
      * Override parent method with joinpoint invocation
      *
-     * @param ReflectionMethod|ParsedReflectionMethod $method Method reflection
+     * @param Method|ParsedMethod $method Method reflection
      */
     protected function overrideMethod($method)
     {
@@ -197,7 +224,7 @@ class AopChildFactory extends AbstractChildCreator
     /**
      * Creates definition for method body
      *
-     * @param ReflectionMethod|ParsedReflectionMethod $method Method reflection
+     * @param Method|ParsedMethod $method Method reflection
      *
      * @return string new method body
      */
@@ -208,7 +235,7 @@ class AopChildFactory extends AbstractChildCreator
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $args = join(', ', array_map(function ($param) {
-            /** @var $param ReflectionParameter|ParsedReflectionParameter */
+            /** @var $param Parameter|ParsedParameter */
             $byReference = $param->isPassedByReference() ? '&' : '';
             return $byReference . '$' . $param->name;
         }, $method->getParameters()));
@@ -221,7 +248,7 @@ class AopChildFactory extends AbstractChildCreator
     /**
      * Makes property intercepted
      *
-     * @param Property|ParsedReflectionProperty $property Reflection of property to intercept
+     * @param Property|ParsedProperty $property Reflection of property to intercept
      */
     protected function interceptProperty($property)
     {
@@ -229,36 +256,54 @@ class AopChildFactory extends AbstractChildCreator
         $this->isFieldsIntercepted = true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function __toString()
     {
         $ctor = $this->class->getConstructor();
         if ($this->isFieldsIntercepted && (!$ctor || !$ctor->isPrivate())) {
             $this->addFieldInterceptorsCode($ctor);
         }
-        $self       = get_called_class();
         $serialized = serialize($this->advices);
-        return parent::__toString()
+
+        ksort($this->methodsCode);
+        ksort($this->propertiesCode);
+        $prefix = join(' ', Reflection::getModifierNames($this->class->getModifiers()));
+
+        $classCode = sprintf("%s\n%sclass %s extends %s%s\n{\n%s\n\n%s\n%s\n}",
+            $this->class->getDocComment(),
+            $prefix ? "$prefix " : '',
+            $this->name,
+            $this->parentClassName,
+            $this->interfaces ? ' implements ' . join(', ', $this->interfaces) : '',
+            $this->traits ? $this->indent('use ' . join(', ', $this->traits) .';') : '',
+            $this->indent(join("\n", $this->propertiesCode)),
+            $this->indent(join("\n", $this->methodsCode))
+        );
+
+        return $classCode
             // Inject advices on call
             . PHP_EOL
-            . '\\' . $self . "::injectJoinpoints('" . $this->class->name . "', unserialize('{$serialized}'));";
+            . '\\' . __CLASS__ . "::injectJoinPoints('" . $this->class->name . "', unserialize('{$serialized}'));";
     }
 
     /**
      * Add code for intercepting properties
      *
-     * @param null|ReflectionMethod|ParsedReflectionMethod $constructor Constructor reflection or null
+     * @param null|Method|ParsedMethod $constructor Constructor reflection or null
      */
     protected function addFieldInterceptorsCode($constructor = null)
     {
         $this->setProperty(Property::IS_PRIVATE, '__properties', 'array()');
-        $this->setMethod(ReflectionMethod::IS_PUBLIC, '__get', $this->getMagicGetterBody(), '$name');
-        $this->setMethod(ReflectionMethod::IS_PUBLIC, '__set', $this->getMagicSetterBody(), '$name, $value');
+        $this->setMethod(Method::IS_PUBLIC, '__get', $this->getMagicGetterBody(), '$name');
+        $this->setMethod(Method::IS_PUBLIC, '__set', $this->getMagicSetterBody(), '$name, $value');
         $this->isFieldsIntercepted = true;
         if ($constructor) {
             $this->override('__construct', $this->getConstructorBody($constructor, true));
         } else {
             $this->setMethod(
-                ReflectionMethod::IS_PUBLIC,
+                Method::IS_PUBLIC,
                 '__construct',
                 $this->getConstructorBody($constructor, false),
                 ''
@@ -315,7 +360,7 @@ SETTER;
     /**
      * Returns constructor code
      *
-     * @param ParsedReflectionMethod|ReflectionMethod|null $constructor Constructor reflection
+     * @param ParsedMethod|Method|null $constructor Constructor reflection
      * @param bool $isCallParent Is there is a need to call parent code
      *
      * @return string

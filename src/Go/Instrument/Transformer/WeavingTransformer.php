@@ -10,16 +10,17 @@ namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
-use Go\Aop\Support\AopChildFactory;
+use Go\Proxy\ClassProxy;
 
+use Go\Proxy\TraitProxy;
 use TokenReflection\Broker;
-use TokenReflection\ReflectionClass;
-use TokenReflection\ReflectionFileNamespace;
+use TokenReflection\ReflectionClass as ParsedClass;
+use TokenReflection\ReflectionFileNamespace as ParsedFileNamespace;
 
 /**
  * @package go
  */
-class AopProxyTransformer implements SourceTransformer
+class WeavingTransformer implements SourceTransformer
 {
 
     /**
@@ -86,13 +87,13 @@ class AopProxyTransformer implements SourceTransformer
 
         $parsedSource = $this->broker->processString($metadata->source, $fileName, true);
 
-        /** @var $namespaces ReflectionFileNamespace[] */
+        /** @var $namespaces ParsedFileNamespace[] */
         $namespaces = $parsedSource->getNamespaces();
         assert('count($namespaces) < 2; /* Only one namespace per file is supported */');
 
         foreach ($namespaces as $namespace) {
 
-            /** @var $classes ReflectionClass[] */
+            /** @var $classes ParsedClass[] */
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
 
@@ -102,9 +103,7 @@ class AopProxyTransformer implements SourceTransformer
                 }
 
                 // Look for aspects
-                if ($class->hasAnnotation('Aspect') || in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
-                    // Here we will create an aspect advisor and register aspect
-                    // AspectContainer::register($class);
+                if ($class->implementsInterface('Go\Aop\Aspect')) {
                     continue;
                 }
 
@@ -120,7 +119,9 @@ class AopProxyTransformer implements SourceTransformer
                     $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
 
                     // Prepare child Aop proxy
-                    $child  = AopChildFactory::generate($class, $advices);
+                    $child = $class->isTrait()
+                            ? TraitProxy::generate($class, $advices)
+                            : ClassProxy::generate($class, $advices);
 
                     // Set new parent name instead of original
                     $child->setParentName($newParentName);
@@ -135,7 +136,7 @@ class AopProxyTransformer implements SourceTransformer
     /**
      * Adjust definition of original class source to enable extending
      *
-     * @param ReflectionClass $class Instance of class reflection
+     * @param ParsedClass $class Instance of class reflection
      * @param string $source Source code
      * @param string $newParentName New name for the parent class
      *
@@ -143,14 +144,15 @@ class AopProxyTransformer implements SourceTransformer
      */
     private function adjustOriginalClass($class, $source, $newParentName)
     {
+        $type = $class->isTrait() ? 'trait' : 'class';
         $source = preg_replace(
-            '/class\s+(' . $class->getShortName() . ')/iS',
-            "class $newParentName",
+            "/{$type}\s+(" . $class->getShortName() . ')/iS',
+            "{$type} {$newParentName}",
             $source
         );
         if ($class->isFinal()) {
             // Remove final from class, child will be final instead
-            $source = str_replace('final class', 'class', $source);
+            $source = str_replace("final {$type}", $type, $source);
         }
         return $source;
     }

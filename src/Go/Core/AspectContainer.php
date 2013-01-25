@@ -297,7 +297,7 @@ class AspectContainer
     /**
      * Returns list of advices from advisor and point filter
      *
-     * @param ReflectionClass|ParsedReflectionClass|string $class Class to inject advices
+     * @param ReflectionClass|ParsedReflectionClass $class Class to inject advices
      * @param Aop\PointcutAdvisor $advisor Advisor for class
      * @param Aop\PointFilter $filter Filter for points
      *
@@ -337,13 +337,18 @@ class AspectContainer
     /**
      * Returns list of introduction advices from advisor
      *
-     * @param ReflectionClass|ParsedReflectionClass|string $class Class to inject advices
+     * @param ReflectionClass|ParsedReflectionClass $class Class to inject advices
      * @param Aop\IntroductionAdvisor $advisor Advisor for class
      *
      * @return array
      */
     private function getIntroductionFromAdvisor($class, $advisor)
     {
+        // Do not make introduction for traits
+        if ($class->isTrait()) {
+            return array();
+        }
+
         /** @var $advice Aop\IntroductionInfo */
         $advice = $advisor->getAdvice();
 
