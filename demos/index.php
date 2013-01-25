@@ -38,7 +38,8 @@ if ($class instanceof Serializable) {
 } else {
     echo "Ooops, Example isn't serializable!", "<br>", PHP_EOL;
 }
+unserialize(serialize($class));
 $class->publicHello();
 for ($i=10; $i--; ) {
-    $class->cacheMe(1);
+    $class->cacheMe(0.2);
 }
