@@ -103,7 +103,7 @@ class WeavingTransformer implements SourceTransformer
                 }
 
                 // Look for aspects
-                if ($class->implementsInterface('Go\Aop\Aspect')) {
+                if (in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
                     continue;
                 }
 
