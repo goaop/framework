@@ -62,7 +62,7 @@ Composer will install the library to your project's `vendor/lisachenko/go-aop-ph
 Alternative way for installing the library is to use git submodules:
 
 ``` bash
-git submodule add https://github.com/lisachenko/go-aop-php vendor/alisachenko/go-aop-php
+git submodule add https://github.com/lisachenko/go-aop-php vendor/lisachenko/go-aop-php
 ```
 
 Dependencies should be also installed as submodules:
@@ -144,7 +144,7 @@ $applicationAspectKernel->init(array(
         // Application root directory
         'appDir' => __DIR__ . '/../',
         // Cache directory should be disabled for now
-        'cacheDir' => null
+        'cacheDir' => null,
         // Include paths restricts the directories where aspects should be applied, or empty for all source files
         'includePaths' => array(
             __DIR__ . '/../src/'
