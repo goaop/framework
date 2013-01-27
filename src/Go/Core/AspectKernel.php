@@ -12,7 +12,7 @@ use Go\Instrument\RawAnnotationReader;
 use Go\Instrument\ClassLoading\UniversalClassLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\Transformer\SourceTransformer;
-use Go\Instrument\Transformer\AopProxyTransformer;
+use Go\Instrument\Transformer\WeavingTransformer;
 use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
@@ -208,7 +208,7 @@ abstract class AspectKernel
             new MagicConstantTransformer(
                 $this->options
             ),
-            new AopProxyTransformer(
+            new WeavingTransformer(
                 $this->options,
                 new TokenReflection\Broker(
                     new TokenReflection\Broker\Backend\Memory()
