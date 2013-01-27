@@ -120,7 +120,7 @@ class WeavingTransformer extends BaseSourceTransformer
                     $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
 
                     // Prepare child Aop proxy
-                    $child = $class->isTrait()
+                    $child = (IS_MODERN_PHP && $class->isTrait())
                             ? TraitProxy::generate($class, $advices)
                             : ClassProxy::generate($class, $advices);
 
@@ -145,7 +145,7 @@ class WeavingTransformer extends BaseSourceTransformer
      */
     private function adjustOriginalClass($class, $source, $newParentName)
     {
-        $type = $class->isTrait() ? 'trait' : 'class';
+        $type = (IS_MODERN_PHP && $class->isTrait()) ? 'trait' : 'class';
         $source = preg_replace(
             "/{$type}\s+(" . $class->getShortName() . ')/iS',
             "{$type} {$newParentName}",
