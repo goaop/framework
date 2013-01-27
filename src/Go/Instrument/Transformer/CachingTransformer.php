@@ -9,6 +9,7 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectKernel;
+use Go\Core\AspectContainer;
 
 /**
  * Take transformed source from the cache
@@ -16,7 +17,7 @@ use Go\Core\AspectKernel;
  * @package go
  * @subpackage instrument
  */
-class CachingTransformer implements SourceTransformer
+class CachingTransformer extends BaseSourceTransformer
 {
 
     /**
@@ -41,16 +42,16 @@ class CachingTransformer implements SourceTransformer
     /**
      * Class constructor
      *
-     * @param array $options Configuration options from kernel
+     * @param AspectKernel $kernel Instance of aspect kernel
      * @param array $transformers Source transformers
      */
-    public function __construct(array $options, array $transformers)
+    public function __construct(AspectKernel $kernel, array $transformers)
     {
-        if ($options['cacheDir']) {
-            $this->cachePath = realpath($options['cacheDir']);
+        parent::__construct($kernel);
+        if ($this->options['cacheDir']) {
+            $this->cachePath = realpath($this->options['cacheDir']);
         }
-
-        $this->rootPath     = realpath($options['appDir']);
+        $this->rootPath     = realpath($this->options['appDir']);
         $this->transformers = $transformers;
     }
 
@@ -72,13 +73,11 @@ class CachingTransformer implements SourceTransformer
         $cacheUri    = stream_resolve_include_path($originalUri);
         $cacheUri    = str_replace($this->rootPath, $this->cachePath, $cacheUri);
 
-        // TODO: decide how to inject container in more friendly way
-        $container     = AspectKernel::getInstance()->getContainer();
         $lastModified  = filemtime($originalUri);
         $cacheModified = file_exists($cacheUri) ? filemtime($cacheUri) : 0;
 
         // TODO: add more accurate cache invalidation, like in Symfony2
-        if ($cacheModified < $lastModified || !$container->isFresh($cacheModified)) {
+        if ($cacheModified < $lastModified || !$this->container->isFresh($cacheModified)) {
             @mkdir(dirname($cacheUri), 0770, true);
             $this->processTransformers($metadata);
             file_put_contents($cacheUri, $metadata->source);

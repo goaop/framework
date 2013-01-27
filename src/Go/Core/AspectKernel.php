@@ -129,6 +129,16 @@ abstract class AspectKernel
     }
 
     /**
+     * Returns list of kernel options
+     *
+     * @return array
+     */
+    public function getOptions()
+    {
+        return $this->options;
+    }
+
+    /**
      * Returns default options for kernel
      *
      * @return array
@@ -201,15 +211,10 @@ abstract class AspectKernel
     protected function registerTransformers(SourceTransformingLoader $sourceLoader)
     {
         $sourceTransformers = array(
-            new FilterInjectorTransformer(
-                $this->options,
-                $sourceLoader->getId()
-            ),
-            new MagicConstantTransformer(
-                $this->options
-            ),
+            new FilterInjectorTransformer($this->options, $sourceLoader->getId()),
+            new MagicConstantTransformer($this),
             new WeavingTransformer(
-                $this->options,
+                $this,
                 new TokenReflection\Broker(
                     new TokenReflection\Broker\Backend\Memory()
                 )
@@ -217,10 +222,7 @@ abstract class AspectKernel
         );
 
         return array(
-            new CachingTransformer(
-                $this->options,
-                $sourceTransformers
-            )
+            new CachingTransformer($this, $sourceTransformers)
         );
     }
 

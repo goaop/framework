@@ -22,14 +22,40 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
-        $this->transformer = new MagicConstantTransformer(array(
-            'cacheDir' => __DIR__,
-            'appDir'   => dirname(__DIR__),
-        ));
+        $this->transformer = new MagicConstantTransformer(
+            $this->getKernelMock(array(
+                'cacheDir' => __DIR__,
+                'appDir'   => dirname(__DIR__),
+            ))
+        );
 
         $stream = fopen('php://filter/string.tolower/resource=' . __FILE__, 'r');
         $this->metadata = new StreamMetaData($stream);
         fclose($stream);
+    }
+
+    /**
+     * Returns a mock for kernel
+     *
+     * @return \PHPUnit_Framework_MockObject_MockObject|\Go\Core\AspectKernel
+     */
+    protected function getKernelMock($options)
+    {
+        $mock = $this->getMockForAbstractClass(
+            'Go\Core\AspectKernel',
+            array(),
+            '',
+            false,
+            true,
+            true,
+            array('getOptions')
+        );
+        $mock->expects($this->any())
+            ->method('getOptions')
+            ->will(
+                $this->returnValue($options)
+            );
+        return $mock;
     }
 
     public function testTransformerReturnsWithoutMagicConsts()

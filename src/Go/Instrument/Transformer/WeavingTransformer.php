@@ -20,7 +20,7 @@ use TokenReflection\ReflectionFileNamespace as ParsedFileNamespace;
 /**
  * @package go
  */
-class WeavingTransformer implements SourceTransformer
+class WeavingTransformer extends BaseSourceTransformer
 {
 
     /**
@@ -45,15 +45,17 @@ class WeavingTransformer implements SourceTransformer
     protected $excludePaths = array();
 
     /**
-     * Constructs AOP Proxy transformer
+     * Constructs a weaving transformer
      *
+     * @param AspectKernel $kernel Instance of aspect kernel
      * @param Broker $broker Instance of reflection broker to use
      */
-    public function __construct(array $options, Broker $broker)
+    public function __construct(AspectKernel $kernel, Broker $broker)
     {
+        parent::__construct($kernel);
         $this->broker       = $broker;
-        $this->includePaths = array_map('realpath', $options['includePaths']);
-        $this->excludePaths = array_map('realpath', $options['autoload']);
+        $this->includePaths = array_map('realpath', $this->options['includePaths']);
+        $this->excludePaths = array_map('realpath', $this->options['autoload']);
     }
 
     /**
@@ -107,8 +109,7 @@ class WeavingTransformer implements SourceTransformer
                     continue;
                 }
 
-                $container = AspectKernel::getInstance()->getContainer();
-                $advices   = $container->getAdvicesForClass($class);
+                $advices = $this->container->getAdvicesForClass($class);
 
                 if ($advices) {
 

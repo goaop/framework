@@ -8,13 +8,15 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Core\AspectKernel;
+
 /**
  * Replace magic directory and file constants in the source code
  *
  * @package go
  * @subpackage instrument
  */
-class MagicConstantTransformer implements SourceTransformer
+class MagicConstantTransformer extends BaseSourceTransformer
 {
 
     /**
@@ -34,12 +36,13 @@ class MagicConstantTransformer implements SourceTransformer
     /**
      * Class constructor
      *
-     * @param array $options Configuration options from kernel
+     * @param AspectKernel $kernel Instance of kernel
      */
-    public function __construct(array $options)
+    public function __construct(AspectKernel $kernel)
     {
-        self::$rootPath = realpath($options['appDir']);
-        $rewriteToPath  = $options['cacheDir'];
+        parent::__construct($kernel);
+        self::$rootPath = realpath($this->options['appDir']);
+        $rewriteToPath  = $this->options['cacheDir'];
         if ($rewriteToPath) {
             self::$rewriteToPath = realpath($rewriteToPath);
         }
