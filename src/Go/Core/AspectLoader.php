@@ -95,7 +95,6 @@ class AspectLoader
      */
     protected function loadFrom(Aspect $aspect, $refPoint, array $loaders)
     {
-        $annotations = $this->getAnnotations($refPoint);
 
         foreach ($loaders as $loader) {
 
@@ -109,6 +108,7 @@ class AspectLoader
                     break;
 
                 case AspectLoaderExtension::KIND_ANNOTATION:
+                    $annotations = $this->getAnnotations($refPoint);
                     foreach ($annotations as $annotation) {
                         if ($loader->supports($aspect, $refPoint, $annotation)) {
                             $loader->load($this->container, $aspect, $refPoint, $annotation);
