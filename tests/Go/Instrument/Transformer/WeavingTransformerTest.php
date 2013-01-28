@@ -19,11 +19,19 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     protected $metadata = null;
 
+    /**
+     * @var null|\TokenReflection\Broker
+     */
+    protected $broker = null;
+
      /**
      * {@inheritDoc}
      */
     public function setUp()
     {
+        $this->broker = new \TokenReflection\Broker(
+            new \TokenReflection\Broker\Backend\Memory()
+        );
         $this->transformer = new WeavingTransformer(
             $this->getKernelMock(
                 array(
@@ -34,9 +42,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
                 ),
                 $this->getContainerMock()
             ),
-            new \TokenReflection\Broker(
-                new \TokenReflection\Broker\Backend\Memory()
-            )
+            $this->broker
         );
 
         $stream = fopen('php://filter/string.tolower/resource=' . __FILE__, 'r');
@@ -93,24 +99,117 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testWeaverForNormalClass()
     {
-        $source   = $this->loadTest('class');
-        $this->metadata->source = $source;
+        $this->metadata->source = $this->loadTest('class');
         $this->transformer->transform($this->metadata);
-        $actual = strtr(
-            preg_replace('/^\s+$/m', '', $this->metadata->source),
-            array(
-                "\r\n" => PHP_EOL,
-                "\n"   => PHP_EOL,
-            )
-        );
-        $expected = strtr(
-            preg_replace('/^\s+$/m', '', $this->loadTest('class-woven')),
-            array(
-                "\r\n" => PHP_EOL,
-                "\n"   => PHP_EOL,
-            )
-        );
+
+        $actual   = $this->normalizeWhitespaces($this->metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven'));
         $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Check that weaver can work with final class
+     */
+    public function testWeaverForFinalClass()
+    {
+        $this->metadata->source = $this->loadTest('final-class');
+        $this->transformer->transform($this->metadata);
+
+        $actual   = $this->normalizeWhitespaces($this->metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('final-class-woven'));
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Transformer verifies include paths
+     */
+    public function testTransformerWithIncludePaths()
+    {
+        $this->transformer = new WeavingTransformer(
+            $this->getKernelMock(
+                array(
+                    'cacheDir'     => __DIR__,
+                    'appDir'       => dirname(__DIR__),
+                    'includePaths' => array(__DIR__),
+                    'autoload'     => array()
+                ),
+                $this->getContainerMock()
+            ),
+            $this->broker
+        );
+        $this->metadata->source = $this->loadTest('class');
+        $this->transformer->transform($this->metadata);
+
+        $actual   = $this->normalizeWhitespaces($this->metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven'));
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Transformer verifies include paths
+     */
+    public function testTransformerWithAnotherIncludePathSkip()
+    {
+        $this->transformer = new WeavingTransformer(
+            $this->getKernelMock(
+                array(
+                    'cacheDir'     => __DIR__,
+                    'appDir'       => dirname(__DIR__),
+                    'includePaths' => array('/some/path'),
+                    'autoload'     => array()
+                ),
+                $this->getContainerMock()
+            ),
+            $this->broker
+        );
+        $this->metadata->source = $this->loadTest('class');
+        $this->transformer->transform($this->metadata);
+
+        $actual   = $this->normalizeWhitespaces($this->metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('class'));
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Transformer exclude paths for internal libraries
+     */
+    public function testTransformerSkipInternalClasses()
+    {
+        $this->transformer = new WeavingTransformer(
+            $this->getKernelMock(
+                array(
+                    'cacheDir'     => __DIR__,
+                    'appDir'       => dirname(__DIR__),
+                    'includePaths' => array(),
+                    'autoload'     => array(__DIR__)
+                ),
+                $this->getContainerMock()
+            ),
+            $this->broker
+        );
+        $this->metadata->source = $this->loadTest('class');
+        $this->transformer->transform($this->metadata);
+
+        $actual   = $this->normalizeWhitespaces($this->metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('class'));
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Normalizes string context
+     *
+     * @param string $value
+     * @return string
+     */
+    protected function normalizeWhitespaces($value)
+    {
+        return strtr(
+            preg_replace('/^\s+$/m', '', $value),
+            array(
+                "\r\n" => PHP_EOL,
+                "\n"   => PHP_EOL,
+            )
+        );
     }
 
     /**
