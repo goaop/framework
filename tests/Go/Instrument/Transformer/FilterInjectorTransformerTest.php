@@ -20,26 +20,24 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * {@inheritDoc}
      */
-    public static function setUpBeforeClass()
-    {
-        self::$transformer = new FilterInjectorTransformer(array(
-            'cacheDir' => null,
-            'appDir' => '',
-            'debug' => false,
-        ), 'unit.test');
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public function setUp()
     {
+        if (!self::$transformer) {
+            self::$transformer = new FilterInjectorTransformer(
+                array(
+                    'cacheDir' => null,
+                    'appDir' => '',
+                    'debug' => false,
+                ),
+                'unit.test'
+            );
+        }
         $stream = fopen('php://input', 'r');
         $this->metadata = new StreamMetaData($stream);
         fclose($stream);
     }
 
-    public function testCanTransformeWithoutInclusion()
+    public function testCanTransformWithoutInclusion()
     {
         $this->metadata->source = '<?php echo "simple test, include" . $include; ?>';
         $output = $this->metadata->source;
@@ -47,7 +45,23 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($this->metadata->source, $output);
     }
 
-    public function testCanTransformeInclude()
+    public function testSkipTransformationQuickly()
+    {
+        $this->metadata->source = '<?php echo "simple test, no key words" ?>';
+        $output = $this->metadata->source;
+        self::$transformer->transform($this->metadata);
+        $this->assertEquals($this->metadata->source, $output);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     */
+    public function testCanBeConfiguredOnlyOnce()
+    {
+        $filter = new FilterInjectorTransformer(array(), 'test');
+    }
+
+    public function testCanTransformInclude()
     {
         $this->metadata->source = '<?php include $class; ?>';
         self::$transformer->transform($this->metadata);
@@ -55,7 +69,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($this->metadata->source, $output);
     }
 
-    public function testCanTransformeIncludeOnce()
+    public function testCanTransformIncludeOnce()
     {
         $this->metadata->source = '<?php include_once $class; ?>';
         self::$transformer->transform($this->metadata);
@@ -63,7 +77,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($this->metadata->source, $output);
     }
 
-    public function testCanTransformeRequire()
+    public function testCanTransformRequire()
     {
         $this->metadata->source = '<?php require $class; ?>';
         self::$transformer->transform($this->metadata);
@@ -71,7 +85,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($this->metadata->source, $output);
     }
 
-    public function testCanTransformeRequireOnce()
+    public function testCanTransformRequireOnce()
     {
         $this->metadata->source = '<?php require_once $class; ?>';
         self::$transformer->transform($this->metadata);
