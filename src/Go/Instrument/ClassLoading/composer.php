@@ -20,8 +20,10 @@ use Go\Instrument\ClassLoading\UniversalClassLoader;
 function ensureLibraryAutoloaderIsFirst()
 {
     $loaders = spl_autoload_functions();
-    if (isset($loaders[0]) && ($loaders[0][0] instanceof UniversalClassLoader)) {
-        return;
+    if ($loaders && isset($loaders[0]) && is_array($loaders[0])) {
+        if ($loaders[0][0] instanceof UniversalClassLoader) {
+            return;
+        }
     }
     $newLoaders = array();
     foreach ($loaders as $loader) {
