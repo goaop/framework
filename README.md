@@ -37,11 +37,18 @@ Go! library is developed for PHP 5.4.0 and up, but it can partially work with PH
 
 Note that PHP versions before 5.4 will not work completely, if you try to use
  aspects for code that uses Late Static Binding (LSB) feature.
- 
-Version 5.4.11 of PHP has a [bug](https://bugs.php.net/bug.php?id=64070) with traits inheritance, 
-so method interception in traits is broken.
 
 Go! library will not work with eAccelerator.
+
+Known bugs
+------------
+
+* Version 5.4.5 of PHP has a [bug #62836  Seg fault or broken object references on unserialize()](https://bugs.php.net/bug.php?id=62836).
+Class advices will be always broken after unserialize().
+* Version 5.4.8 of PHP has a [bug #63481  Segmentation fault caused by unserialize()](https://bugs.php.net/bug.php?id=63481). 
+Interceptors for class can be unserialized incorrectly.
+* Version 5.4.11 of PHP has a [bug #64070  Inheritance with Traits failed with error](https://bugs.php.net/bug.php?id=64070). 
+Method interception in traits is broken, however DeclareParent advice can be used correctly.
 
 Installation
 ------------
