@@ -35,8 +35,11 @@ Requirements
 
 Go! library is developed for PHP 5.4.0 and up, but it can partially work with PHP 5.3.0 code.
 
-Note that PHP versions before 5.4.0 will not work completely, if you try to use
+Note that PHP versions before 5.4 will not work completely, if you try to use
  aspects for code that uses Late Static Binding (LSB) feature.
+ 
+Version 5.4.11 of PHP has a [bug](https://bugs.php.net/bug.php?id=64070) with traits inheritance, 
+so method interception in traits is broken.
 
 Go! library will not work with eAccelerator.
 
