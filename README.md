@@ -17,6 +17,19 @@ of application and display the name and the arguments of each method during its 
 
 [![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
 
+What is AOP?
+------------
+
+AOP (Aspect-Oriented Programming) is an approach to cross-cutting concerns, where the concerns are designed and implemented
+in a "modular" way (that is, with appropriate encapsulation, lack of duplication, etc.), then integrated into all the relevant
+execution points in a succinct and robust way, e.g. through declarative or programmatic means.
+
+In AOP terms, the execution points are called join points, a particular set of them is called a pointcut and the new
+behavior that is executed before, after, or "around" a join point is called advice. You can read more about AOP in
+[Introduction](https://github.com/lisachenko/go-aop-php/wiki/Introduction) section.
+
+PHP traits can be used to implement some aspect-like functionality.
+
 Requirements
 ------------
 
@@ -240,9 +253,8 @@ Now you are ready to use the power of aspects! Feel free to change anything ever
 Documentation
 -------------
 
-Documentation about Go! library can be found at [official site][1]. Currently only Russian language
-is supported. If you'd like to contribute, please translate any part of the documentation to your
+Documentation about Go! library can be found at [official wiki][1]. If you'd like to contribute, please translate any part of the documentation to your
 language.
 
-[1]: http://lisachenko.github.com/go-aop-php/
+[1]: https://github.com/lisachenko/go-aop-php/wiki
 
