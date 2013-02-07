@@ -20,7 +20,7 @@ of application and display the name and the arguments of each method during its 
 What is AOP?
 ------------
 
-AOP (Aspect-Oriented Programming) is an approach to cross-cutting concerns, where the concerns are designed and implemented
+[AOP (Aspect-Oriented Programming)](http://en.wikipedia.org/wiki/Aspect-oriented_programming) is an approach to cross-cutting concerns, where the concerns are designed and implemented
 in a "modular" way (that is, with appropriate encapsulation, lack of duplication, etc.), then integrated into all the relevant
 execution points in a succinct and robust way, e.g. through declarative or programmatic means.
 
