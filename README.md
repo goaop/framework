@@ -263,8 +263,7 @@ Now you are ready to use the power of aspects! Feel free to change anything ever
 Documentation
 -------------
 
-Documentation about Go! library can be found at [official wiki][1]. If you'd like to contribute, please translate any part of the documentation to your
-language.
+Documentation about Go! library can be found at [official site][1].
 
-[1]: https://github.com/lisachenko/go-aop-php/wiki
+[1]: http://go.aopphp.com
 
