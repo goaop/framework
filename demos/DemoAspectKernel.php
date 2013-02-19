@@ -7,6 +7,7 @@
  */
 
 use Aspect\DebugAspect;
+use Aspect\HealthyLiveAspect;
 
 use Go\Core\AspectKernel;
 use Go\Core\AspectContainer;
@@ -37,5 +38,6 @@ class DemoAspectKernel extends AspectKernel
     protected function configureAop(AspectContainer $container)
     {
         $container->registerAspect(new DebugAspect('ASPECT!'));
+        $container->registerAspect(new HealthyLiveAspect());
     }
 }
