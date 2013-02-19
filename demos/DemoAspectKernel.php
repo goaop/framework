@@ -24,7 +24,7 @@ class DemoAspectKernel extends AspectKernel
      */
     protected function getApplicationLoaderPath()
     {
-        return './autoload.php';
+        return __DIR__ . '/autoload.php';
     }
 
     /**

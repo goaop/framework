@@ -37,19 +37,9 @@ class DebugAspect implements Aspect
     protected $introduction = null;
 
     /**
-     * Aspect constructor
-     *
-     * @param string $message Additional message to show
-     */
-    public function __construct($message)
-    {
-        $this->message = $message;
-    }
-
-    /**
      * Pointcut for example class
      *
-     * @Pointcut("execution(public *->*(*))")
+     * @Pointcut("execution(public Example->*(*))")
      */
     protected function examplePublicMethods() {}
 
@@ -69,7 +59,7 @@ class DebugAspect implements Aspect
              '()',
              ' with arguments: ',
              json_encode($invocation->getArguments()),
-             "<br>\n";
+             PHP_EOL;
     }
 
     /**
@@ -88,7 +78,7 @@ class DebugAspect implements Aspect
              '()',
              ' with arguments: ',
              json_encode($invocation->getArguments()),
-             "<br>\n";
+             PHP_EOL;
     }
 
     /**
@@ -111,7 +101,7 @@ class DebugAspect implements Aspect
             $memoryCache[$key] = $invocation->proceed();
         }
 
-        echo "Take ", sprintf("%0.3f", (microtime(true) - $time) * 1e3), "ms to call method<br>", PHP_EOL;
+        echo "Take ", sprintf("%0.3f", (microtime(true) - $time) * 1e3), "ms to call method", PHP_EOL;
         return $memoryCache[$key];
     }
 
@@ -135,7 +125,7 @@ class DebugAspect implements Aspect
             ", access: $type",
             ", value: ",
             json_encode($value),
-            "<br>\n";
+            PHP_EOL;
 
         return $value;
     }
