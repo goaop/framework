@@ -62,6 +62,8 @@ class ClassProxy extends AbstractProxy
     public static function generate($parent, array $advices)
     {
         $aopChild = new self($parent, $parent->getShortName(), $advices);
+        $aopChild->addInterface('\Go\Aop\Proxy');
+
         if (!empty($advices)) {
             $aopChild->addJoinpointsProperty($aopChild);
 
