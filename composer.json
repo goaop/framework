@@ -4,7 +4,7 @@
 
     "type": "library",
     "keywords": ["library", "aop", "php", "aspect"],
-    "homepage": "http://lisachenko.github.com/go-aop-php/",
+    "homepage": "http://go.aopphp.com/",
     "license": "MIT",
 
     "require": {
