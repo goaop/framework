@@ -64,9 +64,9 @@ class PointcutGrammar extends Grammar
             )
             ->call(function($_, $_, ModifierMatcherFilter $memberModifiers, ClassFilter $classFilter, $callType, $method) {
                 if ($callType === '::') {
-                    $memberModifiers->andMatch(ReflectionMethod::IS_STATIC);
+                    $memberModifiers->andMatch(\ReflectionMethod::IS_STATIC);
                 } else {
-                    $memberModifiers->notMatch(ReflectionMethod::IS_STATIC);
+                    $memberModifiers->notMatch(\ReflectionMethod::IS_STATIC);
                 }
                 $pointcut = new SignatureMethodPointcut($method, $memberModifiers);
                 $pointcut->setClassFilter($classFilter);
