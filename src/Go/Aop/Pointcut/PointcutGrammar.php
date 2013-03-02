@@ -13,6 +13,7 @@ use Go\Aop\TrueClassFilter;
 use Go\Aop\Support\SimpleClassFilter;
 
 use Dissect\Parser\Grammar;
+use Go\Core\AspectKernel;
 
 /**
  * Pointcut grammar defines general structure of pointcuts and rules of parsing
@@ -75,7 +76,18 @@ class PointcutGrammar extends Grammar
                 $pointcut = new SignatureMethodPointcut($methodNamePattern, $memberModifiers);
                 $pointcut->setClassFilter($classFilter);
                 return $pointcut;
-            });
+            })
+
+            ->is('@annotation', '(', 'NamespaceClassName', ')')
+            ->call(function ($_, $_, $annotationClassName, $_) {
+                // TODO: inject container as dependency
+                $container = AspectKernel::getInstance()->getContainer();
+                // TODO: use single annotation reader
+                $reader   = $container->get('aspect.annotation.raw.reader');
+                return new AnnotationMethodPointcut($reader, $annotationClassName);
+            })
+
+        ;
 
         $this('Arguments')
             ->is('Empty')
