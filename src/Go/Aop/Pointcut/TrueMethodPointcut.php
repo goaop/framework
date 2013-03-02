@@ -15,9 +15,9 @@ use Go\Aop\Support\StaticMethodMatcherPointcut;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 
 /**
- * Within method pointcut matches all methods in specific class or namespace
+ * True method pointcut matches all methods in specific class
  */
-class WithinMethodPointcut extends StaticMethodMatcherPointcut
+class TrueMethodPointcut extends StaticMethodMatcherPointcut
 {
     /**
      * Performs matching of point of code
