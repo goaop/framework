@@ -112,8 +112,11 @@ abstract class AspectKernel
 
         // Pointcut services
         $container->set('aspect.pointcut.lexer', new PointcutLexer());
-        // TODO: use production parse table for parser
-        $container->set('aspect.pointcut.parser', new Parser(new PointcutGrammar()));
+        $container->set('aspect.pointcut.parser', new Parser(
+            new PointcutGrammar(),
+            // Include production parse table for parser
+            include __DIR__ . '/../Aop/Pointcut/PointcutParseTable.php'
+        ));
 
         // Register general aspect loader extension
         $aspectLoader->registerLoaderExtension(new GeneralAspectLoaderExtension());
