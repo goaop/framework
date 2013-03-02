@@ -8,6 +8,9 @@
 
 namespace Go\Core;
 
+use Dissect\Parser\LALR1\Parser;
+use Go\Aop\Pointcut\PointcutGrammar;
+use Go\Aop\Pointcut\PointcutLexer;
 use Go\Instrument\RawAnnotationReader;
 use Go\Instrument\ClassLoading\UniversalClassLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
@@ -106,6 +109,11 @@ abstract class AspectKernel
         // TODO: use cached annotation reader
         $container->set('aspect.annotation.reader', new AnnotationReader());
         $container->set('aspect.annotation.raw.reader', new RawAnnotationReader());
+
+        // Pointcut services
+        $container->set('aspect.pointcut.lexer', new PointcutLexer());
+        // TODO: use production parse table for parser
+        $container->set('aspect.pointcut.parser', new Parser(new PointcutGrammar()));
 
         // Register general aspect loader extension
         $aspectLoader->registerLoaderExtension(new GeneralAspectLoaderExtension());
