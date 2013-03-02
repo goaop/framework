@@ -191,80 +191,13 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
             return $this->loadPointcutFromContainer($container, $reflection, $metaInformation);
         }
 
-        // execution(public Example\Aspect\*->method*())
-        // execution(protected Test\Class*::someStatic*Method())
-        static $executionReg = '/
-            ^execution\(
-                (?P<modifier>public|protected|\*)\s+
-                (?P<class>[\w\\\*]+)
-                (?P<type>->|::)
-                (?P<method>[\w\*]+)
-                \(\*?\)
-            \)$/x';
+        /** @var $lexer \Dissect\Lexer\Lexer */
+        $lexer  = $container->get('aspect.pointcut.lexer');
+        $stream = $lexer->lex($metaInformation->value);
 
-        if (preg_match($executionReg, $metaInformation->value, $matches)) {
-            $modifier = self::$methodModifiers[$matches['modifier']];
-            $modifier |= self::$methodModifiers[$matches['type']];
-            $modifierFilter = new Pointcut\ModifierMatcherFilter(0);
-            $modifierFilter->orMatch($modifier);
-            $pointcut = new Pointcut\SignatureMethodPointcut($matches['method'], $modifierFilter);
-            if ($matches['class'] !== '*') {
-                $classFilter = new Support\SimpleClassFilter($matches['class']);
-                $pointcut->setClassFilter($classFilter);
-            }
-            return $pointcut;
-        }
-
-        // @annotation(First\Second\Annotation\Class)
-        static $annotationReg = '/
-            ^@annotation\(
-                (?P<annotation>[\w\\\*]+)
-            \)$/x';
-
-        if (preg_match($annotationReg, $metaInformation->value, $matches)) {
-            // TODO: use single annotation reader
-            $reader   = $container->get('aspect.annotation.raw.reader');
-            $pointcut = new Support\AnnotationMethodPointcut($reader, $matches['annotation']);
-            return $pointcut;
-        }
-
-
-        // within(Go\Aspects\Blog\Package\*) : This will match all the methods in all classes of Go\Aspects\Blog\Package.
-        // within(Go\Aspects\Blog\Package\**) : This will match all the methods in all classes of Go\Aspects\Blog\Package and its sub packages. The only difference is the extra dot(.) after package.
-        // within(Go\Aspects\Blog\Package\DemoClass) : This will match all the methods in the DemoClass.
-        // within(DemoInterface+) : This will match all the methods which are in classes which implement DemoInterface.
-        static $withinReg = '/
-            ^within\(
-                (?P<class>[\w\\\*]+)
-                (?P<children>\+?)
-            \)$/x';
-
-        if (preg_match($withinReg, $metaInformation->value, $matches)) {
-            $pointcut = new Support\WithinMethodPointcut($matches['class'], (bool) $matches['children']);
-            return $pointcut;
-        }
-
-        // access(public Example\Aspect\*->property*)
-        // access(protected Test\Class*->someProtected*Property)
-        static $propertyReg = '/
-            ^access\(
-                (?P<modifier>public|protected|\*)\s+
-                (?P<class>[\w\\\*]+)
-                ->
-                (?P<property>[\w\*]+)
-            \)$/x';
-
-        if (preg_match($propertyReg, $metaInformation->value, $matches)) {
-            $modifier = self::$propertyModifiers[$matches['modifier']];
-            $pointcut = new Support\SignaturePropertyPointcut($matches['property'], $modifier);
-            if ($matches['class'] !== '*') {
-                $classFilter = new Support\SimpleClassFilter($matches['class']);
-                $pointcut->setClassFilter($classFilter);
-            }
-            return $pointcut;
-        }
-
-        throw new \UnexpectedValueException("Unsupported pointcut: {$metaInformation->value}");
+        /** @var $parser \Dissect\Parser\Parser */
+        $parser = $container->get('aspect.pointcut.parser');
+        return $parser->parse($stream);
     }
 
     /**
