@@ -205,8 +205,9 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
         if (preg_match($executionReg, $metaInformation->value, $matches)) {
             $modifier = self::$methodModifiers[$matches['modifier']];
             $modifier |= self::$methodModifiers[$matches['type']];
-            $modifierFilter = new Pointcut\ModifierMatcherFilter($modifier);
-            $pointcut       = new Pointcut\SignatureMethodPointcut($matches['method'], $modifierFilter);
+            $modifierFilter = new Pointcut\ModifierMatcherFilter(0);
+            $modifierFilter->orMatch($modifier);
+            $pointcut = new Pointcut\SignatureMethodPointcut($matches['method'], $modifierFilter);
             if ($matches['class'] !== '*') {
                 $classFilter = new Support\SimpleClassFilter($matches['class']);
                 $pointcut->setClassFilter($classFilter);
