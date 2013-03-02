@@ -60,7 +60,7 @@ class ModifierMatcherFilter implements PointFilter
     {
         $modifiers = $point->getModifiers();
         return !($this->notMask & $modifiers) &&
-            (($this->andMask & $modifiers == $this->andMask) || ($this->orMask & $modifiers));
+            (($this->andMask === ($this->andMask & $modifiers)) || ($this->orMask & $modifiers));
     }
 
     /**
