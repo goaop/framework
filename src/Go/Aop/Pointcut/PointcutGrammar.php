@@ -54,24 +54,32 @@ class PointcutGrammar extends Grammar
 
         $this('SinglePointcut')
             ->is(
-                'execution',
-                '(' ,
-                'MemberModifiers',
-                'ClassFilter',
-                'MethodCall',
-                'NamePattern', '(', ')',
+                'execution', '(' ,
+                    'MemberModifiers', 'ClassFilter', 'MethodCall', 'NamePattern', '(', 'Arguments', ')',
                 ')'
             )
-            ->call(function($_, $_, ModifierMatcherFilter $memberModifiers, ClassFilter $classFilter, $callType, $method) {
-                if ($callType === '::') {
+            ->call(function(
+                    $_, // execution node
+                    $_, // (
+                    ModifierMatcherFilter $memberModifiers,
+                    ClassFilter $classFilter,
+                    $methodCallType,
+                    $methodNamePattern,
+                    $_ // )
+            ) {
+                if ($methodCallType === '::') {
                     $memberModifiers->andMatch(\ReflectionMethod::IS_STATIC);
                 } else {
                     $memberModifiers->notMatch(\ReflectionMethod::IS_STATIC);
                 }
-                $pointcut = new SignatureMethodPointcut($method, $memberModifiers);
+                $pointcut = new SignatureMethodPointcut($methodNamePattern, $memberModifiers);
                 $pointcut->setClassFilter($classFilter);
                 return $pointcut;
             });
+
+        $this('Arguments')
+            ->is('Empty')
+            ->is('*');
 
         $stringConverter = $this->getNodeToStringConverter();
 
