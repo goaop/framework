@@ -61,13 +61,13 @@ class PointcutGrammar extends Grammar
                 ')'
             )
             ->call(function(
-                    $_, // execution node
-                    $_, // (
-                    ModifierMatcherFilter $memberModifiers,
-                    ClassFilter $classFilter,
-                    $methodCallType,
-                    $methodNamePattern,
-                    $_ // )
+                $_, // execution node
+                $_, // (
+                ModifierMatcherFilter $memberModifiers,
+                ClassFilter $classFilter,
+                $methodCallType,
+                $methodNamePattern,
+                $_ // )
             ) {
                 if ($methodCallType === '::') {
                     $memberModifiers->andMatch(\ReflectionMethod::IS_STATIC);
