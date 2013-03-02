@@ -9,6 +9,7 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\ClassFilter;
+use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\TrueClassFilter;
 use Go\Aop\Support\SimpleClassFilter;
 
@@ -88,9 +89,11 @@ class PointcutGrammar extends Grammar
             })
 
             // TODO: add grammar for subclasses
-            ->is('within', '(', 'NamespaceClassName', ')')
-            ->call(function ($_, $_, $namespaceName, $_) {
-                return new WithinMethodPointcut($namespaceName);
+            ->is('within', '(', 'ClassFilter', ')')
+            ->call(function ($_, $_, $classFilter, $_) {
+                $pointcut = new TrueMethodPointcut();
+                $pointcut->setClassFilter($classFilter);
+                return $pointcut;
             })
 
         ;
@@ -112,7 +115,13 @@ class PointcutGrammar extends Grammar
                 return $pattern === '**'
                     ? TrueClassFilter::getInstance()
                     : new SimpleClassFilter($pattern);
-            });
+            })
+
+            ->is('NamespaceClassName', '+')
+            ->call(function($pattern, $_) {
+                return new InheritanceClassFilter($pattern);
+            })
+        ;
 
         // stable
         $this('NamespaceClassName')
