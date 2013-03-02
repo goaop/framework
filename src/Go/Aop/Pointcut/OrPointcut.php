@@ -9,7 +9,6 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
-use Go\Aop\Support\StaticMethodMatcherPointcut;
 
 /**
  * Signature method pointcut checks method signature (modifiers and name) to match it

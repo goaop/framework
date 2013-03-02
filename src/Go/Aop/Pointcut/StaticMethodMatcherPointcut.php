@@ -6,13 +6,13 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop\Support;
+namespace Go\Aop\Pointcut;
 
-use Go\Aop\MethodMatcher;
 use Go\Aop\Pointcut;
 use Go\Aop\ClassFilter;
 use Go\Aop\PointFilter;
 use Go\Aop\TrueClassFilter;
+use Go\Aop\Support\StaticMethodMatcher;
 
 /**
  * Convenient abstract superclass for static method matchers, which don't care about arguments at runtime.

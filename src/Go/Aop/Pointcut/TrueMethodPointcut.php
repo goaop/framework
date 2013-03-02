@@ -10,8 +10,6 @@ namespace Go\Aop\Pointcut;
 
 use ReflectionMethod;
 
-use Go\Aop\Support\StaticMethodMatcherPointcut;
-
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 
 /**
