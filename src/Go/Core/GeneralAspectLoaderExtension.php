@@ -14,6 +14,7 @@ use ReflectionProperty;
 use Go\Aop\Aspect;
 use Go\Aop\Framework;
 use Go\Aop\MethodMatcher;
+use Go\Aop\Pointcut;
 use Go\Aop\PropertyMatcher;
 use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
@@ -204,7 +205,8 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
         if (preg_match($executionReg, $metaInformation->value, $matches)) {
             $modifier = self::$methodModifiers[$matches['modifier']];
             $modifier |= self::$methodModifiers[$matches['type']];
-            $pointcut = new Support\SignatureMethodPointcut($matches['method'], $modifier);
+            $modifierFilter = new Pointcut\ModifierMatcherFilter($modifier);
+            $pointcut       = new Pointcut\SignatureMethodPointcut($matches['method'], $modifierFilter);
             if ($matches['class'] !== '*') {
                 $classFilter = new Support\SimpleClassFilter($matches['class']);
                 $pointcut->setClassFilter($classFilter);
