@@ -79,6 +79,21 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
+            ->is('access', '(', 'MemberModifiers', 'ClassFilter', '->', 'NamePattern', ')')
+            ->call(function(
+                $_,
+                $_,
+                ModifierMatcherFilter $memberModifiers,
+                ClassFilter $classFilter,
+                $_,
+                $propertyNamePattern,
+                $_ // )
+            ) {
+                $pointcut = new SignaturePropertyPointcut($propertyNamePattern, $memberModifiers);
+                $pointcut->setClassFilter($classFilter);
+                return $pointcut;
+            })
+
             ->is('@annotation', '(', 'NamespaceClassPattern', ')')
             ->call(function ($_, $_, $annotationClassName, $_) {
                 // TODO: inject container as dependency
@@ -88,7 +103,6 @@ class PointcutGrammar extends Grammar
                 return new AnnotationMethodPointcut($reader, $annotationClassName);
             })
 
-            // TODO: add grammar for subclasses
             ->is('within', '(', 'ClassFilter', ')')
             ->call(function ($_, $_, $classFilter, $_) {
                 $pointcut = new TrueMethodPointcut();
