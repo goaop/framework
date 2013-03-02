@@ -34,6 +34,13 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
     private $classFilter = null;
 
     /**
+     * Modifier filter for method
+     *
+     * @var PointFilter
+     */
+    protected $modifierFilter;
+
+    /**
      * Property name to match, can contain wildcards *,?
      *
      * @var string
@@ -41,38 +48,19 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
     protected $propertyName = '';
 
     /**
-     * Modifier mask for property
-     *
-     * @var string
-     */
-    protected $modifier;
-
-    /**
-     * Bit mask:
-     *
-     *  const IS_STATIC = 1;
-     *  const IS_PUBLIC = 256;
-     *  const IS_PROTECTED = 512;
-     *  const IS_PRIVATE = 1024;
-     *
-     * @var integer|null
-     */
-    protected static $bitMask = 0x0701;
-
-    /**
      * Signature property matcher constructor
      *
      * @param string $propertyName Name of the property to match or glob pattern
-     * @param integer $modifier Method modifier (mask of reflection constant modifiers)
+     * @param PointFilter $modifierFilter Property modifier filter
      */
-    public function __construct($propertyName, $modifier)
+    public function __construct($propertyName, PointFilter $modifierFilter)
     {
-        $this->propertyName = $propertyName;
-        $this->regexp     = strtr(preg_quote($this->propertyName, '/'), array(
+        $this->propertyName   = $propertyName;
+        $this->regexp         = strtr(preg_quote($this->propertyName, '/'), array(
             '\\*' => '.*?',
             '\\?' => '.'
         ));
-        $this->modifier   = $modifier;
+        $this->modifierFilter = $modifierFilter;
     }
 
     /**
@@ -122,8 +110,7 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
             return false;
         }
 
-        $modifiers = $property->getModifiers();
-        if (!($modifiers & $this->modifier) || ((self::$bitMask - $this->modifier) & $modifiers)) {
+        if (!$this->modifierFilter->matches($property)) {
             return false;
         }
 
