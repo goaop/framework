@@ -79,12 +79,12 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
-            ->is('@annotation', '(', 'NamespaceClassName', ')')
+            ->is('@annotation', '(', 'NamespaceClassPattern', ')')
             ->call(function ($_, $_, $annotationClassName, $_) {
                 // TODO: inject container as dependency
                 $container = AspectKernel::getInstance()->getContainer();
                 // TODO: use single annotation reader
-                $reader   = $container->get('aspect.annotation.raw.reader');
+                $reader = $container->get('aspect.annotation.raw.reader');
                 return new AnnotationMethodPointcut($reader, $annotationClassName);
             })
 
@@ -117,16 +117,11 @@ class PointcutGrammar extends Grammar
                     : new SimpleClassFilter($pattern);
             })
 
-            ->is('NamespaceClassName', '+')
+            ->is('NamespaceClassPattern', '+')
             ->call(function($parentClassName, $_) {
                 return new InheritanceClassFilter($parentClassName);
             })
         ;
-
-        // stable
-        $this('NamespaceClassName')
-            ->is('NamePart')->call($stringConverter)
-            ->is('NamePart', 'NsSeparator', 'NamespaceClassName')->call($stringConverter);
 
         // stable
         $this('NamespaceClassPattern')
