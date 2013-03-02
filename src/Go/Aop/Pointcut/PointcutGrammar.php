@@ -110,7 +110,7 @@ class PointcutGrammar extends Grammar
             ->is('->')->call($stringConverter);
 
         $this('ClassFilter')
-            ->is('NamespaceClassName')
+            ->is('NamespaceClassPattern')
             ->call(function($pattern) {
                 return $pattern === '**'
                     ? TrueClassFilter::getInstance()
@@ -118,16 +118,21 @@ class PointcutGrammar extends Grammar
             })
 
             ->is('NamespaceClassName', '+')
-            ->call(function($pattern, $_) {
-                return new InheritanceClassFilter($pattern);
+            ->call(function($parentClassName, $_) {
+                return new InheritanceClassFilter($parentClassName);
             })
         ;
 
         // stable
         $this('NamespaceClassName')
+            ->is('NamePart')->call($stringConverter)
+            ->is('NamePart', 'NsSeparator', 'NamespaceClassName')->call($stringConverter);
+
+        // stable
+        $this('NamespaceClassPattern')
             ->is('NamePattern')
             ->is('**')->call($stringConverter)
-            ->is('NamePattern', 'NsSeparator', 'NamespaceClassName')->call($stringConverter);
+            ->is('NamePattern', 'NsSeparator', 'NamespaceClassPattern')->call($stringConverter);
 
         // stable
         $this('NamePattern')
