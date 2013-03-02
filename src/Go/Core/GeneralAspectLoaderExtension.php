@@ -25,31 +25,6 @@ use Go\Lang\Annotation;
  */
 class GeneralAspectLoaderExtension implements AspectLoaderExtension
 {
-    /**
-     * Mappings of string values to method modifiers
-     *
-     * @todo: Move to the pointcut parser
-     * @var array
-     */
-    protected static $methodModifiers = array(
-        'public'    => ReflectionMethod::IS_PUBLIC,
-        'protected' => ReflectionMethod::IS_PROTECTED,
-        '::'        => ReflectionMethod::IS_STATIC,
-        '*'         => 768 /* PUBLIC | PROTECTED */,
-        '->'        => 0,
-    );
-
-    /**
-     * Mappings of string values to property modifiers
-     *
-     * @todo: Move to the pointcut parser
-     * @var array
-     */
-    protected static $propertyModifiers = array(
-        'public'    => ReflectionProperty::IS_PUBLIC,
-        'protected' => ReflectionProperty::IS_PROTECTED,
-        '*'         => 768 /* PUBLIC | PROTECTED */,
-    );
 
     /**
      * General aspect loader works with annotations from aspect
@@ -176,13 +151,10 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
     /**
      * Temporary method for parsing pointcuts
      *
-     * @todo Replace this method with pointcut parser
-     *
      * @param AspectContainer $container Container
      * @param Annotation\BaseAnnotation|Annotation\BaseInterceptor $metaInformation
      * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      *
-     * @throws \UnexpectedValueException If pointcut can not be parsed
      * @return \Go\Aop\Pointcut
      */
     private function parsePointcut(AspectContainer $container, $reflection, $metaInformation)
