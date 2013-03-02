@@ -10,15 +10,40 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
 
+/**
+ * ModifierMatcherFilter performs checks on modifiers for reflection point
+ *
+ * @package Go\Aop\Pointcut
+ */
 class ModifierMatcherFilter implements PointFilter
 {
 
+    /**
+     * Bit mask, that should be always match
+     *
+     * @var int
+     */
     protected $andMask = 0;
 
+    /**
+     * Bit mask, that can be used for additional check
+     *
+     * @var int
+     */
     protected $orMask = 0;
 
+    /**
+     * Bit mask to exclude specific value from matching, for example, !public
+     *
+     * @var int
+     */
     protected $notMask = 0;
 
+    /**
+     * Initialize default filter with "and" mask
+     *
+     * @param int $initialMask Default mask for "and"
+     */
     public function __construct($initialMask = 0)
     {
         $this->andMask = $initialMask;
@@ -33,29 +58,44 @@ class ModifierMatcherFilter implements PointFilter
      */
     public function matches($point)
     {
-        if (!method_exists($point, 'getModifiers')) {
-            return false;
-        }
         $modifiers = $point->getModifiers();
         return !($this->notMask & $modifiers) &&
             (($this->andMask & $modifiers == $this->andMask) || ($this->orMask & $modifiers));
     }
 
-    public function andMatch($value)
+    /**
+     * Add "and" or mask
+     *
+     * @param integer $bitMask
+     * @return $this
+     */
+    public function andMatch($bitMask)
     {
-        $this->andMask |= $value;
+        $this->andMask |= $bitMask;
         return $this;
     }
 
-    public function orMatch($value)
+    /**
+     * Add "or" mask
+     *
+     * @param integer $bitMask
+     * @return $this
+     */
+    public function orMatch($bitMask)
     {
-        $this->orMask |= $value;
+        $this->orMask |= $bitMask;
         return $this;
     }
 
-    public function notMatch($value)
+    /**
+     * Add "not" mask
+     *
+     * @param integer $bitMask
+     * @return $this
+     */
+    public function notMatch($bitMask)
     {
-        $this->notMask |= $value;
+        $this->notMask |= $bitMask;
         return $this;
     }
 }
