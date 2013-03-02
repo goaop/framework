@@ -6,11 +6,13 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop\Support;
+namespace Go\Aop\Pointcut;
 
 use ReflectionMethod;
 
+use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\SimpleClassFilter;
+use Go\Aop\Support\StaticMethodMatcherPointcut;
 
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 
