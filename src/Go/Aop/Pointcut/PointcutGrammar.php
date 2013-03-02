@@ -87,6 +87,12 @@ class PointcutGrammar extends Grammar
                 return new AnnotationMethodPointcut($reader, $annotationClassName);
             })
 
+            // TODO: add grammar for subclasses
+            ->is('within', '(', 'NamespaceClassName', ')')
+            ->call(function ($_, $_, $namespaceName, $_) {
+                return new WithinMethodPointcut($namespaceName);
+            })
+
         ;
 
         $this('Arguments')
