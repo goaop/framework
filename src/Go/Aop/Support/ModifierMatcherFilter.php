@@ -6,7 +6,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop\Pointcut;
+namespace Go\Aop\Support;
 
 use Go\Aop\PointFilter;
 

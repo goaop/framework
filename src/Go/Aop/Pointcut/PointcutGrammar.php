@@ -10,11 +10,12 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
 use Go\Aop\Support\InheritanceClassFilter;
+use Go\Aop\Support\ModifierMatcherFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Aop\Support\SimpleClassFilter;
+use Go\Core\AspectKernel;
 
 use Dissect\Parser\Grammar;
-use Go\Core\AspectKernel;
 
 /**
  * Pointcut grammar defines general structure of pointcuts and rules of parsing
