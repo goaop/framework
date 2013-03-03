@@ -15,7 +15,7 @@ use Go\Aop\Aspect;
 use Go\Aop\Framework;
 use Go\Aop\MethodMatcher;
 use Go\Aop\Pointcut;
-use Go\Aop\PropertyMatcher;
+use Go\Aop\PointFilter;
 use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
@@ -73,11 +73,12 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
      */
     public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
     {
-        // TODO: use general pointcut parser here instead of hardcoded regular expressions
+        /** @var $pointcut Pointcut|PointFilter */
         $pointcut       = $this->parsePointcut($container, $reflection, $metaInformation);
         $methodId       = sprintf("%s->%s()", $reflection->class, $reflection->name);
         $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);
 
+        $isPointFilter  = $pointcut instanceof PointFilter;
         switch (true) {
             // Register a pointcut by its name
             case ($metaInformation instanceof Annotation\Pointcut):
@@ -89,7 +90,7 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
                 $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
                 break;
 
-            case ($pointcut instanceof PropertyMatcher):
+            case ($isPointFilter && ($pointcut->getKind() & PointFilter::KIND_PROPERTY)):
                 $advice = $this->getPropertyInterceptor($metaInformation, $adviceCallback);
                 $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
                 break;

@@ -12,7 +12,6 @@ use ReflectionProperty;
 
 use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
 
-use Go\Aop\PropertyMatcher;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use Go\Aop\TruePointFilter;
@@ -20,7 +19,7 @@ use Go\Aop\TruePointFilter;
 /**
  * Signature property pointcut checks the property signature (modifiers and name) to match it
  */
-class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
+class SignaturePropertyPointcut implements Pointcut, PointFilter
 {
 
     /**

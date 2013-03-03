@@ -321,7 +321,7 @@ class AspectContainer
         }
 
         // Check properties in class only for PropertyMatcher filters
-        if ($filter instanceof Aop\PropertyMatcher) {
+        if ($filter->getKind() & Aop\PointFilter::KIND_PROPERTY) {
             $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED;
             foreach ($class->getProperties($mask) as $property) {
                 /** @var $property ReflectionProperty */
