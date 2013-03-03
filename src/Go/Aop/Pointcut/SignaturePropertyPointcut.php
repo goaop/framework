@@ -6,32 +6,35 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop\Support;
+namespace Go\Aop\Pointcut;
 
-use Reflector;
-use ReflectionClass;
 use ReflectionProperty;
 
 use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
 
-use Go\Aop\PropertyMatcher;
 use Go\Aop\Pointcut;
-use Go\Aop\ClassFilter;
 use Go\Aop\PointFilter;
-use Go\Aop\TrueClassFilter;
+use Go\Aop\Support\TruePointFilter;
 
 /**
  * Signature property pointcut checks the property signature (modifiers and name) to match it
  */
-class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
+class SignaturePropertyPointcut implements Pointcut, PointFilter
 {
 
     /**
      * Filter for class
      *
-     * @var null|ClassFilter
+     * @var null|PointFilter
      */
     private $classFilter = null;
+
+    /**
+     * Modifier filter for method
+     *
+     * @var PointFilter
+     */
+    protected $modifierFilter;
 
     /**
      * Property name to match, can contain wildcards *,?
@@ -41,38 +44,19 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
     protected $propertyName = '';
 
     /**
-     * Modifier mask for property
-     *
-     * @var string
-     */
-    protected $modifier;
-
-    /**
-     * Bit mask:
-     *
-     *  const IS_STATIC = 1;
-     *  const IS_PUBLIC = 256;
-     *  const IS_PROTECTED = 512;
-     *  const IS_PRIVATE = 1024;
-     *
-     * @var integer|null
-     */
-    protected static $bitMask = 0x0701;
-
-    /**
      * Signature property matcher constructor
      *
      * @param string $propertyName Name of the property to match or glob pattern
-     * @param integer $modifier Method modifier (mask of reflection constant modifiers)
+     * @param PointFilter $modifierFilter Property modifier filter
      */
-    public function __construct($propertyName, $modifier)
+    public function __construct($propertyName, PointFilter $modifierFilter)
     {
-        $this->propertyName = $propertyName;
-        $this->regexp     = strtr(preg_quote($this->propertyName, '/'), array(
+        $this->propertyName   = $propertyName;
+        $this->regexp         = strtr(preg_quote($this->propertyName, '/'), array(
             '\\*' => '.*?',
             '\\?' => '.'
         ));
-        $this->modifier   = $modifier;
+        $this->modifierFilter = $modifierFilter;
     }
 
     /**
@@ -88,9 +72,9 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
     /**
      * Set the ClassFilter to use for this pointcut.
      *
-     * @param ClassFilter $classFilter
+     * @param PointFilter $classFilter
      */
-    public function setClassFilter(ClassFilter $classFilter)
+    public function setClassFilter(PointFilter $classFilter)
     {
         $this->classFilter = $classFilter;
     }
@@ -98,12 +82,12 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
     /**
      * Return the ClassFilter for this pointcut.
      *
-     * @return ClassFilter
+     * @return PointFilter
      */
     public function getClassFilter()
     {
         if (!$this->classFilter) {
-            $this->classFilter = TrueClassFilter::getInstance();
+            $this->classFilter = TruePointFilter::getInstance();
         }
         return $this->classFilter;
     }
@@ -122,11 +106,20 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
             return false;
         }
 
-        $modifiers = $property->getModifiers();
-        if (!($modifiers & $this->modifier) || ((self::$bitMask - $this->modifier) & $modifiers)) {
+        if (!$this->modifierFilter->matches($property)) {
             return false;
         }
 
         return ($property->name === $this->propertyName) || (bool) preg_match("/^{$this->regexp}$/i", $property->name);
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return self::KIND_PROPERTY;
     }
 }

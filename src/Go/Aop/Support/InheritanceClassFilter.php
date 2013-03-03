@@ -10,13 +10,13 @@ namespace Go\Aop\Support;
 
 use ReflectionClass;
 
-use Go\Aop\ClassFilter;
+use Go\Aop\PointFilter;
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 
 /**
  * Inheritance class matcher that match single class name or any subclass
  */
-class InheritanceClassFilter implements ClassFilter
+class InheritanceClassFilter implements PointFilter
 {
 
     /**
@@ -47,5 +47,15 @@ class InheritanceClassFilter implements ClassFilter
         }
 
         return $class->isSubclassOf($this->parentClass) || $class->implementsInterface($this->parentClass);
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return self::KIND_CLASS;
     }
 }

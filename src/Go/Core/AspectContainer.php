@@ -307,8 +307,8 @@ class AspectContainer
     {
         $classAdvices = array();
 
-        // Check methods in class only for MethodMatcher filters
-        if ($filter instanceof Aop\MethodMatcher) {
+        // Check methods in class only for method filters
+        if ($filter->getKind() & Aop\PointFilter::KIND_METHOD) {
 
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
@@ -320,8 +320,8 @@ class AspectContainer
             }
         }
 
-        // Check properties in class only for PropertyMatcher filters
-        if ($filter instanceof Aop\PropertyMatcher) {
+        // Check properties in class only for property filters
+        if ($filter->getKind() & Aop\PointFilter::KIND_PROPERTY) {
             $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED;
             foreach ($class->getProperties($mask) as $property) {
                 /** @var $property ReflectionProperty */

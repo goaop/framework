@@ -12,7 +12,7 @@ use ReflectionMethod;
 use ReflectionProperty;
 
 use Go\Aop\Aspect;
-use Go\Aop\ClassFilter;
+use Go\Aop\PointFilter;
 use Go\Aop\Framework;
 use Go\Aop\Support;
 use Go\Lang\Annotation;
@@ -88,7 +88,7 @@ class IntroductionAspectExtension implements AspectLoaderExtension
      *
      * @throws \UnexpectedValueException If class filter can not be parsed
      * @throws \InvalidArgumentException
-     * @return ClassFilter
+     * @return PointFilter
      */
     private function parseClassFilter($metaInformation)
     {
