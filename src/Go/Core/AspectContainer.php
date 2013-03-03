@@ -13,7 +13,12 @@ use ReflectionMethod;
 use ReflectionProperty;
 
 use Go\Aop;
+use Go\Aop\Pointcut\PointcutLexer;
+use Go\Aop\Pointcut\PointcutGrammar;
+use Go\Instrument\RawAnnotationReader;
 
+use Dissect\Parser\LALR1\Parser;
+use Doctrine\Common\Annotations\AnnotationReader;
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 
 /**
@@ -69,6 +74,43 @@ class AspectContainer extends Container
     private $isAdvisorsLoaded = false;
 
     /**
+     * Constructor for container
+     */
+    public function __construct()
+    {
+        // Register all services in the container
+        $this->set('aspect.loader', function ($container) {
+            $aspectLoader = new AspectLoader($container);
+
+            // Register general aspect loader extension
+            $aspectLoader->registerLoaderExtension(new GeneralAspectLoaderExtension());
+            $aspectLoader->registerLoaderExtension(new IntroductionAspectExtension());
+
+            return $aspectLoader;
+        });
+
+        // TODO: use cached annotation reader
+        $this->set('aspect.annotation.reader', function () {
+            return new AnnotationReader();
+        });
+        $this->set('aspect.annotation.raw.reader', function () {
+            return new RawAnnotationReader();
+        });
+
+        // Pointcut services
+        $this->set('aspect.pointcut.lexer', function () {
+            return new PointcutLexer();
+        });
+        $this->set('aspect.pointcut.parser', function () {
+            return new Parser(
+                new PointcutGrammar(),
+                // Include production parse table for parser
+                include __DIR__ . '/../Aop/Pointcut/PointcutParseTable.php'
+            );
+        });
+    }
+
+    /**
      * Returns a pointcut by identifier
      *
      * @param string $id Pointcut identifier
@@ -118,13 +160,12 @@ class AspectContainer extends Container
      * Register an aspect in the container
      *
      * @param Aop\Aspect $aspect Instance of concrete aspect
-     * @internal param string $id Key for aspect
-     *
      */
     public function registerAspect(Aop\Aspect $aspect)
     {
-        $aspectName = get_class($aspect);
-        $this->set("aspect.{$aspectName}", $aspect, array('aspect'));
+        $refAspect = new ReflectionClass($aspect);
+        $this->set("aspect.{$refAspect->name}", $aspect, array('aspect'));
+        $this->addResource($refAspect->getFileName());
     }
 
     /**
