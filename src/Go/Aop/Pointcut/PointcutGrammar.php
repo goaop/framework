@@ -8,7 +8,7 @@
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\ClassFilter;
+use Go\Aop\PointFilter;
 use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\TrueClassFilter;
 use Go\Aop\Support\SimpleClassFilter;
@@ -64,7 +64,7 @@ class PointcutGrammar extends Grammar
                 $_, // execution node
                 $_, // (
                 ModifierMatcherFilter $memberModifiers,
-                ClassFilter $classFilter,
+                PointFilter $classFilter,
                 $methodCallType,
                 $methodNamePattern,
                 $_ // )
@@ -84,7 +84,7 @@ class PointcutGrammar extends Grammar
                 $_,
                 $_,
                 ModifierMatcherFilter $memberModifiers,
-                ClassFilter $classFilter,
+                PointFilter $classFilter,
                 $_,
                 $propertyNamePattern,
                 $_ // )

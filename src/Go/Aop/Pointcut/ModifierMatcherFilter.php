@@ -98,4 +98,14 @@ class ModifierMatcherFilter implements PointFilter
         $this->notMask |= $bitMask;
         return $this;
     }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return self::KIND_ALL;
+    }
 }

@@ -10,7 +10,7 @@ namespace Go\Aop\Support;
 
 use ReflectionClass;
 
-use Go\Aop\ClassFilter;
+use Go\Aop\PointFilter;
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 
 /**
@@ -18,7 +18,7 @@ use TokenReflection\ReflectionClass as ParsedReflectionClass;
  *
  * Class name can contain wildcards '*', '**' and '?'
  */
-class SimpleClassFilter implements ClassFilter
+class SimpleClassFilter implements PointFilter
 {
 
     /**
@@ -54,5 +54,15 @@ class SimpleClassFilter implements ClassFilter
         }
 
         return ($class->name === $this->className) || (bool) preg_match("/^{$this->regexp}$/i", $class->name);
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return self::KIND_CLASS;
     }
 }

@@ -9,7 +9,6 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
-use Go\Aop\ClassFilter;
 use Go\Aop\PointFilter;
 use Go\Aop\TrueClassFilter;
 use Go\Aop\Support\DynamicMethodMatcher;
@@ -26,24 +25,24 @@ abstract class DynamicMethodMatcherPointcut extends DynamicMethodMatcher impleme
     /**
      * Filter for class
      *
-     * @var null|ClassFilter
+     * @var null|PointFilter
      */
     private $classFilter = null;
 
     /**
      * Set the ClassFilter to use for this pointcut.
      *
-     * @param ClassFilter $classFilter
+     * @param PointFilter $classFilter
      */
-    public function setClassFilter(ClassFilter $classFilter)
+    public function setClassFilter(PointFilter $classFilter)
     {
         $this->classFilter = $classFilter;
     }
 
     /**
-     * Return the ClassFilter for this pointcut.
+     * Return the class filter for this pointcut.
      *
-     * @return ClassFilter
+     * @return PointFilter
      */
     public function getClassFilter()
     {

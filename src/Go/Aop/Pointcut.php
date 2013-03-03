@@ -21,9 +21,9 @@ namespace Go\Aop;
 interface Pointcut
 {
     /**
-     * Return the ClassFilter for this pointcut.
+     * Return the class filter for this pointcut.
      *
-     * @return ClassFilter
+     * @return PointFilter
      */
     public function getClassFilter();
 

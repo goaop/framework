@@ -8,15 +8,12 @@
 
 namespace Go\Aop\Pointcut;
 
-use Reflector;
-use ReflectionClass;
 use ReflectionProperty;
 
 use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
 
 use Go\Aop\PropertyMatcher;
 use Go\Aop\Pointcut;
-use Go\Aop\ClassFilter;
 use Go\Aop\PointFilter;
 use Go\Aop\TrueClassFilter;
 
@@ -29,7 +26,7 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
     /**
      * Filter for class
      *
-     * @var null|ClassFilter
+     * @var null|PointFilter
      */
     private $classFilter = null;
 
@@ -76,9 +73,9 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
     /**
      * Set the ClassFilter to use for this pointcut.
      *
-     * @param ClassFilter $classFilter
+     * @param PointFilter $classFilter
      */
-    public function setClassFilter(ClassFilter $classFilter)
+    public function setClassFilter(PointFilter $classFilter)
     {
         $this->classFilter = $classFilter;
     }
@@ -86,7 +83,7 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
     /**
      * Return the ClassFilter for this pointcut.
      *
-     * @return ClassFilter
+     * @return PointFilter
      */
     public function getClassFilter()
     {
@@ -115,5 +112,15 @@ class SignaturePropertyPointcut implements Pointcut, PropertyMatcher
         }
 
         return ($property->name === $this->propertyName) || (bool) preg_match("/^{$this->regexp}$/i", $property->name);
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return self::KIND_PROPERTY;
     }
 }

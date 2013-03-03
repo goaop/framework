@@ -30,4 +30,15 @@ abstract class DynamicMethodMatcher implements MethodMatcher
     {
         return true;
     }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return self::KIND_METHOD;
+    }
+
 }

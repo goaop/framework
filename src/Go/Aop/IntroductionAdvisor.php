@@ -24,7 +24,7 @@ interface IntroductionAdvisor extends Advisor
      *
      * This represents the class part of a pointcut. Note that method matching doesn't make sense to introductions.
      *
-     * @return ClassFilter The class filter
+     * @return PointFilter The class filter
      */
     public function getClassFilter();
 

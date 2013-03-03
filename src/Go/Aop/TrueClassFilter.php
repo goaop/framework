@@ -8,16 +8,13 @@
 
 namespace Go\Aop;
 
-use Reflector;
 use ReflectionClass;
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
-
-use Go\Aop\ClassFilter;
 
 /**
  * Canonical ClassFilter instance that matches all classes.
  */
-class TrueClassFilter implements ClassFilter
+class TrueClassFilter implements PointFilter
 {
 
     /**
@@ -53,5 +50,15 @@ class TrueClassFilter implements ClassFilter
     {
         // Is check for a ReflectionClass class is needed here?
         return true;
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return self::KIND_CLASS;
     }
 }
