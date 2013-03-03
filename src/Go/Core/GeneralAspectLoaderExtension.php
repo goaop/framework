@@ -13,7 +13,6 @@ use ReflectionProperty;
 
 use Go\Aop\Aspect;
 use Go\Aop\Framework;
-use Go\Aop\MethodMatcher;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use Go\Aop\Support;
@@ -85,7 +84,7 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
                 $container->registerPointcut($pointcut, $methodId);
                 break;
 
-            case ($pointcut instanceof MethodMatcher):
+            case ($isPointFilter && ($pointcut->getKind() & PointFilter::KIND_METHOD)):
                 $advice = $this->getMethodInterceptor($metaInformation, $adviceCallback);
                 $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
                 break;
