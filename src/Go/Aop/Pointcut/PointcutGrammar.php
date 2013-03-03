@@ -10,7 +10,7 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
 use Go\Aop\Support\InheritanceClassFilter;
-use Go\Aop\TrueClassFilter;
+use Go\Aop\TruePointFilter;
 use Go\Aop\Support\SimpleClassFilter;
 
 use Dissect\Parser\Grammar;
@@ -127,7 +127,7 @@ class PointcutGrammar extends Grammar
             ->is('NamespaceClassPattern')
             ->call(function($pattern) {
                 return $pattern === '**'
-                    ? TrueClassFilter::getInstance()
+                    ? TruePointFilter::getInstance()
                     : new SimpleClassFilter($pattern);
             })
 

@@ -10,7 +10,7 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
-use Go\Aop\TrueClassFilter;
+use Go\Aop\TruePointFilter;
 use Go\Aop\Support\DynamicMethodMatcher;
 
 /**
@@ -47,7 +47,7 @@ abstract class DynamicMethodMatcherPointcut extends DynamicMethodMatcher impleme
     public function getClassFilter()
     {
         if (!$this->classFilter) {
-            $this->classFilter = TrueClassFilter::getInstance();
+            $this->classFilter = TruePointFilter::getInstance();
         }
         return $this->classFilter;
     }

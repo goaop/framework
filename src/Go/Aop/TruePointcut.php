@@ -8,7 +8,6 @@
 
 namespace Go\Aop;
 
-use Go\Aop\TrueClassFilter;
 use Go\Aop\TruePointFilter;
 
 /**
@@ -48,7 +47,7 @@ class TruePointcut implements Pointcut
      */
     public function getClassFilter()
     {
-        return TrueClassFilter::getInstance();
+        return TruePointFilter::getInstance();
     }
 
     /**
