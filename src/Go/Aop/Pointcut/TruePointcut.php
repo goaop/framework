@@ -6,8 +6,10 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop;
+namespace Go\Aop\Pointcut;
 
+use Go\Aop\PointFilter;
+use Go\Aop\Pointcut;
 use Go\Aop\TruePointFilter;
 
 /**
@@ -29,7 +31,7 @@ class TruePointcut implements Pointcut
     /**
      * Singleton pattern
      *
-     * @return TruePointcut
+     * @return self
      */
     public static function getInstance()
     {
