@@ -19,7 +19,7 @@ use TokenReflection\ReflectionClass as ParsedReflectionClass;
 /**
  * Aspect container contains list of all pointcuts and advisors
  */
-class AspectContainer
+class AspectContainer extends Container
 {
     /**
      * Prefix for properties interceptor
@@ -46,33 +46,6 @@ class AspectContainer
      */
     const AOP_PROXIED_SUFFIX = '__AopProxied';
 
-    /**
-     * List of named pointcuts in the container
-     *
-     * @var array|Aop\Pointcut[]
-     */
-    protected $pointcuts = array();
-
-    /**
-     * List of named and indexed advisors in the container
-     *
-     * @var array|Aop\Advisor[]
-     */
-    protected $advisors = array();
-
-    /**
-     * List of services in the container
-     *
-     * @var array|object[]
-     */
-    protected $services = array();
-
-    /**
-     * List of registered aspects
-     *
-     * @var array
-     */
-    protected $aspects = array();
 
     /**
      * List of resources for application
@@ -89,31 +62,11 @@ class AspectContainer
     protected $maxTimestamp = 0;
 
     /**
-     * Set a service into the container
+     * Flag, that determines if pointcuts are loaded from aspects
      *
-     * @param string $id Key for service
-     * @param object $service Service to store
+     * @var bool
      */
-    public function set($id, $service)
-    {
-        $this->services[$id] = $service;
-    }
-
-    /**
-     * Return a service from the container
-     *
-     * @param string $id Service key
-     *
-     * @return object
-     * @throws \OutOfBoundsException if service was not found
-     */
-    public function get($id)
-    {
-        if (is_numeric($id) || !isset($this->services[$id])) {
-            throw new \OutOfBoundsException("Unknown service {$id}");
-        }
-        return $this->services[$id];
-    }
+    private $isAdvisorsLoaded = false;
 
     /**
      * Returns a pointcut by identifier
@@ -121,15 +74,10 @@ class AspectContainer
      * @param string $id Pointcut identifier
      *
      * @return Aop\Pointcut
-     *
-     * @throws \OutOfBoundsException if pointcut key is invalid
      */
     public function getPointcut($id)
     {
-        if (is_numeric($id) || !isset($this->pointcuts[$id])) {
-            throw new \OutOfBoundsException("Unknown pointcut {$id}");
-        }
-        return $this->pointcuts[$id];
+        return $this->get("pointcut.{$id}");
     }
 
     /**
@@ -138,30 +86,9 @@ class AspectContainer
      * @param Aop\Pointcut $pointcut Instance
      * @param string $id Key for pointcut
      */
-    public function registerPointcut(Aop\Pointcut $pointcut, $id = null)
+    public function registerPointcut(Aop\Pointcut $pointcut, $id)
     {
-        if ($id) {
-            $this->pointcuts[$id] = $pointcut;
-        } else {
-            $this->pointcuts[] = $pointcut;
-        }
-    }
-
-    /**
-     * Returns an advisor by identifier
-     *
-     * @param string $id Advisor identifier
-     *
-     * @return Aop\Advisor
-     *
-     * @throws \OutOfBoundsException if advisor key is invalid
-     */
-    public function getAdvisor($id)
-    {
-        if (is_numeric($id) || !isset($this->advisors[$id])) {
-            throw new \OutOfBoundsException("Unknown advisor {$id}");
-        }
-        return $this->advisors[$id];
+        $this->set("pointcut.{$id}", $pointcut, array('pointcut'));
     }
 
     /**
@@ -170,13 +97,9 @@ class AspectContainer
      * @param Aop\Advisor $advisor Instance
      * @param string $id Key for advisor
      */
-    public function registerAdvisor(Aop\Advisor $advisor, $id = null)
+    public function registerAdvisor(Aop\Advisor $advisor, $id)
     {
-        if ($id) {
-            $this->advisors[$id] = $advisor;
-        } else {
-            $this->advisors[] = $advisor;
-        }
+        $this->set("advisor.{$id}", $advisor, array('advisor'));
     }
 
     /**
@@ -184,38 +107,24 @@ class AspectContainer
      *
      * @param string $aspectName Aspect name
      *
-     * @throws \OutOfBoundsException If aspect is unknown
-     *
      * @return Aop\Aspect
      */
     public function getAspect($aspectName)
     {
-        if (!isset($this->aspects[$aspectName])) {
-            throw new \OutOfBoundsException("Unknown aspect {$aspectName}");
-        }
-        return $this->aspects[$aspectName];
+        return $this->get("aspect.{$aspectName}");
     }
 
     /**
      * Register an aspect in the container
      *
      * @param Aop\Aspect $aspect Instance of concrete aspect
-     * @param string $id Key for aspect
+     * @internal param string $id Key for aspect
      *
-     * @throws \LogicException if aspect was already registered
      */
     public function registerAspect(Aop\Aspect $aspect)
     {
         $aspectName = get_class($aspect);
-        if (!empty($this->aspects[$aspectName])) {
-            throw new \LogicException("Only one instance of single aspect can be registered at once");
-        }
-
-        /** @var $loader AspectLoader */
-        $loader = $this->get('aspect.loader');
-        $loader->load($aspect);
-
-        $this->aspects[$aspectName] = $aspect;
+        $this->set("aspect.{$aspectName}", $aspect, array('aspect'));
     }
 
     /**
@@ -255,6 +164,10 @@ class AspectContainer
      */
     public function getAdvicesForClass($class)
     {
+        if (!$this->isAdvisorsLoaded) {
+            $this->loadAdvisorsAndPointcuts();
+        }
+
         $classAdvices = array();
         if (!$class instanceof ReflectionClass && !$class instanceof ParsedReflectionClass) {
             $class = new ReflectionClass($class);
@@ -268,7 +181,7 @@ class AspectContainer
             $originalClass = $class;
         }
 
-        foreach ($this->advisors as $advisor) {
+        foreach ($this->getByTag('advisor') as $advisor) {
 
             if ($advisor instanceof Aop\PointcutAdvisor) {
 
@@ -355,5 +268,19 @@ class AspectContainer
         return array(
             self::INTRODUCTION_TRAIT_PREFIX.':'.join(':', $advice->getInterfaces()) => $advice
         );
+    }
+
+    /**
+     * Load pointcuts into container
+     *
+     * There is no need to always load pointcuts, so we delay loading
+     */
+    private function loadAdvisorsAndPointcuts()
+    {
+        /** @var $loader AspectLoader */
+        $loader = $this->get('aspect.loader');
+        foreach ($this->getByTag('aspect') as $aspect) {
+            $loader->load($aspect);
+        }
     }
 }
