@@ -6,9 +6,11 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop\Support;
+namespace Go\Aop\Pointcut;
 
 use ReflectionMethod;
+
+use Go\Aop\PointFilter;
 
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 
@@ -25,41 +27,26 @@ class SignatureMethodPointcut extends StaticMethodMatcherPointcut
     protected $methodName = '';
 
     /**
-     * Modifier mask for method
+     * Modifier filter for method
      *
-     * @var string
+     * @var PointFilter
      */
-    protected $modifier;
-
-    /**
-     * Bit mask:
-     *
-     * const IS_STATIC = 1
-     * const IS_ABSTRACT = 2
-     * const IS_FINAL = 4
-     * const IS_PUBLIC = 256
-     * const IS_PROTECTED = 512
-     * const IS_PRIVATE = 1024
-     *
-     * @var integer|null
-     */
-    protected static $bitMask = 0x0701; // STATIC + PUBLIC + PROTECTED + PRIVATE
-
+    protected $modifierFilter;
 
     /**
      * Signature method matcher constructor
      *
      * @param string $methodName Name of the method to match or glob pattern
-     * @param integer $modifier Method modifier (mask of reflection constant modifiers)
+     * @param PointFilter $modifierFilter Method modifier filter
      */
-    public function __construct($methodName, $modifier)
+    public function __construct($methodName, PointFilter $modifierFilter)
     {
-        $this->methodName = $methodName;
-        $this->regexp     = strtr(preg_quote($this->methodName, '/'), array(
+        $this->methodName     = $methodName;
+        $this->regexp         = strtr(preg_quote($this->methodName, '/'), array(
             '\\*' => '.*?',
             '\\?' => '.'
         ));
-        $this->modifier   = $modifier;
+        $this->modifierFilter = $modifierFilter;
     }
 
     /**
@@ -76,8 +63,7 @@ class SignatureMethodPointcut extends StaticMethodMatcherPointcut
             return false;
         }
 
-        $modifiers = $method->getModifiers();
-        if (!($modifiers & $this->modifier) || ((self::$bitMask - $this->modifier) & $modifiers)) {
+        if (!$this->modifierFilter->matches($method)) {
             return false;
         }
 

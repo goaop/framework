@@ -12,7 +12,7 @@ use InvalidArgumentException;
 use ReflectionClass;
 
 use Go\Aop\Advice;
-use Go\Aop\ClassFilter;
+use Go\Aop\PointFilter;
 use Go\Aop\IntroductionInfo;
 use Go\Aop\IntroductionAdvisor;
 
@@ -30,14 +30,14 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     /**
      * Type pattern the introduction is restricted to
      *
-     * @var ClassFilter
+     * @var PointFilter
      */
     private $classFilter;
 
     /**
      * Create a DefaultIntroductionAdvisor for the given advice.
      */
-    public function __construct(ClassFilter $classFilter, IntroductionInfo $info)
+    public function __construct(PointFilter $classFilter, IntroductionInfo $info)
     {
         $this->classFilter = $classFilter;
         $this->advice      = $info;
@@ -95,7 +95,7 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
      *
      * This represents the class part of a pointcut. Note that method matching doesn't make sense to introductions.
      *
-     * @return ClassFilter The class filter
+     * @return PointFilter The class filter
      */
     public function getClassFilter()
     {
@@ -105,9 +105,9 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     /**
      * Set the class filter for advisor
      *
-     * @param ClassFilter $classFilter Filter for classes
+     * @param PointFilter $classFilter Filter for classes
      */
-    public function setClassFilter(ClassFilter $classFilter)
+    public function setClassFilter(PointFilter $classFilter)
     {
         $this->classFilter = $classFilter;
     }

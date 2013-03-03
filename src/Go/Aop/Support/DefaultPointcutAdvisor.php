@@ -10,7 +10,6 @@ namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
 use Go\Aop\Pointcut;
-use Go\Aop\TruePointcut;
 
 /**
  * Convenient Pointcut-driven Advisor implementation.
@@ -47,7 +46,7 @@ class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
      */
     public function getPointcut()
     {
-        return $this->pointcut ?: TruePointcut::getInstance();
+        return $this->pointcut;
     }
 
     /**

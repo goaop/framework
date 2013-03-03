@@ -6,49 +6,47 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop\Support;
+namespace Go\Aop\Pointcut;
 
-use Go\Aop\MethodMatcher;
 use Go\Aop\Pointcut;
-use Go\Aop\ClassFilter;
 use Go\Aop\PointFilter;
-use Go\Aop\TrueClassFilter;
+use Go\Aop\Support\TruePointFilter;
+use Go\Aop\Support\StaticMethodMatcher;
 
 /**
- * Convenient superclass when we want to force subclasses to implement MethodMatcher interface,
- * but subclasses will want to be pointcuts.
+ * Convenient abstract superclass for static method matchers, which don't care about arguments at runtime.
  *
- * The getClassFilter() method can be overriden to customize ClassFilter behaviour as well.
+ * The "classFilter" property can be set to customize ClassFilter behavior.
  */
-abstract class DynamicMethodMatcherPointcut extends DynamicMethodMatcher implements Pointcut
+abstract class StaticMethodMatcherPointcut extends StaticMethodMatcher implements Pointcut
 {
 
     /**
      * Filter for class
      *
-     * @var null|ClassFilter
+     * @var null|PointFilter
      */
     private $classFilter = null;
 
     /**
      * Set the ClassFilter to use for this pointcut.
      *
-     * @param ClassFilter $classFilter
+     * @param PointFilter $classFilter
      */
-    public function setClassFilter(ClassFilter $classFilter)
+    public function setClassFilter(PointFilter $classFilter)
     {
         $this->classFilter = $classFilter;
     }
 
     /**
-     * Return the ClassFilter for this pointcut.
+     * Return the class filter for this pointcut.
      *
-     * @return ClassFilter
+     * @return PointFilter
      */
     public function getClassFilter()
     {
         if (!$this->classFilter) {
-            $this->classFilter = TrueClassFilter::getInstance();
+            $this->classFilter = TruePointFilter::getInstance();
         }
         return $this->classFilter;
     }

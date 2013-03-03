@@ -13,8 +13,8 @@ use ReflectionProperty;
 
 use Go\Aop\Aspect;
 use Go\Aop\Framework;
-use Go\Aop\MethodMatcher;
-use Go\Aop\PropertyMatcher;
+use Go\Aop\Pointcut;
+use Go\Aop\PointFilter;
 use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
@@ -24,31 +24,6 @@ use Go\Lang\Annotation;
  */
 class GeneralAspectLoaderExtension implements AspectLoaderExtension
 {
-    /**
-     * Mappings of string values to method modifiers
-     *
-     * @todo: Move to the pointcut parser
-     * @var array
-     */
-    protected static $methodModifiers = array(
-        'public'    => ReflectionMethod::IS_PUBLIC,
-        'protected' => ReflectionMethod::IS_PROTECTED,
-        '::'        => ReflectionMethod::IS_STATIC,
-        '*'         => 768 /* PUBLIC | PROTECTED */,
-        '->'        => 0,
-    );
-
-    /**
-     * Mappings of string values to property modifiers
-     *
-     * @todo: Move to the pointcut parser
-     * @var array
-     */
-    protected static $propertyModifiers = array(
-        'public'    => ReflectionProperty::IS_PUBLIC,
-        'protected' => ReflectionProperty::IS_PROTECTED,
-        '*'         => 768 /* PUBLIC | PROTECTED */,
-    );
 
     /**
      * General aspect loader works with annotations from aspect
@@ -97,23 +72,24 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
      */
     public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
     {
-        // TODO: use general pointcut parser here instead of hardcoded regular expressions
+        /** @var $pointcut Pointcut|PointFilter */
         $pointcut       = $this->parsePointcut($container, $reflection, $metaInformation);
         $methodId       = sprintf("%s->%s()", $reflection->class, $reflection->name);
         $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);
 
+        $isPointFilter  = $pointcut instanceof PointFilter;
         switch (true) {
             // Register a pointcut by its name
             case ($metaInformation instanceof Annotation\Pointcut):
                 $container->registerPointcut($pointcut, $methodId);
                 break;
 
-            case ($pointcut instanceof MethodMatcher):
+            case ($isPointFilter && ($pointcut->getKind() & PointFilter::KIND_METHOD)):
                 $advice = $this->getMethodInterceptor($metaInformation, $adviceCallback);
                 $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
                 break;
 
-            case ($pointcut instanceof PropertyMatcher):
+            case ($isPointFilter && ($pointcut->getKind() & PointFilter::KIND_PROPERTY)):
                 $advice = $this->getPropertyInterceptor($metaInformation, $adviceCallback);
                 $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
                 break;
@@ -175,13 +151,10 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
     /**
      * Temporary method for parsing pointcuts
      *
-     * @todo Replace this method with pointcut parser
-     *
      * @param AspectContainer $container Container
      * @param Annotation\BaseAnnotation|Annotation\BaseInterceptor $metaInformation
      * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      *
-     * @throws \UnexpectedValueException If pointcut can not be parsed
      * @return \Go\Aop\Pointcut
      */
     private function parsePointcut(AspectContainer $container, $reflection, $metaInformation)
@@ -190,78 +163,13 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
             return $this->loadPointcutFromContainer($container, $reflection, $metaInformation);
         }
 
-        // execution(public Example\Aspect\*->method*())
-        // execution(protected Test\Class*::someStatic*Method())
-        static $executionReg = '/
-            ^execution\(
-                (?P<modifier>public|protected|\*)\s+
-                (?P<class>[\w\\\*]+)
-                (?P<type>->|::)
-                (?P<method>[\w\*]+)
-                \(\*?\)
-            \)$/x';
+        /** @var $lexer \Dissect\Lexer\Lexer */
+        $lexer  = $container->get('aspect.pointcut.lexer');
+        $stream = $lexer->lex($metaInformation->value);
 
-        if (preg_match($executionReg, $metaInformation->value, $matches)) {
-            $modifier = self::$methodModifiers[$matches['modifier']];
-            $modifier |= self::$methodModifiers[$matches['type']];
-            $pointcut = new Support\SignatureMethodPointcut($matches['method'], $modifier);
-            if ($matches['class'] !== '*') {
-                $classFilter = new Support\SimpleClassFilter($matches['class']);
-                $pointcut->setClassFilter($classFilter);
-            }
-            return $pointcut;
-        }
-
-        // @annotation(First\Second\Annotation\Class)
-        static $annotationReg = '/
-            ^@annotation\(
-                (?P<annotation>[\w\\\*]+)
-            \)$/x';
-
-        if (preg_match($annotationReg, $metaInformation->value, $matches)) {
-            // TODO: use single annotation reader
-            $reader   = $container->get('aspect.annotation.raw.reader');
-            $pointcut = new Support\AnnotationMethodPointcut($reader, $matches['annotation']);
-            return $pointcut;
-        }
-
-
-        // within(Go\Aspects\Blog\Package\*) : This will match all the methods in all classes of Go\Aspects\Blog\Package.
-        // within(Go\Aspects\Blog\Package\**) : This will match all the methods in all classes of Go\Aspects\Blog\Package and its sub packages. The only difference is the extra dot(.) after package.
-        // within(Go\Aspects\Blog\Package\DemoClass) : This will match all the methods in the DemoClass.
-        // within(DemoInterface+) : This will match all the methods which are in classes which implement DemoInterface.
-        static $withinReg = '/
-            ^within\(
-                (?P<class>[\w\\\*]+)
-                (?P<children>\+?)
-            \)$/x';
-
-        if (preg_match($withinReg, $metaInformation->value, $matches)) {
-            $pointcut = new Support\WithinMethodPointcut($matches['class'], (bool) $matches['children']);
-            return $pointcut;
-        }
-
-        // access(public Example\Aspect\*->property*)
-        // access(protected Test\Class*->someProtected*Property)
-        static $propertyReg = '/
-            ^access\(
-                (?P<modifier>public|protected|\*)\s+
-                (?P<class>[\w\\\*]+)
-                ->
-                (?P<property>[\w\*]+)
-            \)$/x';
-
-        if (preg_match($propertyReg, $metaInformation->value, $matches)) {
-            $modifier = self::$propertyModifiers[$matches['modifier']];
-            $pointcut = new Support\SignaturePropertyPointcut($matches['property'], $modifier);
-            if ($matches['class'] !== '*') {
-                $classFilter = new Support\SimpleClassFilter($matches['class']);
-                $pointcut->setClassFilter($classFilter);
-            }
-            return $pointcut;
-        }
-
-        throw new \UnexpectedValueException("Unsupported pointcut: {$metaInformation->value}");
+        /** @var $parser \Dissect\Parser\Parser */
+        $parser = $container->get('aspect.pointcut.parser');
+        return $parser->parse($stream);
     }
 
     /**

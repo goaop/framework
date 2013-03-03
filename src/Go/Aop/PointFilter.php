@@ -13,6 +13,13 @@ namespace Go\Aop;
  */
 interface PointFilter
 {
+
+    const KIND_METHOD   = 1;
+    const KIND_PROPERTY = 2;
+    const KIND_CLASS    = 4;
+    const KIND_TRAIT    = 8;
+    const KIND_ALL      = 15;
+
     /**
      * Performs matching of point of code
      *
@@ -21,4 +28,11 @@ interface PointFilter
      * @return bool
      */
     public function matches($point);
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind();
 }

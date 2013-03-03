@@ -59,7 +59,7 @@ class HealthyLiveAspect implements Aspect
      * Method that advice to clean teeth before go to sleep
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before("execution(public Human->sleep())")
+     * @Before("execution(public Human->sleep(*))")
      */
     protected function cleanTeethBeforeSleep(MethodInvocation $invocation)
     {

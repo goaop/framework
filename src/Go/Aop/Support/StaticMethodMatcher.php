@@ -27,4 +27,16 @@ abstract class StaticMethodMatcher implements MethodMatcher
     {
         return false;
     }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return self::KIND_METHOD;
+    }
+
+
 }
