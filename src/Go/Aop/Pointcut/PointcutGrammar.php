@@ -10,7 +10,7 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
 use Go\Aop\Support\InheritanceClassFilter;
-use Go\Aop\TruePointFilter;
+use Go\Aop\Support\TruePointFilter;
 use Go\Aop\Support\SimpleClassFilter;
 
 use Dissect\Parser\Grammar;

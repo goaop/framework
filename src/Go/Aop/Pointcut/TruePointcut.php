@@ -10,7 +10,7 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
 use Go\Aop\Pointcut;
-use Go\Aop\TruePointFilter;
+use Go\Aop\Support\TruePointFilter;
 
 /**
  * Canonical Pointcut instance that always matches.

@@ -6,7 +6,9 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Go\Aop;
+namespace Go\Aop\Support;
+
+use Go\Aop\PointFilter;
 
 /**
  * Canonical PointFilter instance that matches all points.
@@ -24,7 +26,7 @@ class TruePointFilter implements PointFilter
     /**
      * Singleton pattern
      *
-     * @return TruePointFilter
+     * @return self
      */
     public static function getInstance()
     {
