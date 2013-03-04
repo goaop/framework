@@ -17,7 +17,8 @@ DemoAspectKernel::getInstance()->init(array(
     'autoload' => array(
         'Go'               => realpath(__DIR__ . '/../src'),
         'TokenReflection'  => realpath(__DIR__ . '/../vendor/andrewsville/php-token-reflection/'),
-        'Doctrine\\Common' => realpath(__DIR__ . '/../vendor/doctrine/common/lib/')
+        'Doctrine\\Common' => realpath(__DIR__ . '/../vendor/doctrine/common/lib/'),
+        'Dissect'          => realpath(__DIR__ . '/../vendor/jakubledl/dissect/src/'),
     ),
     // Default application directory
     'appDir' => __DIR__ . '/../demos',
