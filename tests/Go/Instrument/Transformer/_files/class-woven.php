@@ -13,7 +13,7 @@ class TestClass__AopProxied {
 }
 
 
-class TestClass extends TestClass__AopProxied
+class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
 {
 
 

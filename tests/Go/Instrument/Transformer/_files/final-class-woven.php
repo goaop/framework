@@ -12,7 +12,7 @@ class TestFinalClass__AopProxied {
     protected static function protectedStaticMethod() {}
 }
 
-final class TestFinalClass extends TestFinalClass__AopProxied
+final class TestFinalClass extends TestFinalClass__AopProxied implements \Go\Aop\Proxy
 {
 
     /**
