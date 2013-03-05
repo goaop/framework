@@ -44,6 +44,13 @@ class SignaturePropertyPointcut implements Pointcut, PointFilter
     protected $propertyName = '';
 
     /**
+     * Regular expression for matching
+     *
+     * @var string
+     */
+    protected $regexp;
+
+    /**
      * Signature property matcher constructor
      *
      * @param string $propertyName Name of the property to match or glob pattern

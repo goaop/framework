@@ -34,6 +34,13 @@ class SignatureMethodPointcut extends StaticMethodMatcherPointcut
     protected $modifierFilter;
 
     /**
+     * Regular expression for matching
+     *
+     * @var string
+     */
+    protected $regexp;
+
+    /**
      * Signature method matcher constructor
      *
      * @param string $methodName Name of the method to match or glob pattern
