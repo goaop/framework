@@ -92,6 +92,7 @@ Dependencies should be also installed as submodules:
 ``` bash
 git submodule add https://github.com/Andrewsville/PHP-Token-Reflection vendor/andrewsville/php-token-reflection
 git submodule add https://github.com/doctrine/common vendor/doctrine/common
+git submodule add https://github.com/jakubledl/dissect vendor/jakubledl/dissect
 ```
 
 ### Step 2: Create an application aspect kernel
@@ -162,7 +163,8 @@ $applicationAspectKernel->init(array(
         'autoload' => array(
             'Go'               => realpath(__DIR__ . '/../vendor/lisachenko/go-aop-php/src/'),
             'TokenReflection'  => realpath(__DIR__ . '/../vendor/andrewsville/php-token-reflection/'),
-            'Doctrine\\Common' => realpath(__DIR__ . '/../vendor/doctrine/common/lib/')
+            'Doctrine\\Common' => realpath(__DIR__ . '/../vendor/doctrine/common/lib/'),
+            'Dissect'          => realpath(__DIR__ . '/../vendor/jakubledl/dissect/src/')
         ),
         // Application root directory
         'appDir' => __DIR__ . '/../',
