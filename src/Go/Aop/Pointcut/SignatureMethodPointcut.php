@@ -74,6 +74,6 @@ class SignatureMethodPointcut extends StaticMethodMatcherPointcut
             return false;
         }
 
-        return ($method->name === $this->methodName) || (bool) preg_match("/^{$this->regexp}$/i", $method->name);
+        return ($method->name === $this->methodName) || (bool) preg_match("/^{$this->regexp}$/", $method->name);
     }
 }

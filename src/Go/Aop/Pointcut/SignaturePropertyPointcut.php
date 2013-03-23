@@ -117,7 +117,7 @@ class SignaturePropertyPointcut implements Pointcut, PointFilter
             return false;
         }
 
-        return ($property->name === $this->propertyName) || (bool) preg_match("/^{$this->regexp}$/i", $property->name);
+        return ($property->name === $this->propertyName) || (bool) preg_match("/^{$this->regexp}$/", $property->name);
     }
 
     /**
