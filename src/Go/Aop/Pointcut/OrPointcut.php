@@ -8,45 +8,39 @@
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\PointFilter;
+use Go\Aop\Pointcut;
+use Go\Aop\Support\OrPointFilter;
 
 /**
  * Signature method pointcut checks method signature (modifiers and name) to match it
  */
-class OrPointcut extends StaticMethodMatcherPointcut
+class OrPointcut extends AndPointcut
 {
-
-    /**
-     * @var PointFilter
-     */
-    protected $first;
-
-    /**
-     * @var PointFilter
-     */
-    protected $second;
 
     /**
      * Signature method matcher constructor
      *
-     * @param PointFilter $first First filter
-     * @param PointFilter $second Second filter
+     * @param Pointcut $first First filter
+     * @param Pointcut $second Second filter
      */
-    public function __construct(PointFilter $first, PointFilter $second)
+    public function __construct(Pointcut $first, Pointcut $second)
     {
         $this->first  = $first;
         $this->second = $second;
+        $this->kind   = $first->getPointFilter()->getKind() | $second->getPointFilter()->getKind();
+
+        $this->classFilter = new OrPointFilter($first->getClassFilter(), $second->getClassFilter());
     }
 
     /**
      * Performs matching of point of code
      *
-     * @param mixed $method Specific part of code, can be any Reflection class
+     * @param mixed $point Specific part of code, can be any Reflection class
      *
      * @return bool
      */
-    public function matches($method)
+    public function matches($point)
     {
-        return $this->first->matches($method) || $this->second->matches($method);
+        return $this->isMatchesPointcut($point, $this->first) || $this->isMatchesPointcut($point, $this->second);
     }
 }
