@@ -46,7 +46,7 @@ class InheritanceClassFilter implements PointFilter
             return false;
         }
 
-        return $class->isSubclassOf($this->parentClass) || $class->implementsInterface($this->parentClass);
+        return $class->isSubclassOf($this->parentClass) || in_array($this->parentClass, $class->getInterfaceNames());
     }
 
     /**
