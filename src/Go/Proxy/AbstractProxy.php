@@ -169,7 +169,8 @@ abstract class AbstractProxy
             }
             $interfaceName = $interface->name;
         }
-        $this->interfaces[] = $interfaceName;
+        // Use absolute namespace to prevent NS-conflicts
+        $this->interfaces[] = '\\' . ltrim($interfaceName, '\\');
     }
 
     /**
@@ -188,7 +189,8 @@ abstract class AbstractProxy
             }
             $traitName = $trait->name;
         }
-        $this->traits[] = $traitName;
+        // Use absolute namespace to prevent NS-conflicts
+        $this->traits[] = '\\' . ltrim($traitName, '\\');
     }
     /**
      * Creates a property
