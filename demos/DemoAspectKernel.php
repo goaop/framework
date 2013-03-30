@@ -17,17 +17,6 @@ use Go\Core\AspectContainer;
  */
 class DemoAspectKernel extends AspectKernel
 {
-
-    /**
-     * Returns the path to the application autoloader file, typical autoload.php
-     *
-     * @return string
-     */
-    protected function getApplicationLoaderPath()
-    {
-        return __DIR__ . '/autoload.php';
-    }
-
     /**
      * Configure an AspectContainer with advisors, aspects and pointcuts
      *

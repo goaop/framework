@@ -8,25 +8,23 @@
 
 use Doctrine\Common\Annotations\AnnotationRegistry;
 
-include '../src/Go/Core/AspectKernel.php';
-include 'DemoAspectKernel.php';
+include __DIR__ . '/../src/Go/Core/AspectKernel.php';
+include __DIR__ . '/DemoAspectKernel.php';
 
 // Initialize demo aspect container
 DemoAspectKernel::getInstance()->init(array(
-    // Configuration for autoload namespaces
-    'autoload' => array(
-        'Go'               => realpath(__DIR__ . '/../src'),
-        'TokenReflection'  => realpath(__DIR__ . '/../vendor/andrewsville/php-token-reflection/'),
-        'Doctrine\\Common' => realpath(__DIR__ . '/../vendor/doctrine/common/lib/'),
-        'Dissect'          => realpath(__DIR__ . '/../vendor/jakubledl/dissect/src/'),
+    'debug'         => true,
+    'appLoader'     => __DIR__ . '/autoload.php',
+    'appDir'        => __DIR__ . '/../demos',
+    'cacheDir'      => __DIR__ . '/cache',
+    'autoloadPaths' =>  array(
+        'Go'               => __DIR__ . '/../src',
+        'TokenReflection'  => __DIR__ . '/../vendor/andrewsville/php-token-reflection/',
+        'Doctrine\\Common' => __DIR__ . '/../vendor/doctrine/common/lib/',
+        'Dissect'          => __DIR__ . '/../vendor/jakubledl/dissect/src/',
     ),
-    // Default application directory
-    'appDir' => __DIR__ . '/../demos',
-    // Cache directory for Go! generated classes
-    'cacheDir' => __DIR__ . '/cache',
-    // Include paths for aspect weaving
-    'includePaths' => array(),
-    'debug' => true
+    // Composer way to autoload source code
+    // 'autoloadPaths' => include __DIR__ . '/../vendor/composer/autoload_namespaces.php',
 ));
 
-AnnotationRegistry::registerFile('./Annotation/Cacheable.php');
+AnnotationRegistry::registerFile(__DIR__ . './Annotation/Cacheable.php');
