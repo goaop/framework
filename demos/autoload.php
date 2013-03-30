@@ -32,6 +32,8 @@ spl_autoload_register(function($originalClassName) {
     return (bool) $resolvedFileName;
 });
 
-ob_start(function($content) {
-    return str_replace(PHP_EOL, "<br>" . PHP_EOL, $content);
-});
+if (php_sapi_name()!='cli') {
+    ob_start(function($content) {
+        return str_replace(PHP_EOL, "<br>" . PHP_EOL, $content);
+    });
+}
