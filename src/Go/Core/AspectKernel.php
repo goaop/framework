@@ -49,6 +49,13 @@ abstract class AspectKernel
     protected static $instance = null;
 
     /**
+     * Default class name for container, can be redefined in children
+     *
+     * @var string
+     */
+    protected static $containerClass = 'Go\Core\AspectContainer';
+
+    /**
      * Aspect container instance
      *
      * @var null|AspectContainer
@@ -131,37 +138,24 @@ abstract class AspectKernel
      */
     protected function getDefaultOptions()
     {
-        return array_replace_recursive(
-            $this->options,
-            array(
-                // Configuration for autoload namespaces
-                'autoload' => array(
-                    'Go'               => realpath(__DIR__ . '/../../'),
-                    'TokenReflection'  => realpath(__DIR__ . '/../../../vendor/andrewsville/php-token-reflection/'),
-                    'Doctrine\\Common' => realpath(__DIR__ . '/../../../vendor/doctrine/common/lib/')
-                ),
-                //Debug mode
-                'debug' => false,
-                // Default application directory
-                'appDir' => __DIR__ . '/../../../',
-                // Cache directory for Go! generated classes
-                'cacheDir' => __DIR__ . '/../../../cache/',
-                // Include paths for aspect weaving
-                'includePaths' => array(),
-                // Name of the class for container
-                'containerClass' => $this->getContainerClassName(),
-                // Application autoloader
-                'appLoader' => $this->getApplicationLoaderPath(),
-            )
+        return array(
+            //Debug mode
+            'debug'     => false,
+            // Base application directory
+            'appDir'    => __DIR__ . '/../../../../../../',
+            // Cache directory for Go! generated classes
+            'cacheDir'  => null,
+            // Path to the application autoloader file, typical autoload.php
+            'appLoader' => null,
+
+            // Configuration for autoload namespaces
+            'autoloadPaths'  => array(),
+            // Include paths for aspect weaving
+            'includePaths'   => array(),
+            // Name of the class for container
+            'containerClass' => static::$containerClass,
         );
     }
-
-    /**
-     * Returns the path to the application autoloader file, typical autoload.php
-     *
-     * @return string
-     */
-    abstract protected function getApplicationLoaderPath();
 
     /**
      * Configure an AspectContainer with advisors, aspects and pointcuts
@@ -171,21 +165,6 @@ abstract class AspectKernel
      * @return void
      */
     abstract protected function configureAop(AspectContainer $container);
-
-    /**
-     * Return the name for the container class
-     *
-     * Override this method to extend container with custom container
-     *
-     * NB. If you use a custom class, then you should include it source before starting the kernel or it won't be
-     * found during loading of the kernel.
-     *
-     * @return string
-     */
-    protected function getContainerClassName()
-    {
-        return __NAMESPACE__ . '\\AspectContainer';
-    }
 
     /**
      * Returns list of source transformers, that will be applied to the PHP source
@@ -227,7 +206,7 @@ abstract class AspectKernel
         require_once __DIR__ . '/../Instrument/ClassLoading/UniversalClassLoader.php';
 
         $loader = new UniversalClassLoader();
-        $loader->registerNamespaces($this->options['autoload']);
+        $loader->registerNamespaces($this->options['autoloadPaths']);
         $loader->register();
 
         // Configure library loader for doctrine annotation loader
