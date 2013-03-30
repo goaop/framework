@@ -1,5 +1,9 @@
 Changelog
 ======
+0.2.x
+* Some BC breaks for kernel configuration (look at demo for appLoader and autoloadPaths)
+* Fix logic bug for composite pointcuts
+
 0.2.0 (Mar 15, 2013)
 * Intercepting methods in traits
 * Pointcut parser/grammar

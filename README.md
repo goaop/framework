@@ -119,16 +119,6 @@ class ApplicationAspectKernel extends AspectKernel
 {
 
     /**
-     * Returns the path to the application autoloader file, typical autoload.php
-     *
-     * @return string
-     */
-    protected function getApplicationLoaderPath()
-    {
-        return __DIR__ . '/autoload.php';
-    }
-
-    /**
      * Configure an AspectContainer with advisors, aspects and pointcuts
      *
      * @param AspectContainer $container
@@ -140,10 +130,6 @@ class ApplicationAspectKernel extends AspectKernel
     }
 }
 ```
-
-Look at the method `getApplicationLoaderPath()`. It must return the path to the application
-loader file, typically `autoload.php` or `bootstrap.php`. Aspect kernel will delegate control to that
-file for registering an autoloader for application classes.
 
 ### 3. Configure the aspect kernel in the front controller
 
@@ -159,23 +145,28 @@ include __DIR__ . '/../app/ApplicationAspectKernel.php';
 // Initialize an application aspect container
 $applicationAspectKernel = ApplicationAspectKernel::getInstance();
 $applicationAspectKernel->init(array(
-        // Configuration for autoload namespaces
-        'autoload' => array(
-            'Go'               => realpath(__DIR__ . '/../vendor/lisachenko/go-aop-php/src/'),
-            'TokenReflection'  => realpath(__DIR__ . '/../vendor/andrewsville/php-token-reflection/'),
-            'Doctrine\\Common' => realpath(__DIR__ . '/../vendor/doctrine/common/lib/'),
-            'Dissect'          => realpath(__DIR__ . '/../vendor/jakubledl/dissect/src/')
-        ),
+        'appLoader'     => __DIR__ . '/autoload.php',
         // Application root directory
-        'appDir' => __DIR__ . '/../',
-        // Cache directory should be disabled for now
-        'cacheDir' => null,
+        'appDir'        => __DIR__ . '/../',
+        // Cache directory
+        'cacheDir'      => __DIR__ . '/path/to/cache/for/aop',
+        // Configuration for autoload namespaces
+        'autoloadPaths' => array(
+            'Go'               => __DIR__ . '/../vendor/lisachenko/go-aop-php/src/',
+            'TokenReflection'  => __DIR__ . '/../vendor/andrewsville/php-token-reflection/',
+            'Doctrine\\Common' => __DIR__ . '/../vendor/doctrine/common/lib/',
+            'Dissect'          => __DIR__ . '/../vendor/jakubledl/dissect/src/'
+        ),
         // Include paths restricts the directories where aspects should be applied, or empty for all source files
         'includePaths' => array(
             __DIR__ . '/../src/'
         )
 ));
 ```
+
+Look at the key `appLoader` in the config. It must return the path to the application
+loader file, typically `autoload.php` or `bootstrap.php`. Aspect kernel will delegate control to that
+file for registering an autoloader for application classes.
 
 ### 4. Adjust the front controller of your application for proxying autoloading requests to the aspect kernel
 
@@ -268,4 +259,3 @@ Documentation
 Documentation about Go! library can be found at [official site][1].
 
 [1]: http://go.aopphp.com
-
