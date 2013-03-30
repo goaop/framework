@@ -9,13 +9,10 @@
 namespace Aspect;
 
 use Go\Aop\Aspect;
-use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\After;
 use Go\Lang\Annotation\Before;
-use Go\Lang\Annotation\Around;
 use Go\Lang\Annotation\Pointcut;
-use Go\Lang\Annotation\DeclareParents;
 
 /**
  * Healthy live aspect
@@ -25,12 +22,12 @@ class HealthyLiveAspect implements Aspect
     /**
      * Pointcut for eat method
      *
-     * @Pointcut("execution(public Human->eat(*))")
+     * @Pointcut("execution(public Example\Human->eat(*))")
      */
     protected function humanEat() {}
 
     /**
-     * Method that should be called before real method
+     * Washing hands before eating
      *
      * @param MethodInvocation $invocation Invocation
      * @Before(pointcut="humanEat()") // Short pointcut name (for same class)
@@ -43,7 +40,7 @@ class HealthyLiveAspect implements Aspect
     }
 
     /**
-     * Method that should be called after real method
+     * Method that advices to clean the teeth after eating
      *
      * @param MethodInvocation $invocation Invocation
      * @After(pointcut="Aspect\HealthyLiveAspect->humanEat()") // Full-qualified pointcut name
@@ -56,10 +53,10 @@ class HealthyLiveAspect implements Aspect
     }
 
     /**
-     * Method that advice to clean teeth before go to sleep
+     * Method that advice to clean the teeth before going to sleep
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before("execution(public Human->sleep(*))")
+     * @Before("execution(public Example\Human->sleep(*))")
      */
     protected function cleanTeethBeforeSleep(MethodInvocation $invocation)
     {

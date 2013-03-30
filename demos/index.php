@@ -8,16 +8,17 @@
 
 include __DIR__ . (isset($_GET['original']) ? './autoload.php' : './autoload_aspect.php');
 
-$class = new Example('test');
-if ($class instanceof Serializable) {
+$example = new Example\General('test');
+$class   = new ReflectionObject($example);
+
+if ($example instanceof Serializable) {
     echo "Yeah, Example is serializable!", PHP_EOL;
-    $ref = new ReflectionClass('Example');
-    var_dump($ref->getTraitNames(), $ref->getInterfaceNames());
+    var_dump($class->getTraitNames(), $class->getInterfaceNames());
 } else {
-    echo "Ooops, Example isn't serializable!", PHP_EOL;
+    echo "Ooops, {$class->name} isn't serializable!", PHP_EOL;
 }
-unserialize(serialize($class));
-$class->publicHello();
+unserialize(serialize($example));
+$example->publicHello();
 for ($i=10; $i--; ) {
-    $class->cacheMe(0.2);
+    $example->cacheMe(0.2);
 }

@@ -6,6 +6,8 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
+namespace Example;
+
 /**
  * Human class example
  */

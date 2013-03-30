@@ -6,16 +6,15 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-use Aspect\DebugAspect;
-use Aspect\HealthyLiveAspect;
+namespace Aspect;
 
 use Go\Core\AspectKernel;
 use Go\Core\AspectContainer;
 
 /**
- * Demo Aspect Kernel class
+ * Awesome Aspect Kernel class
  */
-class DemoAspectKernel extends AspectKernel
+class AwesomeAspectKernel extends AspectKernel
 {
     /**
      * Configure an AspectContainer with advisors, aspects and pointcuts
@@ -26,7 +25,8 @@ class DemoAspectKernel extends AspectKernel
      */
     protected function configureAop(AspectContainer $container)
     {
-        $container->registerAspect(new DebugAspect('ASPECT!'));
+        $container->registerAspect(new DebugAspect());
+        $container->registerAspect(new FluentInterfaceAspect());
         $container->registerAspect(new HealthyLiveAspect());
     }
 }

@@ -30,7 +30,11 @@ class DebugAspect implements Aspect
     protected $message = '';
 
     /**
-     * @DeclareParents(value="Example", interface="Serializable", defaultImpl="Aspect\Introduce\SerializableImpl")
+     * @DeclareParents(
+     *   value="Example\General",
+     *   interface="Serializable",
+     *   defaultImpl="Aspect\Introduce\SerializableImpl"
+     * )
      *
      * @var null
      */
@@ -39,7 +43,7 @@ class DebugAspect implements Aspect
     /**
      * Pointcut for example class
      *
-     * @Pointcut("execution(public Example->*(*))")
+     * @Pointcut("execution(public Example\General->*(*))")
      */
     protected function examplePublicMethods() {}
 
@@ -110,7 +114,7 @@ class DebugAspect implements Aspect
      *
      * @param FieldAccess $property Joinpoint
      *
-     * @Around("access(* Example->*)")
+     * @Around("access(* Example\General->*)")
      * @return mixed
      */
     public function aroundFieldAccess(FieldAccess $property)

@@ -7,12 +7,13 @@
  */
 
 use Doctrine\Common\Annotations\AnnotationRegistry;
+use Aspect\AwesomeAspectKernel;
 
 include __DIR__ . '/../src/Go/Core/AspectKernel.php';
-include __DIR__ . '/DemoAspectKernel.php';
+include __DIR__ . '/Aspect/AwesomeAspectKernel.php';
 
 // Initialize demo aspect container
-DemoAspectKernel::getInstance()->init(array(
+AwesomeAspectKernel::getInstance()->init(array(
     'debug'         => true,
     'appLoader'     => __DIR__ . '/autoload.php',
     'appDir'        => __DIR__ . '/../demos',
