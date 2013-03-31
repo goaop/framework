@@ -66,7 +66,7 @@ class WeavingTransformer extends BaseSourceTransformer
      */
     public function transform(StreamMetaData $metadata)
     {
-        $fileName = realpath($metadata->getResourceUri());
+        $fileName = $metadata->uri;
         if ($this->includePaths) {
             $found = false;
             foreach ($this->includePaths as $includePath) {

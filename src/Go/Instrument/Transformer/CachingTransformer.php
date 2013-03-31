@@ -69,9 +69,8 @@ class CachingTransformer extends BaseSourceTransformer
             return;
         }
 
-        $originalUri = $metadata->getResourceUri();
-        $cacheUri    = stream_resolve_include_path($originalUri);
-        $cacheUri    = str_replace($this->rootPath, $this->cachePath, $cacheUri);
+        $originalUri = $metadata->uri;
+        $cacheUri    = str_replace($this->rootPath, $this->cachePath, $originalUri);
 
         $lastModified  = filemtime($originalUri);
         $cacheModified = file_exists($cacheUri) ? filemtime($cacheUri) : 0;

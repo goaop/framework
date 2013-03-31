@@ -25,7 +25,7 @@ use InvalidArgumentException;
  * @property string mode the type of access required for this stream
  * @property bool seekable whether the current stream can be seeked.
  * @property string uri the URI/filename associated with this stream.
- * @property source source of the stream.
+ * @property string source of the stream.
  */
 class StreamMetaData extends ArrayObject
 {
@@ -33,7 +33,7 @@ class StreamMetaData extends ArrayObject
      * Creates metadata object from stream
      *
      * @param resource $stream Instance of stream
-     *
+     * @param string $source Source code or null
      * @throws \InvalidArgumentException for invalid stream
      */
     public function __construct($stream, $source = null)
@@ -42,23 +42,12 @@ class StreamMetaData extends ArrayObject
             throw new InvalidArgumentException("Stream should be valid resource");
         }
         $metadata = stream_get_meta_data($stream);
-        if($source) {
+        if ($source) {
             $metadata['source'] = $source;
         }
-        parent::__construct($metadata, ArrayObject::ARRAY_AS_PROPS);
-    }
-
-    /**
-     * Return original resource URI from filter URI
-     *
-     * @return string
-     * @throws \InvalidArgumentException if resource was not found in URI
-     */
-    public function getResourceUri()
-    {
-        if (!preg_match('/resource=(.+)$/i', $this->uri, $matches)) {
-            throw new InvalidArgumentException("Original resource not found in URI");
+        if (preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
+            $metadata['uri'] = stream_resolve_include_path($matches[1]);
         }
-        return $matches[1];
+        parent::__construct($metadata, ArrayObject::ARRAY_AS_PROPS);
     }
 }

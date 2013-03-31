@@ -103,7 +103,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
      */
     private function replaceMagicConstants(StreamMetaData $metadata)
     {
-        $originalUri = $metadata->getResourceUri();
+        $originalUri = $metadata->uri;
         $replacement = array(
             T_FILE => $originalUri,
             T_DIR  => dirname($originalUri)
