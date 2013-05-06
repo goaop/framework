@@ -16,6 +16,7 @@ As an example, with the help of 10-20 lines of code we can intercept all the pub
 of application and display the name and the arguments of each method during its execution.
 
 [![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
+[![Dependencies Status](https://d2xishtp1ojlk0.cloudfront.net/d/1416156)](http://depending.in/lisachenko/go-aop-php)
 
 What is AOP?
 ------------
