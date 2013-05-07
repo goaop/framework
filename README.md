@@ -17,6 +17,7 @@ of application and display the name and the arguments of each method during its 
 
 [![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
 [![Dependencies Status](https://d2xishtp1ojlk0.cloudfront.net/d/1416156)](http://depending.in/lisachenko/go-aop-php)
+<a href="https://flattr.com/submit/auto?user_id=lisachenko&url=https://github.com/lisachenko/go-aop-php&title=Go!%20AOP%20PHP%20Framework&language=en_GB&tags=aop,php,framework,programming,library"><img align="bottom" alt="Flattr this project!" src="https://api.flattr.com/button/flattr-badge-large.png"></a>
 
 What is AOP?
 ------------
