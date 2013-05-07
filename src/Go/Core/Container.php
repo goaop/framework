@@ -43,6 +43,32 @@ class Container
     }
 
     /**
+     * Set a shared value in the container
+     *
+     * @param string $id Identifier
+     * @param callable $value Value to store
+     * @param array $tags Additional tags
+     *
+     * @throws \InvalidArgumentException if value is not callable
+     */
+    public function share($id, $value, array $tags = array())
+    {
+        if (!is_callable($value)) {
+            throw new \InvalidArgumentException("Only callable values can be shared in the container");
+        }
+        $value = function (self $container) use ($value, $id) {
+            static $sharedValue;
+
+            if (null === $sharedValue) {
+                $sharedValue = $value($container);
+            }
+
+            return $sharedValue;
+        };
+        $this->set($id, $value, $tags);
+    }
+
+    /**
      * Return a service or value from the container
      *
      * @param string $id Identifier

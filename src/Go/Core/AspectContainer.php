@@ -79,7 +79,7 @@ class AspectContainer extends Container
     public function __construct()
     {
         // Register all services in the container
-        $this->set('aspect.loader', function ($container) {
+        $this->share('aspect.loader', function ($container) {
             $aspectLoader = new AspectLoader($container);
 
             // Register general aspect loader extension
@@ -90,18 +90,18 @@ class AspectContainer extends Container
         });
 
         // TODO: use cached annotation reader
-        $this->set('aspect.annotation.reader', function () {
+        $this->share('aspect.annotation.reader', function () {
             return new AnnotationReader();
         });
-        $this->set('aspect.annotation.raw.reader', function () {
+        $this->share('aspect.annotation.raw.reader', function () {
             return new RawAnnotationReader();
         });
 
         // Pointcut services
-        $this->set('aspect.pointcut.lexer', function () {
+        $this->share('aspect.pointcut.lexer', function () {
             return new PointcutLexer();
         });
-        $this->set('aspect.pointcut.parser', function () {
+        $this->share('aspect.pointcut.parser', function () {
             return new Parser(
                 new PointcutGrammar(),
                 // Include production parse table for parser
