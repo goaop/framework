@@ -138,6 +138,22 @@ abstract class AspectKernel
      */
     protected function getDefaultOptions()
     {
+        $libraryComposer     = __DIR__ . '/../../../vendor/composer/autoload_namespaces.php';
+        $applicationComposer = __DIR__ . '/../../../../../vendor/composer/autoload_namespaces.php';
+
+        switch (true) {
+            case file_exists($libraryComposer):
+                $composer = $libraryComposer;
+                break;
+
+            case file_exists($applicationComposer):
+                $composer = $applicationComposer;
+                break;
+
+            default:
+                $composer = null;
+        }
+
         return array(
             //Debug mode
             'debug'     => false,
@@ -148,8 +164,8 @@ abstract class AspectKernel
             // Path to the application autoloader file, typical autoload.php
             'appLoader' => null,
 
-            // Configuration for autoload namespaces
-            'autoloadPaths'  => array(),
+            // Configuration for autoload namespaces, can use composer
+            'autoloadPaths'  => $composer ? (include $composer) : array(),
             // Include paths for aspect weaving
             'includePaths'   => array(),
             // Name of the class for container
@@ -199,13 +215,13 @@ abstract class AspectKernel
      */
     protected function initLibraryLoader()
     {
-        /**
-         * Separate class loader for core should be used to load classes,
-         * so UniversalClassLoader is moved to the custom namespace
-         */
+
         require_once __DIR__ . '/../Instrument/ClassLoading/UniversalClassLoader.php';
 
         $loader = new UniversalClassLoader();
+        if (empty($this->options['autoloadPaths'])) {
+            throw new \InvalidArgumentException("Composer was not found, please configure an `autoloadPaths`");
+        }
         $loader->registerNamespaces($this->options['autoloadPaths']);
         $loader->register();
 

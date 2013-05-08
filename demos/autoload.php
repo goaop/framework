@@ -11,6 +11,11 @@
  */
 ini_set('display_errors', true);
 
+// Composer autoloading
+if (file_exists('../vendor/autoload.php')) {
+    $loader = include '../vendor/autoload.php';
+}
+
 /**
  * Register PSR-0 autoloader for our code, any components can be used here
  */

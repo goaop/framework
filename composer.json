@@ -23,7 +23,7 @@
 
     "autoload": {
         "psr-0": { "Go": "src/" },
-        "files": ["src/Go/Instrument/ClassLoading/composer.php"]
+        "files": ["src/Go/Instrument/ClassLoading/AopComposerLoader.php"]
     },
     "extra": {
         "branch-alias": {
