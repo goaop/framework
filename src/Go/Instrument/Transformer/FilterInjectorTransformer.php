@@ -100,17 +100,23 @@ class FilterInjectorTransformer implements SourceTransformer
      * This operation can check for cache, can rewrite paths, add additional filters and much more
      *
      * @param string $resource Initial resource to include
+     * @param string $originalDir Path to the directory from where include was called for resolving relative resources
+     *
      * @return string Transformed path to the resource
      */
-    public static function rewrite($resource)
+    public static function rewrite($resource, $originalDir = '')
     {
-        // If cache is disabled, then use on-fly method
+        if ($resource['0'] !== '/' && $resource[1] !== ':') {
+            $resource
+                =  stream_resolve_include_path($resource)
+                ?: stream_resolve_include_path("{$originalDir}/{$resource}");
+        }
+        // If the cache is disabled, then use on-fly method
         if (!self::$rewriteToPath || self::$debug) {
             return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
         }
 
-        $newResource = stream_resolve_include_path($resource);
-        $newResource = str_replace(self::$rootPath, self::$rewriteToPath, $newResource);
+        $newResource = str_replace(self::$rootPath, self::$rewriteToPath, $resource);
 
         // Trigger creation of cache, this will create a cache file with $newResource name
         if (!file_exists($newResource)) {
@@ -143,7 +149,7 @@ class FilterInjectorTransformer implements SourceTransformer
         foreach ($tokenStream as $token) {
             if ($isWaitingEnd && ($token === ';' || $token === ',')) {
                 $isWaitingEnd = false;
-                $transformedSource .= ')';
+                $transformedSource .= ', __DIR__)';
             }
             list ($token, $value) = (array) $token + array(1 => $token);
             $transformedSource .= $value;

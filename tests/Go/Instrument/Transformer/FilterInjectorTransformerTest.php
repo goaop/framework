@@ -65,7 +65,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $this->metadata->source = '<?php include $class; ?>';
         self::$transformer->transform($this->metadata);
-        $output = '<?php include \\' . get_class(self::$transformer) . '::rewrite( $class); ?>';
+        $output = '<?php include \\' . get_class(self::$transformer) . '::rewrite( $class, __DIR__); ?>';
         $this->assertEquals($this->metadata->source, $output);
     }
 
@@ -73,7 +73,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $this->metadata->source = '<?php include_once $class; ?>';
         self::$transformer->transform($this->metadata);
-        $output = '<?php include_once \\' . get_class(self::$transformer) . '::rewrite( $class); ?>';
+        $output = '<?php include_once \\' . get_class(self::$transformer) . '::rewrite( $class, __DIR__); ?>';
         $this->assertEquals($this->metadata->source, $output);
     }
 
@@ -81,7 +81,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $this->metadata->source = '<?php require $class; ?>';
         self::$transformer->transform($this->metadata);
-        $output = '<?php require \\' . get_class(self::$transformer) . '::rewrite( $class); ?>';
+        $output = '<?php require \\' . get_class(self::$transformer) . '::rewrite( $class, __DIR__); ?>';
         $this->assertEquals($this->metadata->source, $output);
     }
 
@@ -89,7 +89,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $this->metadata->source = '<?php require_once $class; ?>';
         self::$transformer->transform($this->metadata);
-        $output = '<?php require_once \\' . get_class(self::$transformer) . '::rewrite( $class); ?>';
+        $output = '<?php require_once \\' . get_class(self::$transformer) . '::rewrite( $class, __DIR__); ?>';
         $this->assertEquals($this->metadata->source, $output);
     }
 
@@ -99,4 +99,14 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $output = FilterInjectorTransformer::PHP_FILTER_READ . 'unit.test/resource=/path/to/my/class.php';
         $this->assertEquals($this->metadata->source, $output);
     }
+
+    public function testCanRewriteRelativePathsWithFilter()
+    {
+        $this->metadata->source = FilterInjectorTransformer::rewrite('_files/class.php', __DIR__);
+        $output = FilterInjectorTransformer::PHP_FILTER_READ
+                . 'unit.test/resource='
+                . stream_resolve_include_path('_files/class.php');
+        $this->assertEquals($this->metadata->source, $output);
+    }
+
 }
