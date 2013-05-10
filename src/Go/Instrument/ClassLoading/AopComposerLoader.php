@@ -11,6 +11,7 @@ namespace Go\Instrument\ClassLoading;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 
 use Composer\Autoload\ClassLoader;
+use Doctrine\Common\Annotations\AnnotationRegistry;
 
 /**
  * AopComposerLoader class is responsible to use a weaver for classes instead of original one
@@ -28,6 +29,18 @@ class AopComposerLoader
     protected $original = null;
 
     /**
+     * List of internal dependencies that should not be analyzed by AOP
+     *
+     * @var array
+     */
+    protected $internalNamespaces = array(
+        'Go',
+        'Dissect',
+        'Doctrine\\Common',
+        'TokenReflection',
+    );
+
+    /**
      * Constructs an wrapper for the composer loader
      *
      * @param ClassLoader $original Instance of current loader
@@ -38,21 +51,28 @@ class AopComposerLoader
     }
 
     /**
+     * Initialize aspect autoloader
+     *
      * Replaces original composer autoloader with wrapper
      */
-    public static function replaceOriginal()
+    public static function init()
     {
         $loaders = spl_autoload_functions();
 
-        $newLoaders = array();
-        foreach ($loaders as $loader) {
-            spl_autoload_unregister($loader);
+        foreach ($loaders as &$loader) {
             if (is_array($loader) && ($loader[0] instanceof ClassLoader)) {
+                $originalLoader = $loader[0];
+
+                // Configure library loader for doctrine annotation loader
+                AnnotationRegistry::registerLoader(function($class) use ($originalLoader) {
+                    $originalLoader->loadClass($class);
+                    return class_exists($class, false);
+                });
+                spl_autoload_unregister($loader);
                 $loader[0] = new AopComposerLoader($loader[0]);
             }
-            array_push($newLoaders, $loader);
         }
-        foreach ($newLoaders as $loader) {
+        foreach ($loaders as $loader) {
             spl_autoload_register($loader);
         }
     }
@@ -63,26 +83,17 @@ class AopComposerLoader
     public function loadClass($class)
     {
         if ($file = $this->original->findFile($class)) {
-            include ($this->isInternal($class) ? $file : FilterInjectorTransformer::rewrite($file));
-        }
-    }
-
-    /**
-     * Checks if a class is internal for Go! framework
-     *
-     * @param string $class Name of the class to load
-     *
-     * @return bool
-     */
-    protected function isInternal($class)
-    {
-        foreach (UniversalClassLoader::$internalNamespaces as $ns) {
-            if (strpos($class, $ns) === 0) {
-                return true;
+            $isInternal = false;
+            foreach ($this->internalNamespaces as $ns) {
+                if (strpos($class, $ns) === 0) {
+                    $isInternal = true;
+                    break;
+                }
             }
+
+            include ($isInternal ? $file : FilterInjectorTransformer::rewrite($file));
         }
-        return false;
     }
 }
 
-AopComposerLoader::replaceOriginal();
+AopComposerLoader::init();
