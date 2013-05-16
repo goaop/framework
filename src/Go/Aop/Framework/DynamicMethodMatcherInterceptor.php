@@ -21,22 +21,8 @@ use Go\Aop\Support\DynamicMethodMatcher;
  *
  * @package go
  */
-class DynamicMethodMatcherInterceptor implements MethodInterceptor
+class DynamicMethodMatcherInterceptor extends BaseInterceptor implements MethodInterceptor
 {
-
-    /**
-     * Instance of dynamic matcher
-     *
-     * @var DynamicMethodMatcher
-     */
-    private $matcher;
-
-    /**
-     * Instance of method interceptor to invoke
-     *
-     * @var MethodInterceptor
-     */
-    private $interceptor;
 
     /**
      * Dynamic matcher constructor
@@ -46,8 +32,29 @@ class DynamicMethodMatcherInterceptor implements MethodInterceptor
      */
     public function __construct(DynamicMethodMatcher $matcher, MethodInterceptor $interceptor)
     {
-        $this->matcher     = $matcher;
-        $this->interceptor = $interceptor;
+        $this->pointcut     = $matcher;
+        $this->adviceMethod = $interceptor;
+    }
+
+    /**
+     * Serializes an interceptor into string representation
+     *
+     * @return string the string representation of the object or null
+     */
+    public function serialize()
+    {
+        return serialize(array($this->pointcut, $this->adviceMethod));
+    }
+
+    /**
+     * Unserialize an interceptor from the string
+     *
+     * @param string $serialized The string representation of the object.
+     * @return void
+     */
+    public function unserialize($serialized)
+    {
+        list($this->pointcut, $this->adviceMethod) = unserialize(($serialized));
     }
 
     /**
@@ -58,8 +65,8 @@ class DynamicMethodMatcherInterceptor implements MethodInterceptor
      */
     final public function invoke(MethodInvocation $invocation)
     {
-        if ($this->matcher->matches($invocation->getMethod(), $invocation->getThis(), $invocation->getArguments())) {
-            return $this->interceptor->invoke($invocation);
+        if ($this->pointcut->matches($invocation->getMethod(), $invocation->getThis(), $invocation->getArguments())) {
+            return $this->adviceMethod->invoke($invocation);
         } else {
             return $invocation->proceed();
         }
