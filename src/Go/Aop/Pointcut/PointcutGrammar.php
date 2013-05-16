@@ -48,7 +48,7 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
-            ->is('!', 'SinglePointcut')
+            ->is('!', 'Pointcut')
             ->call(function($_, $first) {
                 return new NotPointcut($first);
             })
