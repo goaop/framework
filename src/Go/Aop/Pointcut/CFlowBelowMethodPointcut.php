@@ -10,37 +10,43 @@ namespace Go\Aop\Pointcut;
 
 use ReflectionClass;
 
+use Go\Aop\Pointcut;
+use Go\Aop\PointFilter;
+use ReflectionMethod;
+
 /**
  * Flow pointcut is a dynamic checker that verifies stack trace to understand is it matches or not
  */
 class CFlowBelowMethodPointcut extends DynamicMethodMatcherPointcut
 {
-    /**
-     * Method name to match, can contain wildcards *,?
-     *
-     * @var string
-     */
-    protected $methodName = '';
 
     /**
-     * Modifier mask for method
+     * Filter for the class
      *
-     * @var string
+     * @var null|PointFilter
      */
-    protected $modifier;
+    protected $internalClassFilter = null;
 
     /**
-     * Signature method matcher constructor
+     * Filter for the points
      *
-     * @param string $methodName Name of the method to match or glob pattern
+     * @var null|PointFilter
      */
-    public function __construct($methodName)
+    protected $internalPointFilter;
+
+    /**
+     * Control flow below constructor
+     *
+     * @param Pointcut $pointcut Instance of pointcut, that will be used for matching
+     * @throws \InvalidArgumentException if filter doesn't support methods
+     */
+    public function __construct(Pointcut $pointcut)
     {
-        $this->methodName = $methodName;
-        $this->regexp     = strtr(preg_quote($this->methodName, '/'), array(
-            '\\*' => '.*?',
-            '\\?' => '.'
-        ));
+        $this->internalClassFilter = $pointcut->getClassFilter();
+        $this->internalPointFilter = $pointcut->getPointFilter();
+        if (!($this->internalPointFilter->getKind() & PointFilter::KIND_METHOD)) {
+            throw new \InvalidArgumentException("Only method filters are valid for control flow");
+        }
     }
 
     /**
@@ -54,14 +60,23 @@ class CFlowBelowMethodPointcut extends DynamicMethodMatcherPointcut
      */
     public function matches($method, $instance = null, array $arguments = null)
     {
+        // With single parameter (statically) always matches
+        if (!$instance) {
+            return true;
+        }
+
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
         foreach ($trace as $stackFrame) {
-            $isStrongEqual = $stackFrame['function'] === $this->methodName;
-            if ($isStrongEqual || (bool) preg_match("/^{$this->regexp}$/i", $stackFrame['function'])) {
-                $isMatches = $this->getClassFilter()->matches(new ReflectionClass($stackFrame['class']));
-                if ($isMatches) {
-                    return true;
-                }
+            if (!isset($stackFrame['class'])) {
+                continue;
+            }
+            $refClass = new ReflectionClass($stackFrame['class']);
+            if (!$this->internalClassFilter->matches($refClass)) {
+                continue;
+            }
+            $refMethod = new ReflectionMethod($stackFrame['class'], $stackFrame['function']);
+            if ($this->internalPointFilter->matches($refMethod)) {
+                return true;
             }
         }
 
