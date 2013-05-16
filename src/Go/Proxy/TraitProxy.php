@@ -146,7 +146,9 @@ BODY;
         return $classCode
             // Inject advices on call
             . PHP_EOL
-            . '\\' . __CLASS__ . "::injectJoinPoints('" . $this->class->name . "', unserialize('{$serialized}'));";
+            . '\\' . __CLASS__ . "::injectJoinPoints('"
+                . $this->class->name . "',"
+                . " unserialize(" . var_export($serialized, true) . "));";
     }
 
     private function getMethodAliasesCode()
