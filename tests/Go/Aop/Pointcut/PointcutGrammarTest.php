@@ -79,6 +79,10 @@ class PointcutGrammarTest extends \PHPUnit_Framework_TestCase
 
             // Parenthesis
             array('within(DemoInterface+) && ( within(**) || within(*) )'),
+
+            // Control flow execution pointcuts
+            array('cflowbelow(execution(public Example->method(*)))'),
+
         );
     }
 

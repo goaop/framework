@@ -53,6 +53,11 @@ class PointcutGrammar extends Grammar
                 return new NotPointcut($first);
             })
 
+            ->is('cflowbelow', '(', 'Pointcut', ')')
+            ->call(function($_, $_, $pointcut) {
+                return new CFlowBelowMethodPointcut($pointcut);
+            })
+
             ->is('SinglePointcut');
 
         $this('SinglePointcut')
