@@ -19,7 +19,7 @@ use Go\Aop\Support\TruePointFilter;
 /**
  * Signature property pointcut checks the property signature (modifiers and name) to match it
  */
-class SignaturePropertyPointcut implements Pointcut, PointFilter
+class SignaturePropertyPointcut implements Pointcut
 {
 
     /**

@@ -15,7 +15,7 @@ use Go\Aop\Support\AndPointFilter;
 /**
  * Signature method pointcut checks method signature (modifiers and name) to match it
  */
-class AndPointcut implements Pointcut, PointFilter
+class AndPointcut implements Pointcut
 {
 
     /**

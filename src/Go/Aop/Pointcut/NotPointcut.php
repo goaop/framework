@@ -15,7 +15,7 @@ use Go\Aop\Support\TruePointFilter;
 /**
  * Signature method pointcut checks method signature (modifiers and name) to match it
  */
-class NotPointcut implements PointFilter, Pointcut
+class NotPointcut implements Pointcut
 {
     /**
      * @var Pointcut
