@@ -50,14 +50,4 @@ abstract class StaticMethodMatcherPointcut extends StaticMethodMatcher implement
         }
         return $this->classFilter;
     }
-
-    /**
-     * Return the PointFilter for this pointcut.
-     *
-     * @return PointFilter
-     */
-    public function getPointFilter()
-    {
-        return $this;
-    }
 }

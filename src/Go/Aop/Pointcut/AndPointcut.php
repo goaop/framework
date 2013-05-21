@@ -52,7 +52,7 @@ class AndPointcut implements Pointcut
     {
         $this->first  = $first;
         $this->second = $second;
-        $this->kind   = $first->getPointFilter()->getKind() & $second->getPointFilter()->getKind();
+        $this->kind   = $first->getKind() & $second->getKind();
 
         $this->classFilter = new AndPointFilter($first->getClassFilter(), $second->getClassFilter());
     }
@@ -80,18 +80,6 @@ class AndPointcut implements Pointcut
     }
 
     /**
-     * Return the PointFilter for this pointcut.
-     *
-     * This can be method filter, property filter.
-     *
-     * @return PointFilter
-     */
-    public function getPointFilter()
-    {
-        return $this;
-    }
-
-    /**
      * Returns the kind of point filter
      *
      * @return integer
@@ -111,7 +99,7 @@ class AndPointcut implements Pointcut
      */
     protected function isMatchesPointcut($point, Pointcut $pointcut)
     {
-        return $pointcut->getPointFilter()->matches($point)
+        return $pointcut->matches($point)
             && $pointcut->getClassFilter()->matches($point->getDeclaringClass());
     }
 }

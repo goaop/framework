@@ -52,13 +52,4 @@ abstract class DynamicMethodMatcherPointcut extends DynamicMethodMatcher impleme
         return $this->classFilter;
     }
 
-    /**
-     * Return the PointFilter for this pointcut.
-     *
-     * @return PointFilter
-     */
-    public function getPointFilter()
-    {
-        return $this;
-    }
 }

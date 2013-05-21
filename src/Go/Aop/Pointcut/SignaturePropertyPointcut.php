@@ -67,16 +67,6 @@ class SignaturePropertyPointcut implements Pointcut
     }
 
     /**
-     * Return the PointFilter for this pointcut.
-     *
-     * @return PointFilter
-     */
-    public function getPointFilter()
-    {
-        return $this;
-    }
-
-    /**
      * Set the ClassFilter to use for this pointcut.
      *
      * @param PointFilter $classFilter

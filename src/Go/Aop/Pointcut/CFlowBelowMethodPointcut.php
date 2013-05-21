@@ -43,7 +43,7 @@ class CFlowBelowMethodPointcut extends DynamicMethodMatcherPointcut
     public function __construct(Pointcut $pointcut)
     {
         $this->internalClassFilter = $pointcut->getClassFilter();
-        $this->internalPointFilter = $pointcut->getPointFilter();
+        $this->internalPointFilter = $pointcut;
         if (!($this->internalPointFilter->getKind() & PointFilter::KIND_METHOD)) {
             throw new \InvalidArgumentException("Only method filters are valid for control flow");
         }

@@ -37,7 +37,7 @@ class NotPointcut implements Pointcut
     public function __construct(Pointcut $pointcut)
     {
         $this->pointcut = $pointcut;
-        $this->kind     = $pointcut->getPointFilter()->getKind();
+        $this->kind     = $pointcut->getKind();
     }
 
     /**
@@ -53,7 +53,7 @@ class NotPointcut implements Pointcut
         if (!$isMatchesClass) {
             return true;
         }
-        $isMatchesPoint = $this->pointcut->getPointFilter()->matches($point);
+        $isMatchesPoint = $this->pointcut->matches($point);
         if (!$isMatchesPoint) {
             return true;
         }
@@ -78,17 +78,5 @@ class NotPointcut implements Pointcut
     public function getClassFilter()
     {
         return TruePointFilter::getInstance();
-    }
-
-    /**
-     * Return the PointFilter for this pointcut.
-     *
-     * This can be method filter, property filter.
-     *
-     * @return PointFilter
-     */
-    public function getPointFilter()
-    {
-        return $this;
     }
 }

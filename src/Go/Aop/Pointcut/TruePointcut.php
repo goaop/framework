@@ -53,18 +53,6 @@ class TruePointcut implements Pointcut
     }
 
     /**
-     * Return the PointFilter for this pointcut.
-     *
-     * This can be method filter, property filter.
-     *
-     * @return PointFilter
-     */
-    public function getPointFilter()
-    {
-        return TruePointFilter::getInstance();
-    }
-
-    /**
      * Performs matching of point of code
      *
      * @param mixed $point Specific part of code, can be any Reflection class

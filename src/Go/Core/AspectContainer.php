@@ -228,10 +228,9 @@ class AspectContainer extends Container
 
                 $pointcut = $advisor->getPointcut();
                 if ($pointcut->getClassFilter()->matches($class)) {
-                    $pointFilter  = $pointcut->getPointFilter();
                     $classAdvices = array_merge_recursive(
                         $classAdvices,
-                        $this->getAdvicesFromAdvisor($originalClass, $advisor, $pointFilter)
+                        $this->getAdvicesFromAdvisor($originalClass, $advisor, $pointcut)
                     );
                 }
             }

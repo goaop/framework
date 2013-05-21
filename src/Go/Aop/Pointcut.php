@@ -26,13 +26,4 @@ interface Pointcut extends PointFilter
      * @return PointFilter
      */
     public function getClassFilter();
-
-    /**
-     * Return the PointFilter for this pointcut.
-     *
-     * This can be method filter, property filter.
-     *
-     * @return PointFilter
-     */
-    public function getPointFilter();
 }

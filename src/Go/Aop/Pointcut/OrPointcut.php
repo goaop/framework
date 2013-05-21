@@ -27,7 +27,7 @@ class OrPointcut extends AndPointcut
     {
         $this->first  = $first;
         $this->second = $second;
-        $this->kind   = $first->getPointFilter()->getKind() | $second->getPointFilter()->getKind();
+        $this->kind   = $first->getKind() | $second->getKind();
 
         $this->classFilter = new OrPointFilter($first->getClassFilter(), $second->getClassFilter());
     }
