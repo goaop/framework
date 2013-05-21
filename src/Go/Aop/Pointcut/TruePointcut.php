@@ -63,4 +63,26 @@ class TruePointcut implements Pointcut
     {
         return TruePointFilter::getInstance();
     }
+
+    /**
+     * Performs matching of point of code
+     *
+     * @param mixed $point Specific part of code, can be any Reflection class
+     *
+     * @return bool
+     */
+    public function matches($point)
+    {
+        return true;
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+       return self::KIND_ALL;
+    }
 }

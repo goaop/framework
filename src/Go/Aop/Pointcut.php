@@ -18,7 +18,7 @@ namespace Go\Aop;
  * @package go
  * @subpackage aop
  */
-interface Pointcut
+interface Pointcut extends PointFilter
 {
     /**
      * Return the class filter for this pointcut.
