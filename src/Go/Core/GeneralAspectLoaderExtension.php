@@ -19,6 +19,9 @@ use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
 
+use Dissect\Lexer\Exception\RecognitionException;
+use Dissect\Parser\Exception\UnexpectedTokenException;
+
 /**
  * General aspect loader add common support for general advices, declared as annotations
  */
@@ -161,6 +164,7 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
      * @param Annotation\BaseAnnotation|Annotation\BaseInterceptor $metaInformation
      * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      *
+     * @throws \UnexpectedValueException if there was an error during parsing
      * @return \Go\Aop\Pointcut
      */
     private function parsePointcut(AspectContainer $container, $reflection, $metaInformation)
@@ -171,11 +175,40 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
 
         /** @var $lexer \Dissect\Lexer\Lexer */
         $lexer  = $container->get('aspect.pointcut.lexer');
-        $stream = $lexer->lex($metaInformation->value);
+        try {
+            $stream = $lexer->lex($metaInformation->value);
+        } catch (RecognitionException $e) {
+            $message = "Can not recognize the lexical structure `%s` before %s, defined in %s:%d";
+            $message = sprintf(
+                $message,
+                $metaInformation->value,
+                (isset($reflection->class) ? $reflection->class . '->' : '') . $reflection->name,
+                $reflection->getFileName(),
+                $reflection->getStartLine()
+            );
+            throw new \UnexpectedValueException($message, 0, $e);
+        }
 
         /** @var $parser \Dissect\Parser\Parser */
         $parser = $container->get('aspect.pointcut.parser');
-        return $parser->parse($stream);
+        try {
+            return $parser->parse($stream);
+        } catch (UnexpectedTokenException $e) {
+            /** @var \Dissect\Lexer\Token $token */
+            $token    = $e->getToken();
+            $message  = "Unexpected token %s in the `%s` before %s, defined in %s:%d." . PHP_EOL;
+            $message .= "Expected one of: %s";
+            $message  = sprintf(
+                $message,
+                $token->getValue(),
+                $metaInformation->value,
+                (isset($reflection->class) ? $reflection->class . '->' : '') . $reflection->name,
+                $reflection->getFileName(),
+                $reflection->getStartLine(),
+                join(', ', $e->getExpected())
+            );
+            throw new \UnexpectedValueException($message, 0, $e);
+        }
     }
 
     /**
