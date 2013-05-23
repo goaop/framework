@@ -16,6 +16,7 @@ use Go\Aop;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
+use TokenReflection\ReflectionFileNamespace;
 
 /**
  * Aspect container contains list of all pointcuts and advisors
@@ -47,6 +48,34 @@ class AdviceMatcher
     {
         $this->loader    = $loader;
         $this->container = $container;
+    }
+
+    /**
+     *
+     * Returns list of function advices for namespace
+     *
+     * @param ReflectionFileNamespace $namespace
+     *
+     * @return array
+     */
+    public function getAdvicesForFunctions($namespace)
+    {
+        static $advices = null;
+
+        if ($namespace->getName() == 'no-namespace') {
+            return array();
+        }
+
+        if (!isset($advices)) {
+            $advices   = array();
+            $functions = get_defined_functions();
+            foreach ($functions['internal'] as $function) {
+                $advices["func:{$function}"] = array(
+                );
+            }
+        }
+
+        return $advices;
     }
 
     /**
