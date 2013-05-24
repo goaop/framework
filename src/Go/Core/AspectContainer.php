@@ -67,11 +67,12 @@ class AspectContainer extends Container
     protected $maxTimestamp = 0;
 
     /**
-     * Flag, that determines if pointcuts are loaded from aspects
+     * List of loaded resources (it is used for comparison with $this->resources)
      *
-     * @var bool
+     * @see AspectContainer::resources
+     * @var array
      */
-    private $isAdvisorsLoaded = false;
+    private $loadedResources = array();
 
     /**
      * Constructor for container
@@ -205,7 +206,7 @@ class AspectContainer extends Container
      */
     public function getAdvicesForClass($class)
     {
-        if (!$this->isAdvisorsLoaded) {
+        if ($this->loadedResources != $this->resources) {
             $this->loadAdvisorsAndPointcuts();
         }
 
@@ -317,10 +318,12 @@ class AspectContainer extends Container
      */
     private function loadAdvisorsAndPointcuts()
     {
+        // TODO: use a difference with $this->resources to load only missed aspects
         /** @var $loader AspectLoader */
         $loader = $this->get('aspect.loader');
         foreach ($this->getByTag('aspect') as $aspect) {
             $loader->load($aspect);
         }
+        $this->loadedResources = $this->resources;
     }
 }
