@@ -56,7 +56,7 @@ class Container
         if (!is_callable($value)) {
             throw new \InvalidArgumentException("Only callable values can be shared in the container");
         }
-        $value = function (self $container) use ($value, $id) {
+        $value = function ($container) use ($value, $id) {
             static $sharedValue;
 
             if (null === $sharedValue) {
