@@ -80,6 +80,11 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
         $methodId       = sprintf("%s->%s()", $reflection->class, $reflection->name);
         $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);
 
+        if (isset($metaInformation->scope) && $metaInformation->scope !== 'aspect') {
+            $scope = $metaInformation->scope;
+            $adviceCallback = Framework\BaseAdvice::createScopeCallback($adviceCallback, $scope);
+        }
+
         $isPointFilter  = $pointcut instanceof PointFilter;
         switch (true) {
             // Register a pointcut by its name

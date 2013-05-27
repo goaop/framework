@@ -13,6 +13,7 @@ use ReflectionMethod;
 
 use Go\Aop\Advice;
 use Go\Aop\Aspect;
+use Go\Aop\Intercept\Joinpoint;
 use Go\Core\AspectKernel;
 
 /**
@@ -73,7 +74,13 @@ abstract class BaseAdvice implements Advice
      */
     public static function serializeAdvice($adviceMethod)
     {
-        $refAdvice = new ReflectionFunction($adviceMethod);
+        $refAdvice    = new ReflectionFunction($adviceMethod);
+        $refVariables = $refAdvice->getStaticVariables();
+        $scope        = 'aspect';
+        if (isset($refVariables['scope'])) {
+            $scope     = $refVariables['scope'];
+            $refAdvice = new ReflectionFunction($refVariables['adviceCallback']);
+        }
         if (IS_MODERN_PHP) {
             $method = $refAdvice;
             $aspect = $refAdvice->getClosureThis();
@@ -83,6 +90,7 @@ abstract class BaseAdvice implements Advice
             $aspect = $vars['aspect'];
         }
         return array(
+            'scope'  => $scope,
             'method' => $method->name,
             'aspect' => get_class($aspect)
         );
@@ -99,10 +107,14 @@ abstract class BaseAdvice implements Advice
     {
         $aspectName = $adviceData['aspect'];
         $methodName = $adviceData['method'];
+        $scope      = $adviceData['scope'];
 
         $refMethod = new ReflectionMethod($aspectName, $methodName);
         $aspect    = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
-        return static::fromAspectReflection($aspect, $refMethod);
+
+        $advice = static::fromAspectReflection($aspect, $refMethod);
+        $advice = static::createScopeCallback($advice, $scope);
+        return $advice;
     }
 
     /**
@@ -121,6 +133,48 @@ abstract class BaseAdvice implements Advice
             return function () use ($aspect, $refMethod) {
                 return $refMethod->invokeArgs($aspect, func_get_args());
             };
+        }
+    }
+
+    /**
+     * Creates an advice with respect to the desired scope
+     *
+     * @param callable| $adviceCallback Advice to call
+     * @param string $scope Scope for callback
+     *
+     * @throws \InvalidArgumentException is scope is not supported
+     * @return callable
+     */
+    public static function createScopeCallback($adviceCallback, $scope)
+    {
+        switch ($scope) {
+            case 'aspect':
+                return $adviceCallback;
+
+            case 'proxy':
+                return function (Joinpoint $joinpoint) use ($adviceCallback, $scope) {
+                    $instance    = $joinpoint->getThis();
+                    $isNotObject = $instance !== (object) $instance;
+                    $object      = $isNotObject ? null : $instance;
+                    $target      = $isNotObject ? $instance : get_class($instance);
+                    $callback    = $adviceCallback->bindTo($object, $target);
+
+                    return $callback($joinpoint);
+                };
+
+            case 'target':
+                return function (Joinpoint $joinpoint) use ($adviceCallback, $scope) {
+                    $instance    = $joinpoint->getThis();
+                    $isNotObject = $instance !== (object) $instance;
+                    $object      = $isNotObject ? null : $instance;
+                    $target      = $isNotObject ? $instance : get_parent_class($instance);
+                    $callback    = $adviceCallback->bindTo($object, $target);
+
+                    return $callback($joinpoint);
+                };
+
+            default:
+                throw new \InvalidArgumentException("Unsupported scope `{$scope}`");
         }
     }
 }
