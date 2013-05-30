@@ -211,30 +211,4 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
             throw new \UnexpectedValueException($message, 0, $e);
         }
     }
-
-    /**
-     * Loads a pointcut from container by name
-     *
-     * @param Annotation\BaseAnnotation|Annotation\BaseInterceptor $metaInformation
-     * @param $container
-     * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
-     *
-     * @return mixed Pointcut
-     * @throws \UnexpectedValueException If both value and pointcut name is set
-     */
-    private function loadPointcutFromContainer(AspectContainer $container, $reflection, $metaInformation)
-    {
-        if ($metaInformation->value) {
-            throw new \UnexpectedValueException("Can not use both `value` and `pointcut` properties");
-        }
-
-        try {
-            // FQDN
-            return $container->getPointcut($metaInformation->pointcut);
-        } catch (\OutOfBoundsException $e) {
-            // By method name for class
-            $pointcutId = sprintf("%s->%s", $reflection->class, $metaInformation->pointcut);
-            return $container->getPointcut($pointcutId);
-        }
-    }
 }
