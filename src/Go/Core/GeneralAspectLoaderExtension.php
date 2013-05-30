@@ -174,10 +174,6 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
      */
     private function parsePointcut(AspectContainer $container, $reflection, $metaInformation)
     {
-        if (isset($metaInformation->pointcut)) {
-            return $this->loadPointcutFromContainer($container, $reflection, $metaInformation);
-        }
-
         /** @var $lexer \Dissect\Lexer\Lexer */
         $lexer  = $container->get('aspect.pointcut.lexer');
         try {

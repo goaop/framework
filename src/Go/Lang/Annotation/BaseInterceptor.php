@@ -26,11 +26,4 @@ class BaseInterceptor extends BaseAnnotation implements Interceptor
      * @var string
      */
     public $scope = 'aspect';
-
-    /**
-     * Name of the pointcut to use
-     *
-     * @var string
-     */
-    public $pointcut = null;
 }

@@ -51,7 +51,7 @@ class DebugAspect implements Aspect
      * Method that should be called before real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before(pointcut="examplePublicMethods()") // Short pointcut name (for same class)
+     * @Before("Aspect\DebugAspect->examplePublicMethods")
      */
     public function beforeMethodExecution(MethodInvocation $invocation)
     {
@@ -70,7 +70,7 @@ class DebugAspect implements Aspect
      * Method that should be called after real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @After(pointcut="Aspect\DebugAspect->examplePublicMethods()") // Full-qualified pointcut name
+     * @After("Aspect\DebugAspect->examplePublicMethods")
      */
     public function afterMethodExecution(MethodInvocation $invocation)
     {

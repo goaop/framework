@@ -30,7 +30,7 @@ class HealthyLiveAspect implements Aspect
      * Washing hands before eating
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before(pointcut="humanEat()") // Short pointcut name (for same class)
+     * @Before("Aspect\HealthyLiveAspect->humanEat")
      */
     protected function washUpBeforeEat(MethodInvocation $invocation)
     {
@@ -43,7 +43,7 @@ class HealthyLiveAspect implements Aspect
      * Method that advices to clean the teeth after eating
      *
      * @param MethodInvocation $invocation Invocation
-     * @After(pointcut="Aspect\HealthyLiveAspect->humanEat()") // Full-qualified pointcut name
+     * @After("Aspect\HealthyLiveAspect->humanEat")
      */
     protected function cleanTeethAfterEat(MethodInvocation $invocation)
     {
