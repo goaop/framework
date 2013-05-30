@@ -104,7 +104,7 @@ class AspectContainer extends Container
         });
         $this->share('aspect.pointcut.parser', function () {
             return new Parser(
-                new PointcutGrammar(),
+                new PointcutGrammar($this),
                 // Include production parse table for parser
                 include __DIR__ . '/../Aop/Pointcut/PointcutParseTable.php'
             );

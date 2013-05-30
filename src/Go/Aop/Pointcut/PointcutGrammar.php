@@ -13,7 +13,7 @@ use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Aop\Support\SimpleClassFilter;
-use Go\Core\AspectKernel;
+use Go\Core\AspectContainer;
 
 use Dissect\Parser\Grammar;
 
@@ -27,7 +27,7 @@ class PointcutGrammar extends Grammar
     /**
      * Constructs a pointcut grammar with AST
      */
-    public function __construct()
+    public function __construct(AspectContainer $container)
     {
         $this('Empty')
             ->is(/* empty */);
@@ -101,9 +101,7 @@ class PointcutGrammar extends Grammar
             })
 
             ->is('@annotation', '(', 'NamespaceClassPattern', ')')
-            ->call(function ($_, $_, $annotationClassName, $_) {
-                // TODO: inject container as dependency
-                $container = AspectKernel::getInstance()->getContainer();
+            ->call(function ($_, $_, $annotationClassName, $_) use ($container) {
                 // TODO: use single annotation reader
                 $reader = $container->get('aspect.annotation.raw.reader');
                 return new AnnotationMethodPointcut($reader, $annotationClassName);
@@ -116,13 +114,20 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
-        ;
+            ->is('PointcutReference')
+            ->call(function ($pointcutName) use ($container) {
+                return $container->getPointcut($pointcutName);
+            });
 
         $this('Arguments')
             ->is('Empty')
             ->is('*');
 
         $stringConverter = $this->getNodeToStringConverter();
+
+        $this('PointcutReference')
+            ->is('NamespaceClassPattern', 'MethodCall', 'NamePart')
+            ->call($stringConverter);
 
         // stable
         $this('MethodCall')

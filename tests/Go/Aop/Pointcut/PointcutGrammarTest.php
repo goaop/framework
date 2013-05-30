@@ -34,7 +34,8 @@ class PointcutGrammarTest extends \PHPUnit_Framework_TestCase
     {
         parent::setUp();
         $this->lexer  = new PointcutLexer();
-        $this->parser = new Parser(new PointcutGrammar());
+        $container    = $this->getMock('Go\Core\AspectContainer');
+        $this->parser = new Parser(new PointcutGrammar($container));
     }
 
     /**
