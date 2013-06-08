@@ -11,9 +11,10 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Proxy\ClassProxy;
-
 use Go\Proxy\TraitProxy;
+
 use TokenReflection\Broker;
+use TokenReflection\Exception\FileProcessingException;
 use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionFileNamespace as ParsedFileNamespace;
 
@@ -86,8 +87,13 @@ class WeavingTransformer extends BaseSourceTransformer
             }
         }
 
-
-        $parsedSource = $this->broker->processString($metadata->source, $fileName, true);
+        try {
+            $parsedSource = $this->broker->processString($metadata->source, $fileName, true);
+        } catch (FileProcessingException $e) {
+            // TODO: collect this exception and make a record in the modified source
+            // TODO: Maybe just ask a developer to add this file into exclude list?
+            return;
+        }
 
         /** @var $namespaces ParsedFileNamespace[] */
         $namespaces = $parsedSource->getNamespaces();
