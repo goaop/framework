@@ -6,7 +6,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Annotation;
+namespace Demo\Annotation;
 
 use Doctrine\Common\Annotations\Annotation;
 

@@ -6,9 +6,9 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Example;
+namespace Demo\Example;
 
-use Aspect\FluentInterface;
+use Demo\Aspect\FluentInterface;
 
 /**
  * Example class to show fluent interface in action

@@ -22,7 +22,10 @@
     ],
 
     "autoload": {
-        "psr-0": { "Go": "src/" },
+        "psr-0": {
+            "Go": "src/",
+            "Demo" : "demos/"
+        },
         "files": ["src/Go/Instrument/ClassLoading/AopComposerLoader.php"]
     },
     "extra": {

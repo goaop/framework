@@ -7,7 +7,7 @@
  * To change this template use File | Settings | File Templates.
  */
 
-namespace Aspect;
+namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
@@ -18,7 +18,7 @@ class FluentInterfaceAspect implements Aspect
     /**
      * Fluent interface advice
      *
-     * @Around("within(Aspect\FluentInterface+) && execution(public **->set*(*))")
+     * @Around("within(Demo\Aspect\FluentInterface+) && execution(public **->set*(*))")
      *
      * @param MethodInvocation $invocation
      * @return mixed|null|object

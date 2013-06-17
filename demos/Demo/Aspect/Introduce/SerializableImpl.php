@@ -6,7 +6,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Aspect\Introduce;
+namespace Demo\Aspect\Introduce;
 
 /**
  * Example class to test aspects
