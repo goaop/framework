@@ -28,7 +28,7 @@ execution points in a succinct and robust way, e.g. through declarative or progr
 
 In AOP terms, the execution points are called join points, a particular set of them is called a pointcut and the new
 behavior that is executed before, after, or "around" a join point is called advice. You can read more about AOP in
-[Introduction](https://github.com/lisachenko/go-aop-php/wiki/Introduction) section.
+[Introduction](http://go.aopphp.com/docs/introduction/) section.
 
 PHP traits can be used to implement some aspect-like functionality.
 
@@ -93,7 +93,7 @@ git submodule add https://github.com/lisachenko/go-aop-php vendor/lisachenko/go-
 Dependencies should be also installed as submodules:
 ``` bash
 git submodule add https://github.com/Andrewsville/PHP-Token-Reflection vendor/andrewsville/php-token-reflection
-git submodule add https://github.com/doctrine/common vendor/doctrine/common
+git submodule add https://github.com/doctrine/common vendor/doctrine/common (use 2.3.x tags)
 git submodule add https://github.com/jakubledl/dissect vendor/jakubledl/dissect
 ```
 
