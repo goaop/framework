@@ -124,22 +124,25 @@ abstract class AspectKernel
     }
 
     /**
-     * Returns default options for kernel
+     * Returns default options for kernel. Available options:
+     *
+     *   debug    - boolean Determines whether or not kernel is in debug mode
+     *   appDir   - string Path to the application root directory.
+     *   cacheDir - string Path to the cache directory where compiled classes will be stored
+     *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
+     *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
      *
      * @return array
      */
     protected function getDefaultOptions()
     {
         return array(
-            //Debug mode
             'debug'     => false,
-            // Base application directory
             'appDir'    => __DIR__ . '/../../../../../../',
-            // Cache directory for Go! generated classes
             'cacheDir'  => null,
-            // Include paths for aspect weaving
+
             'includePaths'   => array(),
-            // Name of the class for container
+            'excludePaths'   => array(),
             'containerClass' => static::$containerClass,
         );
     }
