@@ -8,7 +8,7 @@
 
 include __DIR__ . (isset($_GET['original']) ? './autoload.php' : './autoload_aspect.php');
 
-$example = new Example\General('test');
+$example = new Demo\Example\General('test');
 $class   = new ReflectionObject($example);
 
 if ($example instanceof Serializable) {

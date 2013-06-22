@@ -6,7 +6,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Aspect;
+namespace Demo\Aspect;
 
 use Go\Core\AspectKernel;
 use Go\Core\AspectContainer;

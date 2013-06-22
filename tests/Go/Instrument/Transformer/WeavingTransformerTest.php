@@ -35,10 +35,10 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $this->transformer = new WeavingTransformer(
             $this->getKernelMock(
                 array(
-                    'cacheDir'      => __DIR__,
-                    'appDir'        => dirname(__DIR__),
-                    'includePaths'  => array(),
-                    'autoloadPaths' => array()
+                    'cacheDir'     => __DIR__,
+                    'appDir'       => dirname(__DIR__),
+                    'includePaths' => array(),
+                    'excludePaths' => array()
                 ),
                 $this->getContainerMock()
             ),
@@ -128,10 +128,10 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $this->transformer = new WeavingTransformer(
             $this->getKernelMock(
                 array(
-                    'cacheDir'      => __DIR__,
-                    'appDir'        => dirname(__DIR__),
-                    'includePaths'  => array(__DIR__),
-                    'autoloadPaths' => array()
+                    'cacheDir'     => __DIR__,
+                    'appDir'       => dirname(__DIR__),
+                    'includePaths' => array(__DIR__),
+                    'excludePaths' => array()
                 ),
                 $this->getContainerMock()
             ),
@@ -153,10 +153,10 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $this->transformer = new WeavingTransformer(
             $this->getKernelMock(
                 array(
-                    'cacheDir'      => __DIR__,
-                    'appDir'        => dirname(__DIR__),
-                    'includePaths'  => array('/some/path'),
-                    'autoloadPaths' => array()
+                    'cacheDir'     => __DIR__,
+                    'appDir'       => dirname(__DIR__),
+                    'includePaths' => array('/some/path'),
+                    'excludePaths' => array()
                 ),
                 $this->getContainerMock()
             ),
@@ -178,10 +178,10 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $this->transformer = new WeavingTransformer(
             $this->getKernelMock(
                 array(
-                    'cacheDir'      => __DIR__,
-                    'appDir'        => dirname(__DIR__),
-                    'includePaths'  => array(),
-                    'autoloadPaths' => array(__DIR__)
+                    'cacheDir'     => __DIR__,
+                    'appDir'       => dirname(__DIR__),
+                    'includePaths' => array(),
+                    'excludePaths' => array(__DIR__)
                 ),
                 $this->getContainerMock()
             ),
