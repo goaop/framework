@@ -22,8 +22,11 @@
     ],
 
     "autoload": {
-        "psr-0": { "Go": "src/" },
-        "files": ["src/Go/Instrument/ClassLoading/composer.php"]
+        "psr-0": {
+            "Go": "src/",
+            "Demo" : "demos/"
+        },
+        "files": ["src/Go/Instrument/ClassLoading/AopComposerLoader.php"]
     },
     "extra": {
         "branch-alias": {

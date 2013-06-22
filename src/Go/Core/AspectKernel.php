@@ -8,7 +8,6 @@
 
 namespace Go\Core;
 
-use Go\Instrument\ClassLoading\UniversalClassLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
@@ -28,9 +27,6 @@ define('IS_MODERN_PHP', version_compare(PHP_VERSION, '5.4.0') >= 0);
 
 /**
  * Abstract aspect kernel is used to prepare an application to work with aspects.
- *
- * Realization of this class should return the path for application loader, so when the kernel has finished its work,
- * it will pass the control to the application loader.
  */
 abstract class AspectKernel
 {
@@ -88,7 +84,6 @@ abstract class AspectKernel
     public function init(array $options = array())
     {
         $this->options = array_replace_recursive($this->getDefaultOptions(), $options);
-        $this->initLibraryLoader();
 
         /** @var $container AspectContainer */
         $container = $this->container = new $this->options['containerClass'];
@@ -100,9 +95,6 @@ abstract class AspectKernel
         foreach ($this->registerTransformers($sourceLoaderFilter) as $sourceTransformer) {
             $sourceLoaderFilter->addTransformer($sourceTransformer);
         }
-
-        // Load application configurator
-        $sourceLoaderFilter->load($this->options['appLoader']);
 
         // Register kernel resources in the container
         $this->addKernelResourcesToContainer($container);
@@ -132,27 +124,25 @@ abstract class AspectKernel
     }
 
     /**
-     * Returns default options for kernel
+     * Returns default options for kernel. Available options:
+     *
+     *   debug    - boolean Determines whether or not kernel is in debug mode
+     *   appDir   - string Path to the application root directory.
+     *   cacheDir - string Path to the cache directory where compiled classes will be stored
+     *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
+     *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
      *
      * @return array
      */
     protected function getDefaultOptions()
     {
         return array(
-            //Debug mode
             'debug'     => false,
-            // Base application directory
             'appDir'    => __DIR__ . '/../../../../../../',
-            // Cache directory for Go! generated classes
             'cacheDir'  => null,
-            // Path to the application autoloader file, typical autoload.php
-            'appLoader' => null,
 
-            // Configuration for autoload namespaces
-            'autoloadPaths'  => array(),
-            // Include paths for aspect weaving
             'includePaths'   => array(),
-            // Name of the class for container
+            'excludePaths'   => array(),
             'containerClass' => static::$containerClass,
         );
     }
@@ -189,32 +179,6 @@ abstract class AspectKernel
         return array(
             new CachingTransformer($this, $sourceTransformers)
         );
-    }
-
-    /**
-     * Init library autoloader.
-     *
-     * We cannot use any standard autoloaders in the application level because we will rewrite them on fly.
-     * This will also reduce the time for library loading and prevent cyclic errors when source is loaded.
-     */
-    protected function initLibraryLoader()
-    {
-        /**
-         * Separate class loader for core should be used to load classes,
-         * so UniversalClassLoader is moved to the custom namespace
-         */
-        require_once __DIR__ . '/../Instrument/ClassLoading/UniversalClassLoader.php';
-
-        $loader = new UniversalClassLoader();
-        $loader->registerNamespaces($this->options['autoloadPaths']);
-        $loader->register();
-
-        // Configure library loader for doctrine annotation loader
-        AnnotationRegistry::registerLoader(function($class) use ($loader) {
-            $loader->loadClass($class);
-            return class_exists($class, false);
-        });
-
     }
 
     /**

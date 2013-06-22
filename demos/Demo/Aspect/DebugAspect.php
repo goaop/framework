@@ -6,7 +6,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Aspect;
+namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\FieldAccess;
@@ -31,9 +31,9 @@ class DebugAspect implements Aspect
 
     /**
      * @DeclareParents(
-     *   value="Example\General",
+     *   value="Demo\Example\General",
      *   interface="Serializable",
-     *   defaultImpl="Aspect\Introduce\SerializableImpl"
+     *   defaultImpl="Demo\Aspect\Introduce\SerializableImpl"
      * )
      *
      * @var null
@@ -43,7 +43,7 @@ class DebugAspect implements Aspect
     /**
      * Pointcut for example class
      *
-     * @Pointcut("execution(public Example\General->*(*))")
+     * @Pointcut("execution(public Demo\Example\General->*(*))")
      */
     protected function examplePublicMethods() {}
 
@@ -51,7 +51,7 @@ class DebugAspect implements Aspect
      * Method that should be called before real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before("Aspect\DebugAspect->examplePublicMethods")
+     * @Before("Demo\Aspect\DebugAspect->examplePublicMethods")
      */
     public function beforeMethodExecution(MethodInvocation $invocation)
     {
@@ -70,7 +70,7 @@ class DebugAspect implements Aspect
      * Method that should be called after real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @After("Aspect\DebugAspect->examplePublicMethods")
+     * @After("Demo\Aspect\DebugAspect->examplePublicMethods")
      */
     public function afterMethodExecution(MethodInvocation $invocation)
     {
@@ -90,7 +90,7 @@ class DebugAspect implements Aspect
      *
      * @param MethodInvocation $invocation Invocation
      *
-     * @Around("@annotation(Annotation\Cacheable)")
+     * @Around("@annotation(Demo\Annotation\Cacheable)")
      */
     public function aroundCacheable(MethodInvocation $invocation)
     {
@@ -114,7 +114,7 @@ class DebugAspect implements Aspect
      *
      * @param FieldAccess $property Joinpoint
      *
-     * @Around("access(* Example\General->*)")
+     * @Around("access(* Demo\Example\General->*)")
      * @return mixed
      */
     public function aroundFieldAccess(FieldAccess $property)

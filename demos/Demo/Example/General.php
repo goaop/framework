@@ -6,9 +6,9 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-namespace Example;
+namespace Demo\Example;
 
-use Annotation\Cacheable;
+use Demo\Annotation\Cacheable;
 
 /**
  * Example class to test aspects
