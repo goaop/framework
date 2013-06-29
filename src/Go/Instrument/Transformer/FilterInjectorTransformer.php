@@ -116,7 +116,11 @@ class FilterInjectorTransformer implements SourceTransformer
             return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
         }
 
-        $newResource = str_replace(self::$rootPath, self::$rewriteToPath, $resource);
+        $newResource = str_replace(
+            array('/', self::$rootPath),
+            array(DIRECTORY_SEPARATOR, self::$rewriteToPath),
+            $resource
+        );
 
         // Trigger creation of cache, this will create a cache file with $newResource name
         if (!file_exists($newResource)) {
