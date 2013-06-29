@@ -96,8 +96,10 @@ abstract class AspectKernel
             $sourceLoaderFilter->addTransformer($sourceTransformer);
         }
 
-        // Register kernel resources in the container
-        $this->addKernelResourcesToContainer($container);
+        // Register kernel resources in the container for debug mode
+        if ($this->options['debug']) {
+            $this->addKernelResourcesToContainer($container);
+        }
 
         // Register all AOP configuration in the container
         $this->configureAop($container);
