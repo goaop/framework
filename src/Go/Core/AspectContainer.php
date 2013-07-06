@@ -102,9 +102,9 @@ class AspectContainer extends Container
         $this->share('aspect.pointcut.lexer', function () {
             return new PointcutLexer();
         });
-        $this->share('aspect.pointcut.parser', function () {
+        $this->share('aspect.pointcut.parser', function ($container) {
             return new Parser(
-                new PointcutGrammar($this),
+                new PointcutGrammar($container),
                 // Include production parse table for parser
                 include __DIR__ . '/../Aop/Pointcut/PointcutParseTable.php'
             );
