@@ -27,32 +27,6 @@ use TokenReflection\ReflectionClass as ParsedReflectionClass;
 class GoAspectContainer extends Container implements AspectContainer
 {
     /**
-     * Prefix for properties interceptor
-     */
-    const PROPERTY_PREFIX = "prop";
-
-    /**
-     * Prefix for method interceptor
-     */
-    const METHOD_PREFIX = "method";
-
-    /**
-     * Prefix for static method interceptor
-     */
-    const STATIC_METHOD_PREFIX = "static";
-
-    /**
-     * Trait introduction prefix
-     */
-    const INTRODUCTION_TRAIT_PREFIX = "introduction";
-
-    /**
-     * Suffix, that will be added to all proxied class names
-     */
-    const AOP_PROXIED_SUFFIX = '__AopProxied';
-
-
-    /**
      * List of resources for application
      *
      * @var array
