@@ -59,6 +59,12 @@ class FilterInjectorTransformer implements SourceTransformer
      * @var bool
      */
     protected static $debug = false;
+    
+    /**
+     *
+     * @var Go\Core\AspectContainer
+     */
+    protected static $container = null;
 
     /**
      * Class constructor
@@ -92,6 +98,7 @@ class FilterInjectorTransformer implements SourceTransformer
         self::$filterName = $filterName;
         self::$debug      = $options['debug'];
         self::$configured = true;
+        self::$container = $options['container'];
     }
 
     /**
@@ -112,7 +119,7 @@ class FilterInjectorTransformer implements SourceTransformer
                 ?: stream_resolve_include_path("{$originalDir}/{$resource}");
         }
         // If the cache is disabled, then use on-fly method
-        if (!self::$rewriteToPath || self::$debug) {
+        if (!self::$rewriteToPath) {
             return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
         }
 
@@ -121,9 +128,25 @@ class FilterInjectorTransformer implements SourceTransformer
             array(DIRECTORY_SEPARATOR, self::$rewriteToPath),
             $resource
         );
-
+        
         // Trigger creation of cache, this will create a cache file with $newResource name
-        if (!file_exists($newResource)) {
+        switch(true) {
+            case !file_exists($newResource):
+                $mustRewrite = true;
+                break;
+            case !self::$debug;
+                $mustRewrite = false;
+                break;
+            case filemtime($resource) >= filemtime($newResource):
+            case !self::$container->isFresh(filemtime($resource));
+                $mustRewrite = true;
+                break;
+            default:
+                $mustRewrite = false;
+                break;
+        }
+        
+        if ($mustRewrite) {
             file_get_contents(self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource);
         }
         return $newResource;
