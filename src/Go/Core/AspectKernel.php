@@ -49,7 +49,7 @@ abstract class AspectKernel
      *
      * @var string
      */
-    protected static $containerClass = 'Go\Core\AspectContainer';
+    protected static $containerClass = 'Go\Core\GoAspectContainer';
 
     /**
      * Aspect container instance

@@ -9,6 +9,7 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
+use Go\Core\AspectWeaver;
 use Go\Core\AspectKernel;
 use Go\Proxy\ClassProxy;
 use Go\Proxy\TraitProxy;
@@ -30,6 +31,11 @@ class WeavingTransformer extends BaseSourceTransformer
      * @var Broker
      */
     protected $broker;
+
+    /**
+     * @var AspectWeaver
+     */
+    protected $weaver;
 
     /**
      * List of include paths to process
@@ -55,6 +61,8 @@ class WeavingTransformer extends BaseSourceTransformer
     {
         parent::__construct($kernel);
         $this->broker       = $broker;
+        $this->weaver       = $this->container->get('aspect.weaver');
+
         $this->includePaths = array_map('realpath', $this->options['includePaths']);
         $this->excludePaths = array_map('realpath', $this->options['excludePaths']);
     }
@@ -115,7 +123,7 @@ class WeavingTransformer extends BaseSourceTransformer
                     continue;
                 }
 
-                $advices = $this->container->getAdvicesForClass($class);
+                $advices = $this->weaver->getAdvicesForClass($class);
 
                 if ($advices) {
 
