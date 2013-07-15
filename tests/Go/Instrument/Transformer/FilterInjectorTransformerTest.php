@@ -28,6 +28,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
                     'cacheDir' => null,
                     'appDir' => '',
                     'debug' => false,
+                    'container' => new TestFilterInjectorTransformerContainer()
                 ),
                 'unit.test'
             );
@@ -109,4 +110,12 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($this->metadata->source, $output);
     }
 
+}
+
+class TestFilterInjectorTransformerContainer extends \Go\Core\AspectContainer
+{
+  public function isFresh($timestamp)
+  {
+     return true;
+  }
 }

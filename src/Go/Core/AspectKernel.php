@@ -167,8 +167,10 @@ abstract class AspectKernel
      */
     protected function registerTransformers(SourceTransformingLoader $sourceLoader)
     {
+        $options = $this->options;
+        $options['container'] = $this->getContainer();
         $sourceTransformers = array(
-            new FilterInjectorTransformer($this->options, $sourceLoader->getId()),
+            new FilterInjectorTransformer($options, $sourceLoader->getId()),
             new MagicConstantTransformer($this),
             new WeavingTransformer(
                 $this,
