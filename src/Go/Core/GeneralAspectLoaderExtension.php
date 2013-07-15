@@ -76,8 +76,8 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
     public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
     {
         /** @var $pointcut Pointcut|PointFilter */
-        $pointcut       = $this->parsePointcut($container, $reflection, $metaInformation);
-        $methodId       = sprintf("%s->%s", $reflection->class, $reflection->name);
+        $pointcut       = $this->parsePointcut($container, $aspect, $reflection, $metaInformation);
+        $methodId       = sprintf("%s->%s", get_class($aspect), $reflection->name);
         $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);
 
         if (isset($metaInformation->scope) && $metaInformation->scope !== 'aspect') {
@@ -166,18 +166,20 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
      * Temporary method for parsing pointcuts
      *
      * @param AspectContainer $container Container
+     * @param Aspect $aspect Instance of current aspect
      * @param Annotation\BaseAnnotation|Annotation\BaseInterceptor $metaInformation
      * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      *
      * @throws \UnexpectedValueException if there was an error during parsing
      * @return \Go\Aop\Pointcut
      */
-    private function parsePointcut(AspectContainer $container, $reflection, $metaInformation)
+    private function parsePointcut(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation)
     {
         /** @var $lexer \Dissect\Lexer\Lexer */
         $lexer  = $container->get('aspect.pointcut.lexer');
         try {
-            $stream = $lexer->lex($metaInformation->value);
+            $resolvedThisPointcut = str_replace('$this', get_class($aspect), $metaInformation->value);
+            $stream = $lexer->lex($resolvedThisPointcut);
         } catch (RecognitionException $e) {
             $message = "Can not recognize the lexical structure `%s` before %s, defined in %s:%d";
             $message = sprintf(
