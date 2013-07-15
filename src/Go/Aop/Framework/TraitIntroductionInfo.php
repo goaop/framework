@@ -46,7 +46,7 @@ class TraitIntroductionInfo implements IntroductionInfo
      */
     public function getInterfaces()
     {
-        return array($this->introducedInterface);
+        return (array) $this->introducedInterface;
     }
 
     /**
@@ -56,6 +56,6 @@ class TraitIntroductionInfo implements IntroductionInfo
      */
     public function getTraits()
     {
-        return array($this->implementationClass);
+        return (array) $this->implementationClass;
     }
 }

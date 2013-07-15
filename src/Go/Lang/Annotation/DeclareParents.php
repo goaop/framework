@@ -16,8 +16,8 @@ namespace Go\Lang\Annotation;
  *
  * @Attributes({
  *   @Attribute("value", type = "string", required=true),
- *   @Attribute("interface", type = "string", required=true),
- *   @Attribute("defaultImpl", type = "string", required=true)
+ *   @Attribute("interface", type = "string"),
+ *   @Attribute("defaultImpl", type = "string")
  * })
  */
 class DeclareParents extends BaseAnnotation
@@ -27,12 +27,12 @@ class DeclareParents extends BaseAnnotation
      *
      * @var string
      */
-    public $defaultImpl = '';
+    public $defaultImpl = null;
 
     /**
      * Interface name to add
      *
      * @var string
      */
-    public $interface = '';
+    public $interface = null;
 }
