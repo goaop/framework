@@ -55,18 +55,6 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     }
 
     /**
-     * Proceed to the next interceptor in the Chain
-     *
-     * Typically this method is called inside previous closure, as instance of Joinpoint is passed to callback
-     * Do not call this method directly, only inside callback closures.
-     *
-     * This method should be extended to invoke original method
-     *
-     * @return mixed
-     */
-    abstract public function proceed();
-
-    /**
      * Gets the method being called.
      *
      * <p>This method is a friendly implementation of the
