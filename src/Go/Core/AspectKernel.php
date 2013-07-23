@@ -174,7 +174,8 @@ abstract class AspectKernel
                 $this,
                 new TokenReflection\Broker(
                     new TokenReflection\Broker\Backend\Memory()
-                )
+                ),
+                $this->container->get('aspect.advice_matcher')
             )
         );
 

@@ -13,18 +13,14 @@ use ReflectionMethod;
 use ReflectionProperty;
 
 use Go\Aop;
-use Go\Aop\Pointcut\PointcutLexer;
-use Go\Aop\Pointcut\PointcutGrammar;
-use Go\Instrument\RawAnnotationReader;
 
-use Dissect\Parser\LALR1\Parser;
 use Doctrine\Common\Annotations\AnnotationReader;
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 
 /**
  * Aspect container contains list of all pointcuts and advisors
  */
-class AspectWeaver
+class AdviceMatcher
 {
     /**
      * Loader of aspects
@@ -33,7 +29,19 @@ class AspectWeaver
      */
     protected $loader;
 
+    /**
+     * Instance of container for aspect
+     *
+     * @var AspectContainer
+     */
     protected $container;
+
+    /**
+     * List of resources that was loaded
+     *
+     * @var array
+     */
+    protected $loadedResources = array();
 
     public function __construct(AspectLoader $loader, AspectContainer $container)
     {
@@ -50,9 +58,9 @@ class AspectWeaver
      */
     public function getAdvicesForClass($class)
     {
-//        if ($this->loadedResources != $this->resources) {
+        if ($this->loadedResources != $this->container->getResources()) {
             $this->loadAdvisorsAndPointcuts();
-//        }
+        }
 
         $classAdvices = array();
         if (!$class instanceof ReflectionClass && !$class instanceof ParsedReflectionClass) {
@@ -163,8 +171,10 @@ class AspectWeaver
     private function loadAdvisorsAndPointcuts()
     {
         // TODO: use a difference with $this->resources to load only missed aspects
+        // TODO: maybe this is a task for the AspectLoader?
         foreach ($this->container->getByTag('aspect') as $aspect) {
             $this->loader->load($aspect);
         }
+        $this->loadedResources = $this->container->getResources();
     }
 }

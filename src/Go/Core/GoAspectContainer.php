@@ -41,14 +41,6 @@ class GoAspectContainer extends Container implements AspectContainer
     protected $maxTimestamp = 0;
 
     /**
-     * List of loaded resources (it is used for comparison with $this->resources)
-     *
-     * @see AspectContainer::resources
-     * @var array
-     */
-    private $loadedResources = array();
-
-    /**
      * Constructor for container
      */
     public function __construct()
@@ -64,8 +56,8 @@ class GoAspectContainer extends Container implements AspectContainer
             return $aspectLoader;
         });
 
-        $this->share('aspect.weaver', function ($container) {
-            return new AspectWeaver(
+        $this->share('aspect.advice_matcher', function ($container) {
+            return new AdviceMatcher(
                 $container->get('aspect.loader'),
                 $container
             );
@@ -151,11 +143,11 @@ class GoAspectContainer extends Container implements AspectContainer
     }
 
     /**
-     * Add an resource for container
+     * Add an AOP resource to the container
      *
      * TODO: use symfony/config component for creating the cache
      *
-     * Resources is used to check the freshness of cache
+     * Resources is used to check the freshness of AOP cache
      */
     public function addResource($resource)
     {
@@ -164,11 +156,21 @@ class GoAspectContainer extends Container implements AspectContainer
     }
 
     /**
-     * Checks the freshness of container
+     * Returns list of AOP resources
+     *
+     * @return array
+     */
+    public function getResources()
+    {
+        return $this->resources;
+    }
+
+    /**
+     * Checks the freshness of AOP cache
      *
      * @param integer $timestamp
      *
-     * @return bool Whether or not container is fresh
+     * @return bool Whether or not concrete file is fresh
      */
     public function isFresh($timestamp)
     {
@@ -176,135 +178,5 @@ class GoAspectContainer extends Container implements AspectContainer
             $this->maxTimestamp = max(array_map('filemtime', $this->resources));
         }
         return $this->maxTimestamp < $timestamp;
-    }
-
-    /**
-     * Return list of advices for class
-     *
-     * @param string|ReflectionClass|ParsedReflectionClass $class Class to advise
-     *
-     * @return array|Aop\Advice[] List of advices for class
-     */
-    public function getAdvicesForClass($class)
-    {
-        if ($this->loadedResources != $this->resources) {
-            $this->loadAdvisorsAndPointcuts();
-        }
-
-        $classAdvices = array();
-        if (!$class instanceof ReflectionClass && !$class instanceof ParsedReflectionClass) {
-            $class = new ReflectionClass($class);
-        }
-
-        $parentClass = $class->getParentClass();
-
-        if ($parentClass && preg_match('/' . self::AOP_PROXIED_SUFFIX . '$/', $parentClass->name)) {
-            $originalClass = $parentClass;
-        } else {
-            $originalClass = $class;
-        }
-
-        foreach ($this->getByTag('advisor') as $advisor) {
-
-            if ($advisor instanceof Aop\PointcutAdvisor) {
-
-                $pointcut = $advisor->getPointcut();
-                if ($pointcut->getClassFilter()->matches($class)) {
-                    $classAdvices = array_merge_recursive(
-                        $classAdvices,
-                        $this->getAdvicesFromAdvisor($originalClass, $advisor, $pointcut)
-                    );
-                }
-            }
-
-            if ($advisor instanceof Aop\IntroductionAdvisor) {
-                if ($advisor->getClassFilter()->matches($class)) {
-                    $classAdvices = array_merge_recursive(
-                        $classAdvices,
-                        $this->getIntroductionFromAdvisor($originalClass, $advisor)
-                    );
-                }
-            }
-        }
-        return $classAdvices;
-    }
-
-    /**
-     * Returns list of advices from advisor and point filter
-     *
-     * @param ReflectionClass|ParsedReflectionClass $class Class to inject advices
-     * @param Aop\PointcutAdvisor $advisor Advisor for class
-     * @param Aop\PointFilter $filter Filter for points
-     *
-     * @return array
-     */
-    private function getAdvicesFromAdvisor($class, Aop\PointcutAdvisor $advisor, Aop\PointFilter $filter)
-    {
-        $classAdvices = array();
-
-        // Check methods in class only for method filters
-        if ($filter->getKind() & Aop\PointFilter::KIND_METHOD) {
-
-            $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
-            foreach ($class->getMethods($mask) as $method) {
-                /** @var $method ReflectionMethod| */
-                if ($method->getDeclaringClass()->name == $class->name && $filter->matches($method)) {
-                    $prefix = $method->isStatic() ? self::STATIC_METHOD_PREFIX : self::METHOD_PREFIX;
-                    $classAdvices[$prefix . ':'. $method->name][] = $advisor->getAdvice();
-                }
-            }
-        }
-
-        // Check properties in class only for property filters
-        if ($filter->getKind() & Aop\PointFilter::KIND_PROPERTY) {
-            $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED;
-            foreach ($class->getProperties($mask) as $property) {
-                /** @var $property ReflectionProperty */
-                if ($filter->matches($property)) {
-                    $classAdvices[self::PROPERTY_PREFIX.':'.$property->name][] = $advisor->getAdvice();
-                }
-            }
-        }
-
-        return $classAdvices;
-    }
-
-    /**
-     * Returns list of introduction advices from advisor
-     *
-     * @param ReflectionClass|ParsedReflectionClass $class Class to inject advices
-     * @param Aop\IntroductionAdvisor $advisor Advisor for class
-     *
-     * @return array
-     */
-    private function getIntroductionFromAdvisor($class, $advisor)
-    {
-        // Do not make introduction for traits
-        if ($class->isTrait()) {
-            return array();
-        }
-
-        /** @var $advice Aop\IntroductionInfo */
-        $advice = $advisor->getAdvice();
-
-        return array(
-            self::INTRODUCTION_TRAIT_PREFIX.':'.join(':', $advice->getInterfaces()) => $advice
-        );
-    }
-
-    /**
-     * Load pointcuts into container
-     *
-     * There is no need to always load pointcuts, so we delay loading
-     */
-    private function loadAdvisorsAndPointcuts()
-    {
-        // TODO: use a difference with $this->resources to load only missed aspects
-        /** @var $loader AspectLoader */
-        $loader = $this->get('aspect.loader');
-        foreach ($this->getByTag('aspect') as $aspect) {
-            $loader->load($aspect);
-        }
-        $this->loadedResources = $this->resources;
     }
 }

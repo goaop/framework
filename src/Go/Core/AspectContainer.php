@@ -88,4 +88,28 @@ interface AspectContainer
      * @return Aop\Aspect
      */
     public function getAspect($aspectName);
+
+    /**
+     * Add an AOP resource to the container
+     *
+     * @param string $resource Path to the resource
+     * Resources is used to check the freshness of AOP cache
+     */
+    public function addResource($resource);
+
+    /**
+     * Returns the list of AOP resources
+     *
+     * @return array
+     */
+    public function getResources();
+
+    /**
+     * Checks the freshness of AOP cache
+     *
+     * @param integer $timestamp
+     *
+     * @return bool Whether or not concrete file is fresh
+     */
+    public function isFresh($timestamp);
 }

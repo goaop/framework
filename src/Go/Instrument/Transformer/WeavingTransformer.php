@@ -9,7 +9,7 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
-use Go\Core\AspectWeaver;
+use Go\Core\AdviceMatcher;
 use Go\Core\AspectKernel;
 use Go\Proxy\ClassProxy;
 use Go\Proxy\TraitProxy;
@@ -33,9 +33,9 @@ class WeavingTransformer extends BaseSourceTransformer
     protected $broker;
 
     /**
-     * @var AspectWeaver
+     * @var AdviceMatcher
      */
-    protected $weaver;
+    protected $adviceMatcher;
 
     /**
      * List of include paths to process
@@ -56,12 +56,13 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @param AspectKernel $kernel Instance of aspect kernel
      * @param Broker $broker Instance of reflection broker to use
+     * @param AdviceMatcher $adviceMatcher Advice matcher for class
      */
-    public function __construct(AspectKernel $kernel, Broker $broker)
+    public function __construct(AspectKernel $kernel, Broker $broker, AdviceMatcher $adviceMatcher)
     {
         parent::__construct($kernel);
-        $this->broker       = $broker;
-        $this->weaver       = $this->container->get('aspect.weaver');
+        $this->broker        = $broker;
+        $this->adviceMatcher = $adviceMatcher;
 
         $this->includePaths = array_map('realpath', $this->options['includePaths']);
         $this->excludePaths = array_map('realpath', $this->options['excludePaths']);
@@ -123,7 +124,7 @@ class WeavingTransformer extends BaseSourceTransformer
                     continue;
                 }
 
-                $advices = $this->weaver->getAdvicesForClass($class);
+                $advices = $this->adviceMatcher->getAdvicesForClass($class);
 
                 if ($advices) {
 
