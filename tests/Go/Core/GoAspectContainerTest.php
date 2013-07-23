@@ -7,16 +7,17 @@ use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Aop\Support\TruePointFilter;
 use \PHPUnit_Framework_TestCase as TestCase;
 
-class AspectContainerTest extends TestCase
+class GoAspectContainerTest extends TestCase
 {
     /**
-     * @var null|AspectContainer
+     * @var null|GoAspectContainer
      */
     protected $container = null;
 
     protected function setUp()
     {
-        $this->container = new AspectContainer();
+        //$this->markTestIncomplete("Temporary disabled");
+        $this->container = new GoAspectContainer();
     }
 
     /**
@@ -34,6 +35,7 @@ class AspectContainerTest extends TestCase
     {
         return array(
             array('aspect.loader'),
+            array('aspect.advice_matcher'),
             array('aspect.annotation.reader'),
             array('aspect.annotation.raw.reader'),
             array('aspect.pointcut.lexer'),
@@ -100,83 +102,5 @@ class AspectContainerTest extends TestCase
 
         $isFresh = $this->container->isFresh($realMtime + 3600);
         $this->assertTrue($isFresh);
-    }
-
-    /**
-     * Verifies that empty result will be returned without aspects and advisors
-     */
-    public function testGetEmptyAdvicesForClass()
-    {
-        // by class name
-        $advices = $this->container->getAdvicesForClass(__CLASS__);
-        $this->assertEmpty($advices);
-
-        // by reflection
-        $advices = $this->container->getAdvicesForClass(new \ReflectionClass(__CLASS__));
-        $this->assertEmpty($advices);
-    }
-
-    /**
-     * Check that list of advices for method works correctly
-     */
-    public function testGetSingleMethodAdviceForClassFromAdvisor()
-    {
-        $funcName = __FUNCTION__;
-
-        $pointcut = $this->getMock('Go\Aop\Pointcut');
-        $pointcut
-            ->expects($this->any())
-            ->method('getClassFilter')
-            ->will($this->returnValue(TruePointFilter::getInstance()));
-        $pointcut
-            ->expects($this->any())
-            ->method('matches')
-            ->will($this->returnCallback(function ($point) use ($funcName) {
-                return $point->name === $funcName;
-            }));
-        $pointcut
-            ->expects($this->any())
-            ->method('getKind')
-            ->will($this->returnValue(Pointcut::KIND_METHOD));
-
-        $advice = $this->getMock('Go\Aop\Advice');
-        $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
-        $this->container->registerAdvisor($advisor, 'test');
-
-        $advices = $this->container->getAdvicesForClass(__CLASS__);
-        $this->assertArrayHasKey(AspectContainer::METHOD_PREFIX . ':' . $funcName, $advices);
-        $this->assertCount(1, $advices);
-    }
-
-    /**
-     * Check that list of advices for fields works correctly
-     */
-    public function testGetSinglePropertyAdviceForClassFromAdvisor()
-    {
-        $propName = 'container'; // $this->container;
-
-        $pointcut = $this->getMock('Go\Aop\Pointcut');
-        $pointcut
-            ->expects($this->any())
-            ->method('getClassFilter')
-            ->will($this->returnValue(TruePointFilter::getInstance()));
-        $pointcut
-            ->expects($this->any())
-            ->method('matches')
-            ->will($this->returnCallback(function ($point) use ($propName) {
-                return $point->name === $propName;
-            }));
-        $pointcut
-            ->expects($this->any())
-            ->method('getKind')
-            ->will($this->returnValue(Pointcut::KIND_PROPERTY));
-
-        $advice = $this->getMock('Go\Aop\Advice');
-        $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
-        $this->container->registerAdvisor($advisor, 'test');
-
-        $advices = $this->container->getAdvicesForClass(__CLASS__);
-        $this->assertArrayHasKey(AspectContainer::PROPERTY_PREFIX . ':' . $propName, $advices);
-        $this->assertCount(1, $advices);
     }
 }

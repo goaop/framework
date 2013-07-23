@@ -49,7 +49,7 @@ abstract class AspectKernel
      *
      * @var string
      */
-    protected static $containerClass = 'Go\Core\AspectContainer';
+    protected static $containerClass = 'Go\Core\GoAspectContainer';
 
     /**
      * Aspect container instance
@@ -174,7 +174,8 @@ abstract class AspectKernel
                 $this,
                 new TokenReflection\Broker(
                     new TokenReflection\Broker\Backend\Memory()
-                )
+                ),
+                $this->container->get('aspect.advice_matcher')
             )
         );
 
