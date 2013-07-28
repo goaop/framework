@@ -10,6 +10,7 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\FieldAccess;
+use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\After;
 use Go\Lang\Annotation\Before;
@@ -132,5 +133,24 @@ class DebugAspect implements Aspect
             PHP_EOL;
 
         return $value;
+    }
+
+    /**
+     * @param FunctionInvocation $invocation
+     *
+     * @Around("function(Demo\Example\*(*))")
+     *
+     * @return mixed
+     */
+    public function aroundFunction(FunctionInvocation $invocation)
+    {
+        echo 'Calling Around Interceptor for function: ',
+            $invocation->getFunction()->getName(),
+            '()',
+            ' with arguments: ',
+            json_encode($invocation->getArguments()),
+            PHP_EOL;
+
+        return $invocation->proceed();
     }
 }
