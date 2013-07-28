@@ -197,16 +197,38 @@ class FunctionProxy
      */
     protected function getJoinpointInvocationBody($function)
     {
-        $class  = '\\' . __CLASS__;
-        $prefix = 'func';
+        $class   = '\\' . __CLASS__;
+        $prefix  = 'func';
 
-        $args = join(', ', array_map(function ($param) {
+        $dynamicArgs   = false;
+        $hasOptionals  = false;
+        $hasReferences = false;
+
+        $argValues = array_map(function ($param) use (&$dynamicArgs, &$hasOptionals, &$hasReferences) {
             /** @var $param Parameter|ParsedParameter */
-            $byReference = $param->isPassedByReference() ? '&' : '';
-            return $byReference . '$' . $param->name;
-        }, $function->getParameters()));
+            $byReference   = $param->isPassedByReference();
+            $dynamicArg    = $param->name == '...';
+            $dynamicArgs   = $dynamicArgs || $dynamicArg;
+            $hasOptionals  = $hasOptionals || ($param->isOptional() && !$param->isDefaultValueAvailable());
+            $hasReferences = $hasReferences || $byReference;
+            return ($byReference ? '&' : '') . '$' . $param->name;
+        }, $function->getParameters());
 
-        $args = strpos($args, '...') === false ? "array($args)" : 'func_get_args()';
+        if ($dynamicArgs) {
+            // Remove last '...' argument
+            array_pop($argValues);
+        }
+
+        $args = join(', ', $argValues);
+
+        if ($dynamicArgs) {
+            $args = $hasReferences ? "array($args) + \\func_get_args()" : '\func_get_args()';
+        } elseif ($hasOptionals) {
+            $args = "\\array_slice(array($args), 0, \\func_num_args())";
+        } else {
+            $args = "array($args)";
+        }
+
         return <<<BODY
 static \$__joinPoint = null;
 if (!\$__joinPoint) {
@@ -275,14 +297,14 @@ BODY;
             } else {
                 $defaultValue = var_export($parameter->getDefaultValue());
             }
-        } elseif ($parameter->allowsNull()) {
+        } elseif ($parameter->allowsNull() || $parameter->isOptional()) {
             $defaultValue = 'null';
         }
         $code = sprintf('%s%s$%s%s',
             $type ? "$type " : '',
             $parameter->isPassedByReference() ? '&' : '',
             $parameter->name,
-            $isDefaultValueAvailable ? (" = " . $defaultValue) : ''
+            $defaultValue ? (" = " . $defaultValue) : ''
         );
         return $code;
     }
