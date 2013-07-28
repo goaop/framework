@@ -8,17 +8,15 @@
 
 namespace Go\Proxy;
 
+use Go\Aop\Advice;
 use Go\Aop\Framework\ReflectionFunctionInvocation;
-use Go\Core\AspectContainer;
+use Go\Aop\Intercept\FunctionInvocation;
 
-use Go\Core\AspectKernel;
 use ReflectionFunction;
 use ReflectionParameter as Parameter;
 
-use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionFileNamespace;
 use TokenReflection\ReflectionParameter as ParsedParameter;
-use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionFunction as ParsedFunction;
 
 class FunctionProxy
@@ -83,7 +81,7 @@ class FunctionProxy
      * @param array|Advice[] $advices List of function advices
      *
      * @throws \InvalidArgumentException for unsupported advice type
-     * @return ClassProxy
+     * @return FunctionProxy
      */
     public static function generate($namespace, array $advices)
     {
@@ -106,9 +104,19 @@ class FunctionProxy
         return $functions;
     }
 
-    public static function getJoinPoint($functionName, $namespace)
+    /**
+     * Returns a joinpoint for specific function in the namespace
+     *
+     * @param string $joinPointName Special joinpoint name
+     * @param string $namespace Name of the namespace
+     *
+     * @return FunctionInvocation
+     */
+    public static function getJoinPoint($joinPointName, $namespace)
     {
-        $advices = self::$functionAdvices[$namespace][$functionName];
+        $advices      = self::$functionAdvices[$namespace][$joinPointName];
+        $nameParts    = explode(':', $joinPointName, 2);
+        $functionName = end($nameParts);
         return new ReflectionFunctionInvocation($functionName, $advices);
     }
 
@@ -125,10 +133,6 @@ class FunctionProxy
      */
     public static function injectJoinPoints($namespace, array $advices = array())
     {
-        if (!$advices) {
-            $container = AspectKernel::getInstance()->getContainer();
-            $advices   = $container->getAdvicesForFunctions($namespace);
-        }
         self::$functionAdvices[$namespace] = $advices;
     }
 
@@ -138,7 +142,7 @@ class FunctionProxy
      * @param ReflectionFunction|ParsedFunction $function Function reflection
      * @param string $body New body for function
      *
-     * @return AbstractProxy
+     * @return $this
      */
     public function override($function, $body)
     {
