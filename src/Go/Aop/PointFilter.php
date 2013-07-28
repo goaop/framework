@@ -18,7 +18,8 @@ interface PointFilter
     const KIND_PROPERTY = 2;
     const KIND_CLASS    = 4;
     const KIND_TRAIT    = 8;
-    const KIND_ALL      = 15;
+    const KIND_FUNCTION = 16;
+    const KIND_ALL      = 31;
 
     /**
      * Performs matching of point of code

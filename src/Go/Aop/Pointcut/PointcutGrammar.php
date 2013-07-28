@@ -11,6 +11,7 @@ namespace Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
+use Go\Aop\Support\SimpleNamespaceFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Aop\Support\SimpleClassFilter;
 use Go\Core\AspectContainer;
@@ -85,6 +86,25 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
+            ->is(
+                'function', '(',
+                    'NamespacePattern', '(', 'Arguments', ')',
+                ')'
+            )
+            ->call(function(
+                $_, // function node
+                $_, // (
+                $namespacePattern
+            ) {
+                $lastNsPos   = strrpos($namespacePattern, '\\');
+                $namespace   = substr($namespacePattern, 0, $lastNsPos);
+                $funcPattern = substr($namespacePattern, $lastNsPos+1);
+                $nsFilter    = new SimpleNamespaceFilter($namespace);
+                $pointcut    = new FunctionPointcut($funcPattern);
+                $pointcut->setNamespaceFilter($nsFilter);
+                return $pointcut;
+            })
+
             ->is('access', '(', 'MemberModifiers', 'ClassFilter', '->', 'NamePattern', ')')
             ->call(function(
                 $_,
@@ -100,7 +120,7 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
-            ->is('@annotation', '(', 'NamespaceClassPattern', ')')
+            ->is('@annotation', '(', 'NamespacePattern', ')')
             ->call(function ($_, $_, $annotationClassName, $_) use ($container) {
                 // TODO: use single annotation reader
                 $reader = $container->get('aspect.annotation.raw.reader');
@@ -126,7 +146,7 @@ class PointcutGrammar extends Grammar
         $stringConverter = $this->getNodeToStringConverter();
 
         $this('PointcutReference')
-            ->is('NamespaceClassPattern', 'MethodCall', 'NamePart')
+            ->is('NamespacePattern', 'MethodCall', 'NamePart')
             ->call($stringConverter);
 
         // stable
@@ -135,24 +155,24 @@ class PointcutGrammar extends Grammar
             ->is('->')->call($stringConverter);
 
         $this('ClassFilter')
-            ->is('NamespaceClassPattern')
+            ->is('NamespacePattern')
             ->call(function($pattern) {
                 return $pattern === '**'
                     ? TruePointFilter::getInstance()
                     : new SimpleClassFilter($pattern);
             })
 
-            ->is('NamespaceClassPattern', '+')
+            ->is('NamespacePattern', '+')
             ->call(function($parentClassName, $_) {
                 return new InheritanceClassFilter($parentClassName);
             })
         ;
 
         // stable
-        $this('NamespaceClassPattern')
+        $this('NamespacePattern')
             ->is('NamePattern')
             ->is('**')->call($stringConverter)
-            ->is('NamePattern', 'NsSeparator', 'NamespaceClassPattern')->call($stringConverter);
+            ->is('NamespacePattern', 'NsSeparator', 'NamePattern')->call($stringConverter);
 
         // stable
         $this('NamePattern')

@@ -44,10 +44,19 @@ class AdviceMatcher
      */
     protected $loadedResources = array();
 
+    /**
+     * Temporary flag to enable|disable function advising
+     *
+     * @var bool
+     */
+    private $funcEnabled = false;
+
     public function __construct(AspectLoader $loader, AspectContainer $container)
     {
         $this->loader    = $loader;
         $this->container = $container;
+
+        $this->funcEnabled |= defined('GO_INTERCEPT_FUNCTIONS');
     }
 
     /**
@@ -60,18 +69,29 @@ class AdviceMatcher
      */
     public function getAdvicesForFunctions($namespace)
     {
-        static $advices = null;
-
-        if ($namespace->getName() == 'no-namespace') {
+        // TODO: remove after stabilization of functionality
+        if (!$this->funcEnabled || $namespace->getName() == 'no-namespace') {
             return array();
         }
 
-        if (!isset($advices)) {
-            $advices   = array();
-            $functions = get_defined_functions();
-            foreach ($functions['internal'] as $function) {
-                $advices["func:{$function}"] = array(
-                );
+        $advices = array();
+
+        if ($this->loadedResources != $this->container->getResources()) {
+            $this->loadAdvisorsAndPointcuts();
+        }
+
+        foreach ($this->container->getByTag('advisor') as $advisor) {
+
+            if ($advisor instanceof Aop\PointcutAdvisor) {
+
+                $pointcut = $advisor->getPointcut();
+                $isFunctionAdvisor = $pointcut->getKind() & Aop\PointFilter::KIND_FUNCTION;
+                if ($isFunctionAdvisor && $pointcut->getClassFilter()->matches($namespace)) {
+                    $advices = array_merge_recursive(
+                        $advices,
+                        $this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $pointcut)
+                    );
+                }
             }
         }
 
@@ -205,5 +225,36 @@ class AdviceMatcher
             $this->loader->load($aspect);
         }
         $this->loadedResources = $this->container->getResources();
+    }
+
+    /**
+     * Returns list of function advices for specific namespace
+     *
+     * @param $namespace
+     * @param Aop\PointcutAdvisor $advisor Advisor for class
+     * @param Aop\PointFilter $pointcut Filter for points
+     *
+     * @return array
+     */
+    private function getFunctionAdvicesFromAdvisor($namespace, $advisor, $pointcut)
+    {
+        static $globalFunctions = array();
+
+        $advices = array();
+
+        if (!$globalFunctions) {
+            $listOfGlobalFunctions = get_defined_functions();
+            foreach ($listOfGlobalFunctions['internal'] as $functionName) {
+                $globalFunctions[$functionName] = new \ReflectionFunction($functionName);
+            }
+        }
+
+        foreach ($globalFunctions as $functionName=>$globalFunction) {
+            if ($pointcut->matches($globalFunction)) {
+                $advices["func:$functionName"][] = $advisor->getAdvice();
+            }
+        }
+
+        return $advices;
     }
 }

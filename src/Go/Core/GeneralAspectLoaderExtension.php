@@ -108,6 +108,11 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
                 $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
                 break;
 
+            case ($isPointFilter && ($pointcut->getKind() & PointFilter::KIND_FUNCTION)):
+                $advice = $this->getFunctionInterceptor($metaInformation, $adviceCallback);
+                $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
+                break;
+
             default:
                 throw new \UnexpectedValueException("Unsupported pointcut class: " . get_class($pointcut));
         }
@@ -133,6 +138,23 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
 
             case ($metaInformation instanceof Annotation\AfterThrowing):
                 return new Framework\MethodAfterThrowingInterceptor($adviceCallback, $metaInformation->order);
+
+            default:
+                throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
+        }
+    }
+
+    /**
+     * @param $metaInformation
+     * @param $adviceCallback
+     * @return \Go\Aop\Intercept\MethodInterceptor
+     * @throws \UnexpectedValueException
+     */
+    protected function getFunctionInterceptor($metaInformation, $adviceCallback)
+    {
+        switch (true) {
+            case ($metaInformation instanceof Annotation\Around):
+                return new Framework\FunctionAroundInterceptor($adviceCallback, $metaInformation->order);
 
             default:
                 throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));

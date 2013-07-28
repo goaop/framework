@@ -144,14 +144,21 @@ class WeavingTransformer extends BaseSourceTransformer
                     $child->setParentName($newParentName);
 
                     // Add child to source
-                    $metadata->source .= $child;
+                    $metadata->source .= $child . PHP_EOL;
                 }
             }
 
             $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace);
-            if ($functionAdvices) {
-                $functionFileName = 'functions' . $namespace->getName() . '.php';
-                if (!file_exists($functionFileName)) {
+            if ($functionAdvices && $this->options['cacheDir']) {
+                $cacheDir = $this->options['cacheDir'] . '/_functions/';
+                $fileName = str_replace('\\', DIRECTORY_SEPARATOR, $namespace->getName()) . '.php';
+
+                $functionFileName = $cacheDir . $fileName;
+                if (!file_exists($functionFileName) || !$this->container->isFresh(filemtime($functionFileName))) {
+                    $dirname = dirname($functionFileName);
+                    if (!file_exists($dirname)) {
+                        mkdir($dirname, 0770, true);
+                    }
                     $source = FunctionProxy::generate($namespace, $functionAdvices);
                     file_put_contents($functionFileName, $source);
                 }
