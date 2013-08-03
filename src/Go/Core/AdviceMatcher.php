@@ -13,6 +13,7 @@ use ReflectionMethod;
 use ReflectionProperty;
 
 use Go\Aop;
+use Go\Aop\Support\NamespacedReflectionFunction;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use TokenReflection\ReflectionClass as ParsedReflectionClass;

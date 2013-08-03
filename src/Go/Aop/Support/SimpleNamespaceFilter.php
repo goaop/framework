@@ -46,15 +46,18 @@ class SimpleNamespaceFilter implements PointFilter
 
     /**
      * {@inheritdoc}
+     * @param ParsedReflectionFileNamespace|string $ns
      */
     public function matches($ns)
     {
-        /** @var $ns ParsedReflectionFileNamespace */
-        if (!$ns instanceof ParsedReflectionFileNamespace) {
+        $isNamespaceIsObject = ($ns === (object) $ns);
+
+        if ($isNamespaceIsObject && !$ns instanceof ParsedReflectionFileNamespace) {
             return false;
         }
 
-        return ($ns->getName() === $this->nsName) || (bool) preg_match("/^{$this->regexp}$/", $ns->getName());
+        $nsName = $isNamespaceIsObject ? $ns->getName() : $ns;
+        return ($nsName === $this->nsName) || (bool) preg_match("/^{$this->regexp}$/", $nsName);
     }
 
     /**
