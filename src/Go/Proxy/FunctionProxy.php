@@ -182,13 +182,22 @@ class FunctionProxy
      */
     protected function getOverriddenFunction($function, $body)
     {
+        static $inMemoryCache = array();
+
+        $functionName = $function->getName();
+        if (isset($inMemoryCache[$functionName])) {
+            return $inMemoryCache[$functionName];
+        }
+
         $code = sprintf("%sfunction %s%s(%s)\n{\n%s\n}\n",
             preg_replace('/ {4}|\t/', '', $function->getDocComment()) ."\n",
             $function->returnsReference() ? '&' : '',
-            $function->getName(),
+            $functionName,
             join(', ', $this->getParameters($function->getParameters())),
             $this->indent($body)
         );
+
+        $inMemoryCache[$functionName] = $code;
         return $code;
     }
 
