@@ -230,7 +230,7 @@ class AdviceMatcher
     /**
      * Returns list of function advices for specific namespace
      *
-     * @param $namespace
+     * @param ReflectionFileNamespace $namespace
      * @param Aop\PointcutAdvisor $advisor Advisor for class
      * @param Aop\PointFilter $pointcut Filter for points
      *
@@ -238,19 +238,18 @@ class AdviceMatcher
      */
     private function getFunctionAdvicesFromAdvisor($namespace, $advisor, $pointcut)
     {
-        static $globalFunctions = array();
+        $functions = array();
+        $advices   = array();
 
-        $advices = array();
-
-        if (!$globalFunctions) {
+        if (!$functions) {
             $listOfGlobalFunctions = get_defined_functions();
             foreach ($listOfGlobalFunctions['internal'] as $functionName) {
-                $globalFunctions[$functionName] = new \ReflectionFunction($functionName);
+                $functions[$functionName] = new NamespacedReflectionFunction($functionName, $namespace->getName());
             }
         }
 
-        foreach ($globalFunctions as $functionName=>$globalFunction) {
-            if ($pointcut->matches($globalFunction)) {
+        foreach ($functions as $functionName=>$function) {
+            if ($pointcut->matches($function)) {
                 $advices["func:$functionName"][] = $advisor->getAdvice();
             }
         }
