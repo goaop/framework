@@ -27,6 +27,7 @@ class PointcutLexer extends SimpleLexer
         $this->token('execution');
         $this->token('within');
         $this->token('access');
+        $this->token('@access');
         $this->token('cflowbelow');
         $this->token('function');
         $this->token('@annotation');
