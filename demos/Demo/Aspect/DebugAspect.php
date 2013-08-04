@@ -138,7 +138,7 @@ class DebugAspect implements Aspect
     /**
      * @param FunctionInvocation $invocation
      *
-     * @Around("function(Demo\Example\*(*))")
+     * @Around("execution(Demo\Example\*(*))")
      *
      * @return mixed
      */
