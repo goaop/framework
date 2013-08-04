@@ -1,5 +1,19 @@
 Changelog
 ======
+0.4.0 (Aug 04, 2013)
+* Privileged advices for aspect: allows to access private and protected properties and methods of objects inside advice
+* Full integration with composer that allows for easy configuration and workflow with AOP
+* Fix some bugs with caching on Windows
+* "True" pointcut references that gives the ability to compose a complex pointcut from a simple pointcuts.
+* Pointcut now accept "$this" in references to point to the current aspect instance
+  (Allows for abstract aspects and abstract pointcuts)
+* AspectContainer interface was extracted. This gives the way to integrate with another DIC. Look at Warlock framework.
+* Intercepting system functions such as `fopen()`, `file_get_contents()`, etc
+* Annotation property pointcut was added
+* Ability to declare multiple interfaces and/or traits with single `DeclareParent` introduction
+* DeclareError interceptor was added. This can be used for generating an runtime error for methods that should not be executed
+  in such a way.
+
 0.3.0 (May 27, 2013)
 * Support for dynamic pointcuts: pointcut that match a specific point in the code, if it is under the control
  flow (look at AspectJ cflow and cflowbelow)
