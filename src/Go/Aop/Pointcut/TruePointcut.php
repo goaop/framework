@@ -21,25 +21,20 @@ use Go\Aop\Support\TruePointFilter;
 class TruePointcut implements Pointcut
 {
     /**
-     * Private class constructor
+     * Filter for class
+     *
+     * @var null|PointFilter
      */
-    private function __construct()
-    {
-
-    }
+    private $classFilter = null;
 
     /**
-     * Singleton pattern
+     * Set the ClassFilter to use for this pointcut.
      *
-     * @return self
+     * @param PointFilter $classFilter
      */
-    public static function getInstance()
+    public function setClassFilter(PointFilter $classFilter)
     {
-        static $instance = null;
-        if (!$instance) {
-            $instance = new self();
-        }
-        return $instance;
+        $this->classFilter = $classFilter;
     }
 
     /**
@@ -49,7 +44,10 @@ class TruePointcut implements Pointcut
      */
     public function getClassFilter()
     {
-        return TruePointFilter::getInstance();
+        if (!$this->classFilter) {
+            $this->classFilter = TruePointFilter::getInstance();
+        }
+        return $this->classFilter;
     }
 
     /**

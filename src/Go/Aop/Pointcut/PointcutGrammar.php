@@ -138,6 +138,13 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
+            ->is('class', '(', 'ClassFilter', ')')
+            ->call(function ($_, $_, $classFilter, $_) {
+                $pointcut = new TruePointcut();
+                $pointcut->setClassFilter($classFilter);
+                return $pointcut;
+            })
+
             ->is('PointcutReference')
             ->call(function ($pointcutName) use ($container) {
                 return $container->getPointcut($pointcutName);
