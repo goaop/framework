@@ -55,7 +55,9 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      */
     public function supports(Aspect $aspect, $reflection, $metaInformation = null)
     {
-        return $metaInformation instanceof Annotation\DeclareParents && IS_MODERN_PHP;
+        return
+            ($metaInformation instanceof Annotation\DeclareParents && IS_MODERN_PHP) ||
+            ($metaInformation instanceof Annotation\DeclareError && IS_MODERN_PHP);
     }
 
     /**
@@ -64,7 +66,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      * @param AspectContainer $container Instance of container
      * @param Aspect $aspect Instance of aspect
      * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
-     * @param Annotation\DeclareParents|null $metaInformation Additional meta-information
+     * @param mixed|null $metaInformation Additional meta-information
      *
      * @throws \UnexpectedValueException
      */
@@ -80,6 +82,14 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                 $advice    = new Framework\TraitIntroductionInfo($interface, $implement);
                 $advisor   = new Support\DeclareParentsAdvisor($pointcut->getClassFilter(), $advice);
                 $container->registerAdvisor($advisor, $propertyId);
+                break;
+
+            case ($metaInformation instanceof Annotation\DeclareError):
+                $reflection->setAccessible(true);
+                $message = $reflection->getValue($aspect);
+                $level   = $metaInformation->level;
+                $advice  = new Framework\DeclareErrorInterceptor($message, $level);
+                $container->registerAdvisor(new Support\DefaultPointcutAdvisor($pointcut, $advice), $propertyId);
                 break;
 
             default:
