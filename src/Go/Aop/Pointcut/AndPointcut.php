@@ -99,7 +99,9 @@ class AndPointcut implements Pointcut
      */
     protected function isMatchesPointcut($point, Pointcut $pointcut)
     {
-        $preFilter = isset($point->class) ? $point->getDeclaringClass() : $point->getNamespaceName();
+        $preFilter = method_exists($point, 'getDeclaringClass')
+            ? $point->getDeclaringClass()
+            : $point->getNamespaceName();
         return $pointcut->matches($point)
             && $pointcut->getClassFilter()->matches($preFilter);
     }

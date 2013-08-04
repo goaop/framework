@@ -49,7 +49,10 @@ class NotPointcut implements Pointcut
      */
     public function matches($point)
     {
-        $preFilter    = isset($point->class) ? $point->getDeclaringClass() : $point->getNamespaceName();
+        $preFilter = method_exists($point, 'getDeclaringClass')
+            ? $point->getDeclaringClass()
+            : $point->getNamespaceName();
+
         $isMatchesPre = $this->pointcut->getClassFilter()->matches($preFilter);
         if (!$isMatchesPre) {
             return true;
