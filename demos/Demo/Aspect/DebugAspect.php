@@ -17,6 +17,7 @@ use Go\Lang\Annotation\Before;
 use Go\Lang\Annotation\Around;
 use Go\Lang\Annotation\Pointcut;
 use Go\Lang\Annotation\DeclareParents;
+use Go\Lang\Annotation\DeclareError;
 
 /**
  * Debug aspect
@@ -27,8 +28,9 @@ class DebugAspect implements Aspect
      * Message to show when calling the method
      *
      * @var string
+     * @DeclareError("execution(public Demo\Example\General->cacheMe(*))")
      */
-    protected $message = '';
+    protected $message = 'Method should not be called in debug mode';
 
     /**
      * @DeclareParents(

@@ -26,5 +26,5 @@ class DeclareError extends BaseAnnotation
      *
      * @var string
      */
-    public $level = E_USER_ERROR;
+    public $level = E_USER_NOTICE;
 }
