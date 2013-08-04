@@ -86,6 +86,7 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
             // Function pointcut
             array('execution(Demo\*\Test\**\*(*))'),
             array('execution(Demo\Namespace\array_*_er(*))'),
+            array('execution(**\*(*))'),
 
         );
     }
