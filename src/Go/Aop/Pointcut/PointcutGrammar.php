@@ -120,6 +120,13 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
+            ->is('@access', '(', 'NamespacePattern', ')')
+            ->call(function ($_, $_, $annotationClassName, $_) use ($container) {
+                // TODO: use single annotation reader
+                $reader = $container->get('aspect.annotation.raw.reader');
+                return new AnnotationPropertyPointcut($reader, $annotationClassName);
+            })
+
             ->is('@annotation', '(', 'NamespacePattern', ')')
             ->call(function ($_, $_, $annotationClassName, $_) use ($container) {
                 // TODO: use single annotation reader
