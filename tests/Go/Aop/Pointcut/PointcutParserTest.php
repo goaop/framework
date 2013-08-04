@@ -10,12 +10,11 @@
 namespace Go\Aop\Pointcut;
 
 /**
- * Class PointcutGrammarTest defines common check for valid grammar parsing
+ * Class PointcutParserTest defines common check for valid grammar parsing
  */
 use Dissect\Lexer\Lexer;
-use Dissect\Parser\LALR1\Parser;
 
-class PointcutGrammarTest extends \PHPUnit_Framework_TestCase
+class PointcutParserTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var null|Lexer
@@ -23,7 +22,7 @@ class PointcutGrammarTest extends \PHPUnit_Framework_TestCase
     protected $lexer = null;
 
     /**
-     * @var null|Parser
+     * @var null|PointcutParser
      */
     protected $parser = null;
 
@@ -35,7 +34,7 @@ class PointcutGrammarTest extends \PHPUnit_Framework_TestCase
         parent::setUp();
         $this->lexer  = new PointcutLexer();
         $container    = $this->getMock('Go\Core\AspectContainer');
-        $this->parser = new Parser(new PointcutGrammar($container));
+        $this->parser = new PointcutParser(new PointcutGrammar($container));
     }
 
     /**
@@ -83,6 +82,11 @@ class PointcutGrammarTest extends \PHPUnit_Framework_TestCase
 
             // Control flow execution pointcuts
             array('cflowbelow(execution(public Example->method(*)))'),
+
+            // Function pointcut
+            array('execution(Demo\*\Test\**\*(*))'),
+            array('execution(Demo\Namespace\array_*_er(*))'),
+            array('execution(**\*(*))'),
 
         );
     }

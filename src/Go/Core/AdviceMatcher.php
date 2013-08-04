@@ -13,12 +13,14 @@ use ReflectionMethod;
 use ReflectionProperty;
 
 use Go\Aop;
+use Go\Aop\Support\NamespacedReflectionFunction;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
+use TokenReflection\ReflectionFileNamespace;
 
 /**
- * Aspect container contains list of all pointcuts and advisors
+ * Advice matcher returns the list of advices for the specific point of code
  */
 class AdviceMatcher
 {
@@ -43,10 +45,65 @@ class AdviceMatcher
      */
     protected $loadedResources = array();
 
-    public function __construct(AspectLoader $loader, AspectContainer $container)
+    /**
+     * Flag to enable/disable support of global function interception
+     *
+     * @var bool
+     */
+    private $isInterceptFunctions = false;
+
+    /**
+     * Constructor
+     *
+     * @param AspectLoader $loader Instance of aspect loader
+     * @param AspectContainer $container Container
+     * @param bool $isInterceptFunctions Optional flag to enable function interception
+     */
+    public function __construct(AspectLoader $loader, AspectContainer $container, $isInterceptFunctions = false)
     {
         $this->loader    = $loader;
         $this->container = $container;
+
+        $this->isInterceptFunctions = $isInterceptFunctions;
+    }
+
+    /**
+     *
+     * Returns list of function advices for namespace
+     *
+     * @param ReflectionFileNamespace $namespace
+     *
+     * @return array
+     */
+    public function getAdvicesForFunctions($namespace)
+    {
+        // TODO: remove after stabilization of functionality
+        if (!$this->isInterceptFunctions || $namespace->getName() == 'no-namespace') {
+            return array();
+        }
+
+        $advices = array();
+
+        if ($this->loadedResources != $this->container->getResources()) {
+            $this->loadAdvisorsAndPointcuts();
+        }
+
+        foreach ($this->container->getByTag('advisor') as $advisor) {
+
+            if ($advisor instanceof Aop\PointcutAdvisor) {
+
+                $pointcut = $advisor->getPointcut();
+                $isFunctionAdvisor = $pointcut->getKind() & Aop\PointFilter::KIND_FUNCTION;
+                if ($isFunctionAdvisor && $pointcut->getClassFilter()->matches($namespace)) {
+                    $advices = array_merge_recursive(
+                        $advices,
+                        $this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $pointcut)
+                    );
+                }
+            }
+        }
+
+        return $advices;
     }
 
     /**
@@ -176,5 +233,35 @@ class AdviceMatcher
             $this->loader->load($aspect);
         }
         $this->loadedResources = $this->container->getResources();
+    }
+
+    /**
+     * Returns list of function advices for specific namespace
+     *
+     * @param ReflectionFileNamespace $namespace
+     * @param Aop\PointcutAdvisor $advisor Advisor for class
+     * @param Aop\PointFilter $pointcut Filter for points
+     *
+     * @return array
+     */
+    private function getFunctionAdvicesFromAdvisor($namespace, $advisor, $pointcut)
+    {
+        $functions = array();
+        $advices   = array();
+
+        if (!$functions) {
+            $listOfGlobalFunctions = get_defined_functions();
+            foreach ($listOfGlobalFunctions['internal'] as $functionName) {
+                $functions[$functionName] = new NamespacedReflectionFunction($functionName, $namespace->getName());
+            }
+        }
+
+        foreach ($functions as $functionName=>$function) {
+            if ($pointcut->matches($function)) {
+                $advices["func:$functionName"][] = $advisor->getAdvice();
+            }
+        }
+
+        return $advices;
     }
 }
