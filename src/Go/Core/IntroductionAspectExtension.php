@@ -12,7 +12,6 @@ use ReflectionMethod;
 use ReflectionProperty;
 
 use Go\Aop\Aspect;
-use Go\Aop\PointFilter;
 use Go\Aop\Framework;
 use Go\Aop\Support;
 use Go\Lang\Annotation;
@@ -20,11 +19,11 @@ use Go\Lang\Annotation;
 /**
  * Introduction aspect extension
  */
-class IntroductionAspectExtension implements AspectLoaderExtension
+class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 {
 
     /**
-     * General aspect loader works with annotations from aspect
+     * Introduction aspect loader works with annotations from aspect
      *
      * For extension that works with annotations additional metaInformation will be passed
      *
@@ -36,7 +35,7 @@ class IntroductionAspectExtension implements AspectLoaderExtension
     }
 
     /**
-     * General aspect loader works only with methods of aspect
+     * Introduction aspect loader works only with properties of aspect
      *
      * @return string|array
      */
@@ -66,54 +65,26 @@ class IntroductionAspectExtension implements AspectLoaderExtension
      * @param Aspect $aspect Instance of aspect
      * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      * @param Annotation\DeclareParents|null $metaInformation Additional meta-information
+     *
+     * @throws \UnexpectedValueException
      */
     public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
     {
-        // TODO: use general class parser here instead of hardcoded regular expressions
-        $classFilter = $this->parseClassFilter($metaInformation);
-        $interface   = $metaInformation->interface;
-        $implement   = $metaInformation->defaultImpl;
-        $advice      = new Framework\TraitIntroductionInfo($interface, $implement);
-        $advisor     = new Support\DeclareParentsAdvisor($classFilter, $advice);
+        $pointcut    = $this->parsePointcut($container, $aspect, $reflection, $metaInformation);
         $propertyId  = sprintf("%s->%s", $reflection->class, $reflection->name);
-        $container->registerAdvisor($advisor, $propertyId);
-    }
 
-    /**
-     * Temporary method for parsing class filters
-     *
-     * @todo Replace this method with pointcut parser
-     *
-     * @param Annotation\BaseAnnotation $metaInformation
-     *
-     * @throws \UnexpectedValueException If class filter can not be parsed
-     * @throws \InvalidArgumentException
-     * @return PointFilter
-     */
-    private function parseClassFilter($metaInformation)
-    {
-        // Go\Aspects\Blog\Package\** : This will match all classes of Go\Aspects\Blog\Package and its sub packages.
-        // Go\Aspects\Blog\Package\DemoClass : This will match DemoClass.
-        // DemoInterface+ : This will match all classes which implement DemoInterface.
-        static $classReg = '/
-            ^
-                (?P<class>[\w\\\*]+)
-                (?P<children>\+?)
-            $/x';
+        switch (true) {
+            case ($metaInformation instanceof Annotation\DeclareParents):
+                $interface = $metaInformation->interface;
+                $implement = $metaInformation->defaultImpl;
+                $advice    = new Framework\TraitIntroductionInfo($interface, $implement);
+                $advisor   = new Support\DeclareParentsAdvisor($pointcut->getClassFilter(), $advice);
+                $container->registerAdvisor($advisor, $propertyId);
+                break;
 
-        if (preg_match($classReg, $metaInformation->value, $matches)) {
-            $className = $matches['class'];
-            if (!$matches['children']) {
-                $classFilter = new Support\SimpleClassFilter($className);
-            } elseif (strpos($className, '*') === false) {
-                $classFilter = new Support\InheritanceClassFilter($className);
-            } else {
-                throw new \InvalidArgumentException("Can not use children selector with class mask");
-            }
+            default:
+                throw new \UnexpectedValueException("Unsupported pointcut class: " . get_class($pointcut));
 
-            return $classFilter;
         }
-
-        throw new \UnexpectedValueException("Unsupported class filter: {$metaInformation->value}");
     }
 }

@@ -25,7 +25,7 @@ use Dissect\Parser\Exception\UnexpectedTokenException;
 /**
  * General aspect loader add common support for general advices, declared as annotations
  */
-class GeneralAspectLoaderExtension implements AspectLoaderExtension
+class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
 {
 
     /**
@@ -181,58 +181,6 @@ class GeneralAspectLoaderExtension implements AspectLoaderExtension
 
             default:
                 throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
-        }
-    }
-
-    /**
-     * Temporary method for parsing pointcuts
-     *
-     * @param AspectContainer $container Container
-     * @param Aspect $aspect Instance of current aspect
-     * @param Annotation\BaseAnnotation|Annotation\BaseInterceptor $metaInformation
-     * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
-     *
-     * @throws \UnexpectedValueException if there was an error during parsing
-     * @return \Go\Aop\Pointcut
-     */
-    private function parsePointcut(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation)
-    {
-        /** @var $lexer \Dissect\Lexer\Lexer */
-        $lexer  = $container->get('aspect.pointcut.lexer');
-        try {
-            $resolvedThisPointcut = str_replace('$this', get_class($aspect), $metaInformation->value);
-            $stream = $lexer->lex($resolvedThisPointcut);
-        } catch (RecognitionException $e) {
-            $message = "Can not recognize the lexical structure `%s` before %s, defined in %s:%d";
-            $message = sprintf(
-                $message,
-                $metaInformation->value,
-                (isset($reflection->class) ? $reflection->class . '->' : '') . $reflection->name,
-                $reflection->getFileName(),
-                $reflection->getStartLine()
-            );
-            throw new \UnexpectedValueException($message, 0, $e);
-        }
-
-        /** @var $parser \Dissect\Parser\Parser */
-        $parser = $container->get('aspect.pointcut.parser');
-        try {
-            return $parser->parse($stream);
-        } catch (UnexpectedTokenException $e) {
-            /** @var \Dissect\Lexer\Token $token */
-            $token    = $e->getToken();
-            $message  = "Unexpected token %s in the `%s` before %s, defined in %s:%d." . PHP_EOL;
-            $message .= "Expected one of: %s";
-            $message  = sprintf(
-                $message,
-                $token->getValue(),
-                $metaInformation->value,
-                (isset($reflection->class) ? $reflection->class . '->' : '') . $reflection->name,
-                $reflection->getFileName(),
-                $reflection->getStartLine(),
-                join(', ', $e->getExpected())
-            );
-            throw new \UnexpectedValueException($message, 0, $e);
         }
     }
 }
