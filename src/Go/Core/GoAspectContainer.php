@@ -55,6 +55,8 @@ class GoAspectContainer extends Container implements AspectContainer
 
             return $aspectLoader;
         });
+        // Kernel flag to enable support of function interception
+        $this->set('kernel.interceptFunctions', false);
 
         $this->share('aspect.advice_matcher', function ($container) {
             return new AdviceMatcher(
