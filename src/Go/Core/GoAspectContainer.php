@@ -59,7 +59,8 @@ class GoAspectContainer extends Container implements AspectContainer
         $this->share('aspect.advice_matcher', function ($container) {
             return new AdviceMatcher(
                 $container->get('aspect.loader'),
-                $container
+                $container,
+                $container->get('kernel.interceptFunctions')
             );
         });
 

@@ -20,7 +20,7 @@ use TokenReflection\ReflectionClass as ParsedReflectionClass;
 use TokenReflection\ReflectionFileNamespace;
 
 /**
- * Aspect container contains list of all pointcuts and advisors
+ * Advice matcher returns the list of advices for the specific point of code
  */
 class AdviceMatcher
 {
@@ -46,18 +46,25 @@ class AdviceMatcher
     protected $loadedResources = array();
 
     /**
-     * Temporary flag to enable|disable function advising
+     * Flag to enable/disable support of global function interception
      *
      * @var bool
      */
-    private $funcEnabled = false;
+    private $isInterceptFunctions = false;
 
-    public function __construct(AspectLoader $loader, AspectContainer $container)
+    /**
+     * Constructor
+     *
+     * @param AspectLoader $loader Instance of aspect loader
+     * @param AspectContainer $container Container
+     * @param bool $isInterceptFunctions Optional flag to enable function interception
+     */
+    public function __construct(AspectLoader $loader, AspectContainer $container, $isInterceptFunctions = false)
     {
         $this->loader    = $loader;
         $this->container = $container;
 
-        $this->funcEnabled |= defined('GO_INTERCEPT_FUNCTIONS');
+        $this->isInterceptFunctions = $isInterceptFunctions;
     }
 
     /**
@@ -71,7 +78,7 @@ class AdviceMatcher
     public function getAdvicesForFunctions($namespace)
     {
         // TODO: remove after stabilization of functionality
-        if (!$this->funcEnabled || $namespace->getName() == 'no-namespace') {
+        if (!$this->isInterceptFunctions || $namespace->getName() == 'no-namespace') {
             return array();
         }
 

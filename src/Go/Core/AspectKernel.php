@@ -88,6 +88,7 @@ abstract class AspectKernel
         /** @var $container AspectContainer */
         $container = $this->container = new $this->options['containerClass'];
         $container->set('kernel', $this);
+        $container->set('kernel.interceptFunctions', $this->options['interceptFunctions']);
 
         $sourceLoaderFilter = new SourceTransformingLoader();
         $sourceLoaderFilter->register();
@@ -133,6 +134,7 @@ abstract class AspectKernel
      *   cacheDir - string Path to the cache directory where compiled classes will be stored
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
+     *   interceptFunctions - boolean Enable support for interception of global functions (experimental)
      *
      * @return array
      */
@@ -143,9 +145,10 @@ abstract class AspectKernel
             'appDir'    => __DIR__ . '/../../../../../../',
             'cacheDir'  => null,
 
-            'includePaths'   => array(),
-            'excludePaths'   => array(),
-            'containerClass' => static::$containerClass,
+            'interceptFunctions' => false,
+            'includePaths'       => array(),
+            'excludePaths'       => array(),
+            'containerClass'     => static::$containerClass,
         );
     }
 

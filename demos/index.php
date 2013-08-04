@@ -6,8 +6,6 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-define('GO_INTERCEPT_FUNCTIONS', true);
-
 include __DIR__ . (isset($_GET['original']) ? './autoload.php' : './autoload_aspect.php');
 
 $example = new Demo\Example\General('test');
