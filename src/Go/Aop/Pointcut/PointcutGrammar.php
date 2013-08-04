@@ -87,7 +87,7 @@ class PointcutGrammar extends Grammar
             })
 
             ->is(
-                'function', '(',
+                'execution', '(',
                     'NamespacePattern', '(', 'Arguments', ')',
                 ')'
             )
@@ -172,7 +172,7 @@ class PointcutGrammar extends Grammar
         $this('NamespacePattern')
             ->is('NamePattern')
             ->is('**')->call($stringConverter)
-            ->is('NamespacePattern', 'NsSeparator', 'NamePattern')->call($stringConverter);
+            ->is('NamespacePattern', 'NsSeparator', 'NamespacePattern')->call($stringConverter);
 
         // stable
         $this('NamePattern')
@@ -217,6 +217,7 @@ class PointcutGrammar extends Grammar
             })
             ->is('final')->call($converter);
 
+        $this->resolve(Grammar::ALL);
         $this->start('Pointcut');
     }
 

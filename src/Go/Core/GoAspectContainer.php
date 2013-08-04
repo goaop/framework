@@ -15,9 +15,9 @@ use ReflectionProperty;
 use Go\Aop;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutGrammar;
+use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\RawAnnotationReader;
 
-use Dissect\Parser\LALR1\Parser;
 use Doctrine\Common\Annotations\AnnotationReader;
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 
@@ -76,11 +76,7 @@ class GoAspectContainer extends Container implements AspectContainer
             return new PointcutLexer();
         });
         $this->share('aspect.pointcut.parser', function ($container) {
-            return new Parser(
-                new PointcutGrammar($container),
-                // Include production parse table for parser
-                include __DIR__ . '/../Aop/Pointcut/PointcutParseTable.php'
-            );
+            return new PointcutParser(new PointcutGrammar($container));
         });
     }
 
