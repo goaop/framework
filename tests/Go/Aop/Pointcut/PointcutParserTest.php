@@ -58,7 +58,10 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
             array('execution(final public Example\Aspect\*->method*(*))'),
             array('execution(protected|public **::*someStatic*Method*(*))'),
 
-            //array('@annotation(First\Second\Annotation\Class)'),
+            array('@annotation(First\Second\Annotation\Class)'),
+
+            // This will match property that has First\Second\Annotation\Class annotation
+            array('@access(First\Second\Annotation\Class)'),
 
             // This will match all the methods in all classes of Go\Aspects\Blog\Package.
             array('within(Go\Aspects\Blog\Package\*)'),
