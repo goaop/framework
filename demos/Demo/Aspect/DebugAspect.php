@@ -32,7 +32,7 @@ class DebugAspect implements Aspect
 
     /**
      * @DeclareParents(
-     *   value="Demo\Example\General",
+     *   value="class(Demo\Example\General)",
      *   interface="Serializable",
      *   defaultImpl="Demo\Aspect\Introduce\SerializableImpl"
      * )
