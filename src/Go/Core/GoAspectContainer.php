@@ -79,7 +79,12 @@ class GoAspectContainer extends Container implements AspectContainer
             return new PointcutLexer();
         });
         $this->share('aspect.pointcut.parser', function ($container) {
-            return new PointcutParser(new PointcutGrammar($container));
+            return new PointcutParser(
+                new PointcutGrammar(
+                    $container,
+                    $container->get('aspect.annotation.raw.reader')
+                )
+            );
         });
     }
 

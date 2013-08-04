@@ -34,7 +34,8 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
         parent::setUp();
         $this->lexer  = new PointcutLexer();
         $container    = $this->getMock('Go\Core\AspectContainer');
-        $this->parser = new PointcutParser(new PointcutGrammar($container));
+        $annotReader  = $this->getMock('Go\Instrument\RawAnnotationReader');
+        $this->parser = new PointcutParser(new PointcutGrammar($container, $annotReader));
     }
 
     /**

@@ -15,6 +15,7 @@ use Go\Aop\Support\SimpleNamespaceFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Aop\Support\SimpleClassFilter;
 use Go\Core\AspectContainer;
+use Go\Instrument\RawAnnotationReader;
 
 use Dissect\Parser\Grammar;
 
@@ -28,7 +29,7 @@ class PointcutGrammar extends Grammar
     /**
      * Constructs a pointcut grammar with AST
      */
-    public function __construct(AspectContainer $container)
+    public function __construct(AspectContainer $container, RawAnnotationReader $annotationReader)
     {
         $this('Empty')
             ->is(/* empty */);
@@ -121,17 +122,13 @@ class PointcutGrammar extends Grammar
             })
 
             ->is('@access', '(', 'NamespacePattern', ')')
-            ->call(function ($_, $_, $annotationClassName, $_) use ($container) {
-                // TODO: use single annotation reader
-                $reader = $container->get('aspect.annotation.raw.reader');
-                return new AnnotationPropertyPointcut($reader, $annotationClassName);
+            ->call(function ($_, $_, $annotationClassName, $_) use ($annotationReader) {
+                return new AnnotationPropertyPointcut($annotationReader, $annotationClassName);
             })
 
             ->is('@annotation', '(', 'NamespacePattern', ')')
-            ->call(function ($_, $_, $annotationClassName, $_) use ($container) {
-                // TODO: use single annotation reader
-                $reader = $container->get('aspect.annotation.raw.reader');
-                return new AnnotationMethodPointcut($reader, $annotationClassName);
+            ->call(function ($_, $_, $annotationClassName, $_) use ($annotationReader) {
+                return new AnnotationMethodPointcut($annotationReader, $annotationClassName);
             })
 
             ->is('within', '(', 'ClassFilter', ')')
