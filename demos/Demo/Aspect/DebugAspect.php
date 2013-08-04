@@ -52,7 +52,7 @@ class DebugAspect implements Aspect
      * Method that should be called before real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before("Demo\Aspect\DebugAspect->examplePublicMethods")
+     * @Before("$this->examplePublicMethods")
      */
     public function beforeMethodExecution(MethodInvocation $invocation)
     {
@@ -71,7 +71,7 @@ class DebugAspect implements Aspect
      * Method that should be called after real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @After("Demo\Aspect\DebugAspect->examplePublicMethods")
+     * @After("$this->examplePublicMethods")
      */
     public function afterMethodExecution(MethodInvocation $invocation)
     {

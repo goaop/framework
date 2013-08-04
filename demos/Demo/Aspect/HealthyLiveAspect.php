@@ -30,7 +30,7 @@ class HealthyLiveAspect implements Aspect
      * Washing hands before eating
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before("Demo\Aspect\HealthyLiveAspect->humanEat")
+     * @Before("$this->humanEat")
      */
     protected function washUpBeforeEat(MethodInvocation $invocation)
     {
@@ -43,7 +43,7 @@ class HealthyLiveAspect implements Aspect
      * Method that advices to clean the teeth after eating
      *
      * @param MethodInvocation $invocation Invocation
-     * @After("Demo\Aspect\HealthyLiveAspect->humanEat")
+     * @After("$this->humanEat")
      */
     protected function cleanTeethAfterEat(MethodInvocation $invocation)
     {
