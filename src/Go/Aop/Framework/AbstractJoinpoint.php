@@ -36,6 +36,27 @@ abstract class AbstractJoinpoint implements Joinpoint
     protected $advices = array();
 
     /**
+     * Current advice index
+     *
+     * @var int
+     */
+    protected $current = 0;
+
+    /**
+     * Stack frames to work with recursive calls or with cross-calls inside object
+     *
+     * @var array
+     */
+    protected $stackFrames = array();
+
+    /**
+     * Recursion level for invocation
+     *
+     * @var int
+     */
+    protected $level = 0;
+
+    /**
      * Name of the invocation class
      *
      * @var string

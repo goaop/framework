@@ -21,27 +21,6 @@ use Go\Aop\Intercept\Invocation;
 abstract class AbstractInvocation extends AbstractJoinpoint implements Invocation
 {
     /**
-     * Stack frames to work with recursive calls or with cross-calls inside object
-     *
-     * @var array
-     */
-    protected $stackFrames = array();
-
-    /**
-     * Recursion level for invocation
-     *
-     * @var int
-     */
-    protected $level = 0;
-
-    /**
-     * Current advice index
-     *
-     * @var int
-     */
-    protected $current = 0;
-
-    /**
      * Arguments for invocation
      *
      * @var array
