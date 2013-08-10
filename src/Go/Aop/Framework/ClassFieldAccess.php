@@ -30,13 +30,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     );
 
     /**
-     * Name of the field
-     *
-     * @var string
-     */
-    protected $fieldName = '';
-
-    /**
      * Instance of object for accessing
      *
      * @var object
@@ -81,7 +74,12 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function __construct($className, $fieldName, array $advices)
     {
         parent::__construct($className, $advices);
-        $this->fieldName = $fieldName;
+
+        $this->reflectionProperty = $reflectionProperty = new ReflectionProperty($className, $fieldName);
+        // Give an access to protected field
+        if ($reflectionProperty->isProtected()) {
+            $reflectionProperty->setAccessible(true);
+        }
     }
 
     /**
@@ -104,13 +102,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     public function getField()
     {
-        if (!$this->reflectionProperty) {
-            $this->reflectionProperty = new ReflectionProperty($this->className, $this->fieldName);
-            // Give an access to protected field
-            if ($this->reflectionProperty->isProtected()) {
-                $this->reflectionProperty->setAccessible(true);
-            }
-        }
         return $this->reflectionProperty;
     }
 
@@ -136,17 +127,17 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     final public function proceed()
     {
-        /** @var $currentInterceptor FieldInterceptor */
-        $currentInterceptor = current($this->advices);
-        if (!$currentInterceptor) {
-            if ($this->accessType === self::READ) {
-                return $this->value;
-            } else {
-                return $this->getValueToSet();
-            }
+        if (isset($this->advices[$this->current])) {
+            /** @var $currentInterceptor FieldInterceptor */
+            $currentInterceptor = $this->advices[$this->current++];
+            return $currentInterceptor->{self::$interceptorMethodMapping[$this->accessType]}($this);
         }
-        next($this->advices);
-        return $currentInterceptor->{self::$interceptorMethodMapping[$this->accessType]}($this);
+
+        if ($this->accessType === self::WRITE) {
+            return $this->getValueToSet();
+        }
+
+        return $this->value;
     }
 
     /**
@@ -161,12 +152,27 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     final public function __invoke($instance, $accessType, $originalValue, $newValue = NAN)
     {
+        if ($this->level) {
+            array_push($this->stackFrames, array($this->instance, $this->accessType, $this->value, $this->newValue));
+        }
+
+        ++$this->level;
+
+        $this->current    = 0;
         $this->instance   = $instance;
         $this->accessType = $accessType;
         $this->value      = $originalValue;
         $this->newValue   = $newValue;
-        reset($this->advices);
-        return $this->proceed();
+
+        $result = $this->proceed();
+
+        --$this->level;
+
+        if ($this->level) {
+            list($this->instance, $this->accessType, $this->value, $this->newValue) = array_pop($this->stackFrames);
+        }
+        return $result;
+
     }
 
     /**
