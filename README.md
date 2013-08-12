@@ -61,26 +61,15 @@ Go! library can be installed with composer or manually with git submodules. Inst
 1. Download go-aop-php using composer or git submodule
 2. Create an application aspect kernel
 3. Configure the aspect kernel in the front controller
-4. Adjust the front controller of your application for proxying autoloading requests to the aspect kernel
-5. Create an aspect
-6. Register the aspect in the aspect kernel
+4. Create an aspect
+5. Register the aspect in the aspect kernel
 
 ### Step 1: Download go-aop-php using composer or git submodule
 
-Add Go! AOP library to your composer.json:
-
-```js
-{
-    "require": {
-        "lisachenko/go-aop-php": "*"
-    }
-}
-```
-
-Now ask composer to download the library with its dependencies by running the command:
+Ask composer to download the Go! AOP library with its dependencies by running the command:
 
 ``` bash
-$ php composer.phar update lisachenko/go-aop-php
+$ php composer.phar require lisachenko/go-aop-php:0.4.0
 ```
 
 Composer will install the library to your project's `vendor/lisachenko/go-aop-php` directory.
