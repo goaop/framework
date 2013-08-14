@@ -108,6 +108,7 @@ class WeavingTransformer extends BaseSourceTransformer
         /** @var $namespaces ParsedFileNamespace[] */
         $namespaces = $parsedSource->getNamespaces();
         assert('count($namespaces) < 2; /* Only one namespace per file is supported */');
+        $lineOffset = 0;
 
         foreach ($namespaces as $namespace) {
 
@@ -144,7 +145,16 @@ class WeavingTransformer extends BaseSourceTransformer
                     $child->setParentName($newParentName);
 
                     // Add child to source
-                    $metadata->source .= $child . PHP_EOL;
+                    $lastLine = $class->getEndLine() + $lineOffset; // returns the last line of class
+                    $dataArray = explode("\n", $metadata->source);
+
+                    $currentClassArray = array_splice($dataArray, 0, $lastLine);
+                    $childClassArray = explode("\n", $child);
+                    $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
+
+                    $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
+
+                    $metadata->source = implode("\n", $dataArray);
                 }
             }
 
@@ -180,8 +190,8 @@ class WeavingTransformer extends BaseSourceTransformer
     {
         $type = (IS_MODERN_PHP && $class->isTrait()) ? 'trait' : 'class';
         $source = preg_replace(
-            "/{$type}\s+(" . $class->getShortName() . ')/iS',
-            "{$type} {$newParentName}",
+            "/{$type}\s+(" . $class->getShortName() . ')(\b)/iS',
+            "{$type} {$newParentName}$2",
             $source
         );
         if ($class->isFinal()) {

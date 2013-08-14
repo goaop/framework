@@ -204,6 +204,19 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
+     */
+    public function testMultipleClasses()
+    {
+        $this->metadata->source = $this->loadTest('multiple-classes');
+        $this->transformer->transform($this->metadata);
+
+        $actual   = $this->normalizeWhitespaces($this->metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('multiple-classes-woven'));
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
      * Normalizes string context
      *
      * @param string $value
