@@ -150,8 +150,15 @@ class FilterInjectorTransformer implements SourceTransformer
 
         $transformedSource = '';
         $isWaitingEnd      = false;
+        $openedBraces      = 0;
         foreach ($tokenStream as $token) {
-            if ($isWaitingEnd && ($token === ';' || $token === ',')) {
+            if ($isWaitingEnd && $token == '(') {
+                $openedBraces++;
+            } elseif ($isWaitingEnd && $token == ')') {
+                $openedBraces--;
+            }
+
+            if ($isWaitingEnd && $openedBraces == 0 && ($token === ';' || $token === ',')) {
                 $isWaitingEnd = false;
                 $transformedSource .= ', __DIR__)';
             }
