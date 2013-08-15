@@ -109,4 +109,11 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($this->metadata->source, $output);
     }
 
+    public function testCanTransformWithBraces()
+    {
+        $this->metadata->source = file_get_contents(__DIR__ . '/_files/yii_style.php');
+        self::$transformer->transform($this->metadata);
+        $this->assertEquals($this->metadata->source, file_get_contents(__DIR__ . '/_files/yii_style_output.php'));
+    }
+
 }
