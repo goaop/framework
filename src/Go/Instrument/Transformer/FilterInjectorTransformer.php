@@ -150,15 +150,23 @@ class FilterInjectorTransformer implements SourceTransformer
 
         $transformedSource = '';
         $isWaitingEnd      = false;
-        $openedBraces      = 0;
+        
+        $insideBracesCount = 0;
+        $isBracesFinished  = false;
         foreach ($tokenStream as $token) {
-            if ($isWaitingEnd && $token == '(') {
-                $openedBraces++;
-            } elseif ($isWaitingEnd && $token == ')') {
-                $openedBraces--;
+            if ($isWaitingEnd && $token === '(') {
+                if ($isWaitingEnd) {
+                    $insideBracesCount++;
+                }
+            } elseif ($isWaitingEnd && $token === ')') {
+                if ($insideBracesCount > 0) {
+                    $insideBracesCount--;
+                } else {
+                    $isBracesFinished = true;
+                }
             }
 
-            if ($isWaitingEnd && $openedBraces == 0 && ($token === ';' || $token === ',')) {
+            if ($isWaitingEnd && $insideBracesCount == 0 && ($token === ';' || $token === ',' || ($isBracesFinished && $token === ')'))) {
                 $isWaitingEnd = false;
                 $transformedSource .= ', __DIR__)';
             }
@@ -166,6 +174,7 @@ class FilterInjectorTransformer implements SourceTransformer
             $transformedSource .= $value;
             if (!$isWaitingEnd && isset($lookFor[$token])) {
                 $isWaitingEnd = true;
+                $isBracesFinished = false;
                 $transformedSource  .= ' \\' . __CLASS__ . '::rewrite(';
             }
         }
