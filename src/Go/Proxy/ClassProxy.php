@@ -242,8 +242,20 @@ class ClassProxy extends AbstractProxy
             return $byReference . '$' . $param->name;
         }, $method->getParameters()));
 
-        $args = $scope . ($args ? ", array($args)" : '');
-        $body = "return self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($args);";
+        $body = '';
+
+        if (strpos($method->getSource(), 'func_get_args') !== false) {
+            $body = '$argsList = func_get_args();' . PHP_EOL;
+            if (empty($args)) {
+                $scope = "$scope, \$argsList";
+            } else {
+                $scope = "$scope, array($args) + \$argsList";
+            }
+        } elseif (!empty($args)) {
+            $scope = "$scope, array($args)";
+        }
+
+        $body .= "return self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($scope);";
         return $body;
     }
 
