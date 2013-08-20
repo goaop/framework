@@ -72,6 +72,8 @@ class AopComposerLoader
                 $loader[0] = new AopComposerLoader($loader[0]);
             }
         }
+        unset($loader);
+
         foreach ($loaders as $loader) {
             spl_autoload_register($loader);
         }
