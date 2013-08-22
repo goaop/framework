@@ -60,6 +60,7 @@ class AopComposerLoader
         $loaders = spl_autoload_functions();
 
         foreach ($loaders as &$loader) {
+            $loaderToUnregister = $loader;
             if (is_array($loader) && ($loader[0] instanceof ClassLoader)) {
                 $originalLoader = $loader[0];
 
@@ -68,9 +69,9 @@ class AopComposerLoader
                     $originalLoader->loadClass($class);
                     return class_exists($class, false);
                 });
-                spl_autoload_unregister($loader);
                 $loader[0] = new AopComposerLoader($loader[0]);
             }
+            spl_autoload_unregister($loaderToUnregister);
         }
         unset($loader);
 
