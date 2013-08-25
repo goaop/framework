@@ -15,14 +15,6 @@ class ClosureDynamicMethodInvocationTest extends \PHPUnit_Framework_TestCase
     /**
      * {@inheritdoc}
      */
-    public static function setUpBeforeClass()
-    {
-        include_once __DIR__ . '/../../Tests/First.php';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     protected function setUp()
     {
         if (version_compare(PHP_VERSION, '5.4.0') < 0) {

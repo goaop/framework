@@ -11,14 +11,6 @@ class ReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     const FIRST_CLASS_NAME = 'Go\Tests\First';
 
     /**
-     * {@inheritdoc}
-     */
-    public static function setUpBeforeClass()
-    {
-        include_once __DIR__ . '/../../Tests/First.php';
-    }
-
-    /**
      * Tests dynamic method invocations
      *
      * @dataProvider dynamicMethodsBatch
