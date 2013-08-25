@@ -11,7 +11,6 @@ namespace Go\Aop\Framework;
 use Serializable;
 
 use Go\Aop\Pointcut;
-use Go\Aop\Framework\BaseAdvice;
 use Go\Aop\Intercept\Interceptor;
 
 /**
@@ -49,7 +48,7 @@ class BaseInterceptor extends BaseAdvice implements Interceptor, Serializable
      * @param integer $order Order of interceptor
      * @param Pointcut $pointcut Pointcut instance where interceptor should be called
      */
-    public function __construct($adviceMethod, $order = self::ORDER_NOT_SET, Pointcut $pointcut = null)
+    public function __construct($adviceMethod, $order = 0, Pointcut $pointcut = null)
     {
         assert('is_callable($adviceMethod) /* Advice method should be callable */');
 

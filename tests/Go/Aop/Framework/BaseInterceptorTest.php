@@ -40,7 +40,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
 
         $interceptor = new BaseInterceptor($advice);
         $result      = serialize($interceptor);
-        $expected = 'C:32:"Go\Aop\Framework\BaseInterceptor":178:{a:2:{s:12:"adviceMethod";a:3:{s:5:"scope";s:6:"aspect";s:6:"method";s:26:"Go\Aop\Framework\{closure}";s:6:"aspect";s:36:"Go\Aop\Framework\BaseInterceptorTest";}s:5:"order";i:-1;}}';
+        $expected = 'C:32:"Go\Aop\Framework\BaseInterceptor":161:{a:1:{s:12:"adviceMethod";a:3:{s:5:"scope";s:6:"aspect";s:6:"method";s:26:"Go\Aop\Framework\{closure}";s:6:"aspect";s:36:"Go\Aop\Framework\BaseInterceptorTest";}}}';
         $this->assertEquals($expected, $result);
     }
 
@@ -61,7 +61,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
         $mockClass      = get_class($mock);
         $mockNameLength = strlen($mockClass);
         // Trick to mock unserialization of advice
-        $serialized = 'C:' . $mockNameLength .':"' . $mockClass . '":178:{a:2:{s:12:"adviceMethod";a:3:{s:5:"scope";s:6:"aspect";s:6:"method";s:26:"Go\Aop\Framework\{closure}";s:6:"aspect";s:36:"Go\Aop\Framework\BaseInterceptorTest";}s:5:"order";i:-1;}}';
+        $serialized = 'C:' . $mockNameLength .':"' . $mockClass . '":161:{a:1:{s:12:"adviceMethod";a:3:{s:5:"scope";s:6:"aspect";s:6:"method";s:26:"Go\Aop\Framework\{closure}";s:6:"aspect";s:36:"Go\Aop\Framework\BaseInterceptorTest";}}}';
         $result     = unserialize($serialized);
         $this->assertEquals($advice, $result->getRawAdvice());
     }

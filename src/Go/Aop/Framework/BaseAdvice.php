@@ -44,16 +44,11 @@ use Go\Core\AspectKernel;
 abstract class BaseAdvice implements Advice
 {
     /**
-     * Constant for undefined order
-     */
-    const ORDER_NOT_SET = -1;
-
-    /**
      * Advice order
      *
      * @var int
      */
-    protected $order = self::ORDER_NOT_SET;
+    protected $order = 0;
 
     /**
      * Returns the advice order
