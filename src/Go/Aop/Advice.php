@@ -16,12 +16,4 @@ namespace Go\Aop;
  */
 interface Advice
 {
-    /** Before advice */
-    const BEFORE = 'before';
-
-    /** Around advice */
-    const AROUND = 'around';
-
-    /** After advice */
-    const AFTER = 'after';
 }

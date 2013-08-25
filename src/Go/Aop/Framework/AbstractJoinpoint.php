@@ -78,13 +78,13 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * Sorts advices by priority
      *
-     * @param array|BaseAdvice[] $advices
-     * @return array|BaseAdvice[] Sorted list of advices
+     * @param array|OrderedAdvice[] $advices
+     * @return array|OrderedAdvice[] Sorted list of advices
      */
     static protected function sortAdvices(array $advices)
     {
         $sortedAdvices = $advices;
-        usort($sortedAdvices, function(BaseAdvice $first, BaseAdvice $second) {
+        usort($sortedAdvices, function(OrderedAdvice $first, OrderedAdvice $second) {
             if ($first instanceof AdviceBefore && !($second instanceof AdviceBefore)) {
                 return -1;
             } elseif ($first instanceof AdviceAround && !($second instanceof AdviceAround)) {

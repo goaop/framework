@@ -11,7 +11,6 @@ namespace Go\Aop\Framework;
 use ReflectionFunction;
 use ReflectionMethod;
 
-use Go\Aop\Advice;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Core\AspectKernel;
@@ -41,7 +40,7 @@ use Go\Core\AspectKernel;
  *   }
  * @author Lissachenko Alexander
  */
-abstract class BaseAdvice implements Advice
+abstract class BaseAdvice implements OrderedAdvice
 {
     /**
      * Advice order
