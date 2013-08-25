@@ -69,7 +69,7 @@ abstract class AbstractJoinpoint implements Joinpoint
      * @param string $className Name of the class
      * @param array $advices List of advices
      */
-    protected function __construct($className, array $advices)
+    public function __construct($className, array $advices)
     {
         $this->className = $className;
         $this->advices   = static::sortAdvices($advices);
@@ -78,21 +78,28 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * Sorts advices by priority
      *
-     * @param array|OrderedAdvice[] $advices
-     * @return array|OrderedAdvice[] Sorted list of advices
+     * @param array|Advice[] $advices
+     * @return array|Advice[] Sorted list of advices
      */
     static protected function sortAdvices(array $advices)
     {
         $sortedAdvices = $advices;
-        usort($sortedAdvices, function(OrderedAdvice $first, OrderedAdvice $second) {
-            if ($first instanceof AdviceBefore && !($second instanceof AdviceBefore)) {
-                return -1;
-            } elseif ($first instanceof AdviceAround && !($second instanceof AdviceAround)) {
-                return 1;
-            } elseif ($first instanceof AdviceAfter && !($second instanceof AdviceAfter)) {
-                return $second instanceof AdviceBefore ? 1 : -1;
-            } else {
-                return $first->getAdviceOrder() - $second->getAdviceOrder();
+        usort($sortedAdvices, function(Advice $first, Advice $second) {
+            switch (true) {
+                case $first instanceof AdviceBefore && !($second instanceof AdviceBefore):
+                    return -1;
+
+                case $first instanceof AdviceAround && !($second instanceof AdviceAround):
+                    return 1;
+
+                case $first instanceof AdviceAfter && !($second instanceof AdviceAfter):
+                    return $second instanceof AdviceBefore ? 1 : -1;
+
+                case ($first instanceof OrderedAdvice && $second instanceof OrderedAdvice):
+                    return $first->getAdviceOrder() - $second->getAdviceOrder();
+
+                default:
+                    return 0;
             }
         });
         return $sortedAdvices;
