@@ -37,10 +37,26 @@ class BaseInterceptorTest extends AbstractInterceptorTest
     {
         $sequence = array();
         $advice   = $this->getAdvice($sequence);
+        $mock     = $this->getMock('Go\Aop\Framework\BaseInterceptor', array('serializeAdvice'), array($advice));
+        $mock
+            ->staticExpects($this->any())
+            ->method('serializeAdvice')
+            ->will(
+                $this->returnCallback(
+                    function () use ($advice) {
+                        return array(
+                            'scope'  => 'aspect',
+                            'method' => 'Go\Aop\Framework\{closure}',
+                            'aspect' => 'Go\Aop\Framework\BaseInterceptorTest'
+                        );
+                    }
+                )
+            );
+        $mockClass      = get_class($mock);
+        $mockNameLength = strlen($mockClass);
+        $result         = serialize($mock);
+        $expected       = 'C:' . $mockNameLength . ':"' . $mockClass . '":161:{a:1:{s:12:"adviceMethod";a:3:{s:5:"scope";s:6:"aspect";s:6:"method";s:26:"Go\Aop\Framework\{closure}";s:6:"aspect";s:36:"Go\Aop\Framework\BaseInterceptorTest";}}}';
 
-        $interceptor = new BaseInterceptor($advice);
-        $result      = serialize($interceptor);
-        $expected = 'C:32:"Go\Aop\Framework\BaseInterceptor":161:{a:1:{s:12:"adviceMethod";a:3:{s:5:"scope";s:6:"aspect";s:6:"method";s:26:"Go\Aop\Framework\{closure}";s:6:"aspect";s:36:"Go\Aop\Framework\BaseInterceptorTest";}}}';
         $this->assertEquals($expected, $result);
     }
 
