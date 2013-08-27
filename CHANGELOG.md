@@ -1,5 +1,10 @@
 Changelog
 ======
+0.4.1 (Aug 27, 2013)
+* Better parsing of complex "include" expressions for Yii (by @zvirusz)
+* Support for dynamic arguments count for methods by checking for func_get_args() inside method body
+* Fixed a bug with autoloaders reodering (by @zvirusz)
+
 0.4.0 (Aug 04, 2013)
 * Privileged advices for aspect: allows to access private and protected properties and methods of objects inside advice
 * Full integration with composer that allows for easy configuration and workflow with AOP
