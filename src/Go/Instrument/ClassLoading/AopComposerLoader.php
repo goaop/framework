@@ -97,6 +97,14 @@ class AopComposerLoader
             include ($isInternal ? $file : FilterInjectorTransformer::rewrite($file));
         }
     }
+    
+    /**
+     * {@inheritDoc}
+     */ 
+    public function findFile($class)
+    {
+        return $this->original->findFile($class);
+    }    
 }
 
 AopComposerLoader::init();
