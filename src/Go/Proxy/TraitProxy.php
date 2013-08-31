@@ -81,10 +81,6 @@ class TraitProxy extends ClassProxy
      */
     public static function injectJoinPoints($className, array $advices = array())
     {
-        if (!$advices) {
-            $container = AspectKernel::getInstance()->getContainer();
-            $advices   = $container->getAdvicesForClass($className);
-        }
         self::$traitAdvices[$className] = $advices;
     }
 

@@ -110,11 +110,6 @@ class ClassProxy extends AbstractProxy
      */
     public static function injectJoinPoints($className, array $advices = array())
     {
-        if (!$advices) {
-            $container = AspectKernel::getInstance()->getContainer();
-            $advices   = $container->getAdvicesForClass($className);
-        }
-
         $className  = new ReflectionClass($className);
         $joinPoints = static::wrapWithJoinPoints($advices, $className->getParentClass()->name);
 
