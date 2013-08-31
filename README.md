@@ -1,16 +1,16 @@
 README
 ======
 
-What is Go?!
+What is Go! AOP?
 -----------------
 
-Go! is a PHP 5.4 library based on OOP and AOP paradigms.
+Go! AOP is a PHP 5.4 library based on OOP and AOP paradigms.
 It allows developers to add support of AOP to every PHP application.
 
-Go! doesn't require any PECL-extentions, it neither uses any dark magic of Runkit nor evals, the library doesn't use DI-containers.
+Go! AOP doesn't require any PECL-extentions, it neither uses any dark magic of Runkit nor evals, the library doesn't use DI-containers.
 The code with weaved aspects is fully readable and native, it can be easily debugged with XDebug.
 You can debug either classes or aspects.
-The main advantage of Go! is that potentially it can be installed in every PHP-application,
+The main advantage of Go! AOP is that potentially it can be installed in every PHP-application,
 because you don't have to change the application source code at all.
 As an example, with the help of 10-20 lines of code we can intercept all the public, protected and static methods in all the classes
 of application and display the name and the arguments of each method during its execution.
@@ -36,12 +36,12 @@ PHP traits can be used to implement some aspect-like functionality.
 Requirements
 ------------
 
-Go! library is developed for PHP 5.4.0 and up, but it can partially work with PHP 5.3.0 code.
+Go! AOP library is developed for PHP 5.4.0 and up, but it can partially work with PHP 5.3.0 code.
 
 Note that PHP versions before 5.4 will not work completely, if you try to use
  aspects for code that uses Late Static Binding (LSB) feature.
 
-Go! library will not work with eAccelerator.
+Go! AOP library will not work with eAccelerator.
 
 Known bugs
 ------------
@@ -56,15 +56,15 @@ Method interception in traits is broken, however DeclareParent advice can be use
 Installation
 ------------
 
-Go! library can be installed with composer or manually with git submodules. Installation is quite easy:
+Go! AOP library can be installed with composer or manually with git submodules. Installation is quite easy:
 
-1. Download go-aop-php using composer or git submodule
+1. Download the library using composer or git submodule
 2. Create an application aspect kernel
 3. Configure the aspect kernel in the front controller
 4. Create an aspect
 5. Register the aspect in the aspect kernel
 
-### Step 1: Download go-aop-php using composer or git submodule
+### Step 1: Download the library using composer or git submodule
 
 Ask composer to download the Go! AOP library with its dependencies by running the command:
 
@@ -147,7 +147,7 @@ $applicationAspectKernel->init(array(
 
 ### 4. Create an aspect
 
-Aspect is the key element of AOP philosophy. And Go! library just uses simple PHP classes for declaring aspects!
+Aspect is the key element of AOP philosophy. And Go! AOP library just uses simple PHP classes for declaring aspects!
 Therefore it's possible to use all features of OOP for aspect classes.
 As an example let's intercept all the methods and display their names:
 
