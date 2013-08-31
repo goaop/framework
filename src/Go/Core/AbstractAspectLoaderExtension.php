@@ -8,15 +8,14 @@
 
 namespace Go\Core;
 
-use ReflectionMethod;
-use ReflectionProperty;
-
+use Dissect\Lexer\Exception\RecognitionException;
+use Dissect\Lexer\TokenStream\TokenStream;
+use Dissect\Parser\Exception\UnexpectedTokenException;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use Go\Lang\Annotation;
-
-use Dissect\Lexer\Exception\RecognitionException;
-use Dissect\Parser\Exception\UnexpectedTokenException;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Abstract aspect loader
@@ -37,8 +36,25 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      */
     protected function parsePointcut(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation)
     {
+        $stream = $this->makeLexicalAnalyze($container, $aspect, $reflection, $metaInformation);
+        return $this->parseTokenStream($container, $reflection, $metaInformation, $stream);
+    }
+
+    /**
+     * Performs lexical analyze of pointcut
+     *
+     * @param AspectContainer $container Container instance
+     * @param Aspect $aspect Instance of aspect
+     * @param ReflectionMethod|ReflectionProperty $reflection
+     * @param $metaInformation
+     *
+     * @return TokenStream
+     * @throws \UnexpectedValueException
+     */
+    protected function makeLexicalAnalyze(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation)
+    {
         /** @var $lexer \Dissect\Lexer\Lexer */
-        $lexer  = $container->get('aspect.pointcut.lexer');
+        $lexer = $container->get('aspect.pointcut.lexer');
         try {
             $resolvedThisPointcut = str_replace('$this', get_class($aspect), $metaInformation->value);
             $stream = $lexer->lex($resolvedThisPointcut);
@@ -57,17 +73,32 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             );
             throw new \UnexpectedValueException($message, 0, $e);
         }
+        return $stream;
+    }
 
+    /**
+     * Performs parsing of pointcut
+     *
+     * @param AspectContainer $container Instance of container
+     * @param ReflectionMethod|ReflectionProperty $reflection
+     * @param $metaInformation
+     * @param TokenStream $stream
+     * @return Pointcut
+     *
+     * @throws \UnexpectedValueException
+     */
+    protected function parseTokenStream(AspectContainer $container, $reflection, $metaInformation, $stream)
+    {
         /** @var $parser \Dissect\Parser\Parser */
         $parser = $container->get('aspect.pointcut.parser');
         try {
-            return $parser->parse($stream);
+            $pointcut = $parser->parse($stream);
         } catch (UnexpectedTokenException $e) {
             /** @var \Dissect\Lexer\Token $token */
-            $token    = $e->getToken();
-            $message  = "Unexpected token %s in the `%s` before %s, defined in %s:%d." . PHP_EOL;
+            $token   = $e->getToken();
+            $message = "Unexpected token %s in the `%s` before %s, defined in %s:%d." . PHP_EOL;
             $message .= "Expected one of: %s";
-            $message  = sprintf(
+            $message = sprintf(
                 $message,
                 $token->getValue(),
                 $metaInformation->value,
@@ -82,5 +113,6 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             );
             throw new \UnexpectedValueException($message, 0, $e);
         }
+        return $pointcut;
     }
 }
