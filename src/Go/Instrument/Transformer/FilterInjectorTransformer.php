@@ -106,6 +106,7 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public static function rewrite($resource, $originalDir = '')
     {
+        $resource = (string) $resource;
         if ($resource['0'] !== '/' && $resource[1] !== ':') {
             $resource
                 =  stream_resolve_include_path($resource)
