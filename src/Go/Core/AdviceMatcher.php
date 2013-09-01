@@ -258,7 +258,7 @@ class AdviceMatcher
 
         foreach ($functions as $functionName=>$function) {
             if ($pointcut->matches($function)) {
-                $advices["func"][$functionName][] = $advisor->getAdvice();
+                $advices[AspectContainer::FUNCTION_PREFIX][$functionName][] = $advisor->getAdvice();
             }
         }
 

@@ -16,6 +16,11 @@ use Go\Aop;
 interface AspectContainer
 {
     /**
+     * Prefix for function interceptor
+     */
+    const FUNCTION_PREFIX = "func";
+
+    /**
      * Prefix for properties interceptor
      */
     const PROPERTY_PREFIX = "prop";

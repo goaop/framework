@@ -12,6 +12,7 @@ use Go\Aop\Advice;
 use Go\Aop\Framework\ReflectionFunctionInvocation;
 use Go\Aop\Intercept\FunctionInvocation;
 
+use Go\Core\AspectContainer;
 use ReflectionFunction;
 use ReflectionParameter as Parameter;
 
@@ -86,11 +87,11 @@ class FunctionProxy
     public static function generate($namespace, array $advices)
     {
         $functions = new self($namespace, $advices);
-        if (empty($advices['func'])) {
+        if (empty($advices[AspectContainer::FUNCTION_PREFIX])) {
             return $functions;
         }
 
-        foreach ($advices['func'] as $pointName => $value) {
+        foreach ($advices[AspectContainer::FUNCTION_PREFIX] as $pointName => $value) {
             $function = new ReflectionFunction($pointName);
             $functions->override($function, $functions->getJoinpointInvocationBody($function));
         }
@@ -108,7 +109,7 @@ class FunctionProxy
      */
     public static function getJoinPoint($joinPointName, $namespace)
     {
-        $advices  = self::$functionAdvices[$namespace]['func'][$joinPointName];
+        $advices = self::$functionAdvices[$namespace][AspectContainer::FUNCTION_PREFIX][$joinPointName];
         return new ReflectionFunctionInvocation($joinPointName, $advices);
     }
 
