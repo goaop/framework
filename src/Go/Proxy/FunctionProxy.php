@@ -86,21 +86,15 @@ class FunctionProxy
     public static function generate($namespace, array $advices)
     {
         $functions = new self($namespace, $advices);
-        if (!empty($advices)) {
-            foreach ($advices as $name => $value) {
-
-                list ($type, $pointName) = explode(':', $name, 2);
-                switch ($type) {
-                    case 'func':
-                        $function = new ReflectionFunction($pointName);
-                        $functions->override($function, $functions->getJoinpointInvocationBody($function));
-                        break;
-
-                    default:
-                        throw new \InvalidArgumentException("Unsupported point `$type`");
-                }
-            }
+        if (empty($advices['func'])) {
+            return $functions;
         }
+
+        foreach ($advices['func'] as $pointName => $value) {
+            $function = new ReflectionFunction($pointName);
+            $functions->override($function, $functions->getJoinpointInvocationBody($function));
+        }
+
         return $functions;
     }
 
@@ -114,10 +108,8 @@ class FunctionProxy
      */
     public static function getJoinPoint($joinPointName, $namespace)
     {
-        $advices      = self::$functionAdvices[$namespace][$joinPointName];
-        $nameParts    = explode(':', $joinPointName, 2);
-        $functionName = end($nameParts);
-        return new ReflectionFunctionInvocation($functionName, $advices);
+        $advices  = self::$functionAdvices[$namespace]['func'][$joinPointName];
+        return new ReflectionFunctionInvocation($joinPointName, $advices);
     }
 
 
@@ -211,7 +203,6 @@ class FunctionProxy
     protected function getJoinpointInvocationBody($function)
     {
         $class   = '\\' . __CLASS__;
-        $prefix  = 'func';
 
         $dynamicArgs   = false;
         $hasOptionals  = false;
@@ -245,7 +236,7 @@ class FunctionProxy
         return <<<BODY
 static \$__joinPoint = null;
 if (!\$__joinPoint) {
-    \$__joinPoint = {$class}::getJoinPoint('{$prefix}:{$function->name}', __NAMESPACE__);
+    \$__joinPoint = {$class}::getJoinPoint('{$function->name}', __NAMESPACE__);
 }
 return \$__joinPoint->__invoke($args);
 BODY;

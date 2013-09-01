@@ -55,44 +55,52 @@ class ClassProxy extends AbstractProxy
      * Generates an child code by parent class reflection and joinpoints for it
      *
      * @param ReflectionClass|ParsedClass $parent Parent class reflection
-     * @param array|Advice[] $advices List of advices for
+     * @param array|Advice[] $classAdvices List of advices for class
      *
+     * @throws \InvalidArgumentException if there are unknown type of advices
      * @return ClassProxy
      */
-    public static function generate($parent, array $advices)
+    public static function generate($parent, array $classAdvices)
     {
-        $aopChild = new self($parent, $parent->getShortName(), $advices);
+        $aopChild = new self($parent, $parent->getShortName(), $classAdvices);
         $aopChild->addInterface('\Go\Aop\Proxy');
 
-        if (!empty($advices)) {
-            $aopChild->addJoinpointsProperty($aopChild);
+        if (empty($classAdvices)) {
+            return $aopChild;
+        }
 
-            foreach ($advices as $name => $value) {
+        $aopChild->addJoinpointsProperty($aopChild);
 
-                list ($type, $pointName) = explode(':', $name, 2);
-                switch ($type) {
-                    case AspectContainer::METHOD_PREFIX:
-                    case AspectContainer::STATIC_METHOD_PREFIX:
-                        $aopChild->overrideMethod($parent->getMethod($pointName));
-                        break;
+        foreach ($classAdvices as $type => $typedAdvices) {
 
-                    case AspectContainer::PROPERTY_PREFIX:
-                        $aopChild->interceptProperty($parent->getProperty($pointName));
-                        break;
+            switch ($type) {
+                case AspectContainer::METHOD_PREFIX:
+                case AspectContainer::STATIC_METHOD_PREFIX:
+                    foreach ($typedAdvices as $joinPointName => $advice) {
+                        $aopChild->overrideMethod($parent->getMethod($joinPointName));
+                    }
+                    break;
 
-                    case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
-                        /** @var $value IntroductionInfo */
-                        foreach ($value->getInterfaces() as $interface) {
+                case AspectContainer::PROPERTY_PREFIX:
+                    foreach ($typedAdvices as $joinPointName => $advice) {
+                        $aopChild->interceptProperty($parent->getProperty($joinPointName));
+                    }
+                    break;
+
+                case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
+                    foreach ($typedAdvices as $advice) {
+                        /** @var $advice IntroductionInfo */
+                        foreach ($advice->getInterfaces() as $interface) {
                             $aopChild->addInterface($interface);
                         }
-                        foreach ($value->getTraits() as $trait) {
+                        foreach ($advice->getTraits() as $trait) {
                             $aopChild->addTrait($trait);
                         }
-                        break;
+                    }
+                    break;
 
-                    default:
-                        throw new \InvalidArgumentException("Unsupported point `$type`");
-                }
+                default:
+                    throw new \InvalidArgumentException("Unsupported point `$type`");
             }
         }
         return $aopChild;
@@ -134,13 +142,10 @@ class ClassProxy extends AbstractProxy
     protected static function wrapWithJoinPoints($classAdvices, $className)
     {
         $joinPoints = array();
-        foreach ($classAdvices as $name => $advices) {
-
-            $joinPoint = static::wrapSingleJoinPoint($className, $name, $advices);
-            if ($joinPoint) {
-                $joinPoints[$name] = $joinPoint;
+        foreach ($classAdvices as $type => $typedAdvices) {
+            foreach ($typedAdvices as $name => $advices) {
+                $joinPoints["$type:$name"] = static::wrapSingleJoinPoint($className, $type, $name, $advices);
             }
-
         }
         return $joinPoints;
     }
@@ -149,16 +154,15 @@ class ClassProxy extends AbstractProxy
      * Wrap advices with single join point
      *
      * @param string $className Name of the original class to use
-     * @param string $name Unique joinpoint name
+     * @param string $joinPointType Type of joinpoint
+     * @param string $joinPointName Unique joinpoint name
      * @param array|Advice[] $advices Advices for specific class
      *
      * @throws \UnexpectedValueException
-     *
      * @return array|Joinpoint[] returns list of joinpoint ready to use
      */
-    protected static function wrapSingleJoinPoint($className, $name, $advices)
+    protected static function wrapSingleJoinPoint($className, $joinPointType, $joinPointName, $advices)
     {
-        list ($joinPointType, $joinPointName) = explode(':', $name);
         $joinPoint = null;
         switch ($joinPointType) {
             case AspectContainer::METHOD_PREFIX:

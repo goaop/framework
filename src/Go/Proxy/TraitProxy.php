@@ -39,31 +39,34 @@ class TraitProxy extends ClassProxy
      * Generates an child code by parent class reflection and joinpoints for it
      *
      * @param ReflectionClass|ParsedClass $parent Parent class reflection
-     * @param array|Advice[] $advices List of advices for
+     * @param array|Advice[] $traitAdvices List of advices for trait
      *
      * @throws \InvalidArgumentException for unsupported advice type
      * @return ClassProxy
      */
-    public static function generate($parent, array $advices)
+    public static function generate($parent, array $traitAdvices)
     {
-        $traitChild = new self($parent, $parent->getShortName(), $advices);
-        if (!empty($advices)) {
-            foreach ($advices as $name => $value) {
+        $traitChild = new self($parent, $parent->getShortName(), $traitAdvices);
 
-                list ($type, $pointName) = explode(':', $name, 2);
-                switch ($type) {
-                    case AspectContainer::METHOD_PREFIX:
-                    case AspectContainer::STATIC_METHOD_PREFIX:
-                        $traitChild->overrideMethod($parent->getMethod($pointName));
-                        break;
+        if (empty($traitAdvices)) {
+            return $traitChild;
+        }
 
-                    case AspectContainer::PROPERTY_PREFIX:
-                    case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
-                        continue;
+        foreach ($traitAdvices as $type => $typedAdvices) {
+            switch ($type) {
+                case AspectContainer::METHOD_PREFIX:
+                case AspectContainer::STATIC_METHOD_PREFIX:
+                    foreach ($typedAdvices as $joinPointName => $advice) {
+                        $traitChild->overrideMethod($parent->getMethod($joinPointName));
+                    }
+                    break;
 
-                    default:
-                        throw new \InvalidArgumentException("Unsupported point `$type`");
-                }
+                case AspectContainer::PROPERTY_PREFIX:
+                case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
+                    continue;
+
+                default:
+                    throw new \InvalidArgumentException("Unsupported point `$type`");
             }
         }
         return $traitChild;
@@ -75,20 +78,20 @@ class TraitProxy extends ClassProxy
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
      *
      * @param string $className Aop child proxy class
-     * @param array|Advice[] $advices List of advices to inject into class
+     * @param array|\Go\Aop\Advice[] $traitAdvices List of advices to inject into class
      *
      * @return void
      */
-    public static function injectJoinPoints($className, array $advices = array())
+    public static function injectJoinPoints($className, array $traitAdvices = array())
     {
-        self::$traitAdvices[$className] = $advices;
+        self::$traitAdvices[$className] = $traitAdvices;
     }
 
 
-    public static function getJoinPoint($traitName, $className, $pointName)
+    public static function getJoinPoint($traitName, $className, $joinPointType, $pointName)
     {
         $advices = self::$traitAdvices[$traitName][$pointName];
-        return self::wrapSingleJoinPoint($className, $pointName . '➩', $advices);
+        return self::wrapSingleJoinPoint($className, $joinPointType, $pointName . '➩', $advices);
     }
 
 
@@ -116,7 +119,7 @@ class TraitProxy extends ClassProxy
         return <<<BODY
 static \$__joinPoint = null;
 if (!\$__joinPoint) {
-    \$__joinPoint = {$class}::getJoinPoint(__TRAIT__, __CLASS__, '{$prefix}:{$method->name}');
+    \$__joinPoint = {$class}::getJoinPoint(__TRAIT__, __CLASS__, '{$prefix}', '{$method->name}');
 }
 return \$__joinPoint->__invoke($args);
 BODY;

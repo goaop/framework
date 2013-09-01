@@ -92,8 +92,9 @@ class AdviceMatcherTest extends TestCase
         $this->container->registerAdvisor($advisor, 'test');
 
         $advices = $this->adviceMatcher->getAdvicesForClass(__CLASS__);
-        $this->assertArrayHasKey(AspectContainer::METHOD_PREFIX . ':' . $funcName, $advices);
-        $this->assertCount(1, $advices);
+        $this->assertArrayHasKey(AspectContainer::METHOD_PREFIX, $advices);
+        $this->assertArrayHasKey($funcName, $advices[AspectContainer::METHOD_PREFIX]);
+        $this->assertCount(1, $advices[AspectContainer::METHOD_PREFIX]);
     }
 
     /**
@@ -124,7 +125,8 @@ class AdviceMatcherTest extends TestCase
         $this->container->registerAdvisor($advisor, 'test');
 
         $advices = $this->adviceMatcher->getAdvicesForClass(__CLASS__);
-        $this->assertArrayHasKey(AspectContainer::PROPERTY_PREFIX . ':' . $propName, $advices);
-        $this->assertCount(1, $advices);
+        $this->assertArrayHasKey(AspectContainer::PROPERTY_PREFIX, $advices);
+        $this->assertArrayHasKey($propName, $advices[AspectContainer::PROPERTY_PREFIX]);
+        $this->assertCount(1, $advices[AspectContainer::PROPERTY_PREFIX]);
     }
 }

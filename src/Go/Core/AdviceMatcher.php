@@ -178,7 +178,7 @@ class AdviceMatcher
                 /** @var $method ReflectionMethod| */
                 if ($method->getDeclaringClass()->name == $class->name && $filter->matches($method)) {
                     $prefix = $method->isStatic() ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
-                    $classAdvices[$prefix . ':'. $method->name][] = $advisor->getAdvice();
+                    $classAdvices[$prefix][$method->name][] = $advisor->getAdvice();
                 }
             }
         }
@@ -189,7 +189,7 @@ class AdviceMatcher
             foreach ($class->getProperties($mask) as $property) {
                 /** @var $property ReflectionProperty */
                 if ($filter->matches($property)) {
-                    $classAdvices[AspectContainer::PROPERTY_PREFIX.':'.$property->name][] = $advisor->getAdvice();
+                    $classAdvices[AspectContainer::PROPERTY_PREFIX][$property->name][] = $advisor->getAdvice();
                 }
             }
         }
@@ -216,7 +216,7 @@ class AdviceMatcher
         $advice = $advisor->getAdvice();
 
         return array(
-            AspectContainer::INTRODUCTION_TRAIT_PREFIX.':'.join(':', $advice->getInterfaces()) => $advice
+            AspectContainer::INTRODUCTION_TRAIT_PREFIX => array($advice)
         );
     }
 
@@ -258,7 +258,7 @@ class AdviceMatcher
 
         foreach ($functions as $functionName=>$function) {
             if ($pointcut->matches($function)) {
-                $advices["func:$functionName"][] = $advisor->getAdvice();
+                $advices["func"][$functionName][] = $advisor->getAdvice();
             }
         }
 

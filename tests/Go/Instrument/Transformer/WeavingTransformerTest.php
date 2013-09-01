@@ -279,7 +279,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
                 $this->returnCallback(function (\TokenReflection\ReflectionClass $refClass) {
                     $advices  = array();
                     foreach ($refClass->getMethods() as $method) {
-                        $advices[AspectContainer::METHOD_PREFIX . ':' . $method->name] = true;
+                        $advices[AspectContainer::METHOD_PREFIX][$method->name] = true;
                     }
                     return $advices;
                 })

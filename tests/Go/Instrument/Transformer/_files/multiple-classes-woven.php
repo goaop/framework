@@ -20,7 +20,7 @@ class TestClass1 extends TestClass1__AopProxied implements \Go\Aop\Proxy
     }
 
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass1', unserialize('a:1:{s:11:"method:test";b:1;}'));
+\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass1', unserialize('a:1:{s:6:"method";a:1:{s:4:"test";b:1;}}'));
 
 TestClass1::test();
 
@@ -42,7 +42,7 @@ class TestClass11 extends TestClass11__AopProxied implements \Go\Aop\Proxy
     }
 
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass11', unserialize('a:1:{s:11:"method:test";b:1;}'));
+\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass11', unserialize('a:1:{s:6:"method";a:1:{s:4:"test";b:1;}}'));
 
 TestClass11::test();
 
@@ -64,6 +64,6 @@ class TestClass2 extends TestClass2__AopProxied implements \Go\Aop\Proxy
     }
 
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass2', unserialize('a:1:{s:11:"method:test";b:1;}'));
+\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass2', unserialize('a:1:{s:6:"method";a:1:{s:4:"test";b:1;}}'));
 
 TestClass2::test();
