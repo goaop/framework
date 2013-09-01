@@ -124,10 +124,6 @@ class ClassProxy extends AbstractProxy
      */
     public static function injectJoinPoints($className, array $advices = array())
     {
-        if (!isset(self::$invocationClassMap)) {
-            self::setMappings();
-        }
-
         $className  = new ReflectionClass($className);
         $joinPoints = static::wrapWithJoinPoints($advices, $className->getParentClass()->name);
 
@@ -170,6 +166,10 @@ class ClassProxy extends AbstractProxy
      */
     protected static function wrapWithJoinPoints($classAdvices, $className)
     {
+        if (!isset(self::$invocationClassMap)) {
+            self::setMappings();
+        }
+
         $joinPoints = array();
         foreach ($classAdvices as $joinPointType => $typedAdvices) {
             // if not isset then we don't want to create such invocation for class

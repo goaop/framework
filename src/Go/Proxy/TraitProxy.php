@@ -84,16 +84,16 @@ class TraitProxy extends ClassProxy
      */
     public static function injectJoinPoints($className, array $traitAdvices = array())
     {
-        if (!isset(self::$invocationClassMap)) {
-            self::setMappings();
-        }
-
         self::$traitAdvices[$className] = $traitAdvices;
     }
 
 
     public static function getJoinPoint($traitName, $className, $joinPointType, $pointName)
     {
+        if (!isset(self::$invocationClassMap)) {
+            self::setMappings();
+        }
+
         $advices   = self::$traitAdvices[$traitName][$joinPointType][$pointName];
         $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $advices);
         return $joinpoint;
