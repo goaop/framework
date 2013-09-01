@@ -50,6 +50,13 @@ abstract class BaseAdvice implements OrderedAdvice
     protected $order = 0;
 
     /**
+     * Local cache of advices for faster unserialization on big projects
+     *
+     * @var array
+     */
+    protected static $localAdvicesCache = array();
+
+    /**
      * Returns the advice order
      *
      * @return int
@@ -103,12 +110,20 @@ abstract class BaseAdvice implements OrderedAdvice
         $methodName = $adviceData['method'];
         $scope      = $adviceData['scope'];
 
-        $refMethod = new ReflectionMethod($aspectName, $methodName);
-        $aspect    = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
+        if (!isset(static::$localAdvicesCache["$aspectName->$methodName"]['aspect'])) {
+            $refMethod = new ReflectionMethod($aspectName, $methodName);
+            $aspect    = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
+            $advice    = static::fromAspectReflection($aspect, $refMethod);
+            static::$localAdvicesCache["$aspectName->$methodName"]['aspect'] = $advice;
+        }
 
-        $advice = static::fromAspectReflection($aspect, $refMethod);
-        $advice = static::createScopeCallback($advice, $scope);
-        return $advice;
+        if ($scope !== 'aspect' && !isset(static::$localAdvicesCache["$aspectName->$methodName"][$scope])) {
+            $advice = static::$localAdvicesCache["$aspectName->$methodName"]['aspect'];
+            $advice = static::createScopeCallback($advice, $scope);
+            static::$localAdvicesCache["$aspectName->$methodName"][$scope] = $advice;
+        }
+
+        return static::$localAdvicesCache["$aspectName->$methodName"][$scope];
     }
 
     /**

@@ -156,10 +156,10 @@ class ClassProxy extends AbstractProxy
      * @param string $className Name of the original class to use
      * @param string $joinPointType Type of joinpoint
      * @param string $joinPointName Unique joinpoint name
-     * @param array|Advice[] $advices Advices for specific class
+     * @param array|Advice[] $advices Advices for joinpoint
      *
      * @throws \UnexpectedValueException
-     * @return array|Joinpoint[] returns list of joinpoint ready to use
+     * @return Joinpoint
      */
     protected static function wrapSingleJoinPoint($className, $joinPointType, $joinPointName, $advices)
     {
