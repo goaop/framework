@@ -227,12 +227,17 @@ class AdviceMatcher
      */
     private function loadAdvisorsAndPointcuts()
     {
-        // TODO: use a difference with $this->resources to load only missed aspects
+        $containerResources = $this->container->getResources();
+        $resourcesToLoad    = array_diff($containerResources, $this->loadedResources);
+
         // TODO: maybe this is a task for the AspectLoader?
         foreach ($this->container->getByTag('aspect') as $aspect) {
-            $this->loader->load($aspect);
+            $ref = new ReflectionClass($aspect);
+            if (in_array($ref->getFileName(), $resourcesToLoad)) {
+                $this->loader->load($aspect);
+            }
         }
-        $this->loadedResources = $this->container->getResources();
+        $this->loadedResources = $containerResources;
     }
 
     /**
