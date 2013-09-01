@@ -36,6 +36,12 @@ use TokenReflection\ReflectionProperty as ParsedProperty;
  */
 class ClassProxy extends AbstractProxy
 {
+    /**
+     * Static mappings for class name for excluding if..else check
+     *
+     * @var null|array
+     */
+    protected static $invocationClassMap = null;
 
     /**
      * Flag to determine if we need to add a code for property interceptors
@@ -118,6 +124,10 @@ class ClassProxy extends AbstractProxy
      */
     public static function injectJoinPoints($className, array $advices = array())
     {
+        if (!isset(self::$invocationClassMap)) {
+            self::setMappings();
+        }
+
         $className  = new ReflectionClass($className);
         $joinPoints = static::wrapWithJoinPoints($advices, $className->getParentClass()->name);
 
@@ -125,6 +135,25 @@ class ClassProxy extends AbstractProxy
         $prop = $className->getProperty('__joinPoints');
         $prop->setAccessible(true);
         $prop->setValue($joinPoints);
+    }
+
+    /**
+     * Initialize static mappings to reduce the time for checking if..else IS_MODERN_PHP
+     */
+    protected static function setMappings()
+    {
+        $dynamicMethodClass = IS_MODERN_PHP
+            ? 'Go\Aop\Framework\ClosureDynamicMethodInvocation'
+            : 'Go\Aop\Framework\ReflectionMethodInvocation';
+        $staticMethodClass  = IS_MODERN_PHP
+            ? 'Go\Aop\Framework\ClosureStaticMethodInvocation'
+            : 'Go\Aop\Framework\ReflectionMethodInvocation';
+
+        self::$invocationClassMap = array(
+            AspectContainer::METHOD_PREFIX        => $dynamicMethodClass,
+            AspectContainer::STATIC_METHOD_PREFIX => $staticMethodClass,
+            AspectContainer::PROPERTY_PREFIX      => 'Go\Aop\Framework\ClassFieldAccess'
+        );
     }
 
     /**
@@ -142,57 +171,17 @@ class ClassProxy extends AbstractProxy
     protected static function wrapWithJoinPoints($classAdvices, $className)
     {
         $joinPoints = array();
-        foreach ($classAdvices as $type => $typedAdvices) {
-            foreach ($typedAdvices as $name => $advices) {
-                $joinPoints["$type:$name"] = static::wrapSingleJoinPoint($className, $type, $name, $advices);
+        foreach ($classAdvices as $joinPointType => $typedAdvices) {
+            // if not isset then we don't want to create such invocation for class
+            if (!isset(self::$invocationClassMap[$joinPointType])) {
+                continue;
+            }
+            foreach ($typedAdvices as $joinPointName => $advices) {
+                $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $joinPointName, $advices);
+                $joinPoints["$joinPointType:$joinPointName"] = $joinpoint;
             }
         }
         return $joinPoints;
-    }
-
-    /**
-     * Wrap advices with single join point
-     *
-     * @param string $className Name of the original class to use
-     * @param string $joinPointType Type of joinpoint
-     * @param string $joinPointName Unique joinpoint name
-     * @param array|Advice[] $advices Advices for joinpoint
-     *
-     * @throws \UnexpectedValueException
-     * @return Joinpoint
-     */
-    protected static function wrapSingleJoinPoint($className, $joinPointType, $joinPointName, $advices)
-    {
-        $joinPoint = null;
-        switch ($joinPointType) {
-            case AspectContainer::METHOD_PREFIX:
-                if (IS_MODERN_PHP) {
-                    $joinPoint = new ClosureDynamicMethodInvocation($className, $joinPointName, $advices);
-                } else {
-                    $joinPoint = new ReflectionMethodInvocation($className, $joinPointName, $advices);
-                }
-                break;
-
-            case AspectContainer::STATIC_METHOD_PREFIX:
-                if (IS_MODERN_PHP) {
-                    $joinPoint = new ClosureStaticMethodInvocation($className, $joinPointName, $advices);
-                } else {
-                    $joinPoint = new ReflectionMethodInvocation($className, $joinPointName, $advices);
-                }
-                break;
-
-            case AspectContainer::PROPERTY_PREFIX:
-                $joinPoint = new ClassFieldAccess($className, $joinPointName, $advices);
-                break;
-
-            case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
-                // Nothing to create here
-                break;
-
-            default:
-                throw new UnexpectedValueException("Invalid joinpoint `{$joinPointType}` type. Not yet supported.");
-        }
-        return $joinPoint;
     }
 
     /**
