@@ -13,7 +13,9 @@ ini_set('display_errors', true);
 
 // Composer autoloading
 if (file_exists('../vendor/autoload.php')) {
+    /** @var Composer\Autoload\ClassLoader $loader */
     $loader = include '../vendor/autoload.php';
+    $loader->add('Demo', __DIR__);
 }
 
 if (php_sapi_name()!='cli') {
