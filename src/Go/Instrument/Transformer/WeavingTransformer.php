@@ -80,7 +80,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $fileName = $metadata->uri;
         if (!$this->isAllowedToTransform($fileName)) {
             return;
-        };
+        }
 
         try {
             $parsedSource = $this->broker->processString($metadata->source, $fileName, true);
@@ -101,64 +101,54 @@ class WeavingTransformer extends BaseSourceTransformer
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
 
-                // Skip interfaces
-                if ($class->isInterface()) {
+                // Skip interfaces and aspects
+                if ($class->isInterface() || in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
                     continue;
                 }
-
-                // Look for aspects
-                if (in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
-                    continue;
-                }
-
-                $advices = $this->adviceMatcher->getAdvicesForClass($class);
-
-                if ($advices) {
-
-                    // Prepare new parent name
-                    $newParentName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
-
-                    // Replace original class name with new
-                    $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
-
-                    // Prepare child Aop proxy
-                    $child = (IS_MODERN_PHP && $class->isTrait())
-                            ? TraitProxy::generate($class, $advices)
-                            : ClassProxy::generate($class, $advices);
-
-                    // Set new parent name instead of original
-                    $child->setParentName($newParentName);
-
-                    // Add child to source
-                    $lastLine = $class->getEndLine() + $lineOffset; // returns the last line of class
-                    $dataArray = explode("\n", $metadata->source);
-
-                    $currentClassArray = array_splice($dataArray, 0, $lastLine);
-                    $childClassArray = explode("\n", $child);
-                    $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
-
-                    $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
-
-                    $metadata->source = implode("\n", $dataArray);
-                }
+                $this->processSingleClass($metadata, $class, $lineOffset);
             }
+            $this->processFunctions($metadata, $namespace);
+        }
+    }
 
-            $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace);
-            if ($functionAdvices && $this->options['cacheDir']) {
-                $cacheDir = $this->options['cacheDir'] . '/_functions/';
-                $fileName = str_replace('\\', DIRECTORY_SEPARATOR, $namespace->getName()) . '.php';
+    /**
+     * Performs weaving of single class if needed
+     *
+     * @param StreamMetaData $metadata Source stream information
+     * @param ParsedClass $class Instance of class to analyze
+     * @param integer $lineOffset Current offset, will be updated to store the last position
+     */
+    private function processSingleClass(StreamMetaData $metadata, $class, &$lineOffset)
+    {
+        $advices = $this->adviceMatcher->getAdvicesForClass($class);
 
-                $functionFileName = $cacheDir . $fileName;
-                if (!file_exists($functionFileName) || !$this->container->isFresh(filemtime($functionFileName))) {
-                    $dirname = dirname($functionFileName);
-                    if (!file_exists($dirname)) {
-                        mkdir($dirname, 0770, true);
-                    }
-                    $source = FunctionProxy::generate($namespace, $functionAdvices);
-                    file_put_contents($functionFileName, $source);
-                }
-                $metadata->source .= 'include_once ' . var_export($functionFileName, true) . ';'. PHP_EOL;
-            }
+        if ($advices) {
+
+            // Prepare new parent name
+            $newParentName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
+
+            // Replace original class name with new
+            $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
+
+            // Prepare child Aop proxy
+            $child = (IS_MODERN_PHP && $class->isTrait())
+                ? TraitProxy::generate($class, $advices)
+                : ClassProxy::generate($class, $advices);
+
+            // Set new parent name instead of original
+            $child->setParentName($newParentName);
+
+            // Add child to source
+            $lastLine  = $class->getEndLine() + $lineOffset; // returns the last line of class
+            $dataArray = explode("\n", $metadata->source);
+
+            $currentClassArray = array_splice($dataArray, 0, $lastLine);
+            $childClassArray   = explode("\n", $child);
+            $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
+
+            $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
+
+            $metadata->source = implode("\n", $dataArray);
         }
     }
 
@@ -213,5 +203,31 @@ class WeavingTransformer extends BaseSourceTransformer
             }
         }
         return true;
+    }
+
+    /**
+     * Performs weaving of functions in the current namespace
+     *
+     * @param StreamMetaData $metadata Source stream information
+     * @param ParsedFileNamespace $namespace Current namespace for file
+     */
+    private function processFunctions(StreamMetaData $metadata, $namespace)
+    {
+        $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace);
+        if ($functionAdvices && $this->options['cacheDir']) {
+            $cacheDir = $this->options['cacheDir'] . '/_functions/';
+            $fileName = str_replace('\\', DIRECTORY_SEPARATOR, $namespace->getName()) . '.php';
+
+            $functionFileName = $cacheDir . $fileName;
+            if (!file_exists($functionFileName) || !$this->container->isFresh(filemtime($functionFileName))) {
+                $dirname = dirname($functionFileName);
+                if (!file_exists($dirname)) {
+                    mkdir($dirname, 0770, true);
+                }
+                $source = FunctionProxy::generate($namespace, $functionAdvices);
+                file_put_contents($functionFileName, $source);
+            }
+            $metadata->source .= 'include_once ' . var_export($functionFileName, true) . ';' . PHP_EOL;
+        }
     }
 }
