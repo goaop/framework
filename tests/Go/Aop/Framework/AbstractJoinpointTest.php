@@ -14,14 +14,7 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
      */
     public function testSortingLogic($advices, array $order = array())
     {
-        $ref = new \ReflectionProperty('Go\Aop\Framework\AbstractJoinpoint', 'advices');
-        $ref->setAccessible(true);
-
-        $joinpoint = $this->getMockForAbstractClass(
-            'Go\Aop\Framework\AbstractJoinpoint',
-            array($advices)
-        );
-        $advices = $ref->getValue($joinpoint);
+        $advices = AbstractJoinpoint::sortAdvices($advices);
         foreach ($advices as $index => $advice) {
             if (isset($order[$index])) {
                 $this->assertInstanceOf($order[$index], $advice);

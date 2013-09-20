@@ -8,6 +8,7 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AspectContainer;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectKernel;
@@ -123,6 +124,14 @@ class WeavingTransformer extends BaseSourceTransformer
         $advices = $this->adviceMatcher->getAdvicesForClass($class);
 
         if ($advices) {
+            // Sort advices in advance to keep the correct order in cache
+            foreach ($advices as &$typeAdvices) {
+                foreach ($typeAdvices as &$joinpointAdvices) {
+                    if (is_array($joinpointAdvices)) {
+                        $joinpointAdvices = AbstractJoinpoint::sortAdvices($joinpointAdvices);
+                    }
+                }
+            }
 
             // Prepare new parent name
             $newParentName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;

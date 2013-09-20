@@ -63,7 +63,7 @@ abstract class AbstractJoinpoint implements Joinpoint
      */
     public function __construct(array $advices)
     {
-        $this->advices = static::sortAdvices($advices);
+        $this->advices = $advices;
     }
 
     /**
@@ -72,7 +72,7 @@ abstract class AbstractJoinpoint implements Joinpoint
      * @param array|Advice[] $advices
      * @return array|Advice[] Sorted list of advices
      */
-    static protected function sortAdvices(array $advices)
+    static public function sortAdvices(array $advices)
     {
         $sortedAdvices = $advices;
         usort($sortedAdvices, function(Advice $first, Advice $second) {
