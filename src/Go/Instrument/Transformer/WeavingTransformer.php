@@ -78,24 +78,9 @@ class WeavingTransformer extends BaseSourceTransformer
     public function transform(StreamMetaData $metadata)
     {
         $fileName = $metadata->uri;
-        if ($this->includePaths) {
-            $found = false;
-            foreach ($this->includePaths as $includePath) {
-                if (strpos($fileName, $includePath) === 0) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                return;
-            }
-        }
-
-        foreach ($this->excludePaths as $excludePath) {
-            if (strpos($fileName, $excludePath) === 0) {
-                return;
-            }
-        }
+        if (!$this->isAllowedToTransform($fileName)) {
+            return;
+        };
 
         try {
             $parsedSource = $this->broker->processString($metadata->source, $fileName, true);
@@ -199,5 +184,34 @@ class WeavingTransformer extends BaseSourceTransformer
             $source = str_replace("final {$type}", $type, $source);
         }
         return $source;
+    }
+
+    /**
+     * Verifies if file should be transformed or not
+     *
+     * @param string $fileName Name of the file to transform
+     * @return bool
+     */
+    private function isAllowedToTransform($fileName)
+    {
+        if ($this->includePaths) {
+            $found = false;
+            foreach ($this->includePaths as $includePath) {
+                if (strpos($fileName, $includePath) === 0) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                return false;
+            }
+        }
+
+        foreach ($this->excludePaths as $excludePath) {
+            if (strpos($fileName, $excludePath) === 0) {
+                return false;
+            }
+        }
+        return true;
     }
 }
