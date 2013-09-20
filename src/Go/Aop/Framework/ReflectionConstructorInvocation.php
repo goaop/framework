@@ -45,7 +45,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     public function __construct($className, array $advices)
     {
         $this->class = new ReflectionClass($className);
-        parent::__construct($className, $advices);
+        parent::__construct($advices);
     }
 
     /**

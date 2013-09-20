@@ -57,22 +57,13 @@ abstract class AbstractJoinpoint implements Joinpoint
     protected $level = 0;
 
     /**
-     * Name of the invocation class
-     *
-     * @var string
-     */
-    protected $className = '';
-
-    /**
      * Initializes list of advices for current joinpoint
      *
-     * @param string $className Name of the class
      * @param array $advices List of advices
      */
-    public function __construct($className, array $advices)
+    public function __construct(array $advices)
     {
-        $this->className = $className;
-        $this->advices   = static::sortAdvices($advices);
+        $this->advices = static::sortAdvices($advices);
     }
 
     /**

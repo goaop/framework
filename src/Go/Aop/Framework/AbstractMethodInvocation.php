@@ -37,6 +37,13 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     protected $reflectionMethod = null;
 
     /**
+     * Name of the invocation class
+     *
+     * @var string
+     */
+    protected $className = '';
+
+    /**
      * Constructor for method invocation
      *
      * @param string $className Class name
@@ -45,7 +52,8 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      */
     public function __construct($className, $methodName, array $advices)
     {
-        parent::__construct($className, $advices);
+        parent::__construct($advices);
+        $this->className        = $className;
         $this->reflectionMethod = $method = new ReflectionMethod($this->className, $methodName);
 
         // Give an access to call protected method

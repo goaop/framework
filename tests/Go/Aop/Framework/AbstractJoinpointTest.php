@@ -19,7 +19,7 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
 
         $joinpoint = $this->getMockForAbstractClass(
             'Go\Aop\Framework\AbstractJoinpoint',
-            array(__CLASS__, $advices)
+            array($advices)
         );
         $advices = $ref->getValue($joinpoint);
         foreach ($advices as $index => $advice) {

@@ -37,7 +37,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
      */
     public function __construct($functionName, array $advices)
     {
-        parent::__construct('', $advices);
+        parent::__construct($advices);
         $this->reflectionFunction = new ReflectionFunction($functionName);
     }
 

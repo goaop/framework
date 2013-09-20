@@ -73,7 +73,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     public function __construct($className, $fieldName, array $advices)
     {
-        parent::__construct($className, $advices);
+        parent::__construct($advices);
 
         $this->reflectionProperty = $reflectionProperty = new ReflectionProperty($className, $fieldName);
         // Give an access to protected field
