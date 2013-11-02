@@ -12,9 +12,9 @@
 ini_set('display_errors', true);
 
 // Composer autoloading
-if (file_exists('../vendor/autoload.php')) {
+if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     /** @var Composer\Autoload\ClassLoader $loader */
-    $loader = include '../vendor/autoload.php';
+    $loader = include __DIR__ . '/../vendor/autoload.php';
     $loader->add('Demo', __DIR__);
 }
 

@@ -9,7 +9,7 @@
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Demo\Aspect\AwesomeAspectKernel;
 
-include 'autoload.php';
+include __DIR__ .'/autoload.php';
 
 // Initialize demo aspect container
 AwesomeAspectKernel::getInstance()->init(array(
