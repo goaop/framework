@@ -150,18 +150,19 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Set new parent name instead of original
         $child->setParentName($newParentName);
+        $contentToInclude = $this->saveProxyToCache($class, $child);
 
         // Add child to source
         $tokenCount = $class->getBroker()->getFileTokens($class->getFileName())->count();
         if ($tokenCount - $class->getEndPosition() < 3) {
             // If it's the last class in a file, just add child source
-            $metadata->source .= $child . PHP_EOL;
+            $metadata->source .= $contentToInclude . PHP_EOL;
         } else {
             $lastLine  = $class->getEndLine() + $lineOffset; // returns the last line of class
             $dataArray = explode("\n", $metadata->source);
 
             $currentClassArray = array_splice($dataArray, 0, $lastLine);
-            $childClassArray   = explode("\n", $child);
+            $childClassArray   = explode("\n", $contentToInclude);
             $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
 
             $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
@@ -247,5 +248,38 @@ class WeavingTransformer extends BaseSourceTransformer
             }
             $metadata->source .= 'include_once ' . var_export($functionFileName, true) . ';' . PHP_EOL;
         }
+    }
+
+    /**
+     * Save AOP proxy to the separate file anr returns the php source code for inclusion
+     *
+     * @param ParsedClass $class Original class reflection
+     * @param string|ClassProxy $child
+     *
+     * @return string
+     */
+    private function saveProxyToCache($class, $child)
+    {
+        // Without cache we should rewrite original file
+        if (!$this->options['cacheDir']) {
+            return $child;
+        }
+        $cacheDir = $this->options['cacheDir'] . '/_proxies/';
+        $fileName = str_replace('\\', DIRECTORY_SEPARATOR, $class->getName()) . '.php';
+
+        $proxyFileName = $cacheDir . $fileName;
+        $dirname       = dirname($proxyFileName);
+        if (!file_exists($dirname)) {
+            mkdir($dirname, 0770, true);
+        }
+
+        $body = '<?php' . PHP_EOL;
+        $body .= "namespace {$class->getNamespaceName()};" . PHP_EOL . PHP_EOL;
+        foreach ($class->getNamespaceAliases() as $alias => $fqdn) {
+            $body .= "use {$fqdn} as {$alias};" . PHP_EOL;
+        }
+        $body .= $child;
+        file_put_contents($proxyFileName, $body);
+        return 'include_once ' . var_export($proxyFileName, true) . ';' . PHP_EOL;
     }
 }
