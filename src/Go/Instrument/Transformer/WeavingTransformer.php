@@ -261,7 +261,7 @@ class WeavingTransformer extends BaseSourceTransformer
     private function saveProxyToCache($class, $child)
     {
         // Without cache we should rewrite original file
-        if (!$this->options['cacheDir']) {
+        if (empty($this->options['cacheDir'])) {
             return $child;
         }
         $cacheDir = $this->options['cacheDir'] . '/_proxies/';
