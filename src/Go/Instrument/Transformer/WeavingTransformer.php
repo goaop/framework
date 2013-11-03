@@ -123,42 +123,45 @@ class WeavingTransformer extends BaseSourceTransformer
     {
         $advices = $this->adviceMatcher->getAdvicesForClass($class);
 
-        if ($advices) {
-            // Sort advices in advance to keep the correct order in cache
-            foreach ($advices as &$typeAdvices) {
-                foreach ($typeAdvices as &$joinpointAdvices) {
-                    if (is_array($joinpointAdvices)) {
-                        $joinpointAdvices = AbstractJoinpoint::sortAdvices($joinpointAdvices);
-                    }
+        if (!$advices) {
+            // Fast return if there aren't any advices for that class
+            return;
+        }
+
+        // Sort advices in advance to keep the correct order in cache
+        foreach ($advices as &$typeAdvices) {
+            foreach ($typeAdvices as &$joinpointAdvices) {
+                if (is_array($joinpointAdvices)) {
+                    $joinpointAdvices = AbstractJoinpoint::sortAdvices($joinpointAdvices);
                 }
             }
-
-            // Prepare new parent name
-            $newParentName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
-
-            // Replace original class name with new
-            $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
-
-            // Prepare child Aop proxy
-            $child = (IS_MODERN_PHP && $class->isTrait())
-                ? TraitProxy::generate($class, $advices)
-                : ClassProxy::generate($class, $advices);
-
-            // Set new parent name instead of original
-            $child->setParentName($newParentName);
-
-            // Add child to source
-            $lastLine  = $class->getEndLine() + $lineOffset; // returns the last line of class
-            $dataArray = explode("\n", $metadata->source);
-
-            $currentClassArray = array_splice($dataArray, 0, $lastLine);
-            $childClassArray   = explode("\n", $child);
-            $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
-
-            $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
-
-            $metadata->source = implode("\n", $dataArray);
         }
+
+        // Prepare new parent name
+        $newParentName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
+
+        // Replace original class name with new
+        $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
+
+        // Prepare child Aop proxy
+        $child = (IS_MODERN_PHP && $class->isTrait())
+            ? TraitProxy::generate($class, $advices)
+            : ClassProxy::generate($class, $advices);
+
+        // Set new parent name instead of original
+        $child->setParentName($newParentName);
+
+        // Add child to source
+        $lastLine  = $class->getEndLine() + $lineOffset; // returns the last line of class
+        $dataArray = explode("\n", $metadata->source);
+
+        $currentClassArray = array_splice($dataArray, 0, $lastLine);
+        $childClassArray   = explode("\n", $child);
+        $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
+
+        $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
+
+        $metadata->source = implode("\n", $dataArray);
     }
 
     /**
