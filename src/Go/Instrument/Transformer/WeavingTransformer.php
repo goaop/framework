@@ -152,16 +152,22 @@ class WeavingTransformer extends BaseSourceTransformer
         $child->setParentName($newParentName);
 
         // Add child to source
-        $lastLine  = $class->getEndLine() + $lineOffset; // returns the last line of class
-        $dataArray = explode("\n", $metadata->source);
+        $tokenCount = $class->getBroker()->getFileTokens($class->getFileName())->count();
+        if ($tokenCount - $class->getEndPosition() < 3) {
+            // If it's the last class in a file, just add child source
+            $metadata->source .= $child . PHP_EOL;
+        } else {
+            $lastLine  = $class->getEndLine() + $lineOffset; // returns the last line of class
+            $dataArray = explode("\n", $metadata->source);
 
-        $currentClassArray = array_splice($dataArray, 0, $lastLine);
-        $childClassArray   = explode("\n", $child);
-        $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
+            $currentClassArray = array_splice($dataArray, 0, $lastLine);
+            $childClassArray   = explode("\n", $child);
+            $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
 
-        $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
+            $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
 
-        $metadata->source = implode("\n", $dataArray);
+            $metadata->source = implode("\n", $dataArray);
+        }
     }
 
     /**
