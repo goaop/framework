@@ -2,6 +2,7 @@
 
 namespace Go\Instrument;
 
+use Doctrine\Common\Annotations\AnnotationException;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 
@@ -30,7 +31,11 @@ class CacheWarmer
     public function warmUpFiles($files)
     {
         foreach($files as $file) {
-            FilterInjectorTransformer::rewrite($file);
+            try {
+                FilterInjectorTransformer::rewrite($file);
+            } catch(AnnotationException $e) {
+
+            }
         }
     }
 }
