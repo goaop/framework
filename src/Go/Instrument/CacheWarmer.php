@@ -1,14 +1,6 @@
 <?php
-/**
- * Created by JetBrains PhpStorm.
- * User: Martin
- * Date: 13-12-01
- * Time: 11:30
- * To change this template use File | Settings | File Templates.
- */
 
 namespace Go\Instrument;
-
 
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
