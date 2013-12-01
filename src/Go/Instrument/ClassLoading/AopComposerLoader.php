@@ -107,7 +107,9 @@ class AopComposerLoader
     }
 
     /**
-     * @return ClassLoader|null
+     * Return the original class loader
+     *
+     * @return ClassLoader
      */
     public function getOriginalLoader()
     {
