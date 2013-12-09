@@ -18,7 +18,7 @@ of application and display the name and the arguments of each method during its 
 [![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
 [![Dependencies Status](https://d2xishtp1ojlk0.cloudfront.net/d/1416156)](http://depending.in/lisachenko/go-aop-php)
 [![Latest Stable Version](https://poser.pugx.org/lisachenko/go-aop-php/v/stable.png)](https://packagist.org/packages/lisachenko/go-aop-php)
-<a href="https://flattr.com/submit/auto?user_id=lisachenko&url=https://github.com/lisachenko/go-aop-php&title=Go!%20AOP%20PHP%20Framework&language=en_GB&tags=aop,php,framework,programming,library"><img align="bottom" alt="Flattr this project!" src="https://api.flattr.com/button/flattr-badge-large.png"></a>
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/lisachenko/go-aop-php/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 What is AOP?
 ------------
@@ -216,7 +216,7 @@ use Aspect/MonitorAspect;
 //...
 ```
 
-Now you are ready to use the power of aspects! Feel free to change anything everywhere.
+Now you are ready to use the power of aspects! Feel free to change anything everywhere. If you like this project, you could support it <a href="https://flattr.com/submit/auto?user_id=lisachenko&url=https://github.com/lisachenko/go-aop-php&title=Go!%20AOP%20PHP%20Framework&language=en_GB&tags=aop,php,framework,programming,library"><img align="bottom" alt="Flattr this project!" src="https://api.flattr.com/button/flattr-badge-large.png"></a>
 
 Documentation
 -------------
