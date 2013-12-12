@@ -30,6 +30,12 @@ define('IS_MODERN_PHP', version_compare(PHP_VERSION, '5.4.0') >= 0);
  */
 abstract class AspectKernel
 {
+
+    /**
+     * Version of kernel
+     */
+    const VERSION = '0.4.1';
+
     /**
      * Kernel options
      *
