@@ -78,20 +78,42 @@ EOT
         $output->writeln("Total <info>{$totalFiles}</info> files to process.");
         $iterator->rewind();
 
-        $index = 0;
+        set_error_handler(function ($errno, $errstr, $errfile, $errline ) {
+            throw new \ErrorException($errstr, $errno, 0, $errfile, $errline);
+        });
+
+        $index  = 0;
+        $errors = array();
         foreach($iterator as $file) {
             if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
                 $output->writeln("Processing file <info>{$file->getRealPath()}</info>");
             }
-            // This will trigger creation of cache
-            file_get_contents(FilterInjectorTransformer::rewrite($file->getRealPath()));
+            $isSuccess = null;
+            try {
+                // This will trigger creation of cache
+                file_get_contents(FilterInjectorTransformer::rewrite($file->getRealPath()));
+                $isSuccess = true;
+            } catch (\Exception $e) {
+                $isSuccess = false;
+                $errors[$file->getRealPath()] = $e;
+            }
             if ($output->getVerbosity() == OutputInterface::VERBOSITY_NORMAL) {
-                $output->write('.');
-                if (++$index % 20 == 0) {
+                $output->write($isSuccess ? '.' : '<error>E</error>');
+                if (++$index % 50 == 0) {
                     $output->writeln("($index/$totalFiles)");
                 }
             }
         }
+
+        restore_error_handler();
+
+        if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERY_VERBOSE) {
+            foreach($errors as $file=>$error) {
+                $message = "File {$file} is not processed correctly due to exception: {$error->getMessage()}";
+                $output->writeln($message);
+            }
+        }
+
         $output->writeln("<info>Done</info>");
     }
 

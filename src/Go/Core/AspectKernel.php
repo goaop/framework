@@ -9,6 +9,7 @@
 namespace Go\Core;
 
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
+use Go\Instrument\CleanableMemory;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use Go\Instrument\Transformer\CachingTransformer;
@@ -182,7 +183,7 @@ abstract class AspectKernel
             new WeavingTransformer(
                 $this,
                 new TokenReflection\Broker(
-                    new TokenReflection\Broker\Backend\Memory()
+                    new CleanableMemory()
                 ),
                 $this->container->get('aspect.advice_matcher')
             )
