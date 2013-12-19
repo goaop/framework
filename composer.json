@@ -14,6 +14,15 @@
         "doctrine/annotations": "~1.0"
     },
 
+    "require-dev": {
+        "symfony/console": "~2"
+    },
+
+    "suggest": {
+        "symfony/console": "for the command-line tool"
+    },
+
+    "bin": ["bin/warmup"],
     "authors": [
         {
             "name": "Lissachenko Alexander",

@@ -1,0 +1,37 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Go! OOP&AOP PHP framework
+ *
+ * @copyright     Copyright 2013, Lissachenko Alexander <lisachenko.it@gmail.com>
+ * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ */
+
+use Go\Console\Command\WarmupCommand;
+use Go\Core\AspectKernel;
+use Symfony\Component\Console\Application;
+
+
+if (is_dir($vendor = __DIR__ . '/../vendor')) {
+    require $vendor . '/autoload.php';
+} elseif (is_dir($vendor = __DIR__ . '/../../../../vendor')) {
+    require $vendor . '/autoload.php';
+} else {
+    die(
+        'You must set up the project dependencies.' . PHP_EOL .
+        'To do that, run the following commands:' . PHP_EOL . PHP_EOL .
+        '$ curl -s http://getcomposer.org/installer | php' . PHP_EOL .
+        '$ php composer.phar install' . PHP_EOL
+    );
+}
+
+if (!class_exists('Symfony\Component\Console\Application')) {
+    die(
+        'You must install the symfony/console package in order ' .
+        'to use the command-line tool.' . PHP_EOL
+    );
+}
+
+$app = new Application('Go! AOP', AspectKernel::VERSION);
+$app->add(new WarmupCommand());
+$app->run();

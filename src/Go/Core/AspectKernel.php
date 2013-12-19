@@ -9,6 +9,7 @@
 namespace Go\Core;
 
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
+use Go\Instrument\CleanableMemory;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use Go\Instrument\Transformer\CachingTransformer;
@@ -30,6 +31,12 @@ define('IS_MODERN_PHP', version_compare(PHP_VERSION, '5.4.0') >= 0);
  */
 abstract class AspectKernel
 {
+
+    /**
+     * Version of kernel
+     */
+    const VERSION = '0.4.1';
+
     /**
      * Kernel options
      *
@@ -176,7 +183,7 @@ abstract class AspectKernel
             new WeavingTransformer(
                 $this,
                 new TokenReflection\Broker(
-                    new TokenReflection\Broker\Backend\Memory()
+                    new CleanableMemory()
                 ),
                 $this->container->get('aspect.advice_matcher')
             )
