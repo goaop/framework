@@ -109,6 +109,13 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($output, $this->metadata->source);
     }
 
+    public function testCanRewriteClassesWithToString()
+    {
+        $file = new \SplFileInfo(__FILE__);
+        $actual = FilterInjectorTransformer::rewrite($file);
+        $this->assertStringEndsWith(__FILE__, $actual);
+    }
+
     public function testCanTransformWithBraces()
     {
         $this->metadata->source = file_get_contents(__DIR__ . '/_files/yii_style.php');
