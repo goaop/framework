@@ -1,11 +1,5 @@
-README
-======
-
-What is Go! AOP?
+Go! Aspect-Oriented Framework for PHP
 -----------------
-
-Go! AOP is a PHP 5.4 library based on OOP and AOP paradigms.
-It allows developers to add support of AOP to every PHP application.
 
 Go! AOP doesn't require any PECL-extentions, it neither uses any dark magic of Runkit nor evals, the library doesn't use DI-containers.
 The code with weaved aspects is fully readable and native, it can be easily debugged with XDebug.
