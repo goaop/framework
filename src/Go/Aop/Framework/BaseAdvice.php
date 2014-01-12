@@ -183,7 +183,10 @@ abstract class BaseAdvice implements OrderedAdvice
                 };
 
             default:
-                throw new \InvalidArgumentException("Unsupported scope `{$scope}`");
+                return function (Joinpoint $joinpoint) use ($aspect, $adviceCallback, $scope) {
+                    $callback = $adviceCallback->bindTo($aspect, $scope);
+                    return $callback($joinpoint);
+                };
         }
     }
 }
