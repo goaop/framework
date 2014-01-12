@@ -118,8 +118,9 @@ abstract class BaseAdvice implements OrderedAdvice
         }
 
         if ($scope !== 'aspect' && !isset(static::$localAdvicesCache["$aspectName->$methodName"][$scope])) {
+            $aspect = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
             $advice = static::$localAdvicesCache["$aspectName->$methodName"]['aspect'];
-            $advice = static::createScopeCallback($advice, $scope);
+            $advice = static::createScopeCallback($aspect, $advice, $scope);
             static::$localAdvicesCache["$aspectName->$methodName"][$scope] = $advice;
         }
 
@@ -148,36 +149,35 @@ abstract class BaseAdvice implements OrderedAdvice
     /**
      * Creates an advice with respect to the desired scope
      *
+     * @param Aspect $aspect
      * @param callable| $adviceCallback Advice to call
      * @param string $scope Scope for callback
      *
      * @throws \InvalidArgumentException is scope is not supported
      * @return callable
      */
-    public static function createScopeCallback($adviceCallback, $scope)
+    public static function createScopeCallback(Aspect $aspect, $adviceCallback, $scope)
     {
         switch ($scope) {
             case 'aspect':
                 return $adviceCallback;
 
             case 'proxy':
-                return function (Joinpoint $joinpoint) use ($adviceCallback, $scope) {
+                return function (Joinpoint $joinpoint) use ($aspect, $adviceCallback, $scope) {
                     $instance    = $joinpoint->getThis();
                     $isNotObject = $instance !== (object) $instance;
-                    $object      = $isNotObject ? null : $instance;
                     $target      = $isNotObject ? $instance : get_class($instance);
-                    $callback    = $adviceCallback->bindTo($object, $target);
+                    $callback    = $adviceCallback->bindTo($aspect, $target);
 
                     return $callback($joinpoint);
                 };
 
             case 'target':
-                return function (Joinpoint $joinpoint) use ($adviceCallback, $scope) {
+                return function (Joinpoint $joinpoint) use ($aspect, $adviceCallback, $scope) {
                     $instance    = $joinpoint->getThis();
                     $isNotObject = $instance !== (object) $instance;
-                    $object      = $isNotObject ? null : $instance;
                     $target      = $isNotObject ? $instance : get_parent_class($instance);
-                    $callback    = $adviceCallback->bindTo($object, $target);
+                    $callback    = $adviceCallback->bindTo($aspect, $target);
 
                     return $callback($joinpoint);
                 };

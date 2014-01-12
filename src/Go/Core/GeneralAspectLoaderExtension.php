@@ -82,7 +82,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
 
         if (isset($metaInformation->scope) && $metaInformation->scope !== 'aspect') {
             $scope = $metaInformation->scope;
-            $adviceCallback = Framework\BaseAdvice::createScopeCallback($adviceCallback, $scope);
+            $adviceCallback = Framework\BaseAdvice::createScopeCallback($aspect, $adviceCallback, $scope);
         }
 
         $isPointFilter  = $pointcut instanceof PointFilter;
