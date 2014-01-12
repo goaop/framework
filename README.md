@@ -12,7 +12,6 @@ of application and display the name and the arguments of each method during its 
 [![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
 [![Dependencies Status](https://d2xishtp1ojlk0.cloudfront.net/d/1416156)](http://depending.in/lisachenko/go-aop-php)
 [![Latest Stable Version](https://poser.pugx.org/lisachenko/go-aop-php/v/stable.png)](https://packagist.org/packages/lisachenko/go-aop-php)
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/lisachenko/go-aop-php/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 What is AOP?
 ------------
