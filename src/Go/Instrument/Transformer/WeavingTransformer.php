@@ -264,7 +264,7 @@ class WeavingTransformer extends BaseSourceTransformer
         if (empty($this->options['cacheDir'])) {
             return $child;
         }
-        $cacheDir = $this->options['cacheDir'] . '/_proxies/';
+        $cacheDir = $this->options['cacheDir'] . DIRECTORY_SEPARATOR . '_proxies' . DIRECTORY_SEPARATOR;
         $fileName = str_replace('\\', DIRECTORY_SEPARATOR, $class->getName()) . '.php';
 
         $proxyFileName = $cacheDir . $fileName;

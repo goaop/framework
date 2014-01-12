@@ -93,7 +93,11 @@ class MagicConstantTransformer extends BaseSourceTransformer
      */
     public static function resolveFileName($fileName)
     {
-        return str_replace(self::$rewriteToPath, self::$rootPath, $fileName);
+        return str_replace(
+            array(self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'),
+            array(self::$rootPath, ''),
+            $fileName
+        );
     }
 
     /**
