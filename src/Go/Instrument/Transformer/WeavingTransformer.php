@@ -273,8 +273,11 @@ class WeavingTransformer extends BaseSourceTransformer
             mkdir($dirname, 0770, true);
         }
 
-        $body = '<?php' . PHP_EOL;
-        $body .= "namespace {$class->getNamespaceName()};" . PHP_EOL . PHP_EOL;
+        $body      = '<?php' . PHP_EOL;
+        $namespace = $class->getNamespaceName();
+        if ($namespace) {
+            $body .= "namespace {$namespace};" . PHP_EOL . PHP_EOL;
+        }
         foreach ($class->getNamespaceAliases() as $alias => $fqdn) {
             $body .= "use {$fqdn} as {$alias};" . PHP_EOL;
         }
