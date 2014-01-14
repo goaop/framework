@@ -35,7 +35,7 @@ abstract class AspectKernel
     /**
      * Version of kernel
      */
-    const VERSION = '0.4.1';
+    const VERSION = '0.4.3';
 
     /**
      * Kernel options
