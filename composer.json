@@ -31,10 +31,7 @@
     ],
 
     "autoload": {
-        "psr-0": {
-            "Go": "src/"
-        },
-        "files": ["src/Go/Instrument/ClassLoading/AopComposerLoader.php"]
+        "psr-0": {"Go": "src/"}
     },
     "extra": {
         "branch-alias": {

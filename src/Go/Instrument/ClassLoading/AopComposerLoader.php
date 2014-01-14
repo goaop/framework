@@ -106,5 +106,3 @@ class AopComposerLoader
         return $this->original->findFile($class);
     }    
 }
-
-AopComposerLoader::init();

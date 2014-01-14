@@ -8,6 +8,7 @@
 
 namespace Go\Core;
 
+use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\CleanableMemory;
 use Go\Instrument\Transformer\SourceTransformer;
@@ -15,8 +16,6 @@ use Go\Instrument\Transformer\WeavingTransformer;
 use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
-
-use Doctrine\Common\Annotations\AnnotationRegistry;
 
 use TokenReflection;
 
@@ -90,6 +89,7 @@ abstract class AspectKernel
      */
     public function init(array $options = array())
     {
+        AopComposerLoader::init();
         $this->options = array_replace_recursive($this->getDefaultOptions(), $options);
 
         /** @var $container AspectContainer */
