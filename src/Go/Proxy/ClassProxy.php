@@ -172,6 +172,11 @@ class ClassProxy extends AbstractProxy
                 continue;
             }
             foreach ($typedAdvices as $joinPointName => $advices) {
+                $advices = array_map(function ($v, $k) {
+                    $advice = AspectKernel::getInstance()->getContainer()->get($k)->getAdvice();
+                    return $advice;
+                }, $advices, array_keys($advices));
+
                 $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $joinPointName, $advices);
                 $joinPoints["$joinPointType:$joinPointName"] = $joinpoint;
             }
@@ -265,7 +270,8 @@ class ClassProxy extends AbstractProxy
         if ($this->isFieldsIntercepted && (!$ctor || !$ctor->isPrivate())) {
             $this->addFieldInterceptorsCode($ctor);
         }
-        $serialized = serialize($this->advices);
+        //$serialized = serialize($this->advices);
+        $serialized = json_encode($this->advices);
 
         ksort($this->methodsCode);
         ksort($this->propertiesCode);
@@ -287,7 +293,7 @@ class ClassProxy extends AbstractProxy
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->class->name . "',"
-                . " unserialize(" . var_export($serialized, true) . "));";
+                . " json_decode(" . var_export($serialized, true) . ", true));";
     }
 
     /**

@@ -89,6 +89,10 @@ class TraitProxy extends ClassProxy
         }
 
         $advices   = self::$traitAdvices[$traitName][$joinPointType][$pointName];
+        $advices = array_map(function ($v, $k) {
+            $advice = AspectKernel::getInstance()->getContainer()->get($k)->getAdvice();
+            return $advice;
+        }, $advices, array_keys($advices));
         $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $advices);
 
         return $joinpoint;
@@ -131,7 +135,8 @@ BODY;
      */
     public function __toString()
     {
-        $serialized = serialize($this->advices);
+        //$serialized = serialize($this->advices);
+        $serialized = json_encode($this->advices);
         ksort($this->methodsCode);
         $classCode = sprintf("%s\ntrait %s\n{\n%s\n\n%s\n}",
             $this->class->getDocComment(),
@@ -148,7 +153,7 @@ BODY;
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->class->name . "',"
-                . " unserialize(" . var_export($serialized, true) . "));";
+                . " json_decode(" . var_export($serialized, true) . ", true));";
     }
 
     private function getMethodAliasesCode()
