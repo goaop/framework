@@ -46,7 +46,9 @@ class AdviceMatcherTest extends TestCase
                 $advisors[$id] = $advisor;
             }));
 
-        $loader = $this->getMock('Go\Core\AspectLoader', array(), array($this->container));
+        $reader = $this->getMock('Doctrine\Common\Annotations\Reader');
+
+        $loader = $this->getMock('Go\Core\AspectLoader', array(), array($this->container, $reader));
         $this->adviceMatcher = new AdviceMatcher($loader, $this->container);
     }
 

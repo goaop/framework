@@ -72,7 +72,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      */
     public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
     {
-        $pointcut    = $this->parsePointcut($container, $aspect, $reflection, $metaInformation);
+        $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation);
         $propertyId  = sprintf("%s->%s", $reflection->class, $reflection->name);
 
         switch (true) {

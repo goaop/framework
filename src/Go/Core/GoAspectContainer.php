@@ -47,11 +47,16 @@ class GoAspectContainer extends Container implements AspectContainer
     {
         // Register all services in the container
         $this->share('aspect.loader', function ($container) {
-            $aspectLoader = new AspectLoader($container);
+            $aspectLoader = new AspectLoader(
+                $container,
+                $container->get('aspect.annotation.reader')
+            );
+            $lexer  = $container->get('aspect.pointcut.lexer');
+            $parser = $container->get('aspect.pointcut.parser');
 
             // Register general aspect loader extension
-            $aspectLoader->registerLoaderExtension(new GeneralAspectLoaderExtension());
-            $aspectLoader->registerLoaderExtension(new IntroductionAspectExtension());
+            $aspectLoader->registerLoaderExtension(new GeneralAspectLoaderExtension($lexer, $parser));
+            $aspectLoader->registerLoaderExtension(new IntroductionAspectExtension($lexer, $parser));
 
             return $aspectLoader;
         });
