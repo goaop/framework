@@ -8,9 +8,6 @@
 
 namespace Go\Core;
 
-use ReflectionMethod;
-use ReflectionProperty;
-
 use Go\Aop\Aspect;
 use Go\Aop\Framework;
 use Go\Aop\Pointcut;
@@ -18,9 +15,9 @@ use Go\Aop\PointFilter;
 use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
+use ReflectionMethod;
+use ReflectionProperty;
 
-use Dissect\Lexer\Exception\RecognitionException;
-use Dissect\Parser\Exception\UnexpectedTokenException;
 
 /**
  * General aspect loader add common support for general advices, declared as annotations
@@ -72,11 +69,12 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      * @param Aspect $aspect Instance of aspect
      * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
+     *
+     * @throws \UnexpectedValueException
      */
     public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
     {
-        /** @var $pointcut Pointcut|PointFilter */
-        $pointcut       = $this->parsePointcut($container, $aspect, $reflection, $metaInformation);
+        $pointcut       = $this->parsePointcut($aspect, $reflection, $metaInformation);
         $methodId       = sprintf("%s->%s", get_class($aspect), $reflection->name);
         $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);
 
