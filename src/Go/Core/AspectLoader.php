@@ -8,6 +8,7 @@
 
 namespace Go\Core;
 
+use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Aspect;
 
 /**
@@ -31,11 +32,19 @@ class AspectLoader
     protected $loaders = array();
 
     /**
+     * Annotation reader for aspects
+     *
+     * @var Reader|null
+     */
+    protected $annotationReader = null;
+
+    /**
      * Loader constructor
      */
-    public function __construct(AspectContainer $container)
+    public function __construct(AspectContainer $container, Reader $reader)
     {
-        $this->container = $container;
+        $this->container        = $container;
+        $this->annotationReader = $reader;
     }
 
     /**
@@ -130,17 +139,15 @@ class AspectLoader
      */
     protected function getAnnotations($refPoint)
     {
-        /** @var $annotationReader \Doctrine\Common\Annotations\Reader */
-        $annotationReader = $this->container->get('aspect.annotation.reader');
         switch (true) {
             case ($refPoint instanceof \ReflectionClass):
-                return $annotationReader->getClassAnnotations($refPoint);
+                return $this->annotationReader->getClassAnnotations($refPoint);
 
             case ($refPoint instanceof \ReflectionMethod):
-                return $annotationReader->getMethodAnnotations($refPoint);
+                return $this->annotationReader->getMethodAnnotations($refPoint);
 
             case ($refPoint instanceof \ReflectionProperty):
-                return $annotationReader->getPropertyAnnotations($refPoint);
+                return $this->annotationReader->getPropertyAnnotations($refPoint);
 
             default:
                 throw new \InvalidArgumentException("Unsupported reflection point " . get_class($refPoint));
