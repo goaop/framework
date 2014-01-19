@@ -65,7 +65,7 @@ class PointcutGrammar extends Grammar
         $this('SinglePointcut')
             ->is(
                 'execution', '(' ,
-                    'MemberModifiers', 'ClassFilter', 'MethodCall', 'NamePattern', '(', 'Arguments', ')',
+                    'MemberModifiers', 'ClassFilter', 'MethodCall', 'NamePattern', '(', '*', ')',
                 ')'
             )
             ->call(function(
@@ -89,7 +89,7 @@ class PointcutGrammar extends Grammar
 
             ->is(
                 'execution', '(',
-                    'NamespacePattern', '(', 'Arguments', ')',
+                    'NamespacePattern', '(', '*', ')',
                 ')'
             )
             ->call(function(
@@ -149,10 +149,6 @@ class PointcutGrammar extends Grammar
             ->call(function ($pointcutName) use ($container) {
                 return $container->getPointcut($pointcutName);
             });
-
-        $this('Arguments')
-            ->is('Empty')
-            ->is('*');
 
         $stringConverter = $this->getNodeToStringConverter();
 
