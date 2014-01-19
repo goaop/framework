@@ -66,11 +66,11 @@ class ClassProxy extends AbstractProxy
      * @throws \InvalidArgumentException if there are unknown type of advices
      * @return ClassProxy
      */
-    public static function generate($parent, array $classAdvices)
+    public function __construct($parent, array $classAdvices)
     {
-        $aopChild = new self($parent, $parent->getShortName(), $classAdvices);
-        $aopChild->addInterface('\Go\Aop\Proxy');
-        $aopChild->addJoinpointsProperty($aopChild);
+        parent::__construct($parent, $parent->getShortName(), $classAdvices);
+        $this->addInterface('\Go\Aop\Proxy');
+        $this->addJoinpointsProperty();
 
         foreach ($classAdvices as $type => $typedAdvices) {
 
@@ -78,13 +78,13 @@ class ClassProxy extends AbstractProxy
                 case AspectContainer::METHOD_PREFIX:
                 case AspectContainer::STATIC_METHOD_PREFIX:
                     foreach ($typedAdvices as $joinPointName => $advice) {
-                        $aopChild->overrideMethod($parent->getMethod($joinPointName));
+                        $this->overrideMethod($parent->getMethod($joinPointName));
                     }
                     break;
 
                 case AspectContainer::PROPERTY_PREFIX:
                     foreach ($typedAdvices as $joinPointName => $advice) {
-                        $aopChild->interceptProperty($parent->getProperty($joinPointName));
+                        $this->interceptProperty($parent->getProperty($joinPointName));
                     }
                     break;
 
@@ -92,10 +92,10 @@ class ClassProxy extends AbstractProxy
                     foreach ($typedAdvices as $advice) {
                         /** @var $advice IntroductionInfo */
                         foreach ($advice->getInterfaces() as $interface) {
-                            $aopChild->addInterface($interface);
+                            $this->addInterface($interface);
                         }
                         foreach ($advice->getTraits() as $trait) {
-                            $aopChild->addTrait($trait);
+                            $this->addTrait($trait);
                         }
                     }
                     break;
@@ -104,7 +104,6 @@ class ClassProxy extends AbstractProxy
                     throw new \InvalidArgumentException("Unsupported point `$type`");
             }
         }
-        return $aopChild;
     }
 
     /**

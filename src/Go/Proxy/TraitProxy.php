@@ -42,22 +42,18 @@ class TraitProxy extends ClassProxy
      * @param array|Advice[] $traitAdvices List of advices for trait
      *
      * @throws \InvalidArgumentException for unsupported advice type
-     * @return ClassProxy
+     * @return self
      */
-    public static function generate($parent, array $traitAdvices)
+    public function __construct($parent, array $traitAdvices)
     {
-        $traitChild = new self($parent, $parent->getShortName(), $traitAdvices);
-
-        if (empty($traitAdvices)) {
-            return $traitChild;
-        }
+        parent::__construct($parent, $parent->getShortName(), $traitAdvices);
 
         foreach ($traitAdvices as $type => $typedAdvices) {
             switch ($type) {
                 case AspectContainer::METHOD_PREFIX:
                 case AspectContainer::STATIC_METHOD_PREFIX:
                     foreach ($typedAdvices as $joinPointName => $advice) {
-                        $traitChild->overrideMethod($parent->getMethod($joinPointName));
+                        $this->overrideMethod($parent->getMethod($joinPointName));
                     }
                     break;
 
@@ -69,7 +65,6 @@ class TraitProxy extends ClassProxy
                     throw new \InvalidArgumentException("Unsupported point `$type`");
             }
         }
-        return $traitChild;
     }
 
     /**

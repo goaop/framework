@@ -145,8 +145,8 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Prepare child Aop proxy
         $child = (IS_MODERN_PHP && $class->isTrait())
-            ? TraitProxy::generate($class, $advices)
-            : ClassProxy::generate($class, $advices);
+            ? new TraitProxy($class, $advices)
+            : new ClassProxy($class, $advices);
 
         // Set new parent name instead of original
         $child->setParentName($newParentName);
