@@ -234,7 +234,7 @@ class WeavingTransformer extends BaseSourceTransformer
     {
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace);
         if ($functionAdvices && $this->options['cacheDir']) {
-            $cacheDir = $this->options['cacheDir'] . '/_functions/';
+            $cacheDir = $this->options['cacheDir'] . DIRECTORY_SEPARATOR . '_functions' . DIRECTORY_SEPARATOR;
             $fileName = str_replace('\\', DIRECTORY_SEPARATOR, $namespace->getName()) . '.php';
 
             $functionFileName = $cacheDir . $fileName;
