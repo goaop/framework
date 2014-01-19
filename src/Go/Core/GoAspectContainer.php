@@ -16,6 +16,7 @@ use Go\Aop;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutParser;
+use Go\Aop\Support\AnnotatedReflectionMethod;
 use Go\Instrument\RawAnnotationReader;
 
 use Doctrine\Common\Annotations\AnnotationReader;
@@ -73,7 +74,10 @@ class GoAspectContainer extends Container implements AspectContainer
 
         // TODO: use cached annotation reader
         $this->share('aspect.annotation.reader', function () {
-            return new AnnotationReader();
+            $reader = new AnnotationReader();
+            // Direct injection for AnnotatedReflectionMethod
+            AnnotatedReflectionMethod::injectAnnotationReader($reader);
+            return $reader;
         });
         $this->share('aspect.annotation.raw.reader', function () {
             return new RawAnnotationReader();
