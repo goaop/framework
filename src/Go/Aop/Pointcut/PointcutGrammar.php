@@ -29,7 +29,7 @@ class PointcutGrammar extends Grammar
     /**
      * Constructs a pointcut grammar with AST
      */
-    public function __construct(AspectContainer $container, RawAnnotationReader $annotationReader)
+    public function __construct(AspectContainer $container = null, RawAnnotationReader $annotationReader = null)
     {
         $this('Empty')
             ->is(/* empty */);
