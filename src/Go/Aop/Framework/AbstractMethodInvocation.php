@@ -96,15 +96,18 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      * interceptors are installed.
      * @return object
      */
-     public function getStaticPart()
-     {
-         return $this->getMethod();
-     }
+    public function getStaticPart()
+    {
+        return $this->getMethod();
+    }
 
     /**
      * Invokes current method invocation with all interceptors
      *
-     * @return mixed
+     * @param null|object|string $instance Invocation instance (class name for static methods)
+     * @param array $arguments List of arguments for method invocation
+     *
+     * @return mixed Result of invocation
      */
     final public function __invoke($instance = null, array $arguments = array())
     {

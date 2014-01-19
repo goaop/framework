@@ -56,5 +56,5 @@ interface Joinpoint
      * interceptors are installed.
      * @return object
      */
-     public function getStaticPart();
+    public function getStaticPart();
 }
