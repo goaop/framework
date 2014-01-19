@@ -177,17 +177,23 @@ abstract class AspectKernel
      */
     protected function registerTransformers(SourceTransformingLoader $sourceLoader)
     {
-        $sourceTransformers = array(
-            new FilterInjectorTransformer($this->options, $sourceLoader->getId()),
-            new MagicConstantTransformer($this),
-            new WeavingTransformer(
-                $this,
-                new TokenReflection\Broker(
-                    new CleanableMemory()
-                ),
-                $this->container->get('aspect.advice_matcher')
-            )
-        );
+        $filterInjector   = new FilterInjectorTransformer($this->options, $sourceLoader->getId());
+        $magicTransformer = new MagicConstantTransformer($this);
+        $aspectKernel     = $this;
+
+        $sourceTransformers = function () use ($filterInjector, $magicTransformer, $aspectKernel) {
+            return array(
+                $filterInjector,
+                $magicTransformer,
+                new WeavingTransformer(
+                    $aspectKernel,
+                    new TokenReflection\Broker(
+                        new CleanableMemory()
+                    ),
+                    $aspectKernel->getContainer()->get('aspect.advice_matcher')
+                )
+            );
+        };
 
         return array(
             new CachingTransformer($this, $sourceTransformers)

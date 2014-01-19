@@ -35,7 +35,7 @@ class CachingTransformer extends BaseSourceTransformer
     protected $cachePath = '';
 
     /**
-     * @var array|SourceTransformer[]
+     * @var array|callable|SourceTransformer[]
      */
     protected $transformers = array();
 
@@ -43,9 +43,11 @@ class CachingTransformer extends BaseSourceTransformer
      * Class constructor
      *
      * @param AspectKernel $kernel Instance of aspect kernel
-     * @param array $transformers Source transformers
+     * @param array|callable $transformers Source transformers or callable that should return transformers
+     *
+     * @throws \InvalidArgumentException
      */
-    public function __construct(AspectKernel $kernel, array $transformers)
+    public function __construct(AspectKernel $kernel, $transformers)
     {
         parent::__construct($kernel);
         $cacheDir = $this->options['cacheDir'];
@@ -111,6 +113,10 @@ class CachingTransformer extends BaseSourceTransformer
      */
     private function processTransformers(StreamMetaData $metadata)
     {
+        if (is_callable($this->transformers)) {
+            $delayedTransformers = $this->transformers;
+            $this->transformers  = $delayedTransformers();
+        }
         foreach ($this->transformers as $transformer) {
             $transformer->transform($metadata);
         }
