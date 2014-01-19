@@ -70,11 +70,6 @@ class ClassProxy extends AbstractProxy
     {
         $aopChild = new self($parent, $parent->getShortName(), $classAdvices);
         $aopChild->addInterface('\Go\Aop\Proxy');
-
-        if (empty($classAdvices)) {
-            return $aopChild;
-        }
-
         $aopChild->addJoinpointsProperty($aopChild);
 
         foreach ($classAdvices as $type => $typedAdvices) {
