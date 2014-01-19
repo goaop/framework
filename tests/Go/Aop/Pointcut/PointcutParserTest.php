@@ -55,6 +55,7 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
         return array(
             // Execution pointcuts
             array('execution(public Example->method(*))'),
+            array('execution(public Example->method|method1|method2(*))'),
             array('execution(final public Example\Aspect\*->method*(*))'),
             array('execution(protected|public **::*someStatic*Method*(*))'),
 

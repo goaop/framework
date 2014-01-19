@@ -39,7 +39,8 @@ class SimpleClassFilter implements PointFilter
         $this->regexp    = strtr(preg_quote($this->className, '/'), array(
             '\\*'    => '[^\\\\]+',
             '\\*\\*' => '.+',
-            '\\?'    => '.'
+            '\\?'    => '.',
+            '\\|'    => '|'
         ));
     }
 

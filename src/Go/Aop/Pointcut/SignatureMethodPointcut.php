@@ -51,7 +51,8 @@ class SignatureMethodPointcut extends StaticMethodMatcherPointcut
         $this->methodName     = $methodName;
         $this->regexp         = strtr(preg_quote($this->methodName, '/'), array(
             '\\*' => '.*?',
-            '\\?' => '.'
+            '\\?' => '.',
+            '\\|' => '|'
         ));
         $this->modifierFilter = $modifierFilter;
     }

@@ -40,7 +40,8 @@ class SimpleNamespaceFilter implements PointFilter
         $this->regexp  = strtr(preg_quote($this->nsName, '/'), array(
             '\\*'    => '[^\\\\]+',
             '\\*\\*' => '.+',
-            '\\?'    => '.'
+            '\\?'    => '.',
+            '\\|'    => '|'
         ));
     }
 

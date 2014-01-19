@@ -61,7 +61,8 @@ class SignaturePropertyPointcut implements Pointcut
         $this->propertyName   = $propertyName;
         $this->regexp         = strtr(preg_quote($this->propertyName, '/'), array(
             '\\*' => '.*?',
-            '\\?' => '.'
+            '\\?' => '.',
+            '\\|' => '|'
         ));
         $this->modifierFilter = $modifierFilter;
     }

@@ -189,6 +189,7 @@ class PointcutGrammar extends Grammar
         $this('NamePattern')
             ->is('NamePattern', '*')->call($stringConverter)
             ->is('NamePattern', 'NamePart')->call($stringConverter)
+            ->is('NamePattern', '|', 'NamePart')->call($stringConverter)
             ->is('NamePart')->call($stringConverter)
             ->is('*')->call($stringConverter);
 
