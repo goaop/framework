@@ -8,6 +8,7 @@
 
 namespace Go\Core;
 
+use Doctrine\Common\Annotations\FileCacheReader;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
@@ -61,8 +62,6 @@ class GoAspectContainer extends Container implements AspectContainer
 
             return $aspectLoader;
         });
-        // Kernel flag to enable support of function interception
-        $this->set('kernel.interceptFunctions', false);
 
         $this->share('aspect.advice_matcher', function ($container) {
             return new AdviceMatcher(
@@ -72,9 +71,16 @@ class GoAspectContainer extends Container implements AspectContainer
             );
         });
 
-        // TODO: use cached annotation reader
-        $this->share('aspect.annotation.reader', function () {
-            $reader = new AnnotationReader();
+        $this->share('aspect.annotation.reader', function ($container) {
+            $options = $container->get('kernel.options');
+            $reader  = new AnnotationReader();
+            if (!empty($options['cacheDir'])) {
+                $reader  = new FileCacheReader(
+                    $reader,
+                    $options['cacheDir'] . DIRECTORY_SEPARATOR . '_annotations' . DIRECTORY_SEPARATOR,
+                    $options['debug']
+                );
+            }
             // Direct injection for AnnotatedReflectionMethod
             AnnotatedReflectionMethod::injectAnnotationReader($reader);
             return $reader;
