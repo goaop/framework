@@ -72,4 +72,19 @@ class SignatureMethodPointcutTest extends \PHPUnit_Framework_TestCase
         $matched  = $pointcut->matches(new \ReflectionMethod('Go\Tests\First', 'protectedMethod'));
         $this->assertTrue($matched, "Pointcut should match this method");
     }
+
+    /**
+     * Tests that multiple pattern is using strict matching
+     *
+     * @link https://github.com/lisachenko/go-aop-php/issues/115
+     */
+    public function testIssue115()
+    {
+        $pointcut = new SignatureMethodPointcut('public|Public', TruePointFilter::getInstance());
+        $matched  = $pointcut->matches(new \ReflectionMethod('Go\Tests\First', 'publicMethod'));
+        $this->assertFalse($matched, "Pointcut should match strict");
+
+        $matched  = $pointcut->matches(new \ReflectionMethod('Go\Tests\First', 'staticLsbPublic'));
+        $this->assertFalse($matched, "Pointcut should match strict");
+    }
 }
