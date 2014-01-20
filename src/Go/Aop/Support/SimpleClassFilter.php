@@ -54,7 +54,7 @@ class SimpleClassFilter implements PointFilter
             return false;
         }
 
-        return ($class->name === $this->className) || (bool) preg_match("/^{$this->regexp}$/", $class->name);
+        return ($class->name === $this->className) || (bool) preg_match("/^(?:{$this->regexp})$/", $class->name);
     }
 
     /**
