@@ -58,7 +58,7 @@ class SimpleNamespaceFilter implements PointFilter
         }
 
         $nsName = $isNamespaceIsObject ? $ns->getName() : $ns;
-        return ($nsName === $this->nsName) || (bool) preg_match("/^{$this->regexp}$/", $nsName);
+        return ($nsName === $this->nsName) || (bool) preg_match("/^(?:{$this->regexp})$/", $nsName);
     }
 
     /**
