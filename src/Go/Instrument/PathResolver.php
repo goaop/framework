@@ -16,6 +16,15 @@ namespace Go\Instrument;
  */
 class PathResolver
 {
+
+    /**
+     * Custom replacement for realpath() and stream_resolve_include_path()
+     *
+     * @param string|array $somePath Path without normalization or array of paths
+     * @param bool $shouldCheckExistence Flag for checking existence of resolved filename
+     *
+     * @return array|bool|string
+     */
     public static function realpath($somePath, $shouldCheckExistence = false)
     {
         $normalized = null;
@@ -26,13 +35,18 @@ class PathResolver
         $components = explode('://', $somePath, 2);
         list ($pathScheme, $path) = isset($components[1]) ? $components : array(null, $components[0]);
 
+        $isRelative = !$pathScheme && ($path[0] !== '/') && ($path[1] !== ':');
+        if ($isRelative) {
+            $path = getcwd() . DIRECTORY_SEPARATOR . $path;
+        }
+
         // resolve path parts (single dot, double dot and double delimiters)
         $path  = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
         if (strpos($path, '.') !== false) {
-            $parts     = array_filter(explode(DIRECTORY_SEPARATOR, $path));
+            $parts     = explode(DIRECTORY_SEPARATOR, $path);
             $absolutes = array();
             foreach ($parts as $part) {
-                if ('.' == $path) {
+                if ('.' == $part) {
                     continue;
                 } elseif ('..' == $part) {
                     array_pop($absolutes);
@@ -42,12 +56,15 @@ class PathResolver
             }
             $path = implode(DIRECTORY_SEPARATOR, $absolutes);
         }
+
         if ($pathScheme) {
             $path = "{$pathScheme}://{$path}";
         }
+
         if ($shouldCheckExistence && !file_exists($path)) {
             return false;
         }
+
         return $path;
     }
 }
