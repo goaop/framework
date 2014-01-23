@@ -101,7 +101,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
             $consumed = 0;
         }
 
-        if ($closing) {
+        if ($closing || feof($this->stream)) {
             $consumed += strlen($this->data);
 
             // $this->stream contains pointer to the source
