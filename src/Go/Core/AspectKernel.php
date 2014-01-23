@@ -90,7 +90,6 @@ abstract class AspectKernel
      */
     public function init(array $options = array())
     {
-        AopComposerLoader::init();
         $this->options = $this->normalizeOptions($options);
 
         /** @var $container AspectContainer */
@@ -109,6 +108,8 @@ abstract class AspectKernel
         if ($this->options['debug']) {
             $this->addKernelResourcesToContainer($container);
         }
+
+        AopComposerLoader::init();
 
         // Register all AOP configuration in the container
         $this->configureAop($container);
