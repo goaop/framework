@@ -26,22 +26,6 @@ class FilterInjectorTransformer implements SourceTransformer
     const PHP_FILTER_READ = 'php://filter/read=';
 
     /**
-     * Root path of application
-     *
-     * This path will be replaced with rewriteToPath
-     *
-     * @var string
-     */
-    protected static $rootPath;
-
-    /**
-     * Path to rewrite for absolute address
-     *
-     * @var string
-     */
-    protected static $rewriteToPath = null;
-
-    /**
      * Name of the filter to inject
      *
      * @var string
@@ -49,18 +33,11 @@ class FilterInjectorTransformer implements SourceTransformer
     protected static $filterName;
 
     /**
-     * Flag of configuration
+     * Kernel options
      *
-     * @var bool
+     * @var array
      */
-    protected static $configured = false;
-
-    /**
-     * Debug mode
-     *
-     * @var bool
-     */
-    protected static $debug = false;
+    protected static $options = array();
 
     /**
      * Class constructor
@@ -83,14 +60,11 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     protected static function configure(array $options, $filterName)
     {
-        if (self::$configured) {
+        if (self::$options) {
             throw new \RuntimeException("Filter injector can be configured only once.");
         }
-        self::$rewriteToPath = $options['cacheDir'];
-        self::$rootPath      = $options['appDir'];
-        self::$filterName    = $filterName;
-        self::$debug         = $options['debug'];
-        self::$configured    = true;
+        self::$options    = $options;
+        self::$filterName = $filterName;
     }
 
     /**
@@ -105,6 +79,11 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public static function rewrite($resource, $originalDir = '')
     {
+        static $appDir, $cacheDir, $debug, $prebuiltCache;
+        if (!$appDir) {
+            extract(self::$options, EXTR_IF_EXISTS);
+        }
+
         $resource = (string) $resource;
         if ($resource['0'] !== '/') {
             $resource
@@ -112,14 +91,14 @@ class FilterInjectorTransformer implements SourceTransformer
                 ?: PathResolver::realpath("{$originalDir}/{$resource}", $checkExistence = true);
         }
         // If the cache is disabled, then use on-fly method
-        if (!self::$rewriteToPath || self::$debug) {
+        if (!$cacheDir || $debug) {
             return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
         }
 
-        $newResource = str_replace(self::$rootPath, self::$rewriteToPath, $resource);
+        $newResource = str_replace($appDir, $cacheDir, $resource);
 
         // Trigger creation of cache, this will create a cache file with $newResource name
-        if (!file_exists($newResource)) {
+        if (!$prebuiltCache && !file_exists($newResource)) {
             file_get_contents(self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource);
         }
         return $newResource;
