@@ -6,7 +6,7 @@
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
-include __DIR__ . (isset($_GET['original']) ? './autoload.php' : './autoload_aspect.php');
+include __DIR__ . (isset($_GET['original']) ? '/autoload.php' : '/autoload_aspect.php');
 
 // Test case with human
 $man = new Demo\Example\Human();
