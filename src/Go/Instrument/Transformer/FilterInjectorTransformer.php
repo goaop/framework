@@ -8,6 +8,8 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Instrument\PathResolver;
+
 /**
  * Injects source filter for require and include operations
  *
@@ -84,14 +86,11 @@ class FilterInjectorTransformer implements SourceTransformer
         if (self::$configured) {
             throw new \RuntimeException("Filter injector can be configured only once.");
         }
-        $rewriteToPath = $options['cacheDir'];
-        if ($rewriteToPath) {
-            self::$rewriteToPath = realpath($rewriteToPath);
-        }
-        self::$rootPath   = realpath($options['appDir']);
-        self::$filterName = $filterName;
-        self::$debug      = $options['debug'];
-        self::$configured = true;
+        self::$rewriteToPath = $options['cacheDir'];
+        self::$rootPath      = $options['appDir'];
+        self::$filterName    = $filterName;
+        self::$debug         = $options['debug'];
+        self::$configured    = true;
     }
 
     /**
@@ -107,21 +106,17 @@ class FilterInjectorTransformer implements SourceTransformer
     public static function rewrite($resource, $originalDir = '')
     {
         $resource = (string) $resource;
-        if ($resource['0'] !== '/' && strpos($resource, ':') === false) {
+        if ($resource['0'] !== '/') {
             $resource
-                =  stream_resolve_include_path($resource)
-                ?: stream_resolve_include_path("{$originalDir}/{$resource}");
+                =  PathResolver::realpath($resource, $checkExistence = true)
+                ?: PathResolver::realpath("{$originalDir}/{$resource}", $checkExistence = true);
         }
         // If the cache is disabled, then use on-fly method
         if (!self::$rewriteToPath || self::$debug) {
             return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
         }
 
-        $newResource = str_replace(
-            array('/', self::$rootPath),
-            array(DIRECTORY_SEPARATOR, self::$rewriteToPath),
-            $resource
-        );
+        $newResource = str_replace(self::$rootPath, self::$rewriteToPath, $resource);
 
         // Trigger creation of cache, this will create a cache file with $newResource name
         if (!file_exists($newResource)) {

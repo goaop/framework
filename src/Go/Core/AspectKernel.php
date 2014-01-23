@@ -11,6 +11,7 @@ namespace Go\Core;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\CleanableMemory;
+use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use Go\Instrument\Transformer\CachingTransformer;
@@ -90,7 +91,7 @@ abstract class AspectKernel
     public function init(array $options = array())
     {
         AopComposerLoader::init();
-        $this->options = array_replace_recursive($this->getDefaultOptions(), $options);
+        $this->options = $this->normalizeOptions($options);
 
         /** @var $container AspectContainer */
         $container = $this->container = new $this->options['containerClass'];
@@ -158,6 +159,25 @@ abstract class AspectKernel
             'excludePaths'       => array(),
             'containerClass'     => static::$containerClass,
         );
+    }
+
+
+    /**
+     * Normalizes options for the kernel
+     * @param $options
+     *
+     * @return array|mixed
+     */
+    protected function normalizeOptions(array $options)
+    {
+        $options = array_replace_recursive($this->getDefaultOptions(), $options);
+
+        $options['appDir']   = PathResolver::realpath($options['appDir']);
+        $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
+        $options['includePaths'] = PathResolver::realpath($options['includePaths']);
+        $options['excludePaths'] = PathResolver::realpath($options['excludePaths']);
+
+        return $options;
     }
 
     /**

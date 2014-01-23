@@ -66,8 +66,8 @@ class WeavingTransformer extends BaseSourceTransformer
         $this->broker        = $broker;
         $this->adviceMatcher = $adviceMatcher;
 
-        $this->includePaths = array_map('realpath', $this->options['includePaths']);
-        $this->excludePaths = array_map('realpath', $this->options['excludePaths']);
+        $this->includePaths = $this->options['includePaths'];
+        $this->excludePaths = $this->options['excludePaths'];
     }
 
     /**
