@@ -18,6 +18,7 @@ AwesomeAspectKernel::getInstance()->init(array(
     'cacheDir'      => __DIR__ . '/cache',
 
     'interceptFunctions' => true, // Enable support for function interception (Since 0.4.0)
+    'prebuiltCache'      => false, // Cache was already prebuilt (Since 0.5.0)
 ));
 
 AnnotationRegistry::registerFile(__DIR__ . '/Demo/Annotation/Cacheable.php');

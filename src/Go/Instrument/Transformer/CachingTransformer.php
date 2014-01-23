@@ -62,7 +62,7 @@ class CachingTransformer extends BaseSourceTransformer
                 }
                 mkdir($cacheDir, 0770);
             }
-            if (!is_writable($cacheDir)) {
+            if (!$this->options['prebuiltCache'] && !is_writable($cacheDir)) {
                 throw new \InvalidArgumentException("Cache directory {$cacheDir} is not writable");
             }
             $this->cachePath = realpath($cacheDir);

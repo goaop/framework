@@ -153,6 +153,7 @@ abstract class AspectKernel
             'cacheDir'  => null,
 
             'interceptFunctions' => false,
+            'prebuiltCache'      => false,
             'includePaths'       => array(),
             'excludePaths'       => array(),
             'containerClass'     => static::$containerClass,
