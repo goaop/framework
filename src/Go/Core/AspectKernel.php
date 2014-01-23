@@ -165,9 +165,10 @@ abstract class AspectKernel
 
     /**
      * Normalizes options for the kernel
-     * @param $options
      *
-     * @return array|mixed
+     * @param array $options List of options
+     *
+     * @return array
      */
     protected function normalizeOptions(array $options)
     {

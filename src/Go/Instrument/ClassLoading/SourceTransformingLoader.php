@@ -80,6 +80,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
         if (empty(self::$filterId)) {
             throw new \RuntimeException('Stream filter was not registered');
         }
+
         return self::$filterId;
     }
 
@@ -101,6 +102,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
 
             $bucket = stream_bucket_new($this->stream, $metadata->source);
             stream_bucket_append($out, $bucket);
+
             return PSFS_PASS_ON;
         }
 
