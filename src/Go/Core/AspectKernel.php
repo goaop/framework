@@ -171,7 +171,7 @@ abstract class AspectKernel
      */
     protected function normalizeOptions(array $options)
     {
-        $options = array_replace_recursive($this->getDefaultOptions(), $options);
+        $options = array_replace($this->getDefaultOptions(), $options);
 
         $options['appDir']   = PathResolver::realpath($options['appDir']);
         $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
