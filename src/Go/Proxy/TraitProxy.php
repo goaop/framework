@@ -46,7 +46,7 @@ class TraitProxy extends ClassProxy
      */
     public function __construct($parent, array $traitAdvices)
     {
-        parent::__construct($parent, $parent->getShortName(), $traitAdvices);
+        parent::__construct($parent, $traitAdvices);
 
         foreach ($traitAdvices as $type => $typedAdvices) {
             switch ($type) {
