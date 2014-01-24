@@ -91,6 +91,7 @@ abstract class AspectKernel
     public function init(array $options = array())
     {
         $this->options = $this->normalizeOptions($options);
+        define('AOP_CACHE_DIR', $this->options['cacheDir']);
 
         /** @var $container AspectContainer */
         $container = $this->container = new $this->options['containerClass'];
