@@ -9,6 +9,7 @@
 namespace Go\Aop\Support;
 
 use Doctrine\Common\Annotations\Reader;
+use Go\Core\AspectKernel;
 use ReflectionMethod;
 
 /**
@@ -31,7 +32,7 @@ class AnnotatedReflectionMethod extends ReflectionMethod
      */
     public function getAnnotation($annotationName)
     {
-       return self::$annotationReader->getMethodAnnotation($this, $annotationName);
+       return self::getReader()->getMethodAnnotation($this, $annotationName);
     }
 
     /**
@@ -41,16 +42,21 @@ class AnnotatedReflectionMethod extends ReflectionMethod
      */
     public function getAnnotations()
     {
-        return self::$annotationReader->getMethodAnnotations($this);
+        return self::getReader()->getMethodAnnotations($this);
     }
 
     /**
-     * Injects an annotation reader
+     * Returns an annotation reader
      *
-     * @param Reader $reader
+     * @return Reader $reader
      */
-    public static function injectAnnotationReader(Reader $reader)
+    private static function getReader()
     {
-        self::$annotationReader = $reader;
+        if (!self::$annotationReader) {
+            // TODO: ugly global dependecy, decide how to inject it more friendly
+            self::$annotationReader = AspectKernel::getInstance()->getContainer()->get('aspect.annotation.reader');
+        };
+
+        return self::$annotationReader;
     }
 }

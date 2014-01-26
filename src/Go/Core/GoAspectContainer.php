@@ -81,8 +81,6 @@ class GoAspectContainer extends Container implements AspectContainer
                     $options['debug']
                 );
             }
-            // Direct injection for AnnotatedReflectionMethod
-            AnnotatedReflectionMethod::injectAnnotationReader($reader);
             return $reader;
         });
         $this->share('aspect.annotation.raw.reader', function () {
