@@ -2,8 +2,10 @@
 /**
  * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop;
@@ -12,7 +14,7 @@ namespace Go\Aop;
  * Tag interface for Advice. Implementations can be any type of advice, such as Interceptors.
  *
  * @author Rod Johnson
- * @author Lissachenko Alexander
+ * @author Lisachenko Alexander
  */
 interface Advice
 {
