@@ -8,6 +8,7 @@
 
 namespace Go\Core;
 
+use Doctrine\Common\Annotations\FileCacheReader;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
@@ -16,6 +17,7 @@ use Go\Aop;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutParser;
+use Go\Aop\Support\AnnotatedReflectionMethod;
 use Go\Instrument\RawAnnotationReader;
 
 use Doctrine\Common\Annotations\AnnotationReader;
@@ -60,8 +62,6 @@ class GoAspectContainer extends Container implements AspectContainer
 
             return $aspectLoader;
         });
-        // Kernel flag to enable support of function interception
-        $this->set('kernel.interceptFunctions', false);
 
         $this->share('aspect.advice_matcher', function ($container) {
             return new AdviceMatcher(
@@ -71,9 +71,17 @@ class GoAspectContainer extends Container implements AspectContainer
             );
         });
 
-        // TODO: use cached annotation reader
-        $this->share('aspect.annotation.reader', function () {
-            return new AnnotationReader();
+        $this->share('aspect.annotation.reader', function ($container) {
+            $options = $container->get('kernel.options');
+            $reader  = new AnnotationReader();
+            if (!empty($options['cacheDir'])) {
+                $reader  = new FileCacheReader(
+                    $reader,
+                    $options['cacheDir'] . DIRECTORY_SEPARATOR . '_annotations' . DIRECTORY_SEPARATOR,
+                    $options['debug']
+                );
+            }
+            return $reader;
         });
         $this->share('aspect.annotation.raw.reader', function () {
             return new RawAnnotationReader();

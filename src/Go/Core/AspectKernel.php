@@ -96,6 +96,7 @@ abstract class AspectKernel
         $container = $this->container = new $this->options['containerClass'];
         $container->set('kernel', $this);
         $container->set('kernel.interceptFunctions', $this->options['interceptFunctions']);
+        $container->set('kernel.options', $this->options);
 
         $sourceLoaderFilter = new SourceTransformingLoader();
         $sourceLoaderFilter->register();

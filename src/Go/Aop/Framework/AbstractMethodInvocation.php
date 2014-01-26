@@ -8,10 +8,9 @@
 
 namespace Go\Aop\Framework;
 
-use ReflectionMethod;
-
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Aop\Intercept\MethodInterceptor;
+use Go\Aop\Support\AnnotatedReflectionMethod;
+use ReflectionMethod;
 
 /**
  * Abstract method invocation implementation
@@ -54,7 +53,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     {
         parent::__construct($advices);
         $this->className        = $className;
-        $this->reflectionMethod = $method = new ReflectionMethod($this->className, $methodName);
+        $this->reflectionMethod = $method = new AnnotatedReflectionMethod($this->className, $methodName);
 
         // Give an access to call protected method
         if ($method->isProtected()) {
@@ -68,7 +67,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      * <p>This method is a friendly implementation of the
      * {@link Joinpoint::getStaticPart()} method (same result).
      *
-     * @return ReflectionMethod the method being called.
+     * @return AnnotatedReflectionMethod the method being called.
      */
     public function getMethod()
     {

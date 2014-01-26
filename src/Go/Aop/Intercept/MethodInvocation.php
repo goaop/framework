@@ -8,6 +8,7 @@
 
 namespace Go\Aop\Intercept;
 
+use Go\Aop\Support\AnnotatedReflectionMethod;
 use ReflectionMethod;
 
 /**
@@ -28,7 +29,7 @@ interface MethodInvocation extends Invocation
      * <p>This method is a friendly implementation of the
      * {@link Joinpoint::getStaticPart()} method (same result).
      *
-     * @return ReflectionMethod the method being called.
+     * @return ReflectionMethod|AnnotatedReflectionMethod the method being called.
      */
     public function getMethod();
 

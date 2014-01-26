@@ -16,8 +16,9 @@ class GoAspectContainerTest extends TestCase
 
     protected function setUp()
     {
-        //$this->markTestIncomplete("Temporary disabled");
         $this->container = new GoAspectContainer();
+        $this->container->set('kernel.options', array());
+        $this->container->set('kernel.interceptFunctions', false);
     }
 
     /**
