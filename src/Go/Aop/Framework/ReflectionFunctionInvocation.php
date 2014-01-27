@@ -53,6 +53,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
         if (isset($this->advices[$this->current])) {
             /** @var $currentInterceptor FunctionInterceptor */
             $currentInterceptor = $this->advices[$this->current++];
+
             return $currentInterceptor->invoke($this);
         }
 
@@ -123,6 +124,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
         if ($this->level) {
             list($this->arguments, $this->current) = array_pop($this->stackFrames);
         }
+
         return $result;
     }
 }

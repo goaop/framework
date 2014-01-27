@@ -38,27 +38,27 @@ class PointcutGrammar extends Grammar
 
         $this('Pointcut')
             ->is('Pointcut', '||', 'Pointcut')
-            ->call(function($first, $_, $second) {
+            ->call(function ($first, $_, $second) {
                 return new OrPointcut($first, $second);
             })
 
             ->is('Pointcut', '&&', 'Pointcut')
-            ->call(function($first, $_, $second) {
+            ->call(function ($first, $_, $second) {
                 return new AndPointcut($first, $second);
             })
 
             ->is('(', 'Pointcut', ')')
-            ->call(function($_, $pointcut) {
+            ->call(function ($_, $pointcut) {
                 return $pointcut;
             })
 
             ->is('!', 'Pointcut')
-            ->call(function($_, $first) {
+            ->call(function ($_, $first) {
                 return new NotPointcut($first);
             })
 
             ->is('cflowbelow', '(', 'Pointcut', ')')
-            ->call(function($_, $_, $pointcut) {
+            ->call(function ($_, $_, $pointcut) {
                 return new CFlowBelowMethodPointcut($pointcut);
             })
 
@@ -86,6 +86,7 @@ class PointcutGrammar extends Grammar
                 }
                 $pointcut = new SignatureMethodPointcut($methodNamePattern, $memberModifiers);
                 $pointcut->setClassFilter($classFilter);
+
                 return $pointcut;
             })
 
@@ -105,6 +106,7 @@ class PointcutGrammar extends Grammar
                 $nsFilter    = new SimpleNamespaceFilter($namespace);
                 $pointcut    = new FunctionPointcut($funcPattern);
                 $pointcut->setNamespaceFilter($nsFilter);
+
                 return $pointcut;
             })
 
@@ -120,6 +122,7 @@ class PointcutGrammar extends Grammar
             ) {
                 $pointcut = new SignaturePropertyPointcut($propertyNamePattern, $memberModifiers);
                 $pointcut->setClassFilter($classFilter);
+
                 return $pointcut;
             })
 
@@ -137,6 +140,7 @@ class PointcutGrammar extends Grammar
             ->call(function ($_, $_, $classFilter, $_) {
                 $pointcut = new TrueMethodPointcut();
                 $pointcut->setClassFilter($classFilter);
+
                 return $pointcut;
             })
 
@@ -144,6 +148,7 @@ class PointcutGrammar extends Grammar
             ->call(function ($_, $_, $classFilter, $_) {
                 $pointcut = new TruePointcut();
                 $pointcut->setClassFilter($classFilter);
+
                 return $pointcut;
             })
 
@@ -165,14 +170,14 @@ class PointcutGrammar extends Grammar
 
         $this('ClassFilter')
             ->is('NamespacePattern')
-            ->call(function($pattern) {
+            ->call(function ($pattern) {
                 return $pattern === '**'
                     ? TruePointFilter::getInstance()
                     : new SimpleClassFilter($pattern);
             })
 
             ->is('NamespacePattern', '+')
-            ->call(function($parentClassName, $_) {
+            ->call(function ($parentClassName, $_) {
                 return new InheritanceClassFilter($parentClassName);
             })
         ;
@@ -194,8 +199,9 @@ class PointcutGrammar extends Grammar
         // stable
         $this('MemberModifiers')
             ->is('*')
-            ->call(function() {
+            ->call(function () {
                 $matcher = new ModifierMatcherFilter();
+
                 return $matcher->orMatch(-1);
             })
             ->is('NonEmptyMemberModifiers');
@@ -203,17 +209,17 @@ class PointcutGrammar extends Grammar
         // stable
         $this('NonEmptyMemberModifiers')
             ->is('MemberModifier')
-            ->call(function($modifier) {
+            ->call(function ($modifier) {
                 return new ModifierMatcherFilter($modifier);
             })
 
             ->is('NonEmptyMemberModifiers','|','MemberModifier')
-            ->call(function(ModifierMatcherFilter $matcher, $_, $modifier) {
+            ->call(function (ModifierMatcherFilter $matcher, $_, $modifier) {
                 return $matcher->orMatch($modifier);
             })
 
             ->is('NonEmptyMemberModifiers', 'MemberModifier')
-            ->call(function(ModifierMatcherFilter $matcher, $modifier) {
+            ->call(function (ModifierMatcherFilter $matcher, $modifier) {
                 return $matcher->andMatch($modifier);
             });
 
@@ -222,7 +228,7 @@ class PointcutGrammar extends Grammar
         $this('MemberModifier')
             ->is('public')->call($converter)
             ->is('protected')->call($converter)
-            ->is('private')->call(function() {
+            ->is('private')->call(function () {
                 throw new \RuntimeException("Private modifier is not supported");
             })
             ->is('final')->call($converter);
@@ -247,6 +253,7 @@ class PointcutGrammar extends Grammar
                     $value .= $node->getValue();
                 }
             }
+
             return $value;
         };
     }
@@ -258,8 +265,9 @@ class PointcutGrammar extends Grammar
      */
     private function getModifierConverter()
     {
-        return function($node) {
+        return function ($node) {
             $name = strtoupper($node->getValue());
+
             return constant("ReflectionMethod::IS_{$name}");
         };
     }

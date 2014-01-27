@@ -16,7 +16,6 @@ use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Intercept\MethodInterceptor;
 
-
 /**
  * @package go
  */
@@ -32,6 +31,7 @@ class MethodAroundInterceptor extends BaseInterceptor implements MethodIntercept
     final public function invoke(MethodInvocation $invocation)
     {
         $adviceMethod = $this->adviceMethod;
+
         return $adviceMethod($invocation);
     }
 }

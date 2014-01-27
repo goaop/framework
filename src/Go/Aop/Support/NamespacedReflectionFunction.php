@@ -44,6 +44,7 @@ class NamespacedReflectionFunction extends ReflectionFunction
         if ($this->namespace) {
             return $this->namespace;
         }
+
         return parent::getNamespaceName();
     }
 }

@@ -63,6 +63,7 @@ class NotPointcut implements Pointcut
         if (!$isMatchesPoint) {
             return true;
         }
+
         return false;
     }
 

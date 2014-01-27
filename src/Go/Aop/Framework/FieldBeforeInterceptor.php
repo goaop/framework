@@ -14,7 +14,6 @@ use Go\Aop\AdviceBefore;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldInterceptor;
 
-
 /**
  * @package go
  */

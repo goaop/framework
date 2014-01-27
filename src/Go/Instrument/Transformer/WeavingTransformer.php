@@ -194,6 +194,7 @@ class WeavingTransformer extends BaseSourceTransformer
             // Remove final from class, child will be final instead
             $source = str_replace("final {$type}", $type, $source);
         }
+
         return $source;
     }
 
@@ -223,6 +224,7 @@ class WeavingTransformer extends BaseSourceTransformer
                 return false;
             }
         }
+
         return true;
     }
 
@@ -285,6 +287,7 @@ class WeavingTransformer extends BaseSourceTransformer
         }
         $body .= $child;
         file_put_contents($proxyFileName, $body);
+
         return 'include_once ' . var_export($proxyFileName, true) . ';' . PHP_EOL;
     }
 }

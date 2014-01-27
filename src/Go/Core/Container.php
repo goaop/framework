@@ -104,6 +104,7 @@ class Container
                 $result[$id] = $this->get($id);
             }
         }
+
         return $result;
     }
 }

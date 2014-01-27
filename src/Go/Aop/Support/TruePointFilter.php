@@ -36,6 +36,7 @@ class TruePointFilter implements PointFilter
         if (!$instance) {
             $instance = new self();
         }
+
         return $instance;
     }
 

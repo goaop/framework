@@ -64,7 +64,7 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
             throw new \InvalidArgumentException("Only trait can be used as implementation");
         }
 
-        foreach($refInterface->getMethods() as $interfaceMethod) {
+        foreach ($refInterface->getMethods() as $interfaceMethod) {
             if (!$refImplementation->hasMethod($interfaceMethod->name)) {
                 throw new \DomainException("Implementation requires method {$interfaceMethod->name}");
             }
@@ -123,6 +123,7 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     {
         $adviceClass      = get_class($this->advice);
         $interfaceClasses = join(',', $this->advice->getInterfaces());
+
         return get_called_class() . ": advice [{$adviceClass}]; interfaces [{$interfaceClasses}] ";
     }
 }

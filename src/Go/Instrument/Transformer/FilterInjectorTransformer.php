@@ -129,6 +129,7 @@ class FilterInjectorTransformer implements SourceTransformer
         if (!file_exists($newResource)) {
             file_get_contents(self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource);
         }
+
         return $newResource;
     }
 
@@ -153,7 +154,7 @@ class FilterInjectorTransformer implements SourceTransformer
 
         $transformedSource = '';
         $isWaitingEnd      = false;
-        
+
         $insideBracesCount = 0;
         $isBracesFinished  = false;
         $isTernaryOperator = false;

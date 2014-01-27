@@ -132,6 +132,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         if (isset($this->advices[$this->current])) {
             /** @var $currentInterceptor FieldInterceptor */
             $currentInterceptor = $this->advices[$this->current++];
+
             return $currentInterceptor->{self::$interceptorMethodMapping[$this->accessType]}($this);
         }
 
@@ -173,6 +174,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         if ($this->level) {
             list($this->instance, $this->accessType, $this->value, $this->newValue) = array_pop($this->stackFrames);
         }
+
         return $result;
 
     }

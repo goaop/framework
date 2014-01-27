@@ -16,7 +16,6 @@ use Go\Aop\AdviceAfter;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Intercept\MethodInterceptor;
 
-
 /**
  * @package go
  */
@@ -40,6 +39,7 @@ class MethodAfterThrowingInterceptor extends BaseInterceptor implements MethodIn
 
             throw $invocationException;
         }
+
         return $result;
     }
 }

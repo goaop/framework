@@ -14,7 +14,6 @@ use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldInterceptor;
 
-
 /**
  * @package go
  */
@@ -34,6 +33,7 @@ class FieldAroundInterceptor extends BaseInterceptor implements FieldInterceptor
     public function get(FieldAccess $fieldRead)
     {
         $adviceMethod = $this->adviceMethod;
+
         return $adviceMethod($fieldRead);
     }
 
@@ -51,6 +51,7 @@ class FieldAroundInterceptor extends BaseInterceptor implements FieldInterceptor
     public function set(FieldAccess $fieldWrite)
     {
         $adviceMethod = $this->adviceMethod;
+
         return $adviceMethod($fieldWrite);
     }
 }

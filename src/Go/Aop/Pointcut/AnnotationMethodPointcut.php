@@ -65,6 +65,7 @@ class AnnotationMethodPointcut extends StaticMethodMatcherPointcut
             $this->annotationReader->setImports($imports);
         }
         $annotation = $this->annotationReader->getMethodAnnotation($method, $this->annotationName);
+
         return (bool) $annotation;
     }
 }

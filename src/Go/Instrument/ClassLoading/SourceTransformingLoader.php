@@ -31,13 +31,13 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      */
     const FILTER_IDENTIFIER = 'go.source.transforming.loader';
 
-    /**	
+    /**
      * String buffer
      *
      * @var string
      */
     protected $data = '';
-    
+
     /**
      * Filter bucket resource
      *
@@ -89,6 +89,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
         if (empty(self::$filterId)) {
             throw new \RuntimeException('Stream filter was not registered');
         }
+
         return self::$filterId;
     }
 
@@ -116,6 +117,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
             if (!empty($this->bucket->data)) {
                 stream_bucket_append($out, $this->bucket);
             }
+
             return PSFS_PASS_ON;
         }
 

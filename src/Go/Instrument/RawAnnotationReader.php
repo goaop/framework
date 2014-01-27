@@ -83,6 +83,7 @@ class RawAnnotationReader
     public function getClassAnnotations($class)
     {
         $this->parser->setTarget(Target::TARGET_CLASS);
+
         return $this->parser->parse($class->getDocComment(), 'class '.$class->getName());
     }
 
@@ -96,6 +97,7 @@ class RawAnnotationReader
     public function getMethodAnnotations($method)
     {
         $this->parser->setTarget(Target::TARGET_METHOD);
+
         return $this->parser->parse($method->getDocComment(), 'method '.$method->getDeclaringClass()->name.'::'.$method->getName().'()');
     }
 
@@ -109,6 +111,7 @@ class RawAnnotationReader
     public function getPropertyAnnotations($property)
     {
         $this->parser->setTarget(Target::TARGET_PROPERTY);
+
         return $this->parser->parse($property->getDocComment(), 'property '.$property->getDeclaringClass()->name.'::$'.$property->getName());
     }
 

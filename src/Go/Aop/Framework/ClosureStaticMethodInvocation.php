@@ -52,6 +52,7 @@ class ClosureStaticMethodInvocation extends AbstractMethodInvocation
         if (isset($this->advices[$this->current])) {
             /** @var $currentInterceptor MethodInterceptor */
             $currentInterceptor = $this->advices[$this->current++];
+
             return $currentInterceptor->invoke($this);
         }
 
