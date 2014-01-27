@@ -43,6 +43,7 @@ class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
         if (isset($this->advices[$this->current])) {
             /** @var $currentInterceptor MethodInterceptor */
             $currentInterceptor = $this->advices[$this->current++];
+
             return $currentInterceptor->invoke($this);
         }
 
@@ -60,7 +61,7 @@ class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
         $closureToCall = $this->closureToCall;
         $args          = $this->arguments;
 
-        switch(count($args)) {
+        switch (count($args)) {
             case 0:
                 return $closureToCall();
             case 1:

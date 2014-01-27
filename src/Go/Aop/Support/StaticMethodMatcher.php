@@ -25,7 +25,7 @@ abstract class StaticMethodMatcher implements MethodMatcher
      *
      * @return bool whether or not a runtime match via the 3-arg matches() method is required if static matching passed
      */
-    public final function isRuntime()
+    final public function isRuntime()
     {
         return false;
     }
@@ -39,6 +39,5 @@ abstract class StaticMethodMatcher implements MethodMatcher
     {
         return self::KIND_METHOD;
     }
-
 
 }

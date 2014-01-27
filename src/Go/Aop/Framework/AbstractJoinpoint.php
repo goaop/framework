@@ -16,7 +16,6 @@ use Go\Aop\AdviceBefore;
 use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\Joinpoint;
 
-
 /**
  *  Abstract joinpoint for framework
  *
@@ -74,10 +73,10 @@ abstract class AbstractJoinpoint implements Joinpoint
      * @param array|Advice[] $advices
      * @return array|Advice[] Sorted list of advices
      */
-    static public function sortAdvices(array $advices)
+    public static function sortAdvices(array $advices)
     {
         $sortedAdvices = $advices;
-        usort($sortedAdvices, function(Advice $first, Advice $second) {
+        usort($sortedAdvices, function (Advice $first, Advice $second) {
             switch (true) {
                 case $first instanceof AdviceBefore && !($second instanceof AdviceBefore):
                     return -1;
@@ -95,6 +94,7 @@ abstract class AbstractJoinpoint implements Joinpoint
                     return 0;
             }
         });
+
         return $sortedAdvices;
     }
 }

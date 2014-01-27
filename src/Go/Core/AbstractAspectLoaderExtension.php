@@ -67,6 +67,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     protected function parsePointcut(Aspect $aspect, $reflection, $metaInformation)
     {
         $stream = $this->makeLexicalAnalyze($aspect, $reflection, $metaInformation);
+
         return $this->parseTokenStream($reflection, $metaInformation, $stream);
     }
 
@@ -100,6 +101,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             );
             throw new \UnexpectedValueException($message, 0, $e);
         }
+
         return $stream;
     }
 
@@ -137,6 +139,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             );
             throw new \UnexpectedValueException($message, 0, $e);
         }
+
         return $pointcut;
     }
 }

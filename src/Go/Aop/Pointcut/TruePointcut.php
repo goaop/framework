@@ -49,6 +49,7 @@ class TruePointcut implements Pointcut
         if (!$this->classFilter) {
             $this->classFilter = TruePointFilter::getInstance();
         }
+
         return $this->classFilter;
     }
 

@@ -104,6 +104,7 @@ class AndPointcut implements Pointcut
         $preFilter = method_exists($point, 'getDeclaringClass')
             ? $point->getDeclaringClass()
             : $point->getNamespaceName();
+
         return $pointcut->matches($point)
             && $pointcut->getClassFilter()->matches($preFilter);
     }

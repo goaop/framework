@@ -51,6 +51,7 @@ abstract class DynamicMethodMatcherPointcut extends DynamicMethodMatcher impleme
         if (!$this->classFilter) {
             $this->classFilter = TruePointFilter::getInstance();
         }
+
         return $this->classFilter;
     }
 

@@ -61,6 +61,7 @@ class ModifierMatcherFilter implements PointFilter
     public function matches($point)
     {
         $modifiers = $point->getModifiers();
+
         return !($this->notMask & $modifiers) &&
             (($this->andMask === ($this->andMask & $modifiers)) || ($this->orMask & $modifiers));
     }
@@ -74,6 +75,7 @@ class ModifierMatcherFilter implements PointFilter
     public function andMatch($bitMask)
     {
         $this->andMask |= $bitMask;
+
         return $this;
     }
 
@@ -86,6 +88,7 @@ class ModifierMatcherFilter implements PointFilter
     public function orMatch($bitMask)
     {
         $this->orMask |= $bitMask;
+
         return $this;
     }
 
@@ -98,6 +101,7 @@ class ModifierMatcherFilter implements PointFilter
     public function notMatch($bitMask)
     {
         $this->notMask |= $bitMask;
+
         return $this;
     }
 

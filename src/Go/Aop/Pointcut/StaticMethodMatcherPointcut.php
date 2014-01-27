@@ -50,6 +50,7 @@ abstract class StaticMethodMatcherPointcut extends StaticMethodMatcher implement
         if (!$this->classFilter) {
             $this->classFilter = TruePointFilter::getInstance();
         }
+
         return $this->classFilter;
     }
 }

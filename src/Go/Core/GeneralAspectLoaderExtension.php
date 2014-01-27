@@ -20,7 +20,6 @@ use Go\Lang\Annotation;
 use ReflectionMethod;
 use ReflectionProperty;
 
-
 /**
  * General aspect loader add common support for general advices, declared as annotations
  */

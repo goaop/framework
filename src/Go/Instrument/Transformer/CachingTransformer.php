@@ -11,7 +11,6 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectKernel;
-use Go\Core\AspectContainer;
 
 /**
  * Take transformed source from the cache
@@ -85,6 +84,7 @@ class CachingTransformer extends BaseSourceTransformer
         // Do not create a cache
         if (!$this->cachePath) {
             $this->processTransformers($metadata);
+
             return;
         }
 
@@ -102,6 +102,7 @@ class CachingTransformer extends BaseSourceTransformer
             }
             $this->processTransformers($metadata);
             file_put_contents($cacheUri, $metadata->source);
+
             return;
         }
         $metadata->source = file_get_contents($cacheUri);

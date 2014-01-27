@@ -75,6 +75,7 @@ class AnnotationPropertyPointcut implements Pointcut
             $this->annotationReader->setImports($imports);
         }
         $annotation = $this->annotationReader->getPropertyAnnotation($property, $this->annotationName);
+
         return (bool) $annotation;
     }
 
@@ -108,6 +109,7 @@ class AnnotationPropertyPointcut implements Pointcut
         if (!$this->classFilter) {
             $this->classFilter = TruePointFilter::getInstance();
         }
+
         return $this->classFilter;
     }
 }

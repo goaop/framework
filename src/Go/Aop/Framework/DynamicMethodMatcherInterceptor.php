@@ -14,7 +14,6 @@ use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Intercept\MethodInterceptor;
 use Go\Aop\Support\DynamicMethodMatcher;
 
-
 /**
  * Dynamic method matcher combines a pointcut and interceptor.
  *

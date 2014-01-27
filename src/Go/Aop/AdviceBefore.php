@@ -10,8 +10,6 @@
 
 namespace Go\Aop;
 
-use Go\Aop\Advice;
-
 /**
  * Tag class for all before advices either for field access or method calling
  * @author Lisachenko Alexander

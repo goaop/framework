@@ -16,7 +16,6 @@ use Go\Aop\AdviceAfter;
 use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\ConstructorInterceptor;
 
-
 /**
  * @package go
  */
@@ -50,6 +49,7 @@ class ConstructorAfterInterceptor extends BaseInterceptor implements Constructor
         if (isset($invocationException)) {
             throw $invocationException;
         }
+
         return $result;
     }
 }

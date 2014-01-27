@@ -67,8 +67,9 @@ class AopComposerLoader
                 $originalLoader = $loader[0];
 
                 // Configure library loader for doctrine annotation loader
-                AnnotationRegistry::registerLoader(function($class) use ($originalLoader) {
+                AnnotationRegistry::registerLoader(function ($class) use ($originalLoader) {
                     $originalLoader->loadClass($class);
+
                     return class_exists($class, false);
                 });
                 $loader[0] = new AopComposerLoader($loader[0]);
@@ -99,12 +100,12 @@ class AopComposerLoader
             include ($isInternal ? $file : FilterInjectorTransformer::rewrite($file));
         }
     }
-    
+
     /**
      * {@inheritDoc}
-     */ 
+     */
     public function findFile($class)
     {
         return $this->original->findFile($class);
-    }    
+    }
 }

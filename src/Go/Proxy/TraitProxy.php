@@ -15,10 +15,8 @@ use ReflectionMethod as Method;
 use ReflectionParameter as Parameter;
 
 use Go\Aop\Advice;
-use Go\Aop\IntroductionInfo;
 
 use Go\Core\AspectContainer;
-use Go\Core\AspectKernel;
 
 use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionMethod as ParsedMethod;
@@ -84,7 +82,6 @@ class TraitProxy extends ClassProxy
         self::$traitAdvices[$className] = $traitAdvices;
     }
 
-
     public static function getJoinPoint($traitName, $className, $joinPointType, $pointName)
     {
         if (!isset(self::$invocationClassMap)) {
@@ -93,9 +90,9 @@ class TraitProxy extends ClassProxy
 
         $advices   = self::$traitAdvices[$traitName][$joinPointType][$pointName];
         $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $advices);
+
         return $joinpoint;
     }
-
 
     /**
      * Creates definition for trait method body
@@ -114,10 +111,12 @@ class TraitProxy extends ClassProxy
         $args = join(', ', array_map(function ($param) {
             /** @var $param Parameter|ParsedParameter */
             $byReference = $param->isPassedByReference() ? '&' : '';
+
             return $byReference . '$' . $param->name;
         }, $method->getParameters()));
 
         $args = $scope . ($args ? ", array($args)" : '');
+
         return <<<BODY
 static \$__joinPoint = null;
 if (!\$__joinPoint) {
@@ -158,6 +157,7 @@ BODY;
         foreach (array_keys($this->methodsCode) as $methodName) {
             $aliasesLines[] = "{$this->parentClassName}::{$methodName} as protected {$methodName}➩;";
         }
+
         return "{\n " . $this->indent(join("\n", $aliasesLines)) . "\n}";
     }
 }

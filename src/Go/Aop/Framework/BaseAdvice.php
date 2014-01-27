@@ -33,7 +33,7 @@ use Go\Core\AspectKernel;
  * before main invocation.
  *  Framework model an advice as an PHP-closure interceptor, maintaining a
  * chain of interceptors "around" the joinpoint:
- *   function(Joinpoint $joinPoint) {
+ *   function (Joinpoint $joinPoint) {
  *      echo 'Before action';
  *      // call chain here with Joinpoint->proceed() method
  *      $result = $joinPoint->proceed();
@@ -92,6 +92,7 @@ abstract class BaseAdvice implements OrderedAdvice
             $method = $vars['refMethod'];
             $aspect = $vars['aspect'];
         }
+
         return array(
             'scope'  => $scope,
             'method' => $method->name,
@@ -187,6 +188,7 @@ abstract class BaseAdvice implements OrderedAdvice
             default:
                 return function (Joinpoint $joinpoint) use ($aspect, $adviceCallback, $scope) {
                     $callback = $adviceCallback->bindTo($aspect, $scope);
+
                     return $callback($joinpoint);
                 };
         }

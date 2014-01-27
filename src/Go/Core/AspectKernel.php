@@ -26,7 +26,6 @@ use TokenReflection;
  */
 define('IS_MODERN_PHP', version_compare(PHP_VERSION, '5.4.0') >= 0);
 
-
 /**
  * Abstract aspect kernel is used to prepare an application to work with aspects.
  */
@@ -81,6 +80,7 @@ abstract class AspectKernel
         if (!self::$instance) {
             self::$instance = new static();
         }
+
         return self::$instance;
     }
 

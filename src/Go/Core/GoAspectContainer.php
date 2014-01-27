@@ -12,18 +12,14 @@ namespace Go\Core;
 
 use Doctrine\Common\Annotations\FileCacheReader;
 use ReflectionClass;
-use ReflectionMethod;
-use ReflectionProperty;
 
 use Go\Aop;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutParser;
-use Go\Aop\Support\AnnotatedReflectionMethod;
 use Go\Instrument\RawAnnotationReader;
 
 use Doctrine\Common\Annotations\AnnotationReader;
-use TokenReflection\ReflectionClass as ParsedReflectionClass;
 
 /**
  * Aspect container contains list of all pointcuts and advisors
@@ -83,6 +79,7 @@ class GoAspectContainer extends Container implements AspectContainer
                     $options['debug']
                 );
             }
+
             return $reader;
         });
         $this->share('aspect.annotation.raw.reader', function () {
@@ -196,6 +193,7 @@ class GoAspectContainer extends Container implements AspectContainer
         if (!$this->maxTimestamp && $this->resources) {
             $this->maxTimestamp = max(array_map('filemtime', $this->resources));
         }
+
         return $this->maxTimestamp < $timestamp;
     }
 }

@@ -10,9 +10,6 @@
 
 namespace Go\Aop\Support;
 
-use Reflector;
-use ReflectionMethod;
-
 use Go\Aop\MethodMatcher;
 
 /**
@@ -28,7 +25,7 @@ abstract class DynamicMethodMatcher implements MethodMatcher
      *
      * @return bool whether or not a runtime match via the 3-arg matches() method is required if static matching passed
      */
-    public final function isRuntime()
+    final public function isRuntime()
     {
         return true;
     }

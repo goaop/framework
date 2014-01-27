@@ -25,6 +25,7 @@ class CleanableMemory extends Memory
     public function addFile(StreamBase $tokenStream, ReflectionFile $file)
     {
         $this->clearTokenCache();
+
         return parent::addFile($tokenStream, $file);
     }
 

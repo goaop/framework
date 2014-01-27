@@ -23,7 +23,7 @@ namespace Go\Aop\Intercept;
  *   protected $instance=null;
  *
  *   public function construct(ConstructorInvocation $i) {
- *     if($this->instance==null) {
+ *     if ($this->instance==null) {
  *       return $this->instance=$i->proceed();
  *     } else {
  *       throw new \Exception("singleton does not allow multiple instance");

@@ -116,6 +116,7 @@ abstract class AbstractProxy
     public function setParentName($newParentName)
     {
         $this->parentClassName = $newParentName;
+
         return $this;
     }
 
@@ -130,6 +131,7 @@ abstract class AbstractProxy
     public function override($methodName, $body)
     {
         $this->methodsCode[$methodName] = $this->getOverriddenMethod($this->class->getMethod($methodName), $body);
+
         return $this;
     }
 
@@ -152,6 +154,7 @@ abstract class AbstractProxy
             $parameters,
             $this->indent($body)
         );
+
         return $this;
     }
 
@@ -211,6 +214,7 @@ abstract class AbstractProxy
             $propName,
             is_string($defaultText) ? " = $defaultText" : ''
         );
+
         return $this;
     }
 
@@ -239,6 +243,7 @@ abstract class AbstractProxy
             join(', ', $this->getParameters($method->getParameters())),
             $this->indent($body)
         );
+
         return $code;
     }
 
@@ -255,6 +260,7 @@ abstract class AbstractProxy
         $lines = array_map(function ($line) use ($pad) {
             return $pad . $line;
         }, explode("\n", $text));
+
         return join("\n", $lines);
     }
 
@@ -271,6 +277,7 @@ abstract class AbstractProxy
         foreach ($parameters as $parameter) {
             $parameterDefinitions[] = $this->getParameterCode($parameter);
         }
+
         return $parameterDefinitions;
     }
 
@@ -306,6 +313,7 @@ abstract class AbstractProxy
             $parameter->name,
             $isDefaultValueAvailable ? (" = " . $defaultValue) : ''
         );
+
         return $code;
     }
 }

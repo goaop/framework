@@ -41,7 +41,6 @@ EOT
             );
     }
 
-
     /**
      * {@inheritDoc}
      */
@@ -80,13 +79,13 @@ EOT
         $output->writeln("Total <info>{$totalFiles}</info> files to process.");
         $iterator->rewind();
 
-        set_error_handler(function ($errno, $errstr, $errfile, $errline ) {
+        set_error_handler(function ($errno, $errstr, $errfile, $errline) {
             throw new \ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
 
         $index  = 0;
         $errors = array();
-        foreach($iterator as $file) {
+        foreach ($iterator as $file) {
             if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
                 $output->writeln("Processing file <info>{$file->getRealPath()}</info>");
             }
@@ -110,7 +109,7 @@ EOT
         restore_error_handler();
 
         if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERY_VERBOSE) {
-            foreach($errors as $file=>$error) {
+            foreach ($errors as $file=>$error) {
                 $message = "File {$file} is not processed correctly due to exception: {$error->getMessage()}";
                 $output->writeln($message);
             }

@@ -78,6 +78,7 @@ class BaseInterceptor extends BaseAdvice implements Interceptor, Serializable
     {
         $vars = array_filter(get_object_vars($this));
         $vars['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
+
         return serialize($vars);
     }
 
