@@ -35,6 +35,11 @@ class PathResolver
         $components = explode('://', $somePath, 2);
         list ($pathScheme, $path) = isset($components[1]) ? $components : array(null, $components[0]);
 
+        // Optimization to bypass complex logic for simple paths (eg. not in phar archives)
+        if (!$pathScheme) {
+            return $shouldCheckExistence ? stream_resolve_include_path($somePath) : realpath($somePath);
+        }
+
         $isRelative = !$pathScheme && ($path[0] !== '/') && ($path[1] !== ':');
         if ($isRelative) {
             $path = getcwd() . DIRECTORY_SEPARATOR . $path;
