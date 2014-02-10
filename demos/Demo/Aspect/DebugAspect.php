@@ -111,6 +111,7 @@ class DebugAspect implements Aspect
         }
 
         echo "Take ", sprintf("%0.3f", (microtime(true) - $time) * 1e3), "ms to call method", PHP_EOL;
+
         return $memoryCache[$key];
     }
 

@@ -26,6 +26,7 @@ class FluentInterfaceAspect implements Aspect
     protected function aroundMethodExecution(MethodInvocation $invocation)
     {
         $result = $invocation->proceed();
+
         return $result!==null ? $result : $invocation->getThis();
     }
 }
