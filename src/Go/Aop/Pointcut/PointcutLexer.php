@@ -30,10 +30,9 @@ class PointcutLexer extends SimpleLexer
         $this->token('within');
         $this->token('class');
         $this->token('access');
-        $this->token('@access');
         $this->token('cflowbelow');
         $this->token('function');
-        $this->token('@annotation');
+        $this->token('annotation');
 
         // Parenthesis
         $this->token('(');
@@ -55,6 +54,8 @@ class PointcutLexer extends SimpleLexer
         $this->token('&&');
         $this->token('|');
         $this->token('||');
+
+        $this->token('Annotation', '@');
 
         // Regex for class name
         $this->regex('NamePart', '/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/');
