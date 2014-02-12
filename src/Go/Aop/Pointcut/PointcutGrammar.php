@@ -11,6 +11,7 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
+use Go\Aop\Support\AnnotationClassFilter;
 use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
 use Go\Aop\Support\SimpleNamespaceFilter;
@@ -139,6 +140,15 @@ class PointcutGrammar extends Grammar
             ->is('within', '(', 'ClassFilter', ')')
             ->call(function ($_, $_, $classFilter, $_) {
                 $pointcut = new TrueMethodPointcut();
+                $pointcut->setClassFilter($classFilter);
+
+                return $pointcut;
+            })
+
+            ->is('Annotation', 'within', '(', 'NamespacePattern', ')')
+            ->call(function ($_, $_, $_, $annotationClassName, $_) use ($annotationReader) {
+                $pointcut    = new TrueMethodPointcut();
+                $classFilter = new AnnotationClassFilter($annotationReader, $annotationClassName);
                 $pointcut->setClassFilter($classFilter);
 
                 return $pointcut;
