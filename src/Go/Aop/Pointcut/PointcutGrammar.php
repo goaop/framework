@@ -127,13 +127,13 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
-            ->is('@access', '(', 'NamespacePattern', ')')
-            ->call(function ($_, $_, $annotationClassName, $_) use ($annotationReader) {
+            ->is('Annotation', 'access', '(', 'NamespacePattern', ')')
+            ->call(function ($_, $_, $_, $annotationClassName, $_) use ($annotationReader) {
                 return new AnnotationPropertyPointcut($annotationReader, $annotationClassName);
             })
 
-            ->is('@annotation', '(', 'NamespacePattern', ')')
-            ->call(function ($_, $_, $annotationClassName, $_) use ($annotationReader) {
+            ->is('Annotation', 'annotation', '(', 'NamespacePattern', ')')
+            ->call(function ($_, $_, $_, $annotationClassName, $_) use ($annotationReader) {
                 return new AnnotationMethodPointcut($annotationReader, $annotationClassName);
             })
 

@@ -30,10 +30,9 @@ class PointcutLexer extends SimpleLexer
         $this->token('within');
         $this->token('class');
         $this->token('access');
-        $this->token('@access');
         $this->token('cflowbelow');
         $this->token('function');
-        $this->token('@annotation');
+        $this->token('annotation');
 
         // Parenthesis
         $this->token('(');
