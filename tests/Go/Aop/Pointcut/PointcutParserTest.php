@@ -77,6 +77,8 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
             array('within(Go\Aspects\Blog\Package\DemoClass)'),
             // This will match all the methods which are in classes which implement DemoInterface.
             array('within(DemoInterface+)'),
+            // This will match all the methods in the class with specific annotation.
+            array('@within(First\Second\Annotation\Class)'),
 
             // Access pointcuts
             array('access(* Example\Aspect\*->property*)'),
