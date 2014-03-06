@@ -22,4 +22,4 @@ AwesomeAspectKernel::getInstance()->init(array(
     'interceptFunctions' => true, // Enable support for function interception (Since 0.4.0)
 ));
 
-AnnotationRegistry::registerFile(__DIR__ . './Demo/Annotation/Cacheable.php');
+AnnotationRegistry::registerFile(__DIR__ . '/Demo/Annotation/Cacheable.php');

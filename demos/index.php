@@ -8,7 +8,7 @@
  * with this source code in the file LICENSE.
  */
 
-include __DIR__ . (isset($_GET['original']) ? './autoload.php' : './autoload_aspect.php');
+include __DIR__ . (isset($_GET['original']) ? '/autoload.php' : '/autoload_aspect.php');
 
 $example = new Demo\Example\General('test');
 $class   = new ReflectionObject($example);
