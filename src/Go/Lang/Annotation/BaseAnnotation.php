@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Lang\Annotation;
@@ -25,7 +27,7 @@ abstract class BaseAnnotation
      *
      * @param array $data Key-value for properties to be defined in this class
      */
-    public final function __construct(array $data)
+    final public function __construct(array $data)
     {
         foreach ($data as $key => $value) {
             $this->$key = $value;

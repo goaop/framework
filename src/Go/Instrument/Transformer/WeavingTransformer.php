@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Instrument\Transformer;
@@ -192,6 +194,7 @@ class WeavingTransformer extends BaseSourceTransformer
             // Remove final from class, child will be final instead
             $source = str_replace("final {$type}", $type, $source);
         }
+
         return $source;
     }
 
@@ -221,6 +224,7 @@ class WeavingTransformer extends BaseSourceTransformer
                 return false;
             }
         }
+
         return true;
     }
 
@@ -286,6 +290,7 @@ class WeavingTransformer extends BaseSourceTransformer
         }
         $body .= $child;
         file_put_contents($proxyFileName, $body);
+        
         return 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
     }
 }

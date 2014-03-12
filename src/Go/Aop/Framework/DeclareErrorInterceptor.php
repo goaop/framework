@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2013, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Framework;
@@ -56,6 +58,7 @@ class DeclareErrorInterceptor extends BaseInterceptor implements MethodIntercept
     {
         $vars = array_filter(get_object_vars($this));
         unset($vars['adviceMethod']);
+
         return serialize($vars);
     }
 
@@ -93,6 +96,7 @@ class DeclareErrorInterceptor extends BaseInterceptor implements MethodIntercept
                 trigger_error($message, $level);
             };
         }
+
         return $adviceMethod;
     }
 
@@ -113,6 +117,7 @@ class DeclareErrorInterceptor extends BaseInterceptor implements MethodIntercept
             $this->message,
             $this->level
         );
+
         return $invocation->proceed();
     }
 }

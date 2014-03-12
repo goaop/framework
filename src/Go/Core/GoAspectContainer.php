@@ -1,16 +1,17 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Core;
 
+use Doctrine\Common\Annotations\FileCacheReader;
 use ReflectionClass;
-use ReflectionMethod;
-use ReflectionProperty;
 
 use Go\Aop;
 use Go\Aop\Pointcut\PointcutLexer;
@@ -19,7 +20,6 @@ use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\RawAnnotationReader;
 
 use Doctrine\Common\Annotations\AnnotationReader;
-use TokenReflection\ReflectionClass as ParsedReflectionClass;
 
 /**
  * Aspect container contains list of all pointcuts and advisors
@@ -60,8 +60,6 @@ class GoAspectContainer extends Container implements AspectContainer
 
             return $aspectLoader;
         });
-        // Kernel flag to enable support of function interception
-        $this->set('kernel.interceptFunctions', false);
 
         $this->share('aspect.advice_matcher', function ($container) {
             return new AdviceMatcher(
@@ -71,9 +69,18 @@ class GoAspectContainer extends Container implements AspectContainer
             );
         });
 
-        // TODO: use cached annotation reader
-        $this->share('aspect.annotation.reader', function () {
-            return new AnnotationReader();
+        $this->share('aspect.annotation.reader', function ($container) {
+            $options = $container->get('kernel.options');
+            $reader  = new AnnotationReader();
+            if (!empty($options['cacheDir'])) {
+                $reader  = new FileCacheReader(
+                    $reader,
+                    $options['cacheDir'] . DIRECTORY_SEPARATOR . '_annotations' . DIRECTORY_SEPARATOR,
+                    $options['debug']
+                );
+            }
+
+            return $reader;
         });
         $this->share('aspect.annotation.raw.reader', function () {
             return new RawAnnotationReader();

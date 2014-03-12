@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Intercept;
@@ -21,7 +23,7 @@ namespace Go\Aop\Intercept;
  *   protected $instance=null;
  *
  *   public function construct(ConstructorInvocation $i) {
- *     if($this->instance==null) {
+ *     if ($this->instance==null) {
  *       return $this->instance=$i->proceed();
  *     } else {
  *       throw new \Exception("singleton does not allow multiple instance");

@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Proxy;
@@ -24,7 +26,6 @@ use Go\Aop\Framework\ClosureStaticMethodInvocation;
 use Go\Aop\Framework\ClosureDynamicMethodInvocation;
 
 use Go\Core\AspectContainer;
-use Go\Core\AspectKernel;
 
 use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionMethod as ParsedMethod;
@@ -175,6 +176,7 @@ class ClassProxy extends AbstractProxy
                 $joinPoints["$joinPointType:$joinPointName"] = $joinpoint;
             }
         }
+
         return $joinPoints;
     }
 
@@ -221,6 +223,7 @@ class ClassProxy extends AbstractProxy
         $args = join(', ', array_map(function ($param) {
             /** @var $param Parameter|ParsedParameter */
             $byReference = $param->isPassedByReference() ? '&' : '';
+
             return $byReference . '$' . $param->name;
         }, $method->getParameters()));
 
@@ -238,6 +241,7 @@ class ClassProxy extends AbstractProxy
         }
 
         $body .= "return self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($scope);";
+
         return $body;
     }
 
@@ -327,6 +331,7 @@ if (array_key_exists($name, $this->__properties)) {
     return parent::__get($name);
 } else {
     trigger_error("Trying to access undeclared property {$name}");
+
     return null;
 }
 GETTER;
@@ -380,6 +385,7 @@ SETTER;
         } else {
             $parentCall = '';
         }
+
         return <<<CTOR
 \$this->__properties = array(
 $assocProperties

@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2013, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Framework;
@@ -51,6 +53,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
         if (isset($this->advices[$this->current])) {
             /** @var $currentInterceptor FunctionInterceptor */
             $currentInterceptor = $this->advices[$this->current++];
+
             return $currentInterceptor->invoke($this);
         }
 
@@ -121,6 +124,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
         if ($this->level) {
             list($this->arguments, $this->current) = array_pop($this->stackFrames);
         }
+
         return $result;
     }
 }

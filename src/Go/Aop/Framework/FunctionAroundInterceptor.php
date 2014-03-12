@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2013, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Framework;
@@ -13,7 +15,6 @@ use Exception;
 use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\FunctionInterceptor;
-
 
 /**
  * @package go
@@ -30,6 +31,7 @@ class FunctionAroundInterceptor extends BaseInterceptor implements FunctionInter
     final public function invoke(FunctionInvocation $invocation)
     {
         $adviceMethod = $this->adviceMethod;
+
         return $adviceMethod($invocation);
     }
 }

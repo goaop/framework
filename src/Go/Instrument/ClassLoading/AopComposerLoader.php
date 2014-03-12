@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2013, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Instrument\ClassLoading;
@@ -65,8 +67,9 @@ class AopComposerLoader
                 $originalLoader = $loader[0];
 
                 // Configure library loader for doctrine annotation loader
-                AnnotationRegistry::registerLoader(function($class) use ($originalLoader) {
+                AnnotationRegistry::registerLoader(function ($class) use ($originalLoader) {
                     $originalLoader->loadClass($class);
+
                     return class_exists($class, false);
                 });
                 $loader[0] = new AopComposerLoader($loader[0]);
@@ -97,12 +100,12 @@ class AopComposerLoader
             include ($isInternal ? $file : FilterInjectorTransformer::rewrite($file));
         }
     }
-    
+
     /**
      * {@inheritDoc}
-     */ 
+     */
     public function findFile($class)
     {
         return $this->original->findFile($class);
-    }    
+    }
 }

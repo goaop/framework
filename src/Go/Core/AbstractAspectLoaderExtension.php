@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Core;
@@ -65,6 +67,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     protected function parsePointcut(Aspect $aspect, $reflection, $metaInformation)
     {
         $stream = $this->makeLexicalAnalyze($aspect, $reflection, $metaInformation);
+
         return $this->parseTokenStream($reflection, $metaInformation, $stream);
     }
 
@@ -98,6 +101,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             );
             throw new \UnexpectedValueException($message, 0, $e);
         }
+
         return $stream;
     }
 
@@ -135,6 +139,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             );
             throw new \UnexpectedValueException($message, 0, $e);
         }
+
         return $pointcut;
     }
 }

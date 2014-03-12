@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Framework;
@@ -41,6 +43,7 @@ class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
         if (isset($this->advices[$this->current])) {
             /** @var $currentInterceptor MethodInterceptor */
             $currentInterceptor = $this->advices[$this->current++];
+
             return $currentInterceptor->invoke($this);
         }
 
@@ -58,7 +61,7 @@ class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
         $closureToCall = $this->closureToCall;
         $args          = $this->arguments;
 
-        switch(count($args)) {
+        switch (count($args)) {
             case 0:
                 return $closureToCall();
             case 1:

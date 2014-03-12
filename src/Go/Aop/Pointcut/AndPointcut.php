@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2013, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Pointcut;
@@ -102,6 +104,7 @@ class AndPointcut implements Pointcut
         $preFilter = method_exists($point, 'getDeclaringClass')
             ? $point->getDeclaringClass()
             : $point->getNamespaceName();
+
         return $pointcut->matches($point)
             && $pointcut->getClassFilter()->matches($preFilter);
     }

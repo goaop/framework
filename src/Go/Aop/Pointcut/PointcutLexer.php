@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2013, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Pointcut;
@@ -28,10 +30,9 @@ class PointcutLexer extends SimpleLexer
         $this->token('within');
         $this->token('class');
         $this->token('access');
-        $this->token('@access');
         $this->token('cflowbelow');
         $this->token('function');
-        $this->token('@annotation');
+        $this->token('annotation');
 
         // Parenthesis
         $this->token('(');
@@ -53,6 +54,8 @@ class PointcutLexer extends SimpleLexer
         $this->token('&&');
         $this->token('|');
         $this->token('||');
+
+        $this->token('Annotation', '@');
 
         // Regex for class name
         $this->regex('NamePart', '/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/');

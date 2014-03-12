@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Demo\Aspect;
@@ -109,6 +111,7 @@ class DebugAspect implements Aspect
         }
 
         echo "Take ", sprintf("%0.3f", (microtime(true) - $time) * 1e3), "ms to call method", PHP_EOL;
+
         return $memoryCache[$key];
     }
 

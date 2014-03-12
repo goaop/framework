@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Instrument\Transformer;
@@ -101,6 +103,7 @@ class FilterInjectorTransformer implements SourceTransformer
         if (!$prebuiltCache && !file_exists($newResource)) {
             file_get_contents(self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource);
         }
+
         return $newResource;
     }
 
@@ -125,7 +128,7 @@ class FilterInjectorTransformer implements SourceTransformer
 
         $transformedSource = '';
         $isWaitingEnd      = false;
-        
+
         $insideBracesCount = 0;
         $isBracesFinished  = false;
         $isTernaryOperator = false;

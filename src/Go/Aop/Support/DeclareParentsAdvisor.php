@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Support;
@@ -62,7 +64,7 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
             throw new \InvalidArgumentException("Only trait can be used as implementation");
         }
 
-        foreach($refInterface->getMethods() as $interfaceMethod) {
+        foreach ($refInterface->getMethods() as $interfaceMethod) {
             if (!$refImplementation->hasMethod($interfaceMethod->name)) {
                 throw new \DomainException("Implementation requires method {$interfaceMethod->name}");
             }
@@ -121,6 +123,7 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     {
         $adviceClass      = get_class($this->advice);
         $interfaceClasses = join(',', $this->advice->getInterfaces());
+
         return get_called_class() . ": advice [{$adviceClass}]; interfaces [{$interfaceClasses}] ";
     }
 }

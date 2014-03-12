@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Instrument;
@@ -81,6 +83,7 @@ class RawAnnotationReader
     public function getClassAnnotations($class)
     {
         $this->parser->setTarget(Target::TARGET_CLASS);
+
         return $this->parser->parse($class->getDocComment(), 'class '.$class->getName());
     }
 
@@ -94,6 +97,7 @@ class RawAnnotationReader
     public function getMethodAnnotations($method)
     {
         $this->parser->setTarget(Target::TARGET_METHOD);
+
         return $this->parser->parse($method->getDocComment(), 'method '.$method->getDeclaringClass()->name.'::'.$method->getName().'()');
     }
 
@@ -107,6 +111,7 @@ class RawAnnotationReader
     public function getPropertyAnnotations($property)
     {
         $this->parser->setTarget(Target::TARGET_PROPERTY);
+
         return $this->parser->parse($property->getDocComment(), 'property '.$property->getDeclaringClass()->name.'::$'.$property->getName());
     }
 

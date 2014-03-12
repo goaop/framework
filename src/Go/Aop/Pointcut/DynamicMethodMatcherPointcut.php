@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Pointcut;
@@ -49,6 +51,7 @@ abstract class DynamicMethodMatcherPointcut extends DynamicMethodMatcher impleme
         if (!$this->classFilter) {
             $this->classFilter = TruePointFilter::getInstance();
         }
+
         return $this->classFilter;
     }
 

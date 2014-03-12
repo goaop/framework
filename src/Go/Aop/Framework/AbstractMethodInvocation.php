@@ -1,17 +1,18 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Framework;
 
-use ReflectionMethod;
-
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Aop\Intercept\MethodInterceptor;
+use Go\Aop\Support\AnnotatedReflectionMethod;
+use ReflectionMethod;
 
 /**
  * Abstract method invocation implementation
@@ -54,7 +55,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     {
         parent::__construct($advices);
         $this->className        = $className;
-        $this->reflectionMethod = $method = new ReflectionMethod($this->className, $methodName);
+        $this->reflectionMethod = $method = new AnnotatedReflectionMethod($this->className, $methodName);
 
         // Give an access to call protected method
         if ($method->isProtected()) {
@@ -68,7 +69,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      * <p>This method is a friendly implementation of the
      * {@link Joinpoint::getStaticPart()} method (same result).
      *
-     * @return ReflectionMethod the method being called.
+     * @return AnnotatedReflectionMethod the method being called.
      */
     public function getMethod()
     {
@@ -128,6 +129,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
         if ($this->level) {
             list($this->arguments, $this->instance, $this->current) = array_pop($this->stackFrames);
         }
+
         return $result;
     }
 }

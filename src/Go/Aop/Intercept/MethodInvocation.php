@@ -1,13 +1,16 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Intercept;
 
+use Go\Aop\Support\AnnotatedReflectionMethod;
 use ReflectionMethod;
 
 /**
@@ -28,7 +31,7 @@ interface MethodInvocation extends Invocation
      * <p>This method is a friendly implementation of the
      * {@link Joinpoint::getStaticPart()} method (same result).
      *
-     * @return ReflectionMethod the method being called.
+     * @return ReflectionMethod|AnnotatedReflectionMethod the method being called.
      */
     public function getMethod();
 

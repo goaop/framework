@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Framework;
@@ -31,14 +33,14 @@ use Go\Core\AspectKernel;
  * before main invocation.
  *  Framework model an advice as an PHP-closure interceptor, maintaining a
  * chain of interceptors "around" the joinpoint:
- *   function(Joinpoint $joinPoint) {
+ *   function (Joinpoint $joinPoint) {
  *      echo 'Before action';
  *      // call chain here with Joinpoint->proceed() method
  *      $result = $joinPoint->proceed();
  *      echo 'After action';
  *      return $result;
  *   }
- * @author Lissachenko Alexander
+ * @author Lisachenko Alexander
  */
 abstract class BaseAdvice implements OrderedAdvice
 {
@@ -90,6 +92,7 @@ abstract class BaseAdvice implements OrderedAdvice
             $method = $vars['refMethod'];
             $aspect = $vars['aspect'];
         }
+
         return array(
             'scope'  => $scope,
             'method' => $method->name,
@@ -185,6 +188,7 @@ abstract class BaseAdvice implements OrderedAdvice
             default:
                 return function (Joinpoint $joinpoint) use ($aspect, $adviceCallback, $scope) {
                     $callback = $adviceCallback->bindTo($aspect, $scope);
+
                     return $callback($joinpoint);
                 };
         }

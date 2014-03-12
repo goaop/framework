@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Framework;
@@ -76,6 +78,7 @@ class BaseInterceptor extends BaseAdvice implements Interceptor, Serializable
     {
         $vars = array_filter(get_object_vars($this));
         $vars['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
+
         return serialize($vars);
     }
 

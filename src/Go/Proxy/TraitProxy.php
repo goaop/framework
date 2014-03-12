@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Proxy;
@@ -13,10 +15,8 @@ use ReflectionMethod as Method;
 use ReflectionParameter as Parameter;
 
 use Go\Aop\Advice;
-use Go\Aop\IntroductionInfo;
 
 use Go\Core\AspectContainer;
-use Go\Core\AspectKernel;
 
 use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionMethod as ParsedMethod;
@@ -46,7 +46,7 @@ class TraitProxy extends ClassProxy
      */
     public function __construct($parent, array $traitAdvices)
     {
-        parent::__construct($parent, $parent->getShortName(), $traitAdvices);
+        parent::__construct($parent, $traitAdvices);
 
         foreach ($traitAdvices as $type => $typedAdvices) {
             switch ($type) {
@@ -82,7 +82,6 @@ class TraitProxy extends ClassProxy
         self::$traitAdvices[$className] = $traitAdvices;
     }
 
-
     public static function getJoinPoint($traitName, $className, $joinPointType, $pointName)
     {
         if (!isset(self::$invocationClassMap)) {
@@ -91,9 +90,9 @@ class TraitProxy extends ClassProxy
 
         $advices   = self::$traitAdvices[$traitName][$joinPointType][$pointName];
         $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $advices);
+
         return $joinpoint;
     }
-
 
     /**
      * Creates definition for trait method body
@@ -112,10 +111,12 @@ class TraitProxy extends ClassProxy
         $args = join(', ', array_map(function ($param) {
             /** @var $param Parameter|ParsedParameter */
             $byReference = $param->isPassedByReference() ? '&' : '';
+
             return $byReference . '$' . $param->name;
         }, $method->getParameters()));
 
         $args = $scope . ($args ? ", array($args)" : '');
+
         return <<<BODY
 static \$__joinPoint = null;
 if (!\$__joinPoint) {
@@ -156,6 +157,7 @@ BODY;
         foreach (array_keys($this->methodsCode) as $methodName) {
             $aliasesLines[] = "{$this->parentClassName}::{$methodName} as protected {$methodName}➩;";
         }
+
         return "{\n " . $this->indent(join("\n", $aliasesLines)) . "\n}";
     }
 }

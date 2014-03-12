@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2013, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Proxy;
@@ -110,9 +112,9 @@ class FunctionProxy
     public static function getJoinPoint($joinPointName, $namespace)
     {
         $advices = self::$functionAdvices[$namespace][AspectContainer::FUNCTION_PREFIX][$joinPointName];
+
         return new ReflectionFunctionInvocation($joinPointName, $advices);
     }
-
 
     /**
      * Inject advices for given trait
@@ -140,6 +142,7 @@ class FunctionProxy
     public function override($function, $body)
     {
         $this->functionsCode[$function->name] = $this->getOverriddenFunction($function, $body);
+
         return $this;
     }
 
@@ -191,6 +194,7 @@ class FunctionProxy
         );
 
         $inMemoryCache[$functionName] = $code;
+
         return $code;
     }
 
@@ -216,6 +220,7 @@ class FunctionProxy
             $dynamicArgs   = $dynamicArgs || $dynamicArg;
             $hasOptionals  = $hasOptionals || ($param->isOptional() && !$param->isDefaultValueAvailable());
             $hasReferences = $hasReferences || $byReference;
+
             return ($byReference ? '&' : '') . '$' . $param->name;
         }, $function->getParameters());
 
@@ -243,7 +248,6 @@ return \$__joinPoint->__invoke($args);
 BODY;
     }
 
-
     /**
      * Indent block of code
      *
@@ -257,6 +261,7 @@ BODY;
         $lines = array_map(function ($line) use ($pad) {
             return $pad . $line;
         }, explode("\n", $text));
+
         return join("\n", $lines);
     }
 
@@ -276,6 +281,7 @@ BODY;
             }
             $parameterDefinitions[] = $this->getParameterCode($parameter);
         }
+
         return $parameterDefinitions;
     }
 
@@ -311,6 +317,7 @@ BODY;
             $parameter->name,
             $defaultValue ? (" = " . $defaultValue) : ''
         );
+
         return $code;
     }
 }

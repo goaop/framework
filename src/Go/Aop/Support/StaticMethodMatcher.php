@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2012, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Support;
@@ -23,7 +25,7 @@ abstract class StaticMethodMatcher implements MethodMatcher
      *
      * @return bool whether or not a runtime match via the 3-arg matches() method is required if static matching passed
      */
-    public final function isRuntime()
+    final public function isRuntime()
     {
         return false;
     }
@@ -37,6 +39,5 @@ abstract class StaticMethodMatcher implements MethodMatcher
     {
         return self::KIND_METHOD;
     }
-
 
 }

@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Framework;
@@ -62,12 +64,12 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
             /** @var $currentInterceptor ConstructorInterceptor */
             $currentInterceptor = $this->advices[$this->current];
             $this->current++;
+
             return $currentInterceptor->construct($this);
         }
 
         return $this->constructOriginal();
     }
-
 
     /**
      * Gets the constructor being called.
@@ -85,6 +87,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
                 $this->constructor->setAccessible(true);
             }
         }
+
         return $this->constructor;
     }
 
@@ -124,6 +127,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
         // TODO: add support for recursion in constructors
         $this->current   = 0;
         $this->arguments = func_get_args();
+
         return $this->proceed();
     }
 

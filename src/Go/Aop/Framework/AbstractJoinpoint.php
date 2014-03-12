@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Framework;
@@ -13,7 +15,6 @@ use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceBefore;
 use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\Joinpoint;
-
 
 /**
  *  Abstract joinpoint for framework
@@ -72,10 +73,10 @@ abstract class AbstractJoinpoint implements Joinpoint
      * @param array|Advice[] $advices
      * @return array|Advice[] Sorted list of advices
      */
-    static public function sortAdvices(array $advices)
+    public static function sortAdvices(array $advices)
     {
         $sortedAdvices = $advices;
-        usort($sortedAdvices, function(Advice $first, Advice $second) {
+        usort($sortedAdvices, function (Advice $first, Advice $second) {
             switch (true) {
                 case $first instanceof AdviceBefore && !($second instanceof AdviceBefore):
                     return -1;
@@ -93,6 +94,7 @@ abstract class AbstractJoinpoint implements Joinpoint
                     return 0;
             }
         });
+
         return $sortedAdvices;
     }
 }

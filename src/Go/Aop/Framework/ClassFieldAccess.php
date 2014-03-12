@@ -1,9 +1,11 @@
 <?php
 /**
- * Go! OOP&AOP PHP framework
+ * Go! AOP framework
  *
- * @copyright     Copyright 2011, Lissachenko Alexander <lisachenko.it@gmail.com>
- * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Aop\Framework;
@@ -130,6 +132,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         if (isset($this->advices[$this->current])) {
             /** @var $currentInterceptor FieldInterceptor */
             $currentInterceptor = $this->advices[$this->current++];
+
             return $currentInterceptor->{self::$interceptorMethodMapping[$this->accessType]}($this);
         }
 
@@ -171,6 +174,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         if ($this->level) {
             list($this->instance, $this->accessType, $this->value, $this->newValue) = array_pop($this->stackFrames);
         }
+
         return $result;
 
     }
