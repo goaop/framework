@@ -194,6 +194,6 @@ class GoAspectContainer extends Container implements AspectContainer
             $this->maxTimestamp = max(array_map('filemtime', $this->resources));
         }
 
-        return $this->maxTimestamp < $timestamp;
+        return $this->maxTimestamp <= $timestamp;
     }
 }

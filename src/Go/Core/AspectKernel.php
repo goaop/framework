@@ -13,6 +13,7 @@ namespace Go\Core;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\CleanableMemory;
+use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use Go\Instrument\Transformer\CachingTransformer;
@@ -91,8 +92,8 @@ abstract class AspectKernel
      */
     public function init(array $options = array())
     {
-        AopComposerLoader::init();
-        $this->options = array_replace_recursive($this->getDefaultOptions(), $options);
+        $this->options = $this->normalizeOptions($options);
+        define('AOP_CACHE_DIR', $this->options['cacheDir']);
 
         /** @var $container AspectContainer */
         $container = $this->container = new $this->options['containerClass'];
@@ -111,6 +112,8 @@ abstract class AspectKernel
         if ($this->options['debug']) {
             $this->addKernelResourcesToContainer($container);
         }
+
+        AopComposerLoader::init();
 
         // Register all AOP configuration in the container
         $this->configureAop($container);
@@ -156,10 +159,31 @@ abstract class AspectKernel
             'cacheDir'  => null,
 
             'interceptFunctions' => false,
+            'prebuiltCache'      => false,
             'includePaths'       => array(),
             'excludePaths'       => array(),
             'containerClass'     => static::$containerClass,
         );
+    }
+
+
+    /**
+     * Normalizes options for the kernel
+     *
+     * @param array $options List of options
+     *
+     * @return array
+     */
+    protected function normalizeOptions(array $options)
+    {
+        $options = array_replace($this->getDefaultOptions(), $options);
+
+        $options['appDir']   = PathResolver::realpath($options['appDir']);
+        $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
+        $options['includePaths'] = PathResolver::realpath($options['includePaths']);
+        $options['excludePaths'] = PathResolver::realpath($options['excludePaths']);
+
+        return $options;
     }
 
     /**

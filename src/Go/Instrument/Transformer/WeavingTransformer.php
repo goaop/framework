@@ -68,8 +68,8 @@ class WeavingTransformer extends BaseSourceTransformer
         $this->broker        = $broker;
         $this->adviceMatcher = $adviceMatcher;
 
-        $this->includePaths = array_map('realpath', $this->options['includePaths']);
-        $this->excludePaths = array_map('realpath', $this->options['excludePaths']);
+        $this->includePaths = $this->options['includePaths'];
+        $this->excludePaths = $this->options['excludePaths'];
     }
 
     /**
@@ -238,8 +238,9 @@ class WeavingTransformer extends BaseSourceTransformer
     {
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace);
         if ($functionAdvices && $this->options['cacheDir']) {
-            $cacheDir = $this->options['cacheDir'] . DIRECTORY_SEPARATOR . '_functions' . DIRECTORY_SEPARATOR;
-            $fileName = str_replace('\\', DIRECTORY_SEPARATOR, $namespace->getName()) . '.php';
+            $cacheDirSuffix = '/_functions/';
+            $cacheDir       = $this->options['cacheDir'] . $cacheDirSuffix;
+            $fileName       = str_replace('\\', '/', $namespace->getName()) . '.php';
 
             $functionFileName = $cacheDir . $fileName;
             if (!file_exists($functionFileName) || !$this->container->isFresh(filemtime($functionFileName))) {
@@ -250,7 +251,8 @@ class WeavingTransformer extends BaseSourceTransformer
                 $source = FunctionProxy::generate($namespace, $functionAdvices);
                 file_put_contents($functionFileName, $source);
             }
-            $metadata->source .= 'include_once ' . var_export($functionFileName, true) . ';' . PHP_EOL;
+            $content = 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
+            $metadata->source .= $content;
         }
     }
 
@@ -268,8 +270,9 @@ class WeavingTransformer extends BaseSourceTransformer
         if (empty($this->options['cacheDir'])) {
             return $child;
         }
-        $cacheDir = $this->options['cacheDir'] . DIRECTORY_SEPARATOR . '_proxies' . DIRECTORY_SEPARATOR;
-        $fileName = str_replace('\\', DIRECTORY_SEPARATOR, $class->getName()) . '.php';
+        $cacheDirSuffix = '/_proxies/';
+        $cacheDir       = $this->options['cacheDir'] . $cacheDirSuffix;
+        $fileName       = str_replace('\\', '/', $class->getName()) . '.php';
 
         $proxyFileName = $cacheDir . $fileName;
         $dirname       = dirname($proxyFileName);
@@ -287,7 +290,7 @@ class WeavingTransformer extends BaseSourceTransformer
         }
         $body .= $child;
         file_put_contents($proxyFileName, $body);
-
-        return 'include_once ' . var_export($proxyFileName, true) . ';' . PHP_EOL;
+        
+        return 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
     }
 }

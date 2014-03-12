@@ -11,6 +11,7 @@
 namespace Go\Console\Command;
 
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -92,7 +93,11 @@ EOT
             $isSuccess = null;
             try {
                 // This will trigger creation of cache
-                file_get_contents(FilterInjectorTransformer::rewrite($file->getRealPath()));
+                file_get_contents(
+                    FilterInjectorTransformer::PHP_FILTER_READ.
+                    SourceTransformingLoader::FILTER_IDENTIFIER.
+                    "/resource=" . $file->getRealPath()
+                );
                 $isSuccess = true;
             } catch (\Exception $e) {
                 $isSuccess = false;

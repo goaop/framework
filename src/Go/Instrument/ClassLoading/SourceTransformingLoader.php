@@ -39,13 +39,6 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
     protected $data = '';
 
     /**
-     * Filter bucket resource
-     *
-     * @var null|resource
-     */
-    protected $bucket = null;
-
-    /**
      * List of transformers
      *
      * @var array|SourceTransformer[]
@@ -100,23 +93,17 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
     {
         while ($bucket = stream_bucket_make_writeable($in)) {
             $this->data .= $bucket->data;
-            $this->bucket = $bucket;
-            $consumed = 0;
         }
 
-        if ($closing) {
-            $consumed += strlen($this->data);
+        if ($closing || feof($this->stream)) {
+            $consumed = strlen($this->data);
 
             // $this->stream contains pointer to the source
-            $metadata = new StreamMetaData($this->stream);
-            $metadata->source = $this->data;
-
+            $metadata = new StreamMetaData($this->stream, $this->data);
             $this->transformCode($metadata);
-            $this->bucket->data = $metadata->source;
-            $this->bucket->datalen = strlen($this->bucket->data);
-            if (!empty($this->bucket->data)) {
-                stream_bucket_append($out, $this->bucket);
-            }
+
+            $bucket = stream_bucket_new($this->stream, $metadata->source);
+            stream_bucket_append($out, $bucket);
 
             return PSFS_PASS_ON;
         }

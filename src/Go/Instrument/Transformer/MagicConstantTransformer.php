@@ -43,11 +43,8 @@ class MagicConstantTransformer extends BaseSourceTransformer
     public function __construct(AspectKernel $kernel)
     {
         parent::__construct($kernel);
-        self::$rootPath = realpath($this->options['appDir']);
-        $rewriteToPath  = $this->options['cacheDir'];
-        if ($rewriteToPath) {
-            self::$rewriteToPath = realpath($rewriteToPath);
-        }
+        self::$rootPath      = $this->options['appDir'];
+        self::$rewriteToPath = $this->options['cacheDir'];
     }
 
     /**

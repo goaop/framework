@@ -11,6 +11,7 @@
 namespace Go\Instrument\Transformer;
 
 use ArrayObject;
+use Go\Instrument\PathResolver;
 use InvalidArgumentException;
 
 /**
@@ -48,7 +49,7 @@ class StreamMetaData extends ArrayObject
             $metadata['source'] = $source;
         }
         if (preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
-            $metadata['uri'] = stream_resolve_include_path($matches[1]);
+            $metadata['uri'] = PathResolver::realpath($matches[1]);
         }
         parent::__construct($metadata, ArrayObject::ARRAY_AS_PROPS);
     }
