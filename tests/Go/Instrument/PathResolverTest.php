@@ -10,9 +10,8 @@ class PathResolverTest extends \PHPUnit_Framework_TestCase
      */
     public function testCanResolveAndCheckExistence()
     {
-        $dir = __DIR__ . '/not/./existence/../..';
-        $this->assertEquals(__DIR__, PathResolver::realpath($dir, true));
-        $this->assertEquals(false, PathResolver::realpath($dir . '/bad/dir', true));
+        $this->assertEquals(__DIR__, PathResolver::realpath(__DIR__, true));
+        $this->assertEquals(false, PathResolver::realpath(__DIR__ . '/bad/dir', true));
     }
 
     /**
@@ -20,7 +19,7 @@ class PathResolverTest extends \PHPUnit_Framework_TestCase
      */
     public function testCanResolveArray()
     {
-        $this->assertEquals(array(__DIR__ , __FILE__), PathResolver::realpath(array(__DIR__ . '/up/..', __FILE__)));
+        $this->assertEquals(array(__DIR__ , __FILE__), PathResolver::realpath(array(__DIR__ , __FILE__)));
     }
 
     /**
