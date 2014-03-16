@@ -297,8 +297,15 @@ BODY;
         $type = '';
         if ($parameter->isArray()) {
             $type = 'array';
-        } elseif ($parameter->getClass()) {
-            $type = '\\' . $parameter->getClass()->name;
+        } else {
+            try {
+                $cls = $parameter->getClass();
+                if ($cls) {
+                    $type = '\\' . $cls->name;
+                }
+            } catch (\ReflectionException $e) {
+                // ignore
+            }
         }
         $defaultValue = null;
         $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();
