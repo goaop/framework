@@ -40,13 +40,6 @@ class AdviceMatcher
     protected $container;
 
     /**
-     * List of resources that was loaded
-     *
-     * @var array
-     */
-    protected $loadedResources = array();
-
-    /**
      * Flag to enable/disable support of global function interception
      *
      * @var bool
@@ -85,9 +78,7 @@ class AdviceMatcher
 
         $advices = array();
 
-        if ($this->loadedResources != $this->container->getResources()) {
-            $this->loadAdvisorsAndPointcuts();
-        }
+        $this->loader->loadAdvisorsAndPointcuts();
 
         foreach ($this->container->getByTag('advisor') as $advisorId => $advisor) {
 
@@ -116,9 +107,7 @@ class AdviceMatcher
      */
     public function getAdvicesForClass($class)
     {
-        if ($this->loadedResources != $this->container->getResources()) {
-            $this->loadAdvisorsAndPointcuts();
-        }
+        $this->loader->loadAdvisorsAndPointcuts();
 
         $classAdvices = array();
         if (!$class instanceof ReflectionClass && !$class instanceof ParsedReflectionClass) {
@@ -219,26 +208,6 @@ class AdviceMatcher
 
         $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX][$advisorId] = $advice;
         return $classAdvices;
-    }
-
-    /**
-     * Load pointcuts into container
-     *
-     * There is no need to always load pointcuts, so we delay loading
-     */
-    private function loadAdvisorsAndPointcuts()
-    {
-        $containerResources = $this->container->getResources();
-        $resourcesToLoad    = array_diff($containerResources, $this->loadedResources);
-
-        // TODO: maybe this is a task for the AspectLoader?
-        foreach ($this->container->getByTag('aspect') as $aspect) {
-            $ref = new ReflectionClass($aspect);
-            if (in_array($ref->getFileName(), $resourcesToLoad)) {
-                $this->loader->load($aspect);
-            }
-        }
-        $this->loadedResources = $containerResources;
     }
 
     /**

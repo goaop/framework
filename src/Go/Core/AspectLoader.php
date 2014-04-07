@@ -12,6 +12,7 @@ namespace Go\Core;
 
 use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Aspect;
+use ReflectionClass;
 
 /**
  * Loader of aspects into the container
@@ -39,6 +40,13 @@ class AspectLoader
      * @var Reader|null
      */
     protected $annotationReader = null;
+
+    /**
+     * List of resources that was loaded
+     *
+     * @var array
+     */
+    protected $loadedResources = array();
 
     /**
      * Loader constructor
@@ -90,6 +98,32 @@ class AspectLoader
                 $this->loadFrom($aspect, $refProperty, $this->loaders[AspectLoaderExtension::TARGET_PROPERTY]);
             }
         }
+
+        $this->loadedResources[] = $refAspect->getFileName();
+    }
+
+    /**
+     * Load pointcuts into container
+     *
+     * There is no need to always load pointcuts, so we delay loading
+     */
+    public function loadAdvisorsAndPointcuts()
+    {
+        $containerResources = $this->container->getResources();
+        $resourcesToLoad    = array_diff($containerResources, $this->loadedResources);
+
+        if (!$resourcesToLoad) {
+            return;
+        }
+
+        foreach ($this->container->getByTag('aspect') as $aspect) {
+            $ref = new ReflectionClass($aspect);
+            if (in_array($ref->getFileName(), $resourcesToLoad)) {
+                $this->load($aspect);
+            }
+        }
+
+        $this->loadedResources = $containerResources;
     }
 
     /**
