@@ -29,7 +29,7 @@ class CachedAspectLoader extends AspectLoader
     public function __construct(AspectContainer $container, Reader $reader, array $options = array())
     {
         parent::__construct($container, $reader);
-        $this->cacheDir = $options['cacheDir'];
+        $this->cacheDir = isset($options['cacheDir']) ? $options['cacheDir'] : null;
     }
 
     /**
