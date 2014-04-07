@@ -21,18 +21,11 @@ use Go\Aop\Intercept\Interceptor;
 class BaseInterceptor extends BaseAdvice implements Interceptor, Serializable
 {
     /**
-     * Name of the aspect
-     *
-     * @var string
-     */
-    public $aspectName = '';
-
-    /**
      * Pointcut instance
      *
      * @var null|Pointcut
      */
-    public $pointcut = null;
+    protected $pointcut = null;
 
     /**
      * Advice to call
