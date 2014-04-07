@@ -15,6 +15,8 @@ use Go\Aop\Framework\ReflectionFunctionInvocation;
 use Go\Aop\Intercept\FunctionInvocation;
 
 use Go\Core\AspectContainer;
+use Go\Core\AspectKernel;
+use Go\Core\LazyAdvisorAccessor;
 use ReflectionFunction;
 use ReflectionParameter as Parameter;
 
@@ -111,7 +113,17 @@ class FunctionProxy
      */
     public static function getJoinPoint($joinPointName, $namespace)
     {
+        /** @var LazyAdvisorAccessor $accessor */
+        static $accessor = null;
+
+        if (!$accessor) {
+            $accessor  = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
+        }
+
         $advices = self::$functionAdvices[$namespace][AspectContainer::FUNCTION_PREFIX][$joinPointName];
+        $advices = array_map(function ($v, $k) use ($accessor) {
+            return $accessor->__get($k)->getAdvice();
+        }, $advices, array_keys($advices));
 
         return new ReflectionFunctionInvocation($joinPointName, $advices);
     }
@@ -151,7 +163,7 @@ class FunctionProxy
      */
     public function __toString()
     {
-        $serialized = serialize($this->advices);
+        $serialized = json_encode($this->advices);
         ksort($this->functionsCode);
 
         $functionsCode = sprintf("<?php\n%s\nnamespace %s;\n%s",
@@ -165,7 +177,7 @@ class FunctionProxy
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->namespace->getName() . "',"
-                . " \unserialize(" . var_export($serialized, true) . "));";
+                . " \json_decode(" . var_export($serialized, true) . ", true));";
     }
 
     /**

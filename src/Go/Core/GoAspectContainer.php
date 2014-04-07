@@ -62,6 +62,13 @@ class GoAspectContainer extends Container implements AspectContainer
             return $aspectLoader;
         });
 
+        $this->share('aspect.advisor.accessor', function ($container) {
+            return new LazyAdvisorAccessor(
+                $container,
+                $container->get('aspect.loader')
+            );
+        });
+
         $this->share('aspect.advice_matcher', function ($container) {
             return new AdviceMatcher(
                 $container->get('aspect.loader'),

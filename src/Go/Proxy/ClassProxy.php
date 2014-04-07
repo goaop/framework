@@ -10,6 +10,8 @@
 
 namespace Go\Proxy;
 
+use Go\Core\AspectKernel;
+use Go\Core\LazyAdvisorAccessor;
 use Reflection;
 use ReflectionClass;
 use ReflectionMethod as Method;
@@ -166,15 +168,17 @@ class ClassProxy extends AbstractProxy
         }
 
         $joinPoints = array();
+        /** @var LazyAdvisorAccessor $accessor */
+        $accessor  = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
+
         foreach ($classAdvices as $joinPointType => $typedAdvices) {
             // if not isset then we don't want to create such invocation for class
             if (!isset(self::$invocationClassMap[$joinPointType])) {
                 continue;
             }
             foreach ($typedAdvices as $joinPointName => $advices) {
-                $advices = array_map(function ($v, $k) {
-                    $advice = AspectKernel::getInstance()->getContainer()->get($k)->getAdvice();
-                    return $advice;
+                $advices = array_map(function ($v, $k) use ($accessor) {
+                    return $accessor->__get($k)->getAdvice();
                 }, $advices, array_keys($advices));
 
                 $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $joinPointName, $advices);

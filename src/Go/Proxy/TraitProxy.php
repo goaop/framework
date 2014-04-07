@@ -10,6 +10,8 @@
 
 namespace Go\Proxy;
 
+use Go\Core\AspectKernel;
+use Go\Core\LazyAdvisorAccessor;
 use ReflectionClass;
 use ReflectionMethod as Method;
 use ReflectionParameter as Parameter;
@@ -89,10 +91,13 @@ class TraitProxy extends ClassProxy
         }
 
         $advices   = self::$traitAdvices[$traitName][$joinPointType][$pointName];
-        $advices = array_map(function ($v, $k) {
-            $advice = AspectKernel::getInstance()->getContainer()->get($k)->getAdvice();
-            return $advice;
+        /** @var LazyAdvisorAccessor $accessor */
+        $accessor  = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
+
+        $advices = array_map(function ($v, $k) use ($accessor) {
+            return $accessor->__get($k)->getAdvice();
         }, $advices, array_keys($advices));
+
         $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $advices);
 
         return $joinpoint;
