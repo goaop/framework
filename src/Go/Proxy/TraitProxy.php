@@ -140,7 +140,6 @@ BODY;
      */
     public function __toString()
     {
-        //$serialized = serialize($this->advices);
         $serialized = json_encode($this->advices);
         ksort($this->methodsCode);
         $classCode = sprintf("%s\ntrait %s\n{\n%s\n\n%s\n}",

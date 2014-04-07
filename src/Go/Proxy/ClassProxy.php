@@ -274,7 +274,6 @@ class ClassProxy extends AbstractProxy
         if ($this->isFieldsIntercepted && (!$ctor || !$ctor->isPrivate())) {
             $this->addFieldInterceptorsCode($ctor);
         }
-        //$serialized = serialize($this->advices);
         $serialized = json_encode($this->advices);
 
         ksort($this->methodsCode);

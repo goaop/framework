@@ -62,7 +62,6 @@ class AdviceMatcher
     }
 
     /**
-     *
      * Returns list of function advices for namespace
      *
      * @param ReflectionFileNamespace $namespace
@@ -153,6 +152,7 @@ class AdviceMatcher
      *
      * @param ReflectionClass|ParsedReflectionClass $class Class to inject advices
      * @param Aop\PointcutAdvisor $advisor Advisor for class
+     * @param string $advisorId Identifier of advisor
      * @param Aop\PointFilter $filter Filter for points
      *
      * @return array
@@ -193,6 +193,7 @@ class AdviceMatcher
      *
      * @param ReflectionClass|ParsedReflectionClass $class Class to inject advices
      * @param Aop\IntroductionAdvisor $advisor Advisor for class
+     * @param string $advisorId Identifier of advisor
      *
      * @return array
      */
@@ -215,6 +216,7 @@ class AdviceMatcher
      *
      * @param ReflectionFileNamespace $namespace
      * @param Aop\PointcutAdvisor $advisor Advisor for class
+     * @param string $advisorId Identifier of advisor
      * @param Aop\PointFilter $pointcut Filter for points
      *
      * @return array
