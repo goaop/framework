@@ -77,7 +77,7 @@ class AspectLoader
      *
      * @param \Go\Aop\Aspect $aspect
      */
-    final public function load(Aspect $aspect)
+    public function load(Aspect $aspect)
     {
         $refAspect = new \ReflectionClass($aspect);
 
