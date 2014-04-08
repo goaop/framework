@@ -20,7 +20,15 @@ class TestClass1 extends TestClass1__AopProxied implements \Go\Aop\Proxy
     }
 
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass1', json_decode('{"method":{"test":true}}', true));
+\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass1',array (
+  'method' =>
+  array (
+    'test' =>
+    array (
+      0 => 'advisor.Test\\ns3\\TestClass1->test',
+    ),
+  ),
+));
 
 TestClass1::test();
 
@@ -42,7 +50,15 @@ class TestClass11 extends TestClass11__AopProxied implements \Go\Aop\Proxy
     }
 
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass11', json_decode('{"method":{"test":true}}', true));
+\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass11',array (
+  'method' =>
+  array (
+    'test' =>
+    array (
+      0 => 'advisor.Test\\ns3\\TestClass11->test',
+    ),
+  ),
+));
 
 TestClass11::test();
 
@@ -64,6 +80,14 @@ class TestClass2 extends TestClass2__AopProxied implements \Go\Aop\Proxy
     }
 
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass2', json_decode('{"method":{"test":true}}', true));
+\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns3\TestClass2',array (
+  'method' =>
+  array (
+    'test' =>
+    array (
+      0 => 'advisor.Test\\ns3\\TestClass2->test',
+    ),
+  ),
+));
 
 TestClass2::test();

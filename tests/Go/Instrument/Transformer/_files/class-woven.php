@@ -65,4 +65,32 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
     }
 
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestClass', json_decode('{"method":{"publicMethod":true,"protectedMethod":true,"publicStaticMethod":true,"protectedStaticMethod":true,"publicMethodDynamicArguments":true,"publicMethodFixedArguments":true}}', true));
+\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestClass',array (
+  'method' =>
+  array (
+    'publicMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->publicMethod',
+    ),
+    'protectedMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->protectedMethod',
+    ),
+    'publicStaticMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->publicStaticMethod',
+    ),
+    'protectedStaticMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->protectedStaticMethod',
+    ),
+    'publicMethodDynamicArguments' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->publicMethodDynamicArguments',
+    ),
+    'publicMethodFixedArguments' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->publicMethodFixedArguments',
+    ),
+  ),
+));
