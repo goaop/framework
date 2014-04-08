@@ -121,11 +121,13 @@ class FunctionProxy
         }
 
         $advices = self::$functionAdvices[$namespace][AspectContainer::FUNCTION_PREFIX][$joinPointName];
-        $advices = array_map(function ($advisorName) use ($accessor) {
-            return $accessor->__get($advisorName)->getAdvice();
-        }, $advices);
 
-        return new ReflectionFunctionInvocation($joinPointName, $advices);
+        $filledAdvices = array();
+        foreach ($advices as $advisorName) {
+            $filledAdvices[] = $accessor->$advisorName;
+        }
+
+        return new ReflectionFunctionInvocation($joinPointName, $filledAdvices);
     }
 
     /**

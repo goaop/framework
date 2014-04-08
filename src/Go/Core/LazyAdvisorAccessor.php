@@ -10,6 +10,8 @@
 
 
 namespace Go\Core;
+use Go\Aop\Advice;
+use Go\Aop\Advisor;
 
 /**
  * Provides an interface for loading of advisors from the container
@@ -45,19 +47,27 @@ class LazyAdvisorAccessor
      *
      * @param string $name Key name
      *
-     * @return mixed
+     * @throws \InvalidArgumentException if referenced value is not an advisor
+     * @return Advice
      */
     public function __get($name)
     {
         if ($this->container->has($name)) {
-            return $this->container->get($name);
+            $advisor = $this->container->get($name);
         } else {
             list(, $advisorName) = explode('.', $name);
             list($aspect)        = explode('->', $advisorName);
             $aspectInstance      = $this->container->getAspect($aspect);
             $this->loader->load($aspectInstance);
 
-            return $this->container->get($name);
+            $advisor = $this->container->get($name);
         }
+
+        if (!$advisor instanceof Advisor) {
+            throw new \InvalidArgumentException("Reference {$name} is not an advisor");
+        }
+        $this->$name = $advisor->getAdvice();
+
+        return $this->$name;
     }
 }

@@ -86,19 +86,22 @@ class TraitProxy extends ClassProxy
 
     public static function getJoinPoint($traitName, $className, $joinPointType, $pointName)
     {
-        if (!isset(self::$invocationClassMap)) {
+        /** @var LazyAdvisorAccessor $accessor */
+        static $accessor = null;
+
+        if (!self::$invocationClassMap) {
             self::setMappings();
+            $accessor = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
         }
 
-        $advices   = self::$traitAdvices[$traitName][$joinPointType][$pointName];
-        /** @var LazyAdvisorAccessor $accessor */
-        $accessor  = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
+        $advices = self::$traitAdvices[$traitName][$joinPointType][$pointName];
 
-        $advices = array_map(function ($advisorName) use ($accessor) {
-            return $accessor->__get($advisorName)->getAdvice();
-        }, $advices);
+        $filledAdvices = array();
+        foreach ($advices as $advisorName) {
+            $filledAdvices[] = $accessor->$advisorName;
+        }
 
-        $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $advices);
+        $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $filledAdvices);
 
         return $joinpoint;
     }

@@ -163,13 +163,15 @@ class ClassProxy extends AbstractProxy
      */
     protected static function wrapWithJoinPoints($classAdvices, $className)
     {
-        if (!isset(self::$invocationClassMap)) {
+        /** @var LazyAdvisorAccessor $accessor */
+        static $accessor = null;
+
+        if (!self::$invocationClassMap) {
             self::setMappings();
+            $accessor = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
         }
 
         $joinPoints = array();
-        /** @var LazyAdvisorAccessor $accessor */
-        $accessor  = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
 
         foreach ($classAdvices as $joinPointType => $typedAdvices) {
             // if not isset then we don't want to create such invocation for class
@@ -177,11 +179,12 @@ class ClassProxy extends AbstractProxy
                 continue;
             }
             foreach ($typedAdvices as $joinPointName => $advices) {
-                $advices = array_map(function ($advisorName) use ($accessor) {
-                    return $accessor->__get($advisorName)->getAdvice();
-                }, $advices);
+                $filledAdvices = array();
+                foreach ($advices as $advisorName) {
+                    $filledAdvices[] = $accessor->$advisorName;
+                }
 
-                $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $joinPointName, $advices);
+                $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $joinPointName, $filledAdvices);
                 $joinPoints["$joinPointType:$joinPointName"] = $joinpoint;
             }
         }
