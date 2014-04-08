@@ -49,8 +49,7 @@ class GoAspectContainer extends Container implements AspectContainer
         $this->share('aspect.loader', function ($container) {
             $aspectLoader = new AspectLoader(
                 $container,
-                $container->get('aspect.annotation.reader'),
-                $container->get('kernel.options')
+                $container->get('aspect.annotation.reader')
             );
             $lexer  = $container->get('aspect.pointcut.lexer');
             $parser = $container->get('aspect.pointcut.parser');
