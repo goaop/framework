@@ -326,16 +326,15 @@ abstract class AbstractProxy
      */
     private function flattenAdvices($advices)
     {
-        foreach ($advices as &$typedAdvices) {
-            foreach ($typedAdvices as $name=>&$concreteAdvices) {
+        $flattenAdvices = array();
+        foreach ($advices as $type => $typedAdvices) {
+            foreach ($typedAdvices as $name => $concreteAdvices) {
                 if (is_array($concreteAdvices)) {
-                    $concreteAdvices = array_keys($concreteAdvices);
-                } else {
-                    unset($typedAdvices[$name]);
+                    $flattenAdvices[$type][$name] = array_keys($concreteAdvices);
                 }
             }
         }
 
-        return $advices;
+        return $flattenAdvices;
     }
 }
