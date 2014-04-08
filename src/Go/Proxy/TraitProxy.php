@@ -94,9 +94,9 @@ class TraitProxy extends ClassProxy
         /** @var LazyAdvisorAccessor $accessor */
         $accessor  = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
 
-        $advices = array_map(function ($v, $k) use ($accessor) {
-            return $accessor->__get($k)->getAdvice();
-        }, $advices, array_keys($advices));
+        $advices = array_map(function ($advisorName) use ($accessor) {
+            return $accessor->__get($advisorName)->getAdvice();
+        }, $advices);
 
         $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $advices);
 
@@ -140,7 +140,6 @@ BODY;
      */
     public function __toString()
     {
-        $serialized = json_encode($this->advices);
         ksort($this->methodsCode);
         $classCode = sprintf("%s\ntrait %s\n{\n%s\n\n%s\n}",
             $this->class->getDocComment(),
@@ -157,7 +156,7 @@ BODY;
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->class->name . "',"
-                . " json_decode(" . var_export($serialized, true) . ", true));";
+                . var_export($this->advices, true) . ");";
     }
 
     private function getMethodAliasesCode()

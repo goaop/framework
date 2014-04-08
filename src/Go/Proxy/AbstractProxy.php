@@ -99,7 +99,7 @@ abstract class AbstractProxy
         if (!$parentClass instanceof ReflectionClass && !$parentClass instanceof ParsedClass) {
             throw new \InvalidArgumentException("Invalid argument for class");
         }
-        $this->advices = $advices;
+        $this->advices = $this->flattenAdvices($advices);
         $this->class   = $parentClass;
         $this->name    = $thisName;
 
@@ -315,5 +315,27 @@ abstract class AbstractProxy
         );
 
         return $code;
+    }
+
+    /**
+     * Replace concrete advices with list of ids
+     *
+     * @param $advices
+     *
+     * @return array flatten list of advices
+     */
+    private function flattenAdvices($advices)
+    {
+        foreach ($advices as &$typedAdvices) {
+            foreach ($typedAdvices as $name=>&$concreteAdvices) {
+                if (is_array($concreteAdvices)) {
+                    $concreteAdvices = array_keys($concreteAdvices);
+                } else {
+                    unset($typedAdvices[$name]);
+                }
+            }
+        }
+
+        return $advices;
     }
 }

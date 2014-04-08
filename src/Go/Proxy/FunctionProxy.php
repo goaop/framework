@@ -75,7 +75,7 @@ class FunctionProxy
         if (!$namespace instanceof ReflectionFileNamespace) {
             throw new \InvalidArgumentException("Invalid argument for namespace");
         }
-        $this->advices   = $advices;
+        $this->advices   = $this->flattenAdvices($advices);
         $this->namespace = $namespace;
     }
 
@@ -121,9 +121,9 @@ class FunctionProxy
         }
 
         $advices = self::$functionAdvices[$namespace][AspectContainer::FUNCTION_PREFIX][$joinPointName];
-        $advices = array_map(function ($v, $k) use ($accessor) {
-            return $accessor->__get($k)->getAdvice();
-        }, $advices, array_keys($advices));
+        $advices = array_map(function ($advisorName) use ($accessor) {
+            return $accessor->__get($advisorName)->getAdvice();
+        }, $advices);
 
         return new ReflectionFunctionInvocation($joinPointName, $advices);
     }
@@ -163,7 +163,6 @@ class FunctionProxy
      */
     public function __toString()
     {
-        $serialized = json_encode($this->advices);
         ksort($this->functionsCode);
 
         $functionsCode = sprintf("<?php\n%s\nnamespace %s;\n%s",
@@ -177,7 +176,7 @@ class FunctionProxy
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->namespace->getName() . "',"
-                . " \json_decode(" . var_export($serialized, true) . ", true));";
+                . var_export($this->advices, true) . ");";
     }
 
     /**
@@ -331,5 +330,23 @@ BODY;
         );
 
         return $code;
+    }
+
+    /**
+     * Replace concrete advices with list of ids
+     *
+     * @param $advices
+     *
+     * @return array flatten list of advices
+     */
+    private function flattenAdvices($advices)
+    {
+        foreach ($advices as &$typedAdvices) {
+            foreach ($typedAdvices as $name => &$concreteAdvices) {
+                $concreteAdvices = array_keys($concreteAdvices);
+            }
+        }
+
+        return $advices;
     }
 }
