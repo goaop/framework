@@ -10,26 +10,43 @@
 
 namespace Go\Core;
 
-use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Aspect;
 use ReflectionClass;
 
 /**
  * Cached loader is responsible for faster initialization of pointcuts/advisors for concrete aspect
+ *
+ * @property AspectLoader loader
  */
 class CachedAspectLoader extends AspectLoader
 {
 
+    /**
+     * Path to the cache directory
+     *
+     * @var null|string
+     */
     protected $cacheDir;
 
     /**
-     * {@inheritdoc}
-     * @param array $options
+     * Identifier of original loader
+     *
+     * @var string
      */
-    public function __construct(AspectContainer $container, Reader $reader, array $options = array())
+    protected $loaderId;
+
+    /**
+     * Cached loader constructor
+     *
+     * @param AspectContainer $container Instance of container
+     * @param string $loaderId Original loader identifier
+     * @param array $options List of kernel options
+     */
+    public function __construct(AspectContainer $container, $loaderId, array $options = array())
     {
-        parent::__construct($container, $reader);
-        $this->cacheDir = isset($options['cacheDir']) ? $options['cacheDir'] : null;
+        $this->cacheDir  = isset($options['cacheDir']) ? $options['cacheDir'] : null;
+        $this->loaderId  = $loaderId;
+        $this->container = $container;
     }
 
     /**
@@ -50,7 +67,7 @@ class CachedAspectLoader extends AspectLoader
 
         $pointcutsBefore = $this->container->getByTag('pointcut');
         $advisorsBefore  = $this->container->getByTag('advisor');
-        parent::load($aspect);
+        $this->loader->load($aspect);
         $pointcutsAfter = $this->container->getByTag('pointcut');
         $advisorsAfter  = $this->container->getByTag('advisor');
 
@@ -66,6 +83,36 @@ class CachedAspectLoader extends AspectLoader
         }
 
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function registerLoaderExtension(AspectLoaderExtension $loader)
+    {
+        $this->loader->registerLoaderExtension($loader);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function loadAdvisorsAndPointcuts()
+    {
+        $this->loader->loadAdvisorsAndPointcuts();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function __get($name)
+    {
+        if ($name === 'loader') {
+            $this->loader = $this->container->get($this->loaderId);
+
+            return $this->loader;
+        }
+        throw new \RuntimeException("Not implemented");
+    }
+
 
     /**
      * Loads pointcuts and advisors from the file

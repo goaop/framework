@@ -47,7 +47,7 @@ class GoAspectContainer extends Container implements AspectContainer
     {
         // Register all services in the container
         $this->share('aspect.loader', function ($container) {
-            $aspectLoader = new CachedAspectLoader(
+            $aspectLoader = new AspectLoader(
                 $container,
                 $container->get('aspect.annotation.reader'),
                 $container->get('kernel.options')
@@ -62,10 +62,19 @@ class GoAspectContainer extends Container implements AspectContainer
             return $aspectLoader;
         });
 
+        $this->share('aspect.cached.loader', function ($container) {
+            $cachedAspectLoader = new CachedAspectLoader(
+                $container,
+                'aspect.loader',
+                $container->get('kernel.options')
+            );
+            return $cachedAspectLoader;
+        });
+
         $this->share('aspect.advisor.accessor', function ($container) {
             return new LazyAdvisorAccessor(
                 $container,
-                $container->get('aspect.loader')
+                $container->get('aspect.cached.loader')
             );
         });
 
