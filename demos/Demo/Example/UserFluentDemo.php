@@ -15,7 +15,7 @@ use Demo\Aspect\FluentInterface;
 /**
  * Example class to show fluent interface in action
  */
-class User implements FluentInterface
+class UserFluentDemo implements FluentInterface
 {
     protected $name;
     protected $surname;
@@ -23,11 +23,13 @@ class User implements FluentInterface
 
     public function setName($name)
     {
+        echo "Set user name to ", $name, PHP_EOL;
         $this->name = $name;
     }
 
     public function setSurname($surname)
     {
+        echo "Set user surname to ", $surname, PHP_EOL;
         $this->surname = $surname;
     }
 
@@ -36,6 +38,7 @@ class User implements FluentInterface
         if (!$password) {
             throw new \InvalidArgumentException("Password shouldn't be empty");
         }
+        echo "Set user password to ", $password, PHP_EOL;
         $this->password = $password;
     }
 }

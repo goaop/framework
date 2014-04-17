@@ -1,10 +1,11 @@
 <?php
 /**
- * Created by JetBrains PhpStorm.
- * User: 1
- * Date: 17.03.13
- * Time: 17:27
- * To change this template use File | Settings | File Templates.
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Demo\Aspect;
@@ -13,6 +14,15 @@ use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
 
+/**
+ * Fluent interface aspect provides an easy way to reuse "chain" interface for classes
+ *
+ * Basically, it uses around method to intercept all public setters in the class that implements
+ * special marker interface FluentInterface. Then it checks the return value for setter, if it's null,
+ * then advice replaces it with reference to the object "$this".
+ *
+ * @see http://go.aopphp.com/blog/2013/03/19/implementing-fluent-interface-pattern-in-php/
+ */
 class FluentInterfaceAspect implements Aspect
 {
     /**

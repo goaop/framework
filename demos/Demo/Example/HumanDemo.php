@@ -13,7 +13,7 @@ namespace Demo\Example;
 /**
  * Human class example
  */
-class Human
+class HumanDemo
 {
 
     /**

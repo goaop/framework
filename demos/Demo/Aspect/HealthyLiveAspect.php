@@ -24,7 +24,7 @@ class HealthyLiveAspect implements Aspect
     /**
      * Pointcut for eat method
      *
-     * @Pointcut("execution(public Demo\Example\Human->eat(*))")
+     * @Pointcut("execution(public Demo\Example\HumanDemo->eat(*))")
      */
     protected function humanEat() {}
 
@@ -36,7 +36,7 @@ class HealthyLiveAspect implements Aspect
      */
     protected function washUpBeforeEat(MethodInvocation $invocation)
     {
-        /** @var $person \Demo\Example\Human */
+        /** @var $person \Demo\Example\HumanDemo */
         $person = $invocation->getThis();
         $person->washUp();
     }
@@ -49,7 +49,7 @@ class HealthyLiveAspect implements Aspect
      */
     protected function cleanTeethAfterEat(MethodInvocation $invocation)
     {
-        /** @var $person \Demo\Example\Human */
+        /** @var $person \Demo\Example\HumanDemo */
         $person = $invocation->getThis();
         $person->cleanTeeth();
     }
@@ -58,11 +58,11 @@ class HealthyLiveAspect implements Aspect
      * Method that advice to clean the teeth before going to sleep
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before("execution(public Demo\Example\Human->sleep(*))")
+     * @Before("execution(public Demo\Example\HumanDemo->sleep(*))")
      */
     protected function cleanTeethBeforeSleep(MethodInvocation $invocation)
     {
-        /** @var $person \Demo\Example\Human */
+        /** @var $person \Demo\Example\HumanDemo */
         $person = $invocation->getThis();
         $person->cleanTeeth();
     }
