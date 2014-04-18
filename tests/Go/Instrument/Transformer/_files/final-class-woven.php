@@ -32,12 +32,12 @@ final class TestFinalClass extends TestFinalClass__AopProxied implements \Go\Aop
 
     public static function publicStaticMethod()
     {
-        return self::$__joinPoints['static:publicStaticMethod']->__invoke(get_called_class());
+        return self::$__joinPoints['static:publicStaticMethod']->__invoke(\get_called_class());
     }
 
     protected static function protectedStaticMethod()
     {
-        return self::$__joinPoints['static:protectedStaticMethod']->__invoke(get_called_class());
+        return self::$__joinPoints['static:protectedStaticMethod']->__invoke(\get_called_class());
     }
 }
 \Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestFinalClass',array (
