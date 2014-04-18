@@ -79,7 +79,7 @@
             <ul class="nav navbar-nav navbar-right">
                 <li>AOP:
                     <div class="navbar-form btn-group" data-toggle="button">
-                        <?php if (!empty($_COOKIE['aop_on']) && $_COOKIE['aop_on'] !== 'false'): ?>
+                        <?php if (empty($_COOKIE['aop_on']) || $_COOKIE['aop_on'] === 'true'): ?>
                         <button type="button" class="btn btn-info" id="aop_on">On</button>
                         <?php else: ?>
                         <button type="button" class="btn btn-danger active" id="aop_on">Off</button>
@@ -259,6 +259,7 @@ endif;
                 var active=$(this).hasClass('active');
                 document.cookie = "aop_on=" + active;
                 $(this).toggleClass('btn-info').toggleClass('btn-danger').text(active ? "On" : "Off");
+                window.location.reload();
             });
         });
     </script>
