@@ -99,8 +99,6 @@
     <h1>Welcome</h1>
     <p class="lead">
         This demo shows your an examples of AOP usage. <br>
-        Please, choose one of available examples from navigation menu. <br>
-        You can also try to run this code with XDebug.
     </p>
   </div>
 
@@ -169,10 +167,14 @@ switch ($showCase) {
         $aspectName = 'Demo\Aspect\FluentInterfaceAspect';
 
         $example = new UserFluentDemo(); // Original class doesn't provide fluent interface for us
-        $example
-            ->setName('John')
-            ->setSurname('Doe')
-            ->setPassword('root');
+        if ($example instanceof \Go\Aop\Proxy) { // This check is to prevent fatal errors when AOP is disabled
+            $example
+                ->setName('John')
+                ->setSurname('Doe')
+                ->setPassword('root');
+        } else {
+            echo "Fluent interface is not available without AOP", PHP_EOL;
+        }
         break;
 
     case 'human-advices':
@@ -201,12 +203,19 @@ switch ($showCase) {
         $example->oldMethod();
         $example->notSoGoodMethod();
         break;
+
+    default:
+        echo '
+            <p>
+                Please, choose one of available examples from navigation menu. <br>
+                You can also try to run this code with XDebug.
+            </p>';
 }
 ?>
   </div>
   <div class="panel-group" id="accordion">
 <?php // Conditional block with source code of aspect
-if (!empty($aspectName)):
+if ($aspectName):
 ?>
 
     <div class="panel panel-default" id="aspect">
@@ -227,7 +236,7 @@ endif;
 ?>
 
 <?php // Conditional block with source code of class
-if (isset($example)):
+if ($example):
 ?>
     <div class="panel panel-default">
       <div class="panel-heading">
@@ -257,7 +266,7 @@ endif;
         $(function() {
             $("#aop_on").click(function() {
                 var active=$(this).hasClass('active');
-                document.cookie = "aop_on=" + active;
+                document.cookie = "aop_on=" + active + "; path=/";
                 $(this).toggleClass('btn-info').toggleClass('btn-danger').text(active ? "On" : "Off");
                 window.location.reload();
             });
