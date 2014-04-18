@@ -401,7 +401,7 @@ class ClassProxy extends AbstractProxy
     protected function getJoinpointInvocationBody($method)
     {
         $isStatic = $method->isStatic();
-        $scope    = $isStatic ? 'get_called_class()' : '$this';
+        $scope    = $isStatic ? '\get_called_class()' : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $args = join(', ', array_map(function ($param) {
@@ -414,7 +414,7 @@ class ClassProxy extends AbstractProxy
         $body = '';
 
         if (strpos($method->getSource(), 'func_get_args') !== false) {
-            $body = '$argsList = func_get_args();' . PHP_EOL;
+            $body = '$argsList = \func_get_args();' . PHP_EOL;
             if (empty($args)) {
                 $scope = "$scope, \$argsList";
             } else {
@@ -524,13 +524,13 @@ class ClassProxy extends AbstractProxy
     private function getMagicGetterBody()
     {
         return <<<'GETTER'
-if (array_key_exists($name, $this->__properties)) {
+if (\array_key_exists($name, $this->__properties)) {
     return self::$__joinPoints["prop:$name"]->__invoke(
         $this,
         \Go\Aop\Intercept\FieldAccess::READ,
         $this->__properties[$name]
     );
-} elseif (method_exists(get_parent_class(), __FUNCTION__)) {
+} elseif (\method_exists(\get_parent_class(), __FUNCTION__)) {
     return parent::__get($name);
 } else {
     trigger_error("Trying to access undeclared property {$name}");
@@ -548,14 +548,14 @@ GETTER;
     private function getMagicSetterBody()
     {
         return <<<'SETTER'
-if (array_key_exists($name, $this->__properties)) {
+if (\array_key_exists($name, $this->__properties)) {
     $this->__properties[$name] = self::$__joinPoints["prop:$name"]->__invoke(
         $this,
         \Go\Aop\Intercept\FieldAccess::WRITE,
         $this->__properties[$name],
         $value
     );
-} elseif (method_exists(get_parent_class(), __FUNCTION__)) {
+} elseif (\method_exists(\get_parent_class(), __FUNCTION__)) {
     parent::__set($name, $value);
 } else {
     $this->$name = $value;
@@ -584,7 +584,7 @@ SETTER;
         if (isset($this->methodsCode['__construct'])) {
             $parentCall = $this->getJoinpointInvocationBody($constructor);
         } elseif ($isCallParent) {
-            $parentCall = "call_user_func_array(array('parent', __FUNCTION__), func_get_args());";
+            $parentCall = '\call_user_func_array(array("parent", __FUNCTION__), \func_get_args());';
         } else {
             $parentCall = '';
         }

@@ -117,7 +117,7 @@ class TraitProxy extends ClassProxy
     {
         $isStatic = $method->isStatic();
         $class    = '\\' . __CLASS__;
-        $scope    = $isStatic ? 'get_called_class()' : '$this';
+        $scope    = $isStatic ? '\get_called_class()' : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $args = join(', ', array_map(function ($param) {
