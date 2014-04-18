@@ -278,8 +278,6 @@ class ClassProxy extends AbstractProxy
             $this->addFieldInterceptorsCode($ctor);
         }
 
-        ksort($this->methodsCode);
-        ksort($this->propertiesCode);
         $prefix = join(' ', Reflection::getModifierNames($this->class->getModifiers()));
 
         $classCode = sprintf("%s\n%sclass %s extends %s%s\n{\n%s\n\n%s\n%s\n}",

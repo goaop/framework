@@ -165,8 +165,6 @@ class FunctionProxy
      */
     public function __toString()
     {
-        ksort($this->functionsCode);
-
         $functionsCode = sprintf("<?php\n%s\nnamespace %s;\n%s",
             $this->namespace->getDocComment(),
             $this->namespace->getName(),

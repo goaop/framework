@@ -143,7 +143,6 @@ BODY;
      */
     public function __toString()
     {
-        ksort($this->methodsCode);
         $classCode = sprintf("%s\ntrait %s\n{\n%s\n\n%s\n}",
             $this->class->getDocComment(),
             $this->name,

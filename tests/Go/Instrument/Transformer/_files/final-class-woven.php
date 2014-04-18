@@ -20,19 +20,14 @@ final class TestFinalClass extends TestFinalClass__AopProxied implements \Go\Aop
      */
     private static $__joinPoints = array();
 
-    protected function protectedMethod()
-    {
-        return self::$__joinPoints['method:protectedMethod']->__invoke($this);
-    }
-
-    protected static function protectedStaticMethod()
-    {
-        return self::$__joinPoints['static:protectedStaticMethod']->__invoke(get_called_class());
-    }
-
     public function publicMethod()
     {
         return self::$__joinPoints['method:publicMethod']->__invoke($this);
+    }
+
+    protected function protectedMethod()
+    {
+        return self::$__joinPoints['method:protectedMethod']->__invoke($this);
     }
 
     public static function publicStaticMethod()
@@ -40,6 +35,10 @@ final class TestFinalClass extends TestFinalClass__AopProxied implements \Go\Aop
         return self::$__joinPoints['static:publicStaticMethod']->__invoke(get_called_class());
     }
 
+    protected static function protectedStaticMethod()
+    {
+        return self::$__joinPoints['static:protectedStaticMethod']->__invoke(get_called_class());
+    }
 }
 \Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestFinalClass',array (
   'method' =>
