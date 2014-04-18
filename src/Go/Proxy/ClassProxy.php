@@ -40,11 +40,60 @@ use TokenReflection\ReflectionProperty as ParsedProperty;
 class ClassProxy extends AbstractProxy
 {
     /**
+     * Parent class reflection
+     *
+     * @var null|ReflectionClass|ParsedClass
+     */
+    protected $class = null;
+
+    /**
+     * Parent class name, can be changed manually
+     *
+     * @var string
+     */
+    protected $parentClassName = null;
+
+    /**
+     * Source code for methods
+     *
+     * @var array Name of method => source code for it
+     */
+    protected $methodsCode = array();
+
+    /**
      * Static mappings for class name for excluding if..else check
      *
      * @var null|array
      */
     protected static $invocationClassMap = null;
+
+    /**
+     * List of additional interfaces to implement
+     *
+     * @var array
+     */
+    protected $interfaces = array();
+
+    /**
+     * List of additional traits for using
+     *
+     * @var array
+     */
+    protected $traits = array();
+
+    /**
+     * Source code for properties
+     *
+     * @var array Name of property => source code for it
+     */
+    protected $propertiesCode = array();
+
+    /**
+     * Name for the current class
+     *
+     * @var string
+     */
+    protected $name = '';
 
     /**
      * Flag to determine if we need to add a code for property interceptors
@@ -71,7 +120,16 @@ class ClassProxy extends AbstractProxy
      */
     public function __construct($parent, array $classAdvices)
     {
-        parent::__construct($parent, $parent->getShortName(), $classAdvices);
+        if (!$parent instanceof ReflectionClass && !$parent instanceof ParsedClass) {
+            throw new \InvalidArgumentException("Invalid argument for class");
+        }
+
+        parent::__construct($classAdvices);
+
+        $this->class           = $parent;
+        $this->name            = $parent->getShortName();
+        $this->parentClassName = $parent->getShortName();
+
         $this->addInterface('\Go\Aop\Proxy');
         $this->addJoinpointsProperty();
 
@@ -107,6 +165,59 @@ class ClassProxy extends AbstractProxy
                     throw new \InvalidArgumentException("Unsupported point `$type`");
             }
         }
+    }
+
+
+    /**
+     * Updates parent name for child
+     *
+     * @param string $newParentName New class name
+     *
+     * @return static
+     */
+    public function setParentName($newParentName)
+    {
+        $this->parentClassName = $newParentName;
+
+        return $this;
+    }
+
+    /**
+     * Override parent method with new body
+     *
+     * @param string $methodName Method name to override
+     * @param string $body New body for method
+     *
+     * @return static
+     */
+    public function override($methodName, $body)
+    {
+        $this->methodsCode[$methodName] = $this->getOverriddenMethod($this->class->getMethod($methodName), $body);
+
+        return $this;
+    }
+
+    /**
+     * Creates a method
+     *
+     * @param int $methodFlags See ReflectionMethod modifiers
+     * @param string $methodName Name of the method
+     * @param string $body Body of method
+     * @param string $parameters Definition of parameters
+     *
+     * @return static
+     */
+    public function setMethod($methodFlags, $methodName, $body, $parameters)
+    {
+        $this->methodsCode[$methodName] = sprintf("%s%s function %s(%s)\n{\n%s\n}\n",
+            "/**\n * Method was created automatically, do not change it manually\n */\n",
+            join(' ', Reflection::getModifierNames($methodFlags)),
+            $methodName,
+            $parameters,
+            $this->indent($body)
+        );
+
+        return $this;
     }
 
     /**
@@ -190,6 +301,67 @@ class ClassProxy extends AbstractProxy
         }
 
         return $joinPoints;
+    }
+
+    /**
+     * Add an interface for child
+     *
+     * @param string|ReflectionClass|ParsedClass $interface
+     *
+     * @throws \InvalidArgumentException If object is not an interface
+     */
+    public function addInterface($interface)
+    {
+        $interfaceName = $interface;
+        if ($interface instanceof ReflectionClass || $interface instanceof ParsedClass) {
+            if (!$interface->isInterface()) {
+                throw new \InvalidArgumentException("Interface expected to add");
+            }
+            $interfaceName = $interface->name;
+        }
+        // Use absolute namespace to prevent NS-conflicts
+        $this->interfaces[] = '\\' . ltrim($interfaceName, '\\');
+    }
+
+    /**
+     * Add a trait for child
+     *
+     * @param string|ReflectionClass|ParsedClass $trait
+     *
+     * @throws \InvalidArgumentException If object is not a trait
+     */
+    public function addTrait($trait)
+    {
+        $traitName = $trait;
+        if ($trait instanceof ReflectionClass || $trait instanceof ParsedClass) {
+            if (!$trait->isTrait()) {
+                throw new \InvalidArgumentException("Trait expected to add");
+            }
+            $traitName = $trait->name;
+        }
+        // Use absolute namespace to prevent NS-conflicts
+        $this->traits[] = '\\' . ltrim($traitName, '\\');
+    }
+
+    /**
+     * Creates a property
+     *
+     * @param int $propFlags See ReflectionProperty modifiers
+     * @param string $propName Name of the property
+     * @param null|string $defaultText Default value, should be string text!
+     *
+     * @return static
+     */
+    public function setProperty($propFlags, $propName, $defaultText = null)
+    {
+        $this->propertiesCode[$propName] = sprintf("%s%s $%s%s;\n",
+                "/**\n *Property was created automatically, do not change it manually\n */\n",
+                join(' ', Reflection::getModifierNames($propFlags)),
+                $propName,
+                is_string($defaultText) ? " = $defaultText" : ''
+        );
+
+        return $this;
     }
 
     /**
@@ -320,6 +492,28 @@ class ClassProxy extends AbstractProxy
                 ''
             );
         }
+    }
+
+    /**
+     * Creates a method code from Reflection
+     *
+     * @param Method|ParsedMethod $method Reflection for method
+     * @param string $body Body of method
+     *
+     * @return string
+     */
+    protected function getOverriddenMethod($method, $body)
+    {
+        $code = sprintf("%s%s function %s%s(%s)\n{\n%s\n}\n",
+            preg_replace('/ {4}|\t/', '', $method->getDocComment()) . "\n",
+            join(' ', Reflection::getModifierNames($method->getModifiers())),
+            $method->returnsReference() ? '&' : '',
+            $method->name,
+            join(', ', $this->getParameters($method->getParameters())),
+            $this->indent($body)
+        );
+
+        return $code;
     }
 
     /**

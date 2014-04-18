@@ -24,7 +24,7 @@ use TokenReflection\ReflectionFileNamespace;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 use TokenReflection\ReflectionFunction as ParsedFunction;
 
-class FunctionProxy
+class FunctionProxy extends AbstractProxy
 {
 
     /**
@@ -33,13 +33,6 @@ class FunctionProxy
      * @var array
      */
     protected static $functionAdvices = array();
-
-    /**
-     * Indent for source code
-     *
-     * @var int
-     */
-    protected $indent = 4;
 
     /**
      * Name for the current namespace
@@ -56,13 +49,6 @@ class FunctionProxy
     protected $functionsCode = array();
 
     /**
-     * List of advices that are used for generation of stubs
-     *
-     * @var array
-     */
-    protected $advices = array();
-
-    /**
      * Constructs functions stub class from namespace Reflection
      *
      * @param ReflectionFileNamespace $namespace Reflection of namespace
@@ -70,37 +56,23 @@ class FunctionProxy
      *
      * @throws \InvalidArgumentException for invalid classes
      */
-    protected function __construct($namespace, array $advices = array())
+    public function __construct($namespace, array $advices = array())
     {
         if (!$namespace instanceof ReflectionFileNamespace) {
             throw new \InvalidArgumentException("Invalid argument for namespace");
         }
-        $this->advices   = $this->flattenAdvices($advices);
-        $this->namespace = $namespace;
-    }
 
-    /**
-     * Generates an child code by parent class reflection and joinpoints for it
-     *
-     * @param ReflectionFileNamespace $namespace Reflection of namespace
-     * @param array|Advice[] $advices List of function advices
-     *
-     * @throws \InvalidArgumentException for unsupported advice type
-     * @return FunctionProxy
-     */
-    public static function generate($namespace, array $advices)
-    {
-        $functions = new self($namespace, $advices);
+        parent::__construct($advices);
+        $this->namespace = $namespace;
+
         if (empty($advices[AspectContainer::FUNCTION_PREFIX])) {
-            return $functions;
+            return;
         }
 
         foreach ($advices[AspectContainer::FUNCTION_PREFIX] as $pointName => $value) {
             $function = new ReflectionFunction($pointName);
-            $functions->override($function, $functions->getJoinpointInvocationBody($function));
+            $this->override($function, $this->getJoinpointInvocationBody($function));
         }
-
-        return $functions;
     }
 
     /**
@@ -259,94 +231,4 @@ return \$__joinPoint->__invoke($args);
 BODY;
     }
 
-    /**
-     * Indent block of code
-     *
-     * @param string $text Non-indented text
-     *
-     * @return string Indented text
-     */
-    protected function indent($text)
-    {
-        $pad   = str_pad('', $this->indent, ' ');
-        $lines = array_map(function ($line) use ($pad) {
-            return $pad . $line;
-        }, explode("\n", $text));
-
-        return join("\n", $lines);
-    }
-
-    /**
-     * Returns list of string representation of parameters
-     *
-     * @param array|Parameter[]|ParsedParameter[] $parameters List of parameters
-     *
-     * @return array
-     */
-    protected function getParameters(array $parameters)
-    {
-        $parameterDefinitions = array();
-        foreach ($parameters as $parameter) {
-            if ($parameter->name == '...') {
-                continue;
-            }
-            $parameterDefinitions[] = $this->getParameterCode($parameter);
-        }
-
-        return $parameterDefinitions;
-    }
-
-    /**
-     * Return string representation of parameter
-     *
-     * @param Parameter|ParsedParameter $parameter Reflection parameter
-     *
-     * @return string
-     */
-    protected function getParameterCode($parameter)
-    {
-        $type = '';
-        if ($parameter->isArray()) {
-            $type = 'array';
-        } elseif ($parameter->getClass()) {
-            $type = '\\' . $parameter->getClass()->name;
-        }
-        $defaultValue = null;
-        $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();
-        if ($isDefaultValueAvailable) {
-            if ($parameter instanceof ParsedParameter) {
-                $defaultValue = $parameter->getDefaultValueDefinition();
-            } else {
-                $defaultValue = var_export($parameter->getDefaultValue());
-            }
-        } elseif ($parameter->allowsNull() || $parameter->isOptional()) {
-            $defaultValue = 'null';
-        }
-        $code = sprintf('%s%s$%s%s',
-            $type ? "$type " : '',
-            $parameter->isPassedByReference() ? '&' : '',
-            $parameter->name,
-            $defaultValue ? (" = " . $defaultValue) : ''
-        );
-
-        return $code;
-    }
-
-    /**
-     * Replace concrete advices with list of ids
-     *
-     * @param $advices
-     *
-     * @return array flatten list of advices
-     */
-    private function flattenAdvices($advices)
-    {
-        foreach ($advices as &$typedAdvices) {
-            foreach ($typedAdvices as $name => &$concreteAdvices) {
-                $concreteAdvices = array_keys($concreteAdvices);
-            }
-        }
-
-        return $advices;
-    }
 }

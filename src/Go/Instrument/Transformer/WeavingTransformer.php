@@ -248,7 +248,7 @@ class WeavingTransformer extends BaseSourceTransformer
                 if (!file_exists($dirname)) {
                     mkdir($dirname, 0770, true);
                 }
-                $source = FunctionProxy::generate($namespace, $functionAdvices);
+                $source = new FunctionProxy($namespace, $functionAdvices);
                 file_put_contents($functionFileName, $source);
             }
             $content = 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
@@ -290,7 +290,7 @@ class WeavingTransformer extends BaseSourceTransformer
         }
         $body .= $child;
         file_put_contents($proxyFileName, $body);
-        
+
         return 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
     }
 }
