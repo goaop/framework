@@ -12,6 +12,9 @@ of application and display the name and the arguments of each method during its 
 [![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
 [![Dependencies Status](https://depending.in/lisachenko/go-aop-php.png)](http://depending.in/lisachenko/go-aop-php)
 [![Latest Stable Version](https://poser.pugx.org/lisachenko/go-aop-php/v/stable.png)](https://packagist.org/packages/lisachenko/go-aop-php)
+[![Total Downloads](https://poser.pugx.org/lisachenko/go-aop-php/downloads.png)](https://packagist.org/packages/lisachenko/go-aop-php)
+[![Daily Downloads](https://poser.pugx.org/lisachenko/go-aop-php/d/daily.png)](https://packagist.org/packages/lisachenko/go-aop-php)
+[![License](https://poser.pugx.org/lisachenko/go-aop-php/license.png)](https://packagist.org/packages/lisachenko/go-aop-php)
 
 What is AOP?
 ------------
