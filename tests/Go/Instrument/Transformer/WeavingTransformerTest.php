@@ -221,7 +221,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     protected function normalizeWhitespaces($value)
     {
         return strtr(
-            preg_replace('/^\s+$/m', '', $value),
+            preg_replace('/\s+$/m', '', $value),
             array(
                 "\r\n" => PHP_EOL,
                 "\n"   => PHP_EOL,
@@ -275,7 +275,8 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
                 $this->returnCallback(function (\TokenReflection\ReflectionClass $refClass) {
                     $advices  = array();
                     foreach ($refClass->getMethods() as $method) {
-                        $advices[AspectContainer::METHOD_PREFIX][$method->name] = true;
+                        $advisorId = "advisor.{$refClass->name}->{$method->name}";
+                        $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
                     }
                     return $advices;
                 })

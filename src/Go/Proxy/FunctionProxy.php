@@ -15,6 +15,8 @@ use Go\Aop\Framework\ReflectionFunctionInvocation;
 use Go\Aop\Intercept\FunctionInvocation;
 
 use Go\Core\AspectContainer;
+use Go\Core\AspectKernel;
+use Go\Core\LazyAdvisorAccessor;
 use ReflectionFunction;
 use ReflectionParameter as Parameter;
 
@@ -73,7 +75,7 @@ class FunctionProxy
         if (!$namespace instanceof ReflectionFileNamespace) {
             throw new \InvalidArgumentException("Invalid argument for namespace");
         }
-        $this->advices   = $advices;
+        $this->advices   = $this->flattenAdvices($advices);
         $this->namespace = $namespace;
     }
 
@@ -111,9 +113,21 @@ class FunctionProxy
      */
     public static function getJoinPoint($joinPointName, $namespace)
     {
+        /** @var LazyAdvisorAccessor $accessor */
+        static $accessor = null;
+
+        if (!$accessor) {
+            $accessor  = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
+        }
+
         $advices = self::$functionAdvices[$namespace][AspectContainer::FUNCTION_PREFIX][$joinPointName];
 
-        return new ReflectionFunctionInvocation($joinPointName, $advices);
+        $filledAdvices = array();
+        foreach ($advices as $advisorName) {
+            $filledAdvices[] = $accessor->$advisorName;
+        }
+
+        return new ReflectionFunctionInvocation($joinPointName, $filledAdvices);
     }
 
     /**
@@ -151,7 +165,6 @@ class FunctionProxy
      */
     public function __toString()
     {
-        $serialized = serialize($this->advices);
         ksort($this->functionsCode);
 
         $functionsCode = sprintf("<?php\n%s\nnamespace %s;\n%s",
@@ -165,7 +178,7 @@ class FunctionProxy
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->namespace->getName() . "',"
-                . " \unserialize(" . var_export($serialized, true) . "));";
+                . var_export($this->advices, true) . ");";
     }
 
     /**
@@ -319,5 +332,23 @@ BODY;
         );
 
         return $code;
+    }
+
+    /**
+     * Replace concrete advices with list of ids
+     *
+     * @param $advices
+     *
+     * @return array flatten list of advices
+     */
+    private function flattenAdvices($advices)
+    {
+        foreach ($advices as &$typedAdvices) {
+            foreach ($typedAdvices as $name => &$concreteAdvices) {
+                $concreteAdvices = array_keys($concreteAdvices);
+            }
+        }
+
+        return $advices;
     }
 }

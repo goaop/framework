@@ -65,4 +65,32 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
     }
 
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestClass', unserialize('a:1:{s:6:"method";a:6:{s:12:"publicMethod";b:1;s:15:"protectedMethod";b:1;s:18:"publicStaticMethod";b:1;s:21:"protectedStaticMethod";b:1;s:28:"publicMethodDynamicArguments";b:1;s:26:"publicMethodFixedArguments";b:1;}}'));
+\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestClass',array (
+  'method' =>
+  array (
+    'publicMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->publicMethod',
+    ),
+    'protectedMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->protectedMethod',
+    ),
+    'publicStaticMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->publicStaticMethod',
+    ),
+    'protectedStaticMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->protectedStaticMethod',
+    ),
+    'publicMethodDynamicArguments' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->publicMethodDynamicArguments',
+    ),
+    'publicMethodFixedArguments' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestClass->publicMethodFixedArguments',
+    ),
+  ),
+));

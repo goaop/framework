@@ -10,6 +10,8 @@
 
 namespace Go\Proxy;
 
+use Go\Core\AspectKernel;
+use Go\Core\LazyAdvisorAccessor;
 use ReflectionClass;
 use ReflectionMethod as Method;
 use ReflectionParameter as Parameter;
@@ -84,12 +86,22 @@ class TraitProxy extends ClassProxy
 
     public static function getJoinPoint($traitName, $className, $joinPointType, $pointName)
     {
-        if (!isset(self::$invocationClassMap)) {
+        /** @var LazyAdvisorAccessor $accessor */
+        static $accessor = null;
+
+        if (!self::$invocationClassMap) {
             self::setMappings();
+            $accessor = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
         }
 
-        $advices   = self::$traitAdvices[$traitName][$joinPointType][$pointName];
-        $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $advices);
+        $advices = self::$traitAdvices[$traitName][$joinPointType][$pointName];
+
+        $filledAdvices = array();
+        foreach ($advices as $advisorName) {
+            $filledAdvices[] = $accessor->$advisorName;
+        }
+
+        $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $filledAdvices);
 
         return $joinpoint;
     }
@@ -131,7 +143,6 @@ BODY;
      */
     public function __toString()
     {
-        $serialized = serialize($this->advices);
         ksort($this->methodsCode);
         $classCode = sprintf("%s\ntrait %s\n{\n%s\n\n%s\n}",
             $this->class->getDocComment(),
@@ -148,7 +159,7 @@ BODY;
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->class->name . "',"
-                . " unserialize(" . var_export($serialized, true) . "));";
+                . var_export($this->advices, true) . ");";
     }
 
     private function getMethodAliasesCode()

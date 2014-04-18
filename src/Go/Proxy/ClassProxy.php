@@ -10,6 +10,8 @@
 
 namespace Go\Proxy;
 
+use Go\Core\AspectKernel;
+use Go\Core\LazyAdvisorAccessor;
 use Reflection;
 use ReflectionClass;
 use ReflectionMethod as Method;
@@ -161,18 +163,28 @@ class ClassProxy extends AbstractProxy
      */
     protected static function wrapWithJoinPoints($classAdvices, $className)
     {
-        if (!isset(self::$invocationClassMap)) {
+        /** @var LazyAdvisorAccessor $accessor */
+        static $accessor = null;
+
+        if (!self::$invocationClassMap) {
             self::setMappings();
+            $accessor = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
         }
 
         $joinPoints = array();
+
         foreach ($classAdvices as $joinPointType => $typedAdvices) {
             // if not isset then we don't want to create such invocation for class
             if (!isset(self::$invocationClassMap[$joinPointType])) {
                 continue;
             }
             foreach ($typedAdvices as $joinPointName => $advices) {
-                $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $joinPointName, $advices);
+                $filledAdvices = array();
+                foreach ($advices as $advisorName) {
+                    $filledAdvices[] = $accessor->$advisorName;
+                }
+
+                $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $joinPointName, $filledAdvices);
                 $joinPoints["$joinPointType:$joinPointName"] = $joinpoint;
             }
         }
@@ -265,7 +277,6 @@ class ClassProxy extends AbstractProxy
         if ($this->isFieldsIntercepted && (!$ctor || !$ctor->isPrivate())) {
             $this->addFieldInterceptorsCode($ctor);
         }
-        $serialized = serialize($this->advices);
 
         ksort($this->methodsCode);
         ksort($this->propertiesCode);
@@ -287,7 +298,7 @@ class ClassProxy extends AbstractProxy
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->class->name . "',"
-                . " unserialize(" . var_export($serialized, true) . "));";
+                . var_export($this->advices, true) . ");";
     }
 
     /**

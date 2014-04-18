@@ -15,10 +15,9 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
     public function testSortingLogic($advices, array $order = array())
     {
         $advices = AbstractJoinpoint::sortAdvices($advices);
-        foreach ($advices as $index => $advice) {
-            if (isset($order[$index])) {
-                $this->assertInstanceOf($order[$index], $advice);
-            }
+        foreach ($advices as $advice) {
+            $expected = array_shift($order);
+            $this->assertInstanceOf($expected, $advice);
         }
     }
 

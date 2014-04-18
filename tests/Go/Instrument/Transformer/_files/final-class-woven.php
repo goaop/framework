@@ -41,4 +41,24 @@ final class TestFinalClass extends TestFinalClass__AopProxied implements \Go\Aop
     }
 
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestFinalClass', unserialize('a:1:{s:6:"method";a:4:{s:12:"publicMethod";b:1;s:15:"protectedMethod";b:1;s:18:"publicStaticMethod";b:1;s:21:"protectedStaticMethod";b:1;}}'));
+\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestFinalClass',array (
+  'method' =>
+  array (
+    'publicMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestFinalClass->publicMethod',
+    ),
+    'protectedMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestFinalClass->protectedMethod',
+    ),
+    'publicStaticMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestFinalClass->publicStaticMethod',
+    ),
+    'protectedStaticMethod' =>
+    array (
+      0 => 'advisor.Test\\ns1\\TestFinalClass->protectedStaticMethod',
+    ),
+  ),
+));

@@ -91,6 +91,18 @@ class Container
     }
 
     /**
+     * Checks if item with specified id is present in the container
+     *
+     * @param string $id Identifier
+     *
+     * @return bool
+     */
+    public function has($id)
+    {
+        return isset($this->values[$id]);
+    }
+
+    /**
      * Return list of service tagged with marker
      *
      * @param string $tag Tag to select

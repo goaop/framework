@@ -40,13 +40,6 @@ class AdviceMatcher
     protected $container;
 
     /**
-     * List of resources that was loaded
-     *
-     * @var array
-     */
-    protected $loadedResources = array();
-
-    /**
      * Flag to enable/disable support of global function interception
      *
      * @var bool
@@ -69,7 +62,6 @@ class AdviceMatcher
     }
 
     /**
-     *
      * Returns list of function advices for namespace
      *
      * @param ReflectionFileNamespace $namespace
@@ -85,11 +77,9 @@ class AdviceMatcher
 
         $advices = array();
 
-        if ($this->loadedResources != $this->container->getResources()) {
-            $this->loadAdvisorsAndPointcuts();
-        }
+        $this->loader->loadAdvisorsAndPointcuts();
 
-        foreach ($this->container->getByTag('advisor') as $advisor) {
+        foreach ($this->container->getByTag('advisor') as $advisorId => $advisor) {
 
             if ($advisor instanceof Aop\PointcutAdvisor) {
 
@@ -98,7 +88,7 @@ class AdviceMatcher
                 if ($isFunctionAdvisor && $pointcut->getClassFilter()->matches($namespace)) {
                     $advices = array_merge_recursive(
                         $advices,
-                        $this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $pointcut)
+                        $this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $advisorId, $pointcut)
                     );
                 }
             }
@@ -116,9 +106,7 @@ class AdviceMatcher
      */
     public function getAdvicesForClass($class)
     {
-        if ($this->loadedResources != $this->container->getResources()) {
-            $this->loadAdvisorsAndPointcuts();
-        }
+        $this->loader->loadAdvisorsAndPointcuts();
 
         $classAdvices = array();
         if (!$class instanceof ReflectionClass && !$class instanceof ParsedReflectionClass) {
@@ -133,7 +121,7 @@ class AdviceMatcher
             $originalClass = $class;
         }
 
-        foreach ($this->container->getByTag('advisor') as $advisor) {
+        foreach ($this->container->getByTag('advisor') as $advisorId => $advisor) {
 
             if ($advisor instanceof Aop\PointcutAdvisor) {
 
@@ -141,7 +129,7 @@ class AdviceMatcher
                 if ($pointcut->getClassFilter()->matches($class)) {
                     $classAdvices = array_merge_recursive(
                         $classAdvices,
-                        $this->getAdvicesFromAdvisor($originalClass, $advisor, $pointcut)
+                        $this->getAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut)
                     );
                 }
             }
@@ -150,7 +138,7 @@ class AdviceMatcher
                 if ($advisor->getClassFilter()->matches($class)) {
                     $classAdvices = array_merge_recursive(
                         $classAdvices,
-                        $this->getIntroductionFromAdvisor($originalClass, $advisor)
+                        $this->getIntroductionFromAdvisor($originalClass, $advisor, $advisorId)
                     );
                 }
             }
@@ -164,11 +152,12 @@ class AdviceMatcher
      *
      * @param ReflectionClass|ParsedReflectionClass $class Class to inject advices
      * @param Aop\PointcutAdvisor $advisor Advisor for class
+     * @param string $advisorId Identifier of advisor
      * @param Aop\PointFilter $filter Filter for points
      *
      * @return array
      */
-    private function getAdvicesFromAdvisor($class, Aop\PointcutAdvisor $advisor, Aop\PointFilter $filter)
+    private function getAdvicesFromAdvisor($class, Aop\PointcutAdvisor $advisor, $advisorId, Aop\PointFilter $filter)
     {
         $classAdvices = array();
 
@@ -180,7 +169,7 @@ class AdviceMatcher
                 /** @var $method ReflectionMethod| */
                 if ($method->getDeclaringClass()->name == $class->name && $filter->matches($method)) {
                     $prefix = $method->isStatic() ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
-                    $classAdvices[$prefix][$method->name][] = $advisor->getAdvice();
+                    $classAdvices[$prefix][$method->name][$advisorId] = $advisor->getAdvice();
                 }
             }
         }
@@ -191,7 +180,7 @@ class AdviceMatcher
             foreach ($class->getProperties($mask) as $property) {
                 /** @var $property ReflectionProperty */
                 if ($filter->matches($property)) {
-                    $classAdvices[AspectContainer::PROPERTY_PREFIX][$property->name][] = $advisor->getAdvice();
+                    $classAdvices[AspectContainer::PROPERTY_PREFIX][$property->name][$advisorId] = $advisor->getAdvice();
                 }
             }
         }
@@ -204,10 +193,11 @@ class AdviceMatcher
      *
      * @param ReflectionClass|ParsedReflectionClass $class Class to inject advices
      * @param Aop\IntroductionAdvisor $advisor Advisor for class
+     * @param string $advisorId Identifier of advisor
      *
      * @return array
      */
-    private function getIntroductionFromAdvisor($class, $advisor)
+    private function getIntroductionFromAdvisor($class, $advisor, $advisorId)
     {
         // Do not make introduction for traits
         if ($class->isTrait()) {
@@ -217,29 +207,8 @@ class AdviceMatcher
         /** @var $advice Aop\IntroductionInfo */
         $advice = $advisor->getAdvice();
 
-        return array(
-            AspectContainer::INTRODUCTION_TRAIT_PREFIX => array($advice)
-        );
-    }
-
-    /**
-     * Load pointcuts into container
-     *
-     * There is no need to always load pointcuts, so we delay loading
-     */
-    private function loadAdvisorsAndPointcuts()
-    {
-        $containerResources = $this->container->getResources();
-        $resourcesToLoad    = array_diff($containerResources, $this->loadedResources);
-
-        // TODO: maybe this is a task for the AspectLoader?
-        foreach ($this->container->getByTag('aspect') as $aspect) {
-            $ref = new ReflectionClass($aspect);
-            if (in_array($ref->getFileName(), $resourcesToLoad)) {
-                $this->loader->load($aspect);
-            }
-        }
-        $this->loadedResources = $containerResources;
+        $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX][$advisorId] = $advice;
+        return $classAdvices;
     }
 
     /**
@@ -247,11 +216,12 @@ class AdviceMatcher
      *
      * @param ReflectionFileNamespace $namespace
      * @param Aop\PointcutAdvisor $advisor Advisor for class
+     * @param string $advisorId Identifier of advisor
      * @param Aop\PointFilter $pointcut Filter for points
      *
      * @return array
      */
-    private function getFunctionAdvicesFromAdvisor($namespace, $advisor, $pointcut)
+    private function getFunctionAdvicesFromAdvisor($namespace, $advisor, $advisorId, $pointcut)
     {
         $functions = array();
         $advices   = array();
@@ -265,7 +235,7 @@ class AdviceMatcher
 
         foreach ($functions as $functionName=>$function) {
             if ($pointcut->matches($function)) {
-                $advices[AspectContainer::FUNCTION_PREFIX][$functionName][] = $advisor->getAdvice();
+                $advices[AspectContainer::FUNCTION_PREFIX][$functionName][$advisorId] = $advisor->getAdvice();
             }
         }
 
