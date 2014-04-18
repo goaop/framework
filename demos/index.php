@@ -52,6 +52,29 @@
                 </ul>
               </li>
               <li><a href="http://go.aopphp.com/docs/" target="_blank">Documentation</a></li>
+              <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                      AOP Solutions <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li><a href="https://github.com/lisachenko/php-deal" target="_blank">PhpDeal - Design By Contract Framework</a></li>
+                    <li><a href="https://github.com/Codeception/AspectMock" target="_blank">AspectMock - Testing framework</a></li>
+                    <li><a href="https://github.com/lisachenko/warlock" target="_blank">Warlock - Go! AOP + Symfony DiC</a></li>
+                  </ul>
+              </li>
+              <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                      Videos & Presentations<b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li><a href="https://www.youtube.com/watch?feature=player_detailpage&v=aZ_9PuHemBk#t=1283" target="_blank">Advanced logging in PHP</a></li>
+                    <li><a href="https://www.youtube.com/watch?v=BXKQ99-78bI" target="_blank">Aspect Oriented Programming in PHP</a></li>
+                    <li><a href="http://tutsplus.s3.amazonaws.com/tutspremium/Quick-Tips/AspectMock-Is-Pretty-Neat.mp4" target="_blank">AspectMock Is Pretty Neat</a></li>
+                    <li class="divider">Slides</li>
+                    <li><a href="http://www.slideshare.net/lisachenko/weaving-aspects-in-php-with-the-help-of-go-aop-library" target="_blank">Weaving aspects in PHP with the help of Go! AOP library</a></li>
+                    <li><a href="http://www.slideshare.net/lisachenko/aspect-oriented-programming-in-php" target="_blank">Aspect-Oriented Programming in PHP (Russian)</a></li>
+                  </ul>
+              </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>AOP:
