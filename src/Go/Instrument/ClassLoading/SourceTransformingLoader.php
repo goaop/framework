@@ -19,7 +19,7 @@ use Go\Instrument\Transformer\FilterInjectorTransformer;
 /**
  * Php class loader filter for processing php code
  */
-class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
+class SourceTransformingLoader extends PhpStreamFilter
 {
     /**
      * Php filter definition
@@ -58,7 +58,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      * @param string $filterId Identifier for the filter
      * @throws \RuntimeException If registration was failed
      */
-    public function register($filterId = self::FILTER_IDENTIFIER)
+    public static function register($filterId = self::FILTER_IDENTIFIER)
     {
         if (!empty(self::$filterId)) {
             throw new \RuntimeException('Stream filter already registered');
@@ -77,7 +77,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      * @throws \RuntimeException if filter was not registered
      * @return string
      */
-    public function getId()
+    public static function getId()
     {
         if (empty(self::$filterId)) {
             throw new \RuntimeException('Stream filter was not registered');
@@ -118,7 +118,7 @@ class SourceTransformingLoader extends PhpStreamFilter implements LoadTimeWeaver
      *
      * @return void
      */
-    public function addTransformer(SourceTransformer $transformer)
+    public static function addTransformer(SourceTransformer $transformer)
     {
         self::$transformers[] = $transformer;
     }

@@ -101,11 +101,10 @@ abstract class AspectKernel
         $container->set('kernel.interceptFunctions', $this->options['interceptFunctions']);
         $container->set('kernel.options', $this->options);
 
-        $sourceLoaderFilter = new SourceTransformingLoader();
-        $sourceLoaderFilter->register();
+        SourceTransformingLoader::register();
 
-        foreach ($this->registerTransformers($sourceLoaderFilter) as $sourceTransformer) {
-            $sourceLoaderFilter->addTransformer($sourceTransformer);
+        foreach ($this->registerTransformers() as $sourceTransformer) {
+            SourceTransformingLoader::addTransformer($sourceTransformer);
         }
 
         // Register kernel resources in the container for debug mode
@@ -198,13 +197,11 @@ abstract class AspectKernel
     /**
      * Returns list of source transformers, that will be applied to the PHP source
      *
-     * @param SourceTransformingLoader $sourceLoader Instance of source loader for information
-     *
      * @return array|SourceTransformer[]
      */
-    protected function registerTransformers(SourceTransformingLoader $sourceLoader)
+    protected function registerTransformers()
     {
-        $filterInjector   = new FilterInjectorTransformer($this->options, $sourceLoader->getId());
+        $filterInjector   = new FilterInjectorTransformer($this->options, SourceTransformingLoader::getId());
         $magicTransformer = new MagicConstantTransformer($this);
         $aspectKernel     = $this;
 
