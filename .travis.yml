@@ -8,7 +8,7 @@ php:
   - hhvm
 
 before_script:
-    - composer --prefer-source --dev install
+    - ./.travis.before.sh
 
 matrix:
   allow_failures:
