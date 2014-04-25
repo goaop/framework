@@ -1,6 +1,6 @@
 <?php
 
-namespace Go\Tests;
+namespace Go\Stubs;
 
 class First
 {

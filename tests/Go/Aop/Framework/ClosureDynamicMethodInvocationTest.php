@@ -10,7 +10,7 @@ use Go\Aop\Intercept\MethodInvocation;
 class ClosureDynamicMethodInvocationTest extends \PHPUnit_Framework_TestCase
 {
 
-    const FIRST_CLASS_NAME = 'Go\Tests\First';
+    const FIRST_CLASS_NAME = 'Go\Stubs\First';
 
     /**
      * {@inheritdoc}
