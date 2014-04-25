@@ -11,6 +11,7 @@
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Invocation;
+use Go\Stubs\BaseInterceptorMock;
 
 class BaseInterceptorTest extends AbstractInterceptorTest
 {
@@ -39,21 +40,8 @@ class BaseInterceptorTest extends AbstractInterceptorTest
     {
         $sequence = array();
         $advice   = $this->getAdvice($sequence);
-        $mock     = $this->getMock('Go\Aop\Framework\BaseInterceptor', array('serializeAdvice'), array($advice));
-        $mock
-            ->staticExpects($this->any())
-            ->method('serializeAdvice')
-            ->will(
-                $this->returnCallback(
-                    function () use ($advice) {
-                        return array(
-                            'scope'  => 'aspect',
-                            'method' => 'Go\Aop\Framework\{closure}',
-                            'aspect' => 'Go\Aop\Framework\BaseInterceptorTest'
-                        );
-                    }
-                )
-            );
+        $mock     = new BaseInterceptorMock($advice);
+
         $mockClass      = get_class($mock);
         $mockNameLength = strlen($mockClass);
         $result         = serialize($mock);
@@ -65,17 +53,8 @@ class BaseInterceptorTest extends AbstractInterceptorTest
     public function testCanUnserializeInterceptor()
     {
         $advice = $this->getAdvice($sequence);
-        $mock   = $this->getMock('Go\Aop\Framework\BaseInterceptor', array('unserializeAdvice'), array($advice));
-        $mock
-            ->staticExpects($this->any())
-            ->method('unserializeAdvice')
-            ->will(
-                $this->returnCallback(
-                    function () use ($advice) {
-                        return $advice;
-                    }
-                )
-            );
+        $mock   = new BaseInterceptorMock($advice);
+
         $mockClass      = get_class($mock);
         $mockNameLength = strlen($mockClass);
         // Trick to mock unserialization of advice
