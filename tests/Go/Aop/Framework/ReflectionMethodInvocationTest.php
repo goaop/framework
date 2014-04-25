@@ -59,7 +59,7 @@ class ReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
      */
     public function testStaticLsbIsWorking($methodName)
     {
-        $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array($methodName));
+        $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array('none'));
         $invocation = new ReflectionMethodInvocation($childClass, $methodName, array());
 
         // LSB is not working, so it returns parent class name :( So just check that this doesn't break anything
