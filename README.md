@@ -52,36 +52,24 @@ Method interception in traits is broken, however DeclareParent advice can be use
 Installation
 ------------
 
-Go! AOP library can be installed with composer or manually with git submodules. Installation is quite easy:
+Go! AOP library can be installed with composer. Installation is quite easy:
 
-1. Download the library using composer or git submodule
+1. Download the library using composer
 2. Create an application aspect kernel
 3. Configure the aspect kernel in the front controller
 4. Create an aspect
 5. Register the aspect in the aspect kernel
 
-### Step 1: Download the library using composer or git submodule
+### Step 1: Download the library using composer
 
 Ask composer to download the Go! AOP library with its dependencies by running the command:
 
 ``` bash
-$ php composer.phar require lisachenko/go-aop-php:0.4.0
+$ php composer.phar require lisachenko/go-aop-php
 ```
 
 Composer will install the library to your project's `vendor/lisachenko/go-aop-php` directory.
 
-Alternative way for installing the library is to use git submodules:
-
-``` bash
-git submodule add https://github.com/lisachenko/go-aop-php vendor/lisachenko/go-aop-php
-```
-
-Dependencies should be also installed as submodules:
-``` bash
-git submodule add https://github.com/Andrewsville/PHP-Token-Reflection vendor/andrewsville/php-token-reflection
-git submodule add https://github.com/doctrine/common vendor/doctrine/common (use 2.3.x tags)
-git submodule add https://github.com/jakubledl/dissect vendor/jakubledl/dissect
-```
 
 ### Step 2: Create an application aspect kernel
 
