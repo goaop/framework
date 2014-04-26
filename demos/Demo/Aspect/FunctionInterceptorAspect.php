@@ -60,7 +60,6 @@ class FunctionInterceptorAspect implements Aspect
             PHP_EOL;
 
         // return $invocation->proceed(); // Do not call original file_get_contents()
-
         return 'Hello!'; // Override return value for function
     }
 }

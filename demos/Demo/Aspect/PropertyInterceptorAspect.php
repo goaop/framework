@@ -45,7 +45,6 @@ class PropertyInterceptorAspect implements Aspect
             PHP_EOL;
 
         // $value = 666; You can change the return value for read/write operations in advice!
-
         return $value;
     }
 }

@@ -67,6 +67,7 @@ class GoAspectContainer extends Container implements AspectContainer
                 'aspect.loader',
                 $container->get('kernel.options')
             );
+
             return $cachedAspectLoader;
         });
 

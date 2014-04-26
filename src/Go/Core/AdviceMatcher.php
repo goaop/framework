@@ -208,6 +208,7 @@ class AdviceMatcher
         $advice = $advisor->getAdvice();
 
         $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX][$advisorId] = $advice;
+
         return $classAdvices;
     }
 
