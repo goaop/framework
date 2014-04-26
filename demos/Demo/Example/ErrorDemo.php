@@ -34,6 +34,7 @@ class ErrorDemo
     public function notSoGoodMethod()
     {
         $value = round(microtime(true)) % 3; // Sometimes this equal to 0
+
         return rand(1, 10) / $value;
     }
 }
