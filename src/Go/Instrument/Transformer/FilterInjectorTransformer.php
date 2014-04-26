@@ -101,7 +101,11 @@ class FilterInjectorTransformer implements SourceTransformer
 
         // Trigger creation of cache, this will create a cache file with $newResource name
         if (!$prebuiltCache && !file_exists($newResource)) {
-            file_get_contents(self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource);
+            // Workaround for https://github.com/facebook/hhvm/issues/2485
+            $file = fopen($resource, 'r');
+            stream_filter_append($file, self::$filterName);
+            stream_get_contents($file);
+            fclose($file);
         }
 
         return $newResource;
