@@ -103,6 +103,11 @@
   </div>
 
   <div class="well"><!--Here will be an output of code execution-->
+      <p>
+          Please, choose one of available examples from navigation menu. <br>
+          You can also try to run this code with XDebug.
+      </p>
+      <pre>
 <?php
 /**
  * Start of demo source code here
@@ -117,6 +122,15 @@ use Demo\Example\LoggingDemo;
 use Demo\Example\PropertyDemo;
 use Demo\Example\UserFluentDemo;
 use Go\Instrument\Transformer\MagicConstantTransformer;
+
+function highlight($file) {
+    $highlightFileFunc = new ReflectionFunction('highlight_file');
+    if (!$highlightFileFunc->isDisabled()) {
+        highlight_file($file);
+    } else {
+        echo '<pre>' . htmlspecialchars(file_get_contents($file)) . '</pre>';
+    }
+}
 
 $isAOPDisabled = isset($_COOKIE['aop_on']) && $_COOKIE['aop_on'] == 'false';
 include __DIR__ . ($isAOPDisabled ? '/autoload.php' : '/autoload_aspect.php');
@@ -205,14 +219,9 @@ switch ($showCase) {
         break;
 
     default:
-        echo '
-            <p>
-                Please, choose one of available examples from navigation menu. <br>
-                You can also try to run this code with XDebug.
-            </p>';
 }
 ?>
-  </div>
+  </pre></div>
   <div class="panel-group" id="accordion">
 <?php // Conditional block with source code of aspect
 if ($aspectName):
@@ -226,8 +235,8 @@ if ($aspectName):
           </div>
       <div class="panel-body well panel-collapse collapse out" id="collapseOne">
 <?php
-$refAspect = new ReflectionClass($aspectName);
-highlight_file(MagicConstantTransformer::resolveFileName($refAspect->getFileName()));
+$refAspect   = new ReflectionClass($aspectName);
+highlight(MagicConstantTransformer::resolveFileName($refAspect->getFileName()));
 ?>
       </div>
     </div>
@@ -246,7 +255,7 @@ if ($example):
       <div class="panel-body well panel-collapse collapse out" id="collapseTwo">
 <?php
 $refObject = new ReflectionObject($example);
-highlight_file(MagicConstantTransformer::resolveFileName($refObject->getFileName()));
+highlight(MagicConstantTransformer::resolveFileName($refObject->getFileName()));
 ?>
       </div>
     </div>
