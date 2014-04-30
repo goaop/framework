@@ -14,6 +14,7 @@ use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AspectContainer;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectKernel;
+use Go\Instrument\CleanableMemory;
 use Go\Proxy\ClassProxy;
 use Go\Proxy\FunctionProxy;
 use Go\Proxy\TraitProxy;
@@ -86,10 +87,12 @@ class WeavingTransformer extends BaseSourceTransformer
         }
 
         try {
+            CleanableMemory::enterProcessing();
             $parsedSource = $this->broker->processString($metadata->source, $fileName, true);
         } catch (FileProcessingException $e) {
             // TODO: collect this exception and make a record in the modified source
             // TODO: Maybe just ask a developer to add this file into exclude list?
+            CleanableMemory::leaveProcessing();
             return;
         }
 
@@ -112,6 +115,8 @@ class WeavingTransformer extends BaseSourceTransformer
             }
             $this->processFunctions($metadata, $namespace);
         }
+
+        CleanableMemory::leaveProcessing();
     }
 
     /**
