@@ -20,11 +20,37 @@ use TokenReflection\Stream\StreamBase;
 class CleanableMemory extends Memory
 {
     /**
+     * Nested level to track hierarchy
+     *
+     * @var int
+     */
+    protected static $level = 0;
+
+    /**
+     * Increments current level
+     */
+    public static function enterProcessing()
+    {
+        self::$level++;
+    }
+
+    /**
+     * Decrements current level
+     */
+    public static function leaveProcessing()
+    {
+        self::$level = self::$level > 0 ? self::$level-1 : 0;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function addFile(StreamBase $tokenStream, ReflectionFile $file)
     {
-        $this->clearTokenCache();
+        if (self::$level <= 1) {
+            // Clean the old cache only for main classes, allow to bypass cleaning for hierarchy
+            $this->clearTokenCache();
+        }
 
         return parent::addFile($tokenStream, $file);
     }
