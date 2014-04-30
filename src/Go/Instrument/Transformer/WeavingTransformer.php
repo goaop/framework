@@ -107,6 +107,16 @@ class WeavingTransformer extends BaseSourceTransformer
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
 
+                $parentClassNames = array_merge(
+                    $class->getParentClassNameList(),
+                    $class->getInterfaceNames(),
+                    $class->getTraitNames()
+                );
+
+                foreach ($parentClassNames as $parentClassName) {
+                    class_exists($parentClassName); // trigger autoloading of class/interface/trait
+                }
+
                 // Skip interfaces and aspects
                 if ($class->isInterface() || in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
                     continue;
