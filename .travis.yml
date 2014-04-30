@@ -5,11 +5,11 @@ php:
   - 5.5
   - 5.4
   - 5.3
-  - hhvm
+  - hhvm-nightly
 
 before_script:
     - ./.travis.before.sh
 
 matrix:
   allow_failures:
-    - php: hhvm
+    - php: hhvm-nightly
