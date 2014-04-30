@@ -38,38 +38,6 @@ class TraitProxy extends ClassProxy
     protected static $traitAdvices = array();
 
     /**
-     * Generates an child code by parent class reflection and joinpoints for it
-     *
-     * @param ReflectionClass|ParsedClass $parent Parent class reflection
-     * @param array|Advice[] $traitAdvices List of advices for trait
-     *
-     * @throws \InvalidArgumentException for unsupported advice type
-     * @return self
-     */
-    public function __construct($parent, array $traitAdvices)
-    {
-        parent::__construct($parent, $traitAdvices);
-
-        foreach ($traitAdvices as $type => $typedAdvices) {
-            switch ($type) {
-                case AspectContainer::METHOD_PREFIX:
-                case AspectContainer::STATIC_METHOD_PREFIX:
-                    foreach ($typedAdvices as $joinPointName => $advice) {
-                        $this->overrideMethod($parent->getMethod($joinPointName));
-                    }
-                    break;
-
-                case AspectContainer::PROPERTY_PREFIX:
-                case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
-                    continue;
-
-                default:
-                    throw new \InvalidArgumentException("Unsupported point `$type`");
-            }
-        }
-    }
-
-    /**
      * Inject advices for given trait
      *
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
