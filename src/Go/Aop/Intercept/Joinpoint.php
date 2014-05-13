@@ -59,4 +59,11 @@ interface Joinpoint
      * @return object
      */
     public function getStaticPart();
+
+    /**
+     * Returns a friendly description of current joinpoint
+     *
+     * @return string
+     */
+    public function __toString();
 }

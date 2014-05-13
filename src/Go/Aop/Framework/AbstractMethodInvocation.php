@@ -132,4 +132,19 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
 
         return $result;
     }
+
+    /**
+     * Returns friendly description of this joinpoint
+     *
+     * @return string
+     */
+    final public function __toString()
+    {
+        return sprintf(
+            "execution(%s%s%s())",
+            is_object($this->instance) ? get_class($this->instance) : $this->instance,
+            $this->reflectionMethod->isStatic() ? '::' : '->',
+            $this->reflectionMethod->name
+        );
+    }
 }

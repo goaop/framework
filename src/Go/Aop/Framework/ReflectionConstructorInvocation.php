@@ -140,4 +140,17 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     {
         return $this->class->newInstanceArgs($this->arguments);
     }
+
+    /**
+     * Returns a friendly description of current joinpoint
+     *
+     * @return string
+     */
+    final public function __toString()
+    {
+        return sprintf(
+            "initialization(%s)",
+            $this->class->name
+        );
+    }
 }

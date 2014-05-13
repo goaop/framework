@@ -127,4 +127,17 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
 
         return $result;
     }
+
+    /**
+     * Returns a friendly description of current joinpoint
+     *
+     * @return string
+     */
+    final public function __toString()
+    {
+        return sprintf(
+            "execution(%s())",
+            $this->reflectionFunction->getName()
+        );
+    }
 }

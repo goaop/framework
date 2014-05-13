@@ -204,4 +204,20 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     {
         return $this->getField();
     }
+
+    /**
+     * Returns a friendly description of current joinpoint
+     *
+     * @return string
+     */
+    final public function __toString()
+    {
+        return sprintf(
+            "%s(%s%s%s)",
+            $this->accessType == self::READ ? 'get' : 'set',
+            is_object($this->instance) ? get_class($this->instance) : $this->instance,
+            $this->reflectionProperty->isStatic() ? '::' : '->',
+            $this->reflectionProperty->name
+        );
+    }
 }
