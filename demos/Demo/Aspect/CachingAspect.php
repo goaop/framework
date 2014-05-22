@@ -41,8 +41,10 @@ class CachingAspect implements Aspect
         $class = is_object($obj) ? get_class($obj) : $obj;
         $key   = $class . ':' . $invocation->getMethod()->name;
         if (!isset($memoryCache[$key])) {
-            // We can use ttl value from annotation
-            echo "Ttl is: ", $invocation->getMethod()->getAnnotation('Demo\Annotation\Cacheable')->time, PHP_EOL;
+            // We can use ttl value from annotation, but Doctrine annotations doesn't work under GAE
+            if (!isset($_SERVER['APPENGINE_RUNTIME'])) {
+                echo "Ttl is: ", $invocation->getMethod()->getAnnotation('Demo\Annotation\Cacheable')->time, PHP_EOL;
+            }
 
             $memoryCache[$key] = $invocation->proceed();
         }
