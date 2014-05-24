@@ -116,7 +116,7 @@ abstract class AbstractProxy
             $type ? "$type " : '',
             $parameter->isPassedByReference() ? '&' : '',
             $parameter->name,
-            $defaultValue ? (" = " . $defaultValue) : ''
+            $defaultValue !== null ? (" = " . $defaultValue) : ''
         );
 
         return $code;
