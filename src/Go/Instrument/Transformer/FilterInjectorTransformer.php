@@ -74,23 +74,24 @@ class FilterInjectorTransformer implements SourceTransformer
      *
      * This operation can check for cache, can rewrite paths, add additional filters and much more
      *
-     * @param string $resource Initial resource to include
+     * @param string $originalResource Initial resource to include
      * @param string $originalDir Path to the directory from where include was called for resolving relative resources
      *
      * @return string Transformed path to the resource
      */
-    public static function rewrite($resource, $originalDir = '')
+    public static function rewrite($originalResource, $originalDir = '')
     {
         static $appDir, $cacheDir, $debug, $prebuiltCache;
         if (!$appDir) {
             extract(self::$options, EXTR_IF_EXISTS);
         }
 
-        $resource = (string) $resource;
+        $resource = (string) $originalResource;
         if ($resource['0'] !== '/') {
             $resource
                 =  PathResolver::realpath($resource, $checkExistence = true)
-                ?: PathResolver::realpath("{$originalDir}/{$resource}", $checkExistence = true);
+                ?: PathResolver::realpath("{$originalDir}/{$resource}", $checkExistence = true)
+                ?: $originalResource;
         }
         // If the cache is disabled, then use on-fly method
         if (!$cacheDir || $debug) {
