@@ -54,7 +54,7 @@ class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
 
         // Rebind the closure if instance was changed since last time
         if ($this->previousInstance !== $this->instance) {
-            $this->closureToCall    = $this->closureToCall->bindTo($this->instance, $this->className);
+            $this->closureToCall    = $this->closureToCall->bindTo($this->instance, $this->reflectionMethod->class);
             $this->previousInstance = $this->instance;
         }
 
