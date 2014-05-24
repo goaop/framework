@@ -1,5 +1,18 @@
 Changelog
 ======
+0.5.0 (May 24, 2014)
+* Proxies are now stored in the separate files to allow more transparent debugging
+* Cache warmer command added
+* Extended pointcut syntax for or-ed methods: ClassName->method1|method2(*)
+* Access to the annotations for method from MethodInvocation
+* Support for read-only file systems (phar, GAE, etc)
+* Direct access to advisors (no more serialize/unserialize)
+* New @within pointcut to match classes by annotation class
+* Nice demo GUI
+* Deprecate the usage of submodules for framework
+* Inheritance support during class-loading and weaving
+* List of small fixes and imrovements
+
 0.4.1 (Aug 27, 2013)
 * Better parsing of complex "include" expressions for Yii (by @zvirusz)
 * Support for dynamic arguments count for methods by checking for func_get_args() inside method body
