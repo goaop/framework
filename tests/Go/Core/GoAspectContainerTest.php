@@ -3,8 +3,6 @@
 namespace Go\Core;
 
 use Go\Aop\Pointcut;
-use Go\Aop\Support\DefaultPointcutAdvisor;
-use Go\Aop\Support\TruePointFilter;
 use \PHPUnit_Framework_TestCase as TestCase;
 
 class GoAspectContainerTest extends TestCase

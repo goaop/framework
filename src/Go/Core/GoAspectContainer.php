@@ -12,13 +12,11 @@ namespace Go\Core;
 
 use Doctrine\Common\Annotations\FileCacheReader;
 use ReflectionClass;
-
 use Go\Aop;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\RawAnnotationReader;
-
 use Doctrine\Common\Annotations\AnnotationReader;
 
 /**

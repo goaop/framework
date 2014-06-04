@@ -18,7 +18,6 @@ use ReflectionMethod as Method;
 use ReflectionParameter as Parameter;
 use ReflectionProperty as Property;
 use UnexpectedValueException;
-
 use Go\Aop\Advice;
 use Go\Aop\IntroductionInfo;
 use Go\Aop\Intercept\Joinpoint;
@@ -26,9 +25,7 @@ use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\ReflectionMethodInvocation;
 use Go\Aop\Framework\ClosureStaticMethodInvocation;
 use Go\Aop\Framework\ClosureDynamicMethodInvocation;
-
 use Go\Core\AspectContainer;
-
 use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionParameter as ParsedParameter;

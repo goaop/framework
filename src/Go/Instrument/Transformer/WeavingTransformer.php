@@ -18,7 +18,6 @@ use Go\Instrument\CleanableMemory;
 use Go\Proxy\ClassProxy;
 use Go\Proxy\FunctionProxy;
 use Go\Proxy\TraitProxy;
-
 use TokenReflection\Broker;
 use TokenReflection\Exception\FileProcessingException;
 use TokenReflection\ReflectionClass as ParsedClass;
@@ -93,6 +92,7 @@ class WeavingTransformer extends BaseSourceTransformer
             // TODO: collect this exception and make a record in the modified source
             // TODO: Maybe just ask a developer to add this file into exclude list?
             CleanableMemory::leaveProcessing();
+
             return;
         }
 

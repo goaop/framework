@@ -13,10 +13,8 @@ namespace Go\Core;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
-
 use Go\Aop;
 use Go\Aop\Support\NamespacedReflectionFunction;
-
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 use TokenReflection\ReflectionFileNamespace;
 

@@ -11,7 +11,6 @@
 namespace Go\Aop\Framework;
 
 use Exception;
-
 use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\FunctionInterceptor;

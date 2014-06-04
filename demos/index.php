@@ -123,7 +123,8 @@ use Demo\Example\PropertyDemo;
 use Demo\Example\UserFluentDemo;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 
-function highlight($file) {
+function highlight($file)
+{
     $highlightFileFunc = new ReflectionFunction('highlight_file');
     if (!$highlightFileFunc->isDisabled()) {
         highlight_file($file);

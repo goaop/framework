@@ -19,7 +19,6 @@ use Go\Aop\Support\TruePointFilter;
 use Go\Aop\Support\SimpleClassFilter;
 use Go\Core\AspectContainer;
 use Go\Instrument\RawAnnotationReader;
-
 use Dissect\Parser\Grammar;
 
 /**

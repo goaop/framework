@@ -11,7 +11,6 @@
 namespace Go\Aop\Framework;
 
 use ReflectionFunction;
-
 use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\FunctionInterceptor;
 

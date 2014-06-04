@@ -12,15 +12,10 @@ namespace Go\Proxy;
 
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
-use ReflectionClass;
 use ReflectionMethod as Method;
 use ReflectionParameter as Parameter;
-
 use Go\Aop\Advice;
-
 use Go\Core\AspectContainer;
-
-use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 

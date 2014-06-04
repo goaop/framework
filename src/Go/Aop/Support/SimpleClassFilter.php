@@ -11,7 +11,6 @@
 namespace Go\Aop\Support;
 
 use ReflectionClass;
-
 use Go\Aop\PointFilter;
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 

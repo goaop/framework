@@ -11,7 +11,6 @@
 namespace Go\Aop\Pointcut;
 
 use ReflectionMethod;
-
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 
 /**

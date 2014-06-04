@@ -11,7 +11,6 @@
 namespace Go\Aop\Pointcut;
 
 use ReflectionClass;
-
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use ReflectionMethod;

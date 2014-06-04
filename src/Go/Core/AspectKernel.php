@@ -19,7 +19,6 @@ use Go\Instrument\Transformer\WeavingTransformer;
 use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
-
 use TokenReflection;
 
 /**
