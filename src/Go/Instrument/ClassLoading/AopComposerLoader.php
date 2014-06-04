@@ -11,7 +11,6 @@
 namespace Go\Instrument\ClassLoading;
 
 use Go\Instrument\Transformer\FilterInjectorTransformer;
-
 use Composer\Autoload\ClassLoader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 

@@ -11,7 +11,6 @@
 namespace Go\Aop\Framework;
 
 use Serializable;
-
 use Go\Aop\Pointcut;
 use Go\Aop\Intercept\Interceptor;
 

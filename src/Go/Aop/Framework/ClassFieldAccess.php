@@ -11,7 +11,6 @@
 namespace Go\Aop\Framework;
 
 use ReflectionProperty;
-
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldInterceptor;
 

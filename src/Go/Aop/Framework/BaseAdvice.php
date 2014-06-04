@@ -12,7 +12,6 @@ namespace Go\Aop\Framework;
 
 use ReflectionFunction;
 use ReflectionMethod;
-
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Core\AspectKernel;

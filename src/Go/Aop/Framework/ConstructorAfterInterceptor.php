@@ -11,7 +11,6 @@
 namespace Go\Aop\Framework;
 
 use Exception;
-
 use Go\Aop\AdviceAfter;
 use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\ConstructorInterceptor;

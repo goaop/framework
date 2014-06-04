@@ -11,7 +11,6 @@
 namespace Go\Instrument\ClassLoading;
 
 use php_user_filter as PhpStreamFilter;
-
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;

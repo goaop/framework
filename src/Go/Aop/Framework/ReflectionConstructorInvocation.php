@@ -12,7 +12,6 @@ namespace Go\Aop\Framework;
 
 use ReflectionClass;
 use ReflectionMethod;
-
 use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\ConstructorInterceptor;
 

@@ -13,11 +13,9 @@ namespace Go\Instrument;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
-
 use TokenReflection\ReflectionClass as ParsedReflectionClass;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
-
 use Doctrine\Common\Annotations\DocParser;
 use Doctrine\Common\Annotations\Annotation\Target;
 

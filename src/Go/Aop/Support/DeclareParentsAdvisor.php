@@ -12,7 +12,6 @@ namespace Go\Aop\Support;
 
 use InvalidArgumentException;
 use ReflectionClass;
-
 use Go\Aop\Advice;
 use Go\Aop\PointFilter;
 use Go\Aop\IntroductionInfo;
