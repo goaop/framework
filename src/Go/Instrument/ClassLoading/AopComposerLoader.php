@@ -35,10 +35,10 @@ class AopComposerLoader
      * @var array
      */
     protected $internalNamespaces = array(
-        'Go',
-        'Dissect',
-        'Doctrine\\Common',
-        'TokenReflection',
+        'Go\\',
+        'Dissect\\',
+        'Doctrine\\Common\\',
+        'TokenReflection\\',
     );
 
     /**
