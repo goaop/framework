@@ -15,11 +15,11 @@
     },
 
     "require-dev": {
-        "symfony/console": "~2"
+        "symfony/console": "~2.1"
     },
 
     "suggest": {
-        "symfony/console": "for the command-line tool"
+        "symfony/console": "Enables the usage of the command-line tool."
     },
 
     "bin": ["bin/warmup"],
