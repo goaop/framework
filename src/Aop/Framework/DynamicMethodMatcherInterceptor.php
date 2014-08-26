@@ -68,8 +68,8 @@ class DynamicMethodMatcherInterceptor extends BaseInterceptor implements MethodI
     {
         if ($this->pointcut->matches($invocation->getMethod(), $invocation->getThis(), $invocation->getArguments())) {
             return $this->adviceMethod->invoke($invocation);
-        } else {
-            return $invocation->proceed();
         }
+
+        return $invocation->proceed();
     }
 }
