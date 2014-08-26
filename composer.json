@@ -31,11 +31,11 @@
     ],
 
     "autoload": {
-        "psr-0": {"Go": "src/"}
+        "psr-4": {"Go\\": "src/"}
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "0.5-dev"
+            "dev-master": "0.6-dev"
         }
     }
 }
