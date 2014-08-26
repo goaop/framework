@@ -7,7 +7,7 @@ php:
   - 5.3
   - hhvm-nightly
 
-before_script:
+install:
     - ./.travis.before.sh
 
 matrix:
