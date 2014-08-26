@@ -91,6 +91,31 @@ class PointcutGrammar extends Grammar
             })
 
             ->is(
+                'dynamic', '(' ,
+                    'MemberModifiers', 'ClassFilter', 'MethodCall', 'NamePattern', '(', '*', ')',
+                ')'
+            )
+            ->call(function(
+                $_, // execution node
+                $_, // (
+                ModifierMatcherFilter $memberModifiers,
+                PointFilter $classFilter,
+                $methodCallType,
+                $methodNamePattern,
+                $_ // )
+            ) {
+                if ($methodCallType === '::') {
+                    $memberModifiers->andMatch(\ReflectionMethod::IS_STATIC);
+                } else {
+                    $memberModifiers->notMatch(\ReflectionMethod::IS_STATIC);
+                }
+                $pointcut = new MagicMethodPointcut($methodNamePattern, $memberModifiers);
+                $pointcut->setClassFilter($classFilter);
+
+                return $pointcut;
+            })
+
+            ->is(
                 'execution', '(',
                     'NamespacePattern', '(', '*', ')',
                 ')'

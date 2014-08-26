@@ -44,6 +44,7 @@
                   <li class="divider">Interceptors</li>
                   <li><a href="?showcase=property-interceptor">Intercepting access to the properties</a></li>
                   <li><a href="?showcase=function-interceptor">Intercepting system functions</a></li>
+                  <li><a href="?showcase=dynamic-interceptor">Intercepting magic methods (__call and __callStatic)</a></li>
                   <li class="divider">Advanced</li>
                   <li><a href="?showcase=fluent-interface">Fluent Interface</a></li>
                   <li><a href="?showcase=human-advices">Human live advices</a></li>
@@ -114,6 +115,7 @@
  */
 
 use Demo\Example\CacheableDemo;
+use Demo\Example\DynamicMethodsDemo;
 use Demo\Example\ErrorDemo;
 use Demo\Example\FunctionDemo;
 use Demo\Example\HumanDemo;
@@ -168,6 +170,15 @@ switch ($showCase) {
         $example->publicProperty = 987; // Write public property
         $example->showProtected();
         $example->setProtected(987);
+        break;
+
+    case 'dynamic-interceptor':
+        $aspectName = 'Demo\Aspect\DynamicMethodsAspect';
+
+        $example = new DynamicMethodsDemo();
+        $example->saveById(123); // intercept magic dynamic method
+        $example->load(456); // notice, that advice for this magic method is not called
+        DynamicMethodsDemo::find(array('id' =>124)); //intercept magic static method
         break;
 
     case 'function-interceptor':
