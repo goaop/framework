@@ -35,5 +35,6 @@ class AwesomeAspectKernel extends AspectKernel
         $container->registerAspect(new FunctionInterceptorAspect());
         $container->registerAspect(new FluentInterfaceAspect());
         $container->registerAspect(new HealthyLiveAspect());
+        $container->registerAspect(new DynamicMethodsAspect());
     }
 }
