@@ -61,6 +61,6 @@ abstract class DynamicMethodMatcherPointcut implements Pointcut
      */
     public function getKind()
     {
-        return PointFilter::KIND_METHOD;
+        return PointFilter::KIND_METHOD | PointFilter::KIND_DYNAMIC;
     }
 }
