@@ -93,7 +93,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
 
             case ($isPointFilter && ($pointcut->getKind() & PointFilter::KIND_METHOD)):
                 $advice = $this->getMethodInterceptor($metaInformation, $adviceCallback);
-                if ($pointcut instanceof Support\DynamicMethodMatcher) {
+                if ($pointcut->getKind() & PointFilter::KIND_DYNAMIC) {
                     $advice = new Framework\DynamicMethodMatcherInterceptor(
                         $pointcut,
                         $advice

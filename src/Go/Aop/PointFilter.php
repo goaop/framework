@@ -22,6 +22,7 @@ interface PointFilter
     const KIND_TRAIT    = 8;
     const KIND_FUNCTION = 16;
     const KIND_ALL      = 31;
+    const KIND_DYNAMIC  = 256;
 
     /**
      * Performs matching of point of code

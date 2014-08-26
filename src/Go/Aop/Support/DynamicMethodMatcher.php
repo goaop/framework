@@ -37,7 +37,7 @@ abstract class DynamicMethodMatcher implements MethodMatcher
      */
     public function getKind()
     {
-        return self::KIND_METHOD;
+        return self::KIND_METHOD | self::KIND_DYNAMIC;
     }
 
 }
