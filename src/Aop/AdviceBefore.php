@@ -12,7 +12,6 @@ namespace Go\Aop;
 
 /**
  * Tag class for all before advices either for field access or method calling
- * @author Lisachenko Alexander
  */
 interface AdviceBefore extends Advice
 {

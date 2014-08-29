@@ -14,8 +14,7 @@ use Go\Core\AspectKernel;
 use Go\Core\AspectContainer;
 
 /**
- * @package go
- * @subpackage instrument
+ * Base source transformer class definition
  */
 abstract class BaseSourceTransformer implements SourceTransformer
 {

@@ -13,7 +13,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\IntroductionInfo;
 
 /**
- * @package go
+ * Advice for introduction that holds list of traits and interfaces for the concrete class
  */
 class TraitIntroductionInfo implements IntroductionInfo
 {

@@ -13,9 +13,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\MethodInterceptor;
 
 /**
- * NB: This invocation is only used for static methods to support LSB
- *
- * @package go
+ * Class-invocation of static method in a class via static closure rebinding and LSB
  */
 class ClosureStaticMethodInvocation extends AbstractMethodInvocation
 {

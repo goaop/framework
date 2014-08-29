@@ -13,6 +13,9 @@ namespace Go\Proxy;
 use ReflectionParameter as Parameter;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 
+/**
+ * Abstract class for building different proxies
+ */
 abstract class AbstractProxy
 {
 

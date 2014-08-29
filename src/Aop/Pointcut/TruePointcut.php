@@ -16,9 +16,6 @@ use Go\Aop\Support\TruePointFilter;
 
 /**
  * Canonical Pointcut instance that always matches.
- *
- * @package go
- * @subpackage aop
  */
 class TruePointcut implements Pointcut
 {

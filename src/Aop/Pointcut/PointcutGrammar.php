@@ -23,8 +23,6 @@ use Dissect\Parser\Grammar;
 
 /**
  * Pointcut grammar defines general structure of pointcuts and rules of parsing
- *
- * @package Go\Aop\Pointcut
  */
 class PointcutGrammar extends Grammar
 {

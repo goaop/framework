@@ -13,12 +13,8 @@ namespace Go\Instrument\Transformer;
 use Go\Instrument\PathResolver;
 
 /**
- * Injects source filter for require and include operations
- *
- * @package go
- * @subpackage instrument
+ * Transformer that injects source filter for "require" and "include" operations
  */
-
 class FilterInjectorTransformer implements SourceTransformer
 {
 

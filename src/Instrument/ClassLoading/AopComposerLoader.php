@@ -16,8 +16,6 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
 
 /**
  * AopComposerLoader class is responsible to use a weaver for classes instead of original one
- *
- * @package Go\Instrument\ClassLoading
  */
 class AopComposerLoader
 {

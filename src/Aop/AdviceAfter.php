@@ -12,7 +12,6 @@ namespace Go\Aop;
 
 /**
  * Tag class for all after advices either for field access or method calling
- * @author Lisachenko Alexander
  */
 interface AdviceAfter extends Advice
 {

@@ -13,9 +13,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\MethodInterceptor;
 
 /**
- * NB: This invocation is only used for dynamic methods to support LSB
- *
- * @package go
+ * Class-invocation of dynamic method in a class via closure rebinding
  */
 class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
 {

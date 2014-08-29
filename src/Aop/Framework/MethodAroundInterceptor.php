@@ -16,7 +16,7 @@ use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Intercept\MethodInterceptor;
 
 /**
- * @package go
+ * "Around" interceptor of method invocation
  */
 class MethodAroundInterceptor extends BaseInterceptor implements MethodInterceptor, AdviceAround
 {

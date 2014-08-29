@@ -16,7 +16,7 @@ use ReflectionFunction;
  * Description of an invocation to a function, given to an interceptor
  * upon function-call.
  *
- * <p>A function invocation is a joinpoint and can be intercepted by a function
+ * A function invocation is a joinpoint and can be intercepted by a function
  * interceptor.
  *
  * @see FunctionInterceptor
@@ -26,9 +26,6 @@ interface FunctionInvocation extends Invocation
 
     /**
      * Gets the function being called.
-     *
-     * <p>This method is a friendly implementation of the
-     * {@link Joinpoint::getStaticPart()} method (same result).
      *
      * @return ReflectionFunction the function being called.
      */

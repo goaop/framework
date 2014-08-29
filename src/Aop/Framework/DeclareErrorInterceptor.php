@@ -15,7 +15,10 @@ use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Pointcut;
 
 /**
- * @package go
+ * Interceptor to dynamically trigger an user notice/warning/error on method call
+ *
+ * This interceptor can be used as active replacement for the @deprecated tag or to notify about
+ * probable issues with specific method.
  */
 class DeclareErrorInterceptor extends BaseInterceptor implements MethodInterceptor
 {

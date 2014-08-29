@@ -15,7 +15,7 @@ use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldInterceptor;
 
 /**
- * @package go
+ * Represents a field access joinpoint
  */
 class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 {
@@ -96,9 +96,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Gets the field being accessed.
      *
-     * <p>This method is a friendly implementation of the
-     * {@link Joinpoint::getStaticPart()} method (same result).
-     *
      * @return ReflectionProperty the field being accessed.
      */
     public function getField()
@@ -109,8 +106,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Gets the value that must be set to the field.
      *
-     * <p>This value can be intercepted and changed by a field
-     * interceptor.
      * @return mixed
      */
     public function getValueToSet()
@@ -182,8 +177,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Returns the object that holds the current joinpoint's static
      * part.
      *
-     * <p>For instance, the target object for an invocation.
-     *
      * @return object|null the object (can be null if the accessible object is
      * static).
      */
@@ -195,8 +188,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Returns the static part of this joinpoint.
      *
-     * <p>The static part is an accessible object on which a chain of
-     * interceptors are installed.
      * @return object
      */
     final public function getStaticPart()

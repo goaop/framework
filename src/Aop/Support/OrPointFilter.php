@@ -13,7 +13,7 @@ namespace Go\Aop\Support;
 use Go\Aop\PointFilter;
 
 /**
- * Logical or filter.
+ * Logical "or" filter.
  */
 class OrPointFilter implements PointFilter
 {

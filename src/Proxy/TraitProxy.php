@@ -20,7 +20,7 @@ use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 
 /**
- * AOP Factory that is used to generate trait proxy from joinpoints
+ * Trait proxy builder that is used to generate a trait from the list of joinpoints
  */
 class TraitProxy extends ClassProxy
 {

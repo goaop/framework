@@ -16,9 +16,6 @@ use Go\Aop\Intercept\FunctionInterceptor;
 
 /**
  * Function invocation implementation
- *
- * @see Go\Aop\Intercept\FunctionInvocation
- * @package go
  */
 class ReflectionFunctionInvocation extends AbstractInvocation implements FunctionInvocation
 {
@@ -62,9 +59,6 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     /**
      * Gets the function being called.
      *
-     * <p>This method is a friendly implementation of the
-     * {@link Joinpoint::getStaticPart()} method (same result).
-     *
      * @return ReflectionFunction the method being called.
      */
     public function getFunction()
@@ -75,8 +69,6 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     /**
      * Returns the object that holds the current joinpoint's static
      * part.
-     *
-     * <p>For instance, the target object for an invocation.
      *
      * @return object|null the object (can be null if the accessible object is
      * static).
@@ -89,8 +81,6 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     /**
      * Returns the static part of this joinpoint.
      *
-     * <p>The static part is an accessible object on which a chain of
-     * interceptors are installed.
      * @return object
      */
      public function getStaticPart()

@@ -13,7 +13,7 @@ namespace Go\Aop\Support;
 use Go\Aop\PointFilter;
 
 /**
- * Logical and filter.
+ * Logical "and" filter.
  */
 class AndPointFilter implements PointFilter
 {

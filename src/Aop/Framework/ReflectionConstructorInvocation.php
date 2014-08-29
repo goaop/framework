@@ -17,9 +17,6 @@ use Go\Aop\Intercept\ConstructorInterceptor;
 
 /**
  * Reflection constructor invocation implementation
- *
- * @see Go\Aop\Intercept\ConstructorInvocation
- * @package go
  */
 class ReflectionConstructorInvocation extends AbstractInvocation implements ConstructorInvocation
 {
@@ -73,10 +70,8 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Gets the constructor being called.
      *
-     * <p>This method is a friendly implementation of the
-     * {@link Joinpoint::getStaticPart()} method (same result).
-     *
-     * @return ReflectionMethod the constructor being called. */
+     * @return ReflectionMethod the constructor being called.
+     */
     public function getConstructor()
     {
         if (!$this->constructor) {
@@ -94,8 +89,6 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      * Returns the object that holds the current joinpoint's static
      * part.
      *
-     * <p>For instance, the target object for an invocation.
-     *
      * @return object|null the object (can be null if the accessible object is
      * static).
      */
@@ -107,8 +100,6 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Returns the static part of this joinpoint.
      *
-     * <p>The static part is an accessible object on which a chain of
-     * interceptors are installed.
      * @return object
      */
     public function getStaticPart()

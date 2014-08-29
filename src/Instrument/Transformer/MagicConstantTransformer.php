@@ -13,10 +13,9 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectKernel;
 
 /**
- * Replace magic directory and file constants in the source code
+ * Transformer that replaces magic __DIR__ and __FILE__ constants in the source code
  *
- * @package go
- * @subpackage instrument
+ * Additionally, ReflectionClass->getFileName() is also wrapped into normalizer method call
  */
 class MagicConstantTransformer extends BaseSourceTransformer
 {

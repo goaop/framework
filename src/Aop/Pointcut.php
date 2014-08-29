@@ -16,9 +16,6 @@ namespace Go\Aop;
  * Pointcuts are defined as a predicate over the syntax-tree of the program, and define an interface that constrains
  * which elements of the base program are exposed by the pointcut. A pointcut picks out certain join points and values
  * at those points
- *
- * @package go
- * @subpackage aop
  */
 interface Pointcut extends PointFilter
 {

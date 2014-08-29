@@ -16,7 +16,7 @@ use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Intercept\MethodInterceptor;
 
 /**
- * @package go
+ * "After Throwing" interceptor of method invocation
  */
 class MethodAfterThrowingInterceptor extends BaseInterceptor implements MethodInterceptor, AdviceAfter
 {

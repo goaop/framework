@@ -32,7 +32,7 @@ use TokenReflection\ReflectionParameter as ParsedParameter;
 use TokenReflection\ReflectionProperty as ParsedProperty;
 
 /**
- * AOP Factory that is used to generate child code from joinpoints
+ * Class proxy builder that is used to generate a child class from the list of joinpoints
  */
 class ClassProxy extends AbstractProxy
 {
