@@ -11,14 +11,12 @@
 namespace Go\Aop;
 
 /**
- * Aspect class realization for PHP
+ * Aspect interface marker
  *
  * Aspect is a module that encapsulates a concern. An aspect is composed of pointcuts, advice bodies and inter-type
  * declarations. In some approaches, and aspect may also contain classes and methods.
  *
  * @link http://en.wikipedia.org/wiki/Aspect_%28computer_science%29
- * @package go
- * @subpackage aop
  */
 interface Aspect
 {

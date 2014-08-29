@@ -13,7 +13,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\MethodInterceptor;
 
 /**
- * @package go
+ * Reflective method invocation implementation
  */
 class ReflectionMethodInvocation extends AbstractMethodInvocation
 {

@@ -16,9 +16,6 @@ use ReflectionMethod;
 
 /**
  * Abstract method invocation implementation
- *
- * @see Go\Aop\Intercept\MethodInvocation
- * @package go
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
@@ -66,9 +63,6 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Gets the method being called.
      *
-     * <p>This method is a friendly implementation of the
-     * {@link Joinpoint::getStaticPart()} method (same result).
-     *
      * @return AnnotatedReflectionMethod the method being called.
      */
     public function getMethod()
@@ -79,8 +73,6 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Returns the object that holds the current joinpoint's static
      * part.
-     *
-     * <p>For instance, the target object for an invocation.
      *
      * @return object|null the object (can be null if the accessible object is
      * static).
@@ -93,8 +85,6 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Returns the static part of this joinpoint.
      *
-     * <p>The static part is an accessible object on which a chain of
-     * interceptors are installed.
      * @return object
      */
     public function getStaticPart()

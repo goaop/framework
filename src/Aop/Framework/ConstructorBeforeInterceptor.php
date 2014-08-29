@@ -15,7 +15,7 @@ use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\ConstructorInterceptor;
 
 /**
- * @package go
+ * "Before" interceptor of constructor
  */
 class ConstructorBeforeInterceptor extends BaseInterceptor implements ConstructorInterceptor, AdviceBefore
 {

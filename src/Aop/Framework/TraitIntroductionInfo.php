@@ -13,51 +13,54 @@ namespace Go\Aop\Framework;
 use Go\Aop\IntroductionInfo;
 
 /**
- * @package go
+ * Advice for introduction that holds list of traits and interfaces for the concrete class
  */
 class TraitIntroductionInfo implements IntroductionInfo
 {
 
     /**
-     * Name of the interface to introduce
+     * List of interfaces to introduce
      *
-     * @var string
+     * @var array
      */
-    private $introducedInterface;
+    private $introducedInterfaces;
 
     /**
-     * Name of the class with implementation (trait)
+     * List of traits to include
      *
-     * @var string
+     * @var array
      */
-    private $implementationClass;
+    private $introducedTraits;
 
     /**
      * Create a DefaultIntroductionAdvisor for the given advice.
+     *
+     * @param string|string[] $introducedInterfaces List of introduced interfaces
+     * @param string|string[] $introducedTraits List of introduced traits
      */
-    public function __construct($interfaceType, $implementationClass)
+    public function __construct($introducedInterfaces, $introducedTraits)
     {
-        $this->introducedInterface = $interfaceType;
-        $this->implementationClass = $implementationClass;
+        $this->introducedInterfaces = (array) $introducedInterfaces;
+        $this->introducedTraits     = (array) $introducedTraits;
     }
 
     /**
      * Return the additional interfaces introduced by this Advisor or Advice.
      *
-     * @return array|string[] the introduced interfaces
+     * @return array|string[] introduced interfaces
      */
     public function getInterfaces()
     {
-        return (array) $this->introducedInterface;
+        return $this->introducedInterfaces;
     }
 
     /**
      * Return the list of traits with realization of introduced interfaces
      *
-     * @return array|string[] the implementations
+     * @return array|string[] trait implementations
      */
     public function getTraits()
     {
-        return (array) $this->implementationClass;
+        return $this->introducedTraits;
     }
 }

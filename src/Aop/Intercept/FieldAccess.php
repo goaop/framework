@@ -15,7 +15,7 @@ use ReflectionProperty;
 /**
  * This interface represents a field access in the program.
  *
- * <p>A field access is a joinpoint and can be intercepted by a field
+ * A field access is a joinpoint and can be intercepted by a field
  * interceptor.
  *
  * @see FieldInterceptor
@@ -24,20 +24,17 @@ interface FieldAccess extends Joinpoint
 {
 
     /**
-     * The read access type (see {@link getAccessType()}).
+     * The read access type
      */
     const READ = 0;
 
     /**
-     * The write access type (see {@link getAccessType()}).
+     * The write access type
      */
     const WRITE = 1;
 
     /**
      * Gets the field being accessed.
-     *
-     * <p>This method is a friendly implementation of the
-     * {@link Joinpoint::getStaticPart()} method (same result).
      *
      * @return ReflectionProperty the field being accessed.
      */
@@ -45,9 +42,6 @@ interface FieldAccess extends Joinpoint
 
     /**
      * Gets the value that must be set to the field.
-     *
-     * <p>This value can be intercepted and changed by a field
-     * interceptor.
      *
      * @return mixed
      */

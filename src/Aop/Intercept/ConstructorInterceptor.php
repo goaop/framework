@@ -13,7 +13,7 @@ namespace Go\Aop\Intercept;
 /**
  * Intercepts the construction of a new object.
  *
- * <p>The user should implement the {@link construct(ConstructorInvocation)}
+ * The user should implement the construct(ConstructorInvocation)
  * method to modify the original behavior. E.g. the following class implements a singleton
  * interceptor (allows only one unique instance for the intercepted
  * class):
@@ -30,20 +30,17 @@ namespace Go\Aop\Intercept;
  *     }
  *   }
  * }
- * </pre> */
-
+ * </pre>
+ */
 interface ConstructorInterceptor extends Interceptor
 {
 
     /**
      * Implement this method to perform extra treatments before and
-     * after the construction of a new object. Polite implementations
-     * would certainly like to invoke {@link Joinpoint::proceed()}.
+     * after the construction of a new object.
      *
      * @param ConstructorInvocation $invocation the construction joinpoint
-     * @return mixed the newly created object, which is also the result of
-     * the call to {@link Joinpoint::proceed()}, might be replaced by
-     * the interceptor.
+     * @return mixed the newly created object
      */
     public function construct(ConstructorInvocation $invocation);
 }

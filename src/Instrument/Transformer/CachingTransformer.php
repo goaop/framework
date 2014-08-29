@@ -13,10 +13,7 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectKernel;
 
 /**
- * Take transformed source from the cache
- *
- * @package go
- * @subpackage instrument
+ * Caching transformer that is able to take the transformed source from a cache
  */
 class CachingTransformer extends BaseSourceTransformer
 {

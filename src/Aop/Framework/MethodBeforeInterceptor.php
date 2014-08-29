@@ -15,7 +15,7 @@ use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Intercept\MethodInterceptor;
 
 /**
- * @package go
+ * "Before" interceptor of method invocation
  */
 class MethodBeforeInterceptor extends BaseInterceptor implements MethodInterceptor, AdviceBefore
 {

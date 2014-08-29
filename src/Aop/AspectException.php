@@ -14,10 +14,6 @@ use RuntimeException;
 
 /**
  * Superclass for all AOP infrastructure exceptions
- *
- * @author Rod Johnson
- * @author Bob Lee
- * @author Lisachenko Alexander
  */
 class AspectException extends RuntimeException
 {

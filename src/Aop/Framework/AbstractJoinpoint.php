@@ -25,7 +25,6 @@ use Go\Aop\Intercept\Joinpoint;
  * of a crosscutting concern.
  *
  * @link http://en.wikipedia.org/wiki/Aspect-oriented_software_development#Join_point_model
- * @package go
  */
 abstract class AbstractJoinpoint implements Joinpoint
 {

@@ -13,7 +13,7 @@ namespace Go\Aop\Support;
 use Go\Aop\PointFilter;
 
 /**
- * Logical not filter.
+ * Logical "not" filter.
  */
 class NotPointFilter implements PointFilter
 {

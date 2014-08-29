@@ -24,7 +24,7 @@ use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionFileNamespace as ParsedFileNamespace;
 
 /**
- * @package go
+ * Main transformer that performs weaving of aspects into the source code
  */
 class WeavingTransformer extends BaseSourceTransformer
 {

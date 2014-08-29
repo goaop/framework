@@ -16,7 +16,7 @@ use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\FunctionInterceptor;
 
 /**
- * @package go
+ * "Around" interceptor of function execution
  */
 class FunctionAroundInterceptor extends BaseInterceptor implements FunctionInterceptor, AdviceAround
 {

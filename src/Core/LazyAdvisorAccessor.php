@@ -8,8 +8,8 @@
  * with this source code in the file LICENSE.
  */
 
-
 namespace Go\Core;
+
 use Go\Aop\Advice;
 use Go\Aop\Advisor;
 

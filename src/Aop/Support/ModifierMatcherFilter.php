@@ -14,8 +14,6 @@ use Go\Aop\PointFilter;
 
 /**
  * ModifierMatcherFilter performs checks on modifiers for reflection point
- *
- * @package Go\Aop\Pointcut
  */
 class ModifierMatcherFilter implements PointFilter
 {

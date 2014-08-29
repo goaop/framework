@@ -14,11 +14,6 @@ use Go\Aop\Intercept\Invocation;
 
 /**
  * Abstract class for all invocations joinpoints
- *
- * It is an implementation of Go\Aop\Intercept\Invocation interface
- *
- * @see Go\Aop\Intercept\Invocation
- * @package go
  */
 abstract class AbstractInvocation extends AbstractJoinpoint implements Invocation
 {

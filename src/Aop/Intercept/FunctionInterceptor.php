@@ -11,21 +11,20 @@
 namespace Go\Aop\Intercept;
 
 /**
- * Intercepts calls on an interface on its way to the target. These
- * are nested "on top" of the target.
+ * Interceptor of calls to the function
  *
- * <p>The user should implement the {@link invoke(FunctionInvocation)}
+ * The user should implement the {@link invoke(FunctionInvocation)}
  * method to modify the original behavior. E.g. the following class
  * implements a tracing interceptor (traces all the calls on the
- * intercepted method(s)):
+ * intercepted function(s)):
  *
  * <pre class=code>
  * class TracingInterceptor implements FunctionInterceptor {
  *   public function invoke(FunctionInvocation $i) {
- *     print("method ".$i->getFunction()." is called".
+ *     print("function ".$i->getFunction()->name." is called".
  *                        " with args ".$i->getArguments());
  *     $ret=$i->proceed();
- *     print("function ".$i->getFunction()." returns ".$ret);
+ *     print("function ".$i->getFunction()->name." returns ".$ret);
  *     return $ret;
  *   }
  * }
@@ -36,12 +35,10 @@ interface FunctionInterceptor extends Interceptor
 
     /**
      * Implement this method to perform extra treatments before and
-     * after the invocation. Polite implementations would certainly
-     * like to invoke {@link Joinpoint::proceed()}.
+     * after the invocation.
      *
      * @param FunctionInvocation $invocation the function invocation joinpoint
-     * @return mixed the result of the call to {@link Joinpoint::proceed()},
-     * might be intercepted by the interceptor.
+     * @return mixed the result of the call
      */
     public function invoke(FunctionInvocation $invocation);
 }

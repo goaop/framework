@@ -11,8 +11,7 @@
 namespace Go\Instrument\Transformer;
 
 /**
- * @package go
- * @subpackage instrument
+ * General source transformer interface
  */
 interface SourceTransformer
 {

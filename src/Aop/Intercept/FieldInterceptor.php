@@ -13,8 +13,8 @@ namespace Go\Aop\Intercept;
 /**
  * Intercepts field access on a target object.
  *
- * <p>The user should implement the {@link set(FieldAccess)} and
- * {@link get(FieldAccess)} methods to modify the original
+ * The user should implement the set(FieldAccess) and
+ * get(FieldAccess) methods to modify the original
  * behavior. E.g. the following class implements a tracing interceptor
  * (traces the accesses to the intercepted field(s)):
  *
@@ -45,13 +45,9 @@ interface FieldInterceptor extends Interceptor
      * Do the stuff you want to do before and after the
      * field is getted.
      *
-     * <p>Polite implementations would certainly like to call
-     * {@link Joinpoint::proceed()}.
-     *
      * @param FieldAccess $fieldRead the joinpoint that corresponds to the field read
      *
-     * @return mixed the result of the field read {@link Joinpoint::proceed()}, might be intercepted by the
-     * interceptor.
+     * @return mixed the result of the field read
      */
     public function get(FieldAccess $fieldRead);
 
@@ -59,13 +55,9 @@ interface FieldInterceptor extends Interceptor
      * Do the stuff you want to do before and after the
      * field is setted.
      *
-     * <p>Polite implementations would certainly like to implement
-     * {@link Joinpoint::proceed()}.
-     *
      * @param FieldAccess $fieldWrite the joinpoint that corresponds to the field write
      *
-     * @return mixed the result of the field set {@link Joinpoint::proceed()}, might be intercepted by the
-     * interceptor.
+     * @return mixed the result of the field set
      */
     public function set(FieldAccess $fieldWrite);
 }

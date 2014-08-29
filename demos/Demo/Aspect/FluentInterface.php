@@ -12,8 +12,6 @@ namespace Demo\Aspect;
 
 /**
  * Fluent interface marker
- *
- * @author Alexander Lisachenko
  */
 interface FluentInterface
 {

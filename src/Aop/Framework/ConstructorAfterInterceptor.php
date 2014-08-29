@@ -16,7 +16,7 @@ use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\ConstructorInterceptor;
 
 /**
- * @package go
+ * "After" interceptor of constructor
  */
 class ConstructorAfterInterceptor extends BaseInterceptor implements ConstructorInterceptor, AdviceAfter
 {

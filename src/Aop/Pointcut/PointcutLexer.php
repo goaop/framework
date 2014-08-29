@@ -14,8 +14,6 @@ use Dissect\Lexer\SimpleLexer;
 
 /**
  * This class defines a lexer for pointcut expression
- *
- * @package Go\Aop\Pointcut
  */
 class PointcutLexer extends SimpleLexer
 {

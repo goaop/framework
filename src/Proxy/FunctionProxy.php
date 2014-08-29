@@ -24,6 +24,9 @@ use TokenReflection\ReflectionFileNamespace;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 use TokenReflection\ReflectionFunction as ParsedFunction;
 
+/**
+ * Function proxy builder that is used to generate a proxy-function from the list of joinpoints
+ */
 class FunctionProxy extends AbstractProxy
 {
 

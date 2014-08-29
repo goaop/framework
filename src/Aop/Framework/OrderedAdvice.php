@@ -14,8 +14,6 @@ use Go\Aop\Advice;
 
 /**
  * Ordered advice can have a custom order to implement sorting
- *
- * @author Lisachenko Alexander
  */
 interface OrderedAdvice extends Advice
 {

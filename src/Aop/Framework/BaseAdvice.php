@@ -39,7 +39,6 @@ use Go\Core\AspectKernel;
  *      echo 'After action';
  *      return $result;
  *   }
- * @author Lisachenko Alexander
  */
 abstract class BaseAdvice implements OrderedAdvice
 {

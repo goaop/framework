@@ -19,8 +19,6 @@ use Go\Aop\Support\DynamicMethodMatcher;
  *
  * For each invocation interceptor asks the pointcut if it matches the invocation.
  * Matcher will receive reflection point, object instance and invocation arguments to make a decision
- *
- * @package go
  */
 class DynamicMethodMatcherInterceptor extends BaseInterceptor implements MethodInterceptor
 {
