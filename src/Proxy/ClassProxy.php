@@ -10,6 +10,7 @@
 
 namespace Go\Proxy;
 
+use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use Reflection;
@@ -239,16 +240,24 @@ class ClassProxy extends AbstractProxy
     }
 
     /**
-     * Initialize static mappings to reduce the time for checking if..else IS_MODERN_PHP
+     * Initialize static mappings to reduce the time for checking features
+     *
+     * @param bool $useClosureBinding Enables usage of closures instead of reflection
+     * @param bool $useSplatOperator Enables usage of optimized invocation with splat operator
      */
-    protected static function setMappings()
+    protected static function setMappings($useClosureBinding, $useSplatOperator)
     {
-        $dynamicMethodClass = IS_MODERN_PHP
-            ? 'Go\Aop\Framework\ClosureDynamicMethodInvocation'
-            : 'Go\Aop\Framework\ReflectionMethodInvocation';
-        $staticMethodClass  = IS_MODERN_PHP
-            ? 'Go\Aop\Framework\ClosureStaticMethodInvocation'
-            : 'Go\Aop\Framework\ReflectionMethodInvocation';
+        $dynamicMethodClass = 'Go\Aop\Framework\ReflectionMethodInvocation';
+        $staticMethodClass  = 'Go\Aop\Framework\ReflectionMethodInvocation';
+
+        if ($useClosureBinding) {
+            $dynamicMethodClass = 'Go\Aop\Framework\ClosureDynamicMethodInvocation';
+            $staticMethodClass  = 'Go\Aop\Framework\ClosureStaticMethodInvocation';
+        }
+
+        if ($useSplatOperator) {
+            $dynamicMethodClass = 'Go\Aop\Framework\ClosureDynamicMethodInvocation56';
+        }
 
         self::$invocationClassMap = array(
             AspectContainer::METHOD_PREFIX        => $dynamicMethodClass,
@@ -275,8 +284,12 @@ class ClassProxy extends AbstractProxy
         static $accessor = null;
 
         if (!self::$invocationClassMap) {
-            self::setMappings();
-            $accessor = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
+            $aspectKernel = AspectKernel::getInstance();
+            $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
+            self::setMappings(
+                $aspectKernel->hasFeature(Features::USE_CLOSURE),
+                $aspectKernel->hasFeature(Features::USE_SPLAT_OPERATOR)
+            );
         }
 
         $joinPoints = array();
