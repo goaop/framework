@@ -2,7 +2,7 @@
 /**
  * Go! AOP framework
  *
- * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -13,23 +13,12 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\MethodInterceptor;
 
 /**
- * Class-invocation of dynamic method in a class via closure rebinding
+ * Class-invocation of dynamic method in a class via closure rebinding for version PHP>=5.6
+ *
+ * This class uses splat operator '...' for faster invocation
  */
-class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
+class ClosureDynamicMethodInvocation56 extends ClosureDynamicMethodInvocation
 {
-    /**
-     * Closure to use
-     *
-     * @var \Closure
-     */
-    protected $closureToCall = null;
-
-    /**
-     * Previous scope of invocation
-     *
-     * @var null
-     */
-    protected $previousInstance = null;
 
     /**
      * Invokes original method and return result from it
@@ -57,24 +46,7 @@ class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
         }
 
         $closureToCall = $this->closureToCall;
-        $args          = $this->arguments;
 
-        switch (count($args)) {
-            case 0:
-                return $closureToCall();
-            case 1:
-                return $closureToCall($args[0]);
-            case 2:
-                return $closureToCall($args[0], $args[1]);
-            case 3:
-                return $closureToCall($args[0], $args[1], $args[2]);
-            case 4:
-                return $closureToCall($args[0], $args[1], $args[2], $args[3]);
-            case 5:
-                return $closureToCall($args[0], $args[1], $args[2], $args[3], $args[4]);
-            default:
-                return forward_static_call_array($closureToCall, $args);
-        }
-
+        return $closureToCall(...$this->arguments);
     }
 }
