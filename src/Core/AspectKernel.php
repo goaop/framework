@@ -10,6 +10,7 @@
 
 namespace Go\Core;
 
+use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\CleanableMemory;
@@ -42,7 +43,9 @@ abstract class AspectKernel
      *
      * @var array
      */
-    protected $options = array();
+    protected $options = array(
+        'features' => 0
+    );
 
     /**
      * Single instance of kernel
@@ -128,6 +131,37 @@ abstract class AspectKernel
     }
 
     /**
+     * Returns a default bit mask of features by checking PHP version
+     *
+     * @return int
+     */
+    public static function getDefaultFeatures()
+    {
+        $features = 0;
+        if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+            $features += Features::USE_CLOSURE;
+            $features += Features::USE_TRAIT;
+        }
+        if (version_compare(PHP_VERSION, '5.6.0') >= 0) {
+            $features += Features::USE_SPLAT_OPERATOR;
+        }
+
+        return $features;
+    }
+
+    /**
+     * Checks if kernel configuration has enabled specific feature
+     *
+     * @param integer $featureToCheck See Go\Aop\Features enumeration class for features
+     *
+     * @return bool Whether specific feature enabled or not
+     */
+    public function hasFeature($featureToCheck)
+    {
+        return ($this->options['features'] & $featureToCheck) !== 0;
+    }
+
+    /**
      * Returns list of kernel options
      *
      * @return array
@@ -143,6 +177,7 @@ abstract class AspectKernel
      *   debug    - boolean Determines whether or not kernel is in debug mode
      *   appDir   - string Path to the application root directory.
      *   cacheDir - string Path to the cache directory where compiled classes will be stored
+     *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
      *   interceptFunctions - boolean Enable support for interception of global functions (experimental)
@@ -151,10 +186,13 @@ abstract class AspectKernel
      */
     protected function getDefaultOptions()
     {
+        $features = static::getDefaultFeatures();
+
         return array(
             'debug'     => false,
             'appDir'    => __DIR__ . '/../../../../../../',
             'cacheDir'  => null,
+            'features' => $features,
 
             'interceptFunctions' => false,
             'prebuiltCache'      => false,
