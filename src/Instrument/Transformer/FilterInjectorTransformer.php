@@ -10,6 +10,7 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Features;
 use Go\Instrument\PathResolver;
 
 /**
@@ -77,9 +78,10 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public static function rewrite($originalResource, $originalDir = '')
     {
-        static $appDir, $cacheDir, $debug, $prebuiltCache;
+        static $appDir, $cacheDir, $debug, $usePrebuiltCache;
         if (!$appDir) {
             extract(self::$options, EXTR_IF_EXISTS);
+            $usePrebuiltCache = self::$options['features'] & Features::PREBUILT_CACHE;
         }
 
         $resource = (string) $originalResource;
@@ -97,7 +99,7 @@ class FilterInjectorTransformer implements SourceTransformer
         $newResource = str_replace($appDir, $cacheDir, $resource);
 
         // Trigger creation of cache, this will create a cache file with $newResource name
-        if (!$prebuiltCache && !file_exists($newResource)) {
+        if (!$usePrebuiltCache && !file_exists($newResource)) {
             // Workaround for https://github.com/facebook/hhvm/issues/2485
             $file = fopen($resource, 'r');
             stream_filter_append($file, self::$filterName);

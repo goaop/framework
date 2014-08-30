@@ -10,6 +10,7 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Features;
 use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AspectContainer;
 use Go\Core\AdviceMatcher;
@@ -161,7 +162,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
 
         // Prepare child Aop proxy
-        $child = (IS_MODERN_PHP && $class->isTrait())
+        $child = ($this->kernel->hasFeature(Features::USE_TRAIT) && $class->isTrait())
             ? new TraitProxy($class, $advices)
             : new ClassProxy($class, $advices);
 
@@ -199,7 +200,7 @@ class WeavingTransformer extends BaseSourceTransformer
      */
     private function adjustOriginalClass($class, $source, $newParentName)
     {
-        $type = (IS_MODERN_PHP && $class->isTrait()) ? 'trait' : 'class';
+        $type = ($this->kernel->hasFeature(Features::USE_TRAIT) && $class->isTrait()) ? 'trait' : 'class';
         $source = preg_replace(
             "/{$type}\s+(" . $class->getShortName() . ')(\b)/iS',
             "{$type} {$newParentName}$2",

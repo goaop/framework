@@ -10,6 +10,7 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Features;
 use ReflectionFunction;
 use ReflectionMethod;
 use Go\Aop\Aspect;
@@ -75,6 +76,11 @@ abstract class BaseAdvice implements OrderedAdvice
      */
     public static function serializeAdvice($adviceMethod)
     {
+        static $useClosure;
+        if (!isset($useClosure)) {
+            $useClosure = AspectKernel::getInstance()->hasFeature(Features::USE_CLOSURE);
+        }
+
         $refAdvice    = new ReflectionFunction($adviceMethod);
         $refVariables = $refAdvice->getStaticVariables();
         $scope        = 'aspect';
@@ -82,7 +88,7 @@ abstract class BaseAdvice implements OrderedAdvice
             $scope     = $refVariables['scope'];
             $refAdvice = new ReflectionFunction($refVariables['adviceCallback']);
         }
-        if (IS_MODERN_PHP) {
+        if ($useClosure) {
             $method = $refAdvice;
             $aspect = $refAdvice->getClosureThis();
         } else {
@@ -138,7 +144,12 @@ abstract class BaseAdvice implements OrderedAdvice
      */
     public static function fromAspectReflection(Aspect $aspect, ReflectionMethod $refMethod)
     {
-        if (IS_MODERN_PHP) {
+        static $useClosure;
+        if (!isset($useClosure)) {
+            $useClosure = AspectKernel::getInstance()->hasFeature(Features::USE_CLOSURE);
+        }
+
+        if ($useClosure) {
             return $refMethod->getClosure($aspect);
         } else {
             return function () use ($aspect, $refMethod) {

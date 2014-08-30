@@ -20,13 +20,6 @@ class BaseInterceptorTest extends AbstractInterceptorTest
      */
     const INVOCATION_CLASS = 'Go\Aop\Intercept\Invocation';
 
-    public static function setUpBeforeClass()
-    {
-        if (!defined('Go\Aop\Framework\IS_MODERN_PHP')) {
-            define('Go\Aop\Framework\IS_MODERN_PHP', PHP_VERSION_ID > 50400);
-        }
-    }
-
     public function testReturnsRawAdvice()
     {
         $sequence = array();

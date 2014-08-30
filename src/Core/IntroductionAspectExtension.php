@@ -57,7 +57,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
     public function supports(Aspect $aspect, $reflection, $metaInformation = null)
     {
         return
-            ($metaInformation instanceof Annotation\DeclareParents && IS_MODERN_PHP) ||
+            ($metaInformation instanceof Annotation\DeclareParents) ||
             ($metaInformation instanceof Annotation\DeclareError);
     }
 

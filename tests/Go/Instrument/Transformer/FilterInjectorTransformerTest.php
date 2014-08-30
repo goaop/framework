@@ -26,8 +26,9 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
             self::$transformer = new FilterInjectorTransformer(
                 array(
                     'cacheDir' => null,
-                    'appDir' => '',
-                    'debug' => false,
+                    'appDir'   => '',
+                    'debug'    => false,
+                    'features' => 0
                 ),
                 'unit.test'
             );

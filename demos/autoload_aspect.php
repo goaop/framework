@@ -10,17 +10,18 @@
 
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Demo\Aspect\AwesomeAspectKernel;
+use Go\Aop\Features;
 
 include __DIR__ .'/autoload.php';
 
 // Initialize demo aspect container
+$defaultFeatures = AwesomeAspectKernel::getDefaultFeatures();
 AwesomeAspectKernel::getInstance()->init(array(
-    'debug'         => true,
-    'appDir'        => __DIR__ . '/../demos',
-    'cacheDir'      => __DIR__ . '/cache',
+    'debug'    => true,
+    'appDir'   => __DIR__ . '/../demos',
+    'cacheDir' => __DIR__ . '/cache',
 
-    'interceptFunctions' => true, // Enable support for function interception (Since 0.4.0)
-    'prebuiltCache'      => false, // Cache was already prebuilt (Since 0.5.0)
+    'features' => $defaultFeatures | Features::INTERCEPT_FUNCTIONS,
 ));
 
 AnnotationRegistry::registerFile(__DIR__ . '/Demo/Annotation/Cacheable.php');

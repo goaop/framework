@@ -10,6 +10,7 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Features;
 use Go\Core\AspectKernel;
 
 /**
@@ -60,7 +61,7 @@ class CachingTransformer extends BaseSourceTransformer
                 }
                 mkdir($cacheDir, 0770);
             }
-            if (!$this->options['prebuiltCache'] && !is_writable($cacheDir)) {
+            if (!$this->kernel->hasFeature(Features::PREBUILT_CACHE) && !is_writable($cacheDir)) {
                 throw new \InvalidArgumentException("Cache directory {$cacheDir} is not writable");
             }
             $this->cachePath = $cacheDir;
