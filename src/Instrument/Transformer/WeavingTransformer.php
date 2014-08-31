@@ -162,9 +162,10 @@ class WeavingTransformer extends BaseSourceTransformer
         $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
 
         // Prepare child Aop proxy
-        $child = ($this->kernel->hasFeature(Features::USE_TRAIT) && $class->isTrait())
-            ? new TraitProxy($class, $advices)
-            : new ClassProxy($class, $advices);
+        $useStatic = $this->kernel->hasFeature(Features::USE_STATIC_FOR_LSB);
+        $child     = ($this->kernel->hasFeature(Features::USE_TRAIT) && $class->isTrait())
+            ? new TraitProxy($class, $advices, $useStatic)
+            : new ClassProxy($class, $advices, $useStatic);
 
         // Set new parent name instead of original
         $child->setParentName($newParentName);
