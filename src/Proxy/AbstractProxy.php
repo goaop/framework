@@ -34,15 +34,24 @@ abstract class AbstractProxy
     protected $advices = array();
 
     /**
+     * PHP expression string for accessing LSB information
+     *
+     * @var string
+     */
+    protected $staticLsbExpression = '\get_called_class()';
+
+    /**
      * Constructs an abstract proxy class
      *
      * @param array $advices List of advices
-     *
-     * @throws \InvalidArgumentException for invalid classes
+     * @param bool $useStaticForLsb Should proxy use 'static::class' instead of '\get_called_class()'
      */
-    public function __construct(array $advices = array())
+    public function __construct(array $advices = array(), $useStaticForLsb = false)
     {
         $this->advices = $this->flattenAdvices($advices);
+        if ($useStaticForLsb) {
+            $this->staticLsbExpression = 'static::class';
+        }
     }
 
     /**

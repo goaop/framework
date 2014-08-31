@@ -10,6 +10,7 @@
 
 namespace Go\Proxy;
 
+use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use ReflectionMethod as Method;
@@ -53,8 +54,14 @@ class TraitProxy extends ClassProxy
         static $accessor = null;
 
         if (!self::$invocationClassMap) {
-            self::setMappings();
-            $accessor = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
+            if (!self::$invocationClassMap) {
+                $aspectKernel = AspectKernel::getInstance();
+                $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
+                self::setMappings(
+                    $aspectKernel->hasFeature(Features::USE_CLOSURE),
+                    $aspectKernel->hasFeature(Features::USE_SPLAT_OPERATOR)
+                );
+            }
         }
 
         $advices = self::$traitAdvices[$traitName][$joinPointType][$pointName];
@@ -80,7 +87,7 @@ class TraitProxy extends ClassProxy
     {
         $isStatic = $method->isStatic();
         $class    = '\\' . __CLASS__;
-        $scope    = $isStatic ? '\get_called_class()' : '$this';
+        $scope    = $isStatic ? $this->staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $args = join(', ', array_map(function ($param) {

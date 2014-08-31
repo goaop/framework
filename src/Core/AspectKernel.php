@@ -137,6 +137,9 @@ abstract class AspectKernel
             $features += Features::USE_CLOSURE;
             $features += Features::USE_TRAIT;
         }
+        if (version_compare(PHP_VERSION, '5.5.0') >= 0) {
+            $features += Features::USE_STATIC_FOR_LSB;
+        }
         if (version_compare(PHP_VERSION, '5.6.0') >= 0) {
             $features += Features::USE_SPLAT_OPERATOR;
         }

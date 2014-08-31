@@ -2,8 +2,10 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\AdviceMatcher;
+use Go\Core\AspectKernel;
 
 class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
 {
@@ -23,6 +25,11 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     protected $broker = null;
 
     /**
+     * @var null|AspectKernel|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $kernel = null;
+
+    /**
      * @var null|AdviceMatcher
      */
     protected $adviceMatcher = null;
@@ -36,15 +43,16 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             new \TokenReflection\Broker\Backend\Memory()
         );
         $this->adviceMatcher = $this->getAdviceMatcherMock();
-        $this->transformer   = new WeavingTransformer(
-            $this->getKernelMock(
-                array(
-                    'appDir'       => dirname(__DIR__),
-                    'includePaths' => array(),
-                    'excludePaths' => array()
-                ),
-                $this->getMock('Go\Core\AspectContainer')
+        $this->kernel        = $this->getKernelMock(
+            array(
+                'appDir'       => dirname(__DIR__),
+                'includePaths' => array(),
+                'excludePaths' => array()
             ),
+            $this->getMock('Go\Core\AspectContainer')
+        );
+        $this->transformer   = new WeavingTransformer(
+            $this->kernel,
             $this->broker,
             $this->adviceMatcher
         );
@@ -156,6 +164,29 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Transformer verifies that proxy with static LSB feature is working
+     */
+    public function testTransformerWithStaticLsbFeature()
+    {
+        $this->kernel->expects($this->any())
+            ->method('hasFeature')
+            ->will(
+                $this->returnCallback(function ($feature) {
+                    return $feature === Features::USE_STATIC_FOR_LSB;
+                })
+            );
+
+        $this->metadata->source = $this->loadTest('class');
+        $this->transformer->transform($this->metadata);
+
+        $actual   = $this->normalizeWhitespaces($this->metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven'));
+        // with Features::USE_STATIC_FOR_LSB we expect static::class in the proxy methods
+        $expected = str_replace('\get_called_class()', 'static::class', $expected);
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
      * Transformer verifies include paths
      */
     public function testTransformerWithAnotherIncludePathSkip()
@@ -251,7 +282,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             false,
             true,
             true,
-            array('getOptions', 'getContainer')
+            array('getOptions', 'getContainer', 'hasFeature')
         );
         $mock->expects($this->any())
             ->method('getOptions')

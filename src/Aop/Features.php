@@ -42,4 +42,9 @@ interface Features
      * This flag is usable for read-only file systems (GAE, phar, etc)
      */
     const PREBUILT_CACHE = 16;
+
+    /**
+     * Allows to use 'static::class' in the source code of proxies, available since PHP5.5
+     */
+    const USE_STATIC_FOR_LSB = 32;
 }
