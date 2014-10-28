@@ -36,27 +36,27 @@ class PointcutGrammar extends Grammar
 
         $this('Pointcut')
             ->is('Pointcut', '||', 'Pointcut')
-            ->call(function ($first, $_, $second) {
+            ->call(function ($first, $_0, $second) {
                 return new OrPointcut($first, $second);
             })
 
             ->is('Pointcut', '&&', 'Pointcut')
-            ->call(function ($first, $_, $second) {
+            ->call(function ($first, $_0, $second) {
                 return new AndPointcut($first, $second);
             })
 
             ->is('(', 'Pointcut', ')')
-            ->call(function ($_, $pointcut) {
+            ->call(function ($_0, $pointcut) {
                 return $pointcut;
             })
 
             ->is('!', 'Pointcut')
-            ->call(function ($_, $first) {
+            ->call(function ($_0, $first) {
                 return new NotPointcut($first);
             })
 
             ->is('cflowbelow', '(', 'Pointcut', ')')
-            ->call(function ($_, $_, $pointcut) {
+            ->call(function ($_0, $_1, $pointcut) {
                 return new CFlowBelowMethodPointcut($pointcut);
             })
 
@@ -69,13 +69,12 @@ class PointcutGrammar extends Grammar
                 ')'
             )
             ->call(function(
-                $_, // execution node
-                $_, // (
+                $_0, // execution node
+                $_1, // (
                 ModifierMatcherFilter $memberModifiers,
                 PointFilter $classFilter,
                 $methodCallType,
-                $methodNamePattern,
-                $_ // )
+                $methodNamePattern
             ) {
                 if ($methodCallType === '::') {
                     $memberModifiers->andMatch(\ReflectionMethod::IS_STATIC);
@@ -94,13 +93,12 @@ class PointcutGrammar extends Grammar
                 ')'
             )
             ->call(function(
-                $_, // execution node
-                $_, // (
+                $_0, // execution node
+                $_1, // (
                 ModifierMatcherFilter $memberModifiers,
                 PointFilter $classFilter,
                 $methodCallType,
-                $methodNamePattern,
-                $_ // )
+                $methodNamePattern
             ) {
                 if ($methodCallType === '::') {
                     $memberModifiers->andMatch(\ReflectionMethod::IS_STATIC);
@@ -119,8 +117,8 @@ class PointcutGrammar extends Grammar
                 ')'
             )
             ->call(function(
-                $_, // function node
-                $_, // (
+                $_0, // function node
+                $_1, // (
                 $namespacePattern
             ) {
                 $lastNsPos   = strrpos($namespacePattern, '\\');
@@ -135,13 +133,12 @@ class PointcutGrammar extends Grammar
 
             ->is('access', '(', 'MemberModifiers', 'ClassFilter', '->', 'NamePattern', ')')
             ->call(function(
-                $_,
-                $_,
+                $_0,
+                $_1,
                 ModifierMatcherFilter $memberModifiers,
                 PointFilter $classFilter,
-                $_,
-                $propertyNamePattern,
-                $_ // )
+                $_2,
+                $propertyNamePattern
             ) {
                 $pointcut = new SignaturePropertyPointcut($propertyNamePattern, $memberModifiers);
                 $pointcut->setClassFilter($classFilter);
@@ -150,17 +147,17 @@ class PointcutGrammar extends Grammar
             })
 
             ->is('Annotation', 'access', '(', 'NamespacePattern', ')')
-            ->call(function ($_, $_, $_, $annotationClassName, $_) use ($annotationReader) {
+            ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 return new AnnotationPropertyPointcut($annotationReader, $annotationClassName);
             })
 
             ->is('Annotation', 'annotation', '(', 'NamespacePattern', ')')
-            ->call(function ($_, $_, $_, $annotationClassName, $_) use ($annotationReader) {
+            ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 return new AnnotationMethodPointcut($annotationReader, $annotationClassName);
             })
 
             ->is('within', '(', 'ClassFilter', ')')
-            ->call(function ($_, $_, $classFilter, $_) {
+            ->call(function ($_0, $_1, $classFilter) {
                 $pointcut = new TrueMethodPointcut();
                 $pointcut->setClassFilter($classFilter);
 
@@ -168,7 +165,7 @@ class PointcutGrammar extends Grammar
             })
 
             ->is('Annotation', 'within', '(', 'NamespacePattern', ')')
-            ->call(function ($_, $_, $_, $annotationClassName, $_) use ($annotationReader) {
+            ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $pointcut    = new TrueMethodPointcut();
                 $classFilter = new AnnotationClassFilter($annotationReader, $annotationClassName);
                 $pointcut->setClassFilter($classFilter);
@@ -177,7 +174,7 @@ class PointcutGrammar extends Grammar
             })
 
             ->is('class', '(', 'ClassFilter', ')')
-            ->call(function ($_, $_, $classFilter, $_) {
+            ->call(function ($_0, $_1, $classFilter) {
                 $pointcut = new TruePointcut();
                 $pointcut->setClassFilter($classFilter);
 
@@ -209,7 +206,7 @@ class PointcutGrammar extends Grammar
             })
 
             ->is('NamespacePattern', '+')
-            ->call(function ($parentClassName, $_) {
+            ->call(function ($parentClassName) {
                 return new InheritanceClassFilter($parentClassName);
             })
         ;
@@ -246,7 +243,7 @@ class PointcutGrammar extends Grammar
             })
 
             ->is('NonEmptyMemberModifiers','|','MemberModifier')
-            ->call(function (ModifierMatcherFilter $matcher, $_, $modifier) {
+            ->call(function (ModifierMatcherFilter $matcher, $_0, $modifier) {
                 return $matcher->orMatch($modifier);
             })
 
