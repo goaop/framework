@@ -140,10 +140,13 @@ class FunctionProxy extends AbstractProxy
      */
     public function __toString()
     {
-        $functionsCode = sprintf("<?php\n%s\nnamespace %s;\n%s",
-            $this->namespace->getDocComment(),
-            $this->namespace->getName(),
-            join("\n", $this->functionsCode)
+        $functionsCode = (
+            "<?php\n" . // Start of file header
+            $this->namespace->getDocComment() . "\n" . // Doc-comment for file
+            'namespace ' . // 'namespace' keyword
+            $this->namespace->getName() . // Name
+            ";\n" . // End of namespace name
+            join("\n", $this->functionsCode) // Function definitions
         );
 
         return $functionsCode
@@ -171,12 +174,17 @@ class FunctionProxy extends AbstractProxy
             return $inMemoryCache[$functionName];
         }
 
-        $code = sprintf("%sfunction %s%s(%s)\n{\n%s\n}\n",
-            preg_replace('/ {4}|\t/', '', $function->getDocComment()) ."\n",
-            $function->returnsReference() ? '&' : '',
-            $functionName,
-            join(', ', $this->getParameters($function->getParameters())),
-            $this->indent($body)
+        $code = (
+            preg_replace('/ {4}|\t/', '', $function->getDocComment()) ."\n" . // Original doc-comment
+            'function ' . // 'function' keyword
+            ($function->returnsReference() ? '&' : '') . // By reference symbol
+            $functionName . // Function name
+            '(' . // Start of parameters
+            join(', ', $this->getParameters($function->getParameters())) . // List of parameters
+            ")\n" . // End of parameters
+            "{\n" . // Start of function body
+            $this->indent($body) . "\n" . // Body of function
+            "}\n" // End of function body
         );
 
         $inMemoryCache[$functionName] = $code;

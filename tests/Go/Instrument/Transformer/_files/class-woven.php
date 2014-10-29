@@ -24,9 +24,8 @@ class TestClass__AopProxied {
 class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
 {
 
-
     /**
-     *Property was created automatically, do not change it manually
+     * Property was created automatically, do not change it manually
      */
     private static $__joinPoints = array();
 
