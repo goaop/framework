@@ -76,7 +76,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
     {
         $pointcut       = $this->parsePointcut($aspect, $reflection, $metaInformation);
-        $methodId       = sprintf("%s->%s", get_class($aspect), $reflection->name);
+        $methodId       = get_class($aspect).'->'.$reflection->name;
         $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);
 
         if (isset($metaInformation->scope) && $metaInformation->scope !== 'aspect') {

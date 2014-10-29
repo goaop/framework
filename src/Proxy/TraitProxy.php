@@ -118,14 +118,17 @@ BODY;
      */
     public function __toString()
     {
-        $classCode = sprintf("%s\ntrait %s\n{\n%s\n\n%s\n}",
-            $this->class->getDocComment(),
-            $this->name,
+        $classCode = (
+            $this->class->getDocComment() . "\n" . // Original doc-block
+            'trait ' . // 'trait' keyword
+            $this->name . "\n" . // Name of the trait
+            "{\n" . // Start of trait body
             $this->indent(
                 'use ' . join(', ', array(-1 => $this->parentClassName) + $this->traits) .
                 $this->getMethodAliasesCode()
-            ),
-            $this->indent(join("\n", $this->methodsCode))
+            ) . "\n" . // Use traits and aliases section
+            $this->indent(join("\n", $this->methodsCode)) . "\n". // Method definitions
+            "}" // End of trait body
         );
 
         return $classCode

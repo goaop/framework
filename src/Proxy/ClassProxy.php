@@ -208,12 +208,17 @@ class ClassProxy extends AbstractProxy
      */
     public function setMethod($methodFlags, $methodName, $body, $parameters)
     {
-        $this->methodsCode[$methodName] = sprintf("%s%s function %s(%s)\n{\n%s\n}\n",
-            "/**\n * Method was created automatically, do not change it manually\n */\n",
-            join(' ', Reflection::getModifierNames($methodFlags)),
-            $methodName,
-            $parameters,
-            $this->indent($body)
+        $this->methodsCode[$methodName] = (
+            "/**\n * Method was created automatically, do not change it manually\n */\n" .
+            join(' ', Reflection::getModifierNames($methodFlags)) . // List of method modifiers
+            ' function ' . // 'function' keyword
+            $methodName . // Method name
+            '(' . // Start of parameter list
+            $parameters . // List of parameters
+            ")\n" . // End of parameter list
+            "{\n" . // Start of method body
+            $this->indent($body) . "\n" . // Method body
+            "}\n" // End of method body
         );
 
         return $this;
@@ -366,11 +371,13 @@ class ClassProxy extends AbstractProxy
      */
     public function setProperty($propFlags, $propName, $defaultText = null)
     {
-        $this->propertiesCode[$propName] = sprintf("%s%s $%s%s;\n",
-                "/**\n *Property was created automatically, do not change it manually\n */\n",
-                join(' ', Reflection::getModifierNames($propFlags)),
-                $propName,
-                is_string($defaultText) ? " = $defaultText" : ''
+        $this->propertiesCode[$propName] = (
+            "/**\n * Property was created automatically, do not change it manually\n */\n" . // Doc-block
+            join(' ', Reflection::getModifierNames($propFlags)) . // List of modifiers for property
+            ' $' . // Space and vaiable symbol
+            $propName . // Name of the property
+            (is_string($defaultText) ? " = $defaultText" : '') . // Default value if present
+            ";\n" // End of line with property definition
         );
 
         return $this;
@@ -464,15 +471,19 @@ class ClassProxy extends AbstractProxy
 
         $prefix = join(' ', Reflection::getModifierNames($this->class->getModifiers()));
 
-        $classCode = sprintf("%s\n%sclass %s extends %s%s\n{\n%s\n\n%s\n%s\n}",
-            $this->class->getDocComment(),
-            $prefix ? "$prefix " : '',
-            $this->name,
-            $this->parentClassName,
-            $this->interfaces ? ' implements ' . join(', ', $this->interfaces) : '',
-            $this->traits ? $this->indent('use ' . join(', ', $this->traits) .';') : '',
-            $this->indent(join("\n", $this->propertiesCode)),
-            $this->indent(join("\n", $this->methodsCode))
+        $classCode = (
+            $this->class->getDocComment() . "\n" . // Original doc-block
+            ($prefix ? "$prefix " : '') . // List of class modifiers
+            'class ' . // 'class' keyword with one space
+            $this->name . // Name of the class
+            ' extends '. // 'extends' keyword with
+            $this->parentClassName . // Name of the parent class
+            ($this->interfaces ? ' implements ' . join(', ', $this->interfaces) : '') . "\n" . // Interfaces list
+            "{\n" . // Start of class definition
+            ($this->traits ? $this->indent('use ' . join(', ', $this->traits) .';'."\n") : '') . "\n" . // Traits list
+            $this->indent(join("\n", $this->propertiesCode)) . "\n" . // Property definitions
+            $this->indent(join("\n", $this->methodsCode)) . "\n" . // Method definitions
+            "}" // End of class definition
         );
 
         return $classCode
@@ -516,13 +527,18 @@ class ClassProxy extends AbstractProxy
      */
     protected function getOverriddenMethod($method, $body)
     {
-        $code = sprintf("%s%s function %s%s(%s)\n{\n%s\n}\n",
-            preg_replace('/ {4}|\t/', '', $method->getDocComment()) . "\n",
-            join(' ', Reflection::getModifierNames($method->getModifiers())),
-            $method->returnsReference() ? '&' : '',
-            $method->name,
-            join(', ', $this->getParameters($method->getParameters())),
-            $this->indent($body)
+        $code = (
+            preg_replace('/ {4}|\t/', '', $method->getDocComment()) . "\n" . // Original Doc-block
+            join(' ', Reflection::getModifierNames($method->getModifiers())) . // List of modifiers
+            ' function ' . // 'function' keyword
+            ($method->returnsReference() ? '&' : '') . // By reference symbol
+            $method->name . // Name of the method
+            '(' . // Start of parameters list
+            join(', ', $this->getParameters($method->getParameters())) . // List of parameters
+            ")\n" . // End of parameters list
+            "{\n" . // Start of method body
+            $this->indent($body) . "\n" . // Method body
+            "}\n" // End of method body
         );
 
         return $code;

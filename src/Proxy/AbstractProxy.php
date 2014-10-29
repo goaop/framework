@@ -124,11 +124,12 @@ abstract class AbstractProxy
         } elseif ($parameter->isOptional()) {
             $defaultValue = 'null';
         }
-        $code = sprintf('%s%s$%s%s',
-            $type ? "$type " : '',
-            $parameter->isPassedByReference() ? '&' : '',
-            $parameter->name,
-            $defaultValue !== null ? (" = " . $defaultValue) : ''
+        $code = (
+            ($type ? "$type " : '') . // Typehint
+            ($parameter->isPassedByReference() ? '&' : '') . // By reference sign
+            '$' . // Variable symbol
+            ($parameter->name) . // Name of the argument
+            ($defaultValue !== null ? (" = " . $defaultValue) : '') // Default value if present
         );
 
         return $code;

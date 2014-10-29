@@ -16,7 +16,7 @@ final class TestFinalClass extends TestFinalClass__AopProxied implements \Go\Aop
 {
 
     /**
-     *Property was created automatically, do not change it manually
+     * Property was created automatically, do not change it manually
      */
     private static $__joinPoints = array();
 
