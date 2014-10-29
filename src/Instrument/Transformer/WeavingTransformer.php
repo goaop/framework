@@ -99,7 +99,6 @@ class WeavingTransformer extends BaseSourceTransformer
 
         /** @var $namespaces ParsedFileNamespace[] */
         $namespaces = $parsedSource->getNamespaces();
-        assert('count($namespaces) < 2; /* Only one namespace per file is supported */');
         $lineOffset = 0;
 
         foreach ($namespaces as $namespace) {

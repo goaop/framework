@@ -70,13 +70,15 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * It's a caution check that multiple namespaces are not yet supported
-     *
-     * @expectedException \PHPUnit_Framework_Error_Warning
      */
     public function testMultipleNamespacesInOneFile()
     {
         $this->metadata->source = $this->loadTest('multiple-ns');
         $this->transformer->transform($this->metadata);
+
+        $actual   = $this->normalizeWhitespaces($this->metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('multiple-ns-woven'));
+        $this->assertEquals($expected, $actual);
     }
 
     /**
