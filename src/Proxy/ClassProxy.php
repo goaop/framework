@@ -260,7 +260,8 @@ class ClassProxy extends AbstractProxy
             $dynamicMethodClass = 'Go\Aop\Framework\ClosureDynamicMethodInvocation56';
         }
 
-        self::$invocationClassMap = array(
+        // We are using LSB here and overridden static property
+        static::$invocationClassMap = array(
             AspectContainer::METHOD_PREFIX        => $dynamicMethodClass,
             AspectContainer::STATIC_METHOD_PREFIX => $staticMethodClass,
             AspectContainer::PROPERTY_PREFIX      => 'Go\Aop\Framework\ClassFieldAccess'

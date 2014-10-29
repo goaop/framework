@@ -34,6 +34,13 @@ class TraitProxy extends ClassProxy
     protected static $traitAdvices = array();
 
     /**
+     * Overridden static property for TraitProxy
+     *
+     * {@inheritDoc}
+     */
+    protected static $invocationClassMap = array();
+
+    /**
      * Inject advices for given trait
      *
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
@@ -54,14 +61,12 @@ class TraitProxy extends ClassProxy
         static $accessor = null;
 
         if (!self::$invocationClassMap) {
-            if (!self::$invocationClassMap) {
-                $aspectKernel = AspectKernel::getInstance();
-                $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
-                self::setMappings(
-                    $aspectKernel->hasFeature(Features::USE_CLOSURE),
-                    $aspectKernel->hasFeature(Features::USE_SPLAT_OPERATOR)
-                );
-            }
+            $aspectKernel = AspectKernel::getInstance();
+            $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
+            self::setMappings(
+                $aspectKernel->hasFeature(Features::USE_CLOSURE),
+                $aspectKernel->hasFeature(Features::USE_SPLAT_OPERATOR)
+            );
         }
 
         $advices = self::$traitAdvices[$traitName][$joinPointType][$pointName];
