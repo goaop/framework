@@ -12,19 +12,18 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceAfter;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Intercept\FieldInterceptor;
 use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "After" interceptor of field access
  */
-class FieldAfterInterceptor extends BaseInterceptor implements FieldInterceptor, AdviceAfter
+class FieldAfterInterceptor extends BaseInterceptor implements AdviceAfter
 {
     /**
      * Do the stuff you want to do before and after the
      * field is getted.
      *
-     * @param FieldAccess $field the joinpoint that corresponds to the field read
+     * @param Joinpoint|FieldAccess $field the joinpoint that corresponds to the field read
      *
      * @return mixed the result of the field read/write {@link Joinpoint::proceed()}
      */

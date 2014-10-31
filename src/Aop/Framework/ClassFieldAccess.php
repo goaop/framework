@@ -10,9 +10,9 @@
 
 namespace Go\Aop\Framework;
 
-use ReflectionProperty;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Intercept\FieldInterceptor;
+use Go\Aop\Intercept\Interceptor;
+use ReflectionProperty;
 
 /**
  * Represents a field access joinpoint
@@ -114,7 +114,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     final public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor FieldInterceptor */
+            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);

@@ -26,27 +26,16 @@ use Go\Aop\Advice;
  * debugger:
  *
  * <pre class=code>
- * class DebuggingInterceptor implements MethodInterceptor,
- *     ConstructorInterceptor, FieldInterceptor {
+ * class DebuggingInterceptor implements Interceptor, ConstructorInterceptor {
  *
- *   public function invoke(MethodInvocation $i) {
- *       $this->debug($i->getMethod(), $i->getThis(), $i->getArgs());
+ *   public function invoke(Joinpoint $i) {
+ *       $this->debug($i->getStaticPart(), $i->getThis(), $i->getArgs());
  *       return $i->proceed();
  *   }
  *
  *   public function construct(ConstructorInvocation $i) {
  *       $this->debug($i->getConstructor(), $i->getThis(), $i->getArgs());
  *       return $i->proceed();
- *   }
- *
- *   public function get(FieldAccess $fa) {
- *       $this->debug($fa->getField(), $fa->getThis(), null);
- *       return $fa->proceed();
- *   }
- *
- *   public function set(FieldAccess $fa) {
- *       $this->debug($fa->getField(), $fa->getThis(), $fa->getValueToSet());
- *       return $fa->proceed();
  *   }
  *
  *   protected function debug($accessibleObject, $object, $value) {
