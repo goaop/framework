@@ -10,6 +10,7 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Intercept\MethodInterceptor;
 use Go\Aop\Support\DynamicMethodMatcher;
@@ -59,15 +60,16 @@ class DynamicMethodMatcherInterceptor extends BaseInterceptor implements MethodI
     /**
      * Method invoker
      *
-     * @param $invocation MethodInvocation the method invocation joinpoint
+     * @param $joinpoint MethodInvocation the method invocation joinpoint
+     *
      * @return mixed the result of the call to {@see Joinpoint->proceed()}
      */
-    final public function invoke(MethodInvocation $invocation)
+    final public function invoke(Joinpoint $joinpoint)
     {
-        if ($this->pointcut->matches($invocation->getMethod(), $invocation->getThis(), $invocation->getArguments())) {
-            return $this->adviceMethod->invoke($invocation);
+        if ($this->pointcut->matches($joinpoint->getMethod(), $joinpoint->getThis(), $joinpoint->getArguments())) {
+            return $this->adviceMethod->invoke($joinpoint);
         }
 
-        return $invocation->proceed();
+        return $joinpoint->proceed();
     }
 }

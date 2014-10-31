@@ -59,5 +59,13 @@ use Go\Aop\Advice;
  */
 interface Interceptor extends Advice
 {
-
+    /**
+     * Implement this method to perform extra treatments before and
+     * after the invocation of joinpoint.
+     *
+     * @param Joinpoint $joinpoint current joinpoint
+     *
+     * @return mixed the result of the call
+     */
+    public function invoke(Joinpoint $joinpoint);
 }

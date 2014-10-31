@@ -33,12 +33,4 @@ namespace Go\Aop\Intercept;
 interface MethodInterceptor extends Interceptor
 {
 
-    /**
-     * Implement this method to perform extra treatments before and
-     * after the invocation.
-     *
-     * @param MethodInvocation $invocation the method invocation joinpoint
-     * @return mixed the result of the call
-     */
-    public function invoke(MethodInvocation $invocation);
 }

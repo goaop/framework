@@ -14,6 +14,7 @@ use Exception;
 use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\FunctionInterceptor;
+use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "Around" interceptor of function execution
@@ -23,14 +24,15 @@ class FunctionAroundInterceptor extends BaseInterceptor implements FunctionInter
     /**
      * Around invoker
      *
-     * @param $invocation FunctionInvocation the function invocation joinpoint
+     * @param FunctionInvocation $joinpoint the function invocation joinpoint
+     *
      * @return mixed the result of the call to {@link Joinpoint::proceed()}
      * @throws Exception
      */
-    final public function invoke(FunctionInvocation $invocation)
+    final public function invoke(Joinpoint $joinpoint)
     {
         $adviceMethod = $this->adviceMethod;
 
-        return $adviceMethod($invocation);
+        return $adviceMethod($joinpoint);
     }
 }

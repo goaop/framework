@@ -12,30 +12,16 @@ namespace Go\Aop\Framework;
 
 class FieldBeforeInterceptorTest extends AbstractFieldInterceptorTest
 {
-    public function testAdviceIsCalledBeforeGet()
+    public function testAdviceIsCalledBeforeInvoke()
     {
         $sequence   = array();
         $advice     = $this->getAdvice($sequence);
         $invocation = $this->getInvocation($sequence);
 
         $interceptor = new FieldBeforeInterceptor($advice);
-        $result = $interceptor->get($invocation);
-
-        $this->assertEquals('invocation', $result, "Advice should not affect the return value of invocation");
-        $this->assertEquals(array('advice', 'invocation'), $sequence, "Before advice should be invoked before invocation");
-    }
-
-    public function testAdviceIsCalledBeforeSet()
-    {
-        $sequence   = array();
-        $advice     = $this->getAdvice($sequence);
-        $invocation = $this->getInvocation($sequence);
-
-        $interceptor = new FieldBeforeInterceptor($advice);
-        $result = $interceptor->set($invocation);
+        $result = $interceptor->invoke($invocation);
 
         $this->assertEquals('invocation', $result, "Advice should not affect the return value of invocation");
         $this->assertEquals(array('advice', 'invocation'), $sequence, "Before advice should be invoked before invocation");
     }
 }
- 

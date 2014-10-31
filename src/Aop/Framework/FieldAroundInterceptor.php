@@ -13,6 +13,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldInterceptor;
+use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "Around" interceptor of field access
@@ -23,29 +24,14 @@ class FieldAroundInterceptor extends BaseInterceptor implements FieldInterceptor
      * Do the stuff you want to do before and after the
      * field is getted.
      *
-     * @param FieldAccess $fieldRead the joinpoint that corresponds to the field read
-     * @return mixed the result of the field read {@link Joinpoint::proceed()}, might be intercepted by the
-     * interceptor.
+     * @param FieldAccess $field the joinpoint that corresponds to the field read
+     *
+     * @return mixed the result of the field read/write {@link Joinpoint::proceed()}
      */
-    public function get(FieldAccess $fieldRead)
+    public function invoke(Joinpoint $fieldRead)
     {
         $adviceMethod = $this->adviceMethod;
 
         return $adviceMethod($fieldRead);
-    }
-
-    /**
-     * Do the stuff you want to do before and after the
-     * field is setted.
-     *
-     * @param FieldAccess $fieldWrite the joinpoint that corresponds to the field write
-     * @return mixed the result of the field set {@link Joinpoint::proceed()}, might be intercepted by the
-     * interceptor.
-     */
-    public function set(FieldAccess $fieldWrite)
-    {
-        $adviceMethod = $this->adviceMethod;
-
-        return $adviceMethod($fieldWrite);
     }
 }

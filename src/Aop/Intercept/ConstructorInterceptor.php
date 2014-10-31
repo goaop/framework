@@ -35,12 +35,4 @@ namespace Go\Aop\Intercept;
 interface ConstructorInterceptor extends Interceptor
 {
 
-    /**
-     * Implement this method to perform extra treatments before and
-     * after the construction of a new object.
-     *
-     * @param ConstructorInvocation $invocation the construction joinpoint
-     * @return mixed the newly created object
-     */
-    public function construct(ConstructorInvocation $invocation);
 }

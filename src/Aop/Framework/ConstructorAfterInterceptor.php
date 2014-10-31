@@ -14,6 +14,7 @@ use Exception;
 use Go\Aop\AdviceAfter;
 use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\ConstructorInterceptor;
+use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "After" interceptor of constructor
@@ -33,7 +34,7 @@ class ConstructorAfterInterceptor extends BaseInterceptor implements Constructor
      * the call to {@link Joinpoint::proceed()}, might be replaced by
      * the interceptor.
      */
-    final public function construct(ConstructorInvocation $invocation)
+    final public function invoke(Joinpoint $invocation)
     {
         $result = null;
         try {

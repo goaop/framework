@@ -41,23 +41,4 @@ namespace Go\Aop\Intercept;
 interface FieldInterceptor extends Interceptor
 {
 
-    /**
-     * Do the stuff you want to do before and after the
-     * field is getted.
-     *
-     * @param FieldAccess $fieldRead the joinpoint that corresponds to the field read
-     *
-     * @return mixed the result of the field read
-     */
-    public function get(FieldAccess $fieldRead);
-
-    /**
-     * Do the stuff you want to do before and after the
-     * field is setted.
-     *
-     * @param FieldAccess $fieldWrite the joinpoint that corresponds to the field write
-     *
-     * @return mixed the result of the field set
-     */
-    public function set(FieldAccess $fieldWrite);
 }

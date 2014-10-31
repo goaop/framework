@@ -13,6 +13,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\AdviceBefore;
 use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\ConstructorInterceptor;
+use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "Before" interceptor of constructor
@@ -30,7 +31,7 @@ class ConstructorBeforeInterceptor extends BaseInterceptor implements Constructo
      * the call to {@link Joinpoint::proceed()}, might be replaced by
      * the interceptor.
      */
-    final public function construct(ConstructorInvocation $invocation)
+    final public function invoke(Joinpoint $invocation)
     {
         $adviceMethod = $this->adviceMethod;
         $adviceMethod($invocation);

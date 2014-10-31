@@ -11,6 +11,7 @@
 namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceBefore;
+use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Intercept\MethodInterceptor;
 
@@ -22,14 +23,15 @@ class MethodBeforeInterceptor extends BaseInterceptor implements MethodIntercept
     /**
      * Before invoker
      *
-     * @param MethodInvocation $invocation the method invocation joinpoint
+     * @param MethodInvocation $joinpoint the method invocation joinpoint
+     *
      * @return mixed the result of the call to {@link Joinpoint::proceed()},
      */
-    final public function invoke(MethodInvocation $invocation)
+    final public function invoke(Joinpoint $joinpoint)
     {
         $adviceMethod = $this->adviceMethod;
-        $adviceMethod($invocation);
+        $adviceMethod($joinpoint);
 
-        return $invocation->proceed();
+        return $joinpoint->proceed();
     }
 }

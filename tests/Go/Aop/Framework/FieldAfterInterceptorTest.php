@@ -19,23 +19,9 @@ class FieldAfterInterceptorTest extends AbstractFieldInterceptorTest
         $invocation = $this->getInvocation($sequence);
 
         $interceptor = new FieldAfterInterceptor($advice);
-        $result = $interceptor->get($invocation);
-
-        $this->assertEquals('invocation', $result, "Advice should not affect the return value of invocation");
-        $this->assertEquals(array('invocation', 'advice'), $sequence, "After advice should be invoked after invocation");
-    }
-
-    public function testAdviceIsCalledAfterSet()
-    {
-        $sequence   = array();
-        $advice     = $this->getAdvice($sequence);
-        $invocation = $this->getInvocation($sequence);
-
-        $interceptor = new FieldAfterInterceptor($advice);
-        $result = $interceptor->set($invocation);
+        $result = $interceptor->invoke($invocation);
 
         $this->assertEquals('invocation', $result, "Advice should not affect the return value of invocation");
         $this->assertEquals(array('invocation', 'advice'), $sequence, "After advice should be invoked after invocation");
     }
 }
- 

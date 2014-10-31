@@ -10,6 +10,7 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Intercept\MethodInterceptor;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Pointcut;
@@ -108,19 +109,19 @@ class DeclareErrorInterceptor extends BaseInterceptor implements MethodIntercept
      * after the invocation. Polite implementations would certainly
      * like to invoke {@link Joinpoint::proceed()}.
      *
-     * @param MethodInvocation $invocation the method invocation joinpoint
-     * @return mixed the result of the call to {@link Joinpoint::proceed()},
-     * might be intercepted by the interceptor.
+     * @param MethodInvocation $joinpoint the method invocation joinpoint
+     *
+     * @return mixed the result of the call to {@link Joinpoint::proceed()}
      */
-    public function invoke(MethodInvocation $invocation)
+    public function invoke(Joinpoint $joinpoint)
     {
         $this->adviceMethod->__invoke(
-            $invocation->getThis(),
-            $invocation->getMethod(),
+            $joinpoint->getThis(),
+            $joinpoint->getMethod(),
             $this->message,
             $this->level
         );
 
-        return $invocation->proceed();
+        return $joinpoint->proceed();
     }
 }
