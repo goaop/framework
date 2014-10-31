@@ -17,7 +17,7 @@ use Go\Aop\Intercept\Interceptor;
 /**
  * Base interceptor realization
  */
-class BaseInterceptor extends BaseAdvice implements Interceptor, Serializable
+abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serializable
 {
     /**
      * Pointcut instance

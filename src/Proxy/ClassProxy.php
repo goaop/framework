@@ -11,6 +11,7 @@
 namespace Go\Proxy;
 
 use Go\Aop\Features;
+use Go\Aop\Framework\MethodInvocationComposer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use Reflection;
@@ -253,17 +254,8 @@ class ClassProxy extends AbstractProxy
      */
     protected static function setMappings($useClosureBinding, $useSplatOperator)
     {
-        $dynamicMethodClass = 'Go\Aop\Framework\ReflectionMethodInvocation';
-        $staticMethodClass  = 'Go\Aop\Framework\ReflectionMethodInvocation';
-
-        if ($useClosureBinding) {
-            $dynamicMethodClass = 'Go\Aop\Framework\ClosureDynamicMethodInvocation';
-            $staticMethodClass  = 'Go\Aop\Framework\ClosureStaticMethodInvocation';
-        }
-
-        if ($useSplatOperator) {
-            $dynamicMethodClass = 'Go\Aop\Framework\ClosureDynamicMethodInvocation56';
-        }
+        $dynamicMethodClass = MethodInvocationComposer::compose(false, $useClosureBinding, $useSplatOperator, false);
+        $staticMethodClass  = MethodInvocationComposer::compose(true, $useClosureBinding, $useSplatOperator, false);
 
         // We are using LSB here and overridden static property
         static::$invocationClassMap = array(
