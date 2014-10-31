@@ -10,9 +10,9 @@
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\Intercept\MethodInvocation;
+use Go\Aop\Intercept\Invocation;
 
-class AroundInterceptorTest extends AbstractMethodInterceptorTest
+class AroundInterceptorTest extends AbstractInterceptorTest
 {
 
     public function testInvocationIsNotCalledWithoutProceed()
@@ -31,7 +31,7 @@ class AroundInterceptorTest extends AbstractMethodInterceptorTest
     public function testInvocationIsCalledWithinAdvice()
     {
         $sequence   = array();
-        $advice     = function (MethodInvocation $invocation) use (&$sequence) {
+        $advice     = function (Invocation $invocation) use (&$sequence) {
             $sequence[] = 'advice';
             $result = $invocation->proceed();
             $sequence[] = 'advice';

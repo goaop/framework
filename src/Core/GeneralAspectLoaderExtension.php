@@ -84,31 +84,21 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
             $adviceCallback = Framework\BaseAdvice::createScopeCallback($aspect, $adviceCallback, $scope);
         }
 
-        $isPointFilter  = $pointcut instanceof PointFilter;
+        $isPointFilter = $pointcut instanceof PointFilter;
         switch (true) {
             // Register a pointcut by its name
             case ($metaInformation instanceof Annotation\Pointcut):
                 $container->registerPointcut($pointcut, $methodId);
                 break;
 
-            case ($isPointFilter && ($pointcut->getKind() & PointFilter::KIND_METHOD)):
-                $advice = $this->getMethodInterceptor($metaInformation, $adviceCallback);
+            case ($isPointFilter):
+                $advice = $this->getInterceptor($metaInformation, $adviceCallback);
                 if ($pointcut instanceof Support\DynamicMethodMatcher) {
                     $advice = new Framework\DynamicInvocationMatcherInterceptor(
                         $pointcut,
                         $advice
                     );
                 }
-                $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
-                break;
-
-            case ($isPointFilter && ($pointcut->getKind() & PointFilter::KIND_PROPERTY)):
-                $advice = $this->getPropertyInterceptor($metaInformation, $adviceCallback);
-                $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
-                break;
-
-            case ($isPointFilter && ($pointcut->getKind() & PointFilter::KIND_FUNCTION)):
-                $advice = $this->getFunctionInterceptor($metaInformation, $adviceCallback);
                 $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
                 break;
 
@@ -123,7 +113,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      * @return \Go\Aop\Intercept\Interceptor
      * @throws \UnexpectedValueException
      */
-    protected function getMethodInterceptor($metaInformation, $adviceCallback)
+    protected function getInterceptor($metaInformation, $adviceCallback)
     {
         switch (true) {
             case ($metaInformation instanceof Annotation\Before):
@@ -137,46 +127,6 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
 
             case ($metaInformation instanceof Annotation\AfterThrowing):
                 return new Framework\AfterThrowingInterceptor($adviceCallback, $metaInformation->order);
-
-            default:
-                throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
-        }
-    }
-
-    /**
-     * @param $metaInformation
-     * @param $adviceCallback
-     * @return \Go\Aop\Intercept\Interceptor
-     * @throws \UnexpectedValueException
-     */
-    protected function getFunctionInterceptor($metaInformation, $adviceCallback)
-    {
-        switch (true) {
-            case ($metaInformation instanceof Annotation\Around):
-                return new Framework\FunctionAroundInterceptor($adviceCallback, $metaInformation->order);
-
-            default:
-                throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
-        }
-    }
-
-    /**
-     * @param $metaInformation
-     * @param $adviceCallback
-     * @return \Go\Aop\Intercept\FieldAccess
-     * @throws \UnexpectedValueException
-     */
-    protected function getPropertyInterceptor($metaInformation, $adviceCallback)
-    {
-        switch (true) {
-            case ($metaInformation instanceof Annotation\Before):
-                return new Framework\FieldBeforeInterceptor($adviceCallback, $metaInformation->order);
-
-            case ($metaInformation instanceof Annotation\After):
-                return new Framework\FieldAfterInterceptor($adviceCallback, $metaInformation->order);
-
-            case ($metaInformation instanceof Annotation\Around):
-                return new Framework\FieldAroundInterceptor($adviceCallback, $metaInformation->order);
 
             default:
                 throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));

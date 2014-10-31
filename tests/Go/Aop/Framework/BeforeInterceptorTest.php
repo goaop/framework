@@ -10,7 +10,7 @@
 
 namespace Go\Aop\Framework;
 
-class BeforeInterceptorTest extends AbstractMethodInterceptorTest
+class BeforeInterceptorTest extends AbstractInterceptorTest
 {
     public function testAdviceIsCalledBeforeInvocation()
     {
