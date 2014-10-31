@@ -18,8 +18,6 @@ use ReflectionFunction;
  *
  * A function invocation is a joinpoint and can be intercepted by a function
  * interceptor.
- *
- * @see FunctionInterceptor
  */
 interface FunctionInvocation extends Invocation
 {
