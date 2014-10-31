@@ -2,16 +2,16 @@
 
 namespace Go\Stubs;
 
-use Go\Aop\Framework\ClosureStaticMethodInvocation;
+use Go\Aop\Intercept\Invocation;
 
 class FirstStatic extends First
 {
     /**
-     * @var ClosureStaticMethodInvocation|null
+     * @var Invocation|null
      */
     protected static $invocation = null;
 
-    public function __construct(ClosureStaticMethodInvocation $invocation)
+    public function __construct(Invocation $invocation)
     {
         static::$invocation = $invocation;
     }
