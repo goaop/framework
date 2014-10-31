@@ -14,12 +14,11 @@ use Exception;
 use Go\Aop\AdviceAfter;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Aop\Intercept\MethodInterceptor;
 
 /**
  * "After" interceptor of method invocation
  */
-class MethodAfterInterceptor extends BaseInterceptor implements MethodInterceptor, AdviceAfter
+class MethodAfterInterceptor extends BaseInterceptor implements AdviceAfter
 {
     /**
      * After invoker

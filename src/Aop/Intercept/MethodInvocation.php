@@ -19,8 +19,6 @@ use ReflectionMethod;
  *
  * A method invocation is a joinpoint and can be intercepted by a method
  * interceptor.
- *
- * @see MethodInterceptor
  */
 interface MethodInvocation extends Invocation
 {

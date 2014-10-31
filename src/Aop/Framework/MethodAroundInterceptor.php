@@ -14,12 +14,11 @@ use Exception;
 use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Aop\Intercept\MethodInterceptor;
 
 /**
  * "Around" interceptor of method invocation
  */
-class MethodAroundInterceptor extends BaseInterceptor implements MethodInterceptor, AdviceAround
+class MethodAroundInterceptor extends BaseInterceptor implements AdviceAround
 {
     /**
      * Around invoker

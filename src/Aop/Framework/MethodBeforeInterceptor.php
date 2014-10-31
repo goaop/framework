@@ -13,12 +13,11 @@ namespace Go\Aop\Framework;
 use Go\Aop\AdviceBefore;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Aop\Intercept\MethodInterceptor;
 
 /**
  * "Before" interceptor of method invocation
  */
-class MethodBeforeInterceptor extends BaseInterceptor implements MethodInterceptor, AdviceBefore
+class MethodBeforeInterceptor extends BaseInterceptor implements AdviceBefore
 {
     /**
      * Before invoker

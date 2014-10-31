@@ -94,7 +94,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
             case ($isPointFilter && ($pointcut->getKind() & PointFilter::KIND_METHOD)):
                 $advice = $this->getMethodInterceptor($metaInformation, $adviceCallback);
                 if ($pointcut instanceof Support\DynamicMethodMatcher) {
-                    $advice = new Framework\DynamicMethodMatcherInterceptor(
+                    $advice = new Framework\DynamicInvocationMatcherInterceptor(
                         $pointcut,
                         $advice
                     );
@@ -120,7 +120,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     /**
      * @param $metaInformation
      * @param $adviceCallback
-     * @return \Go\Aop\Intercept\MethodInterceptor
+     * @return \Go\Aop\Intercept\Interceptor
      * @throws \UnexpectedValueException
      */
     protected function getMethodInterceptor($metaInformation, $adviceCallback)
@@ -146,7 +146,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     /**
      * @param $metaInformation
      * @param $adviceCallback
-     * @return \Go\Aop\Intercept\MethodInterceptor
+     * @return \Go\Aop\Intercept\Interceptor
      * @throws \UnexpectedValueException
      */
     protected function getFunctionInterceptor($metaInformation, $adviceCallback)

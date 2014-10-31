@@ -10,27 +10,27 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Intercept\Interceptor;
+use Go\Aop\Intercept\Invocation;
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Intercept\MethodInvocation;
-use Go\Aop\Intercept\MethodInterceptor;
 use Go\Aop\Support\DynamicMethodMatcher;
 
 /**
- * Dynamic method matcher combines a pointcut and interceptor.
+ * Dynamic invocation matcher combines a pointcut and interceptor.
  *
  * For each invocation interceptor asks the pointcut if it matches the invocation.
  * Matcher will receive reflection point, object instance and invocation arguments to make a decision
  */
-class DynamicMethodMatcherInterceptor extends BaseInterceptor implements MethodInterceptor
+class DynamicInvocationMatcherInterceptor extends BaseInterceptor
 {
 
     /**
      * Dynamic matcher constructor
      *
      * @param DynamicMethodMatcher $matcher Instance of dynamic matcher
-     * @param MethodInterceptor $interceptor Instance of method interceptor to invoke
+     * @param Interceptor $interceptor Instance of interceptor to invoke
      */
-    public function __construct(DynamicMethodMatcher $matcher, MethodInterceptor $interceptor)
+    public function __construct(DynamicMethodMatcher $matcher, Interceptor $interceptor)
     {
         $this->pointcut     = $matcher;
         $this->adviceMethod = $interceptor;
@@ -60,14 +60,16 @@ class DynamicMethodMatcherInterceptor extends BaseInterceptor implements MethodI
     /**
      * Method invoker
      *
-     * @param $joinpoint MethodInvocation the method invocation joinpoint
+     * @param Joinpoint $joinpoint the method invocation joinpoint
      *
      * @return mixed the result of the call to {@see Joinpoint->proceed()}
      */
     final public function invoke(Joinpoint $joinpoint)
     {
-        if ($this->pointcut->matches($joinpoint->getMethod(), $joinpoint->getThis(), $joinpoint->getArguments())) {
-            return $this->adviceMethod->invoke($joinpoint);
+        if ($joinpoint instanceof Invocation) {
+            if ($this->pointcut->matches($joinpoint->getStaticPart(), $joinpoint->getThis(), $joinpoint->getArguments())) {
+                return $this->adviceMethod->invoke($joinpoint);
+            }
         }
 
         return $joinpoint->proceed();

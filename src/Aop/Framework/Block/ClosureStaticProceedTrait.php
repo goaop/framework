@@ -10,7 +10,7 @@
 
 namespace Go\Aop\Framework\Block;
 
-use Go\Aop\Intercept\MethodInterceptor;
+use Go\Aop\Intercept\Interceptor;
 
 trait ClosureStaticProceedTrait
 {
@@ -36,7 +36,7 @@ trait ClosureStaticProceedTrait
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor MethodInterceptor */
+            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);

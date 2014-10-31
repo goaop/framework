@@ -84,7 +84,7 @@ class ClosureDynamicMethodInvocationTest extends \PHPUnit_Framework_TestCase
     {
         $child  = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
         $value  = 'test';
-        $advice = $this->getMock('Go\Aop\Intercept\MethodInterceptor');
+        $advice = $this->getMock('Go\Aop\Intercept\Interceptor');
         $advice->expects($this->once())
             ->method('invoke')
             ->will($this->returnCallback(function (MethodInvocation $object) use (&$value) {
