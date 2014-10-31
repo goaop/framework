@@ -13,17 +13,16 @@ namespace Go\Aop\Framework;
 use Exception;
 use Go\Aop\AdviceAfter;
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Intercept\MethodInvocation;
 
 /**
- * "After" interceptor of method invocation
+ * "After Throwing" interceptor
  */
-class MethodAfterInterceptor extends BaseInterceptor implements AdviceAfter
+class AfterThrowingInterceptor extends BaseInterceptor implements AdviceAfter
 {
     /**
-     * After invoker
+     * After throwing exception invoker
      *
-     * @param MethodInvocation $joinpoint the method invocation joinpoint
+     * @param Joinpoint $joinpoint the concrete joinpoint
      *
      * @return mixed the result of the call to {@link Joinpoint::proceed()}
      * @throws Exception
@@ -34,13 +33,9 @@ class MethodAfterInterceptor extends BaseInterceptor implements AdviceAfter
         try {
             $result = $joinpoint->proceed();
         } catch (Exception $invocationException) {
-            // this is need for finally emulation in PHP
-        }
+            $adviceMethod = $this->adviceMethod;
+            $adviceMethod($joinpoint);
 
-        $adviceMethod = $this->adviceMethod;
-        $adviceMethod($joinpoint);
-
-        if (isset($invocationException)) {
             throw $invocationException;
         }
 

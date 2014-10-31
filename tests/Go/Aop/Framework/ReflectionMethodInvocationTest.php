@@ -97,7 +97,7 @@ class ReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     {
         $child  = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
         $value  = 'test';
-        $advice = new MethodBeforeInterceptor(function ($object) use (&$value) {
+        $advice = new BeforeInterceptor(function ($object) use (&$value) {
             $value = 'ok';
         });
 

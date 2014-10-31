@@ -127,16 +127,16 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     {
         switch (true) {
             case ($metaInformation instanceof Annotation\Before):
-                return new Framework\MethodBeforeInterceptor($adviceCallback, $metaInformation->order);
+                return new Framework\BeforeInterceptor($adviceCallback, $metaInformation->order);
 
             case ($metaInformation instanceof Annotation\After):
-                return new Framework\MethodAfterInterceptor($adviceCallback, $metaInformation->order);
+                return new Framework\AfterInterceptor($adviceCallback, $metaInformation->order);
 
             case ($metaInformation instanceof Annotation\Around):
-                return new Framework\MethodAroundInterceptor($adviceCallback, $metaInformation->order);
+                return new Framework\AroundInterceptor($adviceCallback, $metaInformation->order);
 
             case ($metaInformation instanceof Annotation\AfterThrowing):
-                return new Framework\MethodAfterThrowingInterceptor($adviceCallback, $metaInformation->order);
+                return new Framework\AfterThrowingInterceptor($adviceCallback, $metaInformation->order);
 
             default:
                 throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
