@@ -12,13 +12,12 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceBefore;
 use Go\Aop\Intercept\ConstructorInvocation;
-use Go\Aop\Intercept\ConstructorInterceptor;
 use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "Before" interceptor of constructor
  */
-class ConstructorBeforeInterceptor extends BaseInterceptor implements ConstructorInterceptor, AdviceBefore
+class ConstructorBeforeInterceptor extends BaseInterceptor implements AdviceBefore
 {
 
     /**
@@ -26,7 +25,7 @@ class ConstructorBeforeInterceptor extends BaseInterceptor implements Constructo
      * after the construction of a new object. Polite implementations
      * would certainly like to invoke {@link Joinpoint::proceed()}.
      *
-     * @param ConstructorInvocation $invocation the construction joinpoint
+     * @param Joinpoint|ConstructorInvocation $invocation the construction joinpoint
      * @return mixed the newly created object, which is also the result of
      * the call to {@link Joinpoint::proceed()}, might be replaced by
      * the interceptor.

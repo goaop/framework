@@ -13,13 +13,12 @@ namespace Go\Aop\Framework;
 use Exception;
 use Go\Aop\AdviceAfter;
 use Go\Aop\Intercept\ConstructorInvocation;
-use Go\Aop\Intercept\ConstructorInterceptor;
 use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "After" interceptor of constructor
  */
-class ConstructorAfterInterceptor extends BaseInterceptor implements ConstructorInterceptor, AdviceAfter
+class ConstructorAfterInterceptor extends BaseInterceptor implements AdviceAfter
 {
 
     /**
@@ -27,7 +26,7 @@ class ConstructorAfterInterceptor extends BaseInterceptor implements Constructor
      * after the construction of a new object. Polite implementations
      * would certainly like to invoke {@link Joinpoint::proceed()}.
      *
-     * @param ConstructorInvocation $invocation the construction joinpoint
+     * @param Joinpoint|ConstructorInvocation $invocation the construction joinpoint
      * @throws Exception if exception was thrown in constructor
      *
      * @return mixed the newly created object, which is also the result of

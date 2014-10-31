@@ -18,8 +18,6 @@ use ReflectionMethod;
  *
  * A constructor invocation is a joinpoint and can be intercepted
  * by a constructor interceptor.
- *
- * @see ConstructorInterceptor
  */
 interface ConstructorInvocation extends Invocation
 {
