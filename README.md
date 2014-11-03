@@ -32,12 +32,7 @@ PHP traits can be used to implement some aspect-like functionality.
 Requirements
 ------------
 
-Go! AOP library is developed for PHP 5.4.0 and up, but it can partially work with PHP 5.3.0 code.
-
-Note that PHP versions before 5.4 will not work completely, if you try to use
- aspects for code that uses Late Static Binding (LSB) feature.
-
-Go! AOP library will not work with eAccelerator.
+Go! AOP library is developed for PHP 5.4.0 and up.
 
 Known bugs
 ------------
