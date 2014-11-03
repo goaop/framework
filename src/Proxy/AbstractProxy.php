@@ -136,6 +136,7 @@ abstract class AbstractProxy
         $code = (
             ($type ? "$type " : '') . // Typehint
             ($parameter->isPassedByReference() ? '&' : '') . // By reference sign
+            ($this->useVariadics && $parameter->isVariadic() ? '...' : '') . // Variadic symbol
             '$' . // Variable symbol
             ($parameter->name) . // Name of the argument
             ($defaultValue !== null ? (" = " . $defaultValue) : '') // Default value if present
