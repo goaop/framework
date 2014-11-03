@@ -25,7 +25,10 @@ class BaseInterceptorTest extends AbstractInterceptorTest
         $sequence = array();
         $advice   = $this->getAdvice($sequence);
 
-        $interceptor = new BaseInterceptor($advice);
+        $interceptor = $this->getMockForAbstractClass(
+            'Go\Aop\Framework\BaseInterceptor',
+            array($advice)
+        );
         $this->assertEquals($advice, $interceptor->getRawAdvice());
     }
 
@@ -56,4 +59,3 @@ class BaseInterceptorTest extends AbstractInterceptorTest
         $this->assertEquals($advice, $result->getRawAdvice());
     }
 }
- 

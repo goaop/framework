@@ -8,15 +8,13 @@
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Aop\Framework;
+namespace Go\Aop\Framework\Block;
 
-use Go\Aop\Intercept\MethodInterceptor;
+use Go\Aop\Intercept\Interceptor;
 
-/**
- * Class-invocation of dynamic method in a class via closure rebinding
- */
-class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
+trait ClosureDynamicProceedTrait
 {
+
     /**
      * Closure to use
      *
@@ -39,7 +37,7 @@ class ClosureDynamicMethodInvocation extends AbstractMethodInvocation
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor MethodInterceptor */
+            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);

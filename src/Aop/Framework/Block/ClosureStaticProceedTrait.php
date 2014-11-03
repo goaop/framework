@@ -8,14 +8,11 @@
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Aop\Framework;
+namespace Go\Aop\Framework\Block;
 
-use Go\Aop\Intercept\MethodInterceptor;
+use Go\Aop\Intercept\Interceptor;
 
-/**
- * Class-invocation of static method in a class via static closure rebinding and LSB
- */
-class ClosureStaticMethodInvocation extends AbstractMethodInvocation
+trait ClosureStaticProceedTrait
 {
     /**
      * Closure to use
@@ -32,15 +29,6 @@ class ClosureStaticMethodInvocation extends AbstractMethodInvocation
     private $previousScope = null;
 
     /**
-     * {@inheritdoc}
-     */
-    public function __construct($className, $methodName, array $advices)
-    {
-        parent::__construct($className, $methodName, $advices);
-        $this->closureToCall = $this->getStaticInvoker($this->className, $methodName);
-    }
-
-    /**
      * Invokes original method and return result from it
      *
      * @return mixed
@@ -48,7 +36,7 @@ class ClosureStaticMethodInvocation extends AbstractMethodInvocation
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor MethodInterceptor */
+            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);
@@ -56,6 +44,9 @@ class ClosureStaticMethodInvocation extends AbstractMethodInvocation
 
         // Rebind the closure if scope (class name) was changed since last time
         if ($this->previousScope !== $this->instance) {
+            if ($this->closureToCall === null) {
+                $this->closureToCall = $this->getStaticInvoker($this->className, $this->reflectionMethod->name);
+            }
             $this->closureToCall = $this->closureToCall->bindTo(null, $this->instance);
             $this->previousScope = $this->instance;
         }

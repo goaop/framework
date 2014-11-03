@@ -12,25 +12,25 @@ namespace Go\Aop\Framework;
 
 use Exception;
 use Go\Aop\AdviceAround;
-use Go\Aop\Intercept\MethodInvocation;
-use Go\Aop\Intercept\MethodInterceptor;
+use Go\Aop\Intercept\Joinpoint;
 
 /**
- * "Around" interceptor of method invocation
+ * "Around" interceptor
  */
-class MethodAroundInterceptor extends BaseInterceptor implements MethodInterceptor, AdviceAround
+class AroundInterceptor extends BaseInterceptor implements AdviceAround
 {
     /**
      * Around invoker
      *
-     * @param $invocation MethodInvocation the method invocation joinpoint
+     * @param Joinpoint $joinpoint the concrete joinpoint
+     *
      * @return mixed the result of the call to {@link Joinpoint::proceed()}
      * @throws Exception
      */
-    final public function invoke(MethodInvocation $invocation)
+    final public function invoke(Joinpoint $joinpoint)
     {
         $adviceMethod = $this->adviceMethod;
 
-        return $adviceMethod($invocation);
+        return $adviceMethod($joinpoint);
     }
 }

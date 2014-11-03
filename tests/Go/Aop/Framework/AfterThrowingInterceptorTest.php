@@ -10,20 +10,20 @@
 
 namespace Go\Aop\Framework;
 
-class MethodAfterInterceptorTest extends AbstractMethodInterceptorTest
+class AfterThrowingInterceptorTest extends AbstractInterceptorTest
 {
 
-    public function testAdviceIsCalledAfterInvocation()
+    public function testAdviceIsNotCalledAfterInvocation()
     {
         $sequence   = array();
         $advice     = $this->getAdvice($sequence);
         $invocation = $this->getInvocation($sequence);
 
-        $interceptor = new MethodAfterInterceptor($advice);
+        $interceptor = new AfterThrowingInterceptor($advice);
         $result = $interceptor->invoke($invocation);
 
         $this->assertEquals('invocation', $result, "Advice should not affect the return value of invocation");
-        $this->assertEquals(array('invocation', 'advice'), $sequence, "After advice should be invoked after invocation");
+        $this->assertEquals(array('invocation'), $sequence, "Advice should not be invoked");
     }
 
     public function testAdviceIsCalledAfterExceptionInInvocation()
@@ -32,14 +32,12 @@ class MethodAfterInterceptorTest extends AbstractMethodInterceptorTest
         $advice     = $this->getAdvice($sequence);
         $invocation = $this->getInvocation($sequence, true);
 
-        $interceptor = new MethodAfterInterceptor($advice);
+        $interceptor = new AfterThrowingInterceptor($advice);
         $this->setExpectedException('RuntimeException');
         try {
             $interceptor->invoke($invocation);
         } catch (\Exception $e) {
-            $this->assertEquals(array('invocation', 'advice'), $sequence, "After advice should be invoked after invocation");
+            $this->assertEquals(array('invocation', 'advice'), $sequence, "Advice should be invoked after invocation");
             throw $e;
         }
-    }
-}
- 
+    }}

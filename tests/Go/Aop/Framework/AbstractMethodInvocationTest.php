@@ -27,12 +27,4 @@ class AbstractMethodInvocationTest extends \PHPUnit_Framework_TestCase
     {
         $this->assertInstanceOf('ReflectionMethod', $this->invocation->getStaticPart());
     }
-
-    public function testCanAccessThis()
-    {
-        $this->assertNull($this->invocation->getThis());
-        $this->invocation->__invoke($this, array(1, 2, 3));
-        $this->assertEquals($this, $this->invocation->getThis());
-        $this->assertEquals(array(1, 2, 3), $this->invocation->getArguments());
-    }
 }

@@ -10,25 +10,15 @@
 
 namespace Go\Aop\Framework;
 
-use ReflectionProperty;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Intercept\FieldInterceptor;
+use Go\Aop\Intercept\Interceptor;
+use ReflectionProperty;
 
 /**
  * Represents a field access joinpoint
  */
 class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 {
-
-    /**
-     * Mapping of access type with method to invoke for interceptor
-     *
-     * @var array
-     */
-    private static $interceptorMethodMapping = array(
-        self::READ  => 'get',
-        self::WRITE => 'set'
-    );
 
     /**
      * Instance of object for accessing
@@ -124,10 +114,10 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     final public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor FieldInterceptor */
+            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
-            return $currentInterceptor->{self::$interceptorMethodMapping[$this->accessType]}($this);
+            return $currentInterceptor->invoke($this);
         }
 
         if ($this->accessType === self::WRITE) {

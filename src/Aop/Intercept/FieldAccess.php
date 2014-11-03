@@ -17,8 +17,6 @@ use ReflectionProperty;
  *
  * A field access is a joinpoint and can be intercepted by a field
  * interceptor.
- *
- * @see FieldInterceptor
  */
 interface FieldAccess extends Joinpoint
 {

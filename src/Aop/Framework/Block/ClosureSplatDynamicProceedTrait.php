@@ -2,23 +2,31 @@
 /**
  * Go! AOP framework
  *
- * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Aop\Framework;
+namespace Go\Aop\Framework\Block;
 
-use Go\Aop\Intercept\MethodInterceptor;
+use Go\Aop\Intercept\Interceptor;
 
-/**
- * Class-invocation of dynamic method in a class via closure rebinding for version PHP>=5.6
- *
- * This class uses splat operator '...' for faster invocation
- */
-class ClosureDynamicMethodInvocation56 extends ClosureDynamicMethodInvocation
+trait ClosureSplatDynamicProceedTrait
 {
+    /**
+     * Closure to use
+     *
+     * @var \Closure
+     */
+    protected $closureToCall = null;
+
+    /**
+     * Previous scope of invocation
+     *
+     * @var null
+     */
+    protected $previousInstance = null;
 
     /**
      * Invokes original method and return result from it
@@ -28,7 +36,7 @@ class ClosureDynamicMethodInvocation56 extends ClosureDynamicMethodInvocation
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor MethodInterceptor */
+            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);

@@ -3,6 +3,7 @@
 namespace Go\Stubs;
 
 use Go\Aop\Framework\BaseInterceptor;
+use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Pointcut;
 
 class BaseInterceptorMock extends BaseInterceptor
@@ -38,4 +39,16 @@ class BaseInterceptorMock extends BaseInterceptor
         return self::$advice;
     }
 
+    /**
+     * Implement this method to perform extra treatments before and
+     * after the invocation of joinpoint.
+     *
+     * @param Joinpoint $joinpoint current joinpoint
+     *
+     * @return mixed the result of the call
+     */
+    public function invoke(Joinpoint $joinpoint)
+    {
+        return $joinpoint;
+    }
 }
