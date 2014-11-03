@@ -17,7 +17,10 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
     public static function setUpBeforeClass()
     {
         parent::setUpBeforeClass();
-        self::$invocationClass = MethodInvocationComposer::compose(false, true, true, false);
+        // Add version check to prevent fatals
+        if (PHP_VERSION_ID >= 50600) {
+            self::$invocationClass = MethodInvocationComposer::compose(false, true, true, false);
+        }
     }
 
     /**
