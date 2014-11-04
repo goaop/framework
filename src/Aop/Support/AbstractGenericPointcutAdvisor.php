@@ -24,19 +24,6 @@ abstract class AbstractGenericPointcutAdvisor implements PointcutAdvisor
     private $advice = null;
 
     /**
-     * Return whether this advice is associated with a particular instance or shared with all instances
-     * of the advised class
-     *
-     * NB: This method was moved from AbstractPointcutAdvisor to simplify hierarchy
-     *
-     * @return bool Whether this advice is associated with a particular target instance
-     */
-    public function isPerInstance()
-    {
-        return true;
-    }
-
-    /**
      * Specify the advice that this advisor should apply.
      *
      * @param Advice $advice Advice to apply

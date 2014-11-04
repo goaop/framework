@@ -22,12 +22,4 @@ interface Advisor
      * @return Advice The advice that should apply if the pointcut matches
      */
     public function getAdvice();
-
-    /**
-     * Return whether this advice is associated with a particular instance or shared with all instances
-     * of the advised class
-     *
-     * @return bool Whether this advice is associated with a particular target instance
-     */
-    public function isPerInstance();
 }
