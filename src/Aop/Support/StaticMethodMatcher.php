@@ -17,19 +17,6 @@ use Go\Aop\MethodMatcher;
  */
 abstract class StaticMethodMatcher implements MethodMatcher
 {
-
-    /**
-     * Is this MethodMatcher dynamic or static
-     *
-     * Can be invoked when an AOP proxy is created, and need not be invoked again before each method invocation
-     *
-     * @return bool whether or not a runtime match via the 3-arg matches() method is required if static matching passed
-     */
-    final public function isRuntime()
-    {
-        return false;
-    }
-
     /**
      * Returns the kind of point filter
      *
@@ -39,5 +26,4 @@ abstract class StaticMethodMatcher implements MethodMatcher
     {
         return self::KIND_METHOD;
     }
-
 }
