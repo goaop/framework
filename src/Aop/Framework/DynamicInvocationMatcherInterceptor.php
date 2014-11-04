@@ -13,7 +13,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Invocation;
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Support\DynamicMethodMatcher;
+use Go\Aop\Pointcut;
 
 /**
  * Dynamic invocation matcher combines a pointcut and interceptor.
@@ -27,10 +27,10 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
     /**
      * Dynamic matcher constructor
      *
-     * @param DynamicMethodMatcher $matcher Instance of dynamic matcher
+     * @param Pointcut $matcher Instance of dynamic matcher
      * @param Interceptor $interceptor Instance of interceptor to invoke
      */
-    public function __construct(DynamicMethodMatcher $matcher, Interceptor $interceptor)
+    public function __construct(Pointcut $matcher, Interceptor $interceptor)
     {
         $this->pointcut     = $matcher;
         $this->adviceMethod = $interceptor;
