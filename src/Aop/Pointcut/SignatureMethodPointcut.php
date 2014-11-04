@@ -61,10 +61,12 @@ class SignatureMethodPointcut extends StaticMethodMatcherPointcut
      * Performs matching of point of code
      *
      * @param mixed $method Specific part of code, can be any Reflection class
+     * @param null|string|object $instance Invocation instance or string for static calls
+     * @param null|array $arguments Dynamic arguments for method
      *
      * @return bool
      */
-    public function matches($method)
+    public function matches($method, $instance = null, array $arguments = null)
     {
         /** @var $method ReflectionMethod|ParsedReflectionMethod */
         if (!$method instanceof ReflectionMethod && !$method instanceof ParsedReflectionMethod) {
