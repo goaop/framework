@@ -46,10 +46,12 @@ class NotPointcut implements Pointcut
      * Performs matching of point of code
      *
      * @param mixed $point Specific part of code, can be any Reflection class
+     * @param object|string|null $instance [Optional] Instance for dynamic matching
+     * @param array $arguments [Optional] Extra arguments for dynamic matching
      *
      * @return bool
      */
-    public function matches($point)
+    public function matches($point, $instance = null, array $arguments = null)
     {
         $preFilter = method_exists($point, 'getDeclaringClass')
             ? $point->getDeclaringClass()
@@ -59,7 +61,7 @@ class NotPointcut implements Pointcut
         if (!$isMatchesPre) {
             return true;
         }
-        $isMatchesPoint = $this->pointcut->matches($point);
+        $isMatchesPoint = $this->pointcut->matches($point, $instance, $arguments);
         if (!$isMatchesPoint) {
             return true;
         }
