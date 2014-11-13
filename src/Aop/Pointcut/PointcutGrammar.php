@@ -16,7 +16,7 @@ use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
 use Go\Aop\Support\SimpleNamespaceFilter;
 use Go\Aop\Support\TruePointFilter;
-use Go\Aop\Support\SimpleClassFilter;
+use Go\Aop\Support\SimpleSignatureFilter;
 use Go\Core\AspectContainer;
 use Go\Instrument\RawAnnotationReader;
 use Dissect\Parser\Grammar;
@@ -81,7 +81,8 @@ class PointcutGrammar extends Grammar
                 } else {
                     $memberModifiers->notMatch(\ReflectionMethod::IS_STATIC);
                 }
-                $pointcut = new SignatureMethodPointcut($methodNamePattern, $memberModifiers);
+                $filterKind = PointFilter::KIND_METHOD;
+                $pointcut   = new SignaturePointcut($filterKind, $methodNamePattern, $memberModifiers);
                 $pointcut->setClassFilter($classFilter);
 
                 return $pointcut;
@@ -140,7 +141,8 @@ class PointcutGrammar extends Grammar
                 $_2,
                 $propertyNamePattern
             ) {
-                $pointcut = new SignaturePropertyPointcut($propertyNamePattern, $memberModifiers);
+                $filterKind = PointFilter::KIND_PROPERTY;
+                $pointcut   = new SignaturePointcut($filterKind, $propertyNamePattern, $memberModifiers);
                 $pointcut->setClassFilter($classFilter);
 
                 return $pointcut;
@@ -203,9 +205,12 @@ class PointcutGrammar extends Grammar
         $this('ClassFilter')
             ->is('NamespacePattern')
             ->call(function ($pattern) {
+                $filterKind      = PointFilter::KIND_CLASS;
+                $truePointFilter = TruePointFilter::getInstance();
+
                 return $pattern === '**'
-                    ? TruePointFilter::getInstance()
-                    : new SimpleClassFilter($pattern);
+                    ? $truePointFilter
+                    : new SimpleSignatureFilter($filterKind, $pattern, $truePointFilter);
             })
 
             ->is('NamespacePattern', '+')
