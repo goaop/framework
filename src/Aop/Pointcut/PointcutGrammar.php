@@ -11,7 +11,7 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
-use Go\Aop\Support\AnnotationClassFilter;
+use Go\Aop\Support\AnnotationFilter;
 use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
 use Go\Aop\Support\SimpleNamespaceFilter;
@@ -148,12 +148,14 @@ class PointcutGrammar extends Grammar
 
             ->is('Annotation', 'access', '(', 'NamespacePattern', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
-                return new AnnotationPropertyPointcut($annotationReader, $annotationClassName);
+                $kindProperty = AnnotationFilter::KIND_PROPERTY;
+                return new AnnotationPointcut($kindProperty, $annotationReader, $annotationClassName);
             })
 
             ->is('Annotation', 'annotation', '(', 'NamespacePattern', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
-                return new AnnotationMethodPointcut($annotationReader, $annotationClassName);
+                $kindMethod = AnnotationFilter::KIND_METHOD;
+                return new AnnotationPointcut($kindMethod, $annotationReader, $annotationClassName);
             })
 
             ->is('within', '(', 'ClassFilter', ')')
@@ -167,7 +169,8 @@ class PointcutGrammar extends Grammar
             ->is('Annotation', 'within', '(', 'NamespacePattern', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $pointcut    = new TrueMethodPointcut();
-                $classFilter = new AnnotationClassFilter($annotationReader, $annotationClassName);
+                $kind        = AnnotationFilter::KIND_CLASS;
+                $classFilter = new AnnotationFilter($kind, $annotationReader, $annotationClassName);
                 $pointcut->setClassFilter($classFilter);
 
                 return $pointcut;
