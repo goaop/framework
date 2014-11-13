@@ -27,12 +27,12 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
     /**
      * Dynamic matcher constructor
      *
-     * @param Pointcut $matcher Instance of dynamic matcher
+     * @param Pointcut $pointcut Instance of dynamic matcher
      * @param Interceptor $interceptor Instance of interceptor to invoke
      */
-    public function __construct(Pointcut $matcher, Interceptor $interceptor)
+    public function __construct(Pointcut $pointcut, Interceptor $interceptor)
     {
-        $this->pointcut     = $matcher;
+        $this->pointcut     = $pointcut;
         $this->adviceMethod = $interceptor;
     }
 

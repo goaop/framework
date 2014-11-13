@@ -10,13 +10,14 @@
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\MethodMatcher;
 use ReflectionMethod;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 
 /**
  * True method pointcut matches all methods in specific class
  */
-class TrueMethodPointcut extends StaticMethodMatcherPointcut
+class TrueMethodPointcut extends StaticMethodMatcherPointcut implements MethodMatcher
 {
     /**
      * Performs matching of point of code

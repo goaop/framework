@@ -10,6 +10,7 @@
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\MethodMatcher;
 use ReflectionMethod;
 use Go\Aop\PointFilter;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
@@ -17,7 +18,7 @@ use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 /**
  * Signature method pointcut checks method signature (modifiers and name) to match it
  */
-class SignatureMethodPointcut extends StaticMethodMatcherPointcut
+class SignatureMethodPointcut extends StaticMethodMatcherPointcut implements MethodMatcher
 {
     /**
      * Method name to match, can contain wildcards *,?

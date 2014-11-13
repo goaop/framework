@@ -10,6 +10,7 @@
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\MethodMatcher;
 use ReflectionClass;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
@@ -18,7 +19,7 @@ use ReflectionMethod;
 /**
  * Flow pointcut is a dynamic checker that verifies stack trace to understand is it matches or not
  */
-class CFlowBelowMethodPointcut extends DynamicMethodMatcherPointcut
+class CFlowBelowMethodPointcut extends DynamicMethodMatcherPointcut implements MethodMatcher
 {
 
     /**
