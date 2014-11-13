@@ -11,12 +11,10 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
-use Go\Aop\Support\AnnotationFilter;
 use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
 use Go\Aop\Support\SimpleNamespaceFilter;
 use Go\Aop\Support\TruePointFilter;
-use Go\Aop\Support\SimpleSignatureFilter;
 use Go\Core\AspectContainer;
 use Go\Instrument\RawAnnotationReader;
 use Dissect\Parser\Grammar;
@@ -150,13 +148,13 @@ class PointcutGrammar extends Grammar
 
             ->is('Annotation', 'access', '(', 'NamespacePattern', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
-                $kindProperty = AnnotationFilter::KIND_PROPERTY;
+                $kindProperty = PointFilter::KIND_PROPERTY;
                 return new AnnotationPointcut($kindProperty, $annotationReader, $annotationClassName);
             })
 
             ->is('Annotation', 'annotation', '(', 'NamespacePattern', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
-                $kindMethod = AnnotationFilter::KIND_METHOD;
+                $kindMethod = PointFilter::KIND_METHOD;
                 return new AnnotationPointcut($kindMethod, $annotationReader, $annotationClassName);
             })
 
@@ -171,8 +169,8 @@ class PointcutGrammar extends Grammar
             ->is('Annotation', 'within', '(', 'NamespacePattern', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $pointcut    = new TruePointcut(PointFilter::KIND_METHOD);
-                $kind        = AnnotationFilter::KIND_CLASS;
-                $classFilter = new AnnotationFilter($kind, $annotationReader, $annotationClassName);
+                $kindClass   = PointFilter::KIND_CLASS;
+                $classFilter = new AnnotationPointcut($kindClass, $annotationReader, $annotationClassName);
                 $pointcut->setClassFilter($classFilter);
 
                 return $pointcut;
@@ -210,7 +208,7 @@ class PointcutGrammar extends Grammar
 
                 return $pattern === '**'
                     ? $truePointFilter
-                    : new SimpleSignatureFilter($filterKind, $pattern, $truePointFilter);
+                    : new SignaturePointcut($filterKind, $pattern, $truePointFilter);
             })
 
             ->is('NamespacePattern', '+')
