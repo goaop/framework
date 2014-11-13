@@ -162,7 +162,7 @@ class PointcutGrammar extends Grammar
 
             ->is('within', '(', 'ClassFilter', ')')
             ->call(function ($_0, $_1, $classFilter) {
-                $pointcut = new TrueMethodPointcut();
+                $pointcut = new TruePointcut(PointFilter::KIND_METHOD);
                 $pointcut->setClassFilter($classFilter);
 
                 return $pointcut;
@@ -170,7 +170,7 @@ class PointcutGrammar extends Grammar
 
             ->is('Annotation', 'within', '(', 'NamespacePattern', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
-                $pointcut    = new TrueMethodPointcut();
+                $pointcut    = new TruePointcut(PointFilter::KIND_METHOD);
                 $kind        = AnnotationFilter::KIND_CLASS;
                 $classFilter = new AnnotationFilter($kind, $annotationReader, $annotationClassName);
                 $pointcut->setClassFilter($classFilter);

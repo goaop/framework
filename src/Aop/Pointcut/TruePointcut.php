@@ -20,6 +20,23 @@ class TruePointcut implements Pointcut
     use PointcutClassFilterTrait;
 
     /**
+     * Filter kind
+     *
+     * @var int
+     */
+    protected $filterKind = 0;
+
+    /**
+     * Default constructor can be used to specify concrete filter kind
+     *
+     * @param int $filterKind Kind of filter, e.g. KIND_METHOD
+     */
+    public function __construct($filterKind = self::KIND_ALL)
+    {
+        $this->filterKind = $filterKind;
+    }
+
+    /**
      * Performs matching of point of code
      *
      * @param mixed $point Specific part of code, can be any Reflection class
@@ -38,6 +55,6 @@ class TruePointcut implements Pointcut
      */
     public function getKind()
     {
-       return self::KIND_ALL;
+       return $this->filterKind;
     }
 }
