@@ -10,45 +10,14 @@
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\PointFilter;
 use Go\Aop\Pointcut;
-use Go\Aop\Support\TruePointFilter;
 
 /**
  * Canonical Pointcut instance that always matches.
  */
 class TruePointcut implements Pointcut
 {
-    /**
-     * Filter for class
-     *
-     * @var null|PointFilter
-     */
-    private $classFilter = null;
-
-    /**
-     * Set the ClassFilter to use for this pointcut.
-     *
-     * @param PointFilter $classFilter
-     */
-    public function setClassFilter(PointFilter $classFilter)
-    {
-        $this->classFilter = $classFilter;
-    }
-
-    /**
-     * Return the class filter for this pointcut.
-     *
-     * @return PointFilter
-     */
-    public function getClassFilter()
-    {
-        if (!$this->classFilter) {
-            $this->classFilter = TruePointFilter::getInstance();
-        }
-
-        return $this->classFilter;
-    }
+    use PointcutClassFilterTrait;
 
     /**
      * Performs matching of point of code

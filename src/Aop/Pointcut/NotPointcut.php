@@ -19,6 +19,8 @@ use Go\Aop\Support\TruePointFilter;
  */
 class NotPointcut implements Pointcut
 {
+    use PointcutClassFilterTrait;
+
     /**
      * @var Pointcut
      */
@@ -77,15 +79,5 @@ class NotPointcut implements Pointcut
     public function getKind()
     {
         return $this->kind;
-    }
-
-    /**
-     * Return the class filter for this pointcut.
-     *
-     * @return PointFilter
-     */
-    public function getClassFilter()
-    {
-        return TruePointFilter::getInstance();
     }
 }

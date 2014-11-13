@@ -11,6 +11,7 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\MethodMatcher;
+use Go\Aop\Pointcut;
 use ReflectionMethod;
 use Go\Aop\PointFilter;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
@@ -18,8 +19,10 @@ use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 /**
  * Signature method pointcut checks method signature (modifiers and name) to match it
  */
-class SignatureMethodPointcut extends StaticMethodMatcherPointcut implements MethodMatcher
+class SignatureMethodPointcut implements MethodMatcher, Pointcut
 {
+    use PointcutClassFilterTrait;
+
     /**
      * Method name to match, can contain wildcards *,?
      *
@@ -79,5 +82,15 @@ class SignatureMethodPointcut extends StaticMethodMatcherPointcut implements Met
         }
 
         return ($method->name === $this->methodName) || (bool) preg_match("/^(?:{$this->regexp})$/", $method->name);
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return PointFilter::KIND_METHOD;
     }
 }

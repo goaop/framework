@@ -14,20 +14,13 @@ use ReflectionProperty;
 use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
-use Go\Aop\Support\TruePointFilter;
 
 /**
  * Signature property pointcut checks the property signature (modifiers and name) to match it
  */
 class SignaturePropertyPointcut implements Pointcut
 {
-
-    /**
-     * Filter for class
-     *
-     * @var null|PointFilter
-     */
-    private $classFilter = null;
+    use PointcutClassFilterTrait;
 
     /**
      * Modifier filter for method
@@ -65,30 +58,6 @@ class SignaturePropertyPointcut implements Pointcut
             '\\|' => '|'
         ));
         $this->modifierFilter = $modifierFilter;
-    }
-
-    /**
-     * Set the ClassFilter to use for this pointcut.
-     *
-     * @param PointFilter $classFilter
-     */
-    public function setClassFilter(PointFilter $classFilter)
-    {
-        $this->classFilter = $classFilter;
-    }
-
-    /**
-     * Return the ClassFilter for this pointcut.
-     *
-     * @return PointFilter
-     */
-    public function getClassFilter()
-    {
-        if (!$this->classFilter) {
-            $this->classFilter = TruePointFilter::getInstance();
-        }
-
-        return $this->classFilter;
     }
 
     /**

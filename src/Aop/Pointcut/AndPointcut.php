@@ -11,7 +11,6 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
-use Go\Aop\PointFilter;
 use Go\Aop\Support\AndPointFilter;
 
 /**
@@ -19,6 +18,8 @@ use Go\Aop\Support\AndPointFilter;
  */
 class AndPointcut implements Pointcut
 {
+
+    use PointcutClassFilterTrait;
 
     /**
      * @var Pointcut
@@ -29,13 +30,6 @@ class AndPointcut implements Pointcut
      * @var Pointcut
      */
     protected $second;
-
-    /**
-     * Combined class filter
-     *
-     * @var PointFilter|null
-     */
-    protected $classFilter = null;
 
     /**
      * Returns pointcut kind
@@ -72,16 +66,6 @@ class AndPointcut implements Pointcut
     {
         return $this->isMatchesPointcut($point, $this->first, $instance, $arguments)
             && $this->isMatchesPointcut($point, $this->second, $instance, $arguments);
-    }
-
-    /**
-     * Return the class filter for this pointcut.
-     *
-     * @return PointFilter
-     */
-    public function getClassFilter()
-    {
-        return $this->classFilter;
     }
 
     /**

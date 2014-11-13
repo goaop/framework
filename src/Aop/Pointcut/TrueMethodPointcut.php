@@ -11,14 +11,18 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\MethodMatcher;
+use Go\Aop\Pointcut;
+use Go\Aop\PointFilter;
 use ReflectionMethod;
 use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
 
 /**
  * True method pointcut matches all methods in specific class
  */
-class TrueMethodPointcut extends StaticMethodMatcherPointcut implements MethodMatcher
+class TrueMethodPointcut implements MethodMatcher, Pointcut
 {
+    use PointcutClassFilterTrait;
+
     /**
      * Performs matching of point of code
      *
@@ -36,5 +40,15 @@ class TrueMethodPointcut extends StaticMethodMatcherPointcut implements MethodMa
         }
 
         return true;
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return PointFilter::KIND_METHOD;
     }
 }

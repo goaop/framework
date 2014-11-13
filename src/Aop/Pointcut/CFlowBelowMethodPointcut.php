@@ -19,8 +19,9 @@ use ReflectionMethod;
 /**
  * Flow pointcut is a dynamic checker that verifies stack trace to understand is it matches or not
  */
-class CFlowBelowMethodPointcut extends DynamicMethodMatcherPointcut implements MethodMatcher
+class CFlowBelowMethodPointcut implements MethodMatcher, Pointcut
 {
+    use PointcutClassFilterTrait;
 
     /**
      * Filter for the class
@@ -83,5 +84,15 @@ class CFlowBelowMethodPointcut extends DynamicMethodMatcherPointcut implements M
         }
 
         return false;
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return PointFilter::KIND_METHOD | PointFilter::KIND_DYNAMIC;
     }
 }

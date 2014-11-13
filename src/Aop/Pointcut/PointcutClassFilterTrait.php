@@ -15,11 +15,11 @@ use Go\Aop\PointFilter;
 use Go\Aop\Support\TruePointFilter;
 
 /**
- * Convenient abstract superclass for static method matchers, which don't care about arguments at runtime.
+ * Convenient trait for pointcuts.
  *
  * The "classFilter" property can be set to customize ClassFilter behavior.
  */
-abstract class StaticMethodMatcherPointcut implements Pointcut
+trait PointcutClassFilterTrait
 {
 
     /**
@@ -51,15 +51,5 @@ abstract class StaticMethodMatcherPointcut implements Pointcut
         }
 
         return $this->classFilter;
-    }
-
-    /**
-     * Returns the kind of point filter
-     *
-     * @return integer
-     */
-    public function getKind()
-    {
-        return PointFilter::KIND_METHOD;
     }
 }

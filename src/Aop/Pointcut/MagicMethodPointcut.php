@@ -17,8 +17,10 @@ use Go\Aop\PointFilter;
 /**
  * Magic method pointcut is a dynamic checker that verifies calls for __call and __callStatic
  */
-class MagicMethodPointcut extends DynamicMethodMatcherPointcut implements MethodMatcher
+class MagicMethodPointcut implements MethodMatcher, Pointcut
 {
+    use PointcutClassFilterTrait;
+
     /**
      * Method name to match, can contain wildcards *,?
      *
@@ -83,5 +85,15 @@ class MagicMethodPointcut extends DynamicMethodMatcherPointcut implements Method
         list($methodName) = $arguments;
 
         return ($methodName === $this->methodName) || (bool) preg_match("/^(?:{$this->regexp})$/", $methodName);
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return PointFilter::KIND_METHOD | PointFilter::KIND_DYNAMIC;
     }
 }
