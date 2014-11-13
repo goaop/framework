@@ -10,13 +10,14 @@
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\MethodMatcher;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 
 /**
  * Magic method pointcut is a dynamic checker that verifies calls for __call and __callStatic
  */
-class MagicMethodPointcut extends DynamicMethodMatcherPointcut
+class MagicMethodPointcut extends DynamicMethodMatcherPointcut implements MethodMatcher
 {
     /**
      * Method name to match, can contain wildcards *,?

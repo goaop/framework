@@ -13,14 +13,13 @@ namespace Go\Aop\Pointcut;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use Go\Aop\Support\TruePointFilter;
-use Go\Aop\Support\StaticMethodMatcher;
 
 /**
  * Convenient abstract superclass for static method matchers, which don't care about arguments at runtime.
  *
  * The "classFilter" property can be set to customize ClassFilter behavior.
  */
-abstract class StaticMethodMatcherPointcut extends StaticMethodMatcher implements Pointcut
+abstract class StaticMethodMatcherPointcut implements Pointcut
 {
 
     /**
@@ -52,5 +51,15 @@ abstract class StaticMethodMatcherPointcut extends StaticMethodMatcher implement
         }
 
         return $this->classFilter;
+    }
+
+    /**
+     * Returns the kind of point filter
+     *
+     * @return integer
+     */
+    public function getKind()
+    {
+        return PointFilter::KIND_METHOD;
     }
 }
