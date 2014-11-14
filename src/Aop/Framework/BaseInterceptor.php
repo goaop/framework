@@ -20,9 +20,9 @@ use Go\Aop\Intercept\Interceptor;
 abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serializable
 {
     /**
-     * Pointcut instance
+     * Pointcut expression
      *
-     * @var null|Pointcut
+     * @var null|string
      */
     protected $pointcut = null;
 
@@ -40,9 +40,9 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
      *
      * @param callable $adviceMethod Interceptor advice to call
      * @param integer $order Order of interceptor
-     * @param Pointcut $pointcut Pointcut instance where interceptor should be called
+     * @param string $pointcut Pointcut expression or advice name
      */
-    public function __construct($adviceMethod, $order = 0, Pointcut $pointcut = null)
+    public function __construct($adviceMethod, $order = 0, $pointcut = null)
     {
         assert('is_callable($adviceMethod) /* Advice method should be callable */');
 

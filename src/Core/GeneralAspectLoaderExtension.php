@@ -84,14 +84,13 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
             $adviceCallback = Framework\BaseAdvice::createScopeCallback($aspect, $adviceCallback, $scope);
         }
 
-        $isPointFilter = $pointcut instanceof PointFilter;
         switch (true) {
             // Register a pointcut by its name
             case ($metaInformation instanceof Annotation\Pointcut):
                 $container->registerPointcut($pointcut, $methodId);
                 break;
 
-            case ($isPointFilter):
+            case ($pointcut instanceof PointFilter):
                 $advice = $this->getInterceptor($metaInformation, $adviceCallback);
                 if ($pointcut->getKind() & PointFilter::KIND_DYNAMIC) {
                     $advice = new Framework\DynamicInvocationMatcherInterceptor(
@@ -115,18 +114,20 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      */
     protected function getInterceptor($metaInformation, $adviceCallback)
     {
+        $adviceOrder        = $metaInformation->order;
+        $pointcutExpression = $metaInformation->value;
         switch (true) {
             case ($metaInformation instanceof Annotation\Before):
-                return new Framework\BeforeInterceptor($adviceCallback, $metaInformation->order);
+                return new Framework\BeforeInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
             case ($metaInformation instanceof Annotation\After):
-                return new Framework\AfterInterceptor($adviceCallback, $metaInformation->order);
+                return new Framework\AfterInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
             case ($metaInformation instanceof Annotation\Around):
-                return new Framework\AroundInterceptor($adviceCallback, $metaInformation->order);
+                return new Framework\AroundInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
             case ($metaInformation instanceof Annotation\AfterThrowing):
-                return new Framework\AfterThrowingInterceptor($adviceCallback, $metaInformation->order);
+                return new Framework\AfterThrowingInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
             default:
                 throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
