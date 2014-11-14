@@ -263,7 +263,7 @@ abstract class AspectKernel
      */
     protected function addKernelResourcesToContainer(AspectContainer $container)
     {
-        $trace    = debug_backtrace();
+        $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
         $refClass = new \ReflectionObject($this);
 
         $container->addResource($trace[1]['file']);
