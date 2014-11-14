@@ -28,7 +28,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
      */
     protected function setUp()
     {
-        if (version_compare(PHP_VERSION, '5.6.0') < 0) {
+        if (PHP_VERSION_ID < 50600) {
             $this->markTestSkipped("Closure Method Invocation with splat works only on PHP 5.6 and greater");
         }
         if (defined('HHVM_VERSION')) {

@@ -133,14 +133,14 @@ abstract class AspectKernel
     public static function getDefaultFeatures()
     {
         $features = 0;
-        if (version_compare(PHP_VERSION, '5.4.0') >= 0) {
+        if (PHP_VERSION_ID >= 50400) {
             $features += Features::USE_CLOSURE;
             $features += Features::USE_TRAIT;
         }
-        if (version_compare(PHP_VERSION, '5.5.0') >= 0) {
+        if (PHP_VERSION_ID >= 50500) {
             $features += Features::USE_STATIC_FOR_LSB;
         }
-        if (version_compare(PHP_VERSION, '5.6.0') >= 0) {
+        if (PHP_VERSION_ID >= 50600) {
             $features += Features::USE_SPLAT_OPERATOR;
         }
 
