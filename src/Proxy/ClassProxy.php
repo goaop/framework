@@ -10,8 +10,12 @@
 
 namespace Go\Proxy;
 
+use Go\Aop\Advice;
 use Go\Aop\Features;
 use Go\Aop\Framework\MethodInvocationComposer;
+use Go\Aop\Intercept\Joinpoint;
+use Go\Aop\IntroductionInfo;
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use Reflection;
@@ -19,15 +23,11 @@ use ReflectionClass;
 use ReflectionMethod as Method;
 use ReflectionParameter as Parameter;
 use ReflectionProperty as Property;
-use UnexpectedValueException;
-use Go\Aop\Advice;
-use Go\Aop\IntroductionInfo;
-use Go\Aop\Intercept\Joinpoint;
-use Go\Core\AspectContainer;
 use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 use TokenReflection\ReflectionProperty as ParsedProperty;
+use UnexpectedValueException;
 
 /**
  * Class proxy builder that is used to generate a child class from the list of joinpoints
@@ -157,6 +157,9 @@ class ClassProxy extends AbstractProxy
                     }
                     break;
 
+                case AspectContainer::INIT_PREFIX:
+                    break; // No changes for class
+
                 default:
                     throw new \InvalidArgumentException("Unsupported point `$type`");
             }
@@ -240,6 +243,11 @@ class ClassProxy extends AbstractProxy
         $prop = $className->getProperty('__joinPoints');
         $prop->setAccessible(true);
         $prop->setValue($joinPoints);
+
+        $staticInit = AspectContainer::INIT_PREFIX . ':static';
+        if (isset($joinPoints[$staticInit])) {
+            $joinPoints[$staticInit]->__invoke();
+        }
     }
 
     /**
@@ -257,7 +265,8 @@ class ClassProxy extends AbstractProxy
         static::$invocationClassMap = array(
             AspectContainer::METHOD_PREFIX        => $dynamicMethodClass,
             AspectContainer::STATIC_METHOD_PREFIX => $staticMethodClass,
-            AspectContainer::PROPERTY_PREFIX      => 'Go\Aop\Framework\ClassFieldAccess'
+            AspectContainer::PROPERTY_PREFIX      => 'Go\Aop\Framework\ClassFieldAccess',
+            AspectContainer::INIT_PREFIX          => 'Go\Aop\Framework\StaticInitializationJoinpoint'
         );
     }
 

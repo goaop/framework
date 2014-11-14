@@ -166,6 +166,14 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
+            ->is('staticinitialization', '(', 'ClassFilter', ')')
+            ->call(function ($_0, $_1, $classFilter) {
+                $pointcut = new TruePointcut(PointFilter::KIND_CLASS);
+                $pointcut->setClassFilter($classFilter);
+
+                return $pointcut;
+            })
+
             ->is('Annotation', 'within', '(', 'NamespacePattern', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $pointcut    = new TruePointcut(PointFilter::KIND_METHOD);

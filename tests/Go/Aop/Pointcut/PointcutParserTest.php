@@ -103,6 +103,9 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
             // Dynamic pointcut for methods via __callStatic and __call
             array('dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))'),
             array('dynamic(public Demo\Example\DynamicMethodsDemo->save*(*))'),
+
+            // This will match static initialization pointcut
+            array('staticinitialization(Some\Specific\Class\**)'),
         );
     }
 
