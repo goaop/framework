@@ -158,9 +158,17 @@ class AdviceMatcher
     private function getAdvicesFromAdvisor($class, Aop\PointcutAdvisor $advisor, $advisorId, Aop\PointFilter $filter)
     {
         $classAdvices = array();
+        $filterKind   = $filter->getKind();
+
+        // Check class only for class filters
+        if ($filterKind & Aop\PointFilter::KIND_CLASS) {
+            if ($filter->matches($class)) {
+                $classAdvices[AspectContainer::INIT_PREFIX]['static'][$advisorId] = $advisor->getAdvice();
+            }
+        }
 
         // Check methods in class only for method filters
-        if ($filter->getKind() & Aop\PointFilter::KIND_METHOD) {
+        if ($filterKind & Aop\PointFilter::KIND_METHOD) {
 
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
@@ -173,7 +181,7 @@ class AdviceMatcher
         }
 
         // Check properties in class only for property filters
-        if ($filter->getKind() & Aop\PointFilter::KIND_PROPERTY) {
+        if ($filterKind & Aop\PointFilter::KIND_PROPERTY) {
             $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED;
             foreach ($class->getProperties($mask) as $property) {
                 /** @var $property ReflectionProperty */
