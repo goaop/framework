@@ -14,6 +14,7 @@ use Go\Aop\Advice;
 use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceBefore;
 use Go\Aop\AdviceAround;
+use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
 
 /**
@@ -31,7 +32,7 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * List of advices
      *
-     * @var array|Advice[]
+     * @var array|Advice[]|Interceptor[]
      */
     protected $advices = array();
 
