@@ -40,7 +40,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      * @param string $className Class name
      * @param $advices array List of advices for this invocation
      */
-    public function __construct($className, array $advices)
+    public function __construct($className, $type, array $advices)
     {
         $this->class = new ReflectionClass($className);
         parent::__construct($advices);
@@ -77,7 +77,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
         if (!$this->constructor) {
             $this->constructor = $this->class->getConstructor();
             // Give an access to call protected constructor
-            if ($this->constructor->isProtected()) {
+            if ($this->constructor && $this->constructor->isProtected()) {
                 $this->constructor->setAccessible(true);
             }
         }
@@ -112,11 +112,11 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      *
      * @return mixed
      */
-    final public function __invoke()
+    final public function __invoke(array $arguments = array())
     {
         // TODO: add support for recursion in constructors
         $this->current   = 0;
-        $this->arguments = func_get_args();
+        $this->arguments = $arguments;
 
         return $this->proceed();
     }

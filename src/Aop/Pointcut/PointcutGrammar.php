@@ -166,9 +166,17 @@ class PointcutGrammar extends Grammar
                 return $pointcut;
             })
 
+            ->is('initialization', '(', 'ClassFilter', ')')
+            ->call(function ($_0, $_1, $classFilter){
+                $pointcut = new TruePointcut(PointFilter::KIND_INIT + PointFilter::KIND_CLASS);
+                $pointcut->setClassFilter($classFilter);
+
+                return $pointcut;
+            })
+
             ->is('staticinitialization', '(', 'ClassFilter', ')')
             ->call(function ($_0, $_1, $classFilter) {
-                $pointcut = new TruePointcut(PointFilter::KIND_CLASS);
+                $pointcut = new TruePointcut(PointFilter::KIND_STATIC_INIT + PointFilter::KIND_CLASS);
                 $pointcut->setClassFilter($classFilter);
 
                 return $pointcut;

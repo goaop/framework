@@ -16,13 +16,15 @@ namespace Go\Aop;
 interface PointFilter
 {
 
-    const KIND_METHOD   = 1;
-    const KIND_PROPERTY = 2;
-    const KIND_CLASS    = 4;
-    const KIND_TRAIT    = 8;
-    const KIND_FUNCTION = 16;
-    const KIND_ALL      = 31;
-    const KIND_DYNAMIC  = 256;
+    const KIND_METHOD      = 1;
+    const KIND_PROPERTY    = 2;
+    const KIND_CLASS       = 4;
+    const KIND_TRAIT       = 8;
+    const KIND_FUNCTION    = 16;
+    const KIND_INIT        = 32;
+    CONST KIND_STATIC_INIT = 64;
+    const KIND_ALL         = 127;
+    const KIND_DYNAMIC     = 256;
 
     /**
      * Performs matching of point of code

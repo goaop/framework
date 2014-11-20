@@ -158,6 +158,7 @@ class ClassProxy extends AbstractProxy
                     break;
 
                 case AspectContainer::INIT_PREFIX:
+                case AspectContainer::STATIC_INIT_PREFIX:
                     break; // No changes for class
 
                 default:
@@ -244,7 +245,7 @@ class ClassProxy extends AbstractProxy
         $prop->setAccessible(true);
         $prop->setValue($joinPoints);
 
-        $staticInit = AspectContainer::INIT_PREFIX . ':static';
+        $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';
         if (isset($joinPoints[$staticInit])) {
             $joinPoints[$staticInit]->__invoke();
         }
@@ -266,7 +267,8 @@ class ClassProxy extends AbstractProxy
             AspectContainer::METHOD_PREFIX        => $dynamicMethodClass,
             AspectContainer::STATIC_METHOD_PREFIX => $staticMethodClass,
             AspectContainer::PROPERTY_PREFIX      => 'Go\Aop\Framework\ClassFieldAccess',
-            AspectContainer::INIT_PREFIX          => 'Go\Aop\Framework\StaticInitializationJoinpoint'
+            AspectContainer::STATIC_INIT_PREFIX   => 'Go\Aop\Framework\StaticInitializationJoinpoint',
+            AspectContainer::INIT_PREFIX          => 'Go\Aop\Framework\ReflectionConstructorInvocation'
         );
     }
 
