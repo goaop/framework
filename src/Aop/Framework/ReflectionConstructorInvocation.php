@@ -128,6 +128,13 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      */
     protected function constructOriginal()
     {
+        $ctor         = $this->getConstructor();
+        $hasArguments = $ctor && $ctor->getNumberOfParameters();
+
+        if (!$hasArguments) {
+            return $this->class->newInstance();
+        }
+
         return $this->class->newInstanceArgs($this->arguments);
     }
 
