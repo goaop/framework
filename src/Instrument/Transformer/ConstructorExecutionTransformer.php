@@ -167,6 +167,9 @@ class ConstructorExecutionTransformer implements SourceTransformer
                     $invocation = $joinPoints[$dynamicInit];
                 }
             } catch (\ReflectionException $e) {
+                $invocation = null;
+            }
+            if (!$invocation) {
                 $invocation = new ReflectionConstructorInvocation($fullClassName, 'root', array());
             }
             self::$constructorInvocationsCache[$fullClassName] = $invocation;
