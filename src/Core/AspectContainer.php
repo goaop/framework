@@ -43,9 +43,14 @@ interface AspectContainer
     const INTRODUCTION_TRAIT_PREFIX = "introduction";
 
     /**
-     * Initialization prefix, can be used for staticinitialization and initialization pointcuts
+     * Initialization prefix, is used for initialization pointcuts
      */
     const INIT_PREFIX = "init";
+
+    /**
+     * Initialization prefix, is used for initialization pointcuts
+     */
+    const STATIC_INIT_PREFIX = "staticinit";
 
     /**
      * Suffix, that will be added to all proxied class names

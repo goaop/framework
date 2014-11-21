@@ -15,6 +15,7 @@ use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\CleanableMemory;
 use Go\Instrument\PathResolver;
+use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use Go\Instrument\Transformer\CachingTransformer;
@@ -238,7 +239,7 @@ abstract class AspectKernel
         $aspectKernel     = $this;
 
         $sourceTransformers = function () use ($filterInjector, $magicTransformer, $aspectKernel) {
-            return array(
+            $transformers = array(
                 $filterInjector,
                 $magicTransformer,
                 new WeavingTransformer(
@@ -249,6 +250,11 @@ abstract class AspectKernel
                     $aspectKernel->getContainer()->get('aspect.advice_matcher')
                 )
             );
+            if ($aspectKernel->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
+                $transformers[] = new ConstructorExecutionTransformer();
+            }
+
+            return $transformers;
         };
 
         return array(

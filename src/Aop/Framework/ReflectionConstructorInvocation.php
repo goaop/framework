@@ -28,6 +28,13 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     protected $class = null;
 
     /**
+     * Instance of created class, can be used for Around or After types of advices
+     *
+     * @var object|null
+     */
+    protected $instance = null;
+
+    /**
      * Instance of reflection constructor for class
      *
      * @var null|ReflectionMethod
@@ -35,14 +42,32 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     private $constructor = null;
 
     /**
+     * Number of constructor arguments
+     *
+     * @var int
+     */
+    private $constructorArguments = 0;
+
+    /**
      * Constructor for constructor invocation :)
      *
      * @param string $className Class name
      * @param $advices array List of advices for this invocation
      */
-    public function __construct($className, array $advices)
+    public function __construct($className, $type, array $advices)
     {
-        $this->class = new ReflectionClass($className);
+        $this->class       = new ReflectionClass($className);
+        $this->constructor = $constructor = $this->class->getConstructor();
+
+        // Give an access to call protected constructor
+        if ($constructor && $constructor->isProtected()) {
+            $constructor->setAccessible(true);
+        }
+
+        if ($constructor) {
+            $this->constructorArguments = $constructor->getNumberOfParameters();
+        }
+
         parent::__construct($advices);
     }
 
@@ -64,24 +89,22 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
             return $currentInterceptor->invoke($this);
         }
 
-        return $this->constructOriginal();
+        if (!$this->constructorArguments) {
+            $this->instance = $this->class->newInstance();
+        } else {
+            $this->instance = $this->class->newInstanceArgs($this->arguments);
+        }
+
+        return $this->instance;
     }
 
     /**
      * Gets the constructor being called.
      *
-     * @return ReflectionMethod the constructor being called.
+     * @return ReflectionMethod|null the constructor being called or null if it is absent.
      */
     public function getConstructor()
     {
-        if (!$this->constructor) {
-            $this->constructor = $this->class->getConstructor();
-            // Give an access to call protected constructor
-            if ($this->constructor->isProtected()) {
-                $this->constructor->setAccessible(true);
-            }
-        }
-
         return $this->constructor;
     }
 
@@ -94,7 +117,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      */
     public function getThis()
     {
-        return null;
+        return $this->instance;
     }
 
     /**
@@ -112,23 +135,13 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      *
      * @return mixed
      */
-    final public function __invoke()
+    final public function __invoke(array $arguments = array())
     {
         // TODO: add support for recursion in constructors
         $this->current   = 0;
-        $this->arguments = func_get_args();
+        $this->arguments = $arguments;
 
         return $this->proceed();
-    }
-
-    /**
-     * Invokes original constructor and return result from it
-     *
-     * @return mixed
-     */
-    protected function constructOriginal()
-    {
-        return $this->class->newInstanceArgs($this->arguments);
     }
 
     /**

@@ -163,7 +163,14 @@ class AdviceMatcher
         // Check class only for class filters
         if ($filterKind & Aop\PointFilter::KIND_CLASS) {
             if ($filter->matches($class)) {
-                $classAdvices[AspectContainer::INIT_PREFIX]['static'][$advisorId] = $advisor->getAdvice();
+                // Dynamic initialization
+                if ($filterKind & Aop\PointFilter::KIND_INIT) {
+                    $classAdvices[AspectContainer::INIT_PREFIX]['root'][$advisorId] = $advisor->getAdvice();
+                }
+                // Static initalization
+                if ($filterKind & Aop\PointFilter::KIND_STATIC_INIT) {
+                    $classAdvices[AspectContainer::STATIC_INIT_PREFIX]['root'][$advisorId] = $advisor->getAdvice();
+                }
             }
         }
 
