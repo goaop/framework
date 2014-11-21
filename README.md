@@ -1,16 +1,28 @@
 Go! Aspect-Oriented Framework for PHP
 -----------------
 
-Go! AOP doesn't require any PECL-extentions, it neither uses any dark magic of Runkit nor evals, the library doesn't use DI-containers.
-The code with weaved aspects is fully readable and native, it can be easily debugged with XDebug.
-You can debug either classes or aspects.
-The main advantage of Go! AOP is that potentially it can be installed in every PHP-application,
-because you don't have to change the application source code at all.
-As an example, with the help of 10-20 lines of code we can intercept all the public, protected and static methods in all the classes
-of application and display the name and the arguments of each method during its execution.
+Go! AOP is a modern aspect-oriented framework in plain PHP with rich features for the new level of software development. Framework allows to solve a cross-cutting issues in the traditional object-oriented PHP code by providing a highly efficient and transparent hook system for your exisiting code.
+
+Features
+------------
+* Provides dynamic hook system for PHP without changes in the original source code.
+* Doesn't require any PECL-extentions (php-aop, runkit, uopz) and DI-containers to work.
+* Object-oriented design of aspects, joinpoints and pointcuts.
+* Intercepting an execution of any public or protected method in a classes.
+* Intercepting an execution of public/protected static methods.
+* Intercepting an execution of methods in the traits.
+* Intercepting an access to the public/protected properties for objects.
+* Hooks for static class initialization (after class is loaded into PHP memory).
+* Hooks for object initialization (intercepting `new` keywords).
+* Intercepting an invocation of system PHP functions.
+* Ability to change the return value of any methods/functions via `Around` type of advice.
+* Rich pointcut grammar syntax for defining pointcuts in the source code.
+* Native debugging for AOP with XDebug. The code with weaved aspects is fully readable and native. You can put a breakpoint in the original class or in the aspect and it will work (for debug mode)!
+* Can be integrated with any existing PHP frameworks and libraries.
+* Highly optimized for production use: support of opcode cachers, lazy loading of advices and aspects, joinpoints caching, no runtime checks of pointcuts, no runtime annotations parsing, no evals and `__call` methods, no slow proxies and `call_user_func_array()`. Fast bootstraping process (2-20ms) and advice invocation.
 
 [![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
-[![Dependencies Status](https://depending.in/lisachenko/go-aop-php.png)](http://depending.in/lisachenko/go-aop-php)
+[![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%205.4-8892BF.svg)](https://php.net/)
 [![Latest Stable Version](https://poser.pugx.org/lisachenko/go-aop-php/v/stable.png)](https://packagist.org/packages/lisachenko/go-aop-php)
 [![Total Downloads](https://poser.pugx.org/lisachenko/go-aop-php/downloads.png)](https://packagist.org/packages/lisachenko/go-aop-php)
 [![Daily Downloads](https://poser.pugx.org/lisachenko/go-aop-php/d/daily.png)](https://packagist.org/packages/lisachenko/go-aop-php)
@@ -27,29 +39,13 @@ In AOP terms, the execution points are called join points, a particular set of t
 behavior that is executed before, after, or "around" a join point is called advice. You can read more about AOP in
 [Introduction](http://go.aopphp.com/docs/introduction/) section.
 
-PHP traits can be used to implement some aspect-like functionality.
-
-Requirements
-------------
-
-Go! AOP library is developed for PHP 5.4.0 and up.
-
-Known bugs
-------------
-
-* Version 5.4.5 of PHP has a [bug #62836  Seg fault or broken object references on unserialize()](https://bugs.php.net/bug.php?id=62836).
-Class advices will be always broken after unserialize().
-* Version 5.4.8 of PHP has a [bug #63481  Segmentation fault caused by unserialize()](https://bugs.php.net/bug.php?id=63481). 
-Interceptors for class can be unserialized incorrectly.
-* Version 5.4.11 of PHP has a [bug #64070  Inheritance with Traits failed with error](https://bugs.php.net/bug.php?id=64070). 
-Method interception in traits is broken, however DeclareParent advice can be used correctly.
 
 Installation
 ------------
 
-Go! AOP library can be installed with composer. Installation is quite easy:
+Go! AOP framework can be installed with composer. Installation is quite easy:
 
-1. Download the library using composer
+1. Download the framework using composer
 2. Create an application aspect kernel
 3. Configure the aspect kernel in the front controller
 4. Create an aspect
@@ -57,23 +53,23 @@ Go! AOP library can be installed with composer. Installation is quite easy:
 
 ### Step 1: Download the library using composer
 
-Ask composer to download the Go! AOP library with its dependencies by running the command:
+Ask composer to download the Go! AOP framework with its dependencies by running the command:
 
 ``` bash
-$ php composer.phar require lisachenko/go-aop-php
+$ composer require lisachenko/go-aop-php
 ```
 
-Composer will install the library to your project's `vendor/lisachenko/go-aop-php` directory.
+Composer will install the framework to your project's `vendor/lisachenko/go-aop-php` directory.
 
 
 ### Step 2: Create an application aspect kernel
 
-The aim of this library is to provide easy AOP integration to your application.
+The aim of this framework is to provide easy AOP integration to your application.
 Your first step then is to create the `AspectKernel` class
 for your application. This class will manage all aspects of your
 application in one place.
 
-The library provides base class to make it easier to create your own kernel.
+The framework provides base class to make it easier to create your own kernel.
 To create your application kernel extend the abstract class `Go\Core\AspectKernel`
 
 ``` php
@@ -126,7 +122,7 @@ $applicationAspectKernel->init(array(
 
 ### 4. Create an aspect
 
-Aspect is the key element of AOP philosophy. And Go! AOP library just uses simple PHP classes for declaring aspects!
+Aspect is the key element of AOP philosophy. And Go! AOP framework just uses simple PHP classes for declaring aspects!
 Therefore it's possible to use all features of OOP for aspect classes.
 As an example let's intercept all the methods and display their names:
 
