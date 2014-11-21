@@ -192,7 +192,7 @@ class AdviceMatcher
             $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED;
             foreach ($class->getProperties($mask) as $property) {
                 /** @var $property ReflectionProperty */
-                if ($filter->matches($property)) {
+                if ($filter->matches($property) && !$property->isStatic()) {
                     $classAdvices[AspectContainer::PROPERTY_PREFIX][$property->name][$advisorId] = $advisor->getAdvice();
                 }
             }
