@@ -104,7 +104,7 @@ class ConstructorExecutionTransformer implements SourceTransformer
                 }
             }
             if ($token === T_NEW) {
-                $tokenValue = ' \\' . __CLASS__ . '::getInstance()->{';
+                $tokenValue = '\\' . __CLASS__ . '::getInstance()->{';
                 $isWaitingClass = true;
                 $isClassName    = true;
                 $classNamePosition = 0;
