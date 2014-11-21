@@ -16,7 +16,7 @@ Features
 * Doesn't require any PECL-extentions (php-aop, runkit, uopz) and DI-containers to work.
 * Object-oriented design of aspects, joinpoints and pointcuts.
 * Intercepting an execution of any public or protected method in a classes.
-* Intercepting an execution of public/protected static methods.
+* Intercepting an execution of static methods and methods in final classes.
 * Intercepting an execution of methods in the traits.
 * Intercepting an access to the public/protected properties for objects.
 * Hooks for static class initialization (after class is loaded into PHP memory).
