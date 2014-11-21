@@ -10,6 +10,9 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Framework\ReflectionConstructorInvocation;
+use Go\Core\AspectContainer;
+
 /**
  * Transforms the source code to add an ability to intercept new instances creation
  *
@@ -43,6 +46,12 @@ namespace Go\Instrument\Transformer;
  */
 class ConstructorExecutionTransformer implements SourceTransformer
 {
+    /**
+     * List of constructor invocations per class
+     *
+     * @var array|ReflectionConstructorInvocation[]
+     */
+    private static $constructorInvocationsCache = array();
 
     /**
      * Singletone
@@ -116,12 +125,11 @@ class ConstructorExecutionTransformer implements SourceTransformer
      *
      * @param string $className Name of the class to construct
      *
-     * @return mixed
+     * @return object Instance of required object
      */
     public function __get($className)
     {
-        // TODO: Return from class invocation
-        return new $className;
+        return static::construct($className);
     }
 
     /**
@@ -130,17 +138,40 @@ class ConstructorExecutionTransformer implements SourceTransformer
      * @param string $className Name of the class to construct
      * @param array $args Arguments for the constructor
      *
-     * @return mixed
+     * @return object Instance of required object
      */
-    public function __call($className, $args)
+    public function __call($className, array $args)
     {
-        // TODO: Return from class invocation
-        $refClass = new \ReflectionClass($className);
-        $ctor     = $refClass->getConstructor();
-        if ($ctor && $ctor->getNumberOfParameters()) {
-            return $refClass->newInstanceArgs($args);
+        return static::construct($className, $args);
+    }
+
+    /**
+     * Default implementation for accessing joinpoint or creating a new one on-fly
+     *
+     * @param string $fullClassName Name of the class to create
+     * @param array $arguments Arguments for constructor
+     *
+     * @return object
+     */
+    protected static function construct($fullClassName, array $arguments = array())
+    {
+        $fullClassName = ltrim($fullClassName, '\\');
+        if (!isset(self::$constructorInvocationsCache[$fullClassName])) {
+            $invocation = null;
+            $dynamicInit = AspectContainer::INIT_PREFIX . ':root';
+            try {
+                $joinPointsRef = new \ReflectionProperty($fullClassName, '__joinPoints');
+                $joinPointsRef->setAccessible(true);
+                $joinPoints = $joinPointsRef->getValue();
+                if (isset($joinPoints[$dynamicInit])) {
+                    $invocation = $joinPoints[$dynamicInit];
+                }
+            } catch (\ReflectionException $e) {
+                $invocation = new ReflectionConstructorInvocation($fullClassName, 'root', array());
+            }
+            self::$constructorInvocationsCache[$fullClassName] = $invocation;
         }
 
-        return $refClass->newInstance();
+        return self::$constructorInvocationsCache[$fullClassName]->__invoke($arguments);
     }
 }
