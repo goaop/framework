@@ -271,9 +271,7 @@ class PointcutGrammar extends Grammar
         $this('MemberModifier')
             ->is('public')->call($converter)
             ->is('protected')->call($converter)
-            ->is('private')->call(function () {
-                throw new \RuntimeException("Private modifier is not supported");
-            })
+            ->is('private')->call($converter)
             ->is('final')->call($converter);
 
         $this->resolve(Grammar::ALL);
