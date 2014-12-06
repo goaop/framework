@@ -4,11 +4,11 @@ Go! Aspect-Oriented Framework for PHP
 Go! AOP is a modern aspect-oriented framework in plain PHP with rich features for the new level of software development. Framework allows to solve a cross-cutting issues in the traditional object-oriented PHP code by providing a highly efficient and transparent hook system for your exisiting code.
 
 [![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
+[![Total Downloads](https://img.shields.io/packagist/dt/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
 [![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%205.4-8892BF.svg)](https://php.net/)
-[![Latest Stable Version](https://poser.pugx.org/lisachenko/go-aop-php/v/stable.png)](https://packagist.org/packages/lisachenko/go-aop-php)
-[![Total Downloads](https://poser.pugx.org/lisachenko/go-aop-php/downloads.png)](https://packagist.org/packages/lisachenko/go-aop-php)
-[![Daily Downloads](https://poser.pugx.org/lisachenko/go-aop-php/d/daily.png)](https://packagist.org/packages/lisachenko/go-aop-php)
-[![License](https://poser.pugx.org/lisachenko/go-aop-php/license.png)](https://packagist.org/packages/lisachenko/go-aop-php)
+[![Latest Stable Version](https://img.shields.io/packagist/v/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
+[![Daily Downloads](https://img.shields.io/packagist/dd/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
+[![License](https://img.shields.io/packagist/l/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
 
 Features
 ------------
