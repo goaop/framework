@@ -61,10 +61,11 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
             array('execution(final public Example\Aspect\*->method*(*))'),
             array('execution(protected|public **::*someStatic*Method*(*))'),
 
-            array('@annotation(First\Second\Annotation\Class)'),
-
             // This will match property that has First\Second\Annotation\Class annotation
             array('@access(First\Second\Annotation\Class)'),
+
+            // This will match method execution that has First\Second\Annotation\Class annotation
+            array('@execution(First\Second\Annotation\Class)'),
 
             // This will match all the methods in all classes of Go\Aspects\Blog\Package.
             array('within(Go\Aspects\Blog\Package\*)'),
@@ -103,6 +104,9 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
 
             // This will match static initialization pointcut
             array('staticinitialization(Some\Specific\Class\**)'),
+
+            // This will match dynamic initialization pointcut
+            array('initialization(Some\Specific\Class\**)'),
         );
     }
 
