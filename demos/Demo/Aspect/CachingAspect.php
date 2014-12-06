@@ -29,7 +29,7 @@ class CachingAspect implements Aspect
      *
      * @param MethodInvocation $invocation Invocation
      *
-     * @Around("@annotation(Demo\Annotation\Cacheable)")
+     * @Around("@execution(Demo\Annotation\Cacheable)")
      */
     public function aroundCacheable(MethodInvocation $invocation)
     {

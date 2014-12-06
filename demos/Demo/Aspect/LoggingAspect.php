@@ -34,7 +34,7 @@ class LoggingAspect implements Aspect
      *
      * @param MethodInvocation $invocation Invocation
      *
-     * @Before("@annotation(Demo\Annotation\Loggable)")
+     * @Before("@execution(Demo\Annotation\Loggable)")
      */
     public function beforeMethodExecution(MethodInvocation $invocation)
     {

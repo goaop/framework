@@ -25,7 +25,7 @@ class IntroductionAspect implements Aspect
      * You can also give several interfaces/traits via []
      *
      * @DeclareParents(
-     *   value="class(Demo\Example\IntroductionDemo)",
+     *   value="within(Demo\Example\IntroductionDemo)",
      *   interface="Serializable",
      *   defaultImpl="Demo\Aspect\Introduce\SerializableImpl"
      * )
