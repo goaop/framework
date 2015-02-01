@@ -29,7 +29,7 @@ class MethodInvocationComposer
      *
      * @param bool $useClosureBinding Enables usage of closures instead of reflection
      * @param bool $useSplatOperator Enables usage of optimized invocation with splat operator
-     * @param bool $useSplatOperator Enables usage of optimized invocation with splat operator
+     * @param bool $useVariadics Enables usage of optimized invocation with variadic args
      *
      * @return string Name of composed class
      */
@@ -62,51 +62,6 @@ class MethodInvocationComposer
 
         $className .= 'MethodInvocation';
 
-        if (!class_exists($className, false)) {
-            static::createRuntime($className, $traits);
-        }
-
         return $className;
-    }
-
-    protected static function createRuntime($className, array $traits)
-    {
-        $parts         = explode('\\', $className);
-        $className     = array_pop($parts);
-        $namespaceName = join('\\', $parts);
-
-        $additionalUseTraits = join('', array_map(function ($traitName) {
-            return "    use {$traitName};\n";
-        }, $traits));
-
-        $code = self::getTemplate($className, $namespaceName, $additionalUseTraits);
-        eval($code);
-    }
-
-    /**
-     * @param $className
-     * @param $namespaceName
-     * @param $additionalUseTraits
-     *
-     * @return string
-     */
-    private static function getTemplate($className, $namespaceName, $additionalUseTraits)
-    {
-        return <<<TEMPLATE
-/**
- * Go! AOP framework
- *
- * Auto-generated class for method invocation
- */
-
-namespace {$namespaceName};
-
-use Go\Aop\Framework\AbstractMethodInvocation;
-
-class {$className} extends AbstractMethodInvocation
-{
-{$additionalUseTraits}
-}
-TEMPLATE;
     }
 }
