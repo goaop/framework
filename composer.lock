@@ -4,19 +4,19 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "73f17f3c657593a9c65386254a379e6b",
+    "hash": "a35b00f381d2746348812cabba591a94",
     "packages": [
         {
-            "name": "andrewsville/php-token-reflection",
+            "name": "apigen/token-reflection",
             "version": "1.4.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/Andrewsville/PHP-Token-Reflection.git",
+                "url": "https://github.com/apigen/TokenReflection.git",
                 "reference": "e6d0ac2baf66cdf154be34c3d2a2aa1bd4b426ee"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Andrewsville/PHP-Token-Reflection/zipball/e6d0ac2baf66cdf154be34c3d2a2aa1bd4b426ee",
+                "url": "https://api.github.com/repos/apigen/TokenReflection/zipball/e6d0ac2baf66cdf154be34c3d2a2aa1bd4b426ee",
                 "reference": "e6d0ac2baf66cdf154be34c3d2a2aa1bd4b426ee",
                 "shasum": ""
             },
