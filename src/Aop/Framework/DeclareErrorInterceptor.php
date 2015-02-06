@@ -12,6 +12,8 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Pointcut;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Interceptor to dynamically trigger an user notice/warning/error on method call
@@ -88,11 +90,10 @@ class DeclareErrorInterceptor extends BaseInterceptor
     {
         static $adviceMethod = null;
         if (!$adviceMethod) {
-            $adviceMethod = function ($object, $reflector, $message, $level = E_USER_NOTICE) {
+            $adviceMethod = function ($object, $reflectorName, $message, $level = E_USER_NOTICE) {
                 $class   = is_string($object) ? $object : get_class($object);
-                $name    = $reflector->getName();
                 $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', array(
-                    $class . '->' . $name,
+                    $class . '->' . $reflectorName,
                     $message
                 ));
                 trigger_error($message, $level);
@@ -113,9 +114,15 @@ class DeclareErrorInterceptor extends BaseInterceptor
      */
     public function invoke(Joinpoint $joinpoint)
     {
+        /** @var ReflectionMethod|ReflectionProperty $reflection */
+        $reflection    = $joinpoint->getStaticPart();
+        $reflectorName = 'unknown';
+        if ($reflection && method_exists($reflection, 'getName')) {
+            $reflectorName = $reflection->getName();
+        }
         $this->adviceMethod->__invoke(
             $joinpoint->getThis(),
-            $joinpoint->getStaticPart(),
+            $reflectorName,
             $this->message,
             $this->level
         );
