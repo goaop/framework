@@ -123,17 +123,8 @@ use Demo\Example\IntroductionDemo;
 use Demo\Example\LoggingDemo;
 use Demo\Example\PropertyDemo;
 use Demo\Example\UserFluentDemo;
+use Demo\Highlighter;
 use Go\Instrument\Transformer\MagicConstantTransformer;
-
-function highlight($file)
-{
-    $highlightFileFunc = new ReflectionFunction('highlight_file');
-    if (!$highlightFileFunc->isDisabled()) {
-        highlight_file($file);
-    } else {
-        echo '<pre>' . htmlspecialchars(file_get_contents($file)) . '</pre>';
-    }
-}
 
 $isAOPDisabled = isset($_COOKIE['aop_on']) && $_COOKIE['aop_on'] == 'false';
 include __DIR__ . ($isAOPDisabled ? '/autoload.php' : '/autoload_aspect.php');
@@ -247,8 +238,8 @@ if ($aspectName):
           </div>
       <div class="panel-body well panel-collapse collapse out" id="collapseOne">
 <?php
-$refAspect   = new ReflectionClass($aspectName);
-highlight(MagicConstantTransformer::resolveFileName($refAspect->getFileName()));
+$refAspect = new ReflectionClass($aspectName);
+Highlighter::highlight(MagicConstantTransformer::resolveFileName($refAspect->getFileName()));
 ?>
       </div>
     </div>
@@ -267,7 +258,7 @@ if ($example):
       <div class="panel-body well panel-collapse collapse out" id="collapseTwo">
 <?php
 $refObject = new ReflectionObject($example);
-highlight(MagicConstantTransformer::resolveFileName($refObject->getFileName()));
+Highlighter::highlight(MagicConstantTransformer::resolveFileName($refObject->getFileName()));
 ?>
       </div>
     </div>
