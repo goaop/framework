@@ -44,7 +44,7 @@ class GoAspectContainer extends Container implements AspectContainer
     public function __construct()
     {
         // Register all services in the container
-        $this->share('aspect.loader', function ($container) {
+        $this->share('aspect.loader', function (Container $container) {
             $aspectLoader = new AspectLoader(
                 $container,
                 $container->get('aspect.annotation.reader')
@@ -59,7 +59,7 @@ class GoAspectContainer extends Container implements AspectContainer
             return $aspectLoader;
         });
 
-        $this->share('aspect.cached.loader', function ($container) {
+        $this->share('aspect.cached.loader', function (Container $container) {
             $cachedAspectLoader = new CachedAspectLoader(
                 $container,
                 'aspect.loader',
@@ -69,14 +69,14 @@ class GoAspectContainer extends Container implements AspectContainer
             return $cachedAspectLoader;
         });
 
-        $this->share('aspect.advisor.accessor', function ($container) {
+        $this->share('aspect.advisor.accessor', function (Container $container) {
             return new LazyAdvisorAccessor(
                 $container,
                 $container->get('aspect.cached.loader')
             );
         });
 
-        $this->share('aspect.advice_matcher', function ($container) {
+        $this->share('aspect.advice_matcher', function (Container $container) {
             return new AdviceMatcher(
                 $container->get('aspect.loader'),
                 $container,
@@ -84,7 +84,7 @@ class GoAspectContainer extends Container implements AspectContainer
             );
         });
 
-        $this->share('aspect.annotation.reader', function ($container) {
+        $this->share('aspect.annotation.reader', function (Container $container) {
             $options = $container->get('kernel.options');
             $reader  = new AnnotationReader();
             if (!empty($options['cacheDir'])) {
@@ -105,7 +105,7 @@ class GoAspectContainer extends Container implements AspectContainer
         $this->share('aspect.pointcut.lexer', function () {
             return new PointcutLexer();
         });
-        $this->share('aspect.pointcut.parser', function ($container) {
+        $this->share('aspect.pointcut.parser', function (Container $container) {
             return new PointcutParser(
                 new PointcutGrammar(
                     $container,

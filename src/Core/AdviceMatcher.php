@@ -66,7 +66,7 @@ class AdviceMatcher
      *
      * @return array
      */
-    public function getAdvicesForFunctions($namespace)
+    public function getAdvicesForFunctions(ReflectionFileNamespace $namespace)
     {
         if (!$this->isInterceptFunctions || $namespace->getName() == 'no-namespace') {
             return array();
@@ -209,14 +209,13 @@ class AdviceMatcher
      *
      * @return array
      */
-    private function getIntroductionFromAdvisor($class, $advisor, $advisorId)
+    private function getIntroductionFromAdvisor($class, Aop\IntroductionAdvisor $advisor, $advisorId)
     {
         // Do not make introduction for traits
         if ($class->isTrait()) {
             return array();
         }
 
-        /** @var $advice Aop\IntroductionInfo */
         $advice = $advisor->getAdvice();
 
         $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX][$advisorId] = $advice;
@@ -234,7 +233,11 @@ class AdviceMatcher
      *
      * @return array
      */
-    private function getFunctionAdvicesFromAdvisor($namespace, $advisor, $advisorId, $pointcut)
+    private function getFunctionAdvicesFromAdvisor(
+        ReflectionFileNamespace $namespace,
+        Aop\PointcutAdvisor $advisor,
+        $advisorId,
+        Aop\PointFilter $pointcut)
     {
         $functions = array();
         $advices   = array();
