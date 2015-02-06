@@ -73,7 +73,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
         }
 
         if ($hasReflectionFilename) {
-            // TODO: need to make more reliable solution
+            // need to make more reliable solution
             $metadata->source = preg_replace(
                 '/\$([\w\$\-\>\:\(\)]*?getFileName\(\))/S',
                 '\\' . __CLASS__ . '::resolveFileName(\$\1)',

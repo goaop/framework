@@ -97,7 +97,7 @@ abstract class AbstractProxy
     {
         $parameterDefinitions = array();
         foreach ($parameters as $parameter) {
-            // TODO: Deprecated since PHP5.6 in the favor of variadics, needed for BC only
+            // Deprecated since PHP5.6 in the favor of variadics, needed for BC only
             if ($parameter->name == '...') {
                 continue;
             }

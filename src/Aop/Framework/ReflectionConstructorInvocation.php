@@ -137,7 +137,6 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      */
     final public function __invoke(array $arguments = array())
     {
-        // TODO: add support for recursion in constructors
         $this->current   = 0;
         $this->arguments = $arguments;
 

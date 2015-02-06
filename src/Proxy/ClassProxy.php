@@ -280,7 +280,7 @@ class ClassProxy extends AbstractProxy
      *
      * @throws \UnexpectedValueException If joinPoint type is unknown
      *
-     * @todo Extension should be responsible for wrapping advice with join point.
+     * NB: Extension should be responsible for wrapping advice with join point.
      *
      * @return array|Joinpoint[] returns list of joinpoint ready to use
      */

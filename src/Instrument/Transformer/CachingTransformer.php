@@ -92,7 +92,6 @@ class CachingTransformer extends BaseSourceTransformer
         $lastModified  = filemtime($originalUri);
         $cacheModified = file_exists($cacheUri) ? filemtime($cacheUri) : 0;
 
-        // TODO: add more accurate cache invalidation, like in Symfony2
         if ($cacheModified < $lastModified || !$this->container->isFresh($cacheModified)) {
             $parentCacheDir = dirname($cacheUri);
             if (!is_dir($parentCacheDir)) {

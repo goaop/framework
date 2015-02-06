@@ -55,7 +55,6 @@ class AnnotatedReflectionMethod extends ReflectionMethod
     private static function getReader()
     {
         if (!self::$annotationReader) {
-            // TODO: ugly global dependecy, decide how to inject it more friendly
             self::$annotationReader = AspectKernel::getInstance()->getContainer()->get('aspect.annotation.reader');
         };
 

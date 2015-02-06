@@ -90,8 +90,6 @@ class WeavingTransformer extends BaseSourceTransformer
             CleanableMemory::enterProcessing();
             $parsedSource = $this->broker->processString($metadata->source, $fileName, true);
         } catch (FileProcessingException $e) {
-            // TODO: collect this exception and make a record in the modified source
-            // TODO: Maybe just ask a developer to add this file into exclude list?
             CleanableMemory::leaveProcessing();
 
             return;

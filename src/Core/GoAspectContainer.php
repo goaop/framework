@@ -176,8 +176,6 @@ class GoAspectContainer extends Container implements AspectContainer
     /**
      * Add an AOP resource to the container
      *
-     * TODO: use symfony/config component for creating the cache
-     *
      * Resources is used to check the freshness of AOP cache
      */
     public function addResource($resource)

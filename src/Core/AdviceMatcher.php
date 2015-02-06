@@ -68,7 +68,6 @@ class AdviceMatcher
      */
     public function getAdvicesForFunctions($namespace)
     {
-        // TODO: remove after stabilization of functionality
         if (!$this->isInterceptFunctions || $namespace->getName() == 'no-namespace') {
             return array();
         }
