@@ -27,6 +27,7 @@ class MethodInvocationComposer
     /**
      * Composes a class with specific features and returns its name
      *
+     * @param bool $isStatic Static or dynamic method
      * @param bool $useClosureBinding Enables usage of closures instead of reflection
      * @param bool $useSplatOperator Enables usage of optimized invocation with splat operator
      * @param bool $useVariadics Enables usage of optimized invocation with variadic args
@@ -38,26 +39,17 @@ class MethodInvocationComposer
         $className = __NAMESPACE__ . '\\';
         $className .= $isStatic ? 'Static' : 'Dynamic';
 
-        $traits = array();
-
         if ($useClosureBinding) {
             $className .= 'Closure';
-            $dynamicTrait = self::CLOSURE_DYNAMIC_TRAIT;
             if ($useSplatOperator && !$isStatic) {
                 $className .= 'Splat';
-                $dynamicTrait = self::CLOSURE_SPLAT_TRAIT;
             }
-            $traits[] = $isStatic ? self::CLOSURE_STATIC_TRAIT : $dynamicTrait;
         } else {
             $className .= 'Reflection';
-            $traits[] = self::REFLECTION_TRAIT;
         }
 
         if ($useVariadics) {
             $className .= 'Variadic';
-            $traits[] = self::VARIADIC_INVOCATION;
-        } else {
-            $traits[] = self::SIMPLE_INVOCATION;
         }
 
         $className .= 'MethodInvocation';
