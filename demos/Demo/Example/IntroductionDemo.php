@@ -24,7 +24,14 @@ class IntroductionDemo
         if ($this instanceof \Serializable) {
             echo get_class($this), ' implements `Serializable` interface now!', PHP_EOL;
             $reflection = new \ReflectionObject($this);
-            var_dump($reflection->getInterfaceNames(), $reflection->getTraitNames());
+            echo "List of interfaces:", PHP_EOL;
+            foreach ($reflection->getInterfaceNames() as $interfaceName) {
+                echo '-> ', $interfaceName, PHP_EOL;
+            }
+            echo "List of traits:", PHP_EOL;
+            foreach ($reflection->getTraitNames() as $traitName) {
+                echo '-> ', $traitName, PHP_EOL;
+            }
         } else {
             echo get_class($this), ' does not implement `Serializable` interface', PHP_EOL;
         }
