@@ -69,6 +69,6 @@ class SimpleNamespaceFilter implements PointFilter
      */
     public function getKind()
     {
-        return 0; //self::KIND_CLASS;
+        return 0;
     }
 }
