@@ -8,11 +8,6 @@
  * with this source code in the file LICENSE.
  */
 
-/**
- * Show all errors in code
- */
-ini_set('display_errors', true);
-
 // Composer autoloading
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     /** @var Composer\Autoload\ClassLoader $loader */
