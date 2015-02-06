@@ -10,6 +10,8 @@
 
 namespace Go\Aop\Pointcut;
 
+use Dissect\Lexer\Token;
+use Dissect\Parser\Grammar;
 use Go\Aop\PointFilter;
 use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
@@ -17,7 +19,6 @@ use Go\Aop\Support\SimpleNamespaceFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Core\AspectContainer;
 use Go\Instrument\RawAnnotationReader;
-use Dissect\Parser\Grammar;
 
 /**
  * Pointcut grammar defines general structure of pointcuts and rules of parsing
@@ -309,8 +310,8 @@ class PointcutGrammar extends Grammar
      */
     private function getModifierConverter()
     {
-        return function ($node) {
-            $name = strtoupper($node->getValue());
+        return function (Token $token) {
+            $name = strtoupper($token->getValue());
 
             return constant("ReflectionMethod::IS_{$name}");
         };
