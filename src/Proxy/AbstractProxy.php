@@ -128,7 +128,7 @@ abstract class AbstractProxy
             if ($parameter instanceof ParsedParameter) {
                 $defaultValue = $parameter->getDefaultValueDefinition();
             } else {
-                $defaultValue = var_export($parameter->getDefaultValue());
+                $defaultValue = var_export($parameter->getDefaultValue(), true);
             }
         } elseif ($parameter->isOptional()) {
             $defaultValue = 'null';
