@@ -29,7 +29,6 @@ class PathResolver
      */
     public static function realpath($somePath, $shouldCheckExistence = false)
     {
-        $normalized = null;
         // Do not resolve empty string/false/arrays into the current path
         if (!$somePath) {
             return $somePath;
