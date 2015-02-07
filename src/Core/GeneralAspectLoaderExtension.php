@@ -12,13 +12,10 @@ namespace Go\Core;
 
 use Go\Aop\Aspect;
 use Go\Aop\Framework;
-use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
-use ReflectionMethod;
-use ReflectionProperty;
 
 /**
  * General aspect loader add common support for general advices, declared as annotations

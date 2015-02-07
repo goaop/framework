@@ -10,8 +10,6 @@
 
 namespace Go\Aop\Framework\Block;
 
-use Go\Aop\Intercept\Interceptor;
-
 trait ReflectionProceedTrait
 {
     /**
@@ -22,7 +20,7 @@ trait ReflectionProceedTrait
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor Interceptor */
+            /** @var $currentInterceptor \Go\Aop\Intercept\Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);

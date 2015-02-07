@@ -15,7 +15,6 @@ use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use ReflectionMethod as Method;
 use ReflectionParameter as Parameter;
-use Go\Aop\Advice;
 use Go\Core\AspectContainer;
 use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionParameter as ParsedParameter;

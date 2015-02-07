@@ -27,7 +27,6 @@ use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 use TokenReflection\ReflectionProperty as ParsedProperty;
-use UnexpectedValueException;
 
 /**
  * Class proxy builder that is used to generate a child class from the list of joinpoints

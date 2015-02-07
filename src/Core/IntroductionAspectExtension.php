@@ -10,8 +10,6 @@
 
 namespace Go\Core;
 
-use ReflectionMethod;
-use ReflectionProperty;
 use Go\Aop\Aspect;
 use Go\Aop\Framework;
 use Go\Aop\Support;

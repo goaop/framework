@@ -11,7 +11,6 @@
 namespace Go\Aop\Framework;
 
 use Serializable;
-use Go\Aop\Pointcut;
 use Go\Aop\Intercept\Interceptor;
 
 /**
@@ -40,7 +39,7 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
      *
      * @param callable $adviceMethod Interceptor advice to call
      * @param integer $order Order of interceptor
-     * @param string $pointcut Pointcut expression or advice name
+     * @param string $pointcut \Go\Aop\Pointcut expression or advice name
      */
     public function __construct($adviceMethod, $order = 0, $pointcut = null)
     {
