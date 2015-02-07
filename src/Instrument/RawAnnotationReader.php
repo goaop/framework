@@ -74,11 +74,11 @@ class RawAnnotationReader
     /**
      * Gets the annotations applied to a class.
      *
-     * @param ReflectionClass|ParsedReflectionClass $class The ReflectionClass of the class from which
+     * @param ParsedReflectionClass $class The ReflectionClass of the class from which
      *                               the class annotations should be read.
      * @return array An array of Annotations.
      */
-    public function getClassAnnotations($class)
+    public function getClassAnnotations(ParsedReflectionClass $class)
     {
         $this->parser->setTarget(Target::TARGET_CLASS);
 
@@ -88,11 +88,11 @@ class RawAnnotationReader
      /**
      * Gets the annotations applied to a method.
      *
-     * @param ReflectionMethod|ParsedReflectionMethod $method The ReflectionMethod of the method from which
+     * @param ParsedReflectionMethod $method The ReflectionMethod of the method from which
      *                                   the annotations should be read.
      * @return array An array of Annotations.
      */
-    public function getMethodAnnotations($method)
+    public function getMethodAnnotations(ParsedReflectionMethod $method)
     {
         $this->parser->setTarget(Target::TARGET_METHOD);
 
@@ -102,11 +102,11 @@ class RawAnnotationReader
     /**
      * Gets the annotations applied to a property.
      *
-     * @param ReflectionProperty|ParsedReflectionProperty $property The ReflectionProperty of the property
+     * @param ParsedReflectionProperty $property The ReflectionProperty of the property
      *                                     from which the annotations should be read.
      * @return array An array of Annotations.
      */
-    public function getPropertyAnnotations($property)
+    public function getPropertyAnnotations(ParsedReflectionProperty $property)
     {
         $this->parser->setTarget(Target::TARGET_PROPERTY);
 
@@ -116,12 +116,12 @@ class RawAnnotationReader
     /**
      * Gets a class annotation.
      *
-     * @param ReflectionClass|ParsedReflectionClass $class The ReflectionClass of the class from which
+     * @param ParsedReflectionClass $class The ReflectionClass of the class from which
      *                               the class annotations should be read.
      * @param string $annotationName The name of the annotation.
      * @return The Annotation or NULL, if the requested annotation does not exist.
      */
-    public function getClassAnnotation($class, $annotationName)
+    public function getClassAnnotation(ParsedReflectionClass $class, $annotationName)
     {
         foreach ($this->getClassAnnotations($class) as $annot) {
             if ($annot instanceof $annotationName) {
@@ -135,11 +135,11 @@ class RawAnnotationReader
     /**
      * Gets a method annotation.
      *
-     * @param ReflectionMethod|ParsedReflectionMethod $method
+     * @param ParsedReflectionMethod $method
      * @param string $annotationName The name of the annotation.
      * @return The Annotation or NULL, if the requested annotation does not exist.
      */
-    public function getMethodAnnotation($method, $annotationName)
+    public function getMethodAnnotation(ParsedReflectionMethod $method, $annotationName)
     {
         foreach ($this->getMethodAnnotations($method) as $annot) {
             if ($annot instanceof $annotationName) {
@@ -153,11 +153,11 @@ class RawAnnotationReader
     /**
      * Gets a property annotation.
      *
-     * @param ReflectionProperty|ParsedReflectionProperty $property
+     * @param ParsedReflectionProperty $property
      * @param string $annotationName The name of the annotation.
      * @return The Annotation or NULL, if the requested annotation does not exist.
      */
-    public function getPropertyAnnotation($property, $annotationName)
+    public function getPropertyAnnotation(ParsedReflectionProperty $property, $annotationName)
     {
         foreach ($this->getPropertyAnnotations($property) as $annot) {
             if ($annot instanceof $annotationName) {

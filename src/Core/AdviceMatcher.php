@@ -97,20 +97,16 @@ class AdviceMatcher
     /**
      * Return list of advices for class
      *
-     * @param string|ReflectionClass|ParsedReflectionClass $class Class to advise
+     * @param ParsedReflectionClass $class Class to advise
      *
      * @return array|Aop\Advice[] List of advices for class
      */
-    public function getAdvicesForClass($class)
+    public function getAdvicesForClass(ParsedReflectionClass $class)
     {
         $this->loader->loadAdvisorsAndPointcuts();
 
         $classAdvices = array();
-        if (!$class instanceof ReflectionClass && !$class instanceof ParsedReflectionClass) {
-            $class = new ReflectionClass($class);
-        }
-
-        $parentClass = $class->getParentClass();
+        $parentClass  = $class->getParentClass();
 
         if ($parentClass && preg_match('/' . AspectContainer::AOP_PROXIED_SUFFIX . '$/', $parentClass->name)) {
             $originalClass = $parentClass;
@@ -147,14 +143,18 @@ class AdviceMatcher
     /**
      * Returns list of advices from advisor and point filter
      *
-     * @param ReflectionClass|ParsedReflectionClass $class Class to inject advices
+     * @param ParsedReflectionClass $class Class to inject advices
      * @param Aop\PointcutAdvisor $advisor Advisor for class
      * @param string $advisorId Identifier of advisor
      * @param Aop\PointFilter $filter Filter for points
      *
      * @return array
      */
-    private function getAdvicesFromAdvisor($class, Aop\PointcutAdvisor $advisor, $advisorId, Aop\PointFilter $filter)
+    private function getAdvicesFromAdvisor(
+        ParsedReflectionClass $class,
+        Aop\PointcutAdvisor $advisor,
+        $advisorId,
+        Aop\PointFilter $filter)
     {
         $classAdvices = array();
         $filterKind   = $filter->getKind();
@@ -203,13 +203,16 @@ class AdviceMatcher
     /**
      * Returns list of introduction advices from advisor
      *
-     * @param ReflectionClass|ParsedReflectionClass $class Class to inject advices
+     * @param ParsedReflectionClass $class Class to inject advices
      * @param Aop\IntroductionAdvisor $advisor Advisor for class
      * @param string $advisorId Identifier of advisor
      *
      * @return array
      */
-    private function getIntroductionFromAdvisor($class, Aop\IntroductionAdvisor $advisor, $advisorId)
+    private function getIntroductionFromAdvisor(
+        ParsedReflectionClass $class,
+        Aop\IntroductionAdvisor $advisor,
+        $advisorId)
     {
         // Do not make introduction for traits
         if ($class->isTrait()) {

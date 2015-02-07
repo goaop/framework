@@ -7,6 +7,7 @@ use Go\Aop\Pointcut;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Aop\Support\TruePointFilter;
 use PHPUnit_Framework_TestCase as TestCase;
+use TokenReflection\Broker;
 
 class AdviceMatcherTest extends TestCase
 {
@@ -24,6 +25,8 @@ class AdviceMatcherTest extends TestCase
      * @var array|Advisor[]
      */
     protected $advisors = array();
+
+    protected $reflectionClass = null;
 
     protected function setUp()
     {
@@ -50,6 +53,10 @@ class AdviceMatcherTest extends TestCase
 
         $loader = $this->getMock('Go\Core\AspectLoader', array(), array($this->container, $reader));
         $this->adviceMatcher = new AdviceMatcher($loader, $this->container);
+
+        $brokerInstance = new Broker(new Broker\Backend\Memory());
+        $brokerInstance->processFile(__FILE__);
+        $this->reflectionClass = $brokerInstance->getClass(__CLASS__);
     }
 
     /**
@@ -57,12 +64,8 @@ class AdviceMatcherTest extends TestCase
      */
     public function testGetEmptyAdvicesForClass()
     {
-        // by class name
-        $advices = $this->adviceMatcher->getAdvicesForClass(__CLASS__);
-        $this->assertEmpty($advices);
-
         // by reflection
-        $advices = $this->adviceMatcher->getAdvicesForClass(new \ReflectionClass(__CLASS__));
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass);
         $this->assertEmpty($advices);
     }
 
@@ -93,7 +96,7 @@ class AdviceMatcherTest extends TestCase
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
         $this->container->registerAdvisor($advisor, 'test');
 
-        $advices = $this->adviceMatcher->getAdvicesForClass(__CLASS__);
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass);
         $this->assertArrayHasKey(AspectContainer::METHOD_PREFIX, $advices);
         $this->assertArrayHasKey($funcName, $advices[AspectContainer::METHOD_PREFIX]);
         $this->assertCount(1, $advices[AspectContainer::METHOD_PREFIX]);
@@ -126,7 +129,7 @@ class AdviceMatcherTest extends TestCase
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
         $this->container->registerAdvisor($advisor, 'test');
 
-        $advices = $this->adviceMatcher->getAdvicesForClass(__CLASS__);
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass);
         $this->assertArrayHasKey(AspectContainer::PROPERTY_PREFIX, $advices);
         $this->assertArrayHasKey($propName, $advices[AspectContainer::PROPERTY_PREFIX]);
         $this->assertCount(1, $advices[AspectContainer::PROPERTY_PREFIX]);
