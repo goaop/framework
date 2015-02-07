@@ -10,7 +10,6 @@
 
 namespace Go\Core;
 
-use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
 use Go\Aop;

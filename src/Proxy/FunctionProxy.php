@@ -13,17 +13,12 @@ namespace Go\Proxy;
 use Go\Aop\Advice;
 use Go\Aop\Framework\ReflectionFunctionInvocation;
 use Go\Aop\Intercept\FunctionInvocation;
-
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use ReflectionFunction;
-use ReflectionParameter as Parameter;
-
 use ReflectionParameter;
 use TokenReflection\ReflectionFileNamespace;
-use TokenReflection\ReflectionParameter as ParsedParameter;
-use TokenReflection\ReflectionFunction as ParsedFunction;
 
 /**
  * Function proxy builder that is used to generate a proxy-function from the list of joinpoints

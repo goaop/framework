@@ -11,9 +11,9 @@
 namespace Go\Proxy;
 
 use Go\Aop\Features;
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
-use Go\Core\AspectContainer;
 use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 
