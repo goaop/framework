@@ -4,10 +4,10 @@ Go! Aspect-Oriented Framework for PHP
 Go! AOP is a modern aspect-oriented framework in plain PHP with rich features for the new level of software development. Framework allows to solve a cross-cutting issues in the traditional object-oriented PHP code by providing a highly efficient and transparent hook system for your exisiting code.
 
 [![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
-[![Latest Stable Version](https://poser.pugx.org/lisachenko/go-aop-php/v/stable.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
-[![Total Downloads](https://poser.pugx.org/lisachenko/go-aop-php/downloads.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
+[![GitHub release](https://img.shields.io/github/release/lisachenko/go-aop-php.svg)](https://github.com/lisachenko/go-aop-php/releases/latest)
+[![Total Downloads](https://img.shields.io/packagist/dt/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
 [![Daily Downloads](https://img.shields.io/packagist/dd/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
-[![SensioLabsInsight](https://insight.sensiolabs.com/projects/5998393e-29ea-48f8-8e7e-b19e86daa2db/mini.png)](https://insight.sensiolabs.com/projects/5998393e-29ea-48f8-8e7e-b19e86daa2db)
+[![SensioLabs Insight](https://img.shields.io/sensiolabs/i/5998393e-29ea-48f8-8e7e-b19e86daa2db.svg)](https://insight.sensiolabs.com/projects/5998393e-29ea-48f8-8e7e-b19e86daa2db)
 [![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%205.4-8892BF.svg)](https://php.net/)
 [![License](https://img.shields.io/packagist/l/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
 
