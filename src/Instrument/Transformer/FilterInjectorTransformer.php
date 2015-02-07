@@ -86,9 +86,10 @@ class FilterInjectorTransformer implements SourceTransformer
 
         $resource = (string) $originalResource;
         if ($resource['0'] !== '/') {
+            $shouldCheckExistence = true;
             $resource
-                =  PathResolver::realpath($resource, $checkExistence = true)
-                ?: PathResolver::realpath("{$originalDir}/{$resource}", $checkExistence = true)
+                =  PathResolver::realpath($resource, $shouldCheckExistence)
+                ?: PathResolver::realpath("{$originalDir}/{$resource}", $shouldCheckExistence)
                 ?: $originalResource;
         }
         // If the cache is disabled, then use on-fly method
