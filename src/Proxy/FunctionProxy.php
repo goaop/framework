@@ -20,6 +20,7 @@ use Go\Core\LazyAdvisorAccessor;
 use ReflectionFunction;
 use ReflectionParameter as Parameter;
 
+use ReflectionParameter;
 use TokenReflection\ReflectionFileNamespace;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 use TokenReflection\ReflectionFunction as ParsedFunction;
@@ -59,12 +60,8 @@ class FunctionProxy extends AbstractProxy
      *
      * @throws \InvalidArgumentException for invalid classes
      */
-    public function __construct($namespace, array $advices = array())
+    public function __construct(ReflectionFileNamespace $namespace, array $advices = array())
     {
-        if (!$namespace instanceof ReflectionFileNamespace) {
-            throw new \InvalidArgumentException("Invalid argument for namespace");
-        }
-
         parent::__construct($advices);
         $this->namespace = $namespace;
 
@@ -123,12 +120,12 @@ class FunctionProxy extends AbstractProxy
     /**
      * Override function with new body
      *
-     * @param ReflectionFunction|ParsedFunction $function Function reflection
+     * @param ReflectionFunction $function Function reflection
      * @param string $body New body for function
      *
      * @return $this
      */
-    public function override($function, $body)
+    public function override(ReflectionFunction $function, $body)
     {
         $this->functionsCode[$function->name] = $this->getOverriddenFunction($function, $body);
 
@@ -160,12 +157,12 @@ class FunctionProxy extends AbstractProxy
     /**
      * Creates a function code from Reflection
      *
-     * @param ParsedFunction $function Reflection for function
+     * @param ReflectionFunction $function Reflection for function
      * @param string $body Body of function
      *
      * @return string
      */
-    protected function getOverriddenFunction($function, $body)
+    protected function getOverriddenFunction(ReflectionFunction $function, $body)
     {
         static $inMemoryCache = array();
 
@@ -195,11 +192,11 @@ class FunctionProxy extends AbstractProxy
     /**
      * Creates definition for trait method body
      *
-     * @param ReflectionFunction|ParsedFunction $function Method reflection
+     * @param ReflectionFunction $function Method reflection
      *
      * @return string new method body
      */
-    protected function getJoinpointInvocationBody($function)
+    protected function getJoinpointInvocationBody(ReflectionFunction $function)
     {
         $class   = '\\' . __CLASS__;
 
@@ -207,8 +204,7 @@ class FunctionProxy extends AbstractProxy
         $hasOptionals  = false;
         $hasReferences = false;
 
-        $argValues = array_map(function ($param) use (&$dynamicArgs, &$hasOptionals, &$hasReferences) {
-            /** @var $param Parameter|ParsedParameter */
+        $argValues = array_map(function (ReflectionParameter $param) use (&$dynamicArgs, &$hasOptionals, &$hasReferences) {
             $byReference   = $param->isPassedByReference();
             $dynamicArg    = $param->name == '...';
             $dynamicArgs   = $dynamicArgs || $dynamicArg;

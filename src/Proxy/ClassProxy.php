@@ -21,7 +21,6 @@ use Go\Core\LazyAdvisorAccessor;
 use Reflection;
 use ReflectionClass;
 use ReflectionMethod as Method;
-use ReflectionParameter as Parameter;
 use ReflectionProperty as Property;
 use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionMethod as ParsedMethod;
@@ -36,7 +35,7 @@ class ClassProxy extends AbstractProxy
     /**
      * Parent class reflection
      *
-     * @var null|ReflectionClass|ParsedClass
+     * @var null|ParsedClass
      */
     protected $class = null;
 
@@ -106,19 +105,15 @@ class ClassProxy extends AbstractProxy
     /**
      * Generates an child code by parent class reflection and joinpoints for it
      *
-     * @param ReflectionClass|ParsedClass $parent Parent class reflection
+     * @param ParsedClass $parent Parent class reflection
      * @param array|Advice[] $classAdvices List of advices for class
      * @param bool $useStaticForLsb Should proxy use 'static::class' instead of '\get_called_class()'
      *
      * @throws \InvalidArgumentException if there are unknown type of advices
      * @return ClassProxy
      */
-    public function __construct($parent, array $classAdvices, $useStaticForLsb = false)
+    public function __construct(ParsedClass $parent, array $classAdvices, $useStaticForLsb = false)
     {
-        if (!$parent instanceof ReflectionClass && !$parent instanceof ParsedClass) {
-            throw new \InvalidArgumentException("Invalid argument for class");
-        }
-
         parent::__construct($classAdvices, $useStaticForLsb);
 
         $this->class           = $parent;
@@ -236,11 +231,10 @@ class ClassProxy extends AbstractProxy
      */
     public static function injectJoinPoints($className, array $advices = array())
     {
-        $className  = new ReflectionClass($className);
-        $joinPoints = static::wrapWithJoinPoints($advices, $className->getParentClass()->name);
+        $reflectionClass  = new ReflectionClass($className);
+        $joinPoints       = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
 
-        /** @var $prop Property */
-        $prop = $className->getProperty('__joinPoints');
+        $prop = $reflectionClass->getProperty('__joinPoints');
         $prop->setAccessible(true);
         $prop->setValue($joinPoints);
 
@@ -398,9 +392,9 @@ class ClassProxy extends AbstractProxy
     /**
      * Override parent method with joinpoint invocation
      *
-     * @param Method|ParsedMethod $method Method reflection
+     * @param ParsedMethod $method Method reflection
      */
-    protected function overrideMethod($method)
+    protected function overrideMethod(ParsedMethod $method)
     {
         // temporary disable override of final methods
         if (!$method->isFinal() && !$method->isAbstract()) {
@@ -411,18 +405,17 @@ class ClassProxy extends AbstractProxy
     /**
      * Creates definition for method body
      *
-     * @param Method|ParsedMethod $method Method reflection
+     * @param ParsedMethod $method Method reflection
      *
      * @return string new method body
      */
-    protected function getJoinpointInvocationBody($method)
+    protected function getJoinpointInvocationBody(ParsedMethod $method)
     {
         $isStatic = $method->isStatic();
         $scope    = $isStatic ? $this->staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
-        $args = join(', ', array_map(function ($param) {
-            /** @var $param Parameter|ParsedParameter */
+        $args = join(', ', array_map(function (ParsedParameter $param) {
             $byReference = $param->isPassedByReference() ? '&' : '';
 
             return $byReference . '$' . $param->name;
@@ -449,9 +442,9 @@ class ClassProxy extends AbstractProxy
     /**
      * Makes property intercepted
      *
-     * @param Property|ParsedProperty $property Reflection of property to intercept
+     * @param ParsedProperty $property Reflection of property to intercept
      */
-    protected function interceptProperty($property)
+    protected function interceptProperty(ParsedProperty $property)
     {
         $this->interceptedProperties[] = is_object($property) ? $property->name : $property;
         $this->isFieldsIntercepted = true;
@@ -495,9 +488,9 @@ class ClassProxy extends AbstractProxy
     /**
      * Add code for intercepting properties
      *
-     * @param null|Method|ParsedMethod $constructor Constructor reflection or null
+     * @param null|ParsedMethod $constructor Constructor reflection or null
      */
-    protected function addFieldInterceptorsCode($constructor = null)
+    protected function addFieldInterceptorsCode(ParsedMethod $constructor = null)
     {
         $this->setProperty(Property::IS_PRIVATE, '__properties', 'array()');
         $this->setMethod(Method::IS_PUBLIC, '__get', $this->getMagicGetterBody(), '$name');
@@ -518,12 +511,12 @@ class ClassProxy extends AbstractProxy
     /**
      * Creates a method code from Reflection
      *
-     * @param Method|ParsedMethod $method Reflection for method
+     * @param ParsedMethod $method Reflection for method
      * @param string $body Body of method
      *
      * @return string
      */
-    protected function getOverriddenMethod($method, $body)
+    protected function getOverriddenMethod(ParsedMethod $method, $body)
     {
         $code = (
             preg_replace('/ {4}|\t/', '', $method->getDocComment()) . "\n" . // Original Doc-block
@@ -592,12 +585,12 @@ SETTER;
     /**
      * Returns constructor code
      *
-     * @param ParsedMethod|Method|null $constructor Constructor reflection
+     * @param ParsedMethod $constructor Constructor reflection
      * @param bool $isCallParent Is there is a need to call parent code
      *
      * @return string
      */
-    private function getConstructorBody($constructor, $isCallParent)
+    private function getConstructorBody(ParsedMethod $constructor, $isCallParent)
     {
         $assocProperties = array();
         $listProperties  = array();

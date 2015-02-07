@@ -13,8 +13,6 @@ namespace Go\Proxy;
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
-use ReflectionMethod as Method;
-use ReflectionParameter as Parameter;
 use Go\Core\AspectContainer;
 use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionParameter as ParsedParameter;
@@ -83,19 +81,18 @@ class TraitProxy extends ClassProxy
     /**
      * Creates definition for trait method body
      *
-     * @param Method|ParsedMethod $method Method reflection
+     * @param ParsedMethod $method Method reflection
      *
      * @return string new method body
      */
-    protected function getJoinpointInvocationBody($method)
+    protected function getJoinpointInvocationBody(ParsedMethod $method)
     {
         $isStatic = $method->isStatic();
         $class    = '\\' . __CLASS__;
         $scope    = $isStatic ? $this->staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
-        $args = join(', ', array_map(function ($param) {
-            /** @var $param Parameter|ParsedParameter */
+        $args = join(', ', array_map(function (ParsedParameter $param) {
             $byReference = $param->isPassedByReference() ? '&' : '';
 
             return $byReference . '$' . $param->name;

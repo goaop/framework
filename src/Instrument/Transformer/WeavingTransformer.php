@@ -134,7 +134,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * @param ParsedClass $class Instance of class to analyze
      * @param integer $lineOffset Current offset, will be updated to store the last position
      */
-    private function processSingleClass(StreamMetaData $metadata, $class, &$lineOffset)
+    private function processSingleClass(StreamMetaData $metadata, ParsedClass $class, &$lineOffset)
     {
         $advices = $this->adviceMatcher->getAdvicesForClass($class);
 
