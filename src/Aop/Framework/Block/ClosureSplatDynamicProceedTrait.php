@@ -10,23 +10,9 @@
 
 namespace Go\Aop\Framework\Block;
 
-use Go\Aop\Intercept\Interceptor;
-
 trait ClosureSplatDynamicProceedTrait
 {
-    /**
-     * Closure to use
-     *
-     * @var \Closure
-     */
-    protected $closureToCall = null;
-
-    /**
-     * Previous scope of invocation
-     *
-     * @var null
-     */
-    protected $previousInstance = null;
+    use ClosureDynamicProceedTrait;
 
     /**
      * Invokes original method and return result from it
@@ -36,7 +22,7 @@ trait ClosureSplatDynamicProceedTrait
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor Interceptor */
+            /** @var $currentInterceptor \Go\Aop\Intercept\Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);

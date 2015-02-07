@@ -12,19 +12,7 @@ namespace Go\Aop\Framework\Block;
 
 trait ClosureStaticProceedTrait
 {
-    /**
-     * Closure to use
-     *
-     * @var \Closure
-     */
-    private $closureToCall = null;
-
-    /**
-     * Previous scope of invocation
-     *
-     * @var null
-     */
-    private $previousScope = null;
+    use ClosureDynamicProceedTrait;
 
     /**
      * Invokes original method and return result from it
@@ -41,12 +29,12 @@ trait ClosureStaticProceedTrait
         }
 
         // Rebind the closure if scope (class name) was changed since last time
-        if ($this->previousScope !== $this->instance) {
+        if ($this->previousInstance !== $this->instance) {
             if ($this->closureToCall === null) {
                 $this->closureToCall = $this->getStaticInvoker($this->className, $this->reflectionMethod->name);
             }
             $this->closureToCall = $this->closureToCall->bindTo(null, $this->instance);
-            $this->previousScope = $this->instance;
+            $this->previousInstance = $this->instance;
         }
 
         $closureToCall = $this->closureToCall;
