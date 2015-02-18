@@ -499,12 +499,7 @@ class ClassProxy extends AbstractProxy
         if ($constructor) {
             $this->override('__construct', $this->getConstructorBody($constructor, true));
         } else {
-            $this->setMethod(
-                Method::IS_PUBLIC,
-                '__construct',
-                $this->getConstructorBody($constructor, false),
-                ''
-            );
+            $this->setMethod(Method::IS_PUBLIC, '__construct', $this->getConstructorBody(), '');
         }
     }
 
@@ -590,7 +585,7 @@ SETTER;
      *
      * @return string
      */
-    private function getConstructorBody(ParsedMethod $constructor, $isCallParent)
+    private function getConstructorBody(ParsedMethod $constructor = null, $isCallParent = false)
     {
         $assocProperties = array();
         $listProperties  = array();
@@ -600,7 +595,7 @@ SETTER;
         }
         $assocProperties = $this->indent(join(',' . PHP_EOL, $assocProperties));
         $listProperties  = $this->indent(join(',' . PHP_EOL, $listProperties));
-        if (isset($this->methodsCode['__construct'])) {
+        if ($constructor) {
             $parentCall = $this->getJoinpointInvocationBody($constructor);
         } elseif ($isCallParent) {
             $parentCall = '\call_user_func_array(array("parent", __FUNCTION__), \func_get_args());';
