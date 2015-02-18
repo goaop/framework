@@ -10,6 +10,7 @@ Go! AOP is a modern aspect-oriented framework in plain PHP with rich features fo
 [![SensioLabs Insight](https://img.shields.io/sensiolabs/i/5998393e-29ea-48f8-8e7e-b19e86daa2db.svg)](https://insight.sensiolabs.com/projects/5998393e-29ea-48f8-8e7e-b19e86daa2db)
 [![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%205.4-8892BF.svg)](https://php.net/)
 [![License](https://img.shields.io/packagist/l/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
+[![Gratipay](https://img.shields.io/gratipay/lisachenko.svg)](https://gratipay.com/lisachenko/)
 
 Features
 ------------
