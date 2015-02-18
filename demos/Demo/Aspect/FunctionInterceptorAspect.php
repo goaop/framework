@@ -31,9 +31,8 @@ class FunctionInterceptorAspect implements Aspect
      */
     public function aroundArrayFunctions(FunctionInvocation $invocation)
     {
-        echo 'Calling Around Interceptor for function: ',
-            $invocation->getFunction()->getName(),
-            '()',
+        echo 'Calling Around Interceptor for ',
+            $invocation,
             ' with arguments: ',
             json_encode($invocation->getArguments()),
             PHP_EOL;
@@ -52,9 +51,8 @@ class FunctionInterceptorAspect implements Aspect
      */
     public function aroundFileGetContents(FunctionInvocation $invocation)
     {
-        echo 'Calling Around Interceptor for function: ',
-            $invocation->getFunction()->getName(),
-            '()',
+        echo 'Calling Around Interceptor for ',
+            $invocation,
             ' with arguments: ',
             json_encode($invocation->getArguments()),
             PHP_EOL;

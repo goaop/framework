@@ -25,24 +25,15 @@ class PropertyInterceptorAspect implements Aspect
     /**
      * Advice that controls an access to the properties
      *
-     * @param FieldAccess $property Joinpoint
+     * @param FieldAccess $fieldAccess Joinpoint
      *
      * @Around("access(* Demo\Example\PropertyDemo->*)")
      * @return mixed
      */
-    public function aroundFieldAccess(FieldAccess $property)
+    public function aroundFieldAccess(FieldAccess $fieldAccess)
     {
-        $type  = $property->getAccessType() === FieldAccess::READ ? 'read' : 'write';
-        $value = $property->proceed();
-        echo
-            "Calling Around Interceptor for field: ",
-            get_class($property->getThis()),
-            "->",
-            $property->getField()->getName(),
-            ", access: $type",
-            ", value: ",
-            json_encode($value),
-            PHP_EOL;
+        $value = $fieldAccess->proceed();
+        echo "Calling Around Interceptor for ", $fieldAccess, ", value: ", json_encode($value), PHP_EOL;
 
         // $value = 666; You can change the return value for read/write operations in advice!
         return $value;
