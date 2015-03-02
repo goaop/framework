@@ -4,19 +4,19 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "a35b00f381d2746348812cabba591a94",
+    "hash": "de9a8c1dbd868f3def0f2990a133d38c",
     "packages": [
         {
-            "name": "apigen/token-reflection",
+            "name": "andrewsville/php-token-reflection",
             "version": "1.4.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/apigen/TokenReflection.git",
+                "url": "https://github.com/Andrewsville/PHP-Token-Reflection.git",
                 "reference": "e6d0ac2baf66cdf154be34c3d2a2aa1bd4b426ee"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/apigen/TokenReflection/zipball/e6d0ac2baf66cdf154be34c3d2a2aa1bd4b426ee",
+                "url": "https://api.github.com/repos/Andrewsville/PHP-Token-Reflection/zipball/e6d0ac2baf66cdf154be34c3d2a2aa1bd4b426ee",
                 "reference": "e6d0ac2baf66cdf154be34c3d2a2aa1bd4b426ee",
                 "shasum": ""
             },
@@ -180,20 +180,20 @@
             "version": "v1.0.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/jakubledl/dissect",
-                "reference": "v1.0.1"
+                "url": "https://github.com/jakubledl/dissect.git",
+                "reference": "d3a391de31e45a247e95cef6cf58a91c05af67c4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/jakubledl/dissect/archive/v1.0.1.zip",
-                "reference": "v1.0.1",
+                "url": "https://api.github.com/repos/jakubledl/dissect/zipball/d3a391de31e45a247e95cef6cf58a91c05af67c4",
+                "reference": "d3a391de31e45a247e95cef6cf58a91c05af67c4",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.3"
             },
             "require-dev": {
-                "symfony/console": ">=2.1,<3.0"
+                "symfony/console": "~2.1"
             },
             "suggest": {
                 "symfony/console": "for the command-line tool"
@@ -234,17 +234,17 @@
     "packages-dev": [
         {
             "name": "symfony/console",
-            "version": "v2.6.3",
+            "version": "v2.6.4",
             "target-dir": "Symfony/Component/Console",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/Console.git",
-                "reference": "6ac6491ff60c0e5a941db3ccdc75a07adbb61476"
+                "reference": "e44154bfe3e41e8267d7a3794cd9da9a51cfac34"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Console/zipball/6ac6491ff60c0e5a941db3ccdc75a07adbb61476",
-                "reference": "6ac6491ff60c0e5a941db3ccdc75a07adbb61476",
+                "url": "https://api.github.com/repos/symfony/Console/zipball/e44154bfe3e41e8267d7a3794cd9da9a51cfac34",
+                "reference": "e44154bfe3e41e8267d7a3794cd9da9a51cfac34",
                 "shasum": ""
             },
             "require": {
@@ -287,7 +287,7 @@
             ],
             "description": "Symfony Console Component",
             "homepage": "http://symfony.com",
-            "time": "2015-01-06 17:50:02"
+            "time": "2015-01-25 04:39:26"
         }
     ],
     "aliases": [],
