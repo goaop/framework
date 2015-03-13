@@ -104,7 +104,7 @@ class FilterInjectorTransformer implements SourceTransformer
             return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
         }
 
-        $newResource = self::$kernel->getCachePathResolver()->getCachePathForResource($resource);
+        $newResource = self::$kernel->getContainer()->get('aspect.cache.path.resolver')->getCachePathForResource($resource);
 
         // Trigger creation of cache, this will create a cache file with $newResource name
         if (!$usePrebuiltCache && !file_exists($newResource)) {

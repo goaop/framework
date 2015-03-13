@@ -39,7 +39,7 @@ class CachingTransformer extends BaseSourceTransformer
      *
      * @var integer|null
      */
-    protected $cachePerms;
+    protected $cacheFileMode;
 
     /**
      * @var array|callable|SourceTransformer[]
@@ -73,7 +73,7 @@ class CachingTransformer extends BaseSourceTransformer
                 throw new \InvalidArgumentException("Cache directory {$cacheDir} is not writable");
             }
             $this->cachePath = $cacheDir;
-            $this->cachePerms = (int)$this->options['cachePerms'];
+            $this->cacheFileMode = (int)$this->options['cacheFileMode'];
         }
 
         $this->rootPath     = $this->options['appDir'];
@@ -96,11 +96,11 @@ class CachingTransformer extends BaseSourceTransformer
         }
 
         $originalUri = $metadata->uri;
-        $cacheUri    = $this->kernel->getCachePathResolver()->getCachePathForResource($originalUri);
+        $cacheUri    = $this->container->get('aspect.cache.path.resolver')->getCachePathForResource($originalUri);
 
-        $lastModified  = filemtime($originalUri);
-        $cacheExisted = file_exists($cacheUri);
-        $cacheModified = $cacheExisted ? filemtime($cacheUri) : 0;
+        $lastModified   = filemtime($originalUri);
+        $isNewCacheFile = !file_exists($cacheUri);
+        $cacheModified  = $isNewCacheFile ? 0 : filemtime($cacheUri);
 
         if ($cacheModified < $lastModified || !$this->container->isFresh($cacheModified)) {
             $parentCacheDir = dirname($cacheUri);
@@ -109,8 +109,8 @@ class CachingTransformer extends BaseSourceTransformer
             }
             $this->processTransformers($metadata);
             file_put_contents($cacheUri, $metadata->source);
-            if (!$cacheExisted && $this->cachePerms){
-                chmod($cacheUri, $this->cachePerms);
+            if ($isNewCacheFile && $this->cacheFileMode){
+                chmod($cacheUri, $this->cacheFileMode);
             }
 
             return;
