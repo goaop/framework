@@ -12,6 +12,7 @@ namespace Go\Core;
 
 use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
+use Go\Instrument\ClassLoading\CachePathResolver;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\CleanableMemory;
 use Go\Instrument\PathResolver;
@@ -58,11 +59,25 @@ abstract class AspectKernel
     protected static $containerClass = 'Go\Core\GoAspectContainer';
 
     /**
+     * Default class name for cache path resolver, can be redefined in children
+     *
+     * @var string
+     */
+    protected static $cachePathResolverClass = 'Go\Instrument\ClassLoading\CachePathResolver';
+
+    /**
      * Aspect container instance
      *
      * @var null|AspectContainer
      */
     protected $container = null;
+
+    /**
+     * Cache path resolver instance
+     *
+     * @var null|CachePathResolver
+     */
+    protected $cachePathResolver = null;
 
     /**
      * Protected constructor is used to prevent direct creation, but allows customization if needed
@@ -92,6 +107,8 @@ abstract class AspectKernel
     {
         $this->options = $this->normalizeOptions($options);
         define('AOP_CACHE_DIR', $this->options['cacheDir']);
+
+        $this->cachePathResolver = new $this->options['cachePathResolverClass']($this);
 
         /** @var $container AspectContainer */
         $container = $this->container = new $this->options['containerClass'];
@@ -124,6 +141,16 @@ abstract class AspectKernel
     public function getContainer()
     {
         return $this->container;
+    }
+
+    /**
+     * Returns an instance of cache path resolver
+     *
+     * @return null|CachePathResolver
+     */
+    public function getCachePathResolver ()
+    {
+        return $this->cachePathResolver;
     }
 
     /**
@@ -176,6 +203,7 @@ abstract class AspectKernel
      *   debug    - boolean Determines whether or not kernel is in debug mode
      *   appDir   - string Path to the application root directory.
      *   cacheDir - string Path to the cache directory where compiled classes will be stored
+     *   cachePerms - integer Binary mask of permission bits that is set to cache files
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
@@ -190,11 +218,13 @@ abstract class AspectKernel
             'debug'     => false,
             'appDir'    => __DIR__ . '/../../../../../../',
             'cacheDir'  => null,
+            'cachePerms'=> null,
             'features' => $features,
 
-            'includePaths'       => array(),
-            'excludePaths'       => array(),
-            'containerClass'     => static::$containerClass,
+            'includePaths'           => array(),
+            'excludePaths'           => array(),
+            'containerClass'         => static::$containerClass,
+            'cachePathResolverClass' => static::$cachePathResolverClass,
         );
     }
 
@@ -234,7 +264,7 @@ abstract class AspectKernel
      */
     protected function registerTransformers()
     {
-        $filterInjector   = new FilterInjectorTransformer($this->options, SourceTransformingLoader::getId());
+        $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId());
         $magicTransformer = new MagicConstantTransformer($this);
         $aspectKernel     = $this;
 
@@ -254,12 +284,24 @@ abstract class AspectKernel
                 $transformers[] = new ConstructorExecutionTransformer();
             }
 
-            return $transformers;
+            return $aspectKernel->customizeTransformers($transformers);
         };
 
         return array(
             new CachingTransformer($this, $sourceTransformers)
         );
+    }
+
+    /**
+     * An opportunity to add/remove some transformers depending on project needs
+     *
+     * @param array|SourceTransformer[] $defaultTransformers
+     *
+     * @return array|\Go\Instrument\Transformer\SourceTransformer[]
+     */
+    protected function customizeTransformers (array $defaultTransformers)
+    {
+        return $defaultTransformers;
     }
 
     /**

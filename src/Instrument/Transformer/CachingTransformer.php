@@ -34,6 +34,14 @@ class CachingTransformer extends BaseSourceTransformer
     protected $cachePath = '';
 
     /**
+     * Mask of permission bits for cache files.
+     * By default, permissions are affected by the umask system setting
+     *
+     * @var integer|null
+     */
+    protected $cachePerms;
+
+    /**
      * @var array|callable|SourceTransformer[]
      */
     protected $transformers = array();
@@ -65,6 +73,7 @@ class CachingTransformer extends BaseSourceTransformer
                 throw new \InvalidArgumentException("Cache directory {$cacheDir} is not writable");
             }
             $this->cachePath = $cacheDir;
+            $this->cachePerms = (int)$this->options['cachePerms'];
         }
 
         $this->rootPath     = $this->options['appDir'];
@@ -87,10 +96,11 @@ class CachingTransformer extends BaseSourceTransformer
         }
 
         $originalUri = $metadata->uri;
-        $cacheUri    = str_replace($this->rootPath, $this->cachePath, $originalUri);
+        $cacheUri    = $this->kernel->getCachePathResolver()->getCachePathForResource($originalUri);
 
         $lastModified  = filemtime($originalUri);
-        $cacheModified = file_exists($cacheUri) ? filemtime($cacheUri) : 0;
+        $cacheExisted = file_exists($cacheUri);
+        $cacheModified = $cacheExisted ? filemtime($cacheUri) : 0;
 
         if ($cacheModified < $lastModified || !$this->container->isFresh($cacheModified)) {
             $parentCacheDir = dirname($cacheUri);
@@ -99,6 +109,9 @@ class CachingTransformer extends BaseSourceTransformer
             }
             $this->processTransformers($metadata);
             file_put_contents($cacheUri, $metadata->source);
+            if (!$cacheExisted && $this->cachePerms){
+                chmod($cacheUri, $this->cachePerms);
+            }
 
             return;
         }
