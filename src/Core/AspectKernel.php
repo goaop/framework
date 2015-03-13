@@ -257,24 +257,12 @@ abstract class AspectKernel
                 $transformers[] = new ConstructorExecutionTransformer();
             }
 
-            return $aspectKernel->customizeTransformers($transformers);
+            return $transformers;
         };
 
         return array(
             new CachingTransformer($this, $sourceTransformers)
         );
-    }
-
-    /**
-     * An opportunity to add/remove some transformers depending on project needs
-     *
-     * @param array|SourceTransformer[] $defaultTransformers
-     *
-     * @return array|\Go\Instrument\Transformer\SourceTransformer[]
-     */
-    protected function customizeTransformers (array $defaultTransformers)
-    {
-        return $defaultTransformers;
     }
 
     /**
