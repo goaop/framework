@@ -30,7 +30,8 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
                         'appDir'   => '',
                         'debug'    => false,
                         'features' => 0
-                    )
+                    ),
+                    $this->getMock('Go\Core\GoAspectContainer')
                 ),
                 'unit.test'
             );
@@ -45,7 +46,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
      *
      * @return \PHPUnit_Framework_MockObject_MockObject|\Go\Core\AspectKernel
      */
-    protected function getKernelMock($options)
+    protected function getKernelMock($options, $container)
     {
         $mock = $this->getMockForAbstractClass(
             'Go\Core\AspectKernel',
@@ -54,12 +55,18 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
             false,
             true,
             true,
-            array('getOptions')
+            array('getOptions', 'getContainer')
         );
         $mock->expects($this->any())
             ->method('getOptions')
             ->will(
                 $this->returnValue($options)
+            );
+
+        $mock->expects($this->any())
+            ->method('getContainer')
+            ->will(
+                $this->returnValue($container)
             );
         return $mock;
     }
@@ -85,7 +92,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testCanBeConfiguredOnlyOnce()
     {
-        $filter = new FilterInjectorTransformer($this->getKernelMock(array()), 'test');
+        $filter = new FilterInjectorTransformer($this->getKernelMock(array(), $this->getMock('Go\Core\GoAspectContainer')), 'test');
     }
 
     public function testCanTransformInclude()

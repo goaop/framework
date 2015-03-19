@@ -12,6 +12,7 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\CachePathResolver;
 
 /**
  * Caching transformer that is able to take the transformed source from a cache
@@ -47,6 +48,11 @@ class CachingTransformer extends BaseSourceTransformer
     protected $transformers = array();
 
     /**
+     * @var CachePathResolver|null
+     */
+    protected $cachePathResolver;
+
+    /**
      * Class constructor
      *
      * @param AspectKernel $kernel Instance of aspect kernel
@@ -58,6 +64,7 @@ class CachingTransformer extends BaseSourceTransformer
     {
         parent::__construct($kernel);
         $cacheDir = $this->options['cacheDir'];
+        $this->cachePathResolver = $kernel->getContainer()->get('aspect.cache.path.resolver');
 
         if ($cacheDir) {
             if (!is_dir($cacheDir)) {
@@ -96,7 +103,7 @@ class CachingTransformer extends BaseSourceTransformer
         }
 
         $originalUri = $metadata->uri;
-        $cacheUri    = $this->container->get('aspect.cache.path.resolver')->getCachePathForResource($originalUri);
+        $cacheUri    = $this->cachePathResolver->getCachePathForResource($originalUri);
 
         $lastModified   = filemtime($originalUri);
         $isNewCacheFile = !file_exists($cacheUri);

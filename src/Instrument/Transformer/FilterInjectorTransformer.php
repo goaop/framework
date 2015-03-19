@@ -13,6 +13,7 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
+use Go\Instrument\ClassLoading\CachePathResolver;
 
 /**
  * Transformer that injects source filter for "require" and "include" operations
@@ -45,6 +46,11 @@ class FilterInjectorTransformer implements SourceTransformer
     protected static $kernel;
 
     /**
+     * @var CachePathResolver|null
+     */
+    protected static $cachePathResolver;
+
+    /**
      * Class constructor
      *
      * @param AspectKernel $kernel Kernel to take configuration from
@@ -65,12 +71,13 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     protected static function configure(AspectKernel $kernel, $filterName)
     {
-        if (!is_null(self::$kernel)) {
+        if (self::$kernel) {
             throw new \RuntimeException("Filter injector can be configured only once.");
         }
-        self::$kernel = $kernel;
-        self::$options    = $kernel->getOptions();
-        self::$filterName = $filterName;
+        self::$kernel            = $kernel;
+        self::$options           = $kernel->getOptions();
+        self::$filterName        = $filterName;
+        self::$cachePathResolver = $kernel->getContainer()->get('aspect.cache.path.resolver');
     }
 
     /**
@@ -104,7 +111,7 @@ class FilterInjectorTransformer implements SourceTransformer
             return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
         }
 
-        $newResource = self::$kernel->getContainer()->get('aspect.cache.path.resolver')->getCachePathForResource($resource);
+        $newResource = self::$cachePathResolver->getCachePathForResource($resource);
 
         // Trigger creation of cache, this will create a cache file with $newResource name
         if (!$usePrebuiltCache && !file_exists($newResource)) {
