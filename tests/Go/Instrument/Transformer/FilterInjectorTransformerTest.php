@@ -24,11 +24,14 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     {
         if (!self::$transformer) {
             self::$transformer = new FilterInjectorTransformer(
-                array(
-                    'cacheDir' => null,
-                    'appDir'   => '',
-                    'debug'    => false,
-                    'features' => 0
+                $this->getKernelMock(
+                    array(
+                        'cacheDir' => null,
+                        'appDir'   => '',
+                        'debug'    => false,
+                        'features' => 0
+                    ),
+                    $this->getMock('Go\Core\GoAspectContainer')
                 ),
                 'unit.test'
             );
@@ -36,6 +39,36 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $stream = fopen('php://input', 'r');
         $this->metadata = new StreamMetaData($stream);
         fclose($stream);
+    }
+
+    /**
+     * Returns a mock for kernel
+     *
+     * @return \PHPUnit_Framework_MockObject_MockObject|\Go\Core\AspectKernel
+     */
+    protected function getKernelMock($options, $container)
+    {
+        $mock = $this->getMockForAbstractClass(
+            'Go\Core\AspectKernel',
+            array(),
+            '',
+            false,
+            true,
+            true,
+            array('getOptions', 'getContainer')
+        );
+        $mock->expects($this->any())
+            ->method('getOptions')
+            ->will(
+                $this->returnValue($options)
+            );
+
+        $mock->expects($this->any())
+            ->method('getContainer')
+            ->will(
+                $this->returnValue($container)
+            );
+        return $mock;
     }
 
     public function testCanTransformWithoutInclusion()
@@ -59,7 +92,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testCanBeConfiguredOnlyOnce()
     {
-        $filter = new FilterInjectorTransformer(array(), 'test');
+        $filter = new FilterInjectorTransformer($this->getKernelMock(array(), $this->getMock('Go\Core\GoAspectContainer')), 'test');
     }
 
     public function testCanTransformInclude()

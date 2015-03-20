@@ -11,7 +11,9 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Aop\Features;
+use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
+use Go\Instrument\ClassLoading\CachePathResolver;
 
 /**
  * Transformer that injects source filter for "require" and "include" operations
@@ -39,31 +41,43 @@ class FilterInjectorTransformer implements SourceTransformer
     protected static $options = array();
 
     /**
+     * @var AspectKernel|null
+     */
+    protected static $kernel;
+
+    /**
+     * @var CachePathResolver|null
+     */
+    protected static $cachePathResolver;
+
+    /**
      * Class constructor
      *
-     * @param array $options Configuration options from kernel
+     * @param AspectKernel $kernel Kernel to take configuration from
      * @param string $filterName Name of the filter to inject
      */
-    public function __construct(array $options, $filterName)
+    public function __construct(AspectKernel $kernel, $filterName)
     {
-        self::configure($options, $filterName);
+        self::configure($kernel, $filterName);
     }
 
     /**
      * Static configurator for filter
      *
-     * @param array $options Kernel options
+     * @param AspectKernel $kernel Kernel to use for configuration
      * @param string $filterName Name of the filter to inject
      *
      * @throws \RuntimeException if filter was configured early
      */
-    protected static function configure(array $options, $filterName)
+    protected static function configure(AspectKernel $kernel, $filterName)
     {
-        if (self::$options) {
+        if (self::$kernel) {
             throw new \RuntimeException("Filter injector can be configured only once.");
         }
-        self::$options    = $options;
-        self::$filterName = $filterName;
+        self::$kernel            = $kernel;
+        self::$options           = $kernel->getOptions();
+        self::$filterName        = $filterName;
+        self::$cachePathResolver = $kernel->getContainer()->get('aspect.cache.path.resolver');
     }
 
     /**
@@ -97,7 +111,7 @@ class FilterInjectorTransformer implements SourceTransformer
             return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
         }
 
-        $newResource = str_replace($appDir, $cacheDir, $resource);
+        $newResource = self::$cachePathResolver->getCachePathForResource($resource);
 
         // Trigger creation of cache, this will create a cache file with $newResource name
         if (!$usePrebuiltCache && !file_exists($newResource)) {

@@ -12,6 +12,7 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\CachePathResolver;
 
 /**
  * Caching transformer that is able to take the transformed source from a cache
@@ -34,9 +35,22 @@ class CachingTransformer extends BaseSourceTransformer
     protected $cachePath = '';
 
     /**
+     * Mask of permission bits for cache files.
+     * By default, permissions are affected by the umask system setting
+     *
+     * @var integer|null
+     */
+    protected $cacheFileMode;
+
+    /**
      * @var array|callable|SourceTransformer[]
      */
     protected $transformers = array();
+
+    /**
+     * @var CachePathResolver|null
+     */
+    protected $cachePathResolver;
 
     /**
      * Class constructor
@@ -50,6 +64,7 @@ class CachingTransformer extends BaseSourceTransformer
     {
         parent::__construct($kernel);
         $cacheDir = $this->options['cacheDir'];
+        $this->cachePathResolver = $kernel->getContainer()->get('aspect.cache.path.resolver');
 
         if ($cacheDir) {
             if (!is_dir($cacheDir)) {
@@ -65,6 +80,7 @@ class CachingTransformer extends BaseSourceTransformer
                 throw new \InvalidArgumentException("Cache directory {$cacheDir} is not writable");
             }
             $this->cachePath = $cacheDir;
+            $this->cacheFileMode = (int)$this->options['cacheFileMode'];
         }
 
         $this->rootPath     = $this->options['appDir'];
@@ -87,10 +103,11 @@ class CachingTransformer extends BaseSourceTransformer
         }
 
         $originalUri = $metadata->uri;
-        $cacheUri    = str_replace($this->rootPath, $this->cachePath, $originalUri);
+        $cacheUri    = $this->cachePathResolver->getCachePathForResource($originalUri);
 
-        $lastModified  = filemtime($originalUri);
-        $cacheModified = file_exists($cacheUri) ? filemtime($cacheUri) : 0;
+        $lastModified   = filemtime($originalUri);
+        $isNewCacheFile = !file_exists($cacheUri);
+        $cacheModified  = $isNewCacheFile ? 0 : filemtime($cacheUri);
 
         if ($cacheModified < $lastModified || !$this->container->isFresh($cacheModified)) {
             $parentCacheDir = dirname($cacheUri);
@@ -99,6 +116,9 @@ class CachingTransformer extends BaseSourceTransformer
             }
             $this->processTransformers($metadata);
             file_put_contents($cacheUri, $metadata->source);
+            if ($isNewCacheFile && $this->cacheFileMode){
+                chmod($cacheUri, $this->cacheFileMode);
+            }
 
             return;
         }

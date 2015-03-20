@@ -12,6 +12,7 @@ namespace Go\Core;
 
 use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
+use Go\Instrument\ClassLoading\CachePathResolver;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\CleanableMemory;
 use Go\Instrument\PathResolver;
@@ -176,6 +177,7 @@ abstract class AspectKernel
      *   debug    - boolean Determines whether or not kernel is in debug mode
      *   appDir   - string Path to the application root directory.
      *   cacheDir - string Path to the cache directory where compiled classes will be stored
+     *   cacheFileMode - integer Binary mask of permission bits that is set to cache files
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
@@ -187,14 +189,15 @@ abstract class AspectKernel
         $features = static::getDefaultFeatures();
 
         return array(
-            'debug'     => false,
-            'appDir'    => __DIR__ . '/../../../../../../',
-            'cacheDir'  => null,
-            'features' => $features,
+            'debug'                  => false,
+            'appDir'                 => __DIR__ . '/../../../../../../',
+            'cacheDir'               => null,
+            'cacheFileMode'          => null,
+            'features'               => $features,
 
-            'includePaths'       => array(),
-            'excludePaths'       => array(),
-            'containerClass'     => static::$containerClass,
+            'includePaths'           => array(),
+            'excludePaths'           => array(),
+            'containerClass'         => static::$containerClass,
         );
     }
 
@@ -234,7 +237,7 @@ abstract class AspectKernel
      */
     protected function registerTransformers()
     {
-        $filterInjector   = new FilterInjectorTransformer($this->options, SourceTransformingLoader::getId());
+        $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId());
         $magicTransformer = new MagicConstantTransformer($this);
         $aspectKernel     = $this;
 
