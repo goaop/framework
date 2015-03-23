@@ -101,8 +101,8 @@ class GoAspectContainer extends Container implements AspectContainer
         $this->share('aspect.annotation.raw.reader', function () {
             return new RawAnnotationReader();
         });
-        $this->share('aspect.cache.path.resolver', function () {
-            return new CachePathResolver();
+        $this->share('aspect.cache.path.resolver', function (Container $container) {
+            return new CachePathResolver($container->get('kernel'));
         });
 
         // Pointcut services
