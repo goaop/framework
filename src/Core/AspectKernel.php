@@ -12,7 +12,6 @@ namespace Go\Core;
 
 use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
-use Go\Instrument\ClassLoading\CachePathResolver;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\CleanableMemory;
 use Go\Instrument\PathResolver;
