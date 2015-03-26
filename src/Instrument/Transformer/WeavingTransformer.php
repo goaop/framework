@@ -43,20 +43,6 @@ class WeavingTransformer extends BaseSourceTransformer
     protected $adviceMatcher;
 
     /**
-     * List of include paths to process
-     *
-     * @var array
-     */
-    protected $includePaths = array();
-
-    /**
-     * List of exclude paths to process
-     *
-     * @var array
-     */
-    protected $excludePaths = array();
-
-    /**
      * Constructs a weaving transformer
      *
      * @param AspectKernel $kernel Instance of aspect kernel
@@ -68,9 +54,6 @@ class WeavingTransformer extends BaseSourceTransformer
         parent::__construct($kernel);
         $this->broker        = $broker;
         $this->adviceMatcher = $adviceMatcher;
-
-        $this->includePaths = $this->options['includePaths'];
-        $this->excludePaths = $this->options['excludePaths'];
     }
 
     /**
@@ -82,9 +65,6 @@ class WeavingTransformer extends BaseSourceTransformer
     public function transform(StreamMetaData $metadata)
     {
         $fileName = $metadata->uri;
-        if (!$this->isAllowedToTransform($fileName)) {
-            return;
-        }
 
         try {
             CleanableMemory::enterProcessing();
@@ -210,36 +190,6 @@ class WeavingTransformer extends BaseSourceTransformer
         }
 
         return $source;
-    }
-
-    /**
-     * Verifies if file should be transformed or not
-     *
-     * @param string $fileName Name of the file to transform
-     * @return bool
-     */
-    private function isAllowedToTransform($fileName)
-    {
-        if ($this->includePaths) {
-            $found = false;
-            foreach ($this->includePaths as $includePath) {
-                if (strpos($fileName, $includePath) === 0) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                return false;
-            }
-        }
-
-        foreach ($this->excludePaths as $excludePath) {
-            if (strpos($fileName, $excludePath) === 0) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**

@@ -189,56 +189,6 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Transformer verifies include paths
-     */
-    public function testTransformerWithAnotherIncludePathSkip()
-    {
-        $this->transformer = new WeavingTransformer(
-            $this->getKernelMock(
-                array(
-                    'appDir'       => dirname(__DIR__),
-                    'includePaths' => array('/some/path'),
-                    'excludePaths' => array()
-                ),
-                $this->getMock('Go\Core\AspectContainer')
-            ),
-            $this->broker,
-            $this->adviceMatcher
-        );
-        $this->metadata->source = $this->loadTest('class');
-        $this->transformer->transform($this->metadata);
-
-        $actual   = $this->normalizeWhitespaces($this->metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('class'));
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
-     * Transformer exclude paths for internal libraries
-     */
-    public function testTransformerSkipInternalClasses()
-    {
-        $this->transformer = new WeavingTransformer(
-            $this->getKernelMock(
-                array(
-                    'appDir'       => dirname(__DIR__),
-                    'includePaths' => array(),
-                    'excludePaths' => array(__DIR__)
-                ),
-                $this->getMock('Go\Core\AspectContainer')
-            ),
-            $this->broker,
-            $this->adviceMatcher
-        );
-        $this->metadata->source = $this->loadTest('class');
-        $this->transformer->transform($this->metadata);
-
-        $actual   = $this->normalizeWhitespaces($this->metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('class'));
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
      */
     public function testMultipleClasses()

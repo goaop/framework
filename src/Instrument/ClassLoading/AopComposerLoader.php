@@ -28,24 +28,20 @@ class AopComposerLoader
     protected $original = null;
 
     /**
-     * List of internal dependencies that should not be analyzed by AOP
+     * AOP kernel options
      *
      * @var array
      */
-    protected $internalNamespaces = array(
-        'Go\\',
-        'Dissect\\',
-        'Doctrine\\Common\\',
-        'TokenReflection\\',
-    );
+    protected $options = array();
 
     /**
      * Constructs an wrapper for the composer loader
      *
      * @param ClassLoader $original Instance of current loader
      */
-    public function __construct(ClassLoader $original)
+    public function __construct(ClassLoader $original, array $options = array())
     {
+        $this->options  = $options;
         $this->original = $original;
     }
 
@@ -53,8 +49,10 @@ class AopComposerLoader
      * Initialize aspect autoloader
      *
      * Replaces original composer autoloader with wrapper
+     *
+     * @param array $options Aspect kernel options
      */
-    public static function init()
+    public static function init(array $options = array())
     {
         $loaders = spl_autoload_functions();
 
@@ -69,7 +67,7 @@ class AopComposerLoader
 
                     return class_exists($class, false);
                 });
-                $loader[0] = new AopComposerLoader($loader[0]);
+                $loader[0] = new AopComposerLoader($loader[0], $options);
             }
             spl_autoload_unregister($loaderToUnregister);
         }
@@ -86,15 +84,13 @@ class AopComposerLoader
     public function loadClass($class)
     {
         if ($file = $this->original->findFile($class)) {
-            $isInternal = false;
-            foreach ($this->internalNamespaces as $ns) {
-                if (strpos($class, $ns) === 0) {
-                    $isInternal = true;
-                    break;
-                }
-            }
+            $isAllowedToTransform = $this->isAllowedToTransform($file);
 
-            include ($isInternal ? $file : FilterInjectorTransformer::rewrite($file));
+            if ($isAllowedToTransform) {
+                include FilterInjectorTransformer::rewrite($file);
+            } else {
+                include $file;
+            }
         }
     }
 
@@ -104,5 +100,46 @@ class AopComposerLoader
     public function findFile($class)
     {
         return $this->original->findFile($class);
+    }
+
+    /**
+     * Verifies if file should be transformed or not
+     *
+     * @param string $fileName Name of the file to transform
+     * @return bool
+     */
+    private function isAllowedToTransform($fileName)
+    {
+        static $appDir, $includePaths, $excludePaths;
+        if (!isset($appDir, $includePaths, $excludePaths)) {
+            extract($this->options, EXTR_IF_EXISTS);
+            $excludePaths[] = substr(__DIR__, 0, /* strlen('/Instrument/ClassLoading') */ -24);
+        }
+
+        // Do not touch files that not under appDir
+        if (strpos($fileName, $appDir) !== 0) {
+            return false;
+        }
+
+        if ($includePaths) {
+            $found = false;
+            foreach ($includePaths as $includePath) {
+                if (strpos($fileName, $includePath) === 0) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                return false;
+            }
+        }
+
+        foreach ($excludePaths as $excludePath) {
+            if (strpos($fileName, $excludePath) === 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
