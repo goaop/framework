@@ -214,6 +214,7 @@ abstract class AspectKernel
         if ($options['cacheDir']) {
             $options['excludePaths'][] = $options['cacheDir'];
         }
+        $options['excludePaths'][] = __DIR__ . '/../';
 
         $options['appDir']   = PathResolver::realpath($options['appDir']);
         $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
