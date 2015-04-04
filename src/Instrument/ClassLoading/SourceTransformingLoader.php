@@ -13,7 +13,6 @@ namespace Go\Instrument\ClassLoading;
 use php_user_filter as PhpStreamFilter;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\SourceTransformer;
-use Go\Instrument\Transformer\FilterInjectorTransformer;
 
 /**
  * Php class loader filter for processing php code
@@ -120,18 +119,6 @@ class SourceTransformingLoader extends PhpStreamFilter
     public static function addTransformer(SourceTransformer $transformer)
     {
         self::$transformers[] = $transformer;
-    }
-
-    /**
-     * Load source file with transformation
-     *
-     * @param string $source Original source name
-     *
-     * @return mixed
-     */
-    public function load($source)
-    {
-        return include FilterInjectorTransformer::rewrite($source);
     }
 
     /**
