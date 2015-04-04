@@ -12,6 +12,7 @@ namespace Go\Console\Command;
 
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
+use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -67,15 +68,9 @@ EOT
             throw new \InvalidArgumentException("Cache warmer require the `cacheDir` options to be configured");
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator(
-                $options['appDir'],
-                \FilesystemIterator::SKIP_DOTS
-            )
-        );
+        $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
+        $iterator   = $enumerator->enumerate();
 
-        /** @var \CallbackFilterIterator|\SplFileInfo[] $iterator */
-        $iterator   = new \CallbackFilterIterator($iterator, $this->getFileFilter($options));
         $totalFiles = iterator_count($iterator);
         $output->writeln("Total <info>{$totalFiles}</info> files to process.");
         $iterator->rewind();
@@ -121,46 +116,5 @@ EOT
         }
 
         $output->writeln("<info>Done</info>");
-    }
-
-    /**
-     * Filter for files
-     *
-     * @param array $options Kernel options
-     *
-     * @return callable
-     */
-    protected function getFileFilter(array $options)
-    {
-        $includePaths   = $options['includePaths'];
-        $excludePaths   = $options['excludePaths'];
-        $excludePaths[] = $options['cacheDir'];
-
-        return function (\SplFileInfo $file) use ($includePaths, $excludePaths) {
-            if ($file->getExtension() !== 'php') {
-                return false;
-            };
-
-            if ($includePaths) {
-                $found = false;
-                foreach ($includePaths as $includePath) {
-                    if (strpos($file->getRealPath(), realpath($includePath)) === 0) {
-                        $found = true;
-                        break;
-                    }
-                }
-                if (!$found) {
-                    return false;
-                }
-            }
-
-            foreach ($excludePaths as $excludePath) {
-                if (strpos($file->getRealPath(), realpath($excludePath)) === 0) {
-                    return false;
-                }
-            }
-
-            return true;
-        };
     }
 }
