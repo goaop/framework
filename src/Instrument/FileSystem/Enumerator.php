@@ -64,7 +64,7 @@ class Enumerator
             )
         );
 
-        $callback = $this->getFilter($this->includePaths, $this->excludePaths);
+        $callback = $this->getFilter();
         $iterator = new \CallbackFilterIterator($iterator, $callback);
 
         return $iterator;
@@ -73,22 +73,29 @@ class Enumerator
     /**
      * Returns a filter callback for enumerating files
      *
-     * @param array $includePaths List of included paths
-     * @param array $excludePaths List of excluded paths
-     *
      * @return callable
      */
-    private function getFilter(array $includePaths, array $excludePaths)
+    public function getFilter()
     {
-        return function (\SplFileInfo $file) use ($includePaths, $excludePaths) {
+        $rootDirectory = $this->rootDirectory;
+        $includePaths  = $this->includePaths;
+        $excludePaths  = $this->excludePaths;
+
+        return function (\SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
             if ($file->getExtension() !== 'php') {
                 return false;
             };
 
+            $realPath = $file->getRealPath();
+            // Do not touch files that not under rootDirectory
+            if (strpos($realPath, $rootDirectory) !== 0) {
+                return false;
+            }
+
             if ($includePaths) {
                 $found = false;
                 foreach ($includePaths as $includePath) {
-                    if (strpos($file->getRealPath(), realpath($includePath)) === 0) {
+                    if (strpos($realPath, $includePath) === 0) {
                         $found = true;
                         break;
                     }
@@ -99,7 +106,7 @@ class Enumerator
             }
 
             foreach ($excludePaths as $excludePath) {
-                if (strpos($file->getRealPath(), realpath($excludePath)) === 0) {
+                if (strpos($realPath, $excludePath) === 0) {
                     return false;
                 }
             }

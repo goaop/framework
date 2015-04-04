@@ -10,6 +10,7 @@
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Composer\Autoload\ClassLoader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
@@ -35,6 +36,13 @@ class AopComposerLoader
     protected $options = array();
 
     /**
+     * File enumerator
+     *
+     * @var Enumerator
+     */
+    protected $fileEnumerator;
+
+    /**
      * Constructs an wrapper for the composer loader
      *
      * @param ClassLoader $original Instance of current loader
@@ -43,6 +51,9 @@ class AopComposerLoader
     {
         $this->options  = $options;
         $this->original = $original;
+
+        $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
+        $this->fileEnumerator = $enumerator;
     }
 
     /**
@@ -83,8 +94,13 @@ class AopComposerLoader
      */
     public function loadClass($class)
     {
+        static $isAllowedFilter = null;
+        if (!$isAllowedFilter) {
+            $isAllowedFilter = $this->fileEnumerator->getFilter();
+        }
+
         if ($file = $this->original->findFile($class)) {
-            $isAllowedToTransform = $this->isAllowedToTransform($file);
+            $isAllowedToTransform = $isAllowedFilter(new \SplFileInfo($file));
 
             if ($isAllowedToTransform) {
                 include FilterInjectorTransformer::rewrite($file);
@@ -100,46 +116,5 @@ class AopComposerLoader
     public function findFile($class)
     {
         return $this->original->findFile($class);
-    }
-
-    /**
-     * Verifies if file should be transformed or not
-     *
-     * @param string $fileName Name of the file to transform
-     * @return bool
-     */
-    private function isAllowedToTransform($fileName)
-    {
-        static $appDir, $includePaths, $excludePaths;
-        if (!isset($appDir, $includePaths, $excludePaths)) {
-            extract($this->options, EXTR_IF_EXISTS);
-            $excludePaths[] = substr(__DIR__, 0, /* strlen('/Instrument/ClassLoading') */ -24);
-        }
-
-        // Do not touch files that not under appDir
-        if (strpos($fileName, $appDir) !== 0) {
-            return false;
-        }
-
-        if ($includePaths) {
-            $found = false;
-            foreach ($includePaths as $includePath) {
-                if (strpos($fileName, $includePath) === 0) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                return false;
-            }
-        }
-
-        foreach ($excludePaths as $excludePath) {
-            if (strpos($fileName, $excludePath) === 0) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }
