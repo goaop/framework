@@ -211,6 +211,9 @@ abstract class AspectKernel
     protected function normalizeOptions(array $options)
     {
         $options = array_replace($this->getDefaultOptions(), $options);
+        if ($options['cacheDir']) {
+            $options['excludePaths'][] = $options['cacheDir'];
+        }
 
         $options['appDir']   = PathResolver::realpath($options['appDir']);
         $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
