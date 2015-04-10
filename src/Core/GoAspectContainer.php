@@ -80,7 +80,6 @@ class GoAspectContainer extends Container implements AspectContainer
         $this->share('aspect.advice_matcher', function (Container $container) {
             return new AdviceMatcher(
                 $container->get('aspect.loader'),
-                $container,
                 $container->get('kernel.interceptFunctions')
             );
         });
@@ -140,6 +139,18 @@ class GoAspectContainer extends Container implements AspectContainer
     public function registerPointcut(Aop\Pointcut $pointcut, $id)
     {
         $this->set("pointcut.{$id}", $pointcut, array('pointcut'));
+    }
+
+    /**
+     * Returns an advisor by identifier
+     *
+     * @param string $id Advisor identifier
+     *
+     * @return Aop\Advisor
+     */
+    public function getAdvisor($id)
+    {
+        return $this->get("advisor.{$id}");
     }
 
     /**

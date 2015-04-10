@@ -10,8 +10,10 @@
 
 namespace Go\Core;
 
+use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Framework;
+use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
@@ -63,15 +65,17 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     /**
      * Loads definition from specific point of aspect into the container
      *
-     * @param AspectContainer $container Instance of container
      * @param Aspect $aspect Instance of aspect
      * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
      *
+     * @return array|Pointcut[]|Advisor[]
+     *
      * @throws \UnexpectedValueException
      */
-    public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
+    public function load(Aspect $aspect, $reflection, $metaInformation = null)
     {
+        $loadedItems    = array();
         $pointcut       = $this->parsePointcut($aspect, $reflection, $metaInformation);
         $methodId       = get_class($aspect).'->'.$reflection->name;
         $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);
@@ -84,7 +88,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
         switch (true) {
             // Register a pointcut by its name
             case ($metaInformation instanceof Annotation\Pointcut):
-                $container->registerPointcut($pointcut, $methodId);
+                $loadedItems[$methodId] = $pointcut;
                 break;
 
             case ($pointcut instanceof PointFilter):
@@ -95,12 +99,14 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
                         $advice
                     );
                 }
-                $container->registerAdvisor(new DefaultPointcutAdvisor($pointcut, $advice), $methodId);
+                $loadedItems[$methodId] = new DefaultPointcutAdvisor($pointcut, $advice);
                 break;
 
             default:
                 throw new \UnexpectedValueException("Unsupported pointcut class: " . get_class($pointcut));
         }
+
+        return $loadedItems;
     }
 
     /**

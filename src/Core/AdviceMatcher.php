@@ -30,13 +30,6 @@ class AdviceMatcher
     protected $loader;
 
     /**
-     * Instance of container for aspect
-     *
-     * @var AspectContainer
-     */
-    protected $container;
-
-    /**
      * Flag to enable/disable support of global function interception
      *
      * @var bool
@@ -47,13 +40,11 @@ class AdviceMatcher
      * Constructor
      *
      * @param AspectLoader $loader Instance of aspect loader
-     * @param AspectContainer $container Container
      * @param bool $isInterceptFunctions Optional flag to enable function interception
      */
-    public function __construct(AspectLoader $loader, AspectContainer $container, $isInterceptFunctions = false)
+    public function __construct(AspectLoader $loader, $isInterceptFunctions = false)
     {
-        $this->loader    = $loader;
-        $this->container = $container;
+        $this->loader = $loader;
 
         $this->isInterceptFunctions = $isInterceptFunctions;
     }
@@ -62,10 +53,11 @@ class AdviceMatcher
      * Returns list of function advices for namespace
      *
      * @param ReflectionFileNamespace $namespace
+     * @param array|Aop\Advisor[] $advisors List of advisor to match
      *
      * @return array
      */
-    public function getAdvicesForFunctions(ReflectionFileNamespace $namespace)
+    public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors)
     {
         if (!$this->isInterceptFunctions || $namespace->getName() == 'no-namespace') {
             return array();
@@ -73,9 +65,7 @@ class AdviceMatcher
 
         $advices = array();
 
-        $this->loader->loadAdvisorsAndPointcuts();
-
-        foreach ($this->container->getByTag('advisor') as $advisorId => $advisor) {
+        foreach ($advisors as $advisorId => $advisor) {
 
             if ($advisor instanceof Aop\PointcutAdvisor) {
 
@@ -97,13 +87,12 @@ class AdviceMatcher
      * Return list of advices for class
      *
      * @param ParsedReflectionClass $class Class to advise
+     * @param array|Aop\Advisor[] $advisors List of advisor to match
      *
      * @return array|Aop\Advice[] List of advices for class
      */
-    public function getAdvicesForClass(ParsedReflectionClass $class)
+    public function getAdvicesForClass(ParsedReflectionClass $class, array $advisors)
     {
-        $this->loader->loadAdvisorsAndPointcuts();
-
         $classAdvices = array();
         $parentClass  = $class->getParentClass();
 
@@ -113,7 +102,7 @@ class AdviceMatcher
             $originalClass = $class;
         }
 
-        foreach ($this->container->getByTag('advisor') as $advisorId => $advisor) {
+        foreach ($advisors as $advisorId => $advisor) {
 
             if ($advisor instanceof Aop\PointcutAdvisor) {
 

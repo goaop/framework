@@ -58,7 +58,7 @@ class LazyAdvisorAccessor
             list(, $advisorName) = explode('.', $name);
             list($aspect)        = explode('->', $advisorName);
             $aspectInstance      = $this->container->getAspect($aspect);
-            $this->loader->load($aspectInstance);
+            $this->loader->loadAndRegister($aspectInstance);
 
             $advisor = $this->container->get($name);
         }

@@ -247,13 +247,15 @@ abstract class AspectKernel
         $aspectKernel     = $this;
 
         $sourceTransformers = function () use ($filterInjector, $magicTransformer, $aspectKernel) {
-            $transformers   = array();
-            $transformers[] = new WeavingTransformer(
+            $aspectContainer = $aspectKernel->getContainer();
+            $transformers    = array();
+            $transformers[]  = new WeavingTransformer(
                 $aspectKernel,
                 new TokenReflection\Broker(
                     new CleanableMemory()
                 ),
-                $aspectKernel->getContainer()->get('aspect.advice_matcher')
+                $aspectContainer->get('aspect.advice_matcher'),
+                $aspectContainer->get('aspect.cached.loader')
             );
             if ($aspectKernel->hasFeature(Features::INTERCEPT_INCLUDES)) {
                 $transformers[] = $filterInjector;
