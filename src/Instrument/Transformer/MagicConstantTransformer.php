@@ -50,7 +50,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return void
+     * @return void|bool Return false if transformation should be stopped
      */
     public function transform(StreamMetaData $metadata)
     {

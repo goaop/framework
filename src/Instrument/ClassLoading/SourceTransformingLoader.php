@@ -98,7 +98,7 @@ class SourceTransformingLoader extends PhpStreamFilter
 
             // $this->stream contains pointer to the source
             $metadata = new StreamMetaData($this->stream, $this->data);
-            $this->transformCode($metadata);
+            self::transformCode($metadata);
 
             $bucket = stream_bucket_new($this->stream, $metadata->source);
             stream_bucket_append($out, $bucket);
@@ -125,12 +125,18 @@ class SourceTransformingLoader extends PhpStreamFilter
      * Transforms source code by passing it through all transformers
      *
      * @param StreamMetaData|null $metadata Metadata from stream
-     * @return void
+     * @return void|bool Return false if transformation should be stopped
      */
-    protected function transformCode(StreamMetaData $metadata)
+    public static function transformCode(StreamMetaData $metadata)
     {
+        $result = null;
         foreach (self::$transformers as $transformer) {
-            $transformer->transform($metadata);
+            $result = $transformer->transform($metadata);
+            if ($result === false) {
+                break;
+            }
         }
+
+        return $result;
     }
 }

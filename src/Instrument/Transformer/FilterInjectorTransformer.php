@@ -129,7 +129,7 @@ class FilterInjectorTransformer implements SourceTransformer
      * Wrap all includes into rewrite filter
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return void
+     * @return void|bool Return false if transformation should be stopped
      */
     public function transform(StreamMetaData $metadata)
     {
