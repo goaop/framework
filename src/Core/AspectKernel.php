@@ -245,11 +245,7 @@ abstract class AspectKernel
         $aspectKernel     = $this;
 
         $sourceTransformers = function () use ($filterInjector, $magicTransformer, $aspectKernel) {
-            $transformers = array();
-            if ($aspectKernel->hasFeature(Features::INTERCEPT_INCLUDES)) {
-                $transformers[] = $filterInjector;
-            }
-            $transformers[] = $magicTransformer;
+            $transformers   = array();
             $transformers[] = new WeavingTransformer(
                 $aspectKernel,
                 new TokenReflection\Broker(
@@ -257,6 +253,11 @@ abstract class AspectKernel
                 ),
                 $aspectKernel->getContainer()->get('aspect.advice_matcher')
             );
+            if ($aspectKernel->hasFeature(Features::INTERCEPT_INCLUDES)) {
+                $transformers[] = $filterInjector;
+            }
+            $transformers[] = $magicTransformer;
+
             if ($aspectKernel->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
                 $transformers[] = new ConstructorExecutionTransformer();
             }
