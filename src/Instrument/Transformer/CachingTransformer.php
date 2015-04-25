@@ -120,7 +120,8 @@ class CachingTransformer extends BaseSourceTransformer
             }
             $this->cacheManager->setCacheState($originalUri, array(
                 'filemtime' => isset($_SERVER['REQUEST_TIME']) ? $_SERVER['REQUEST_TIME'] : time(),
-                'processed' => $wasProcessed
+                'processed' => $wasProcessed,
+                'cacheUri'  => $wasProcessed ? $cacheUri : null
             ));
 
             return $wasProcessed;

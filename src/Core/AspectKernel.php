@@ -110,7 +110,7 @@ abstract class AspectKernel
             $this->addKernelResourcesToContainer($container);
         }
 
-        AopComposerLoader::init($this->options);
+        AopComposerLoader::init($this->options, $container);
 
         // Register all AOP configuration in the container
         $this->configureAop($container);

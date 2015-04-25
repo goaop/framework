@@ -10,6 +10,7 @@
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Core\AspectContainer;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Composer\Autoload\ClassLoader;
@@ -43,17 +44,27 @@ class AopComposerLoader
     protected $fileEnumerator;
 
     /**
+     * Manager for the cache data
+     *
+     * @var CachePathManager
+     */
+    private $cacheManager;
+
+    /**
      * Constructs an wrapper for the composer loader
      *
      * @param ClassLoader $original Instance of current loader
+     * @param AspectContainer $container Instance of the container
+     * @param array $options Configuration options
      */
-    public function __construct(ClassLoader $original, array $options = array())
+    public function __construct(ClassLoader $original, AspectContainer $container, array $options = array())
     {
         $this->options  = $options;
         $this->original = $original;
 
-        $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
-        $this->fileEnumerator = $enumerator;
+        $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
+        $this->fileEnumerator = $fileEnumerator;
+        $this->cacheManager   = $container->get('aspect.cache.path.manager');
     }
 
     /**
@@ -62,8 +73,9 @@ class AopComposerLoader
      * Replaces original composer autoloader with wrapper
      *
      * @param array $options Aspect kernel options
+     * @param AspectContainer $container
      */
-    public static function init(array $options = array())
+    public static function init(array $options = array(), AspectContainer $container)
     {
         $loaders = spl_autoload_functions();
 
@@ -78,7 +90,7 @@ class AopComposerLoader
 
                     return class_exists($class, false);
                 });
-                $loader[0] = new AopComposerLoader($loader[0], $options);
+                $loader[0] = new AopComposerLoader($loader[0], $container, $options);
             }
             spl_autoload_unregister($loaderToUnregister);
         }
@@ -94,19 +106,23 @@ class AopComposerLoader
      */
     public function loadClass($class)
     {
-        static $isAllowedFilter = null;
+        static $isAllowedFilter = null, $isProduction = false;
         if (!$isAllowedFilter) {
             $isAllowedFilter = $this->fileEnumerator->getFilter();
+            $isProduction    = !$this->options['debug'];
         }
+        $file = $this->original->findFile($class);
 
-        if ($file = $this->original->findFile($class)) {
-            $isAllowedToTransform = $isAllowedFilter(new \SplFileInfo($file));
-
-            if ($isAllowedToTransform) {
-                include FilterInjectorTransformer::rewrite($file);
-            } else {
-                include $file;
+        if ($file) {
+            $cacheState = $this->cacheManager->queryCacheState($file);
+            if ($cacheState && $isProduction) {
+                $file = $cacheState['processed'] ? $cacheState['cacheUri'] : $file;
+            } elseif ($isAllowedFilter(new \SplFileInfo($file))) {
+                // can be optimized here with $cacheState even for debug mode, but no needed right now
+                $file = FilterInjectorTransformer::rewrite($file);
             }
+
+            include $file;
         }
     }
 
