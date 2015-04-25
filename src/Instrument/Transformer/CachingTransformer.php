@@ -12,15 +12,13 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
-use Go\Instrument\ClassLoading\CachePathResolver;
+use Go\Instrument\ClassLoading\CachePathManager;
 
 /**
  * Caching transformer that is able to take the transformed source from a cache
  */
 class CachingTransformer extends BaseSourceTransformer
 {
-    const CACHE_FILE_NAME = '/_transformation.cache';
-
     /**
      * Root path of application
      *
@@ -49,37 +47,22 @@ class CachingTransformer extends BaseSourceTransformer
     protected $transformers = array();
 
     /**
-     * @var CachePathResolver|null
+     * @var CachePathManager|null
      */
-    protected $cachePathResolver;
-
-    /**
-     * Cached metadata for transformation state for the concrete file
-     *
-     * @var array
-     */
-    protected $transformationFileMap = array();
-
-    /**
-     * New metadata items, that was not present in $transformationFileMap
-     *
-     * @var array
-     */
-    protected $newTransformationMap = array();
+    protected $cacheManager;
 
     /**
      * Class constructor
      *
      * @param AspectKernel $kernel Instance of aspect kernel
      * @param array|callable $transformers Source transformers or callable that should return transformers
-     *
-     * @throws \InvalidArgumentException
+     * @param CachePathManager $cacheManager Cache manager
      */
-    public function __construct(AspectKernel $kernel, $transformers)
+    public function __construct(AspectKernel $kernel, $transformers, CachePathManager $cacheManager)
     {
         parent::__construct($kernel);
         $cacheDir = $this->options['cacheDir'];
-        $this->cachePathResolver = $kernel->getContainer()->get('aspect.cache.path.resolver');
+        $this->cacheManager = $cacheManager;
 
         if ($cacheDir) {
             if (!is_dir($cacheDir)) {
@@ -96,10 +79,6 @@ class CachingTransformer extends BaseSourceTransformer
             }
             $this->cachePath     = $cacheDir;
             $this->cacheFileMode = (int)$this->options['cacheFileMode'];
-
-            if (file_exists($cacheDir. self::CACHE_FILE_NAME)) {
-                $this->transformationFileMap = include $cacheDir . self::CACHE_FILE_NAME;
-            }
         }
 
         $this->rootPath     = $this->options['appDir'];
@@ -121,11 +100,11 @@ class CachingTransformer extends BaseSourceTransformer
 
         $originalUri  = $metadata->uri;
         $wasProcessed = false;
-        $cacheUri     = $this->cachePathResolver->getCachePathForResource($originalUri);
+        $cacheUri     = $this->cacheManager->getCachePathForResource($originalUri);
 
         $lastModified  = filemtime($originalUri);
-        $hasCacheState = isset($this->transformationFileMap[$originalUri]);
-        $cacheModified = $hasCacheState ? $this->transformationFileMap[$originalUri]['filemtime'] : 0;
+        $cacheState    = $this->cacheManager->queryCacheState($originalUri);
+        $cacheModified = $cacheState ? $cacheState['filemtime'] : 0;
 
         if ($cacheModified < $lastModified || !$this->container->isFresh($cacheModified)) {
             $wasProcessed = $this->processTransformers($metadata);
@@ -135,40 +114,26 @@ class CachingTransformer extends BaseSourceTransformer
                     mkdir($parentCacheDir, 0770, true);
                 }
                 file_put_contents($cacheUri, $metadata->source);
-                if ($hasCacheState && $this->cacheFileMode) {
+                if (!$cacheState && $this->cacheFileMode) {
                     chmod($cacheUri, $this->cacheFileMode);
                 }
             }
-            $this->newTransformationMap[$originalUri] = array(
+            $this->cacheManager->setCacheState($originalUri, array(
                 'filemtime' => isset($_SERVER['REQUEST_TIME']) ? $_SERVER['REQUEST_TIME'] : time(),
                 'processed' => $wasProcessed
-            );
+            ));
 
             return $wasProcessed;
         }
 
-        if ($hasCacheState) {
-            $wasProcessed = $this->transformationFileMap[$originalUri]['processed'];
+        if ($cacheState) {
+            $wasProcessed = $cacheState['processed'];
         }
         if ($wasProcessed) {
             $metadata->source = file_get_contents($cacheUri);
         }
 
         return $wasProcessed;
-    }
-
-    /**
-     * Automatic destructor saves all new changes into the cache
-     *
-     * This implementation is not thread-safe, so be care
-     */
-    public function __destruct()
-    {
-        if ($this->newTransformationMap) {
-            $fullCacheMap = $this->newTransformationMap + $this->transformationFileMap;
-            $cacheData    = '<?php return ' . var_export($fullCacheMap, true) . ';';
-            file_put_contents($this->cachePath . self::CACHE_FILE_NAME, $cacheData);
-        }
     }
 
     /**

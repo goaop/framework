@@ -240,7 +240,8 @@ abstract class AspectKernel
      */
     protected function registerTransformers()
     {
-        $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId());
+        $cacheManager     = $this->getContainer()->get('aspect.cache.path.manager');
+        $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
         $magicTransformer = new MagicConstantTransformer($this);
         $aspectKernel     = $this;
 
@@ -266,7 +267,7 @@ abstract class AspectKernel
         };
 
         return array(
-            new CachingTransformer($this, $sourceTransformers)
+            new CachingTransformer($this, $sourceTransformers, $cacheManager)
         );
     }
 
