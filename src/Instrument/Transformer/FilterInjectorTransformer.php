@@ -92,10 +92,9 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public static function rewrite($originalResource, $originalDir = '')
     {
-        static $appDir, $cacheDir, $debug, $usePrebuiltCache;
+        static $appDir, $cacheDir, $debug;
         if (!$appDir) {
             extract(self::$options, EXTR_IF_EXISTS);
-            $usePrebuiltCache = self::$options['features'] & Features::PREBUILT_CACHE;
         }
 
         $resource = (string) $originalResource;
@@ -106,20 +105,11 @@ class FilterInjectorTransformer implements SourceTransformer
                 ?: PathResolver::realpath("{$originalDir}/{$resource}", $shouldCheckExistence)
                 ?: $originalResource;
         }
-        // If the cache is disabled, then use on-fly method
-        if (!$cacheDir || $debug) {
-            return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
-        }
-
         $newResource = self::$cachePathResolver->getCachePathForResource($resource);
 
-        // Trigger creation of cache, this will create a cache file with $newResource name
-        if (!$usePrebuiltCache && !file_exists($newResource)) {
-            // Workaround for https://github.com/facebook/hhvm/issues/2485
-            $file = fopen($resource, 'r');
-            stream_filter_append($file, self::$filterName);
-            stream_get_contents($file);
-            fclose($file);
+        // If the cache is disabled or no cache yet, then use on-fly method
+        if (!$cacheDir || $debug || !file_exists($newResource)) {
+            return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
         }
 
         return $newResource;
