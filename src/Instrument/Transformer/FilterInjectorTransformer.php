@@ -13,7 +13,7 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
-use Go\Instrument\ClassLoading\CachePathResolver;
+use Go\Instrument\ClassLoading\CachePathManager;
 
 /**
  * Transformer that injects source filter for "require" and "include" operations
@@ -46,19 +46,20 @@ class FilterInjectorTransformer implements SourceTransformer
     protected static $kernel;
 
     /**
-     * @var CachePathResolver|null
+     * @var CachePathManager|null
      */
-    protected static $cachePathResolver;
+    protected static $cachePathManager;
 
     /**
      * Class constructor
      *
      * @param AspectKernel $kernel Kernel to take configuration from
      * @param string $filterName Name of the filter to inject
+     * @param CachePathManager $cacheManager Manager for cache files
      */
-    public function __construct(AspectKernel $kernel, $filterName)
+    public function __construct(AspectKernel $kernel, $filterName, CachePathManager $cacheManager)
     {
-        self::configure($kernel, $filterName);
+        self::configure($kernel, $filterName, $cacheManager);
     }
 
     /**
@@ -66,18 +67,17 @@ class FilterInjectorTransformer implements SourceTransformer
      *
      * @param AspectKernel $kernel Kernel to use for configuration
      * @param string $filterName Name of the filter to inject
-     *
-     * @throws \RuntimeException if filter was configured early
+     * @param CachePathManager $cacheManager Cache manager
      */
-    protected static function configure(AspectKernel $kernel, $filterName)
+    protected static function configure(AspectKernel $kernel, $filterName, CachePathManager $cacheManager)
     {
         if (self::$kernel) {
             throw new \RuntimeException("Filter injector can be configured only once.");
         }
-        self::$kernel            = $kernel;
-        self::$options           = $kernel->getOptions();
-        self::$filterName        = $filterName;
-        self::$cachePathResolver = $kernel->getContainer()->get('aspect.cache.path.resolver');
+        self::$kernel           = $kernel;
+        self::$options          = $kernel->getOptions();
+        self::$filterName       = $filterName;
+        self::$cachePathManager = $cacheManager;
     }
 
     /**
@@ -92,10 +92,9 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public static function rewrite($originalResource, $originalDir = '')
     {
-        static $appDir, $cacheDir, $debug, $usePrebuiltCache;
+        static $appDir, $cacheDir, $debug;
         if (!$appDir) {
             extract(self::$options, EXTR_IF_EXISTS);
-            $usePrebuiltCache = self::$options['features'] & Features::PREBUILT_CACHE;
         }
 
         $resource = (string) $originalResource;
@@ -106,30 +105,21 @@ class FilterInjectorTransformer implements SourceTransformer
                 ?: PathResolver::realpath("{$originalDir}/{$resource}", $shouldCheckExistence)
                 ?: $originalResource;
         }
-        // If the cache is disabled, then use on-fly method
-        if (!$cacheDir || $debug) {
+        $cachedResource = self::$cachePathManager->getCachePathForResource($resource);
+
+        // If the cache is disabled or no cache yet, then use on-fly method
+        if (!$cacheDir || $debug || !file_exists($cachedResource)) {
             return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
         }
 
-        $newResource = self::$cachePathResolver->getCachePathForResource($resource);
-
-        // Trigger creation of cache, this will create a cache file with $newResource name
-        if (!$usePrebuiltCache && !file_exists($newResource)) {
-            // Workaround for https://github.com/facebook/hhvm/issues/2485
-            $file = fopen($resource, 'r');
-            stream_filter_append($file, self::$filterName);
-            stream_get_contents($file);
-            fclose($file);
-        }
-
-        return $newResource;
+        return $cachedResource;
     }
 
     /**
      * Wrap all includes into rewrite filter
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return void
+     * @return void|bool Return false if transformation should be stopped
      */
     public function transform(StreamMetaData $metadata)
     {

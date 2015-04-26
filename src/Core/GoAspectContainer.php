@@ -17,7 +17,7 @@ use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\RawAnnotationReader;
-use Go\Instrument\ClassLoading\CachePathResolver;
+use Go\Instrument\ClassLoading\CachePathManager;
 use Doctrine\Common\Annotations\AnnotationReader;
 
 /**
@@ -101,8 +101,8 @@ class GoAspectContainer extends Container implements AspectContainer
         $this->share('aspect.annotation.raw.reader', function () {
             return new RawAnnotationReader();
         });
-        $this->share('aspect.cache.path.resolver', function (Container $container) {
-            return new CachePathResolver($container->get('kernel'));
+        $this->share('aspect.cache.path.manager', function (Container $container) {
+            return new CachePathManager($container->get('kernel'));
         });
 
         // Pointcut services

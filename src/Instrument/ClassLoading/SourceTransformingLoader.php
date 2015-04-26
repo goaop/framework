@@ -13,7 +13,6 @@ namespace Go\Instrument\ClassLoading;
 use php_user_filter as PhpStreamFilter;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\SourceTransformer;
-use Go\Instrument\Transformer\FilterInjectorTransformer;
 
 /**
  * Php class loader filter for processing php code
@@ -99,7 +98,7 @@ class SourceTransformingLoader extends PhpStreamFilter
 
             // $this->stream contains pointer to the source
             $metadata = new StreamMetaData($this->stream, $this->data);
-            $this->transformCode($metadata);
+            self::transformCode($metadata);
 
             $bucket = stream_bucket_new($this->stream, $metadata->source);
             stream_bucket_append($out, $bucket);
@@ -123,27 +122,21 @@ class SourceTransformingLoader extends PhpStreamFilter
     }
 
     /**
-     * Load source file with transformation
-     *
-     * @param string $source Original source name
-     *
-     * @return mixed
-     */
-    public function load($source)
-    {
-        return include FilterInjectorTransformer::rewrite($source);
-    }
-
-    /**
      * Transforms source code by passing it through all transformers
      *
      * @param StreamMetaData|null $metadata Metadata from stream
-     * @return void
+     * @return void|bool Return false if transformation should be stopped
      */
-    protected function transformCode(StreamMetaData $metadata)
+    public static function transformCode(StreamMetaData $metadata)
     {
+        $result = null;
         foreach (self::$transformers as $transformer) {
-            $transformer->transform($metadata);
+            $result = $transformer->transform($metadata);
+            if ($result === false) {
+                break;
+            }
         }
+
+        return $result;
     }
 }

@@ -43,20 +43,6 @@ class WeavingTransformer extends BaseSourceTransformer
     protected $adviceMatcher;
 
     /**
-     * List of include paths to process
-     *
-     * @var array
-     */
-    protected $includePaths = array();
-
-    /**
-     * List of exclude paths to process
-     *
-     * @var array
-     */
-    protected $excludePaths = array();
-
-    /**
      * Constructs a weaving transformer
      *
      * @param AspectKernel $kernel Instance of aspect kernel
@@ -68,23 +54,19 @@ class WeavingTransformer extends BaseSourceTransformer
         parent::__construct($kernel);
         $this->broker        = $broker;
         $this->adviceMatcher = $adviceMatcher;
-
-        $this->includePaths = $this->options['includePaths'];
-        $this->excludePaths = $this->options['excludePaths'];
     }
 
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return void
+     * @return void|bool Return false if transformation should be stopped
      */
     public function transform(StreamMetaData $metadata)
     {
+        $totalTransformations = 0;
+
         $fileName = $metadata->uri;
-        if (!$this->isAllowedToTransform($fileName)) {
-            return;
-        }
 
         try {
             CleanableMemory::enterProcessing();
@@ -92,7 +74,7 @@ class WeavingTransformer extends BaseSourceTransformer
         } catch (FileProcessingException $e) {
             CleanableMemory::leaveProcessing();
 
-            return;
+            return false;
         }
 
         /** @var $namespaces ParsedFileNamespace[] */
@@ -119,12 +101,17 @@ class WeavingTransformer extends BaseSourceTransformer
                 if ($class->isInterface() || in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
                     continue;
                 }
-                $this->processSingleClass($metadata, $class, $lineOffset);
+                $wasClassProcessed    = $this->processSingleClass($metadata, $class, $lineOffset);
+                $totalTransformations += (integer) $wasClassProcessed;
             }
-            $this->processFunctions($metadata, $namespace);
+            $wasFunctionsProcessed = $this->processFunctions($metadata, $namespace);
+            $totalTransformations  += (integer) $wasFunctionsProcessed;
         }
 
         CleanableMemory::leaveProcessing();
+
+        // If we return false this will indicate no more transformation for following transformers
+        return $totalTransformations > 0;
     }
 
     /**
@@ -133,6 +120,8 @@ class WeavingTransformer extends BaseSourceTransformer
      * @param StreamMetaData $metadata Source stream information
      * @param ParsedClass $class Instance of class to analyze
      * @param integer $lineOffset Current offset, will be updated to store the last position
+     *
+     * @return bool True if was class processed, false otherwise
      */
     private function processSingleClass(StreamMetaData $metadata, ParsedClass $class, &$lineOffset)
     {
@@ -140,7 +129,7 @@ class WeavingTransformer extends BaseSourceTransformer
 
         if (!$advices) {
             // Fast return if there aren't any advices for that class
-            return;
+            return false;
         }
 
         // Sort advices in advance to keep the correct order in cache
@@ -185,6 +174,8 @@ class WeavingTransformer extends BaseSourceTransformer
 
             $metadata->source = implode("\n", $dataArray);
         }
+
+        return true;
     }
 
     /**
@@ -213,43 +204,16 @@ class WeavingTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Verifies if file should be transformed or not
-     *
-     * @param string $fileName Name of the file to transform
-     * @return bool
-     */
-    private function isAllowedToTransform($fileName)
-    {
-        if ($this->includePaths) {
-            $found = false;
-            foreach ($this->includePaths as $includePath) {
-                if (strpos($fileName, $includePath) === 0) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                return false;
-            }
-        }
-
-        foreach ($this->excludePaths as $excludePath) {
-            if (strpos($fileName, $excludePath) === 0) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * Performs weaving of functions in the current namespace
      *
      * @param StreamMetaData $metadata Source stream information
      * @param ParsedFileNamespace $namespace Current namespace for file
+     *
+     * @return boolean True if functions were processed, false otherwise
      */
     private function processFunctions(StreamMetaData $metadata, $namespace)
     {
+        $wasProcessedFunctions = false;
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace);
         if ($functionAdvices && $this->options['cacheDir']) {
             $cacheDirSuffix = '/_functions/';
@@ -267,7 +231,10 @@ class WeavingTransformer extends BaseSourceTransformer
             }
             $content = 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
             $metadata->source .= $content;
+            $wasProcessedFunctions = true;
         }
+
+        return $wasProcessedFunctions;
     }
 
     /**

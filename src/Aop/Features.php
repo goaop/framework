@@ -28,29 +28,35 @@ interface Features
     const INTERCEPT_INITIALIZATIONS = 2;
 
     /**
+     * Enables interception of "include"/"require" operations in legacy code
+     * By default this feature is disabled, because only composer should be used
+     */
+    const INTERCEPT_INCLUDES = 4;
+
+    /**
      * Enables usage of traits and introductions as well, available since PHP5.4
      */
-    const USE_TRAIT = 4;
+    const USE_TRAIT = 8;
 
     /**
      * Allows to use closures with binding, available since PHP5.4
      */
-    const USE_CLOSURE = 8;
+    const USE_CLOSURE = 16;
 
     /**
      * Enables usage of splat '...' operator, available since PHP5.6
      */
-    const USE_SPLAT_OPERATOR = 16;
+    const USE_SPLAT_OPERATOR = 32;
 
     /**
      * Do not check the cache presence and assume that cache is already prepared
      *
      * This flag is usable for read-only file systems (GAE, phar, etc)
      */
-    const PREBUILT_CACHE = 32;
+    const PREBUILT_CACHE = 64;
 
     /**
      * Allows to use 'static::class' in the source code of proxies, available since PHP5.5
      */
-    const USE_STATIC_FOR_LSB = 64;
+    const USE_STATIC_FOR_LSB = 128;
 }

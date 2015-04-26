@@ -23,17 +23,19 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         if (!self::$transformer) {
-            self::$transformer = new FilterInjectorTransformer(
-                $this->getKernelMock(
-                    array(
-                        'cacheDir' => null,
-                        'appDir'   => '',
-                        'debug'    => false,
-                        'features' => 0
-                    ),
-                    $this->getMock('Go\Core\GoAspectContainer')
+            $kernelMock = $this->getKernelMock(
+                array(
+                    'cacheDir' => null,
+                    'appDir'   => '',
+                    'debug'    => false,
+                    'features' => 0
                 ),
-                'unit.test'
+                $this->getMock('Go\Core\GoAspectContainer')
+            );
+            self::$transformer = new FilterInjectorTransformer(
+                $kernelMock,
+                'unit.test',
+                $this->getMock('Go\Instrument\ClassLoading\CachePathManager', array(), array($kernelMock))
             );
         }
         $stream = fopen('php://input', 'r');
@@ -85,14 +87,6 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $output = $this->metadata->source;
         self::$transformer->transform($this->metadata);
         $this->assertEquals($output, $this->metadata->source);
-    }
-
-    /**
-     * @expectedException \RuntimeException
-     */
-    public function testCanBeConfiguredOnlyOnce()
-    {
-        $filter = new FilterInjectorTransformer($this->getKernelMock(array(), $this->getMock('Go\Core\GoAspectContainer')), 'test');
     }
 
     public function testCanTransformInclude()

@@ -110,7 +110,7 @@ abstract class AspectKernel
             $this->addKernelResourcesToContainer($container);
         }
 
-        AopComposerLoader::init();
+        AopComposerLoader::init($this->options, $container);
 
         // Register all AOP configuration in the container
         $this->configureAop($container);
@@ -211,6 +211,10 @@ abstract class AspectKernel
     protected function normalizeOptions(array $options)
     {
         $options = array_replace($this->getDefaultOptions(), $options);
+        if ($options['cacheDir']) {
+            $options['excludePaths'][] = $options['cacheDir'];
+        }
+        $options['excludePaths'][] = __DIR__ . '/../';
 
         $options['appDir']   = PathResolver::realpath($options['appDir']);
         $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
@@ -236,22 +240,25 @@ abstract class AspectKernel
      */
     protected function registerTransformers()
     {
-        $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId());
+        $cacheManager     = $this->getContainer()->get('aspect.cache.path.manager');
+        $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
         $magicTransformer = new MagicConstantTransformer($this);
         $aspectKernel     = $this;
 
         $sourceTransformers = function () use ($filterInjector, $magicTransformer, $aspectKernel) {
-            $transformers = array(
-                $filterInjector,
-                $magicTransformer,
-                new WeavingTransformer(
-                    $aspectKernel,
-                    new TokenReflection\Broker(
-                        new CleanableMemory()
-                    ),
-                    $aspectKernel->getContainer()->get('aspect.advice_matcher')
-                )
+            $transformers   = array();
+            $transformers[] = new WeavingTransformer(
+                $aspectKernel,
+                new TokenReflection\Broker(
+                    new CleanableMemory()
+                ),
+                $aspectKernel->getContainer()->get('aspect.advice_matcher')
             );
+            if ($aspectKernel->hasFeature(Features::INTERCEPT_INCLUDES)) {
+                $transformers[] = $filterInjector;
+            }
+            $transformers[] = $magicTransformer;
+
             if ($aspectKernel->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
                 $transformers[] = new ConstructorExecutionTransformer();
             }
@@ -260,7 +267,7 @@ abstract class AspectKernel
         };
 
         return array(
-            new CachingTransformer($this, $sourceTransformers)
+            new CachingTransformer($this, $sourceTransformers, $cacheManager)
         );
     }
 
