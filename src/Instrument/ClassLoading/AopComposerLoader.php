@@ -44,11 +44,11 @@ class AopComposerLoader
     protected $fileEnumerator;
 
     /**
-     * Manager for the cache data
+     * Cache state
      *
-     * @var CachePathManager
+     * @var array
      */
-    private $cacheManager;
+    private $cacheState;
 
     /**
      * Constructs an wrapper for the composer loader
@@ -64,7 +64,7 @@ class AopComposerLoader
 
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
         $this->fileEnumerator = $fileEnumerator;
-        $this->cacheManager   = $container->get('aspect.cache.path.manager');
+        $this->cacheState     = $container->get('aspect.cache.path.manager')->queryCacheState();
     }
 
     /**
@@ -114,7 +114,7 @@ class AopComposerLoader
         $file = $this->original->findFile($class);
 
         if ($file) {
-            $cacheState = $this->cacheManager->queryCacheState($file);
+            $cacheState = isset($this->cacheState[$file]) ? $this->cacheState[$file] : null;
             if ($cacheState && $isProduction) {
                 $file = $cacheState['processed'] ? $cacheState['cacheUri'] : $file;
             } elseif ($isAllowedFilter(new \SplFileInfo($file))) {

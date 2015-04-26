@@ -47,14 +47,14 @@ class CachePathManager
      *
      * @var array
      */
-    protected $transformationFileMap = array();
+    protected $cacheState = array();
 
     /**
-     * New metadata items, that was not present in $transformationFileMap
+     * New metadata items, that was not present in $cacheState
      *
      * @var array
      */
-    protected $newTransformationMap = array();
+    protected $newCacheState = array();
 
     public function __construct (AspectKernel $kernel)
     {
@@ -64,7 +64,7 @@ class CachePathManager
         $this->appDir   = $this->options['appDir'];
 
         if ($this->cacheDir && file_exists($this->cacheDir. self::CACHE_FILE_NAME)) {
-            $this->transformationFileMap = include $this->cacheDir . self::CACHE_FILE_NAME;
+            $this->cacheState = include $this->cacheDir . self::CACHE_FILE_NAME;
         }
     }
 
@@ -84,14 +84,18 @@ class CachePathManager
     /**
      * Tries to return an information for queried resource
      *
-     * @param string $resource Name of the file
+     * @param string|null $resource Name of the file or null to get all information
      *
      * @return array|null Information or null if no record in the cache
      */
-    public function queryCacheState($resource)
+    public function queryCacheState($resource=null)
     {
-        if (isset($this->transformationFileMap[$resource])) {
-            return $this->transformationFileMap[$resource];
+        if (!$resource) {
+            return $this->cacheState;
+        }
+
+        if (isset($this->cacheState[$resource])) {
+            return $this->cacheState[$resource];
         }
 
         return null;
@@ -107,7 +111,7 @@ class CachePathManager
      */
     public function setCacheState($resource, array $metadata)
     {
-        $this->newTransformationMap[$resource] = $metadata;
+        $this->newCacheState[$resource] = $metadata;
     }
 
     /**
@@ -117,8 +121,8 @@ class CachePathManager
      */
     public function __destruct()
     {
-        if ($this->newTransformationMap) {
-            $fullCacheMap = $this->newTransformationMap + $this->transformationFileMap;
+        if ($this->newCacheState) {
+            $fullCacheMap = $this->newCacheState + $this->cacheState;
             $cacheData    = '<?php return ' . var_export($fullCacheMap, true) . ';';
             file_put_contents($this->cacheDir . self::CACHE_FILE_NAME, $cacheData);
         }
