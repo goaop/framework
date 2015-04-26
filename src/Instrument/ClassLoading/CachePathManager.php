@@ -125,6 +125,9 @@ class CachePathManager
             $fullCacheMap = $this->newCacheState + $this->cacheState;
             $cacheData    = '<?php return ' . var_export($fullCacheMap, true) . ';';
             file_put_contents($this->cacheDir . self::CACHE_FILE_NAME, $cacheData);
+            if (function_exists('opcache_invalidate')) {
+                opcache_invalidate($this->cacheDir . self::CACHE_FILE_NAME, true);
+            }
         }
     }
 }
