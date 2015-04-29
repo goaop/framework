@@ -10,7 +10,6 @@
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
 
@@ -47,13 +46,21 @@ class ClassMemberReference
      */
     private $memberNamePattern;
 
+    /**
+     * Default constructor
+     *
+     * @param PointFilter $classFilter
+     * @param ModifierMatcherFilter $visibilityFilter Public/protected/etc
+     * @param ModifierMatcherFilter $accessTypeFilter Static or dynamic
+     * @param string $memberNamePattern Expression for the name
+     */
     public function __construct(
-        PointFilter $classReference,
+        PointFilter $classFilter,
         ModifierMatcherFilter $visibilityFilter,
         ModifierMatcherFilter $accessTypeFilter,
         $memberNamePattern)
     {
-        $this->classFilter    = $classReference;
+        $this->classFilter       = $classFilter;
         $this->visibilityFilter  = $visibilityFilter;
         $this->accessTypeFilter  = $accessTypeFilter;
         $this->memberNamePattern = $memberNamePattern;
