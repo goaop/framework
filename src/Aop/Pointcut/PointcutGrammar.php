@@ -39,14 +39,14 @@ class PointcutGrammar extends Grammar
         $stringConverter = $this->getNodeToStringConverter();
 
         $this('pointcutExpression')
-            ->is('pointcutExpression', '||', 'conjunctedExpression')
+            ->is('pointcutExpression', '||', 'conjugatedExpression')
             ->call(function ($first, $_0, $second) {
                 return new OrPointcut($first, $second);
             })
-            ->is('conjunctedExpression');
+            ->is('conjugatedExpression');
 
-        $this('conjunctedExpression')
-            ->is('conjunctedExpression', '&&', 'negatedExpression')
+        $this('conjugatedExpression')
+            ->is('conjugatedExpression', '&&', 'negatedExpression')
             ->call(function ($first, $_0, $second) {
                 return new AndPointcut($first, $second);
             })
@@ -61,7 +61,7 @@ class PointcutGrammar extends Grammar
 
         $this('brakedExpression')
             ->is('(', 'pointcutExpression', ')')
-            ->call(function ($_, $e, $_) {
+            ->call(function ($_0, $e, $_1) {
                 return $e;
             })
             ->is('singlePointcut');
