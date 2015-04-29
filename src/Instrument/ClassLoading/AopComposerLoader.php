@@ -116,7 +116,7 @@ class AopComposerLoader
         if ($file) {
             $cacheState = isset($this->cacheState[$file]) ? $this->cacheState[$file] : null;
             if ($cacheState && $isProduction) {
-                $file = $cacheState['processed'] ? $cacheState['cacheUri'] : $file;
+                $file = $cacheState['cacheUri'] ?: $file;
             } elseif ($isAllowedFilter(new \SplFileInfo($file))) {
                 // can be optimized here with $cacheState even for debug mode, but no needed right now
                 $file = FilterInjectorTransformer::rewrite($file);

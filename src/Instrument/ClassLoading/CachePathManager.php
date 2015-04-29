@@ -123,7 +123,13 @@ class CachePathManager
     {
         if ($this->newCacheState) {
             $fullCacheMap = $this->newCacheState + $this->cacheState;
+            $cachePath    = substr(var_export($this->cacheDir, true), 1, -1);
+            $rootPath     = substr(var_export($this->appDir, true), 1, -1);
             $cacheData    = '<?php return ' . var_export($fullCacheMap, true) . ';';
+            $cacheData    = strtr($cacheData, array(
+                '\''.$cachePath => 'AOP_CACHE_DIR . \'',
+                '\''.$rootPath  => 'AOP_ROOT_DIR . \''
+            ));
             file_put_contents($this->cacheDir . self::CACHE_FILE_NAME, $cacheData);
             if (function_exists('opcache_invalidate')) {
                 opcache_invalidate($this->cacheDir . self::CACHE_FILE_NAME, true);
