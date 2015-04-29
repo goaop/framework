@@ -112,4 +112,21 @@ class ModifierMatcherFilter implements PointFilter
     {
         return self::KIND_ALL;
     }
+
+    /**
+     * Merges current one filter with another one and returns a new combined filter
+     *
+     * @param ModifierMatcherFilter $filter
+     *
+     * @return ModifierMatcherFilter
+     */
+    public function merge(ModifierMatcherFilter $filter)
+    {
+        $newFilter = clone $this;
+        $newFilter->andMask |= $filter->andMask;
+        $newFilter->orMask  |= $filter->orMask;
+        $newFilter->notMask |= $filter->notMask;
+
+        return $newFilter;
+    }
 }
