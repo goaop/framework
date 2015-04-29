@@ -129,13 +129,21 @@ class ClassProxy extends AbstractProxy
                 case AspectContainer::METHOD_PREFIX:
                 case AspectContainer::STATIC_METHOD_PREFIX:
                     foreach ($typedAdvices as $joinPointName => $advice) {
-                        $this->overrideMethod($parent->getMethod($joinPointName));
+                        $method = $parent->getMethod($joinPointName);
+                        if (!$method instanceof ParsedMethod) {
+                            continue;
+                        }
+                        $this->overrideMethod($method);
                     }
                     break;
 
                 case AspectContainer::PROPERTY_PREFIX:
                     foreach ($typedAdvices as $joinPointName => $advice) {
-                        $this->interceptProperty($parent->getProperty($joinPointName));
+                        $property = $parent->getProperty($joinPointName);
+                        if (!$property instanceof ParsedProperty) {
+                            continue;
+                        }
+                        $this->interceptProperty($property);
                     }
                     break;
 
