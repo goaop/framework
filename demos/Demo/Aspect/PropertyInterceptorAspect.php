@@ -27,7 +27,7 @@ class PropertyInterceptorAspect implements Aspect
      *
      * @param FieldAccess $fieldAccess Joinpoint
      *
-     * @Around("access(* Demo\Example\PropertyDemo->*)")
+     * @Around("access(public|protected Demo\Example\PropertyDemo->*)")
      * @return mixed
      */
     public function aroundFieldAccess(FieldAccess $fieldAccess)
