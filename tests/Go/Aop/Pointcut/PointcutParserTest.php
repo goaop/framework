@@ -79,7 +79,7 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
             array('@within(First\Second\Annotation\Class)'),
 
             // Access pointcuts
-            array('access(* Example\Aspect\*->property*)'),
+            array('access(public|protected Example\Aspect\*->property*)'),
             array('access(protected Test\Class*->someProtected*Property)'),
 
             // Logic pointcuts
