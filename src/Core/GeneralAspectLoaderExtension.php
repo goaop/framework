@@ -93,12 +93,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
 
             case ($pointcut instanceof PointFilter):
                 $advice = $this->getInterceptor($metaInformation, $adviceCallback);
-                if ($pointcut->getKind() & PointFilter::KIND_DYNAMIC) {
-                    $advice = new Framework\DynamicInvocationMatcherInterceptor(
-                        $pointcut,
-                        $advice
-                    );
-                }
+
                 $loadedItems[$methodId] = new DefaultPointcutAdvisor($pointcut, $advice);
                 break;
 
