@@ -10,7 +10,9 @@
 
 namespace Go\Core;
 
+use Go\Aop\Advisor;
 use Go\Aop\Aspect;
+use Go\Aop\Pointcut;
 use ReflectionClass;
 
 /**
@@ -59,29 +61,13 @@ class CachedAspectLoader extends AspectLoader
 
         // If cache is present and actual, then use it
         if (file_exists($fileName) && filemtime($fileName) >= filemtime($refAspect->getFileName())) {
-            $this->loadFromCache($fileName);
-            $this->loadedResources[] = $refAspect->getFileName();
-
-            return;
+            $loadedItems = $this->loadFromCache($fileName);
+        } else {
+            $loadedItems = $this->loader->load($aspect);
+            $this->saveToCache($loadedItems, $fileName);
         }
 
-        $pointcutsBefore = $this->container->getByTag('pointcut');
-        $advisorsBefore  = $this->container->getByTag('advisor');
-        $this->loader->load($aspect);
-        $pointcutsAfter = $this->container->getByTag('pointcut');
-        $advisorsAfter  = $this->container->getByTag('advisor');
-
-        $newPointcuts = array_diff_key($pointcutsAfter, $pointcutsBefore);
-        $newAdvisors  = array_diff_key($advisorsAfter, $advisorsBefore);
-
-        if ($this->cacheDir) {
-            $content = serialize($newPointcuts + $newAdvisors);
-            if (!is_dir(dirname($fileName))) {
-                mkdir(dirname($fileName));
-            }
-            file_put_contents($fileName, $content);
-        }
-
+        return $loadedItems;
     }
 
     /**
@@ -90,14 +76,6 @@ class CachedAspectLoader extends AspectLoader
     public function registerLoaderExtension(AspectLoaderExtension $loader)
     {
         $this->loader->registerLoaderExtension($loader);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function loadAdvisorsAndPointcuts()
-    {
-        $this->loader->loadAdvisorsAndPointcuts();
     }
 
     /**
@@ -119,26 +97,28 @@ class CachedAspectLoader extends AspectLoader
      *
      * @param string $fileName Name of the file with cache
      *
-     * @throws \InvalidArgumentException
+     * @return array|Pointcut[]|Advisor[]
      */
     protected function loadFromCache($fileName)
     {
-        $content = file_get_contents($fileName);
-        $items   = unserialize($content);
-        foreach ($items as $itemName => $value) {
-            list($itemType, $itemName) = explode('.', $itemName, 2);
-            switch ($itemType) {
-                case 'pointcut':
-                    $this->container->registerPointcut($value, $itemName);
-                    break;
+        $content     = file_get_contents($fileName);
+        $loadedItems = unserialize($content);
 
-                case 'advisor':
-                    $this->container->registerAdvisor($value, $itemName);
-                    break;
+        return $loadedItems;
+    }
 
-                default:
-                    throw new \InvalidArgumentException("Unknown item type {$itemType}");
-            }
+    /**
+     * Save pointcuts and advisors to the file
+     *
+     * @param array|Pointcut[]|Advisor[] $items List of items to store
+     * @param string $fileName Name of the file with cache
+     */
+    protected function saveToCache($items, $fileName)
+    {
+        $content = serialize($items);
+        if (!is_dir(dirname($fileName))) {
+            mkdir(dirname($fileName));
         }
+        file_put_contents($fileName, $content);
     }
 }

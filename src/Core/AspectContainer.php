@@ -83,6 +83,15 @@ interface AspectContainer
     public function registerPointcut(Aop\Pointcut $pointcut, $id);
 
     /**
+     * Returns an advisor by identifier
+     *
+     * @param string $id Advisor identifier
+     *
+     * @return Aop\Advisor
+     */
+    public function getAdvisor($id);
+
+    /**
      * Store the advisor in the container
      *
      * @param Aop\Advisor $advisor Instance

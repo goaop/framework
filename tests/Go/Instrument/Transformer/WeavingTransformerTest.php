@@ -39,6 +39,10 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
+        $container = $this->getContainerMock();
+        $reader    = $this->getMock('Doctrine\Common\Annotations\Reader');
+        $loader    = $this->getMock('Go\Core\AspectLoader', array(), array($container, $reader));
+
         $this->broker = new \TokenReflection\Broker(
             new \TokenReflection\Broker\Backend\Memory()
         );
@@ -49,12 +53,13 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
                 'includePaths' => array(),
                 'excludePaths' => array()
             ),
-            $this->getMock('Go\Core\AspectContainer')
+            $container
         );
         $this->transformer   = new WeavingTransformer(
             $this->kernel,
             $this->broker,
-            $this->adviceMatcher
+            $this->adviceMatcher,
+            $loader
         );
 
         if (defined("HHVM_VERSION")) {
@@ -145,6 +150,10 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testTransformerWithIncludePaths()
     {
+        $container = $this->getContainerMock();
+        $reader    = $this->getMock('Doctrine\Common\Annotations\Reader');
+        $loader    = $this->getMock('Go\Core\AspectLoader', array(), array($container, $reader));
+
         $this->transformer = new WeavingTransformer(
             $this->getKernelMock(
                 array(
@@ -152,10 +161,11 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
                     'includePaths' => array(__DIR__),
                     'excludePaths' => array()
                 ),
-                $this->getMock('Go\Core\AspectContainer')
+                $container
             ),
             $this->broker,
-            $this->adviceMatcher
+            $this->adviceMatcher,
+            $loader
         );
         $this->metadata->source = $this->loadTest('class');
         $this->transformer->transform($this->metadata);
@@ -276,5 +286,24 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     private function loadTest($name)
     {
         return file_get_contents(__DIR__ . '/_files/' . $name . '.php');
+    }
+
+    /**
+     * Returns a mock for the container
+     *
+     * @return AspectContainer
+     */
+    private function getContainerMock()
+    {
+        $container = $this->getMock('Go\Core\AspectContainer');
+
+        $container
+            ->expects($this->any())
+            ->method('getByTag')
+            ->will($this->returnValueMap(array(
+                array('advisor', array())
+            )));
+
+        return $container;
     }
 }

@@ -10,8 +10,10 @@
 
 namespace Go\Core;
 
+use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Framework;
+use Go\Aop\Pointcut;
 use Go\Aop\Support;
 use Go\Lang\Annotation;
 
@@ -62,15 +64,17 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
     /**
      * Loads definition from specific point of aspect into the container
      *
-     * @param AspectContainer $container Instance of container
      * @param Aspect $aspect Instance of aspect
      * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information
      *
      * @throws \UnexpectedValueException
+     *
+     * @return array|Pointcut[]|Advisor[]
      */
-    public function load(AspectContainer $container, Aspect $aspect, $reflection, $metaInformation = null)
+    public function load(Aspect $aspect, $reflection, $metaInformation = null)
     {
+        $loadedItems = array();
         $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation);
         $propertyId  = $reflection->class.'->'.$reflection->name;
 
@@ -80,7 +84,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                 $implement = $metaInformation->defaultImpl;
                 $advice    = new Framework\TraitIntroductionInfo($interface, $implement);
                 $advisor   = new Support\DeclareParentsAdvisor($pointcut->getClassFilter(), $advice);
-                $container->registerAdvisor($advisor, $propertyId);
+                $loadedItems[$propertyId] = $advisor;
                 break;
 
             case ($metaInformation instanceof Annotation\DeclareError):
@@ -88,12 +92,14 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                 $message = $reflection->getValue($aspect);
                 $level   = $metaInformation->level;
                 $advice  = new Framework\DeclareErrorInterceptor($message, $level);
-                $container->registerAdvisor(new Support\DefaultPointcutAdvisor($pointcut, $advice), $propertyId);
+                $loadedItems[$propertyId] = new Support\DefaultPointcutAdvisor($pointcut, $advice);
                 break;
 
             default:
                 throw new \UnexpectedValueException("Unsupported pointcut class: " . get_class($pointcut));
 
         }
+
+        return $loadedItems;
     }
 }
