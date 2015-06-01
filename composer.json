@@ -1,6 +1,6 @@
 {
-    "name": "lisachenko/go-aop-php",
-    "description": "Library for aspect-oriented programming in PHP.",
+    "name": "goaop/framework",
+    "description": "Framework for aspect-oriented programming in PHP.",
 
     "type": "library",
     "keywords": ["library", "aop", "php", "aspect"],
