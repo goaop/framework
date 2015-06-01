@@ -3,13 +3,13 @@ Go! Aspect-Oriented Framework for PHP
 
 Go! AOP is a modern aspect-oriented framework in plain PHP with rich features for the new level of software development. Framework allows to solve a cross-cutting issues in the traditional object-oriented PHP code by providing a highly efficient and transparent hook system for your exisiting code.
 
-[![Build Status](https://secure.travis-ci.org/lisachenko/go-aop-php.png?branch=master)](https://travis-ci.org/lisachenko/go-aop-php)
-[![GitHub release](https://img.shields.io/github/release/lisachenko/go-aop-php.svg)](https://github.com/lisachenko/go-aop-php/releases/latest)
-[![Total Downloads](https://img.shields.io/packagist/dt/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
-[![Daily Downloads](https://img.shields.io/packagist/dd/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
+[![Build Status](https://secure.travis-ci.org/goaop/framework.png?branch=master)](https://travis-ci.org/goaop/framework)
+[![GitHub release](https://img.shields.io/github/release/goaop/framework.svg)](https://github.com/goaop/framework/releases/latest)
+[![Total Downloads](https://img.shields.io/packagist/dt/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
+[![Daily Downloads](https://img.shields.io/packagist/dd/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![SensioLabs Insight](https://img.shields.io/sensiolabs/i/5998393e-29ea-48f8-8e7e-b19e86daa2db.svg)](https://insight.sensiolabs.com/projects/5998393e-29ea-48f8-8e7e-b19e86daa2db)
 [![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%205.4-8892BF.svg)](https://php.net/)
-[![License](https://img.shields.io/packagist/l/lisachenko/go-aop-php.svg)](https://packagist.org/packages/lisachenko/go-aop-php)
+[![License](https://img.shields.io/packagist/l/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![Gratipay](https://img.shields.io/gratipay/lisachenko.svg)](https://gratipay.com/lisachenko/)
 
 Features
@@ -59,10 +59,10 @@ Go! AOP framework can be installed with composer. Installation is quite easy:
 Ask composer to download the Go! AOP framework with its dependencies by running the command:
 
 ``` bash
-$ composer require lisachenko/go-aop-php
+$ composer require goaop/framework
 ```
 
-Composer will install the framework to your project's `vendor/lisachenko/go-aop-php` directory.
+Composer will install the framework to your project's `vendor/goaop/framework` directory.
 
 
 ### Step 2: Create an application aspect kernel
