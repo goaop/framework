@@ -15,6 +15,7 @@ use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AspectContainer;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\CleanableMemory;
 use Go\Proxy\ClassProxy;
 use Go\Proxy\FunctionProxy;
@@ -43,17 +44,29 @@ class WeavingTransformer extends BaseSourceTransformer
     protected $adviceMatcher;
 
     /**
+     * @var CachePathManager
+     */
+    private $cachePathManager;
+
+    /**
      * Constructs a weaving transformer
      *
      * @param AspectKernel $kernel Instance of aspect kernel
      * @param Broker $broker Instance of reflection broker to use
      * @param AdviceMatcher $adviceMatcher Advice matcher for class
+     * @param CachePathManager $cachePathManager Cache manager
      */
-    public function __construct(AspectKernel $kernel, Broker $broker, AdviceMatcher $adviceMatcher)
+    public function __construct(
+        AspectKernel $kernel,
+        Broker $broker,
+        AdviceMatcher $adviceMatcher,
+        CachePathManager $cachePathManager
+    )
     {
         parent::__construct($kernel);
-        $this->broker        = $broker;
-        $this->adviceMatcher = $adviceMatcher;
+        $this->broker           = $broker;
+        $this->adviceMatcher    = $adviceMatcher;
+        $this->cachePathManager = $cachePathManager;
     }
 
     /**
@@ -213,12 +226,14 @@ class WeavingTransformer extends BaseSourceTransformer
      */
     private function processFunctions(StreamMetaData $metadata, $namespace)
     {
+        static $cacheDirSuffix = '/_functions/';
+
         $wasProcessedFunctions = false;
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace);
-        if ($functionAdvices && $this->options['cacheDir']) {
-            $cacheDirSuffix = '/_functions/';
-            $cacheDir       = $this->options['cacheDir'] . $cacheDirSuffix;
-            $fileName       = str_replace('\\', '/', $namespace->getName()) . '.php';
+        $cacheDir        = $this->cachePathManager->getCacheDir();
+        if ($functionAdvices && $cacheDir) {
+            $cacheDir = $cacheDir . $cacheDirSuffix;
+            $fileName = str_replace('\\', '/', $namespace->getName()) . '.php';
 
             $functionFileName = $cacheDir . $fileName;
             if (!file_exists($functionFileName) || !$this->container->isFresh(filemtime($functionFileName))) {
@@ -247,13 +262,16 @@ class WeavingTransformer extends BaseSourceTransformer
      */
     private function saveProxyToCache($class, $child)
     {
+        static $cacheDirSuffix = '/_proxies/';
+
+        $cacheDir = $this->cachePathManager->getCacheDir();
+
         // Without cache we should rewrite original file
-        if (empty($this->options['cacheDir'])) {
+        if (!$cacheDir) {
             return $child;
         }
-        $cacheDirSuffix = '/_proxies/';
-        $cacheDir       = $this->options['cacheDir'] . $cacheDirSuffix;
-        $fileName       = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());
+        $cacheDir = $cacheDir . $cacheDirSuffix;
+        $fileName = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());
 
         $proxyFileName = $cacheDir . $fileName;
         $dirname       = dirname($proxyFileName);
