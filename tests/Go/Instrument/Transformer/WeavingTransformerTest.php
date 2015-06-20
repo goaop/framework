@@ -46,6 +46,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $this->kernel        = $this->getKernelMock(
             array(
                 'appDir'       => dirname(__DIR__),
+                'cacheDir'     => null,
                 'includePaths' => array(),
                 'excludePaths' => array()
             ),
@@ -54,7 +55,8 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $this->transformer   = new WeavingTransformer(
             $this->kernel,
             $this->broker,
-            $this->adviceMatcher
+            $this->adviceMatcher,
+            $this->getMock('Go\Instrument\ClassLoading\CachePathManager', array(), array($this->kernel))
         );
 
         if (defined("HHVM_VERSION")) {
@@ -155,7 +157,8 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
                 $this->getMock('Go\Core\AspectContainer')
             ),
             $this->broker,
-            $this->adviceMatcher
+            $this->adviceMatcher,
+            $this->getMock('Go\Instrument\ClassLoading\CachePathManager', array(), array($this->kernel))
         );
         $this->metadata->source = $this->loadTest('class');
         $this->transformer->transform($this->metadata);
