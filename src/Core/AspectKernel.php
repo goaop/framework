@@ -190,7 +190,7 @@ abstract class AspectKernel
 
         return array(
             'debug'                  => false,
-            'appDir'                 => __DIR__ . '/../../../../../../',
+            'appDir'                 => __DIR__ . '/../../../../../',
             'cacheDir'               => null,
             'cacheFileMode'          => null,
             'features'               => $features,
