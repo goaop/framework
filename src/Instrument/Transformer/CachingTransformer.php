@@ -20,20 +20,6 @@ use Go\Instrument\ClassLoading\CachePathManager;
 class CachingTransformer extends BaseSourceTransformer
 {
     /**
-     * Root path of application
-     *
-     * @var string
-     */
-    protected $rootPath = '';
-
-    /**
-     * Cache directory
-     *
-     * @var string
-     */
-    protected $cachePath = '';
-
-    /**
      * Mask of permission bits for cache files.
      * By default, permissions are affected by the umask system setting
      *
@@ -61,28 +47,9 @@ class CachingTransformer extends BaseSourceTransformer
     public function __construct(AspectKernel $kernel, $transformers, CachePathManager $cacheManager)
     {
         parent::__construct($kernel);
-        $cacheDir = $this->options['cacheDir'];
-        $this->cacheManager = $cacheManager;
-
-        if ($cacheDir) {
-            if (!is_dir($cacheDir)) {
-                $cacheRootDir = dirname($cacheDir);
-                if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
-                    throw new \InvalidArgumentException(
-                        "Can not create a directory {$cacheDir} for the cache.
-                        Parent directory {$cacheRootDir} is not writable or not exist.");
-                }
-                mkdir($cacheDir, 0770);
-            }
-            if (!$this->kernel->hasFeature(Features::PREBUILT_CACHE) && !is_writable($cacheDir)) {
-                throw new \InvalidArgumentException("Cache directory {$cacheDir} is not writable");
-            }
-            $this->cachePath     = $cacheDir;
-            $this->cacheFileMode = (int)$this->options['cacheFileMode'];
-        }
-
-        $this->rootPath     = $this->options['appDir'];
-        $this->transformers = $transformers;
+        $this->cacheManager  = $cacheManager;
+        $this->cacheFileMode = (int) $this->options['cacheFileMode'];
+        $this->transformers  = $transformers;
     }
 
     /**
@@ -94,7 +61,7 @@ class CachingTransformer extends BaseSourceTransformer
     public function transform(StreamMetaData $metadata)
     {
         // Do not create a cache
-        if (!$this->cachePath) {
+        if (!$this->cacheManager->getCacheDir()) {
             return $this->processTransformers($metadata);
         }
 

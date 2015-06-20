@@ -9,6 +9,7 @@
  */
 
 namespace Go\Instrument\ClassLoading;
+use Go\Aop\Features;
 use Go\Core\AspectKernel;
 
 /**
@@ -63,9 +64,44 @@ class CachePathManager
         $this->cacheDir = $this->options['cacheDir'];
         $this->appDir   = $this->options['appDir'];
 
-        if ($this->cacheDir && file_exists($this->cacheDir. self::CACHE_FILE_NAME)) {
-            $this->cacheState = include $this->cacheDir . self::CACHE_FILE_NAME;
+        if ($this->cacheDir) {
+            if (!is_dir($this->cacheDir)) {
+                $cacheRootDir = dirname($this->cacheDir);
+                if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
+                    throw new \InvalidArgumentException(
+                        "Can not create a directory {$this->cacheDir} for the cache.
+                        Parent directory {$cacheRootDir} is not writable or not exist.");
+                }
+                mkdir($this->cacheDir, 0770);
+            }
+            if (!$this->kernel->hasFeature(Features::PREBUILT_CACHE) && !is_writable($this->cacheDir)) {
+                throw new \InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
+            }
+
+            if (file_exists($this->cacheDir. self::CACHE_FILE_NAME)) {
+                $this->cacheState = include $this->cacheDir . self::CACHE_FILE_NAME;
+            }
         }
+    }
+
+    /**
+     * Returns current cache directory for aspects, can be bull
+     *
+     * @return null|string
+     */
+    public function getCacheDir()
+    {
+        return $this->cacheDir;
+    }
+
+    /**
+     * Configures a new cache directory for aspects
+     *
+     * @param string $cacheDir New cache directory
+     */
+    public function setCacheDir($cacheDir)
+    {
+        $this->cacheDir = $cacheDir;
     }
 
     /**
@@ -92,6 +128,10 @@ class CachePathManager
     {
         if (!$resource) {
             return $this->cacheState;
+        }
+
+        if (isset($this->newCacheState[$resource])) {
+            return $this->newCacheState[$resource];
         }
 
         if (isset($this->cacheState[$resource])) {
@@ -121,19 +161,29 @@ class CachePathManager
      */
     public function __destruct()
     {
+        $this->flushCacheState();
+    }
+
+    /**
+     * Flushes the cache state into the file
+     */
+    public function flushCacheState()
+    {
         if ($this->newCacheState) {
             $fullCacheMap = $this->newCacheState + $this->cacheState;
             $cachePath    = substr(var_export($this->cacheDir, true), 1, -1);
             $rootPath     = substr(var_export($this->appDir, true), 1, -1);
             $cacheData    = '<?php return ' . var_export($fullCacheMap, true) . ';';
             $cacheData    = strtr($cacheData, array(
-                '\''.$cachePath => 'AOP_CACHE_DIR . \'',
-                '\''.$rootPath  => 'AOP_ROOT_DIR . \''
+                '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
+                '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
             ));
             file_put_contents($this->cacheDir . self::CACHE_FILE_NAME, $cacheData);
             if (function_exists('opcache_invalidate')) {
                 opcache_invalidate($this->cacheDir . self::CACHE_FILE_NAME, true);
             }
+            $this->cacheState    = $this->newCacheState + $this->cacheState;
+            $this->newCacheState = array();
         }
     }
 }
