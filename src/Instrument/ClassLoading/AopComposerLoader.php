@@ -51,6 +51,13 @@ class AopComposerLoader
     private $cacheState;
 
     /**
+     * Was initialization successful or not
+     *
+     * @var bool
+     */
+    private static $wasInitialized = false;
+
+    /**
      * Constructs an wrapper for the composer loader
      *
      * @param ClassLoader $original Instance of current loader
@@ -74,6 +81,8 @@ class AopComposerLoader
      *
      * @param array $options Aspect kernel options
      * @param AspectContainer $container
+     *
+     * @return bool was initialization sucessful or not
      */
     public static function init(array $options = array(), AspectContainer $container)
     {
@@ -91,6 +100,7 @@ class AopComposerLoader
                     return class_exists($class, false);
                 });
                 $loader[0] = new AopComposerLoader($loader[0], $container, $options);
+                self::$wasInitialized = true;
             }
             spl_autoload_unregister($loaderToUnregister);
         }
@@ -99,6 +109,8 @@ class AopComposerLoader
         foreach ($loaders as $loader) {
             spl_autoload_register($loader);
         }
+
+        return self::$wasInitialized;
     }
 
     /**
@@ -132,5 +144,15 @@ class AopComposerLoader
     public function findFile($class)
     {
         return $this->original->findFile($class);
+    }
+
+    /**
+     * Whether or not loader was initialized
+     *
+     * @return bool
+     */
+    public static function wasInitialized()
+    {
+        return self::$wasInitialized;
     }
 }
