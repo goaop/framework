@@ -89,6 +89,11 @@ class CachingTransformer extends BaseSourceTransformer
         $originalUri = $metadata->uri;
         $cacheUri    = str_replace($this->rootPath, $this->cachePath, $originalUri);
 
+        // Guard to disable overwriting of original files
+        if ($cacheUri === $originalUri) {
+            return;
+        }
+
         $lastModified  = filemtime($originalUri);
         $cacheModified = file_exists($cacheUri) ? filemtime($cacheUri) : 0;
 
