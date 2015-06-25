@@ -118,11 +118,24 @@ class AopComposerLoader
      */
     public function loadClass($class)
     {
+        $file = $this->findFile($class);
+
+        if ($file) {
+            include $file;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function findFile($class)
+    {
         static $isAllowedFilter = null, $isProduction = false;
         if (!$isAllowedFilter) {
             $isAllowedFilter = $this->fileEnumerator->getFilter();
             $isProduction    = !$this->options['debug'];
         }
+
         $file = $this->original->findFile($class);
 
         if ($file) {
@@ -133,17 +146,9 @@ class AopComposerLoader
                 // can be optimized here with $cacheState even for debug mode, but no needed right now
                 $file = FilterInjectorTransformer::rewrite($file);
             }
-
-            include $file;
         }
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function findFile($class)
-    {
-        return $this->original->findFile($class);
+        return $file;
     }
 
     /**
