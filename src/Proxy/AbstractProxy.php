@@ -119,6 +119,8 @@ abstract class AbstractProxy
         $type = '';
         if ($parameter->isArray()) {
             $type = 'array';
+        } elseif ($parameter->isCallable()) {
+            $type = 'callable';
         } elseif ($parameter->getClass()) {
             $type = '\\' . $parameter->getClass()->name;
         }
