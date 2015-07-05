@@ -204,17 +204,19 @@ class ClassProxy extends AbstractProxy
      *
      * @param int $methodFlags See ReflectionMethod modifiers
      * @param string $methodName Name of the method
+     * @param bool $byReference Is method should return value by reference
      * @param string $body Body of method
      * @param string $parameters Definition of parameters
      *
      * @return static
      */
-    public function setMethod($methodFlags, $methodName, $body, $parameters)
+    public function setMethod($methodFlags, $methodName, $byReference, $body, $parameters)
     {
         $this->methodsCode[$methodName] = (
             "/**\n * Method was created automatically, do not change it manually\n */\n" .
             join(' ', Reflection::getModifierNames($methodFlags)) . // List of method modifiers
             ' function ' . // 'function' keyword
+            ($byReference ? '&' : '') . // Return value by reference
             $methodName . // Method name
             '(' . // Start of parameter list
             $parameters . // List of parameters
@@ -500,14 +502,15 @@ class ClassProxy extends AbstractProxy
      */
     protected function addFieldInterceptorsCode(ParsedMethod $constructor = null)
     {
+        $byReference = false;
         $this->setProperty(Property::IS_PRIVATE, '__properties', 'array()');
-        $this->setMethod(Method::IS_PUBLIC, '__get', $this->getMagicGetterBody(), '$name');
-        $this->setMethod(Method::IS_PUBLIC, '__set', $this->getMagicSetterBody(), '$name, $value');
+        $this->setMethod(Method::IS_PUBLIC, '__get', $byReference, $this->getMagicGetterBody(), '$name');
+        $this->setMethod(Method::IS_PUBLIC, '__set', $byReference, $this->getMagicSetterBody(), '$name, $value');
         $this->isFieldsIntercepted = true;
         if ($constructor) {
             $this->override('__construct', $this->getConstructorBody($constructor, true));
         } else {
-            $this->setMethod(Method::IS_PUBLIC, '__construct', $this->getConstructorBody(), '');
+            $this->setMethod(Method::IS_PUBLIC, '__construct', $byReference, $this->getConstructorBody(), '');
         }
     }
 
