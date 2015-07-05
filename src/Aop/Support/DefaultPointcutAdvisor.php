@@ -11,7 +11,9 @@
 namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
+use Go\Aop\Framework\DynamicInvocationMatcherInterceptor;
 use Go\Aop\Pointcut;
+use Go\Aop\PointFilter;
 
 /**
  * Convenient Pointcut-driven Advisor implementation.
@@ -40,6 +42,23 @@ class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
         $this->pointcut = $pointcut;
         $this->setAdvice($advice);
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getAdvice()
+    {
+        $advice = parent::getAdvice();
+        if ($this->pointcut->getKind() & PointFilter::KIND_DYNAMIC) {
+            $advice = new DynamicInvocationMatcherInterceptor(
+                $this->pointcut,
+                $advice
+            );
+        }
+
+        return $advice;
+    }
+
 
     /**
      * Get the Pointcut that drives this advisor.

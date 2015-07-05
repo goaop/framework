@@ -170,7 +170,7 @@ class PointcutGrammar extends Grammar
         $this('pointcutReference')
             ->is('namespaceName', '->', 'namePatternPart')
             ->call(function ($className, $_0, $name) use ($container) {
-                return $container->getPointcut("{$className}->{$name}");
+                return new PointcutReference($container, "{$className}->{$name}");
             });
 
         $this('propertyAccessReference')

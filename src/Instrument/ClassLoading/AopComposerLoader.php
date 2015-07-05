@@ -69,7 +69,15 @@ class AopComposerLoader
         $this->options  = $options;
         $this->original = $original;
 
-        $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
+        $prefixes     = $original->getPrefixes();
+        $excludePaths = $options['excludePaths'];
+
+        // Let's exclude core dependencies from that list
+        $excludePaths[] = $prefixes['Dissect'][0];
+        $excludePaths[] = $prefixes['TokenReflection'][0];
+        $excludePaths[] = substr($prefixes['Doctrine\\Common\\Annotations\\'][0], 0, -16);
+
+        $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
         $this->fileEnumerator = $fileEnumerator;
         $this->cacheState     = $container->get('aspect.cache.path.manager')->queryCacheState();
     }

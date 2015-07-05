@@ -10,11 +10,13 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Advisor;
 use Go\Aop\Features;
 use Go\Aop\Framework\AbstractJoinpoint;
-use Go\Core\AspectContainer;
 use Go\Core\AdviceMatcher;
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\CleanableMemory;
 use Go\Proxy\ClassProxy;
@@ -49,24 +51,34 @@ class WeavingTransformer extends BaseSourceTransformer
     private $cachePathManager;
 
     /**
+     * Instance of aspect loader
+     *
+     * @var AspectLoader
+     */
+    protected $aspectLoader;
+
+    /**
      * Constructs a weaving transformer
      *
      * @param AspectKernel $kernel Instance of aspect kernel
      * @param Broker $broker Instance of reflection broker to use
      * @param AdviceMatcher $adviceMatcher Advice matcher for class
      * @param CachePathManager $cachePathManager Cache manager
+     * @param AspectLoader $loader Loader for aspects
      */
     public function __construct(
         AspectKernel $kernel,
         Broker $broker,
         AdviceMatcher $adviceMatcher,
-        CachePathManager $cachePathManager
+        CachePathManager $cachePathManager,
+        AspectLoader $loader
     )
     {
         parent::__construct($kernel);
         $this->broker           = $broker;
         $this->adviceMatcher    = $adviceMatcher;
         $this->cachePathManager = $cachePathManager;
+        $this->aspectLoader     = $loader;
     }
 
     /**
@@ -89,6 +101,13 @@ class WeavingTransformer extends BaseSourceTransformer
 
             return false;
         }
+
+        // Check if we have some new aspects that weren't loaded yet
+        $unloadedAspects = $this->aspectLoader->getUnloadedAspects();
+        if ($unloadedAspects) {
+            $this->loadAndRegisterAspects($unloadedAspects);
+        }
+        $advisors = $this->container->getByTag('advisor');
 
         /** @var $namespaces ParsedFileNamespace[] */
         $namespaces = $parsedSource->getNamespaces();
@@ -114,10 +133,10 @@ class WeavingTransformer extends BaseSourceTransformer
                 if ($class->isInterface() || in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
                     continue;
                 }
-                $wasClassProcessed    = $this->processSingleClass($metadata, $class, $lineOffset);
+                $wasClassProcessed    = $this->processSingleClass($advisors, $metadata, $class, $lineOffset);
                 $totalTransformations += (integer) $wasClassProcessed;
             }
-            $wasFunctionsProcessed = $this->processFunctions($metadata, $namespace);
+            $wasFunctionsProcessed = $this->processFunctions($advisors, $metadata, $namespace);
             $totalTransformations  += (integer) $wasFunctionsProcessed;
         }
 
@@ -130,15 +149,16 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Performs weaving of single class if needed
      *
+     * @param array|Advisor[] $advisors
      * @param StreamMetaData $metadata Source stream information
      * @param ParsedClass $class Instance of class to analyze
      * @param integer $lineOffset Current offset, will be updated to store the last position
      *
      * @return bool True if was class processed, false otherwise
      */
-    private function processSingleClass(StreamMetaData $metadata, ParsedClass $class, &$lineOffset)
+    private function processSingleClass(array $advisors, StreamMetaData $metadata, ParsedClass $class, &$lineOffset)
     {
-        $advices = $this->adviceMatcher->getAdvicesForClass($class);
+        $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
 
         if (!$advices) {
             // Fast return if there aren't any advices for that class
@@ -219,17 +239,18 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Performs weaving of functions in the current namespace
      *
+     * @param array|Advisor[] $advisors List of advisors
      * @param StreamMetaData $metadata Source stream information
      * @param ParsedFileNamespace $namespace Current namespace for file
      *
      * @return boolean True if functions were processed, false otherwise
      */
-    private function processFunctions(StreamMetaData $metadata, $namespace)
+    private function processFunctions(array $advisors, StreamMetaData $metadata, $namespace)
     {
         static $cacheDirSuffix = '/_functions/';
 
         $wasProcessedFunctions = false;
-        $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace);
+        $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace, $advisors);
         $cacheDir        = $this->cachePathManager->getCacheDir();
         if ($functionAdvices && $cacheDir) {
             $cacheDir = $cacheDir . $cacheDirSuffix;
@@ -291,5 +312,17 @@ class WeavingTransformer extends BaseSourceTransformer
         file_put_contents($proxyFileName, $body);
 
         return 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
+    }
+
+    /**
+     * Utility method to load and register unloaded aspects
+     *
+     * @param array $unloadedAspects List of unloaded aspects
+     */
+    private function loadAndRegisterAspects(array $unloadedAspects)
+    {
+        foreach ($unloadedAspects as $unloadedAspect) {
+            $this->aspectLoader->loadAndRegister($unloadedAspect);
+        }
     }
 }
