@@ -10,7 +10,6 @@ Go! AOP is a modern aspect-oriented framework in plain PHP with rich features fo
 [![SensioLabs Insight](https://img.shields.io/sensiolabs/i/5998393e-29ea-48f8-8e7e-b19e86daa2db.svg)](https://insight.sensiolabs.com/projects/5998393e-29ea-48f8-8e7e-b19e86daa2db)
 [![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%205.4-8892BF.svg)](https://php.net/)
 [![License](https://img.shields.io/packagist/l/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
-[![Gratipay](https://img.shields.io/gratipay/lisachenko.svg)](https://gratipay.com/lisachenko/)
 
 Features
 ------------
@@ -194,7 +193,7 @@ use Aspect/MonitorAspect;
 //...
 ```
 
-Now you are ready to use the power of aspects! Feel free to change anything everywhere. If you like this project, you could support it <a href="https://flattr.com/submit/auto?user_id=lisachenko&url=https://github.com/lisachenko/go-aop-php&title=Go!%20AOP%20PHP%20Framework&language=en_GB&tags=aop,php,framework,programming,library"><img align="bottom" alt="Flattr this project!" src="https://api.flattr.com/button/flattr-badge-large.png"></a>
+Now you are ready to use the power of aspects! Feel free to change anything everywhere. If you like this project, you could support it <a href="https://flattr.com/submit/auto?user_id=lisachenko&url=https://github.com/lisachenko/go-aop-php&title=Go!%20AOP%20PHP%20Framework&language=en_GB&tags=aop,php,framework,programming,library"><img align="bottom" alt="Flattr this project!" src="https://api.flattr.com/button/flattr-badge-large.png"></a> [![Gratipay](https://img.shields.io/gratipay/lisachenko.svg)](https://gratipay.com/lisachenko/)
 
 Documentation
 -------------
