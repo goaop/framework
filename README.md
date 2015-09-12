@@ -181,7 +181,7 @@ To register the aspect just add an instance of it in the `configureAop()` method
 ``` php
 // app/ApplicationAspectKernel.php
 
-use Aspect/MonitorAspect;
+use Aspect\MonitorAspect;
 
 //...
 
