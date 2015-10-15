@@ -5,6 +5,7 @@
         "This file is @generated automatically"
     ],
     "hash": "92de328629c36bae8eea13236d818089",
+    "content-hash": "a14241ab23645b34f0abaf16733d6f94",
     "packages": [
         {
             "name": "andrewsville/php-token-reflection",
@@ -37,7 +38,7 @@
             "authors": [
                 {
                     "name": "Ondřej Nešpor",
-                    "homepage": "https://github.com/Andrewsville"
+                    "homepage": "https://github.com/andrewsville"
                 },
                 {
                     "name": "Jaroslav Hanslík",
@@ -55,16 +56,16 @@
         },
         {
             "name": "doctrine/annotations",
-            "version": "v1.2.4",
+            "version": "v1.2.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/annotations.git",
-                "reference": "b5202eb9e83f8db52e0e58867e0a46e63be8332e"
+                "reference": "f25c8aab83e0c3e976fd7d19875f198ccf2f7535"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/annotations/zipball/b5202eb9e83f8db52e0e58867e0a46e63be8332e",
-                "reference": "b5202eb9e83f8db52e0e58867e0a46e63be8332e",
+                "url": "https://api.github.com/repos/doctrine/annotations/zipball/f25c8aab83e0c3e976fd7d19875f198ccf2f7535",
+                "reference": "f25c8aab83e0c3e976fd7d19875f198ccf2f7535",
                 "shasum": ""
             },
             "require": {
@@ -119,7 +120,7 @@
                 "docblock",
                 "parser"
             ],
-            "time": "2014-12-23 22:40:37"
+            "time": "2015-08-31 12:32:49"
         },
         {
             "name": "doctrine/lexer",
@@ -181,12 +182,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/jakubledl/dissect.git",
-                "reference": "d3a391de31e45a247e95cef6cf58a91c05af67c4"
+                "reference": "fd779d60d058fc4d5bbe1e5a16a8a90421bf91d2"
             },
             "dist": {
                 "type": "zip",
                 "url": "https://api.github.com/repos/jakubledl/dissect/zipball/d3a391de31e45a247e95cef6cf58a91c05af67c4",
-                "reference": "d3a391de31e45a247e95cef6cf58a91c05af67c4",
+                "reference": "fd779d60d058fc4d5bbe1e5a16a8a90421bf91d2",
                 "shasum": ""
             },
             "require": {
@@ -234,16 +235,16 @@
     "packages-dev": [
         {
             "name": "symfony/console",
-            "version": "v2.7.0",
+            "version": "v2.7.5",
             "source": {
                 "type": "git",
-                "url": "https://github.com/symfony/Console.git",
-                "reference": "7f0bec04961c61c961df0cb8c2ae88dbfd83f399"
+                "url": "https://github.com/symfony/console.git",
+                "reference": "06cb17c013a82f94a3d840682b49425cd00a2161"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/Console/zipball/7f0bec04961c61c961df0cb8c2ae88dbfd83f399",
-                "reference": "7f0bec04961c61c961df0cb8c2ae88dbfd83f399",
+                "url": "https://api.github.com/repos/symfony/console/zipball/06cb17c013a82f94a3d840682b49425cd00a2161",
+                "reference": "06cb17c013a82f94a3d840682b49425cd00a2161",
                 "shasum": ""
             },
             "require": {
@@ -287,7 +288,7 @@
             ],
             "description": "Symfony Console Component",
             "homepage": "https://symfony.com",
-            "time": "2015-05-29 16:22:24"
+            "time": "2015-09-25 08:32:23"
         }
     ],
     "aliases": [],
