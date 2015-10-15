@@ -10,7 +10,6 @@
 
 namespace Go\Instrument\Transformer;
 
-use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 
