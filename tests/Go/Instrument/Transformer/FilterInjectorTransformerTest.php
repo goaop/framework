@@ -136,7 +136,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $this->metadata->source = FilterInjectorTransformer::rewrite('_files/class.php', __DIR__);
         $output = FilterInjectorTransformer::PHP_FILTER_READ
                 . 'unit.test/resource='
-                . stream_resolve_include_path('_files/class.php');
+                . stream_resolve_include_path(__DIR__ . '/_files/class.php');
         $this->assertEquals($output, $this->metadata->source);
     }
 

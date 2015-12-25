@@ -15,6 +15,8 @@ use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Composer\Autoload\ClassLoader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
+use Go\ParserReflection\Locator\ComposerLocator;
+use Go\ParserReflection\ReflectionEngine;
 
 /**
  * AopComposerLoader class is responsible to use a weaver for classes instead of original one
@@ -74,7 +76,6 @@ class AopComposerLoader
 
         // Let's exclude core dependencies from that list
         $excludePaths[] = $prefixes['Dissect'][0];
-        $excludePaths[] = $prefixes['TokenReflection'][0];
         $excludePaths[] = substr($prefixes['Doctrine\\Common\\Annotations\\'][0], 0, -16);
 
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
@@ -100,7 +101,7 @@ class AopComposerLoader
             $loaderToUnregister = $loader;
             if (is_array($loader) && ($loader[0] instanceof ClassLoader)) {
                 $originalLoader = $loader[0];
-
+                ReflectionEngine::init(new ComposerLocator($originalLoader));
                 // Configure library loader for doctrine annotation loader
                 AnnotationRegistry::registerLoader(function($class) use ($originalLoader) {
                     $originalLoader->loadClass($class);

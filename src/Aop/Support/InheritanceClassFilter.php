@@ -12,7 +12,6 @@ namespace Go\Aop\Support;
 
 use ReflectionClass;
 use Go\Aop\PointFilter;
-use TokenReflection\ReflectionClass as ParsedReflectionClass;
 
 /**
  * Inheritance class matcher that match single class name or any subclass
@@ -42,8 +41,8 @@ class InheritanceClassFilter implements PointFilter
      */
     public function matches($class)
     {
-        /** @var $point ReflectionClass|ParsedReflectionClass */
-        if (!$class instanceof ReflectionClass && !$class instanceof ParsedReflectionClass) {
+        /** @var $point ReflectionClass */
+        if (!$class instanceof ReflectionClass) {
             return false;
         }
 

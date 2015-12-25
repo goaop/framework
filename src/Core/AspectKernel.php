@@ -13,7 +13,6 @@ namespace Go\Core;
 use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
-use Go\Instrument\CleanableMemory;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\SourceTransformer;
@@ -21,7 +20,6 @@ use Go\Instrument\Transformer\WeavingTransformer;
 use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
-use TokenReflection;
 
 /**
  * Abstract aspect kernel is used to prepare an application to work with aspects.
@@ -227,9 +225,6 @@ abstract class AspectKernel
             $aspectContainer = $aspectKernel->getContainer();
             $transformers[]  = new WeavingTransformer(
                 $aspectKernel,
-                new TokenReflection\Broker(
-                    new CleanableMemory()
-                ),
                 $aspectContainer->get('aspect.advice_matcher'),
                 $cacheManager,
                 $aspectContainer->get('aspect.cached.loader')

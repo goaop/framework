@@ -10,11 +10,11 @@
 
 namespace Go\Aop\Pointcut;
 
+use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Pointcut;
-use Go\Instrument\RawAnnotationReader;
-use TokenReflection\ReflectionClass as ParsedReflectionClass;
-use TokenReflection\ReflectionMethod as ParsedReflectionMethod;
-use TokenReflection\ReflectionProperty as ParsedReflectionProperty;
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Annotation property pointcut checks property annotation
@@ -32,7 +32,7 @@ class AnnotationPointcut implements Pointcut
     /**
      * Annotation reader
      *
-     * @var null|RawAnnotationReader
+     * @var null|Reader
      */
     protected $annotationReader = null;
 
@@ -62,33 +62,21 @@ class AnnotationPointcut implements Pointcut
      *
      * @var array
      */
-    protected static $mappings = array(
-        self::KIND_CLASS => array(
-            'TokenReflection\ReflectionClass',
-            'getClassAnnotation'
-        ),
-        self::KIND_TRAIT => array(
-            'TokenReflection\ReflectionClass',
-            'getClassAnnotation'
-        ),
-        self::KIND_METHOD => array(
-            'TokenReflection\ReflectionMethod',
-            'getMethodAnnotation'
-        ),
-        self::KIND_PROPERTY => array(
-            'TokenReflection\ReflectionProperty',
-            'getPropertyAnnotation'
-        )
-    );
+    protected static $mappings = [
+        self::KIND_CLASS    => [ReflectionClass::class, 'getClassAnnotation'],
+        self::KIND_TRAIT    => [ReflectionClass::class, 'getClassAnnotation'],
+        self::KIND_METHOD   => [ReflectionMethod::class, 'getMethodAnnotation'],
+        self::KIND_PROPERTY => [ReflectionProperty::class, 'getPropertyAnnotation']
+    ];
 
     /**
      * Annotation matcher constructor
      *
      * @param integer $filterKind Kind of filter, e.g. KIND_CLASS
-     * @param RawAnnotationReader $reader Reader of annotations
+     * @param Reader $reader Reader of annotations
      * @param string $annotationName Annotation class name to match
      */
-    public function __construct($filterKind, RawAnnotationReader $reader, $annotationName)
+    public function __construct($filterKind, Reader $reader, $annotationName)
     {
         if (!isset(self::$mappings[$filterKind])) {
             throw new \InvalidArgumentException("Unsupported filter kind {$filterKind}");
@@ -101,7 +89,7 @@ class AnnotationPointcut implements Pointcut
     }
 
     /**
-     * @param ParsedReflectionClass|ParsedReflectionMethod|ParsedReflectionProperty $point
+     * @param ReflectionClass|ReflectionMethod|ReflectionProperty $point
      * {@inheritdoc}
      */
     public function matches($point)
@@ -110,9 +98,6 @@ class AnnotationPointcut implements Pointcut
         if (!$point instanceof $expectedClass) {
             return false;
         }
-
-        $aliases = $point->getNamespaceAliases();
-        $this->annotationReader->setImports($aliases);
 
         $annotation = $this->annotationReader->{$this->annotationMethod}($point, $this->annotationName);
 

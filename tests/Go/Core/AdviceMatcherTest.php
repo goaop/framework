@@ -8,8 +8,10 @@ use Go\Aop\Advisor;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Aop\Support\TruePointFilter;
+use Go\ParserReflection\Locator\ComposerLocator;
+use Go\ParserReflection\ReflectionEngine;
+use Go\ParserReflection\ReflectionFile;
 use PHPUnit_Framework_TestCase as TestCase;
-use TokenReflection\Broker;
 
 class AdviceMatcherTest extends TestCase
 {
@@ -20,6 +22,16 @@ class AdviceMatcherTest extends TestCase
 
     protected $reflectionClass = null;
 
+    /**
+     * This method is called before the first test of this test class is run.
+     *
+     * @since Method available since Release 3.4.0
+     */
+    public static function setUpBeforeClass()
+    {
+        ReflectionEngine::init(new ComposerLocator());
+    }
+
     protected function setUp()
     {
         $container = $this->getMock(AspectContainer::class);
@@ -28,9 +40,8 @@ class AdviceMatcherTest extends TestCase
 
         $this->adviceMatcher = new AdviceMatcher($loader, $container);
 
-        $brokerInstance = new Broker(new Broker\Backend\Memory());
-        $brokerInstance->processFile(__FILE__);
-        $this->reflectionClass = $brokerInstance->getClass(__CLASS__);
+        $reflectionFile        = new ReflectionFile(__FILE__);
+        $this->reflectionClass = $reflectionFile->getFileNamespace(__NAMESPACE__)->getClass(__CLASS__);
     }
 
     /**
