@@ -18,7 +18,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public static function setUpBeforeClass()
     {
         parent::setUpBeforeClass();
-        self::$invocationClass = MethodInvocationComposer::compose(true, true, false, false);
+        self::$invocationClass = MethodInvocationComposer::compose(true, false, false);
 
     }
 

@@ -16,7 +16,7 @@ class DynamicReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public static function setUpBeforeClass()
     {
         parent::setUpBeforeClass();
-        self::$invocationClass = MethodInvocationComposer::compose(false, false, false, false);
+        self::$invocationClass = DynamicReflectionMethodInvocation::class;
     }
 
     /**

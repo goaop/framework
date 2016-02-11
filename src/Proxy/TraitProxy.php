@@ -61,7 +61,6 @@ class TraitProxy extends ClassProxy
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
             self::setMappings(
-                $aspectKernel->hasFeature(Features::USE_CLOSURE),
                 $aspectKernel->hasFeature(Features::USE_SPLAT_OPERATOR)
             );
         }

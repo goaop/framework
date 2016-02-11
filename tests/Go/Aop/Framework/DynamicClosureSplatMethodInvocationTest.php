@@ -21,7 +21,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
         parent::setUpBeforeClass();
         // Add version check to prevent fatals
         if (PHP_VERSION_ID >= 50600) {
-            self::$invocationClass = MethodInvocationComposer::compose(false, true, true, false);
+            self::$invocationClass = MethodInvocationComposer::compose(false, true, false);
         }
     }
 

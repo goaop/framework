@@ -76,9 +76,9 @@ abstract class BaseAdvice implements OrderedAdvice
      */
     public static function serializeAdvice($adviceMethod)
     {
-        static $useClosure;
-        if (!isset($useClosure)) {
-            $useClosure = AspectKernel::getInstance()->hasFeature(Features::USE_CLOSURE);
+        static $useWrappedClosure;
+        if (!isset($useWrappedClosure)) {
+            $useWrappedClosure = AspectKernel::getInstance()->hasFeature(Features::USE_WRAPPED_CLOSURE);
         }
 
         $refAdvice    = new ReflectionFunction($adviceMethod);
@@ -88,13 +88,13 @@ abstract class BaseAdvice implements OrderedAdvice
             $scope     = $refVariables['scope'];
             $refAdvice = new ReflectionFunction($refVariables['adviceCallback']);
         }
-        if ($useClosure) {
-            $method = $refAdvice;
-            $aspect = $refAdvice->getClosureThis();
-        } else {
+        if ($useWrappedClosure) {
             $vars   = $refAdvice->getStaticVariables();
             $method = $vars['refMethod'];
             $aspect = $vars['aspect'];
+        } else {
+            $method = $refAdvice;
+            $aspect = $refAdvice->getClosureThis();
         }
 
         return array(
@@ -144,17 +144,17 @@ abstract class BaseAdvice implements OrderedAdvice
      */
     public static function fromAspectReflection(Aspect $aspect, ReflectionMethod $refMethod)
     {
-        static $useClosure;
-        if (!isset($useClosure)) {
-            $useClosure = AspectKernel::getInstance()->hasFeature(Features::USE_CLOSURE);
+        static $useWrappedClosure;
+        if (!isset($useWrappedClosure)) {
+            $useWrappedClosure = AspectKernel::getInstance()->hasFeature(Features::USE_WRAPPED_CLOSURE);
         }
 
-        if ($useClosure) {
-            return $refMethod->getClosure($aspect);
-        } else {
+        if ($useWrappedClosure) {
             return function () use ($aspect, $refMethod) {
                 return $refMethod->invokeArgs($aspect, func_get_args());
             };
+        } else {
+            return $refMethod->getClosure($aspect);
         }
     }
 

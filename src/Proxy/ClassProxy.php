@@ -259,13 +259,12 @@ class ClassProxy extends AbstractProxy
     /**
      * Initialize static mappings to reduce the time for checking features
      *
-     * @param bool $useClosureBinding Enables usage of closures instead of reflection
      * @param bool $useSplatOperator Enables usage of optimized invocation with splat operator
      */
-    protected static function setMappings($useClosureBinding, $useSplatOperator)
+    protected static function setMappings($useSplatOperator)
     {
-        $dynamicMethodClass = MethodInvocationComposer::compose(false, $useClosureBinding, $useSplatOperator, false);
-        $staticMethodClass  = MethodInvocationComposer::compose(true, $useClosureBinding, $useSplatOperator, false);
+        $dynamicMethodClass = MethodInvocationComposer::compose(false, $useSplatOperator, false);
+        $staticMethodClass  = MethodInvocationComposer::compose(true, $useSplatOperator, false);
 
         // We are using LSB here and overridden static property
         static::$invocationClassMap = array(
@@ -298,7 +297,6 @@ class ClassProxy extends AbstractProxy
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
             self::setMappings(
-                $aspectKernel->hasFeature(Features::USE_CLOSURE),
                 $aspectKernel->hasFeature(Features::USE_SPLAT_OPERATOR)
             );
         }

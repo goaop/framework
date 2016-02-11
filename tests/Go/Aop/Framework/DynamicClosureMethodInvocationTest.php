@@ -19,7 +19,7 @@ class DynamicClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public static function setUpBeforeClass()
     {
         parent::setUpBeforeClass();
-        self::$invocationClass = MethodInvocationComposer::compose(false, true, false, false);
+        self::$invocationClass = MethodInvocationComposer::compose(false, false, false);
     }
 
     /**
