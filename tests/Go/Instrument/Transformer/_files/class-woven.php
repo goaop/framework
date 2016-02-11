@@ -41,12 +41,12 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
 
     public static function publicStaticMethod()
     {
-        return self::$__joinPoints['static:publicStaticMethod']->__invoke(\get_called_class());
+        return self::$__joinPoints['static:publicStaticMethod']->__invoke(static::class);
     }
 
     protected static function protectedStaticMethod()
     {
-        return self::$__joinPoints['static:protectedStaticMethod']->__invoke(\get_called_class());
+        return self::$__joinPoints['static:protectedStaticMethod']->__invoke(static::class);
     }
 
     public function publicMethodDynamicArguments($a, &$b)

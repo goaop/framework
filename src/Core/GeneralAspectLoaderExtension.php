@@ -75,7 +75,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      */
     public function load(Aspect $aspect, $reflection, $metaInformation = null)
     {
-        $loadedItems    = array();
+        $loadedItems    = [];
         $pointcut       = $this->parsePointcut($aspect, $reflection, $metaInformation);
         $methodId       = get_class($aspect).'->'.$reflection->name;
         $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);

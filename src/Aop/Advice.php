@@ -12,6 +12,8 @@ namespace Go\Aop;
 
 /**
  * Tag interface for Advice. Implementations can be any type of advice, such as Interceptors.
+ *
+ * @api
  */
 interface Advice
 {

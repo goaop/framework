@@ -28,14 +28,14 @@ class TraitProxy extends ClassProxy
      *
      * @var array
      */
-    protected static $traitAdvices = array();
+    protected static $traitAdvices = [];
 
     /**
      * Overridden static property for TraitProxy
      *
      * {@inheritDoc}
      */
-    protected static $invocationClassMap = array();
+    protected static $invocationClassMap = [];
 
     /**
      * Inject advices for given trait
@@ -47,7 +47,7 @@ class TraitProxy extends ClassProxy
      *
      * @return void
      */
-    public static function injectJoinPoints($className, array $traitAdvices = array())
+    public static function injectJoinPoints($className, array $traitAdvices = [])
     {
         self::$traitAdvices[$className] = $traitAdvices;
     }
@@ -61,14 +61,13 @@ class TraitProxy extends ClassProxy
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
             self::setMappings(
-                $aspectKernel->hasFeature(Features::USE_CLOSURE),
                 $aspectKernel->hasFeature(Features::USE_SPLAT_OPERATOR)
             );
         }
 
         $advices = self::$traitAdvices[$traitName][$joinPointType][$pointName];
 
-        $filledAdvices = array();
+        $filledAdvices = [];
         foreach ($advices as $advisorName) {
             $filledAdvices[] = $accessor->$advisorName;
         }
@@ -89,7 +88,7 @@ class TraitProxy extends ClassProxy
     {
         $isStatic = $method->isStatic();
         $class    = '\\' . __CLASS__;
-        $scope    = $isStatic ? $this->staticLsbExpression : '$this';
+        $scope    = $isStatic ? self::$staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $args = join(', ', array_map(function (ParsedParameter $param) {
@@ -137,7 +136,7 @@ BODY;
 
     private function getMethodAliasesCode()
     {
-        $aliasesLines = array();
+        $aliasesLines = [];
         foreach (array_keys($this->methodsCode) as $methodName) {
             $aliasesLines[] = "{$this->parentClassName}::{$methodName} as protected {$methodName}➩;";
         }

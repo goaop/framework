@@ -55,7 +55,7 @@ abstract class AspectKernel
      *
      * @var string
      */
-    protected static $containerClass = 'Go\Core\GoAspectContainer';
+    protected static $containerClass = GoAspectContainer::class;
 
     /**
      * Aspect container instance
@@ -88,7 +88,7 @@ abstract class AspectKernel
      *
      * @param array $options Associative array of options for kernel
      */
-    public function init(array $options = array())
+    public function init(array $options = [])
     {
         $this->options = $this->normalizeOptions($options);
         define('AOP_ROOT_DIR', $this->options['appDir']);
@@ -135,13 +135,6 @@ abstract class AspectKernel
     public static function getDefaultFeatures()
     {
         $features = 0;
-        if (PHP_VERSION_ID >= 50400) {
-            $features += Features::USE_CLOSURE;
-            $features += Features::USE_TRAIT;
-        }
-        if (PHP_VERSION_ID >= 50500) {
-            $features += Features::USE_STATIC_FOR_LSB;
-        }
         if (PHP_VERSION_ID >= 50600) {
             $features += Features::USE_SPLAT_OPERATOR;
         }
@@ -195,8 +188,8 @@ abstract class AspectKernel
             'cacheFileMode'          => null,
             'features'               => $features,
 
-            'includePaths'           => array(),
-            'excludePaths'           => array(),
+            'includePaths'           => [],
+            'excludePaths'           => [],
             'containerClass'         => static::$containerClass,
         );
     }
@@ -247,7 +240,7 @@ abstract class AspectKernel
         $aspectKernel     = $this;
 
         $sourceTransformers = function () use ($filterInjector, $magicTransformer, $aspectKernel, $cacheManager) {
-            $transformers    = array();
+            $transformers    = [];
             $aspectContainer = $aspectKernel->getContainer();
             $transformers[]  = new WeavingTransformer(
                 $aspectKernel,

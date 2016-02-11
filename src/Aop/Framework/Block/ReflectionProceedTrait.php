@@ -10,6 +10,9 @@
 
 namespace Go\Aop\Framework\Block;
 
+/**
+ * @deprecated since 1.0.0
+ */
 trait ReflectionProceedTrait
 {
     /**

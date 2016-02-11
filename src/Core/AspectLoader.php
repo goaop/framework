@@ -34,7 +34,7 @@ class AspectLoader
      *
      * @var array
      */
-    protected $loaders = array();
+    protected $loaders = [];
 
     /**
      * Annotation reader for aspects
@@ -48,7 +48,7 @@ class AspectLoader
      *
      * @var array
      */
-    protected $loadedAspects = array();
+    protected $loadedAspects = [];
 
     /**
      * Loader constructor
@@ -88,7 +88,7 @@ class AspectLoader
      */
     public function load(Aspect $aspect)
     {
-        $loadedItems = array();
+        $loadedItems = [];
         $refAspect   = new \ReflectionClass($aspect);
 
         if (!empty($this->loaders[AspectLoaderExtension::TARGET_CLASS])) {
@@ -140,7 +140,7 @@ class AspectLoader
      */
     public function getUnloadedAspects()
     {
-        $unloadedAspects = array();
+        $unloadedAspects = [];
 
         foreach ($this->container->getByTag('aspect') as $aspect) {
             if (!isset($this->loadedAspects[get_class($aspect)])) {
@@ -164,7 +164,7 @@ class AspectLoader
      */
     protected function loadFrom(Aspect $aspect, $refPoint, array $loaders)
     {
-        $loadedItems = array();
+        $loadedItems = [];
 
         foreach ($loaders as $loader) {
 

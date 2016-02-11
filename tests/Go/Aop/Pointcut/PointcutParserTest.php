@@ -15,6 +15,8 @@ namespace Go\Aop\Pointcut;
  * Class PointcutParserTest defines common check for valid grammar parsing
  */
 use Dissect\Lexer\Lexer;
+use Go\Core\AspectContainer;
+use Go\Instrument\RawAnnotationReader;
 
 class PointcutParserTest extends \PHPUnit_Framework_TestCase
 {
@@ -35,8 +37,8 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
     {
         parent::setUp();
         $this->lexer  = new PointcutLexer();
-        $container    = $this->getMock('Go\Core\AspectContainer');
-        $annotReader  = $this->getMock('Go\Instrument\RawAnnotationReader');
+        $container    = $this->getMock(AspectContainer::class);
+        $annotReader  = $this->getMock(RawAnnotationReader::class);
         $this->parser = new PointcutParser(new PointcutGrammar($container, $annotReader));
     }
 

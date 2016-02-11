@@ -15,7 +15,7 @@ class AfterInterceptorTest extends AbstractInterceptorTest
 
     public function testAdviceIsCalledAfterInvocation()
     {
-        $sequence   = array();
+        $sequence   = [];
         $advice     = $this->getAdvice($sequence);
         $invocation = $this->getInvocation($sequence);
 
@@ -28,7 +28,7 @@ class AfterInterceptorTest extends AbstractInterceptorTest
 
     public function testAdviceIsCalledAfterExceptionInInvocation()
     {
-        $sequence   = array();
+        $sequence   = [];
         $advice     = $this->getAdvice($sequence);
         $invocation = $this->getInvocation($sequence, true);
 

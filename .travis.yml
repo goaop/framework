@@ -1,16 +1,14 @@
 language: php
 
 php:
-  - 5.6
   - 5.5
-  - 5.4
+  - 5.6
   - 7.0
-  - hhvm-nightly
+  - hhvm
 
 install:
     - ./.travis.before.sh
 
 matrix:
   allow_failures:
-    - php: hhvm-nightly
-    - php: 7.0
+    - php: hhvm

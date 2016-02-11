@@ -44,7 +44,7 @@ class CachedAspectLoader extends AspectLoader
      * @param string $loaderId Original loader identifier
      * @param array $options List of kernel options
      */
-    public function __construct(AspectContainer $container, $loaderId, array $options = array())
+    public function __construct(AspectContainer $container, $loaderId, array $options = [])
     {
         $this->cacheDir  = isset($options['cacheDir']) ? $options['cacheDir'] : null;
         $this->loaderId  = $loaderId;

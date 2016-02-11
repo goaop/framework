@@ -17,7 +17,7 @@ class AroundInterceptorTest extends AbstractInterceptorTest
 
     public function testInvocationIsNotCalledWithoutProceed()
     {
-        $sequence   = array();
+        $sequence   = [];
         $advice     = $this->getAdvice($sequence); // advice will not call Invocation->proceed()
         $invocation = $this->getInvocation($sequence);
 
@@ -30,7 +30,7 @@ class AroundInterceptorTest extends AbstractInterceptorTest
 
     public function testInvocationIsCalledWithinAdvice()
     {
-        $sequence   = array();
+        $sequence   = [];
         $advice     = function (Invocation $invocation) use (&$sequence) {
             $sequence[] = 'advice';
             $result = $invocation->proceed();

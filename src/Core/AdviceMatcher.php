@@ -60,10 +60,10 @@ class AdviceMatcher
     public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors)
     {
         if (!$this->isInterceptFunctions || $namespace->getName() == 'no-namespace') {
-            return array();
+            return [];
         }
 
-        $advices = array();
+        $advices = [];
 
         foreach ($advisors as $advisorId => $advisor) {
 
@@ -93,7 +93,7 @@ class AdviceMatcher
      */
     public function getAdvicesForClass(ParsedReflectionClass $class, array $advisors)
     {
-        $classAdvices = array();
+        $classAdvices = [];
         $parentClass  = $class->getParentClass();
 
         if ($parentClass && preg_match('/' . AspectContainer::AOP_PROXIED_SUFFIX . '$/', $parentClass->name)) {
@@ -144,7 +144,7 @@ class AdviceMatcher
         $advisorId,
         Aop\PointFilter $filter)
     {
-        $classAdvices = array();
+        $classAdvices = [];
         $filterKind   = $filter->getKind();
 
         // Check class only for class filters
@@ -204,7 +204,7 @@ class AdviceMatcher
     {
         // Do not make introduction for traits
         if ($class->isTrait()) {
-            return array();
+            return [];
         }
 
         $advice = $advisor->getAdvice();
@@ -230,8 +230,8 @@ class AdviceMatcher
         $advisorId,
         Aop\PointFilter $pointcut)
     {
-        $functions = array();
-        $advices   = array();
+        $functions = [];
+        $advices   = [];
 
         if (!$functions) {
             $listOfGlobalFunctions = get_defined_functions();

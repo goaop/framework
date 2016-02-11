@@ -95,7 +95,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
      *
      * @return mixed
      */
-    final public function __invoke(array $arguments = array())
+    final public function __invoke(array $arguments = [])
     {
         if ($this->level) {
             array_push($this->stackFrames, array($this->arguments, $this->current));

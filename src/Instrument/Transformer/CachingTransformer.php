@@ -29,7 +29,7 @@ class CachingTransformer extends BaseSourceTransformer
     /**
      * @var array|callable|SourceTransformer[]
      */
-    protected $transformers = array();
+    protected $transformers = [];
 
     /**
      * @var CachePathManager|null

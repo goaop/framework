@@ -2,6 +2,8 @@
 
 namespace Go\Core;
 
+use Go\Aop\Advisor;
+use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use \PHPUnit_Framework_TestCase as TestCase;
 
@@ -15,7 +17,7 @@ class GoAspectContainerTest extends TestCase
     protected function setUp()
     {
         $this->container = new GoAspectContainer();
-        $this->container->set('kernel.options', array());
+        $this->container->set('kernel.options', []);
         $this->container->set('kernel.interceptFunctions', false);
     }
 
@@ -47,7 +49,7 @@ class GoAspectContainerTest extends TestCase
      */
     public function testPointcutCanBeRegisteredAndReceived()
     {
-        $pointcut = $this->getMock('Go\Aop\Pointcut');
+        $pointcut = $this->getMock(Pointcut::class);
         $this->container->registerPointcut($pointcut, 'test');
 
         $this->assertSame($pointcut, $this->container->getPointcut('test'));
@@ -61,7 +63,7 @@ class GoAspectContainerTest extends TestCase
      */
     public function testAdvisorCanBeRegistered()
     {
-        $advisor = $this->getMock('Go\Aop\Advisor');
+        $advisor = $this->getMock(Advisor::class);
         $this->container->registerAdvisor($advisor, 'test');
 
         // Verify that tag is working
@@ -74,7 +76,7 @@ class GoAspectContainerTest extends TestCase
      */
     public function testAspectCanBeRegisteredAndReceived()
     {
-        $aspect = $this->getMock('Go\Aop\Aspect');
+        $aspect = $this->getMock(Aspect::class);
         $aspectClass = get_class($aspect);
 
         $this->container->registerAspect($aspect);
@@ -93,7 +95,7 @@ class GoAspectContainerTest extends TestCase
         // Without resources this should be always true
         $isFresh = $this->container->isFresh(time());
         $this->assertTrue($isFresh);
-        
+
         $this->container->addResource(__FILE__);
         $realMtime = filemtime(__FILE__);
         $isFresh = $this->container->isFresh($realMtime - 3600);

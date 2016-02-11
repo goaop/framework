@@ -2,6 +2,10 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\AdviceAfter;
+use Go\Aop\AdviceAround;
+use Go\Aop\AdviceBefore;
+
 class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
 {
     /**
@@ -12,7 +16,7 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider sortingTestSource
      */
-    public function testSortingLogic($advices, array $order = array())
+    public function testSortingLogic($advices, array $order = [])
     {
         $advices = AbstractJoinpoint::sortAdvices($advices);
         foreach ($advices as $advice) {
@@ -27,82 +31,82 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
             // #0
             array(
                 array(
-                    $this->getMock('Go\Aop\AdviceAfter'),
-                    $this->getMock('Go\Aop\AdviceBefore')
+                    $this->getMock(AdviceAfter::class),
+                    $this->getMock(AdviceBefore::class)
                 ),
                 array(
-                    'Go\Aop\AdviceBefore',
-                    'Go\Aop\AdviceAfter'
+                    AdviceBefore::class,
+                    AdviceAfter::class
                 )
             ),
             // #1
             array(
                 array(
-                    $this->getMock('Go\Aop\AdviceAfter'),
-                    $this->getMock('Go\Aop\AdviceAround')
+                    $this->getMock(AdviceAfter::class),
+                    $this->getMock(AdviceAround::class)
                 ),
                 array(
-                    'Go\Aop\AdviceAfter',
-                    'Go\Aop\AdviceAround'
+                    AdviceAfter::class,
+                    AdviceAround::class
                 )
             ),
             // #2
             array(
                 array(
-                    $this->getMock('Go\Aop\AdviceBefore'),
-                    $this->getMock('Go\Aop\AdviceAfter')
+                    $this->getMock(AdviceBefore::class),
+                    $this->getMock(AdviceAfter::class)
                 ),
                 array(
-                    'Go\Aop\AdviceBefore',
-                    'Go\Aop\AdviceAfter'
+                    AdviceBefore::class,
+                    AdviceAfter::class
                 )
             ),
             // #3
             array(
                 array(
-                    $this->getMock('Go\Aop\AdviceBefore'),
-                    $this->getMock('Go\Aop\AdviceAround')
+                    $this->getMock(AdviceBefore::class),
+                    $this->getMock(AdviceAround::class)
                 ),
                 array(
-                    'Go\Aop\AdviceBefore',
-                    'Go\Aop\AdviceAround'
+                    AdviceBefore::class,
+                    AdviceAround::class
                 )
             ),
             // #4
             array(
                 array(
-                    $this->getMock('Go\Aop\AdviceAround'),
-                    $this->getMock('Go\Aop\AdviceAfter')
+                    $this->getMock(AdviceAround::class),
+                    $this->getMock(AdviceAfter::class)
                 ),
                 array(
-                    'Go\Aop\AdviceAfter',
-                    'Go\Aop\AdviceAround'
+                    AdviceAfter::class,
+                    AdviceAround::class
                 )
             ),
             // #5
             array(
                 array(
-                    $this->getMock('Go\Aop\AdviceAround'),
-                    $this->getMock('Go\Aop\AdviceBefore')
+                    $this->getMock(AdviceAround::class),
+                    $this->getMock(AdviceBefore::class)
                 ),
                 array(
-                    'Go\Aop\AdviceBefore',
-                    'Go\Aop\AdviceAround'
+                    AdviceBefore::class,
+                    AdviceAround::class
                 )
             ),
             // #6
             array(
                 array(
-                    $this->getMock('Go\Aop\AdviceBefore'),
-                    $this->getMock('Go\Aop\AdviceAround'),
-                    $this->getMock('Go\Aop\AdviceBefore'),
-                    $this->getMock('Go\Aop\AdviceAfter'),
+                    $this->getMock(AdviceBefore::class),
+                    $this->getMock(AdviceAround::class),
+                    $this->getMock(AdviceBefore::class),
+                    $this->getMock(AdviceAfter::class),
                 ),
                 array(
-                    'Go\Aop\AdviceBefore',
-                    'Go\Aop\AdviceBefore',
-                    'Go\Aop\AdviceAfter',
-                    'Go\Aop\AdviceAround',
+                    AdviceBefore::class,
+                    AdviceBefore::class,
+                    AdviceAfter::class,
+                    AdviceAround::class,
                 )
             ),
             // #7
@@ -128,7 +132,7 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
      */
     private function getOrderedAdvice($order, $name)
     {
-        $mock = $this->getMock('Go\Aop\Framework\OrderedAdvice', array(), array(), $name);
+        $mock = $this->getMock(OrderedAdvice::class, [], [], $name);
         $mock
             ->expects($this->any())
             ->method('getAdviceOrder')

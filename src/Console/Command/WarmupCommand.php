@@ -56,7 +56,7 @@ EOT
         }
         include_once $path;
 
-        if (!class_exists('Go\Core\AspectKernel', false)) {
+        if (!class_exists(AspectKernel::class, false)) {
             $message = "Kernel was not initialized yet, please configure it in the {$path}";
             throw new \InvalidArgumentException($message);
         }
@@ -80,7 +80,7 @@ EOT
         });
 
         $index  = 0;
-        $errors = array();
+        $errors = [];
         foreach ($iterator as $file) {
             if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
                 $output->writeln("Processing file <info>{$file->getRealPath()}</info>");

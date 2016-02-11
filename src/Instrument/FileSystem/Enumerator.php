@@ -43,7 +43,7 @@ class Enumerator
      * @param array $includePaths List of additional include paths
      * @param array $excludePaths List of additional exclude paths
      */
-    public function __construct($rootDirectory, array $includePaths = array(), array $excludePaths = array())
+    public function __construct($rootDirectory, array $includePaths = [], array $excludePaths = [])
     {
         $this->rootDirectory = $rootDirectory;
         $this->includePaths  = $includePaths;

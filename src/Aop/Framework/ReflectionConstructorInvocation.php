@@ -135,7 +135,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      *
      * @return mixed
      */
-    final public function __invoke(array $arguments = array())
+    final public function __invoke(array $arguments = [])
     {
         $this->current   = 0;
         $this->arguments = $arguments;

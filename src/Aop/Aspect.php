@@ -16,9 +16,9 @@ namespace Go\Aop;
  * Aspect is a module that encapsulates a concern. An aspect is composed of pointcuts, advice bodies and inter-type
  * declarations. In some approaches, and aspect may also contain classes and methods.
  *
+ * @api
  * @link http://en.wikipedia.org/wiki/Aspect_%28computer_science%29
  */
 interface Aspect
 {
-
 }

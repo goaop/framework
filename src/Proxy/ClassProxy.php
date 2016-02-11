@@ -12,7 +12,10 @@ namespace Go\Proxy;
 
 use Go\Aop\Advice;
 use Go\Aop\Features;
+use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\MethodInvocationComposer;
+use Go\Aop\Framework\ReflectionConstructorInvocation;
+use Go\Aop\Framework\StaticInitializationJoinpoint;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\IntroductionInfo;
 use Go\Core\AspectContainer;
@@ -51,7 +54,7 @@ class ClassProxy extends AbstractProxy
      *
      * @var array Name of method => source code for it
      */
-    protected $methodsCode = array();
+    protected $methodsCode = [];
 
     /**
      * Static mappings for class name for excluding if..else check
@@ -65,21 +68,21 @@ class ClassProxy extends AbstractProxy
      *
      * @var array
      */
-    protected $interfaces = array();
+    protected $interfaces = [];
 
     /**
      * List of additional traits for using
      *
      * @var array
      */
-    protected $traits = array();
+    protected $traits = [];
 
     /**
      * Source code for properties
      *
      * @var array Name of property => source code for it
      */
-    protected $propertiesCode = array();
+    protected $propertiesCode = [];
 
     /**
      * Name for the current class
@@ -100,21 +103,20 @@ class ClassProxy extends AbstractProxy
      *
      * @var array
      */
-    private $interceptedProperties = array();
+    private $interceptedProperties = [];
 
     /**
      * Generates an child code by parent class reflection and joinpoints for it
      *
      * @param ParsedClass $parent Parent class reflection
      * @param array|Advice[] $classAdvices List of advices for class
-     * @param bool $useStaticForLsb Should proxy use 'static::class' instead of '\get_called_class()'
      *
      * @throws \InvalidArgumentException if there are unknown type of advices
      * @return ClassProxy
      */
-    public function __construct(ParsedClass $parent, array $classAdvices, $useStaticForLsb = false)
+    public function __construct(ParsedClass $parent, array $classAdvices)
     {
-        parent::__construct($classAdvices, $useStaticForLsb);
+        parent::__construct($classAdvices);
 
         $this->class           = $parent;
         $this->name            = $parent->getShortName();
@@ -239,7 +241,7 @@ class ClassProxy extends AbstractProxy
      *
      * @return void
      */
-    public static function injectJoinPoints($className, array $advices = array())
+    public static function injectJoinPoints($className, array $advices = [])
     {
         $reflectionClass  = new ReflectionClass($className);
         $joinPoints       = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
@@ -257,21 +259,20 @@ class ClassProxy extends AbstractProxy
     /**
      * Initialize static mappings to reduce the time for checking features
      *
-     * @param bool $useClosureBinding Enables usage of closures instead of reflection
      * @param bool $useSplatOperator Enables usage of optimized invocation with splat operator
      */
-    protected static function setMappings($useClosureBinding, $useSplatOperator)
+    protected static function setMappings($useSplatOperator)
     {
-        $dynamicMethodClass = MethodInvocationComposer::compose(false, $useClosureBinding, $useSplatOperator, false);
-        $staticMethodClass  = MethodInvocationComposer::compose(true, $useClosureBinding, $useSplatOperator, false);
+        $dynamicMethodClass = MethodInvocationComposer::compose(false, $useSplatOperator, false);
+        $staticMethodClass  = MethodInvocationComposer::compose(true, $useSplatOperator, false);
 
         // We are using LSB here and overridden static property
         static::$invocationClassMap = array(
             AspectContainer::METHOD_PREFIX        => $dynamicMethodClass,
             AspectContainer::STATIC_METHOD_PREFIX => $staticMethodClass,
-            AspectContainer::PROPERTY_PREFIX      => 'Go\Aop\Framework\ClassFieldAccess',
-            AspectContainer::STATIC_INIT_PREFIX   => 'Go\Aop\Framework\StaticInitializationJoinpoint',
-            AspectContainer::INIT_PREFIX          => 'Go\Aop\Framework\ReflectionConstructorInvocation'
+            AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,
+            AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class,
+            AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class
         );
     }
 
@@ -296,12 +297,11 @@ class ClassProxy extends AbstractProxy
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
             self::setMappings(
-                $aspectKernel->hasFeature(Features::USE_CLOSURE),
                 $aspectKernel->hasFeature(Features::USE_SPLAT_OPERATOR)
             );
         }
 
-        $joinPoints = array();
+        $joinPoints = [];
 
         foreach ($classAdvices as $joinPointType => $typedAdvices) {
             // if not isset then we don't want to create such invocation for class
@@ -309,7 +309,7 @@ class ClassProxy extends AbstractProxy
                 continue;
             }
             foreach ($typedAdvices as $joinPointName => $advices) {
-                $filledAdvices = array();
+                $filledAdvices = [];
                 foreach ($advices as $advisorName) {
                     $filledAdvices[] = $accessor->$advisorName;
                 }
@@ -422,7 +422,7 @@ class ClassProxy extends AbstractProxy
     protected function getJoinpointInvocationBody(ParsedMethod $method)
     {
         $isStatic = $method->isStatic();
-        $scope    = $isStatic ? $this->staticLsbExpression : '$this';
+        $scope    = $isStatic ? self::$staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $args = join(', ', array_map(function (ParsedParameter $param) {
@@ -598,8 +598,8 @@ SETTER;
      */
     private function getConstructorBody(ParsedMethod $constructor = null, $isCallParent = false)
     {
-        $assocProperties = array();
-        $listProperties  = array();
+        $assocProperties = [];
+        $listProperties  = [];
         foreach ($this->interceptedProperties as $propertyName) {
             $assocProperties[] = "'$propertyName' => \$this->$propertyName";
             $listProperties[]  = "\$this->$propertyName";

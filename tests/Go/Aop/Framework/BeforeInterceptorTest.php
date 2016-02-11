@@ -14,7 +14,7 @@ class BeforeInterceptorTest extends AbstractInterceptorTest
 {
     public function testAdviceIsCalledBeforeInvocation()
     {
-        $sequence   = array();
+        $sequence   = [];
         $advice     = $this->getAdvice($sequence);
         $invocation = $this->getInvocation($sequence);
 

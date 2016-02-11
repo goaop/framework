@@ -11,6 +11,7 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
+use Go\Aop\Aspect;
 use Go\Aop\Features;
 use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AdviceMatcher;
@@ -130,7 +131,7 @@ class WeavingTransformer extends BaseSourceTransformer
                 }
 
                 // Skip interfaces and aspects
-                if ($class->isInterface() || in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
+                if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames())) {
                     continue;
                 }
                 $wasClassProcessed    = $this->processSingleClass($advisors, $metadata, $class, $lineOffset);
@@ -181,10 +182,9 @@ class WeavingTransformer extends BaseSourceTransformer
         $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
 
         // Prepare child Aop proxy
-        $useStatic = $this->kernel->hasFeature(Features::USE_STATIC_FOR_LSB);
-        $child     = ($this->kernel->hasFeature(Features::USE_TRAIT) && $class->isTrait())
-            ? new TraitProxy($class, $advices, $useStatic)
-            : new ClassProxy($class, $advices, $useStatic);
+        $child     = $class->isTrait()
+            ? new TraitProxy($class, $advices)
+            : new ClassProxy($class, $advices);
 
         // Set new parent name instead of original
         $child->setParentName($newParentName);
@@ -222,7 +222,7 @@ class WeavingTransformer extends BaseSourceTransformer
      */
     private function adjustOriginalClass($class, $source, $newParentName)
     {
-        $type = ($this->kernel->hasFeature(Features::USE_TRAIT) && $class->isTrait()) ? 'trait' : 'class';
+        $type = $class->isTrait() ? 'trait' : 'class';
         $source = preg_replace(
             "/{$type}\s+(" . $class->getShortName() . ')(\b)/iS',
             "{$type} {$newParentName}$2",

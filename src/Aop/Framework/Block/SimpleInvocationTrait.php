@@ -22,7 +22,7 @@ trait SimpleInvocationTrait
      *
      * @return mixed Result of invocation
      */
-    final public function __invoke($instance = null, array $arguments = array())
+    final public function __invoke($instance = null, array $arguments = [])
     {
         if ($this->level) {
             array_push($this->stackFrames, array($this->arguments, $this->instance, $this->current));

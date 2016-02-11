@@ -51,7 +51,7 @@ class RawAnnotationReader
      */
     public function setImports(array $imports)
     {
-        $convertedImports = array();
+        $convertedImports = [];
         foreach ($imports as $aliasName=>$fullName) {
             $convertedImports[strtolower($aliasName)] = $fullName;
         }

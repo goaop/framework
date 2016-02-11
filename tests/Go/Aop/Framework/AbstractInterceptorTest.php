@@ -18,7 +18,7 @@ abstract class AbstractInterceptorTest extends TestCase
     /**
      * Concrete class name for mock, should be redefined with LSB
      */
-    const INVOCATION_CLASS = 'Go\Aop\Intercept\Invocation';
+    const INVOCATION_CLASS = Invocation::class;
 
     /**
      * Returns a test advice that writes itself to the sequence
@@ -61,4 +61,3 @@ abstract class AbstractInterceptorTest extends TestCase
         return $invocation;
     }
 }
- 

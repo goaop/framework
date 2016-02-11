@@ -18,15 +18,15 @@ class BaseInterceptorTest extends AbstractInterceptorTest
     /**
      * Concrete class name for mock, should be redefined with LSB
      */
-    const INVOCATION_CLASS = 'Go\Aop\Intercept\Invocation';
+    const INVOCATION_CLASS = Invocation::class;
 
     public function testReturnsRawAdvice()
     {
-        $sequence = array();
+        $sequence = [];
         $advice   = $this->getAdvice($sequence);
 
         $interceptor = $this->getMockForAbstractClass(
-            'Go\Aop\Framework\BaseInterceptor',
+            BaseInterceptor::class,
             array($advice)
         );
         $this->assertEquals($advice, $interceptor->getRawAdvice());
@@ -34,7 +34,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
 
     public function testCanSerializeInterceptor()
     {
-        $sequence = array();
+        $sequence = [];
         $advice   = $this->getAdvice($sequence);
         $mock     = new BaseInterceptorMock($advice);
 

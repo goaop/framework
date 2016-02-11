@@ -65,6 +65,6 @@ class CleanableMemory extends Memory
             $tokenStreams = new \ReflectionProperty(get_parent_class(), 'tokenStreams');
             $tokenStreams->setAccessible(true);
         }
-        $tokenStreams->setValue($this, array());
+        $tokenStreams->setValue($this, []);
     }
 }

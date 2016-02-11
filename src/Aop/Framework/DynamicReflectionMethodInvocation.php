@@ -13,6 +13,9 @@ namespace Go\Aop\Framework;
 use Go\Aop\Framework\Block\ReflectionProceedTrait;
 use Go\Aop\Framework\Block\SimpleInvocationTrait;
 
+/**
+ * @deprecated since 1.0.0
+ */
 class DynamicReflectionMethodInvocation extends AbstractMethodInvocation
 {
     use ReflectionProceedTrait;

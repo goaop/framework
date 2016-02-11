@@ -31,14 +31,14 @@ abstract class AbstractProxy
      *
      * @var array
      */
-    protected $advices = array();
+    protected $advices = [];
 
     /**
      * PHP expression string for accessing LSB information
      *
      * @var string
      */
-    protected $staticLsbExpression = '\get_called_class()';
+    protected static $staticLsbExpression = 'static::class';
 
     /**
      * Should proxy use variadics support or not
@@ -51,15 +51,12 @@ abstract class AbstractProxy
      * Constructs an abstract proxy class
      *
      * @param array $advices List of advices
-     * @param bool $useStaticForLsb Should proxy use 'static::class' instead of '\get_called_class()'
+     * @param bool $useVariadics Should proxy use variadics syntax or not
      */
-    public function __construct(array $advices = array(), $useStaticForLsb = false, $useVariadics = false)
+    public function __construct(array $advices = [], $useVariadics = false)
     {
         $this->advices      = $this->flattenAdvices($advices);
         $this->useVariadics = $useVariadics;
-        if ($useStaticForLsb) {
-            $this->staticLsbExpression = 'static::class';
-        }
     }
 
     /**
@@ -95,7 +92,7 @@ abstract class AbstractProxy
      */
     protected function getParameters(array $parameters)
     {
-        $parameterDefinitions = array();
+        $parameterDefinitions = [];
         foreach ($parameters as $parameter) {
             // Deprecated since PHP5.6 in the favor of variadics, needed for BC only
             if ($parameter->name == '...') {
@@ -156,7 +153,7 @@ abstract class AbstractProxy
      */
     private function flattenAdvices($advices)
     {
-        $flattenAdvices = array();
+        $flattenAdvices = [];
         foreach ($advices as $type => $typedAdvices) {
             foreach ($typedAdvices as $name => $concreteAdvices) {
                 if (is_array($concreteAdvices)) {

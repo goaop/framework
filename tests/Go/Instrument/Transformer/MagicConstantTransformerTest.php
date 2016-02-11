@@ -2,6 +2,7 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Core\AspectKernel;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 
@@ -48,8 +49,8 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
     protected function getKernelMock($options)
     {
         $mock = $this->getMockForAbstractClass(
-            'Go\Core\AspectKernel',
-            array(),
+            AspectKernel::class,
+            [],
             '',
             false,
             true,

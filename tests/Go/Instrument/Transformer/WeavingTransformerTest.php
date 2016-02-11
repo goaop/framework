@@ -2,10 +2,13 @@
 
 namespace Go\Instrument\Transformer;
 
+use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectKernel;
+use Go\Core\AspectLoader;
+use Go\Instrument\ClassLoading\CachePathManager;
 
 class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
 {
@@ -40,8 +43,8 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $container = $this->getContainerMock();
-        $reader    = $this->getMock('Doctrine\Common\Annotations\Reader');
-        $loader    = $this->getMock('Go\Core\AspectLoader', array(), array($container, $reader));
+        $reader    = $this->getMock(Reader::class);
+        $loader    = $this->getMock(AspectLoader::class, [], array($container, $reader));
 
         $this->broker = new \TokenReflection\Broker(
             new \TokenReflection\Broker\Backend\Memory()
@@ -51,8 +54,8 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             array(
                 'appDir'       => dirname(__DIR__),
                 'cacheDir'     => null,
-                'includePaths' => array(),
-                'excludePaths' => array()
+                'includePaths' => [],
+                'excludePaths' => []
             ),
             $container
         );
@@ -60,7 +63,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             $this->kernel,
             $this->broker,
             $this->adviceMatcher,
-            $this->getMock('Go\Instrument\ClassLoading\CachePathManager', array(), array($this->kernel)),
+            $this->getMock(CachePathManager::class, [], array($this->kernel)),
             $loader
         );
 
@@ -153,21 +156,21 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     public function testTransformerWithIncludePaths()
     {
         $container = $this->getContainerMock();
-        $reader    = $this->getMock('Doctrine\Common\Annotations\Reader');
-        $loader    = $this->getMock('Go\Core\AspectLoader', array(), array($container, $reader));
+        $reader    = $this->getMock(Reader::class);
+        $loader    = $this->getMock(AspectLoader::class, [], array($container, $reader));
 
         $this->transformer = new WeavingTransformer(
             $this->getKernelMock(
                 array(
                     'appDir'       => dirname(__DIR__),
                     'includePaths' => array(__DIR__),
-                    'excludePaths' => array()
+                    'excludePaths' => []
                 ),
                 $container
             ),
             $this->broker,
             $this->adviceMatcher,
-            $this->getMock('Go\Instrument\ClassLoading\CachePathManager', array(), array($this->kernel)),
+            $this->getMock(CachePathManager::class, [], array($this->kernel)),
             $loader
         );
         $this->metadata->source = $this->loadTest('class');
@@ -175,29 +178,6 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
 
         $actual   = $this->normalizeWhitespaces($this->metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTest('class-woven'));
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
-     * Transformer verifies that proxy with static LSB feature is working
-     */
-    public function testTransformerWithStaticLsbFeature()
-    {
-        $this->kernel->expects($this->any())
-            ->method('hasFeature')
-            ->will(
-                $this->returnCallback(function ($feature) {
-                    return $feature === Features::USE_STATIC_FOR_LSB;
-                })
-            );
-
-        $this->metadata->source = $this->loadTest('class');
-        $this->transformer->transform($this->metadata);
-
-        $actual   = $this->normalizeWhitespaces($this->metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven'));
-        // with Features::USE_STATIC_FOR_LSB we expect static::class in the proxy methods
-        $expected = str_replace('\get_called_class()', 'static::class', $expected);
         $this->assertEquals($expected, $actual);
     }
 
@@ -241,8 +221,8 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     protected function getKernelMock($options, $container)
     {
         $mock = $this->getMockForAbstractClass(
-            'Go\Core\AspectKernel',
-            array(),
+            AspectKernel::class,
+            [],
             '',
             false,
             true,
@@ -270,12 +250,12 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     protected function getAdviceMatcherMock()
     {
-        $mock = $this->getMock('Go\Core\AdviceMatcher', array('getAdvicesForClass'), array(), '', false);
+        $mock = $this->getMock(AdviceMatcher::class, array('getAdvicesForClass'), [], '', false);
         $mock->expects($this->any())
             ->method('getAdvicesForClass')
             ->will(
                 $this->returnCallback(function (\TokenReflection\ReflectionClass $refClass) {
-                    $advices  = array();
+                    $advices  = [];
                     foreach ($refClass->getMethods() as $method) {
                         $advisorId = "advisor.{$refClass->name}->{$method->name}";
                         $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
@@ -298,13 +278,13 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     private function getContainerMock()
     {
-        $container = $this->getMock('Go\Core\AspectContainer');
+        $container = $this->getMock(AspectContainer::class);
 
         $container
             ->expects($this->any())
             ->method('getByTag')
             ->will($this->returnValueMap(array(
-                array('advisor', array())
+                array('advisor', [])
             )));
 
         return $container;

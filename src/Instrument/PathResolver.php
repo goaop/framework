@@ -55,7 +55,7 @@ class PathResolver
         $path  = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
         if (strpos($path, '.') !== false) {
             $parts     = explode(DIRECTORY_SEPARATOR, $path);
-            $absolutes = array();
+            $absolutes = [];
             foreach ($parts as $part) {
                 if ('.' == $part) {
                     continue;

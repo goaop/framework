@@ -34,14 +34,9 @@ interface Features
     const INTERCEPT_INCLUDES = 4;
 
     /**
-     * Enables usage of traits and introductions as well, available since PHP5.4
+     * Allows to use wrapped closures, this can be used in HHVM and PHP7.0 for scope rebinding
      */
-    const USE_TRAIT = 8;
-
-    /**
-     * Allows to use closures with binding, available since PHP5.4
-     */
-    const USE_CLOSURE = 16;
+    const USE_WRAPPED_CLOSURE = 16;
 
     /**
      * Enables usage of splat '...' operator, available since PHP5.6
@@ -54,9 +49,4 @@ interface Features
      * This flag is usable for read-only file systems (GAE, phar, etc)
      */
     const PREBUILT_CACHE = 64;
-
-    /**
-     * Allows to use 'static::class' in the source code of proxies, available since PHP5.5
-     */
-    const USE_STATIC_FOR_LSB = 128;
 }

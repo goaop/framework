@@ -14,10 +14,11 @@ namespace Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use Go\Aop\Support\NotPointFilter;
 use Go\Aop\Support\TruePointFilter;
+use Go\Stubs\First;
 
 class SignaturePointcutTest extends \PHPUnit_Framework_TestCase
 {
-    const STUB_CLASS = 'Go\Stubs\First';
+    const STUB_CLASS = First::class;
 
     /**
      * Tests that method matched by name directly

@@ -30,7 +30,7 @@ class GoAspectContainer extends Container implements AspectContainer
      *
      * @var array
      */
-    protected $resources = array();
+    protected $resources = [];
 
     /**
      * Cached timestamp for resources

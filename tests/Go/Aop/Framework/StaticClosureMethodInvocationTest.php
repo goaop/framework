@@ -2,6 +2,7 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
 
 /**
@@ -10,14 +11,14 @@ use Go\Stubs\FirstStatic;
 class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 {
 
-    const FIRST_CLASS_NAME = 'Go\Stubs\First';
+    const FIRST_CLASS_NAME = First::class;
 
     protected static $invocationClass;
 
     public static function setUpBeforeClass()
     {
         parent::setUpBeforeClass();
-        self::$invocationClass = MethodInvocationComposer::compose(true, true, false, false);
+        self::$invocationClass = MethodInvocationComposer::compose(true, false, false);
 
     }
 
@@ -42,7 +43,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticSelfMethodInvocation($methodName, $expectedResult)
     {
         $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new self::$invocationClass($childClass, $methodName, array());
+        $invocation = new self::$invocationClass($childClass, $methodName, []);
 
         $result = $invocation($childClass);
         $this->assertEquals($expectedResult, $result);
@@ -56,7 +57,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticSelfNotOverridden($methodName, $expectedResult)
     {
         $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array($methodName));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, []);
 
         $result = $invocation($childClass);
         $this->assertEquals($expectedResult, $result);
@@ -70,7 +71,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticLsbIsWorking($methodName)
     {
         $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array($methodName));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, []);
 
         $result = $invocation($childClass);
         $this->assertEquals($childClass, $result);
@@ -79,7 +80,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testValueChangedByReference()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticPassByReference', array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticPassByReference', []);
 
         $value  = 'test';
         $result = $invocation($child, array(&$value));
@@ -89,7 +90,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
     public function testRecursionWorks()
     {
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticLsbRecursion', array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticLsbRecursion', []);
         $child      = new FirstStatic($invocation);
 
         $childClass = get_class($child);
@@ -107,7 +108,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticSelfPublic', array($advice));
 
-        $result = $invocation($child, array());
+        $result = $invocation($child, []);
         $this->assertEquals('ok', $value);
         $this->assertEquals(T_PUBLIC, $result);
     }
@@ -115,9 +116,9 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testInvocationWithDynamicArguments()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticVariableArgsTest', array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticVariableArgsTest', []);
 
-        $args     = array();
+        $args     = [];
         $expected = '';
         for ($i=0; $i<10; $i++) {
             $args[]   = $i;

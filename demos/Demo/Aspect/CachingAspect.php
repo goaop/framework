@@ -33,7 +33,7 @@ class CachingAspect implements Aspect
      */
     public function aroundCacheable(MethodInvocation $invocation)
     {
-        static $memoryCache = array();
+        static $memoryCache = [];
 
         $time  = microtime(true);
 

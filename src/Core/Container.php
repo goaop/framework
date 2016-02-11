@@ -20,14 +20,14 @@ class Container
      *
      * @var array
      */
-    protected $values = array();
+    protected $values = [];
 
     /**
      * Store identifiers os services by tags
      *
      * @var array
      */
-    protected $tags = array();
+    protected $tags = [];
 
     /**
      * Set a service into the container
@@ -36,7 +36,7 @@ class Container
      * @param mixed $value Value to store
      * @param array $tags Additional tags
      */
-    public function set($id, $value, array $tags = array())
+    public function set($id, $value, array $tags = [])
     {
         $this->values[$id] = $value;
         foreach ($tags as $tag) {
@@ -53,7 +53,7 @@ class Container
      *
      * @throws \InvalidArgumentException if value is not callable
      */
-    public function share($id, $value, array $tags = array())
+    public function share($id, $value, array $tags = [])
     {
         if (!is_callable($value)) {
             throw new \InvalidArgumentException("Only callable values can be shared in the container");
@@ -110,7 +110,7 @@ class Container
      */
     public function getByTag($tag)
     {
-        $result = array();
+        $result = [];
         if (isset($this->tags[$tag])) {
             foreach ($this->tags[$tag] as $id) {
                 $result[$id] = $this->get($id);

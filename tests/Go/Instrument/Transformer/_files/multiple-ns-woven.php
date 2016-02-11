@@ -15,7 +15,7 @@ class TestClass1 extends TestClass1__AopProxied implements \Go\Aop\Proxy
 
     public static function test()
     {
-        return self::$__joinPoints['static:test']->__invoke(\get_called_class());
+        return self::$__joinPoints['static:test']->__invoke(static::class);
     }
 
 }
@@ -47,7 +47,7 @@ class TestClass2 extends TestClass2__AopProxied implements \Go\Aop\Proxy
 
     public static function test()
     {
-        return self::$__joinPoints['static:test']->__invoke(\get_called_class());
+        return self::$__joinPoints['static:test']->__invoke(static::class);
     }
 
 }

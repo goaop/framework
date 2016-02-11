@@ -23,7 +23,7 @@ class FunctionDemo
      *
      * @return array|mixed Outcoming array
      */
-    public function testArrayFunctions(array $data = array())
+    public function testArrayFunctions(array $data = [])
     {
         return array_flip(array_unique(array_values($data)));
     }
