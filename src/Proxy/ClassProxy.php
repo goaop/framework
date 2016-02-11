@@ -395,7 +395,7 @@ class ClassProxy extends AbstractProxy
         $this->setProperty(
             Property::IS_PRIVATE | Property::IS_STATIC,
             '__joinPoints',
-            'array()'
+            '[]'
         );
     }
 
@@ -438,10 +438,10 @@ class ClassProxy extends AbstractProxy
             if (empty($args)) {
                 $scope = "$scope, \$argsList";
             } else {
-                $scope = "$scope, array($args) + \$argsList";
+                $scope = "$scope, [$args] + \$argsList";
             }
         } elseif (!empty($args)) {
-            $scope = "$scope, array($args)";
+            $scope = "$scope, [$args]";
         }
 
         $body .= "return self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($scope);";
@@ -609,7 +609,7 @@ SETTER;
         if ($constructor) {
             $parentCall = $this->getJoinpointInvocationBody($constructor);
         } elseif ($isCallParent) {
-            $parentCall = '\call_user_func_array(array("parent", __FUNCTION__), \func_get_args());';
+            $parentCall = '\call_user_func_array(["parent", __FUNCTION__], \func_get_args());';
         } else {
             $parentCall = '';
         }

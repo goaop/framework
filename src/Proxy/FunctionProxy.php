@@ -217,11 +217,11 @@ class FunctionProxy extends AbstractProxy
         $args = join(', ', $argValues);
 
         if ($dynamicArgs) {
-            $args = $hasReferences ? "array($args) + \\func_get_args()" : '\func_get_args()';
+            $args = $hasReferences ? "[$args] + \\func_get_args()" : '\func_get_args()';
         } elseif ($hasOptionals) {
-            $args = "\\array_slice(array($args), 0, \\func_num_args())";
+            $args = "\\array_slice([$args], 0, \\func_num_args())";
         } else {
-            $args = "array($args)";
+            $args = "[$args]";
         }
 
         return <<<BODY

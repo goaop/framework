@@ -12,7 +12,7 @@ class TestClass1 extends TestClass1__AopProxied implements \Go\Aop\Proxy
     /**
      * Property was created automatically, do not change it manually
      */
-    private static $__joinPoints = array();
+    private static $__joinPoints = [];
 
     public static function test()
     {
@@ -42,7 +42,7 @@ class TestClass11 extends TestClass11__AopProxied implements \Go\Aop\Proxy
     /**
      * Property was created automatically, do not change it manually
      */
-    private static $__joinPoints = array();
+    private static $__joinPoints = [];
 
     public static function test()
     {
@@ -72,7 +72,7 @@ class TestClass2 extends TestClass2__AopProxied implements \Go\Aop\Proxy
     /**
      * Property was created automatically, do not change it manually
      */
-    private static $__joinPoints = array();
+    private static $__joinPoints = [];
 
     public static function test()
     {
