@@ -80,7 +80,7 @@ EOT
         });
 
         $index  = 0;
-        $errors = array();
+        $errors = [];
         foreach ($iterator as $file) {
             if ($output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
                 $output->writeln("Processing file <info>{$file->getRealPath()}</info>");

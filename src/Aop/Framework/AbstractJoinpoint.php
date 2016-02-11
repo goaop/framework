@@ -33,7 +33,7 @@ abstract class AbstractJoinpoint implements Joinpoint
      *
      * @var array|Advice[]
      */
-    protected $advices = array();
+    protected $advices = [];
 
     /**
      * Current advice index
@@ -47,7 +47,7 @@ abstract class AbstractJoinpoint implements Joinpoint
      *
      * @var array
      */
-    protected $stackFrames = array();
+    protected $stackFrames = [];
 
     /**
      * Recursion level for invocation

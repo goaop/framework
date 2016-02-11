@@ -49,7 +49,7 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $mock = $this->getMockForAbstractClass(
             'Go\Core\AspectKernel',
-            array(),
+            [],
             '',
             false,
             true,

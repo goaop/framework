@@ -26,7 +26,7 @@ class CachePathManager
     /**
      * @var array
      */
-    protected $options = array();
+    protected $options = [];
 
     /**
      * @var \Go\Core\AspectKernel
@@ -48,14 +48,14 @@ class CachePathManager
      *
      * @var array
      */
-    protected $cacheState = array();
+    protected $cacheState = [];
 
     /**
      * New metadata items, that was not present in $cacheState
      *
      * @var array
      */
-    protected $newCacheState = array();
+    protected $newCacheState = [];
 
     public function __construct (AspectKernel $kernel)
     {
@@ -183,7 +183,7 @@ class CachePathManager
                 opcache_invalidate($this->cacheDir . self::CACHE_FILE_NAME, true);
             }
             $this->cacheState    = $this->newCacheState + $this->cacheState;
-            $this->newCacheState = array();
+            $this->newCacheState = [];
         }
     }
 }

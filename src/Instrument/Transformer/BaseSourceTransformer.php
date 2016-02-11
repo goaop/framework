@@ -24,7 +24,7 @@ abstract class BaseSourceTransformer implements SourceTransformer
      *
      * @var array
      */
-    protected $options = array();
+    protected $options = [];
 
     /**
      * @var AspectKernel|null
@@ -42,7 +42,7 @@ abstract class BaseSourceTransformer implements SourceTransformer
      * @param AspectKernel $kernel Instance of aspect kernel
      * @param array $options Custom options or kernel options
      */
-    public function __construct(AspectKernel $kernel, array $options = array())
+    public function __construct(AspectKernel $kernel, array $options = [])
     {
         $this->kernel    = $kernel;
         $this->container = $kernel->getContainer();

@@ -15,7 +15,7 @@ class GoAspectContainerTest extends TestCase
     protected function setUp()
     {
         $this->container = new GoAspectContainer();
-        $this->container->set('kernel.options', array());
+        $this->container->set('kernel.options', []);
         $this->container->set('kernel.interceptFunctions', false);
     }
 
@@ -93,7 +93,7 @@ class GoAspectContainerTest extends TestCase
         // Without resources this should be always true
         $isFresh = $this->container->isFresh(time());
         $this->assertTrue($isFresh);
-        
+
         $this->container->addResource(__FILE__);
         $realMtime = filemtime(__FILE__);
         $isFresh = $this->container->isFresh($realMtime - 3600);

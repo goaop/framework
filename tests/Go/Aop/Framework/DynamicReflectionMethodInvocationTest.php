@@ -26,7 +26,7 @@ class DynamicReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testDynamicMethodInvocation($methodName, $expectedResult)
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, []);
 
         $result = $invocation($child);
         $this->assertEquals($expectedResult, $result);
@@ -40,7 +40,7 @@ class DynamicReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticSelfMethodInvocation($methodName, $expectedResult)
     {
         $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new self::$invocationClass($childClass, $methodName, array());
+        $invocation = new self::$invocationClass($childClass, $methodName, []);
 
         $result = $invocation($childClass);
         $this->assertEquals($expectedResult, $result);
@@ -54,7 +54,7 @@ class DynamicReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticSelfNotOverridden($methodName, $expectedResult)
     {
         $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array($methodName));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, []);
 
         $result = $invocation($childClass);
         $this->assertEquals($expectedResult, $result);
@@ -68,7 +68,7 @@ class DynamicReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticLsbIsWorking($methodName)
     {
         $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new self::$invocationClass($childClass, $methodName, array());
+        $invocation = new self::$invocationClass($childClass, $methodName, []);
 
         // LSB is not working, so it returns parent class name :( So just check that this doesn't break anything
         $result = $invocation($childClass);
@@ -78,7 +78,7 @@ class DynamicReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testValueChangedByReference()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'passByReference', array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'passByReference', []);
 
         $value  = 'test';
         $result = $invocation($child, array(&$value));
@@ -89,7 +89,7 @@ class DynamicReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testRecursionWorks()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('recursion'));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'recursion', array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'recursion', []);
 
         $child->expects($this->exactly(5))->method('recursion')->will($this->returnCallback(
             function ($value, $level) use ($child, $invocation) {
@@ -111,7 +111,7 @@ class DynamicReflectionMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'publicMethod', array($advice));
 
-        $result = $invocation($child, array());
+        $result = $invocation($child, []);
         $this->assertEquals('ok', $value);
         $this->assertEquals(T_PUBLIC, $result);
     }

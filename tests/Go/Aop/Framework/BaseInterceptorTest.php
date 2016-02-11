@@ -22,7 +22,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
 
     public function testReturnsRawAdvice()
     {
-        $sequence = array();
+        $sequence = [];
         $advice   = $this->getAdvice($sequence);
 
         $interceptor = $this->getMockForAbstractClass(
@@ -34,7 +34,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
 
     public function testCanSerializeInterceptor()
     {
-        $sequence = array();
+        $sequence = [];
         $advice   = $this->getAdvice($sequence);
         $mock     = new BaseInterceptorMock($advice);
 

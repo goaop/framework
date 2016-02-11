@@ -37,7 +37,7 @@ class FilterInjectorTransformer implements SourceTransformer
      *
      * @var array
      */
-    protected static $options = array();
+    protected static $options = [];
 
     /**
      * @var AspectKernel|null

@@ -22,7 +22,7 @@ abstract class AbstractInvocation extends AbstractJoinpoint implements Invocatio
      *
      * @var array
      */
-    protected $arguments = array();
+    protected $arguments = [];
 
     /**
      * Get the arguments as an array object.

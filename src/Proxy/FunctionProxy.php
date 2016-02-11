@@ -31,7 +31,7 @@ class FunctionProxy extends AbstractProxy
      *
      * @var array
      */
-    protected static $functionAdvices = array();
+    protected static $functionAdvices = [];
 
     /**
      * Name for the current namespace
@@ -45,7 +45,7 @@ class FunctionProxy extends AbstractProxy
      *
      * @var array Name of the function => source code for it
      */
-    protected $functionsCode = array();
+    protected $functionsCode = [];
 
     /**
      * Constructs functions stub class from namespace Reflection
@@ -55,7 +55,7 @@ class FunctionProxy extends AbstractProxy
      *
      * @throws \InvalidArgumentException for invalid classes
      */
-    public function __construct(ReflectionFileNamespace $namespace, array $advices = array())
+    public function __construct(ReflectionFileNamespace $namespace, array $advices = [])
     {
         parent::__construct($advices);
         $this->namespace = $namespace;
@@ -89,7 +89,7 @@ class FunctionProxy extends AbstractProxy
 
         $advices = self::$functionAdvices[$namespace][AspectContainer::FUNCTION_PREFIX][$joinPointName];
 
-        $filledAdvices = array();
+        $filledAdvices = [];
         foreach ($advices as $advisorName) {
             $filledAdvices[] = $accessor->$advisorName;
         }
@@ -107,7 +107,7 @@ class FunctionProxy extends AbstractProxy
      *
      * @return void
      */
-    public static function injectJoinPoints($namespace, array $advices = array())
+    public static function injectJoinPoints($namespace, array $advices = [])
     {
         self::$functionAdvices[$namespace] = $advices;
     }
@@ -159,7 +159,7 @@ class FunctionProxy extends AbstractProxy
      */
     protected function getOverriddenFunction(ReflectionFunction $function, $body)
     {
-        static $inMemoryCache = array();
+        static $inMemoryCache = [];
 
         $functionName = $function->getName();
         if (isset($inMemoryCache[$functionName])) {

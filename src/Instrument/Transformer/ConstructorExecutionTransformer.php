@@ -51,7 +51,7 @@ class ConstructorExecutionTransformer implements SourceTransformer
      *
      * @var array|ReflectionConstructorInvocation[]
      */
-    private static $constructorInvocationsCache = array();
+    private static $constructorInvocationsCache = [];
 
     /**
      * Singletone
@@ -153,7 +153,7 @@ class ConstructorExecutionTransformer implements SourceTransformer
      *
      * @return object
      */
-    protected static function construct($fullClassName, array $arguments = array())
+    protected static function construct($fullClassName, array $arguments = [])
     {
         $fullClassName = ltrim($fullClassName, '\\');
         if (!isset(self::$constructorInvocationsCache[$fullClassName])) {
@@ -170,7 +170,7 @@ class ConstructorExecutionTransformer implements SourceTransformer
                 $invocation = null;
             }
             if (!$invocation) {
-                $invocation = new ReflectionConstructorInvocation($fullClassName, 'root', array());
+                $invocation = new ReflectionConstructorInvocation($fullClassName, 'root', []);
             }
             self::$constructorInvocationsCache[$fullClassName] = $invocation;
         }

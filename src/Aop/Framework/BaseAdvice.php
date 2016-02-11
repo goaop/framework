@@ -55,7 +55,7 @@ abstract class BaseAdvice implements OrderedAdvice
      *
      * @var array
      */
-    protected static $localAdvicesCache = array();
+    protected static $localAdvicesCache = [];
 
     /**
      * Returns the advice order

@@ -41,7 +41,7 @@ class SourceTransformingLoader extends PhpStreamFilter
      *
      * @var array|SourceTransformer[]
      */
-    protected static $transformers = array();
+    protected static $transformers = [];
 
     /**
      * Identifier of filter

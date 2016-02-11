@@ -51,7 +51,7 @@ class ClassProxy extends AbstractProxy
      *
      * @var array Name of method => source code for it
      */
-    protected $methodsCode = array();
+    protected $methodsCode = [];
 
     /**
      * Static mappings for class name for excluding if..else check
@@ -65,21 +65,21 @@ class ClassProxy extends AbstractProxy
      *
      * @var array
      */
-    protected $interfaces = array();
+    protected $interfaces = [];
 
     /**
      * List of additional traits for using
      *
      * @var array
      */
-    protected $traits = array();
+    protected $traits = [];
 
     /**
      * Source code for properties
      *
      * @var array Name of property => source code for it
      */
-    protected $propertiesCode = array();
+    protected $propertiesCode = [];
 
     /**
      * Name for the current class
@@ -100,7 +100,7 @@ class ClassProxy extends AbstractProxy
      *
      * @var array
      */
-    private $interceptedProperties = array();
+    private $interceptedProperties = [];
 
     /**
      * Generates an child code by parent class reflection and joinpoints for it
@@ -239,7 +239,7 @@ class ClassProxy extends AbstractProxy
      *
      * @return void
      */
-    public static function injectJoinPoints($className, array $advices = array())
+    public static function injectJoinPoints($className, array $advices = [])
     {
         $reflectionClass  = new ReflectionClass($className);
         $joinPoints       = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
@@ -301,7 +301,7 @@ class ClassProxy extends AbstractProxy
             );
         }
 
-        $joinPoints = array();
+        $joinPoints = [];
 
         foreach ($classAdvices as $joinPointType => $typedAdvices) {
             // if not isset then we don't want to create such invocation for class
@@ -309,7 +309,7 @@ class ClassProxy extends AbstractProxy
                 continue;
             }
             foreach ($typedAdvices as $joinPointName => $advices) {
-                $filledAdvices = array();
+                $filledAdvices = [];
                 foreach ($advices as $advisorName) {
                     $filledAdvices[] = $accessor->$advisorName;
                 }
@@ -598,8 +598,8 @@ SETTER;
      */
     private function getConstructorBody(ParsedMethod $constructor = null, $isCallParent = false)
     {
-        $assocProperties = array();
-        $listProperties  = array();
+        $assocProperties = [];
+        $listProperties  = [];
         foreach ($this->interceptedProperties as $propertyName) {
             $assocProperties[] = "'$propertyName' => \$this->$propertyName";
             $listProperties[]  = "\$this->$propertyName";

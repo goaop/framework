@@ -12,7 +12,7 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider sortingTestSource
      */
-    public function testSortingLogic($advices, array $order = array())
+    public function testSortingLogic($advices, array $order = [])
     {
         $advices = AbstractJoinpoint::sortAdvices($advices);
         foreach ($advices as $advice) {
@@ -128,7 +128,7 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
      */
     private function getOrderedAdvice($order, $name)
     {
-        $mock = $this->getMock('Go\Aop\Framework\OrderedAdvice', array(), array(), $name);
+        $mock = $this->getMock('Go\Aop\Framework\OrderedAdvice', [], [], $name);
         $mock
             ->expects($this->any())
             ->method('getAdviceOrder')

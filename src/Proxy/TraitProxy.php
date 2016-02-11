@@ -28,14 +28,14 @@ class TraitProxy extends ClassProxy
      *
      * @var array
      */
-    protected static $traitAdvices = array();
+    protected static $traitAdvices = [];
 
     /**
      * Overridden static property for TraitProxy
      *
      * {@inheritDoc}
      */
-    protected static $invocationClassMap = array();
+    protected static $invocationClassMap = [];
 
     /**
      * Inject advices for given trait
@@ -47,7 +47,7 @@ class TraitProxy extends ClassProxy
      *
      * @return void
      */
-    public static function injectJoinPoints($className, array $traitAdvices = array())
+    public static function injectJoinPoints($className, array $traitAdvices = [])
     {
         self::$traitAdvices[$className] = $traitAdvices;
     }
@@ -68,7 +68,7 @@ class TraitProxy extends ClassProxy
 
         $advices = self::$traitAdvices[$traitName][$joinPointType][$pointName];
 
-        $filledAdvices = array();
+        $filledAdvices = [];
         foreach ($advices as $advisorName) {
             $filledAdvices[] = $accessor->$advisorName;
         }
@@ -137,7 +137,7 @@ BODY;
 
     private function getMethodAliasesCode()
     {
-        $aliasesLines = array();
+        $aliasesLines = [];
         foreach (array_keys($this->methodsCode) as $methodName) {
             $aliasesLines[] = "{$this->parentClassName}::{$methodName} as protected {$methodName}➩;";
         }

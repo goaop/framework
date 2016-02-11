@@ -22,7 +22,7 @@ class AdviceMatcherTest extends TestCase
     {
         $container = $this->getMock('Go\Core\AspectContainer');
         $reader    = $this->getMock('Doctrine\Common\Annotations\Reader');
-        $loader    = $this->getMock('Go\Core\AspectLoader', array(), array($container, $reader));
+        $loader    = $this->getMock('Go\Core\AspectLoader', [], array($container, $reader));
 
         $this->adviceMatcher = new AdviceMatcher($loader, $container);
 
@@ -37,7 +37,7 @@ class AdviceMatcherTest extends TestCase
     public function testGetEmptyAdvicesForClass()
     {
         // by reflection
-        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, array());
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, []);
         $this->assertEmpty($advices);
     }
 

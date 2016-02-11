@@ -88,7 +88,7 @@ abstract class AspectKernel
      *
      * @param array $options Associative array of options for kernel
      */
-    public function init(array $options = array())
+    public function init(array $options = [])
     {
         $this->options = $this->normalizeOptions($options);
         define('AOP_ROOT_DIR', $this->options['appDir']);
@@ -195,8 +195,8 @@ abstract class AspectKernel
             'cacheFileMode'          => null,
             'features'               => $features,
 
-            'includePaths'           => array(),
-            'excludePaths'           => array(),
+            'includePaths'           => [],
+            'excludePaths'           => [],
             'containerClass'         => static::$containerClass,
         );
     }
@@ -247,7 +247,7 @@ abstract class AspectKernel
         $aspectKernel     = $this;
 
         $sourceTransformers = function () use ($filterInjector, $magicTransformer, $aspectKernel, $cacheManager) {
-            $transformers    = array();
+            $transformers    = [];
             $aspectContainer = $aspectKernel->getContainer();
             $transformers[]  = new WeavingTransformer(
                 $aspectKernel,

@@ -35,7 +35,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
             self::$transformer = new FilterInjectorTransformer(
                 $kernelMock,
                 'unit.test',
-                $this->getMock('Go\Instrument\ClassLoading\CachePathManager', array(), array($kernelMock))
+                $this->getMock('Go\Instrument\ClassLoading\CachePathManager', [], array($kernelMock))
             );
         }
         $stream = fopen('php://input', 'r');
@@ -52,7 +52,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $mock = $this->getMockForAbstractClass(
             'Go\Core\AspectKernel',
-            array(),
+            [],
             '',
             false,
             true,

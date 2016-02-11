@@ -41,7 +41,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $container = $this->getContainerMock();
         $reader    = $this->getMock('Doctrine\Common\Annotations\Reader');
-        $loader    = $this->getMock('Go\Core\AspectLoader', array(), array($container, $reader));
+        $loader    = $this->getMock('Go\Core\AspectLoader', [], array($container, $reader));
 
         $this->broker = new \TokenReflection\Broker(
             new \TokenReflection\Broker\Backend\Memory()
@@ -51,8 +51,8 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             array(
                 'appDir'       => dirname(__DIR__),
                 'cacheDir'     => null,
-                'includePaths' => array(),
-                'excludePaths' => array()
+                'includePaths' => [],
+                'excludePaths' => []
             ),
             $container
         );
@@ -60,7 +60,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             $this->kernel,
             $this->broker,
             $this->adviceMatcher,
-            $this->getMock('Go\Instrument\ClassLoading\CachePathManager', array(), array($this->kernel)),
+            $this->getMock('Go\Instrument\ClassLoading\CachePathManager', [], array($this->kernel)),
             $loader
         );
 
@@ -154,20 +154,20 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $container = $this->getContainerMock();
         $reader    = $this->getMock('Doctrine\Common\Annotations\Reader');
-        $loader    = $this->getMock('Go\Core\AspectLoader', array(), array($container, $reader));
+        $loader    = $this->getMock('Go\Core\AspectLoader', [], array($container, $reader));
 
         $this->transformer = new WeavingTransformer(
             $this->getKernelMock(
                 array(
                     'appDir'       => dirname(__DIR__),
                     'includePaths' => array(__DIR__),
-                    'excludePaths' => array()
+                    'excludePaths' => []
                 ),
                 $container
             ),
             $this->broker,
             $this->adviceMatcher,
-            $this->getMock('Go\Instrument\ClassLoading\CachePathManager', array(), array($this->kernel)),
+            $this->getMock('Go\Instrument\ClassLoading\CachePathManager', [], array($this->kernel)),
             $loader
         );
         $this->metadata->source = $this->loadTest('class');
@@ -242,7 +242,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $mock = $this->getMockForAbstractClass(
             'Go\Core\AspectKernel',
-            array(),
+            [],
             '',
             false,
             true,
@@ -270,12 +270,12 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     protected function getAdviceMatcherMock()
     {
-        $mock = $this->getMock('Go\Core\AdviceMatcher', array('getAdvicesForClass'), array(), '', false);
+        $mock = $this->getMock('Go\Core\AdviceMatcher', array('getAdvicesForClass'), [], '', false);
         $mock->expects($this->any())
             ->method('getAdvicesForClass')
             ->will(
                 $this->returnCallback(function (\TokenReflection\ReflectionClass $refClass) {
-                    $advices  = array();
+                    $advices  = [];
                     foreach ($refClass->getMethods() as $method) {
                         $advisorId = "advisor.{$refClass->name}->{$method->name}";
                         $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
@@ -304,7 +304,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             ->expects($this->any())
             ->method('getByTag')
             ->will($this->returnValueMap(array(
-                array('advisor', array())
+                array('advisor', [])
             )));
 
         return $container;

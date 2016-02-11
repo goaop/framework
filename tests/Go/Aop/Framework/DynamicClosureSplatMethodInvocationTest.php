@@ -44,7 +44,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
     public function testDynamicMethodInvocation($methodName, $expectedResult)
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, []);
 
         $result = $invocation($child);
         $this->assertEquals($expectedResult, $result);
@@ -53,7 +53,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
     public function testValueChangedByReference()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'passByReference', array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'passByReference', []);
 
         $value  = 'test';
         $result = $invocation($child, array(&$value));
@@ -64,9 +64,9 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
     public function testInvocationWithDynamicArguments()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'variableArgsTest', array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'variableArgsTest', []);
 
-        $args     = array();
+        $args     = [];
         $expected = '';
         for ($i=0; $i<10; $i++) {
             $args[]   = $i;
@@ -79,7 +79,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
     public function testRecursionWorks()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('recursion'));
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'recursion', array());
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'recursion', []);
 
         $child->expects($this->exactly(5))->method('recursion')->will($this->returnCallback(
             function ($value, $level) use ($child, $invocation) {
@@ -105,7 +105,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
 
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'publicMethod', array($advice));
 
-        $result = $invocation($child, array());
+        $result = $invocation($child, []);
         $this->assertEquals('ok', $value);
         $this->assertEquals(T_PUBLIC, $result);
     }

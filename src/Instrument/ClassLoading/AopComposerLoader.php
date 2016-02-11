@@ -34,7 +34,7 @@ class AopComposerLoader
      *
      * @var array
      */
-    protected $options = array();
+    protected $options = [];
 
     /**
      * File enumerator
@@ -64,7 +64,7 @@ class AopComposerLoader
      * @param AspectContainer $container Instance of the container
      * @param array $options Configuration options
      */
-    public function __construct(ClassLoader $original, AspectContainer $container, array $options = array())
+    public function __construct(ClassLoader $original, AspectContainer $container, array $options = [])
     {
         $this->options  = $options;
         $this->original = $original;
@@ -92,7 +92,7 @@ class AopComposerLoader
      *
      * @return bool was initialization sucessful or not
      */
-    public static function init(array $options = array(), AspectContainer $container)
+    public static function init(array $options = [], AspectContainer $container)
     {
         $loaders = spl_autoload_functions();
 
