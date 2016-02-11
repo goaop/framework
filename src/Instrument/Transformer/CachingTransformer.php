@@ -72,6 +72,11 @@ class CachingTransformer extends BaseSourceTransformer
             return false;
         }
 
+        // Guard to disable overwriting of original files
+        if ($cacheUri === $originalUri) {
+            return;
+        }
+
         $lastModified  = filemtime($originalUri);
         $cacheState    = $this->cacheManager->queryCacheState($originalUri);
         $cacheModified = $cacheState ? $cacheState['filemtime'] : 0;
