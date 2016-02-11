@@ -11,6 +11,7 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
+use Go\Aop\Aspect;
 use Go\Aop\Features;
 use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AdviceMatcher;
@@ -130,7 +131,7 @@ class WeavingTransformer extends BaseSourceTransformer
                 }
 
                 // Skip interfaces and aspects
-                if ($class->isInterface() || in_array('Go\Aop\Aspect', $class->getInterfaceNames())) {
+                if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames())) {
                     continue;
                 }
                 $wasClassProcessed    = $this->processSingleClass($advisors, $metadata, $class, $lineOffset);

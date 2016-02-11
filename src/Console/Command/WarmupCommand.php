@@ -56,7 +56,7 @@ EOT
         }
         include_once $path;
 
-        if (!class_exists('Go\Core\AspectKernel', false)) {
+        if (!class_exists(AspectKernel::class, false)) {
             $message = "Kernel was not initialized yet, please configure it in the {$path}";
             throw new \InvalidArgumentException($message);
         }

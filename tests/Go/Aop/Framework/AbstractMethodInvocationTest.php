@@ -12,7 +12,7 @@ class AbstractMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->invocation = $this->getMockForAbstractClass(
-            'Go\Aop\Framework\AbstractMethodInvocation',
+            AbstractMethodInvocation::class,
             array(__CLASS__, __FUNCTION__, [])
         );
     }

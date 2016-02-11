@@ -2,6 +2,8 @@
 
 namespace Go\Core;
 
+use Doctrine\Common\Annotations\Reader;
+use Go\Aop\Advice;
 use Go\Aop\Advisor;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\DefaultPointcutAdvisor;
@@ -20,9 +22,9 @@ class AdviceMatcherTest extends TestCase
 
     protected function setUp()
     {
-        $container = $this->getMock('Go\Core\AspectContainer');
-        $reader    = $this->getMock('Doctrine\Common\Annotations\Reader');
-        $loader    = $this->getMock('Go\Core\AspectLoader', [], array($container, $reader));
+        $container = $this->getMock(AspectContainer::class);
+        $reader    = $this->getMock(Reader::class);
+        $loader    = $this->getMock(AspectLoader::class, [], array($container, $reader));
 
         $this->adviceMatcher = new AdviceMatcher($loader, $container);
 
@@ -48,7 +50,7 @@ class AdviceMatcherTest extends TestCase
     {
         $funcName = __FUNCTION__;
 
-        $pointcut = $this->getMock('Go\Aop\Pointcut');
+        $pointcut = $this->getMock(Pointcut::class);
         $pointcut
             ->expects($this->any())
             ->method('getClassFilter')
@@ -64,7 +66,7 @@ class AdviceMatcherTest extends TestCase
             ->method('getKind')
             ->will($this->returnValue(Pointcut::KIND_METHOD));
 
-        $advice = $this->getMock('Go\Aop\Advice');
+        $advice = $this->getMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
         $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, array($advisor));
@@ -80,7 +82,7 @@ class AdviceMatcherTest extends TestCase
     {
         $propName = 'adviceMatcher'; // $this->adviceMatcher;
 
-        $pointcut = $this->getMock('Go\Aop\Pointcut');
+        $pointcut = $this->getMock(Pointcut::class);
         $pointcut
             ->expects($this->any())
             ->method('getClassFilter')
@@ -96,7 +98,7 @@ class AdviceMatcherTest extends TestCase
             ->method('getKind')
             ->will($this->returnValue(Pointcut::KIND_PROPERTY));
 
-        $advice = $this->getMock('Go\Aop\Advice');
+        $advice = $this->getMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
         $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, array($advisor));

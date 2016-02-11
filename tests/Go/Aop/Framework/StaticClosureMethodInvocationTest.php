@@ -2,6 +2,7 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
 
 /**
@@ -10,7 +11,7 @@ use Go\Stubs\FirstStatic;
 class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 {
 
-    const FIRST_CLASS_NAME = 'Go\Stubs\First';
+    const FIRST_CLASS_NAME = First::class;
 
     protected static $invocationClass;
 

@@ -12,7 +12,10 @@ namespace Go\Proxy;
 
 use Go\Aop\Advice;
 use Go\Aop\Features;
+use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\MethodInvocationComposer;
+use Go\Aop\Framework\ReflectionConstructorInvocation;
+use Go\Aop\Framework\StaticInitializationJoinpoint;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\IntroductionInfo;
 use Go\Core\AspectContainer;
@@ -269,9 +272,9 @@ class ClassProxy extends AbstractProxy
         static::$invocationClassMap = array(
             AspectContainer::METHOD_PREFIX        => $dynamicMethodClass,
             AspectContainer::STATIC_METHOD_PREFIX => $staticMethodClass,
-            AspectContainer::PROPERTY_PREFIX      => 'Go\Aop\Framework\ClassFieldAccess',
-            AspectContainer::STATIC_INIT_PREFIX   => 'Go\Aop\Framework\StaticInitializationJoinpoint',
-            AspectContainer::INIT_PREFIX          => 'Go\Aop\Framework\ReflectionConstructorInvocation'
+            AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,
+            AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class,
+            AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class
         );
     }
 

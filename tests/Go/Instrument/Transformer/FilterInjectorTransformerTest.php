@@ -2,6 +2,9 @@
 
 namespace Go\Instrument\Transformer;
 
+use Go\Core\AspectKernel;
+use Go\Core\GoAspectContainer;
+use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 
@@ -30,12 +33,12 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
                     'debug'    => false,
                     'features' => 0
                 ),
-                $this->getMock('Go\Core\GoAspectContainer')
+                $this->getMock(GoAspectContainer::class)
             );
             self::$transformer = new FilterInjectorTransformer(
                 $kernelMock,
                 'unit.test',
-                $this->getMock('Go\Instrument\ClassLoading\CachePathManager', [], array($kernelMock))
+                $this->getMock(CachePathManager::class, [], array($kernelMock))
             );
         }
         $stream = fopen('php://input', 'r');
@@ -51,7 +54,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     protected function getKernelMock($options, $container)
     {
         $mock = $this->getMockForAbstractClass(
-            'Go\Core\AspectKernel',
+            AspectKernel::class,
             [],
             '',
             false,
