@@ -97,7 +97,7 @@ class TraitProxy extends ClassProxy
             return $byReference . '$' . $param->name;
         }, $method->getParameters()));
 
-        $args = $scope . ($args ? ", array($args)" : '');
+        $args = $scope . ($args ? ", [$args]" : '');
 
         return <<<BODY
 static \$__joinPoint = null;

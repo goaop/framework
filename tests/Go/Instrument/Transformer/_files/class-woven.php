@@ -27,7 +27,7 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
     /**
      * Property was created automatically, do not change it manually
      */
-    private static $__joinPoints = array();
+    private static $__joinPoints = [];
 
     public function publicMethod()
     {
@@ -52,12 +52,12 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
     public function publicMethodDynamicArguments($a, &$b)
     {
         $argsList = \func_get_args();
-        return self::$__joinPoints['method:publicMethodDynamicArguments']->__invoke($this, array($a, &$b) + $argsList);
+        return self::$__joinPoints['method:publicMethodDynamicArguments']->__invoke($this, [$a, &$b] + $argsList);
     }
 
     public function publicMethodFixedArguments($a, $b, $c = null)
     {
-        return self::$__joinPoints['method:publicMethodFixedArguments']->__invoke($this, array($a, $b, $c));
+        return self::$__joinPoints['method:publicMethodFixedArguments']->__invoke($this, [$a, $b, $c]);
     }
 
 }
