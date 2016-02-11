@@ -137,7 +137,6 @@ abstract class AspectKernel
         $features = 0;
         if (PHP_VERSION_ID >= 50400) {
             $features += Features::USE_CLOSURE;
-            $features += Features::USE_TRAIT;
         }
         if (PHP_VERSION_ID >= 50500) {
             $features += Features::USE_STATIC_FOR_LSB;

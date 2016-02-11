@@ -34,11 +34,6 @@ interface Features
     const INTERCEPT_INCLUDES = 4;
 
     /**
-     * Enables usage of traits and introductions as well, available since PHP5.4
-     */
-    const USE_TRAIT = 8;
-
-    /**
      * Allows to use closures with binding, available since PHP5.4
      */
     const USE_CLOSURE = 16;
