@@ -89,7 +89,7 @@ class TraitProxy extends ClassProxy
     {
         $isStatic = $method->isStatic();
         $class    = '\\' . __CLASS__;
-        $scope    = $isStatic ? $this->staticLsbExpression : '$this';
+        $scope    = $isStatic ? self::$staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $args = join(', ', array_map(function (ParsedParameter $param) {

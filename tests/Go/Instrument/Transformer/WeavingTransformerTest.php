@@ -182,29 +182,6 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Transformer verifies that proxy with static LSB feature is working
-     */
-    public function testTransformerWithStaticLsbFeature()
-    {
-        $this->kernel->expects($this->any())
-            ->method('hasFeature')
-            ->will(
-                $this->returnCallback(function ($feature) {
-                    return $feature === Features::USE_STATIC_FOR_LSB;
-                })
-            );
-
-        $this->metadata->source = $this->loadTest('class');
-        $this->transformer->transform($this->metadata);
-
-        $actual   = $this->normalizeWhitespaces($this->metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven'));
-        // with Features::USE_STATIC_FOR_LSB we expect static::class in the proxy methods
-        $expected = str_replace('\get_called_class()', 'static::class', $expected);
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
      */
     public function testMultipleClasses()

@@ -38,7 +38,7 @@ abstract class AbstractProxy
      *
      * @var string
      */
-    protected $staticLsbExpression = '\get_called_class()';
+    protected static $staticLsbExpression = 'static::class';
 
     /**
      * Should proxy use variadics support or not
@@ -51,15 +51,12 @@ abstract class AbstractProxy
      * Constructs an abstract proxy class
      *
      * @param array $advices List of advices
-     * @param bool $useStaticForLsb Should proxy use 'static::class' instead of '\get_called_class()'
+     * @param bool $useVariadics Should proxy use variadics syntax or not
      */
-    public function __construct(array $advices = [], $useStaticForLsb = false, $useVariadics = false)
+    public function __construct(array $advices = [], $useVariadics = false)
     {
         $this->advices      = $this->flattenAdvices($advices);
         $this->useVariadics = $useVariadics;
-        if ($useStaticForLsb) {
-            $this->staticLsbExpression = 'static::class';
-        }
     }
 
     /**

@@ -110,14 +110,13 @@ class ClassProxy extends AbstractProxy
      *
      * @param ParsedClass $parent Parent class reflection
      * @param array|Advice[] $classAdvices List of advices for class
-     * @param bool $useStaticForLsb Should proxy use 'static::class' instead of '\get_called_class()'
      *
      * @throws \InvalidArgumentException if there are unknown type of advices
      * @return ClassProxy
      */
-    public function __construct(ParsedClass $parent, array $classAdvices, $useStaticForLsb = false)
+    public function __construct(ParsedClass $parent, array $classAdvices)
     {
-        parent::__construct($classAdvices, $useStaticForLsb);
+        parent::__construct($classAdvices);
 
         $this->class           = $parent;
         $this->name            = $parent->getShortName();
@@ -425,7 +424,7 @@ class ClassProxy extends AbstractProxy
     protected function getJoinpointInvocationBody(ParsedMethod $method)
     {
         $isStatic = $method->isStatic();
-        $scope    = $isStatic ? $this->staticLsbExpression : '$this';
+        $scope    = $isStatic ? self::$staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $args = join(', ', array_map(function (ParsedParameter $param) {
