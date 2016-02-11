@@ -15,8 +15,9 @@ use ReflectionProperty;
 /**
  * This interface represents a field access in the program.
  *
- * A field access is a joinpoint and can be intercepted by a field
- * interceptor.
+ * A field access is a joinpoint and can be intercepted by a field interceptor.
+ *
+ * @api
  */
 interface FieldAccess extends Joinpoint
 {
@@ -34,12 +35,16 @@ interface FieldAccess extends Joinpoint
     /**
      * Gets the field being accessed.
      *
+     * @api
+     *
      * @return ReflectionProperty the field being accessed.
      */
     public function getField();
 
     /**
-     * Gets the value that must be set to the field.
+     * Gets the value that must be set to the field, applicable only for WRITE access type
+     *
+     * @api
      *
      * @return mixed
      */
@@ -47,6 +52,8 @@ interface FieldAccess extends Joinpoint
 
     /**
      * Returns the access type.
+     *
+     * @api
      *
      * @return integer
      */

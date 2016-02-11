@@ -11,13 +11,14 @@
 namespace Go\Aop;
 
 /**
- * Base interface holding AOP advice (action to take at a joinpoint) and a filter determining the
- * applicability of the advice (such as a pointcut).
+ * Base interface holding AOP advice (action to take at a joinpoint)
  */
 interface Advisor
 {
     /**
      * Return the advice part of this aspect. An advice may be an interceptor, a before advice, a throws advice, etc.
+     *
+     * @api
      *
      * @return Advice The advice that should apply if the pointcut matches
      */

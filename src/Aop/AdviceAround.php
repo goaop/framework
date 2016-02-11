@@ -12,8 +12,9 @@ namespace Go\Aop;
 
 /**
  * Tag class for all around advices either for field access or method calling
+ *
+ * @api
  */
 interface AdviceAround extends Advice
 {
-
 }

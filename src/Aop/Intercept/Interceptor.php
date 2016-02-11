@@ -26,28 +26,32 @@ use Go\Aop\Advice;
  * debugger:
  *
  * <pre class=code>
- * class DebuggingInterceptor implements Interceptor {
+ * class DebuggingInterceptor implements Interceptor
+ * {
+ *     public function invoke(Joinpoint $i)
+ *     {
+ *         $this->debug($i->getStaticPart(), $i->getThis(), $i->getArgs());
  *
- *   public function invoke(Joinpoint $i) {
- *       $this->debug($i->getStaticPart(), $i->getThis(), $i->getArgs());
- *       return $i->proceed();
- *   }
+ *         return $i->proceed();
+ *     }
  *
- *   protected function debug($accessibleObject, $object, $value) {
- *       ...
- *   }
+ *     protected function debug($accessibleObject, $object, $value)
+ *     {
+ *         ...
+ *     }
  * }
  * </pre>
  *
  * @see Joinpoint
+ * @api
  */
 interface Interceptor extends Advice
 {
     /**
-     * Implement this method to perform extra treatments before and
-     * after the invocation of joinpoint.
+     * Implement this method to perform extra actions before and after the invocation of joinpoint.
      *
-     * @param Joinpoint $joinpoint current joinpoint
+     * @param Joinpoint $joinpoint Current joinpoint
+     * @api
      *
      * @return mixed the result of the call
      */

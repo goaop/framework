@@ -13,15 +13,16 @@ namespace Go\Aop\Intercept;
 /**
  * This interface represents an invocation in the program
  *
- * An invocation is a joinpoint and can be intercepted by an
- * interceptor
+ * An invocation is a callable joinpoint and can be intercepted by an interceptor
+ *
+ * @api
  */
 interface Invocation extends Joinpoint
 {
-
     /**
-     * Get the arguments as an array object.
-     * It is possible to change element values within this array to change the arguments
+     * Get the arguments of invocation as an array.
+     *
+     * @api
      *
      * @return array the arguments of the invocation
      */

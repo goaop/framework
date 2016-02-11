@@ -10,28 +10,26 @@
 namespace Go\Aop\Intercept;
 
 /**
- * This interface represents a generic runtime joinpoint (in the AOP
- * terminology).
+ * This interface represents a generic runtime joinpoint (in the AOP terminology).
  *
- * A runtime joinpoint is an event that occurs on a static
- * joinpoint (i.e. a location in a the program). For instance, an
- * invocation is the runtime joinpoint on a method (static joinpoint).
- * The static part of a given joinpoint can be generically retrieved
- * using the getStaticPart() method.
+ * A runtime joinpoint is an event that occurs on a static joinpoint (i.e. a location in a the program).
+ * For instance, an invocation is the runtime joinpoint on a method (static joinpoint).
+ * The static part of a given joinpoint can be generically retrieved using the getStaticPart() method.
  *
- * In the context of an interception framework, a runtime joinpoint
- * is then the reification of an access to an accessible object (a
- * method, a constructor, a field), i.e. the static part of the
- * joinpoint. It is passed to the interceptors that are installed on
- * the static joinpoint.
+ * In the context of an interception framework, a runtime joinpoint is then the reification of an access to
+ * an accessible object (a method, a constructor, a field), i.e. the static part of the joinpoint. It is passed
+ * to the interceptors that are installed on the static joinpoint.
  *
  * @see Interceptor
+ * @api
  */
 interface Joinpoint
 {
 
     /**
      * Proceeds to the next interceptor in the chain.
+     *
+     * @api
      *
      * @return mixed see the children interfaces' proceed definition.
      */
@@ -41,8 +39,9 @@ interface Joinpoint
      * Returns the object that holds the current joinpoint's static
      * part.
      *
-     * @return object|null the object (can be null if the accessible object is
-     * static).
+     * @api
+     *
+     * @return object|null the object (can be null if the accessible object is static).
      */
     public function getThis();
 

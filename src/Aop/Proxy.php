@@ -14,8 +14,9 @@ namespace Go\Aop;
  * Marker interface implemented by all AOP proxies.
  *
  * Used to detect whether or not objects are Go-generated proxies.
+ *
+ * @api
  */
 interface Proxy
 {
-
 }
