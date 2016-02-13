@@ -20,9 +20,9 @@ class DynamicClosureMethodInvocation extends AbstractMethodInvocation
     protected $closureToCall = null;
 
     /**
-     * Previous scope of invocation
+     * Previous instance/scope of invocation
      *
-     * @var null
+     * @var null|object|string
      */
     protected $previousInstance = null;
 

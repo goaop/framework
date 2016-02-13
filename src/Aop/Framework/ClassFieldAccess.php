@@ -30,9 +30,9 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Instance of reflection property
      *
-     * @var null|\ReflectionProperty
+     * @var ReflectionProperty
      */
-    protected $reflectionProperty = null;
+    protected $reflectionProperty;
 
     /**
      * New value to set
@@ -44,9 +44,9 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Access type for field access
      *
-     * @var null|integer
+     * @var integer
      */
-    private $accessType = null;
+    private $accessType;
 
     /**
      * Copy of the original value of property

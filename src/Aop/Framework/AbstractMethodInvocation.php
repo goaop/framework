@@ -21,18 +21,18 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
 {
 
     /**
-     * Instance of object for invoking or null
+     * Instance of object for invoking or class name for static call
      *
-     * @var object
+     * @var object|string
      */
-    protected $instance = null;
+    protected $instance;
 
     /**
      * Instance of reflection method for class
      *
-     * @var null|ReflectionMethod
+     * @var ReflectionMethod
      */
-    protected $reflectionMethod = null;
+    protected $reflectionMethod;
 
     /**
      * Name of the invocation class
@@ -74,8 +74,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      * Returns the object that holds the current joinpoint's static
      * part.
      *
-     * @return object|null the object (can be null if the accessible object is
-     * static).
+     * @return object|string the object for dynamic call or string with name of scope
      */
     public function getThis()
     {
