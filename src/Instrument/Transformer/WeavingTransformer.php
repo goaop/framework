@@ -12,7 +12,6 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
-use Go\Aop\Features;
 use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectContainer;
@@ -134,11 +133,11 @@ class WeavingTransformer extends BaseSourceTransformer
                 if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames())) {
                     continue;
                 }
-                $wasClassProcessed    = $this->processSingleClass($advisors, $metadata, $class, $lineOffset);
+                $wasClassProcessed = $this->processSingleClass($advisors, $metadata, $class, $lineOffset);
                 $totalTransformations += (integer) $wasClassProcessed;
             }
             $wasFunctionsProcessed = $this->processFunctions($advisors, $metadata, $namespace);
-            $totalTransformations  += (integer) $wasFunctionsProcessed;
+            $totalTransformations += (integer) $wasFunctionsProcessed;
         }
 
         CleanableMemory::leaveProcessing();
@@ -182,7 +181,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
 
         // Prepare child Aop proxy
-        $child     = $class->isTrait()
+        $child = $class->isTrait()
             ? new TraitProxy($class, $advices)
             : new ClassProxy($class, $advices);
 
