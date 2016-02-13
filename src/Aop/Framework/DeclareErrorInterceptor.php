@@ -11,7 +11,6 @@
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Pointcut;
 use ReflectionMethod;
 use ReflectionProperty;
 
