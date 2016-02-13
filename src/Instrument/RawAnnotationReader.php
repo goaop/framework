@@ -82,7 +82,7 @@ class RawAnnotationReader
         return $this->parser->parse($class->getDocComment(), 'class '.$class->getName());
     }
 
-     /**
+    /**
      * Gets the annotations applied to a method.
      *
      * @param ParsedReflectionMethod $method The ReflectionMethod of the method from which

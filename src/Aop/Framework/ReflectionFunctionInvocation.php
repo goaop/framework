@@ -83,10 +83,10 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
      *
      * @return object
      */
-     public function getStaticPart()
-     {
-         return $this->reflectionFunction;
-     }
+    public function getStaticPart()
+    {
+        return $this->reflectionFunction;
+    }
 
     /**
      * Invokes current function invocation with all interceptors
