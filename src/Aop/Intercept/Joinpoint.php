@@ -41,7 +41,7 @@ interface Joinpoint
      *
      * @api
      *
-     * @return object|null the object (can be null if the accessible object is static).
+     * @return object|string the object for dynamic call or string with name of scope
      */
     public function getThis();
 

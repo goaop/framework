@@ -10,11 +10,35 @@
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\Framework\Block\ClosureSplatDynamicProceedTrait;
-use Go\Aop\Framework\Block\SimpleInvocationTrait;
-
-class DynamicClosureSplatMethodInvocation extends AbstractMethodInvocation
+class DynamicClosureSplatMethodInvocation extends DynamicClosureMethodInvocation
 {
-    use ClosureSplatDynamicProceedTrait;
-    use SimpleInvocationTrait;
+    /**
+     * Invokes original method and return result from it
+     *
+     * @return mixed
+     */
+    public function proceed()
+    {
+        if (isset($this->advices[$this->current])) {
+            /** @var $currentInterceptor \Go\Aop\Intercept\Interceptor */
+            $currentInterceptor = $this->advices[$this->current++];
+
+            return $currentInterceptor->invoke($this);
+        }
+
+        // Fill the closure only once if it's empty
+        if (!$this->closureToCall) {
+            $this->closureToCall = $this->reflectionMethod->getClosure($this->instance);
+        }
+
+        // Rebind the closure if instance was changed since last time
+        if ($this->previousInstance !== $this->instance) {
+            $this->closureToCall    = $this->closureToCall->bindTo($this->instance, $this->reflectionMethod->class);
+            $this->previousInstance = $this->instance;
+        }
+
+        $closureToCall = $this->closureToCall;
+
+        return $closureToCall(...$this->arguments);
+    }
 }
