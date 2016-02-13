@@ -56,7 +56,7 @@ class TraitProxy extends ClassProxy
         /** @var LazyAdvisorAccessor $accessor */
         static $accessor = null;
 
-        if (!self::$invocationClassMap) {
+        if (empty(self::$invocationClassMap)) {
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
             self::setMappings(

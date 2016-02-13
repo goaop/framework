@@ -218,7 +218,7 @@ class GoAspectContainer extends Container implements AspectContainer
      */
     public function isFresh($timestamp)
     {
-        if (!$this->maxTimestamp && $this->resources) {
+        if (!$this->maxTimestamp && !empty($this->resources)) {
             $this->maxTimestamp = max(array_map('filemtime', $this->resources));
         }
 

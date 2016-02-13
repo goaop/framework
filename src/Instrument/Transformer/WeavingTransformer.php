@@ -104,7 +104,7 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Check if we have some new aspects that weren't loaded yet
         $unloadedAspects = $this->aspectLoader->getUnloadedAspects();
-        if ($unloadedAspects) {
+        if (!empty($unloadedAspects)) {
             $this->loadAndRegisterAspects($unloadedAspects);
         }
         $advisors = $this->container->getByTag('advisor');
@@ -160,7 +160,7 @@ class WeavingTransformer extends BaseSourceTransformer
     {
         $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
 
-        if (!$advices) {
+        if (empty($advices)) {
             // Fast return if there aren't any advices for that class
             return false;
         }
@@ -251,7 +251,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $wasProcessedFunctions = false;
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace, $advisors);
         $cacheDir        = $this->cachePathManager->getCacheDir();
-        if ($functionAdvices && $cacheDir) {
+        if (!empty($functionAdvices) && $cacheDir) {
             $cacheDir = $cacheDir . $cacheDirSuffix;
             $fileName = str_replace('\\', '/', $namespace->getName()) . '.php';
 

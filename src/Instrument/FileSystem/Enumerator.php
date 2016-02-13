@@ -92,7 +92,7 @@ class Enumerator
                 return false;
             }
 
-            if ($includePaths) {
+            if (!empty($includePaths)) {
                 $found = false;
                 foreach ($includePaths as $includePath) {
                     if (strpos($realPath, $includePath) === 0) {

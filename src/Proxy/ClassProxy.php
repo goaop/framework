@@ -111,7 +111,6 @@ class ClassProxy extends AbstractProxy
      * @param array|Advice[] $classAdvices List of advices for class
      *
      * @throws \InvalidArgumentException if there are unknown type of advices
-     * @return ClassProxy
      */
     public function __construct(ParsedClass $parent, array $classAdvices)
     {
