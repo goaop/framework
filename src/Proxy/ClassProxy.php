@@ -27,7 +27,6 @@ use ReflectionMethod as Method;
 use ReflectionProperty as Property;
 use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionMethod as ParsedMethod;
-use TokenReflection\ReflectionParameter as ParsedParameter;
 use TokenReflection\ReflectionProperty as ParsedProperty;
 
 /**
@@ -425,12 +424,7 @@ class ClassProxy extends AbstractProxy
         $scope    = $isStatic ? self::$staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
-        $args = join(', ', array_map(function (ParsedParameter $param) {
-            $byReference = $param->isPassedByReference() ? '&' : '';
-
-            return $byReference . '$' . $param->name;
-        }, $method->getParameters()));
-
+        $args = $this->prepareArgsLine($method);
         $body = '';
 
         if (($this->class->name === $method->getDeclaringClassName()) && strpos($method->getSource(), 'func_get_args') !== false) {

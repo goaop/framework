@@ -11,6 +11,7 @@
 namespace Go\Proxy;
 
 use ReflectionParameter as Parameter;
+use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 
 /**
@@ -163,5 +164,23 @@ abstract class AbstractProxy
         }
 
         return $flattenAdvices;
+    }
+
+    /**
+     * Prepares a line with args from the method definition
+     *
+     * @param ParsedMethod $method
+     *
+     * @return string
+     */
+    protected function prepareArgsLine(ParsedMethod $method)
+    {
+        $args = join(', ', array_map(function (ParsedParameter $param) {
+            $byReference = $param->isPassedByReference() ? '&' : '';
+
+            return $byReference . '$' . $param->name;
+        }, $method->getParameters()));
+
+        return $args;
     }
 }
