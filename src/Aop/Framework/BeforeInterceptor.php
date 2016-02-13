@@ -15,8 +15,10 @@ use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "Before" interceptor
+ *
+ * @api
  */
-class BeforeInterceptor extends BaseInterceptor implements AdviceBefore
+final class BeforeInterceptor extends BaseInterceptor implements AdviceBefore
 {
     /**
      * Before invoker for joinpoint

@@ -16,8 +16,10 @@ use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "After Throwing" interceptor
+ *
+ * @api
  */
-class AfterThrowingInterceptor extends BaseInterceptor implements AdviceAfter
+final class AfterThrowingInterceptor extends BaseInterceptor implements AdviceAfter
 {
     /**
      * After throwing exception invoker
