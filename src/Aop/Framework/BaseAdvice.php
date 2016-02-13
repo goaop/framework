@@ -76,11 +76,6 @@ abstract class BaseAdvice implements OrderedAdvice
      */
     public static function serializeAdvice($adviceMethod)
     {
-        static $useWrappedClosure;
-        if (!isset($useWrappedClosure)) {
-            $useWrappedClosure = AspectKernel::getInstance()->hasFeature(Features::USE_WRAPPED_CLOSURE);
-        }
-
         $refAdvice    = new ReflectionFunction($adviceMethod);
         $refVariables = $refAdvice->getStaticVariables();
         $scope        = 'aspect';
@@ -88,19 +83,11 @@ abstract class BaseAdvice implements OrderedAdvice
             $scope     = $refVariables['scope'];
             $refAdvice = new ReflectionFunction($refVariables['adviceCallback']);
         }
-        if ($useWrappedClosure) {
-            $vars   = $refAdvice->getStaticVariables();
-            $method = $vars['refMethod'];
-            $aspect = $vars['aspect'];
-        } else {
-            $method = $refAdvice;
-            $aspect = $refAdvice->getClosureThis();
-        }
 
         return array(
             'scope'  => $scope,
-            'method' => $method->name,
-            'aspect' => get_class($aspect)
+            'method' => $refAdvice->name,
+            'aspect' => get_class($refAdvice->getClosureThis())
         );
     }
 
@@ -120,7 +107,7 @@ abstract class BaseAdvice implements OrderedAdvice
         if (!isset(static::$localAdvicesCache["$aspectName->$methodName"]['aspect'])) {
             $refMethod = new ReflectionMethod($aspectName, $methodName);
             $aspect    = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
-            $advice    = static::fromAspectReflection($aspect, $refMethod);
+            $advice    = $refMethod->getClosure($aspect);
             static::$localAdvicesCache["$aspectName->$methodName"]['aspect'] = $advice;
         }
 
@@ -135,40 +122,16 @@ abstract class BaseAdvice implements OrderedAdvice
     }
 
     /**
-     * Returns an advice from aspect method reflection
-     *
-     * @param Aspect $aspect Instance of aspect
-     * @param ReflectionMethod $refMethod Reflection method of aspect
-     *
-     * @return \Closure
-     */
-    public static function fromAspectReflection(Aspect $aspect, ReflectionMethod $refMethod)
-    {
-        static $useWrappedClosure;
-        if (!isset($useWrappedClosure)) {
-            $useWrappedClosure = AspectKernel::getInstance()->hasFeature(Features::USE_WRAPPED_CLOSURE);
-        }
-
-        if ($useWrappedClosure) {
-            return function () use ($aspect, $refMethod) {
-                return $refMethod->invokeArgs($aspect, func_get_args());
-            };
-        } else {
-            return $refMethod->getClosure($aspect);
-        }
-    }
-
-    /**
      * Creates an advice with respect to the desired scope
      *
      * @param Aspect $aspect
-     * @param callable| $adviceCallback Advice to call
+     * @param \Closure $adviceCallback Advice to call
      * @param string $scope Scope for callback
      *
      * @throws \InvalidArgumentException is scope is not supported
      * @return callable
      */
-    public static function createScopeCallback(Aspect $aspect, $adviceCallback, $scope)
+    public static function createScopeCallback(Aspect $aspect, \Closure $adviceCallback, $scope)
     {
         switch ($scope) {
             case 'aspect':

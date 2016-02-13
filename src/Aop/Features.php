@@ -34,11 +34,6 @@ interface Features
     const INTERCEPT_INCLUDES = 4;
 
     /**
-     * Allows to use wrapped closures, this can be used in HHVM and PHP7.0 for scope rebinding
-     */
-    const USE_WRAPPED_CLOSURE = 16;
-
-    /**
      * Enables usage of splat '...' operator, available since PHP5.6
      */
     const USE_SPLAT_OPERATOR = 32;
