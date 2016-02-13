@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
