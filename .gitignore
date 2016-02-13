@@ -1,11 +1,3 @@
-# Exclude vendor files
 vendor/
-
-# Exclude ide metadatas
-nbproject/
-
-# Lock file
 composer.lock
-
-# PhpUnit working configuration file
 phpunit.xml
