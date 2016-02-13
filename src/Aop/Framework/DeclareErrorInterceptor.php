@@ -120,7 +120,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
             $reflectorName = $reflection->getName();
         }
         $adviceMethod = $this->adviceMethod;
-        $adviceMethod($joinPoint->getThis(), $reflectorName, $this->message, $this->level);
+        $adviceMethod($joinpoint->getThis(), $reflectorName, $this->message, $this->level);
 
         return $joinpoint->proceed();
     }
