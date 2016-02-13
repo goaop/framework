@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -11,8 +11,6 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
-use Go\Aop\PointFilter;
-use Go\Aop\Support\TruePointFilter;
 
 /**
  * Signature method pointcut checks method signature (modifiers and name) to match it

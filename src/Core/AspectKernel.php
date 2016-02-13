@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -32,7 +32,7 @@ abstract class AspectKernel
     /**
      * Version of kernel
      */
-    const VERSION = '0.4.3';
+    const VERSION = '1.0.0';
 
     /**
      * Kernel options

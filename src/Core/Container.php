@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -58,7 +58,7 @@ class Container
         if (!is_callable($value)) {
             throw new \InvalidArgumentException("Only callable values can be shared in the container");
         }
-        $value = function ($container) use ($value) {
+        $value = function($container) use ($value) {
             static $sharedValue;
 
             if (null === $sharedValue) {

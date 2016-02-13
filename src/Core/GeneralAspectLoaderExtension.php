@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -77,7 +77,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     {
         $loadedItems    = [];
         $pointcut       = $this->parsePointcut($aspect, $reflection, $metaInformation);
-        $methodId       = get_class($aspect).'->'.$reflection->name;
+        $methodId       = get_class($aspect) . '->' . $reflection->name;
         $adviceCallback = Framework\BaseAdvice::fromAspectReflection($aspect, $reflection);
 
         if (isset($metaInformation->scope) && $metaInformation->scope !== 'aspect') {

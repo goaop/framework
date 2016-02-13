@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -15,7 +15,6 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use TokenReflection\ReflectionMethod as ParsedMethod;
-use TokenReflection\ReflectionParameter as ParsedParameter;
 
 /**
  * Trait proxy builder that is used to generate a trait from the list of joinpoints
@@ -57,7 +56,7 @@ class TraitProxy extends ClassProxy
         /** @var LazyAdvisorAccessor $accessor */
         static $accessor = null;
 
-        if (!self::$invocationClassMap) {
+        if (empty(self::$invocationClassMap)) {
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
             self::setMappings(
@@ -91,12 +90,7 @@ class TraitProxy extends ClassProxy
         $scope    = $isStatic ? self::$staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
-        $args = join(', ', array_map(function (ParsedParameter $param) {
-            $byReference = $param->isPassedByReference() ? '&' : '';
-
-            return $byReference . '$' . $param->name;
-        }, $method->getParameters()));
-
+        $args = $this->prepareArgsLine($method);
         $args = $scope . ($args ? ", [$args]" : '');
 
         return <<<BODY
@@ -122,7 +116,7 @@ BODY;
                 'use ' . join(', ', array(-1 => $this->parentClassName) + $this->traits) .
                 $this->getMethodAliasesCode()
             ) . "\n" . // Use traits and aliases section
-            $this->indent(join("\n", $this->methodsCode)) . "\n". // Method definitions
+            $this->indent(join("\n", $this->methodsCode)) . "\n" . // Method definitions
             "}" // End of trait body
         );
 

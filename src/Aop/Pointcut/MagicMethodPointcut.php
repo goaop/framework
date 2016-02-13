@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -10,14 +10,14 @@
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\MethodMatcher;
+use Go\Aop\DynamicPointFilter;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 
 /**
  * Magic method pointcut is a dynamic checker that verifies calls for __call and __callStatic
  */
-class MagicMethodPointcut implements MethodMatcher, Pointcut
+class MagicMethodPointcut implements DynamicPointFilter, Pointcut
 {
     use PointcutClassFilterTrait;
 
@@ -64,20 +64,20 @@ class MagicMethodPointcut implements MethodMatcher, Pointcut
     /**
      * Performs matching of point of code
      *
-     * @param mixed $method Specific part of code, can be any Reflection class
+     * @param mixed $point Specific part of code, can be any Reflection class
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
      *
      * @return bool
      */
-    public function matches($method, $instance = null, array $arguments = null)
+    public function matches($point, $instance = null, array $arguments = null)
     {
         // With single parameter (statically) always matches for __call, __callStatic
         if (!$instance) {
-            return ($method->name === '__call' || $method->name === '__callStatic');
+            return ($point->name === '__call' || $point->name === '__callStatic');
         }
 
-        if (!$this->modifierFilter->matches($method)) {
+        if (!$this->modifierFilter->matches($point)) {
             return false;
         }
 

@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -12,7 +12,6 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
-use Go\Aop\Features;
 use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectContainer;
@@ -86,7 +85,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return void|bool Return false if transformation should be stopped
+     * @return boolean Return false if transformation should be stopped
      */
     public function transform(StreamMetaData $metadata)
     {
@@ -105,7 +104,7 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Check if we have some new aspects that weren't loaded yet
         $unloadedAspects = $this->aspectLoader->getUnloadedAspects();
-        if ($unloadedAspects) {
+        if (!empty($unloadedAspects)) {
             $this->loadAndRegisterAspects($unloadedAspects);
         }
         $advisors = $this->container->getByTag('advisor');
@@ -134,11 +133,11 @@ class WeavingTransformer extends BaseSourceTransformer
                 if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames())) {
                     continue;
                 }
-                $wasClassProcessed    = $this->processSingleClass($advisors, $metadata, $class, $lineOffset);
+                $wasClassProcessed = $this->processSingleClass($advisors, $metadata, $class, $lineOffset);
                 $totalTransformations += (integer) $wasClassProcessed;
             }
             $wasFunctionsProcessed = $this->processFunctions($advisors, $metadata, $namespace);
-            $totalTransformations  += (integer) $wasFunctionsProcessed;
+            $totalTransformations += (integer) $wasFunctionsProcessed;
         }
 
         CleanableMemory::leaveProcessing();
@@ -161,7 +160,7 @@ class WeavingTransformer extends BaseSourceTransformer
     {
         $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
 
-        if (!$advices) {
+        if (empty($advices)) {
             // Fast return if there aren't any advices for that class
             return false;
         }
@@ -182,7 +181,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
 
         // Prepare child Aop proxy
-        $child     = $class->isTrait()
+        $child = $class->isTrait()
             ? new TraitProxy($class, $advices)
             : new ClassProxy($class, $advices);
 
@@ -252,7 +251,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $wasProcessedFunctions = false;
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace, $advisors);
         $cacheDir        = $this->cachePathManager->getCacheDir();
-        if ($functionAdvices && $cacheDir) {
+        if (!empty($functionAdvices) && $cacheDir) {
             $cacheDir = $cacheDir . $cacheDirSuffix;
             $fileName = str_replace('\\', '/', $namespace->getName()) . '.php';
 
@@ -277,7 +276,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * Save AOP proxy to the separate file anr returns the php source code for inclusion
      *
      * @param ParsedClass $class Original class reflection
-     * @param string|ClassProxy $child
+     * @param ClassProxy $child
      *
      * @return string
      */

@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -76,7 +76,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
     {
         $loadedItems = [];
         $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation);
-        $propertyId  = $reflection->class.'->'.$reflection->name;
+        $propertyId  = $reflection->class . '->' . $reflection->name;
 
         switch (true) {
             case ($metaInformation instanceof Annotation\DeclareParents):
@@ -91,7 +91,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                 $reflection->setAccessible(true);
                 $message = $reflection->getValue($aspect);
                 $level   = $metaInformation->level;
-                $advice  = new Framework\DeclareErrorInterceptor($message, $level);
+                $advice  = new Framework\DeclareErrorInterceptor($message, $level, $metaInformation->value);
                 $loadedItems[$propertyId] = new Support\DefaultPointcutAdvisor($pointcut, $advice);
                 break;
 

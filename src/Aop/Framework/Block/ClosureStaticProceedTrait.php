@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -53,7 +53,7 @@ trait ClosureStaticProceedTrait
      */
     protected static function getStaticInvoker($className, $method)
     {
-        return function (array $args) use ($className, $method) {
+        return function(array $args) use ($className, $method) {
             return forward_static_call_array(array($className, $method), $args);
         };
     }

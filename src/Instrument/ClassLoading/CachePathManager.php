@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -57,7 +57,7 @@ class CachePathManager
      */
     protected $newCacheState = [];
 
-    public function __construct (AspectKernel $kernel)
+    public function __construct(AspectKernel $kernel)
     {
         $this->kernel   = $kernel;
         $this->options  = $kernel->getOptions();
@@ -78,7 +78,7 @@ class CachePathManager
                 throw new \InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
             }
 
-            if (file_exists($this->cacheDir. self::CACHE_FILE_NAME)) {
+            if (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
                 $this->cacheState = include $this->cacheDir . self::CACHE_FILE_NAME;
             }
         }
@@ -124,7 +124,7 @@ class CachePathManager
      *
      * @return array|null Information or null if no record in the cache
      */
-    public function queryCacheState($resource=null)
+    public function queryCacheState($resource = null)
     {
         if (!$resource) {
             return $this->cacheState;
@@ -169,7 +169,7 @@ class CachePathManager
      */
     public function flushCacheState()
     {
-        if ($this->newCacheState) {
+        if (!empty($this->newCacheState)) {
             $fullCacheMap = $this->newCacheState + $this->cacheState;
             $cachePath    = substr(var_export($this->cacheDir, true), 1, -1);
             $rootPath     = substr(var_export($this->appDir, true), 1, -1);

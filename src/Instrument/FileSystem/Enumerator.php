@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2015, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -73,7 +73,7 @@ class Enumerator
     /**
      * Returns a filter callback for enumerating files
      *
-     * @return callable
+     * @return \Closure
      */
     public function getFilter()
     {
@@ -81,7 +81,7 @@ class Enumerator
         $includePaths  = $this->includePaths;
         $excludePaths  = $this->excludePaths;
 
-        return function (\SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
+        return function(\SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
             if ($file->getExtension() !== 'php') {
                 return false;
             };
@@ -92,7 +92,7 @@ class Enumerator
                 return false;
             }
 
-            if ($includePaths) {
+            if (!empty($includePaths)) {
                 $found = false;
                 foreach ($includePaths as $includePath) {
                     if (strpos($realPath, $includePath) === 0) {

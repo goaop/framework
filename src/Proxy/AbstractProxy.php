@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -11,6 +11,7 @@
 namespace Go\Proxy;
 
 use ReflectionParameter as Parameter;
+use TokenReflection\ReflectionMethod as ParsedMethod;
 use TokenReflection\ReflectionParameter as ParsedParameter;
 
 /**
@@ -76,7 +77,7 @@ abstract class AbstractProxy
     protected function indent($text)
     {
         $pad   = str_pad('', $this->indent, ' ');
-        $lines = array_map(function ($line) use ($pad) {
+        $lines = array_map(function($line) use ($pad) {
             return $pad . $line;
         }, explode("\n", $text));
 
@@ -163,5 +164,23 @@ abstract class AbstractProxy
         }
 
         return $flattenAdvices;
+    }
+
+    /**
+     * Prepares a line with args from the method definition
+     *
+     * @param ParsedMethod $method
+     *
+     * @return string
+     */
+    protected function prepareArgsLine(ParsedMethod $method)
+    {
+        $args = join(', ', array_map(function(ParsedParameter $param) {
+            $byReference = $param->isPassedByReference() ? '&' : '';
+
+            return $byReference . '$' . $param->name;
+        }, $method->getParameters()));
+
+        return $args;
     }
 }

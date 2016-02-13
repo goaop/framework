@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -52,7 +52,7 @@ class PathResolver
         }
 
         // resolve path parts (single dot, double dot and double delimiters)
-        $path  = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
+        $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
         if (strpos($path, '.') !== false) {
             $parts     = explode(DIRECTORY_SEPARATOR, $path);
             $absolutes = [];

@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -27,7 +27,6 @@ use ReflectionMethod as Method;
 use ReflectionProperty as Property;
 use TokenReflection\ReflectionClass as ParsedClass;
 use TokenReflection\ReflectionMethod as ParsedMethod;
-use TokenReflection\ReflectionParameter as ParsedParameter;
 use TokenReflection\ReflectionProperty as ParsedProperty;
 
 /**
@@ -112,7 +111,6 @@ class ClassProxy extends AbstractProxy
      * @param array|Advice[] $classAdvices List of advices for class
      *
      * @throws \InvalidArgumentException if there are unknown type of advices
-     * @return ClassProxy
      */
     public function __construct(ParsedClass $parent, array $classAdvices)
     {
@@ -425,12 +423,7 @@ class ClassProxy extends AbstractProxy
         $scope    = $isStatic ? self::$staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
-        $args = join(', ', array_map(function (ParsedParameter $param) {
-            $byReference = $param->isPassedByReference() ? '&' : '';
-
-            return $byReference . '$' . $param->name;
-        }, $method->getParameters()));
-
+        $args = $this->prepareArgsLine($method);
         $body = '';
 
         if (($this->class->name === $method->getDeclaringClassName()) && strpos($method->getSource(), 'func_get_args') !== false) {
@@ -477,11 +470,11 @@ class ClassProxy extends AbstractProxy
             ($prefix ? "$prefix " : '') . // List of class modifiers
             'class ' . // 'class' keyword with one space
             $this->name . // Name of the class
-            ' extends '. // 'extends' keyword with
+            ' extends ' . // 'extends' keyword with
             $this->parentClassName . // Name of the parent class
             ($this->interfaces ? ' implements ' . join(', ', $this->interfaces) : '') . "\n" . // Interfaces list
             "{\n" . // Start of class definition
-            ($this->traits ? $this->indent('use ' . join(', ', $this->traits) .';'."\n") : '') . "\n" . // Traits list
+            ($this->traits ? $this->indent('use ' . join(', ', $this->traits) . ';' . "\n") : '') . "\n" . // Traits list
             $this->indent(join("\n", $this->propertiesCode)) . "\n" . // Property definitions
             $this->indent(join("\n", $this->methodsCode)) . "\n" . // Method definitions
             "}" // End of class definition

@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -202,9 +202,10 @@ class AdviceMatcher
         Aop\IntroductionAdvisor $advisor,
         $advisorId)
     {
+        $classAdvices = [];
         // Do not make introduction for traits
         if ($class->isTrait()) {
-            return [];
+            return $classAdvices;
         }
 
         $advice = $advisor->getAdvice();
@@ -233,11 +234,9 @@ class AdviceMatcher
         $functions = [];
         $advices   = [];
 
-        if (!$functions) {
-            $listOfGlobalFunctions = get_defined_functions();
-            foreach ($listOfGlobalFunctions['internal'] as $functionName) {
-                $functions[$functionName] = new NamespacedReflectionFunction($functionName, $namespace->getName());
-            }
+        $listOfGlobalFunctions = get_defined_functions();
+        foreach ($listOfGlobalFunctions['internal'] as $functionName) {
+            $functions[$functionName] = new NamespacedReflectionFunction($functionName, $namespace->getName());
         }
 
         foreach ($functions as $functionName=>$function) {

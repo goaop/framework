@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -10,10 +10,11 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\DynamicPointFilter;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Invocation;
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Pointcut;
+use Serializable;
 
 /**
  * Dynamic invocation matcher combines a pointcut and interceptor.
@@ -21,19 +22,32 @@ use Go\Aop\Pointcut;
  * For each invocation interceptor asks the pointcut if it matches the invocation.
  * Matcher will receive reflection point, object instance and invocation arguments to make a decision
  */
-class DynamicInvocationMatcherInterceptor extends BaseInterceptor
+class DynamicInvocationMatcherInterceptor implements Interceptor, Serializable
 {
+    /**
+     * Instance of pointcut to dynamically match joinpoints with args
+     *
+     * @var DynamicPointFilter
+     */
+    protected $dynamicPointFilter;
+
+    /**
+     * Overloaded property for storing instance of Interceptor
+     *
+     * @var Interceptor
+     */
+    protected $interceptor;
 
     /**
      * Dynamic matcher constructor
      *
-     * @param Pointcut $pointcut Instance of dynamic matcher
+     * @param DynamicPointFilter $pointFilter Instance of dynamic matcher
      * @param Interceptor $interceptor Instance of interceptor to invoke
      */
-    public function __construct(Pointcut $pointcut, Interceptor $interceptor)
+    public function __construct(DynamicPointFilter $pointFilter, Interceptor $interceptor)
     {
-        $this->pointcut     = $pointcut;
-        $this->adviceMethod = $interceptor;
+        $this->dynamicPointFilter = $pointFilter;
+        $this->interceptor        = $interceptor;
     }
 
     /**
@@ -43,7 +57,7 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
      */
     public function serialize()
     {
-        return serialize(array($this->pointcut, $this->adviceMethod));
+        return serialize([$this->dynamicPointFilter, $this->interceptor]);
     }
 
     /**
@@ -54,7 +68,7 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
      */
     public function unserialize($serialized)
     {
-        list($this->pointcut, $this->adviceMethod) = unserialize(($serialized));
+        list($this->dynamicPointFilter, $this->interceptor) = unserialize($serialized);
     }
 
     /**
@@ -67,8 +81,8 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
     final public function invoke(Joinpoint $joinpoint)
     {
         if ($joinpoint instanceof Invocation) {
-            if ($this->pointcut->matches($joinpoint->getStaticPart(), $joinpoint->getThis(), $joinpoint->getArguments())) {
-                return $this->adviceMethod->invoke($joinpoint);
+            if ($this->dynamicPointFilter->matches($joinpoint->getStaticPart(), $joinpoint->getThis(), $joinpoint->getArguments())) {
+                return $this->interceptor->invoke($joinpoint);
             }
         }
 

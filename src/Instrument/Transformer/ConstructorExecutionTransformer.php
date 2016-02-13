@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -77,7 +77,7 @@ class ConstructorExecutionTransformer implements SourceTransformer
      */
     public function transform(StreamMetaData $metadata = null)
     {
-        if (strpos($metadata->source, 'new ')===false) {
+        if (strpos($metadata->source, 'new ') === false) {
             return;
         }
 
@@ -95,7 +95,7 @@ class ConstructorExecutionTransformer implements SourceTransformer
                     $isWaitingEnd   = true;
                     $isWaitingClass = false;
                 }
-                if (in_array($tokenStream[$index+1], array('(', ';', ')', '.'))) {
+                if (in_array($tokenStream[$index + 1], array('(', ';', ')', '.'))) {
                     $isWaitingEnd   = true;
                     $isWaitingClass = false;
                 }

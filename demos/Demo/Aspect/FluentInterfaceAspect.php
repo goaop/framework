@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -37,6 +37,6 @@ class FluentInterfaceAspect implements Aspect
     {
         $result = $invocation->proceed();
 
-        return $result!==null ? $result : $invocation->getThis();
+        return $result !== null ? $result : $invocation->getThis();
     }
 }

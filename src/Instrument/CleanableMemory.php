@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -39,7 +39,7 @@ class CleanableMemory extends Memory
      */
     public static function leaveProcessing()
     {
-        self::$level = self::$level > 0 ? self::$level-1 : 0;
+        self::$level = self::$level > 0 ? self::$level - 1 : 0;
     }
 
     /**

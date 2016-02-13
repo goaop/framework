@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -31,7 +31,7 @@ class CacheableDemo
     public function getReport($from)
     {
         // long calculation for 100ms
-        usleep(0.1*1e6);
+        usleep(0.1 * 1e6);
 
         return $from;
     }

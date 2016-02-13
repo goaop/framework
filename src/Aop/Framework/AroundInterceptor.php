@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -10,14 +10,15 @@
 
 namespace Go\Aop\Framework;
 
-use Exception;
 use Go\Aop\AdviceAround;
 use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "Around" interceptor
+ *
+ * @api
  */
-class AroundInterceptor extends BaseInterceptor implements AdviceAround
+final class AroundInterceptor extends BaseInterceptor implements AdviceAround
 {
     /**
      * Around invoker
@@ -25,9 +26,8 @@ class AroundInterceptor extends BaseInterceptor implements AdviceAround
      * @param Joinpoint $joinpoint the concrete joinpoint
      *
      * @return mixed the result of the call to {@link Joinpoint::proceed()}
-     * @throws Exception
      */
-    final public function invoke(Joinpoint $joinpoint)
+    public function invoke(Joinpoint $joinpoint)
     {
         $adviceMethod = $this->adviceMethod;
 

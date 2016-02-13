@@ -13,10 +13,10 @@ class BaseInterceptorMock extends BaseInterceptor
     /**
      * {@inheritdoc}
      */
-    public function __construct($adviceMethod, $order = 0, Pointcut $pointcut = null)
+    public function __construct($adviceMethod, $order = 0, $pointcutExpression = '')
     {
         self::$advice = $adviceMethod;
-        parent::__construct($adviceMethod, $order, $pointcut);
+        parent::__construct($adviceMethod, $order, $pointcutExpression);
     }
 
     /**

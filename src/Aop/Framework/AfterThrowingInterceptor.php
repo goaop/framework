@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -16,8 +16,10 @@ use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "After Throwing" interceptor
+ *
+ * @api
  */
-class AfterThrowingInterceptor extends BaseInterceptor implements AdviceAfter
+final class AfterThrowingInterceptor extends BaseInterceptor implements AdviceAfter
 {
     /**
      * After throwing exception invoker
@@ -27,9 +29,8 @@ class AfterThrowingInterceptor extends BaseInterceptor implements AdviceAfter
      * @return mixed the result of the call to {@link Joinpoint::proceed()}
      * @throws Exception
      */
-    final public function invoke(Joinpoint $joinpoint)
+    public function invoke(Joinpoint $joinpoint)
     {
-        $result = null;
         try {
             $result = $joinpoint->proceed();
         } catch (Exception $invocationException) {

@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -12,7 +12,7 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
 use Demo\Aspect\AwesomeAspectKernel;
 use Go\Aop\Features;
 
-include __DIR__ .'/autoload.php';
+include __DIR__ . '/autoload.php';
 
 // Initialize demo aspect container
 $defaultFeatures = AwesomeAspectKernel::getDefaultFeatures();

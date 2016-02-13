@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -55,6 +55,6 @@ class TruePointcut implements Pointcut
      */
     public function getKind()
     {
-       return $this->filterKind;
+        return $this->filterKind;
     }
 }

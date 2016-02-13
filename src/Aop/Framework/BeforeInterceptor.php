@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -15,8 +15,10 @@ use Go\Aop\Intercept\Joinpoint;
 
 /**
  * "Before" interceptor
+ *
+ * @api
  */
-class BeforeInterceptor extends BaseInterceptor implements AdviceBefore
+final class BeforeInterceptor extends BaseInterceptor implements AdviceBefore
 {
     /**
      * Before invoker for joinpoint
@@ -25,7 +27,7 @@ class BeforeInterceptor extends BaseInterceptor implements AdviceBefore
      *
      * @return mixed the result of the call to {@link Joinpoint::proceed()},
      */
-    final public function invoke(Joinpoint $joinpoint)
+    public function invoke(Joinpoint $joinpoint)
     {
         $adviceMethod = $this->adviceMethod;
         $adviceMethod($joinpoint);

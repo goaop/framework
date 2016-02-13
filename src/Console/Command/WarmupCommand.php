@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -75,7 +75,7 @@ EOT
         $output->writeln("Total <info>{$totalFiles}</info> files to process.");
         $iterator->rewind();
 
-        set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+        set_error_handler(function($errno, $errstr, $errfile, $errline) {
             throw new \ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
 
@@ -89,8 +89,8 @@ EOT
             try {
                 // This will trigger creation of cache
                 file_get_contents(
-                    FilterInjectorTransformer::PHP_FILTER_READ.
-                    SourceTransformingLoader::FILTER_IDENTIFIER.
+                    FilterInjectorTransformer::PHP_FILTER_READ .
+                    SourceTransformingLoader::FILTER_IDENTIFIER .
                     "/resource=" . $file->getRealPath()
                 );
                 $isSuccess = true;

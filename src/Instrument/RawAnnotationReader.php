@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -82,7 +82,7 @@ class RawAnnotationReader
         return $this->parser->parse($class->getDocComment(), 'class '.$class->getName());
     }
 
-     /**
+    /**
      * Gets the annotations applied to a method.
      *
      * @param ParsedReflectionMethod $method The ReflectionMethod of the method from which

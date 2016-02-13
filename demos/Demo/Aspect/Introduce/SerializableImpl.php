@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -34,7 +34,7 @@ trait SerializableImpl
     public function unserialize($serialized)
     {
         $data = unserialize($serialized);
-        foreach($data as $key=>$value) {
+        foreach ($data as $key=>$value) {
             $this->$key = $value;
         }
     }

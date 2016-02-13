@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -110,7 +110,7 @@
       </p>
       <pre>
 <?php
-/**
+/*
  * Start of demo source code here
  */
 

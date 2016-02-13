@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -76,7 +76,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      *
      * @param Aspect $aspect Instance of aspect
      * @param ReflectionMethod|ReflectionProperty $reflection
-     * @param $metaInformation
+     * @param Annotation\BaseAnnotation $metaInformation
      *
      * @return TokenStream
      * @throws \UnexpectedValueException
@@ -109,7 +109,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * Performs parsing of pointcut
      *
      * @param ReflectionMethod|ReflectionProperty $reflection
-     * @param $metaInformation
+     * @param Annotation\BaseAnnotation $metaInformation
      * @param TokenStream $stream
      * @return Pointcut
      *

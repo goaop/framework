@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -83,10 +83,10 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
      *
      * @return object
      */
-     public function getStaticPart()
-     {
-         return $this->reflectionFunction;
-     }
+    public function getStaticPart()
+    {
+        return $this->reflectionFunction;
+    }
 
     /**
      * Invokes current function invocation with all interceptors

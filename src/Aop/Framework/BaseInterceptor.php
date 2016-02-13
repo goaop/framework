@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -10,6 +10,7 @@
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Serializable;
 use Go\Aop\Intercept\Interceptor;
 
@@ -21,33 +22,29 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
     /**
      * Pointcut expression
      *
-     * @var null|string
+     * @var string
      */
-    protected $pointcut = null;
+    protected $pointcutExpression = '';
 
     /**
      * Advice to call
      *
-     * In Spring it's ReflectionMethod, but this will be slowly
-     *
-     * @var null|\Closure
+     * @var Closure
      */
-    protected $adviceMethod = null;
+    protected $adviceMethod;
 
     /**
      * Default constructor for interceptor
      *
-     * @param callable $adviceMethod Interceptor advice to call
+     * @param Closure $adviceMethod Interceptor advice to call
      * @param integer $order Order of interceptor
-     * @param string $pointcut \Go\Aop\Pointcut expression or advice name
+     * @param string $pointcutExpression Pointcut expression or advice name
      */
-    public function __construct($adviceMethod, $order = 0, $pointcut = null)
+    public function __construct(Closure $adviceMethod, $order = 0, $pointcutExpression = '')
     {
-        assert('is_callable($adviceMethod) /* Advice method should be callable */');
-
-        $this->adviceMethod = $adviceMethod;
-        $this->order        = $order;
-        $this->pointcut     = $pointcut;
+        $this->adviceMethod       = $adviceMethod;
+        $this->order              = $order;
+        $this->pointcutExpression = $pointcutExpression;
     }
 
     /**

@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Go! AOP framework
  *
  * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
@@ -102,7 +102,7 @@ class AopComposerLoader
                 $originalLoader = $loader[0];
 
                 // Configure library loader for doctrine annotation loader
-                AnnotationRegistry::registerLoader(function ($class) use ($originalLoader) {
+                AnnotationRegistry::registerLoader(function($class) use ($originalLoader) {
                     $originalLoader->loadClass($class);
 
                     return class_exists($class, false);
