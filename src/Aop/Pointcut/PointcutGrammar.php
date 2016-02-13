@@ -31,7 +31,7 @@ class PointcutGrammar extends Grammar
      * @param AspectContainer $container Instance of the container
      * @param RawAnnotationReader $annotationReader
      */
-    public function __construct(AspectContainer $container = null, RawAnnotationReader $annotationReader = null)
+    public function __construct(AspectContainer $container, RawAnnotationReader $annotationReader)
     {
         $this('empty')
             ->is(/* empty */);
