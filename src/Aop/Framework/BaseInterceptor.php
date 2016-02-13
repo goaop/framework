@@ -10,7 +10,7 @@
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\Advice;
+use Closure;
 use Serializable;
 use Go\Aop\Intercept\Interceptor;
 
@@ -29,20 +29,18 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
     /**
      * Advice to call
      *
-     * In Spring it's ReflectionMethod, but this will be slowly
-     *
-     * @var null|\Closure
+     * @var Closure
      */
-    protected $adviceMethod = null;
+    protected $adviceMethod;
 
     /**
      * Default constructor for interceptor
      *
-     * @param callable|Advice $adviceMethod Interceptor advice to call
+     * @param Closure $adviceMethod Interceptor advice to call
      * @param integer $order Order of interceptor
      * @param string $pointcutExpression Pointcut expression or advice name
      */
-    public function __construct($adviceMethod, $order = 0, $pointcutExpression = '')
+    public function __construct(Closure $adviceMethod, $order = 0, $pointcutExpression = '')
     {
         $this->adviceMethod       = $adviceMethod;
         $this->order              = $order;
