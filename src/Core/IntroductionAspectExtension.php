@@ -91,7 +91,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                 $reflection->setAccessible(true);
                 $message = $reflection->getValue($aspect);
                 $level   = $metaInformation->level;
-                $advice  = new Framework\DeclareErrorInterceptor($message, $level);
+                $advice  = new Framework\DeclareErrorInterceptor($message, $level, $metaInformation->value);
                 $loadedItems[$propertyId] = new Support\DefaultPointcutAdvisor($pointcut, $advice);
                 break;
 

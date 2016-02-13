@@ -23,6 +23,12 @@ use Go\Aop\Pointcut;
  */
 class DynamicInvocationMatcherInterceptor extends BaseInterceptor
 {
+    /**
+     * Instance of pointcut to dynamically match joinpoints with args
+     *
+     * @var Pointcut
+     */
+    protected $pointcut;
 
     /**
      * Dynamic matcher constructor
@@ -33,7 +39,7 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
     public function __construct(Pointcut $pointcut, Interceptor $interceptor)
     {
         $this->pointcut     = $pointcut;
-        $this->adviceMethod = $interceptor;
+        parent::__construct($interceptor);
     }
 
     /**

@@ -18,7 +18,7 @@ use ReflectionProperty;
 /**
  * Interceptor to dynamically trigger an user notice/warning/error on method call
  *
- * This interceptor can be used as active replacement for the @deprecated tag or to notify about
+ * This interceptor can be used as active replacement for the "deprecated" tag or to notify about
  * probable issues with specific method.
  */
 class DeclareErrorInterceptor extends BaseInterceptor
@@ -43,14 +43,14 @@ class DeclareErrorInterceptor extends BaseInterceptor
      *
      * @param string $message Text message for error
      * @param int $level Level of error
-     * @param Pointcut $pointcut Pointcut instance where interceptor should be called
+     * @param string|null $pointcutExpression Pointcut expression
      */
-    public function __construct($message, $level, Pointcut $pointcut = null)
+    public function __construct($message, $level, $pointcutExpression)
     {
-        $adviceMethod  = $this->getDeclareErrorAdvice();
+        $adviceMethod  = self::getDeclareErrorAdvice();
         $this->message = $message;
         $this->level   = $level;
-        parent::__construct($adviceMethod, -256, $pointcut);
+        parent::__construct($adviceMethod, -256, $pointcutExpression);
     }
 
     /**
@@ -75,7 +75,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
     public function unserialize($serialized)
     {
         $vars = unserialize($serialized);
-        $vars['adviceMethod'] = $this->getDeclareErrorAdvice();
+        $vars['adviceMethod'] = self::getDeclareErrorAdvice();
         foreach ($vars as $key=>$value) {
             $this->$key = $value;
         }
@@ -86,7 +86,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
      *
      * @return callable
      */
-    private function getDeclareErrorAdvice()
+    private static function getDeclareErrorAdvice()
     {
         static $adviceMethod = null;
         if (!$adviceMethod) {

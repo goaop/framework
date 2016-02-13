@@ -45,8 +45,9 @@ class PointcutBuilder
      */
     public function before($pointcutExpression, \Closure $advice)
     {
+        $advice = new BeforeInterceptor($advice, 0, $pointcutExpression);
         $this->container->registerAdvisor(
-            new LazyPointcutAdvisor($this->container, $pointcutExpression, new BeforeInterceptor($advice)),
+            new LazyPointcutAdvisor($this->container, $pointcutExpression, $advice),
             $this->getPointcutId($pointcutExpression)
         );
     }
@@ -59,8 +60,9 @@ class PointcutBuilder
      */
     public function after($pointcutExpression, \Closure $advice)
     {
+        $advice = new AfterInterceptor($advice, 0, $pointcutExpression);
         $this->container->registerAdvisor(
-            new LazyPointcutAdvisor($this->container, $pointcutExpression, new AfterInterceptor($advice)),
+            new LazyPointcutAdvisor($this->container, $pointcutExpression, $advice),
             $this->getPointcutId($pointcutExpression)
         );
     }
@@ -73,8 +75,9 @@ class PointcutBuilder
      */
     public function afterThrowing($pointcutExpression, \Closure $advice)
     {
+        $advice = new AfterThrowingInterceptor($advice, 0, $pointcutExpression);
         $this->container->registerAdvisor(
-            new LazyPointcutAdvisor($this->container, $pointcutExpression, new AfterThrowingInterceptor($advice)),
+            new LazyPointcutAdvisor($this->container, $pointcutExpression, $advice),
             $this->getPointcutId($pointcutExpression)
         );
     }
@@ -87,8 +90,9 @@ class PointcutBuilder
      */
     public function around($pointcutExpression, \Closure $advice)
     {
+        $advice = new AroundInterceptor($advice, 0, $pointcutExpression);
         $this->container->registerAdvisor(
-            new LazyPointcutAdvisor($this->container, $pointcutExpression, new AroundInterceptor($advice)),
+            new LazyPointcutAdvisor($this->container, $pointcutExpression, $advice),
             $this->getPointcutId($pointcutExpression)
         );
     }
@@ -102,7 +106,7 @@ class PointcutBuilder
      */
     public function declareError($pointcutExpression, $message, $level = E_USER_ERROR)
     {
-        $advice = new DeclareErrorInterceptor($message, $level);
+        $advice = new DeclareErrorInterceptor($message, $level, $pointcutExpression);
         $this->container->registerAdvisor(
             new LazyPointcutAdvisor($this->container, $pointcutExpression, $advice),
             $this->getPointcutId($pointcutExpression)

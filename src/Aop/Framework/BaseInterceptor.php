@@ -10,6 +10,7 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Advice;
 use Serializable;
 use Go\Aop\Intercept\Interceptor;
 
@@ -21,9 +22,9 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
     /**
      * Pointcut expression
      *
-     * @var null|string
+     * @var string
      */
-    protected $pointcut = null;
+    protected $pointcutExpression = '';
 
     /**
      * Advice to call
@@ -37,17 +38,15 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
     /**
      * Default constructor for interceptor
      *
-     * @param callable $adviceMethod Interceptor advice to call
+     * @param callable|Advice $adviceMethod Interceptor advice to call
      * @param integer $order Order of interceptor
-     * @param string $pointcut \Go\Aop\Pointcut expression or advice name
+     * @param string $pointcutExpression Pointcut expression or advice name
      */
-    public function __construct($adviceMethod, $order = 0, $pointcut = null)
+    public function __construct($adviceMethod, $order = 0, $pointcutExpression = '')
     {
-        assert('is_callable($adviceMethod) /* Advice method should be callable */');
-
-        $this->adviceMethod = $adviceMethod;
-        $this->order        = $order;
-        $this->pointcut     = $pointcut;
+        $this->adviceMethod       = $adviceMethod;
+        $this->order              = $order;
+        $this->pointcutExpression = $pointcutExpression;
     }
 
     /**
