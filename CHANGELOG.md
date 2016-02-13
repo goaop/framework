@@ -1,5 +1,31 @@
 Changelog
 ======
+1.0.0 (Feb 13, 2016)
+* Dropped support for PHP<5.5, clean all old code
+* Tagged public methods and interfaces with @api tag. No more changes for them in future.
+* Refactored core code to use general interceptors for everything instead of separate classes
+* New static initialization pointcut to intercept the moment of class loading
+* New feature to intercept object initializations, requires INTERCEPT_INITIALIZATIONS to be enabled
+* [BC BREAK] remove class() pointcut from the grammar #189
+* [BC BREAK] make within() and @within() match all joinpoints #189
+* [BC BREAK] drop @annotation syntax. Add @execution pointcut
+* Pointcuts can be build now directly from closures via `PointcutBuilder` class
+* Do not create files in the cache, if no aspects were applied to them, respects `includePath` option now
+* `FilterInjector` is now disabled by default, this job for composer integration now
+* Automatic opcache invalidation for cache state file
+
+0.6.1 (Jul 5, 2015)
+* Minor patch to fix a bug with overwriting files
+
+0.6.0 (Feb 1, 2015)
+* Interceptor for magic methods via "dynamic" pointcut. This feature also gives an access for dynamic pointcuts with different checks and conditions.
+* PSR-4 standard for the codebase, thanks to @cordoval
+* Added a support for splat (...) operator for more efficient advice invocation (requires PHP5.6)
+* New feature system. All tunings of kernel are configured with feature-set. This breaks old configuration option `interceptFunctions=>true` use `'features' => $defaultFeatures | Features::INTERCEPT_FUNCTIONS` now
+* Proxy can generate more effective invocation call with `static::class` for PHP>=5.5
+* Bug-fixes with empty cache path and PSR4 code, thanks to @andy-shea
+* Make pointcut grammar class compatible with PHP7.0
+
 0.5.0 (May 24, 2014)
 * Proxies are now stored in the separate files to allow more transparent debugging
 * Cache warmer command added
