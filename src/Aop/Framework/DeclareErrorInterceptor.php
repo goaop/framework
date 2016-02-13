@@ -83,7 +83,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
     /**
      * Returns an advice
      *
-     * @return callable
+     * @return \Closure
      */
     private static function getDeclareErrorAdvice()
     {
@@ -119,12 +119,8 @@ class DeclareErrorInterceptor extends BaseInterceptor
         if ($reflection && method_exists($reflection, 'getName')) {
             $reflectorName = $reflection->getName();
         }
-        $this->adviceMethod->__invoke(
-            $joinpoint->getThis(),
-            $reflectorName,
-            $this->message,
-            $this->level
-        );
+        $adviceMethod = $this->adviceMethod;
+        $adviceMethod($joinPoint->getThis(), $reflectorName, $this->message, $this->level);
 
         return $joinpoint->proceed();
     }
