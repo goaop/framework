@@ -27,7 +27,7 @@ final class BeforeInterceptor extends BaseInterceptor implements AdviceBefore
      *
      * @return mixed the result of the call to {@link Joinpoint::proceed()},
      */
-    final public function invoke(Joinpoint $joinpoint)
+    public function invoke(Joinpoint $joinpoint)
     {
         $adviceMethod = $this->adviceMethod;
         $adviceMethod($joinpoint);

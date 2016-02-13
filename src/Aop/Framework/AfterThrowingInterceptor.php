@@ -29,7 +29,7 @@ final class AfterThrowingInterceptor extends BaseInterceptor implements AdviceAf
      * @return mixed the result of the call to {@link Joinpoint::proceed()}
      * @throws Exception
      */
-    final public function invoke(Joinpoint $joinpoint)
+    public function invoke(Joinpoint $joinpoint)
     {
         $result = null;
         try {

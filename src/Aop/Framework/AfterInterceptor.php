@@ -27,7 +27,7 @@ final class AfterInterceptor extends BaseInterceptor implements AdviceAfter
      *
      * @return mixed the result of the call to {@link Joinpoint::proceed()}
      */
-    final public function invoke(Joinpoint $joinpoint)
+    public function invoke(Joinpoint $joinpoint)
     {
         $result = null;
         try {

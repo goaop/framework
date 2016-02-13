@@ -27,7 +27,7 @@ final class AroundInterceptor extends BaseInterceptor implements AdviceAround
      *
      * @return mixed the result of the call to {@link Joinpoint::proceed()}
      */
-    final public function invoke(Joinpoint $joinpoint)
+    public function invoke(Joinpoint $joinpoint)
     {
         $adviceMethod = $this->adviceMethod;
 
