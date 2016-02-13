@@ -34,7 +34,7 @@ trait SerializableImpl
     public function unserialize($serialized)
     {
         $data = unserialize($serialized);
-        foreach($data as $key=>$value) {
+        foreach ($data as $key=>$value) {
             $this->$key = $value;
         }
     }

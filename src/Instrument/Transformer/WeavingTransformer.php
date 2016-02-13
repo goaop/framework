@@ -85,7 +85,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return void|bool Return false if transformation should be stopped
+     * @return boolean Return false if transformation should be stopped
      */
     public function transform(StreamMetaData $metadata)
     {
@@ -276,7 +276,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * Save AOP proxy to the separate file anr returns the php source code for inclusion
      *
      * @param ParsedClass $class Original class reflection
-     * @param string|ClassProxy $child
+     * @param ClassProxy $child
      *
      * @return string
      */

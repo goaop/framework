@@ -84,7 +84,7 @@ class FunctionProxy extends AbstractProxy
         static $accessor = null;
 
         if (!$accessor) {
-            $accessor  = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
+            $accessor = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
         }
 
         $advices = self::$functionAdvices[$namespace][AspectContainer::FUNCTION_PREFIX][$joinPointName];
@@ -167,7 +167,7 @@ class FunctionProxy extends AbstractProxy
         }
 
         $code = (
-            preg_replace('/ {4}|\t/', '', $function->getDocComment()) ."\n" . // Original doc-comment
+            preg_replace('/ {4}|\t/', '', $function->getDocComment()) . "\n" . // Original doc-comment
             'function ' . // 'function' keyword
             ($function->returnsReference() ? '&' : '') . // By reference symbol
             $functionName . // Function name
@@ -193,13 +193,13 @@ class FunctionProxy extends AbstractProxy
      */
     protected function getJoinpointInvocationBody(ReflectionFunction $function)
     {
-        $class   = '\\' . __CLASS__;
+        $class = '\\' . __CLASS__;
 
         $dynamicArgs   = false;
         $hasOptionals  = false;
         $hasReferences = false;
 
-        $argValues = array_map(function (ReflectionParameter $param) use (&$dynamicArgs, &$hasOptionals, &$hasReferences) {
+        $argValues = array_map(function(ReflectionParameter $param) use (&$dynamicArgs, &$hasOptionals, &$hasReferences) {
             $byReference   = $param->isPassedByReference();
             $dynamicArg    = $param->name == '...';
             $dynamicArgs   = $dynamicArgs || $dynamicArg;

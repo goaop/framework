@@ -116,7 +116,7 @@ BODY;
                 'use ' . join(', ', array(-1 => $this->parentClassName) + $this->traits) .
                 $this->getMethodAliasesCode()
             ) . "\n" . // Use traits and aliases section
-            $this->indent(join("\n", $this->methodsCode)) . "\n". // Method definitions
+            $this->indent(join("\n", $this->methodsCode)) . "\n" . // Method definitions
             "}" // End of trait body
         );
 

@@ -77,7 +77,7 @@ abstract class AbstractProxy
     protected function indent($text)
     {
         $pad   = str_pad('', $this->indent, ' ');
-        $lines = array_map(function ($line) use ($pad) {
+        $lines = array_map(function($line) use ($pad) {
             return $pad . $line;
         }, explode("\n", $text));
 
@@ -175,7 +175,7 @@ abstract class AbstractProxy
      */
     protected function prepareArgsLine(ParsedMethod $method)
     {
-        $args = join(', ', array_map(function (ParsedParameter $param) {
+        $args = join(', ', array_map(function(ParsedParameter $param) {
             $byReference = $param->isPassedByReference() ? '&' : '';
 
             return $byReference . '$' . $param->name;
