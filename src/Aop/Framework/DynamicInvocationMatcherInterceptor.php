@@ -14,6 +14,7 @@ use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Invocation;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Pointcut;
+use Serializable;
 
 /**
  * Dynamic invocation matcher combines a pointcut and interceptor.
@@ -21,7 +22,7 @@ use Go\Aop\Pointcut;
  * For each invocation interceptor asks the pointcut if it matches the invocation.
  * Matcher will receive reflection point, object instance and invocation arguments to make a decision
  */
-class DynamicInvocationMatcherInterceptor extends BaseInterceptor
+class DynamicInvocationMatcherInterceptor implements Interceptor, Serializable
 {
     /**
      * Instance of pointcut to dynamically match joinpoints with args
@@ -31,6 +32,13 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
     protected $pointcut;
 
     /**
+     * Overloaded property for storing instance of Interceptor
+     *
+     * @var Interceptor
+     */
+    protected $interceptor;
+
+    /**
      * Dynamic matcher constructor
      *
      * @param Pointcut $pointcut Instance of dynamic matcher
@@ -38,8 +46,8 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
      */
     public function __construct(Pointcut $pointcut, Interceptor $interceptor)
     {
-        $this->pointcut     = $pointcut;
-        parent::__construct($interceptor);
+        $this->pointcut    = $pointcut;
+        $this->interceptor = $interceptor;
     }
 
     /**
@@ -49,7 +57,7 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
      */
     public function serialize()
     {
-        return serialize(array($this->pointcut, $this->adviceMethod));
+        return serialize([$this->pointcut, $this->interceptor]);
     }
 
     /**
@@ -60,7 +68,7 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
      */
     public function unserialize($serialized)
     {
-        list($this->pointcut, $this->adviceMethod) = unserialize(($serialized));
+        list($this->pointcut, $this->interceptor) = unserialize($serialized);
     }
 
     /**
@@ -74,7 +82,7 @@ class DynamicInvocationMatcherInterceptor extends BaseInterceptor
     {
         if ($joinpoint instanceof Invocation) {
             if ($this->pointcut->matches($joinpoint->getStaticPart(), $joinpoint->getThis(), $joinpoint->getArguments())) {
-                return $this->adviceMethod->invoke($joinpoint);
+                return $this->interceptor->invoke($joinpoint);
             }
         }
 
