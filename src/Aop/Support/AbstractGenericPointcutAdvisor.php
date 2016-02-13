@@ -19,16 +19,18 @@ use Go\Aop\PointcutAdvisor;
 abstract class AbstractGenericPointcutAdvisor implements PointcutAdvisor
 {
     /**
-     * @var null|Advice
+     * Instance of advice
+     *
+     * @var Advice
      */
-    private $advice = null;
+    protected $advice;
 
     /**
-     * Specify the advice that this advisor should apply.
+     * Initializes an advisor with advice
      *
      * @param Advice $advice Advice to apply
      */
-    public function setAdvice(Advice $advice)
+    public function __construct(Advice $advice)
     {
         $this->advice = $advice;
     }

@@ -50,7 +50,7 @@ class LazyPointcutAdvisor extends AbstractGenericPointcutAdvisor
     {
         $this->container          = $container;
         $this->pointcutExpression = $pointcutExpression;
-        $this->setAdvice($advice);
+        parent::__construct($advice);
     }
 
     /**

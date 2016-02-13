@@ -40,7 +40,7 @@ class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
     public function __construct(Pointcut $pointcut, Advice $advice)
     {
         $this->pointcut = $pointcut;
-        $this->setAdvice($advice);
+        parent::__construct($advice);
     }
 
     /**
