@@ -24,7 +24,7 @@
 
     <filter>
         <whitelist>
-            <directory>./src/Go/</directory>
+            <directory>./src/</directory>
         </whitelist>
     </filter>
 
