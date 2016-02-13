@@ -34,7 +34,7 @@ class AnnotatedReflectionMethod extends ReflectionMethod
      */
     public function getAnnotation($annotationName)
     {
-       return self::getReader()->getMethodAnnotation($this, $annotationName);
+        return self::getReader()->getMethodAnnotation($this, $annotationName);
     }
 
     /**

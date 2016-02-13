@@ -53,6 +53,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      *
      * @param string $className Class name
      * @param $advices array List of advices for this invocation
+     * @param string $type
      */
     public function __construct($className, $type, array $advices)
     {
@@ -123,7 +124,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Returns the static part of this joinpoint.
      *
-     * @return object
+     * @return null|ReflectionMethod
      */
     public function getStaticPart()
     {

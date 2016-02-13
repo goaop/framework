@@ -89,7 +89,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
     {
         static $adviceMethod = null;
         if (!$adviceMethod) {
-            $adviceMethod = function ($object, $reflectorName, $message, $level = E_USER_NOTICE) {
+            $adviceMethod = function($object, $reflectorName, $message, $level = E_USER_NOTICE) {
                 $class   = is_string($object) ? $object : get_class($object);
                 $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', array(
                     $class . '->' . $reflectorName,

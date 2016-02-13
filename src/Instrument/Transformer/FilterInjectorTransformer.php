@@ -122,7 +122,7 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public function transform(StreamMetaData $metadata)
     {
-        if ((strpos($metadata->source, 'include')===false) && (strpos($metadata->source, 'require')===false)) {
+        if ((strpos($metadata->source, 'include') === false) && (strpos($metadata->source, 'require') === false)) {
             return;
         }
         static $lookFor = array(
@@ -173,7 +173,7 @@ class FilterInjectorTransformer implements SourceTransformer
             if (!$isWaitingEnd && isset($lookFor[$token])) {
                 $isWaitingEnd = true;
                 $isBracesFinished = $isTernaryOperator = false;
-                $transformedSource  .= ' \\' . __CLASS__ . '::rewrite(';
+                $transformedSource .= ' \\' . __CLASS__ . '::rewrite(';
             }
         }
         $metadata->source = $transformedSource;

@@ -140,7 +140,7 @@ abstract class BaseAdvice implements OrderedAdvice
      * @param Aspect $aspect Instance of aspect
      * @param ReflectionMethod $refMethod Reflection method of aspect
      *
-     * @return callable|object
+     * @return \Closure
      */
     public static function fromAspectReflection(Aspect $aspect, ReflectionMethod $refMethod)
     {
@@ -175,7 +175,7 @@ abstract class BaseAdvice implements OrderedAdvice
                 return $adviceCallback;
 
             case 'proxy':
-                return function (Joinpoint $joinpoint) use ($aspect, $adviceCallback) {
+                return function(Joinpoint $joinpoint) use ($aspect, $adviceCallback) {
                     $instance    = $joinpoint->getThis();
                     $isNotObject = $instance !== (object) $instance;
                     $target      = $isNotObject ? $instance : get_class($instance);
@@ -185,7 +185,7 @@ abstract class BaseAdvice implements OrderedAdvice
                 };
 
             case 'target':
-                return function (Joinpoint $joinpoint) use ($aspect, $adviceCallback) {
+                return function(Joinpoint $joinpoint) use ($aspect, $adviceCallback) {
                     $instance    = $joinpoint->getThis();
                     $isNotObject = $instance !== (object) $instance;
                     $target      = $isNotObject ? $instance : get_parent_class($instance);
@@ -195,7 +195,7 @@ abstract class BaseAdvice implements OrderedAdvice
                 };
 
             default:
-                return function (Joinpoint $joinpoint) use ($aspect, $adviceCallback, $scope) {
+                return function(Joinpoint $joinpoint) use ($aspect, $adviceCallback, $scope) {
                     $callback = $adviceCallback->bindTo($aspect, $scope);
 
                     return $callback($joinpoint);

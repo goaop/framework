@@ -73,7 +73,7 @@ class Enumerator
     /**
      * Returns a filter callback for enumerating files
      *
-     * @return callable
+     * @return \Closure
      */
     public function getFilter()
     {
@@ -81,7 +81,7 @@ class Enumerator
         $includePaths  = $this->includePaths;
         $excludePaths  = $this->excludePaths;
 
-        return function (\SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
+        return function(\SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
             if ($file->getExtension() !== 'php') {
                 return false;
             };

@@ -55,6 +55,6 @@ class TruePointcut implements Pointcut
      */
     public function getKind()
     {
-       return $this->filterKind;
+        return $this->filterKind;
     }
 }

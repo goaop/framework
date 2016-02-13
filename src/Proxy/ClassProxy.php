@@ -471,11 +471,11 @@ class ClassProxy extends AbstractProxy
             ($prefix ? "$prefix " : '') . // List of class modifiers
             'class ' . // 'class' keyword with one space
             $this->name . // Name of the class
-            ' extends '. // 'extends' keyword with
+            ' extends ' . // 'extends' keyword with
             $this->parentClassName . // Name of the parent class
             ($this->interfaces ? ' implements ' . join(', ', $this->interfaces) : '') . "\n" . // Interfaces list
             "{\n" . // Start of class definition
-            ($this->traits ? $this->indent('use ' . join(', ', $this->traits) .';'."\n") : '') . "\n" . // Traits list
+            ($this->traits ? $this->indent('use ' . join(', ', $this->traits) . ';' . "\n") : '') . "\n" . // Traits list
             $this->indent(join("\n", $this->propertiesCode)) . "\n" . // Property definitions
             $this->indent(join("\n", $this->methodsCode)) . "\n" . // Method definitions
             "}" // End of class definition

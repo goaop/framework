@@ -76,7 +76,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
     {
         $loadedItems = [];
         $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation);
-        $propertyId  = $reflection->class.'->'.$reflection->name;
+        $propertyId  = $reflection->class . '->' . $reflection->name;
 
         switch (true) {
             case ($metaInformation instanceof Annotation\DeclareParents):
