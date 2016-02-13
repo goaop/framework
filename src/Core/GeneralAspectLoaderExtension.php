@@ -80,11 +80,6 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
         $methodId       = get_class($aspect) . '->' . $reflection->name;
         $adviceCallback = $reflection->getClosure($aspect);
 
-        if (isset($metaInformation->scope) && $metaInformation->scope !== 'aspect') {
-            $scope = $metaInformation->scope;
-            $adviceCallback = Framework\BaseAdvice::createScopeCallback($aspect, $adviceCallback, $scope);
-        }
-
         switch (true) {
             // Register a pointcut by its name
             case ($metaInformation instanceof Annotation\Pointcut):

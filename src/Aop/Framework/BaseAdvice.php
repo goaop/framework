@@ -10,11 +10,10 @@
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Go\Aop\Features;
 use ReflectionFunction;
 use ReflectionMethod;
-use Go\Aop\Aspect;
-use Go\Aop\Intercept\Joinpoint;
 use Go\Core\AspectKernel;
 
 /**
@@ -53,7 +52,7 @@ abstract class BaseAdvice implements OrderedAdvice
     /**
      * Local cache of advices for faster unserialization on big projects
      *
-     * @var array
+     * @var array|Closure[]
      */
     protected static $localAdvicesCache = [];
 
@@ -70,25 +69,18 @@ abstract class BaseAdvice implements OrderedAdvice
     /**
      * Serialize advice method into array
      *
-     * @param callable|\Closure $adviceMethod An advice for aspect
+     * @param Closure $adviceMethod An advice for aspect
      *
      * @return array
      */
-    public static function serializeAdvice($adviceMethod)
+    public static function serializeAdvice(Closure $adviceMethod)
     {
-        $refAdvice    = new ReflectionFunction($adviceMethod);
-        $refVariables = $refAdvice->getStaticVariables();
-        $scope        = 'aspect';
-        if (isset($refVariables['scope'])) {
-            $scope     = $refVariables['scope'];
-            $refAdvice = new ReflectionFunction($refVariables['adviceCallback']);
-        }
+        $refAdvice = new ReflectionFunction($adviceMethod);
 
-        return array(
-            'scope'  => $scope,
+        return [
             'method' => $refAdvice->name,
             'aspect' => get_class($refAdvice->getClosureThis())
-        );
+        ];
     }
 
     /**
@@ -96,73 +88,20 @@ abstract class BaseAdvice implements OrderedAdvice
      *
      * @param array $adviceData Information about advice
      *
-     * @return callable|\Closure
+     * @return Closure
      */
-    public static function unserializeAdvice($adviceData)
+    public static function unserializeAdvice(array $adviceData)
     {
         $aspectName = $adviceData['aspect'];
         $methodName = $adviceData['method'];
-        $scope      = $adviceData['scope'];
 
-        if (!isset(static::$localAdvicesCache["$aspectName->$methodName"]['aspect'])) {
+        if (!isset(static::$localAdvicesCache["$aspectName->$methodName"])) {
             $refMethod = new ReflectionMethod($aspectName, $methodName);
             $aspect    = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
             $advice    = $refMethod->getClosure($aspect);
-            static::$localAdvicesCache["$aspectName->$methodName"]['aspect'] = $advice;
+            static::$localAdvicesCache["$aspectName->$methodName"] = $advice;
         }
 
-        if ($scope !== 'aspect' && !isset(static::$localAdvicesCache["$aspectName->$methodName"][$scope])) {
-            $aspect = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
-            $advice = static::$localAdvicesCache["$aspectName->$methodName"]['aspect'];
-            $advice = static::createScopeCallback($aspect, $advice, $scope);
-            static::$localAdvicesCache["$aspectName->$methodName"][$scope] = $advice;
-        }
-
-        return static::$localAdvicesCache["$aspectName->$methodName"][$scope];
-    }
-
-    /**
-     * Creates an advice with respect to the desired scope
-     *
-     * @param Aspect $aspect
-     * @param \Closure $adviceCallback Advice to call
-     * @param string $scope Scope for callback
-     *
-     * @throws \InvalidArgumentException is scope is not supported
-     * @return callable
-     */
-    public static function createScopeCallback(Aspect $aspect, \Closure $adviceCallback, $scope)
-    {
-        switch ($scope) {
-            case 'aspect':
-                return $adviceCallback;
-
-            case 'proxy':
-                return function(Joinpoint $joinpoint) use ($aspect, $adviceCallback) {
-                    $instance    = $joinpoint->getThis();
-                    $isNotObject = $instance !== (object) $instance;
-                    $target      = $isNotObject ? $instance : get_class($instance);
-                    $callback    = $adviceCallback->bindTo($aspect, $target);
-
-                    return $callback($joinpoint);
-                };
-
-            case 'target':
-                return function(Joinpoint $joinpoint) use ($aspect, $adviceCallback) {
-                    $instance    = $joinpoint->getThis();
-                    $isNotObject = $instance !== (object) $instance;
-                    $target      = $isNotObject ? $instance : get_parent_class($instance);
-                    $callback    = $adviceCallback->bindTo($aspect, $target);
-
-                    return $callback($joinpoint);
-                };
-
-            default:
-                return function(Joinpoint $joinpoint) use ($aspect, $adviceCallback, $scope) {
-                    $callback = $adviceCallback->bindTo($aspect, $scope);
-
-                    return $callback($joinpoint);
-                };
-        }
+        return static::$localAdvicesCache["$aspectName->$methodName"];
     }
 }
