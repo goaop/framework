@@ -22,7 +22,7 @@ class BaseInterceptorMock extends BaseInterceptor
     /**
      * {@inheritdoc}
      */
-    public static function serializeAdvice($adviceMethod)
+    public static function serializeAdvice(\Closure $adviceMethod)
     {
         return array(
             'scope'  => 'aspect',
@@ -34,7 +34,7 @@ class BaseInterceptorMock extends BaseInterceptor
     /**
      * {@inheritdoc}
      */
-    public static function unserializeAdvice($adviceData)
+    public static function unserializeAdvice(array $adviceData)
     {
         return self::$advice;
     }

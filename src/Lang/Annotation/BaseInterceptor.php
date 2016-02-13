@@ -21,11 +21,4 @@ class BaseInterceptor extends BaseAnnotation implements Interceptor
      * @var integer
      */
     public $order = 0;
-
-    /**
-     * Interceptor scope
-     *
-     * @var string
-     */
-    public $scope = 'aspect';
 }
