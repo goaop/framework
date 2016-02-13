@@ -10,7 +10,6 @@
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\Features;
 use ReflectionFunction;
 use ReflectionMethod;
 use Go\Aop\Aspect;
