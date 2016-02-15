@@ -15,13 +15,12 @@ use Go\Aop\Features;
 include __DIR__ . '/autoload.php';
 
 // Initialize demo aspect container
-$defaultFeatures = AwesomeAspectKernel::getDefaultFeatures();
 AwesomeAspectKernel::getInstance()->init(array(
     'debug'    => true,
     'appDir'   => __DIR__ . '/../demos',
     'cacheDir' => __DIR__ . '/cache',
 
-    'features' => $defaultFeatures | Features::INTERCEPT_FUNCTIONS,
+    'features' => Features::INTERCEPT_FUNCTIONS,
 ));
 
 AnnotationRegistry::registerFile(__DIR__ . '/Demo/Annotation/Cacheable.php');

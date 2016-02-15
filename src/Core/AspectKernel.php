@@ -128,16 +128,6 @@ abstract class AspectKernel
     }
 
     /**
-     * Returns a default bit mask of features by checking PHP version
-     *
-     * @return int
-     */
-    public static function getDefaultFeatures()
-    {
-        return 0;
-    }
-
-    /**
      * Checks if kernel configuration has enabled specific feature
      *
      * @param integer $featureToCheck See Go\Aop\Features enumeration class for features
@@ -174,14 +164,12 @@ abstract class AspectKernel
      */
     protected function getDefaultOptions()
     {
-        $features = static::getDefaultFeatures();
-
         return array(
             'debug'                  => false,
             'appDir'                 => __DIR__ . '/../../../../../',
             'cacheDir'               => null,
             'cacheFileMode'          => null,
-            'features'               => $features,
+            'features'               => 0,
 
             'includePaths'           => [],
             'excludePaths'           => [],
