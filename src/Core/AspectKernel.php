@@ -134,12 +134,7 @@ abstract class AspectKernel
      */
     public static function getDefaultFeatures()
     {
-        $features = 0;
-        if (PHP_VERSION_ID >= 50600) {
-            $features += Features::USE_SPLAT_OPERATOR;
-        }
-
-        return $features;
+        return 0;
     }
 
     /**

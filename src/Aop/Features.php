@@ -34,11 +34,6 @@ interface Features
     const INTERCEPT_INCLUDES = 4;
 
     /**
-     * Enables usage of splat '...' operator, available since PHP5.6
-     */
-    const USE_SPLAT_OPERATOR = 32;
-
-    /**
      * Do not check the cache presence and assume that cache is already prepared
      *
      * This flag is usable for read-only file systems (GAE, phar, etc)

@@ -59,9 +59,7 @@ class TraitProxy extends ClassProxy
         if (empty(self::$invocationClassMap)) {
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
-            self::setMappings(
-                $aspectKernel->hasFeature(Features::USE_SPLAT_OPERATOR)
-            );
+            self::setMappings();
         }
 
         $advices = self::$traitAdvices[$traitName][$joinPointType][$pointName];

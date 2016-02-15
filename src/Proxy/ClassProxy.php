@@ -13,8 +13,10 @@ namespace Go\Proxy;
 use Go\Aop\Advice;
 use Go\Aop\Features;
 use Go\Aop\Framework\ClassFieldAccess;
+use Go\Aop\Framework\DynamicClosureSplatMethodInvocation;
 use Go\Aop\Framework\MethodInvocationComposer;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
+use Go\Aop\Framework\StaticClosureMethodInvocation;
 use Go\Aop\Framework\StaticInitializationJoinpoint;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\IntroductionInfo;
@@ -60,7 +62,13 @@ class ClassProxy extends AbstractProxy
      *
      * @var null|array
      */
-    protected static $invocationClassMap = null;
+    protected static $invocationClassMap = [
+        AspectContainer::METHOD_PREFIX        => DynamicClosureSplatMethodInvocation::class,
+        AspectContainer::STATIC_METHOD_PREFIX => StaticClosureMethodInvocation::class,
+        AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,
+        AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class,
+        AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class
+    ];
 
     /**
      * List of additional interfaces to implement
@@ -256,22 +264,10 @@ class ClassProxy extends AbstractProxy
 
     /**
      * Initialize static mappings to reduce the time for checking features
-     *
-     * @param bool $useSplatOperator Enables usage of optimized invocation with splat operator
      */
-    protected static function setMappings($useSplatOperator)
+    protected static function setMappings()
     {
-        $dynamicMethodClass = MethodInvocationComposer::compose(false, $useSplatOperator, false);
-        $staticMethodClass  = MethodInvocationComposer::compose(true, $useSplatOperator, false);
 
-        // We are using LSB here and overridden static property
-        static::$invocationClassMap = array(
-            AspectContainer::METHOD_PREFIX        => $dynamicMethodClass,
-            AspectContainer::STATIC_METHOD_PREFIX => $staticMethodClass,
-            AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,
-            AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class,
-            AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class
-        );
     }
 
     /**
@@ -294,9 +290,7 @@ class ClassProxy extends AbstractProxy
         if (!self::$invocationClassMap) {
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
-            self::setMappings(
-                $aspectKernel->hasFeature(Features::USE_SPLAT_OPERATOR)
-            );
+            self::setMappings();
         }
 
         $joinPoints = [];
