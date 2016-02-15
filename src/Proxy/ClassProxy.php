@@ -426,14 +426,7 @@ class ClassProxy extends AbstractProxy
         $args = $this->prepareArgsLine($method);
         $body = '';
 
-        if (($this->class->name === $method->getDeclaringClassName()) && strpos($method->getSource(), 'func_get_args') !== false) {
-            $body = '$argsList = \func_get_args();' . PHP_EOL;
-            if (empty($args)) {
-                $scope = "$scope, \$argsList";
-            } else {
-                $scope = "$scope, [$args] + \$argsList";
-            }
-        } elseif (!empty($args)) {
+        if (!empty($args)) {
             $scope = "$scope, [$args]";
         }
 
