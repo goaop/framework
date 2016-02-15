@@ -51,8 +51,7 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
 
     public function publicMethodDynamicArguments($a, &$b)
     {
-        $argsList = \func_get_args();
-        return self::$__joinPoints['method:publicMethodDynamicArguments']->__invoke($this, [$a, &$b] + $argsList);
+        return self::$__joinPoints['method:publicMethodDynamicArguments']->__invoke($this, [$a, &$b]);
     }
 
     public function publicMethodFixedArguments($a, $b, $c = null)
