@@ -263,14 +263,6 @@ class ClassProxy extends AbstractProxy
     }
 
     /**
-     * Initialize static mappings to reduce the time for checking features
-     */
-    protected static function setMappings()
-    {
-
-    }
-
-    /**
      * Wrap advices with joinpoint object
      *
      * @param array|Advice[] $classAdvices Advices for specific class
@@ -287,10 +279,9 @@ class ClassProxy extends AbstractProxy
         /** @var LazyAdvisorAccessor $accessor */
         static $accessor = null;
 
-        if (!self::$invocationClassMap) {
+        if (!isset($accessor)) {
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
-            self::setMappings();
         }
 
         $joinPoints = [];
