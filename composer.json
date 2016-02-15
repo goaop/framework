@@ -33,6 +33,7 @@
     "autoload": {
         "psr-4": {"Go\\": "src/"}
     },
+    "minimum-stability": "stable",
     "extra": {
         "branch-alias": {
             "dev-master": "2.0-dev"
