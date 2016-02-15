@@ -11,10 +11,8 @@
 namespace Go\Proxy;
 
 use Go\Aop\Advice;
-use Go\Aop\Features;
 use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\DynamicClosureSplatMethodInvocation;
-use Go\Aop\Framework\MethodInvocationComposer;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Aop\Framework\StaticClosureMethodInvocation;
 use Go\Aop\Framework\StaticInitializationJoinpoint;

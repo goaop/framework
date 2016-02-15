@@ -14,13 +14,7 @@ class DynamicClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
     const FIRST_CLASS_NAME = First::class;
 
-    protected static $invocationClass;
-
-    public static function setUpBeforeClass()
-    {
-        parent::setUpBeforeClass();
-        self::$invocationClass = MethodInvocationComposer::compose(false, false, false);
-    }
+    protected static $invocationClass = DynamicClosureMethodInvocation::class;
 
     /**
      * {@inheritdoc}
