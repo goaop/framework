@@ -17,16 +17,6 @@ class DynamicClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     protected static $invocationClass = DynamicClosureMethodInvocation::class;
 
     /**
-     * {@inheritdoc}
-     */
-    protected function setUp()
-    {
-        if (defined('HHVM_VERSION')) {
-            $this->markTestSkipped("Skipped due to the bug https://github.com/facebook/hhvm/issues/1203");
-        }
-    }
-
-    /**
      * Tests dynamic method invocations
      *
      * @dataProvider dynamicMethodsBatch
@@ -42,6 +32,10 @@ class DynamicClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
     public function testValueChangedByReference()
     {
+        if (defined('HHVM_VERSION')) {
+            $this->markTestSkipped("Limitation of implementation https://github.com/goaop/framework/issues/250");
+        }
+
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'passByReference', []);
 
