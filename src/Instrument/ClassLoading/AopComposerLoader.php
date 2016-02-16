@@ -101,7 +101,6 @@ class AopComposerLoader
             $loaderToUnregister = $loader;
             if (is_array($loader) && ($loader[0] instanceof ClassLoader)) {
                 $originalLoader = $loader[0];
-                ReflectionEngine::init(new ComposerLocator($originalLoader));
                 // Configure library loader for doctrine annotation loader
                 AnnotationRegistry::registerLoader(function($class) use ($originalLoader) {
                     $originalLoader->loadClass($class);
