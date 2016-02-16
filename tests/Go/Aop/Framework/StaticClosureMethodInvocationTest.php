@@ -16,16 +16,6 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     protected static $invocationClass = StaticClosureMethodInvocation::class;
 
     /**
-     * {@inheritdoc}
-     */
-    protected function setUp()
-    {
-        if (defined('HHVM_VERSION')) {
-            $this->markTestSkipped("Skipped due to the bug https://github.com/facebook/hhvm/issues/1203");
-        }
-    }
-
-    /**
      * Tests static method invocations with self
      *
      * @dataProvider staticSelfMethodsBatch
