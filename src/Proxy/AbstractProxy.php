@@ -10,9 +10,8 @@
 
 namespace Go\Proxy;
 
-use ReflectionParameter as Parameter;
-use TokenReflection\ReflectionMethod as ParsedMethod;
-use TokenReflection\ReflectionParameter as ParsedParameter;
+use ReflectionParameter;
+use ReflectionMethod;
 
 /**
  * Abstract class for building different proxies
@@ -87,7 +86,7 @@ abstract class AbstractProxy
     /**
      * Returns list of string representation of parameters
      *
-     * @param array|Parameter[]|ParsedParameter[] $parameters List of parameters
+     * @param array|ReflectionParameter[] $parameters List of parameters
      *
      * @return array
      */
@@ -108,11 +107,11 @@ abstract class AbstractProxy
     /**
      * Return string representation of parameter
      *
-     * @param Parameter|ParsedParameter $parameter Reflection parameter
+     * @param ReflectionParameter $parameter Reflection parameter
      *
      * @return string
      */
-    protected function getParameterCode($parameter)
+    protected function getParameterCode(ReflectionParameter $parameter)
     {
         $type = '';
         if ($parameter->isArray()) {
@@ -125,11 +124,7 @@ abstract class AbstractProxy
         $defaultValue = null;
         $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();
         if ($isDefaultValueAvailable) {
-            if ($parameter instanceof ParsedParameter) {
-                $defaultValue = $parameter->getDefaultValueDefinition();
-            } else {
-                $defaultValue = var_export($parameter->getDefaultValue(), true);
-            }
+             $defaultValue = var_export($parameter->getDefaultValue(), true);
         } elseif ($parameter->isOptional()) {
             $defaultValue = 'null';
         }
@@ -169,13 +164,13 @@ abstract class AbstractProxy
     /**
      * Prepares a line with args from the method definition
      *
-     * @param ParsedMethod $method
+     * @param ReflectionMethod $method
      *
      * @return string
      */
-    protected function prepareArgsLine(ParsedMethod $method)
+    protected function prepareArgsLine(ReflectionMethod $method)
     {
-        $args = join(', ', array_map(function(ParsedParameter $param) {
+        $args = join(', ', array_map(function(ReflectionParameter $param) {
             $byReference = $param->isPassedByReference() ? '&' : '';
 
             return $byReference . '$' . $param->name;

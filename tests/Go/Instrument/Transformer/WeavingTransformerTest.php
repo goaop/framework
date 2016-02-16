@@ -3,7 +3,6 @@
 namespace Go\Instrument\Transformer;
 
 use Doctrine\Common\Annotations\Reader;
-use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectKernel;
@@ -16,16 +15,6 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      * @var WeavingTransformer
      */
     protected $transformer;
-
-    /**
-     * @var StreamMetaData|null
-     */
-    protected $metadata = null;
-
-    /**
-     * @var null|\TokenReflection\Broker
-     */
-    protected $broker = null;
 
     /**
      * @var null|AspectKernel|\PHPUnit_Framework_MockObject_MockObject
@@ -46,9 +35,6 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $reader    = $this->getMock(Reader::class);
         $loader    = $this->getMock(AspectLoader::class, [], array($container, $reader));
 
-        $this->broker = new \TokenReflection\Broker(
-            new \TokenReflection\Broker\Backend\Memory()
-        );
         $this->adviceMatcher = $this->getAdviceMatcherMock();
         $this->kernel        = $this->getKernelMock(
             array(
@@ -59,23 +45,13 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             ),
             $container
         );
-        $this->transformer   = new WeavingTransformer(
+
+        $this->transformer = new WeavingTransformer(
             $this->kernel,
-            $this->broker,
             $this->adviceMatcher,
             $this->getMock(CachePathManager::class, [], array($this->kernel)),
             $loader
         );
-
-        if (defined("HHVM_VERSION")) {
-            // Workaround for https://github.com/facebook/hhvm/issues/2485
-            $stream = fopen(__FILE__, 'r');
-            stream_filter_append($stream, 'string.tolower');
-        } else {
-            $stream = fopen('php://filter/string.tolower/resource=' . __FILE__, 'r');
-        }
-        $this->metadata = new StreamMetaData($stream);
-        fclose($stream);
     }
 
     /**
@@ -83,11 +59,11 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testMultipleNamespacesInOneFile()
     {
-        $this->metadata->source = $this->loadTest('multiple-ns');
-        $this->transformer->transform($this->metadata);
+        $metadata = $this->loadTest('multiple-ns');
+        $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($this->metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('multiple-ns-woven'));
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('multiple-ns-woven')->source);
         $this->assertEquals($expected, $actual);
     }
 
@@ -96,10 +72,12 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testEmptyNamespaceInFile()
     {
-        $source = $this->loadTest('empty-classes');
-        $this->metadata->source = $source;
-        $this->transformer->transform($this->metadata);
-        $this->assertEquals($source, $this->metadata->source);
+        $metadata = $this->loadTest('empty-classes');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('empty-classes')->source);
+        $this->assertEquals($expected, $actual);
     }
 
     /**
@@ -107,10 +85,12 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testInterfaceIsSkipped()
     {
-        $source = $this->loadTest('interface');
-        $this->metadata->source = $source;
-        $this->transformer->transform($this->metadata);
-        $this->assertEquals($source, $this->metadata->source);
+        $metadata = $this->loadTest('interface');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('interface')->source);
+        $this->assertEquals($expected, $actual);
     }
 
     /**
@@ -118,10 +98,12 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testAspectIsSkipped()
     {
-        $source = $this->loadTest('aspect');
-        $this->metadata->source = $source;
-        $this->transformer->transform($this->metadata);
-        $this->assertEquals($source, $this->metadata->source);
+        $metadata = $this->loadTest('aspect');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('aspect')->source);
+        $this->assertEquals($expected, $actual);
     }
 
     /**
@@ -129,11 +111,11 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testWeaverForNormalClass()
     {
-        $this->metadata->source = $this->loadTest('class');
-        $this->transformer->transform($this->metadata);
+        $metadata = $this->loadTest('class');
+        $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($this->metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven'));
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven')->source);
         $this->assertEquals($expected, $actual);
     }
 
@@ -142,11 +124,11 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testWeaverForFinalClass()
     {
-        $this->metadata->source = $this->loadTest('final-class');
-        $this->transformer->transform($this->metadata);
+        $metadata = $this->loadTest('final-class');
+        $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($this->metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('final-class-woven'));
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('final-class-woven')->source);
         $this->assertEquals($expected, $actual);
     }
 
@@ -168,16 +150,15 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
                 ),
                 $container
             ),
-            $this->broker,
             $this->adviceMatcher,
             $this->getMock(CachePathManager::class, [], array($this->kernel)),
             $loader
         );
-        $this->metadata->source = $this->loadTest('class');
-        $this->transformer->transform($this->metadata);
+        $metadata = $this->loadTest('class');
+        $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($this->metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven'));
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven')->source);
         $this->assertEquals($expected, $actual);
     }
 
@@ -186,11 +167,11 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testMultipleClasses()
     {
-        $this->metadata->source = $this->loadTest('multiple-classes');
-        $this->transformer->transform($this->metadata);
+        $metadata = $this->loadTest('multiple-classes');
+        $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($this->metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('multiple-classes-woven'));
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('multiple-classes-woven')->source);
         $this->assertEquals($expected, $actual);
     }
 
@@ -254,8 +235,8 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $mock->expects($this->any())
             ->method('getAdvicesForClass')
             ->will(
-                $this->returnCallback(function (\TokenReflection\ReflectionClass $refClass) {
-                    $advices  = [];
+                $this->returnCallback(function (\ReflectionClass $refClass) {
+                    $advices  = array();
                     foreach ($refClass->getMethods() as $method) {
                         $advisorId = "advisor.{$refClass->name}->{$method->name}";
                         $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
@@ -266,9 +247,29 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         return $mock;
     }
 
+    /**
+     *
+     *
+     * @param string $name Name of the file to load
+     *
+     * @return StreamMetaData
+     */
     private function loadTest($name)
     {
-        return file_get_contents(__DIR__ . '/_files/' . $name . '.php');
+        $fileName = __DIR__ . '/_files/' . $name . '.php';
+
+        if (defined("HHVM_VERSION")) {
+            // Workaround for https://github.com/facebook/hhvm/issues/2485
+            $stream = fopen($fileName, 'r');
+            stream_filter_append($stream, 'string.tolower');
+        } else {
+            $stream = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
+        }
+        $source   = file_get_contents($fileName);
+        $metadata = new StreamMetaData($stream, $source);
+        fclose($stream);
+
+        return $metadata;
     }
 
     /**

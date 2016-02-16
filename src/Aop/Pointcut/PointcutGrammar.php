@@ -12,13 +12,13 @@ namespace Go\Aop\Pointcut;
 
 use Dissect\Lexer\Token;
 use Dissect\Parser\Grammar;
+use Doctrine\Common\Annotations\Reader;
 use Go\Aop\PointFilter;
 use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
 use Go\Aop\Support\SimpleNamespaceFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Core\AspectContainer;
-use Go\Instrument\RawAnnotationReader;
 
 /**
  * Pointcut grammar defines general structure of pointcuts and rules of parsing
@@ -29,9 +29,9 @@ class PointcutGrammar extends Grammar
      * Constructs a pointcut grammar with AST
      *
      * @param AspectContainer $container Instance of the container
-     * @param RawAnnotationReader $annotationReader
+     * @param Reader $annotationReader
      */
-    public function __construct(AspectContainer $container, RawAnnotationReader $annotationReader)
+    public function __construct(AspectContainer $container, Reader $annotationReader)
     {
         $this('empty')
             ->is(/* empty */);

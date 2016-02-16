@@ -10,12 +10,12 @@
 
 namespace Go\Core;
 
-use ReflectionMethod;
-use ReflectionProperty;
 use Go\Aop;
 use Go\Aop\Support\NamespacedReflectionFunction;
-use TokenReflection\ReflectionClass as ParsedReflectionClass;
-use TokenReflection\ReflectionFileNamespace;
+use Go\ParserReflection\ReflectionFileNamespace;
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Advice matcher returns the list of advices for the specific point of code
@@ -86,12 +86,12 @@ class AdviceMatcher
     /**
      * Return list of advices for class
      *
-     * @param ParsedReflectionClass $class Class to advise
+     * @param ReflectionClass $class Class to advise
      * @param array|Aop\Advisor[] $advisors List of advisor to match
      *
      * @return array|Aop\Advice[] List of advices for class
      */
-    public function getAdvicesForClass(ParsedReflectionClass $class, array $advisors)
+    public function getAdvicesForClass(ReflectionClass $class, array $advisors)
     {
         $classAdvices = [];
         $parentClass  = $class->getParentClass();
@@ -131,7 +131,7 @@ class AdviceMatcher
     /**
      * Returns list of advices from advisor and point filter
      *
-     * @param ParsedReflectionClass $class Class to inject advices
+     * @param ReflectionClass $class Class to inject advices
      * @param Aop\PointcutAdvisor $advisor Advisor for class
      * @param string $advisorId Identifier of advisor
      * @param Aop\PointFilter $filter Filter for points
@@ -139,7 +139,7 @@ class AdviceMatcher
      * @return array
      */
     private function getAdvicesFromAdvisor(
-        ParsedReflectionClass $class,
+        ReflectionClass $class,
         Aop\PointcutAdvisor $advisor,
         $advisorId,
         Aop\PointFilter $filter)
@@ -191,14 +191,14 @@ class AdviceMatcher
     /**
      * Returns list of introduction advices from advisor
      *
-     * @param ParsedReflectionClass $class Class to inject advices
+     * @param ReflectionClass $class Class to inject advices
      * @param Aop\IntroductionAdvisor $advisor Advisor for class
      * @param string $advisorId Identifier of advisor
      *
      * @return array
      */
     private function getIntroductionFromAdvisor(
-        ParsedReflectionClass $class,
+        ReflectionClass $class,
         Aop\IntroductionAdvisor $advisor,
         $advisorId)
     {

@@ -18,27 +18,19 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
-use Go\Instrument\CleanableMemory;
+use Go\ParserReflection\ReflectionEngine;
+use Go\ParserReflection\ReflectionFile;
+use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Proxy\ClassProxy;
 use Go\Proxy\FunctionProxy;
 use Go\Proxy\TraitProxy;
-use TokenReflection\Broker;
-use TokenReflection\Exception\FileProcessingException;
-use TokenReflection\ReflectionClass as ParsedClass;
-use TokenReflection\ReflectionFileNamespace as ParsedFileNamespace;
+use ReflectionClass;
 
 /**
  * Main transformer that performs weaving of aspects into the source code
  */
 class WeavingTransformer extends BaseSourceTransformer
 {
-
-    /**
-     * Reflection broker instance
-     *
-     * @var Broker
-     */
-    protected $broker;
 
     /**
      * @var AdviceMatcher
@@ -61,21 +53,18 @@ class WeavingTransformer extends BaseSourceTransformer
      * Constructs a weaving transformer
      *
      * @param AspectKernel $kernel Instance of aspect kernel
-     * @param Broker $broker Instance of reflection broker to use
      * @param AdviceMatcher $adviceMatcher Advice matcher for class
      * @param CachePathManager $cachePathManager Cache manager
      * @param AspectLoader $loader Loader for aspects
      */
     public function __construct(
         AspectKernel $kernel,
-        Broker $broker,
         AdviceMatcher $adviceMatcher,
         CachePathManager $cachePathManager,
         AspectLoader $loader
     )
     {
         parent::__construct($kernel);
-        $this->broker           = $broker;
         $this->adviceMatcher    = $adviceMatcher;
         $this->cachePathManager = $cachePathManager;
         $this->aspectLoader     = $loader;
@@ -93,14 +82,8 @@ class WeavingTransformer extends BaseSourceTransformer
 
         $fileName = $metadata->uri;
 
-        try {
-            CleanableMemory::enterProcessing();
-            $parsedSource = $this->broker->processString($metadata->source, $fileName, true);
-        } catch (FileProcessingException $e) {
-            CleanableMemory::leaveProcessing();
-
-            return false;
-        }
+        $astTree      = ReflectionEngine::parseFile($fileName, $metadata->source);
+        $parsedSource = new ReflectionFile($fileName, $astTree);
 
         // Check if we have some new aspects that weren't loaded yet
         $unloadedAspects = $this->aspectLoader->getUnloadedAspects();
@@ -109,25 +92,15 @@ class WeavingTransformer extends BaseSourceTransformer
         }
         $advisors = $this->container->getByTag('advisor');
 
-        /** @var $namespaces ParsedFileNamespace[] */
-        $namespaces = $parsedSource->getNamespaces();
+        /** @var $namespaces ReflectionFileNamespace[] */
+        $namespaces = $parsedSource->getFileNamespaces();
         $lineOffset = 0;
 
         foreach ($namespaces as $namespace) {
 
-            /** @var $classes ParsedClass[] */
+            /** @var $classes ReflectionClass[] */
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
-
-                $parentClassNames = array_merge(
-                    $class->getParentClassNameList(),
-                    $class->getInterfaceNames(),
-                    $class->getTraitNames()
-                );
-
-                foreach ($parentClassNames as $parentClassName) {
-                    class_exists($parentClassName); // trigger autoloading of class/interface/trait
-                }
 
                 // Skip interfaces and aspects
                 if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames())) {
@@ -140,8 +113,6 @@ class WeavingTransformer extends BaseSourceTransformer
             $totalTransformations += (integer) $wasFunctionsProcessed;
         }
 
-        CleanableMemory::leaveProcessing();
-
         // If we return false this will indicate no more transformation for following transformers
         return $totalTransformations > 0;
     }
@@ -151,12 +122,12 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @param array|Advisor[] $advisors
      * @param StreamMetaData $metadata Source stream information
-     * @param ParsedClass $class Instance of class to analyze
+     * @param ReflectionClass $class Instance of class to analyze
      * @param integer $lineOffset Current offset, will be updated to store the last position
      *
      * @return bool True if was class processed, false otherwise
      */
-    private function processSingleClass(array $advisors, StreamMetaData $metadata, ParsedClass $class, &$lineOffset)
+    private function processSingleClass(array $advisors, StreamMetaData $metadata, ReflectionClass $class, &$lineOffset)
     {
         $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
 
@@ -190,22 +161,16 @@ class WeavingTransformer extends BaseSourceTransformer
         $contentToInclude = $this->saveProxyToCache($class, $child);
 
         // Add child to source
-        $tokenCount = $class->getBroker()->getFileTokens($class->getFileName())->count();
-        if ($tokenCount - $class->getEndPosition() < 3) {
-            // If it's the last class in a file, just add child source
-            $metadata->source .= $contentToInclude . PHP_EOL;
-        } else {
-            $lastLine  = $class->getEndLine() + $lineOffset; // returns the last line of class
-            $dataArray = explode("\n", $metadata->source);
+        $lastLine  = $class->getEndLine() + $lineOffset; // returns the last line of class
+        $dataArray = explode("\n", $metadata->source);
 
-            $currentClassArray = array_splice($dataArray, 0, $lastLine);
-            $childClassArray   = explode("\n", $contentToInclude);
-            $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
+        $currentClassArray = array_splice($dataArray, 0, $lastLine);
+        $childClassArray   = explode("\n", $contentToInclude);
+        $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
 
-            $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
+        $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
 
-            $metadata->source = implode("\n", $dataArray);
-        }
+        $metadata->source = implode("\n", $dataArray);
 
         return true;
     }
@@ -213,7 +178,7 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Adjust definition of original class source to enable extending
      *
-     * @param ParsedClass $class Instance of class reflection
+     * @param ReflectionClass $class Instance of class reflection
      * @param string $source Source code
      * @param string $newParentName New name for the parent class
      *
@@ -240,7 +205,7 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @param array|Advisor[] $advisors List of advisors
      * @param StreamMetaData $metadata Source stream information
-     * @param ParsedFileNamespace $namespace Current namespace for file
+     * @param ReflectionFileNamespace $namespace Current namespace for file
      *
      * @return boolean True if functions were processed, false otherwise
      */
@@ -275,8 +240,8 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Save AOP proxy to the separate file anr returns the php source code for inclusion
      *
-     * @param ParsedClass $class Original class reflection
-     * @param ClassProxy $child
+     * @param ReflectionClass $class Original class reflection
+     * @param string|ClassProxy $child
      *
      * @return string
      */
@@ -304,9 +269,12 @@ class WeavingTransformer extends BaseSourceTransformer
         if ($namespace) {
             $body .= "namespace {$namespace};" . PHP_EOL . PHP_EOL;
         }
-        foreach ($class->getNamespaceAliases() as $alias => $fqdn) {
+
+        $refNamespace = new ReflectionFileNamespace($class->getFileName(), $namespace);
+        foreach ($refNamespace->getNamespaceAliases() as $fqdn => $alias) {
             $body .= "use {$fqdn} as {$alias};" . PHP_EOL;
         }
+
         $body .= $child;
         file_put_contents($proxyFileName, $body);
 

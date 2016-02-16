@@ -23,11 +23,8 @@ use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use Reflection;
 use ReflectionClass;
-use ReflectionMethod as Method;
-use ReflectionProperty as Property;
-use TokenReflection\ReflectionClass as ParsedClass;
-use TokenReflection\ReflectionMethod as ParsedMethod;
-use TokenReflection\ReflectionProperty as ParsedProperty;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Class proxy builder that is used to generate a child class from the list of joinpoints
@@ -37,7 +34,7 @@ class ClassProxy extends AbstractProxy
     /**
      * Parent class reflection
      *
-     * @var null|ParsedClass
+     * @var null|ReflectionClass
      */
     protected $class = null;
 
@@ -113,12 +110,12 @@ class ClassProxy extends AbstractProxy
     /**
      * Generates an child code by parent class reflection and joinpoints for it
      *
-     * @param ParsedClass $parent Parent class reflection
+     * @param ReflectionClass $parent Parent class reflection
      * @param array|Advice[] $classAdvices List of advices for class
      *
      * @throws \InvalidArgumentException if there are unknown type of advices
      */
-    public function __construct(ParsedClass $parent, array $classAdvices)
+    public function __construct(ReflectionClass $parent, array $classAdvices)
     {
         parent::__construct($classAdvices);
 
@@ -136,9 +133,6 @@ class ClassProxy extends AbstractProxy
                 case AspectContainer::STATIC_METHOD_PREFIX:
                     foreach ($typedAdvices as $joinPointName => $advice) {
                         $method = $parent->getMethod($joinPointName);
-                        if (!$method instanceof ParsedMethod) {
-                            continue;
-                        }
                         $this->overrideMethod($method);
                     }
                     break;
@@ -146,9 +140,6 @@ class ClassProxy extends AbstractProxy
                 case AspectContainer::PROPERTY_PREFIX:
                     foreach ($typedAdvices as $joinPointName => $advice) {
                         $property = $parent->getProperty($joinPointName);
-                        if (!$property instanceof ParsedProperty) {
-                            continue;
-                        }
                         $this->interceptProperty($property);
                     }
                     break;
@@ -306,14 +297,14 @@ class ClassProxy extends AbstractProxy
     /**
      * Add an interface for child
      *
-     * @param string|ReflectionClass|ParsedClass $interface
+     * @param string|ReflectionClass $interface
      *
      * @throws \InvalidArgumentException If object is not an interface
      */
     public function addInterface($interface)
     {
         $interfaceName = $interface;
-        if ($interface instanceof ReflectionClass || $interface instanceof ParsedClass) {
+        if ($interface instanceof ReflectionClass) {
             if (!$interface->isInterface()) {
                 throw new \InvalidArgumentException("Interface expected to add");
             }
@@ -326,14 +317,14 @@ class ClassProxy extends AbstractProxy
     /**
      * Add a trait for child
      *
-     * @param string|ReflectionClass|ParsedClass $trait
+     * @param string|ReflectionClass $trait
      *
      * @throws \InvalidArgumentException If object is not a trait
      */
     public function addTrait($trait)
     {
         $traitName = $trait;
-        if ($trait instanceof ReflectionClass || $trait instanceof ParsedClass) {
+        if ($trait instanceof ReflectionClass) {
             if (!$trait->isTrait()) {
                 throw new \InvalidArgumentException("Trait expected to add");
             }
@@ -374,7 +365,7 @@ class ClassProxy extends AbstractProxy
     protected function addJoinpointsProperty()
     {
         $this->setProperty(
-            Property::IS_PRIVATE | Property::IS_STATIC,
+            ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_STATIC,
             '__joinPoints',
             '[]'
         );
@@ -383,9 +374,9 @@ class ClassProxy extends AbstractProxy
     /**
      * Override parent method with joinpoint invocation
      *
-     * @param ParsedMethod $method Method reflection
+     * @param ReflectionMethod $method Method reflection
      */
-    protected function overrideMethod(ParsedMethod $method)
+    protected function overrideMethod(ReflectionMethod $method)
     {
         // temporary disable override of final methods
         if (!$method->isFinal() && !$method->isAbstract()) {
@@ -396,11 +387,11 @@ class ClassProxy extends AbstractProxy
     /**
      * Creates definition for method body
      *
-     * @param ParsedMethod $method Method reflection
+     * @param ReflectionMethod $method Method reflection
      *
      * @return string new method body
      */
-    protected function getJoinpointInvocationBody(ParsedMethod $method)
+    protected function getJoinpointInvocationBody(ReflectionMethod $method)
     {
         $isStatic = $method->isStatic();
         $scope    = $isStatic ? self::$staticLsbExpression : '$this';
@@ -421,9 +412,9 @@ class ClassProxy extends AbstractProxy
     /**
      * Makes property intercepted
      *
-     * @param ParsedProperty $property Reflection of property to intercept
+     * @param ReflectionProperty $property Reflection of property to intercept
      */
-    protected function interceptProperty(ParsedProperty $property)
+    protected function interceptProperty(ReflectionProperty $property)
     {
         $this->interceptedProperties[] = is_object($property) ? $property->name : $property;
         $this->isFieldsIntercepted = true;
@@ -467,31 +458,31 @@ class ClassProxy extends AbstractProxy
     /**
      * Add code for intercepting properties
      *
-     * @param null|ParsedMethod $constructor Constructor reflection or null
+     * @param null|ReflectionMethod $constructor Constructor reflection or null
      */
-    protected function addFieldInterceptorsCode(ParsedMethod $constructor = null)
+    protected function addFieldInterceptorsCode(ReflectionMethod $constructor = null)
     {
         $byReference = false;
-        $this->setProperty(Property::IS_PRIVATE, '__properties', 'array()');
-        $this->setMethod(Method::IS_PUBLIC, '__get', $byReference, $this->getMagicGetterBody(), '$name');
-        $this->setMethod(Method::IS_PUBLIC, '__set', $byReference, $this->getMagicSetterBody(), '$name, $value');
+        $this->setProperty(ReflectionProperty::IS_PRIVATE, '__properties', 'array()');
+        $this->setMethod(ReflectionMethod::IS_PUBLIC, '__get', $byReference, $this->getMagicGetterBody(), '$name');
+        $this->setMethod(ReflectionMethod::IS_PUBLIC, '__set', $byReference, $this->getMagicSetterBody(), '$name, $value');
         $this->isFieldsIntercepted = true;
         if ($constructor) {
             $this->override('__construct', $this->getConstructorBody($constructor, true));
         } else {
-            $this->setMethod(Method::IS_PUBLIC, '__construct', $byReference, $this->getConstructorBody(), '');
+            $this->setMethod(ReflectionMethod::IS_PUBLIC, '__construct', $byReference, $this->getConstructorBody(), '');
         }
     }
 
     /**
      * Creates a method code from Reflection
      *
-     * @param ParsedMethod $method Reflection for method
+     * @param ReflectionMethod $method Reflection for method
      * @param string $body Body of method
      *
      * @return string
      */
-    protected function getOverriddenMethod(ParsedMethod $method, $body)
+    protected function getOverriddenMethod(ReflectionMethod $method, $body)
     {
         $code = (
             preg_replace('/ {4}|\t/', '', $method->getDocComment()) . "\n" . // Original Doc-block
@@ -560,12 +551,12 @@ SETTER;
     /**
      * Returns constructor code
      *
-     * @param ParsedMethod $constructor Constructor reflection
+     * @param ReflectionMethod $constructor Constructor reflection
      * @param bool $isCallParent Is there is a need to call parent code
      *
      * @return string
      */
-    private function getConstructorBody(ParsedMethod $constructor = null, $isCallParent = false)
+    private function getConstructorBody(ReflectionMethod $constructor = null, $isCallParent = false)
     {
         $assocProperties = [];
         $listProperties  = [];

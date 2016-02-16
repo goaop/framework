@@ -10,11 +10,10 @@
 
 namespace Go\Proxy;
 
-use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
-use TokenReflection\ReflectionMethod as ParsedMethod;
+use ReflectionMethod;
 
 /**
  * Trait proxy builder that is used to generate a trait from the list of joinpoints
@@ -76,11 +75,11 @@ class TraitProxy extends ClassProxy
     /**
      * Creates definition for trait method body
      *
-     * @param ParsedMethod $method Method reflection
+     * @param ReflectionMethod $method Method reflection
      *
      * @return string new method body
      */
-    protected function getJoinpointInvocationBody(ParsedMethod $method)
+    protected function getJoinpointInvocationBody(ReflectionMethod $method)
     {
         $isStatic = $method->isStatic();
         $class    = '\\' . __CLASS__;

@@ -16,7 +16,6 @@ use Go\Aop;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutParser;
-use Go\Instrument\RawAnnotationReader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Doctrine\Common\Annotations\AnnotationReader;
 
@@ -97,9 +96,6 @@ class GoAspectContainer extends Container implements AspectContainer
 
             return $reader;
         });
-        $this->share('aspect.annotation.raw.reader', function() {
-            return new RawAnnotationReader();
-        });
         $this->share('aspect.cache.path.manager', function(Container $container) {
             return new CachePathManager($container->get('kernel'));
         });
@@ -112,7 +108,7 @@ class GoAspectContainer extends Container implements AspectContainer
             return new PointcutParser(
                 new PointcutGrammar(
                     $container,
-                    $container->get('aspect.annotation.raw.reader')
+                    $container->get('aspect.annotation.reader')
                 )
             );
         });

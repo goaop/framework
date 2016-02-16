@@ -74,7 +74,6 @@ class AopComposerLoader
 
         // Let's exclude core dependencies from that list
         $excludePaths[] = $prefixes['Dissect'][0];
-        $excludePaths[] = $prefixes['TokenReflection'][0];
         $excludePaths[] = substr($prefixes['Doctrine\\Common\\Annotations\\'][0], 0, -16);
 
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
@@ -100,7 +99,6 @@ class AopComposerLoader
             $loaderToUnregister = $loader;
             if (is_array($loader) && ($loader[0] instanceof ClassLoader)) {
                 $originalLoader = $loader[0];
-
                 // Configure library loader for doctrine annotation loader
                 AnnotationRegistry::registerLoader(function($class) use ($originalLoader) {
                     $originalLoader->loadClass($class);
