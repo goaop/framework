@@ -15,8 +15,6 @@ use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Composer\Autoload\ClassLoader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
-use Go\ParserReflection\Locator\ComposerLocator;
-use Go\ParserReflection\ReflectionEngine;
 
 /**
  * AopComposerLoader class is responsible to use a weaver for classes instead of original one
