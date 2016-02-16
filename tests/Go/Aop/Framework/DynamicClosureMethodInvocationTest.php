@@ -21,9 +21,6 @@ class DynamicClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
      */
     protected function setUp()
     {
-        if (PHP_VERSION_ID < 50400) {
-            $this->markTestSkipped("Closure Method Invocation works only on PHP 5.4 and greater");
-        }
         if (defined('HHVM_VERSION')) {
             $this->markTestSkipped("Skipped due to the bug https://github.com/facebook/hhvm/issues/1203");
         }
