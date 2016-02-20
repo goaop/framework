@@ -101,12 +101,20 @@ abstract class AbstractProxy
     protected function getParameterCode(ReflectionParameter $parameter)
     {
         $type = '';
-        if ($parameter->isArray()) {
-            $type = 'array';
-        } elseif ($parameter->isCallable()) {
-            $type = 'callable';
-        } elseif ($parameter->getClass()) {
-            $type = '\\' . $parameter->getClass()->name;
+        if (PHP_VERSION_ID >= 50700) {
+            $reflectionType = $parameter->getType();
+            if ($reflectionType) {
+                $nsPrefix = $reflectionType->isBuiltin() ? '' : '\\';
+                $type     = $nsPrefix . (string) $reflectionType;
+            }
+        } else {
+            if ($parameter->isArray()) {
+                $type = 'array';
+            } elseif ($parameter->isCallable()) {
+                $type = 'callable';
+            } elseif ($parameter->getClass()) {
+                $type = '\\' . $parameter->getClass()->name;
+            }
         }
         $defaultValue = null;
         $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();

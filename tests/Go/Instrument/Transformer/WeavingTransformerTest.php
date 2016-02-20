@@ -133,6 +133,19 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Check that weaver can work with PHP7 classes
+     */
+    public function testWeaverForPhp7Class()
+    {
+        $metadata = $this->loadTest('php7-class');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('php7-class-woven')->source);
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
      * Transformer verifies include paths
      */
     public function testTransformerWithIncludePaths()
