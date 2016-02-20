@@ -10,7 +10,10 @@
 
 namespace Go\Aop\Framework;
 
-class StaticClosureMethodInvocation extends AbstractMethodInvocation
+/**
+ * Static closure method invocation is responsible to call static methods via closure
+ */
+final class StaticClosureMethodInvocation extends AbstractMethodInvocation
 {
     /**
      * Closure to use

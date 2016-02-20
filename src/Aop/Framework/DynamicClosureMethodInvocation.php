@@ -10,7 +10,10 @@
 
 namespace Go\Aop\Framework;
 
-class DynamicClosureSplatMethodInvocation extends AbstractMethodInvocation
+/**
+ * Dynamic closure method invocation is responsible to call dynamic methods via closure
+ */
+final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
 {
     /**
      * Closure to use
@@ -41,8 +44,9 @@ class DynamicClosureSplatMethodInvocation extends AbstractMethodInvocation
         }
 
         // Fill the closure only once if it's empty
-        if (!$this->closureToCall) {
-            $this->closureToCall = $this->reflectionMethod->getClosure($this->instance);
+        if ($this->closureToCall === null) {
+            $this->closureToCall    = $this->reflectionMethod->getClosure($this->instance);
+            $this->previousInstance = $this->instance;
         }
 
         // Rebind the closure if instance was changed since last time

@@ -12,7 +12,7 @@ namespace Go\Proxy;
 
 use Go\Aop\Advice;
 use Go\Aop\Framework\ClassFieldAccess;
-use Go\Aop\Framework\DynamicClosureSplatMethodInvocation;
+use Go\Aop\Framework\DynamicClosureMethodInvocation;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Aop\Framework\StaticClosureMethodInvocation;
 use Go\Aop\Framework\StaticInitializationJoinpoint;
@@ -58,7 +58,7 @@ class ClassProxy extends AbstractProxy
      * @var null|array
      */
     protected static $invocationClassMap = [
-        AspectContainer::METHOD_PREFIX        => DynamicClosureSplatMethodInvocation::class,
+        AspectContainer::METHOD_PREFIX        => DynamicClosureMethodInvocation::class,
         AspectContainer::STATIC_METHOD_PREFIX => StaticClosureMethodInvocation::class,
         AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,
         AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class,

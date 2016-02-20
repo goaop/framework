@@ -14,7 +14,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
 
     const FIRST_CLASS_NAME = First::class;
 
-    protected static $invocationClass = DynamicClosureSplatMethodInvocation::class;
+    protected static $invocationClass = DynamicClosureMethodInvocation::class;
 
     /**
      * {@inheritdoc}
