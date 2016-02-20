@@ -18,7 +18,6 @@ use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionFunction;
-use ReflectionParameter;
 
 /**
  * Function proxy builder that is used to generate a proxy-function from the list of joinpoints
