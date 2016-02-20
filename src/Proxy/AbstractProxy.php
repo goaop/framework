@@ -10,8 +10,8 @@
 
 namespace Go\Proxy;
 
+use ReflectionFunctionAbstract;
 use ReflectionParameter;
-use ReflectionMethod;
 
 /**
  * Abstract class for building different proxies
@@ -41,22 +41,13 @@ abstract class AbstractProxy
     protected static $staticLsbExpression = 'static::class';
 
     /**
-     * Should proxy use variadics support or not
-     *
-     * @var bool
-     */
-    protected $useVariadics = false;
-
-    /**
      * Constructs an abstract proxy class
      *
      * @param array $advices List of advices
-     * @param bool $useVariadics Should proxy use variadics syntax or not
      */
-    public function __construct(array $advices = [], $useVariadics = false)
+    public function __construct(array $advices = [])
     {
-        $this->advices      = $this->flattenAdvices($advices);
-        $this->useVariadics = $useVariadics;
+        $this->advices = $this->flattenAdvices($advices);
     }
 
     /**
@@ -94,10 +85,6 @@ abstract class AbstractProxy
     {
         $parameterDefinitions = [];
         foreach ($parameters as $parameter) {
-            // Deprecated since PHP5.6 in the favor of variadics, needed for BC only
-            if ($parameter->name == '...') {
-                continue;
-            }
             $parameterDefinitions[] = $this->getParameterCode($parameter);
         }
 
@@ -124,14 +111,14 @@ abstract class AbstractProxy
         $defaultValue = null;
         $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();
         if ($isDefaultValueAvailable) {
-             $defaultValue = var_export($parameter->getDefaultValue(), true);
+            $defaultValue = var_export($parameter->getDefaultValue(), true);
         } elseif ($parameter->isOptional()) {
             $defaultValue = 'null';
         }
         $code = (
             ($type ? "$type " : '') . // Typehint
             ($parameter->isPassedByReference() ? '&' : '') . // By reference sign
-            ($this->useVariadics && $parameter->isVariadic() ? '...' : '') . // Variadic symbol
+            ($parameter->isVariadic() ? '...' : '') . // Variadic symbol
             '$' . // Variable symbol
             ($parameter->name) . // Name of the argument
             ($defaultValue !== null ? (" = " . $defaultValue) : '') // Default value if present
@@ -164,18 +151,36 @@ abstract class AbstractProxy
     /**
      * Prepares a line with args from the method definition
      *
-     * @param ReflectionMethod $method
+     * @param ReflectionFunctionAbstract $functionLike
      *
      * @return string
      */
-    protected function prepareArgsLine(ReflectionMethod $method)
+    protected function prepareArgsLine(ReflectionFunctionAbstract $functionLike)
     {
-        $args = join(', ', array_map(function(ReflectionParameter $param) {
-            $byReference = $param->isPassedByReference() ? '&' : '';
+        $argumentsPart = [];
+        $arguments     = [];
+        $hasOptionals  = false;
 
-            return $byReference . '$' . $param->name;
-        }, $method->getParameters()));
+        foreach ($functionLike->getParameters() as $parameter) {
+            $byReference  = ($parameter->isPassedByReference() && !$parameter->isVariadic()) ? '&' : '';
+            $hasOptionals = $hasOptionals || $parameter->isOptional();
 
-        return $args;
+            $arguments[] = $byReference . '$' . $parameter->name;
+        }
+
+        $isVariadic = $functionLike->isVariadic();
+        if ($isVariadic) {
+            $argumentsPart[] = array_pop($arguments);
+        }
+        if (!empty($arguments)) {
+            // Unshifting to keep correct order
+            $argumentLine = '[' . join(', ', $arguments) . ']';
+            if ($hasOptionals) {
+                $argumentLine = "\\array_slice($argumentLine, 0, \\func_num_args())";
+            }
+            array_unshift($argumentsPart, $argumentLine);
+        }
+
+        return join(', ', $argumentsPart);
     }
 }
