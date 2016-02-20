@@ -33,7 +33,11 @@ interface MethodInvocation extends Invocation
     /**
      * Invokes current method invocation with all interceptors
      *
-     * @return mixed
+     * @param null|object|string $instance Invocation instance (class name for static methods)
+     * @param array $arguments List of arguments for method invocation
+     * @param array $variadicArguments Additional list of variadic arguments
+     *
+     * @return mixed Result of invocation
      */
-    public function __invoke();
+    public function __invoke($instance = null, array $arguments = [], array $variadicArguments = []);
 }

@@ -107,6 +107,16 @@ class First
     }
 
     /**
+     * Method for checking variadic arguments
+     *
+     * @return array
+     */
+    public function variadicArgsTest(...$args)
+    {
+        return join('', $args);
+    }
+
+    /**
      * Method for checking invocation with any number of arguments
      *
      * NB: Real proxy use the method definition to prepare invocation proxy, so variable number of arguments
@@ -119,4 +129,13 @@ class First
         return join('', func_get_args());
     }
 
+    /**
+     * Method for checking static variadic arguments
+     *
+     * @return array
+     */
+    public static function staticVariadicArgsTest(...$args)
+    {
+        return join('', $args);
+    }
 }

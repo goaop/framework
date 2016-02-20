@@ -66,6 +66,21 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
         }
     }
 
+    public function testInvocationWithVariadicArguments()
+    {
+        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'variadicArgsTest', []);
+
+        $args     = [];
+        $expected = '';
+        for ($i=0; $i<10; $i++) {
+            $args[]   = $i;
+            $expected .= $i;
+            $result   = $invocation($child, $args);
+            $this->assertEquals($expected, $result);
+        }
+    }
+
     public function testRecursionWorks()
     {
         $child      = $this->getMock(self::FIRST_CLASS_NAME, array('recursion'));
