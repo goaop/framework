@@ -91,14 +91,19 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     /**
      * Invokes current function invocation with all interceptors
      *
-     * @param array $arguments Arguments for the invocation
+     * @param array $arguments List of arguments for function invocation
+     * @param array $variadicArguments Additional list of variadic arguments
      *
-     * @return mixed
+     * @return mixed Result of invocation
      */
-    final public function __invoke(array $arguments = [])
+    final public function __invoke(array $arguments = [], array $variadicArguments = [])
     {
         if ($this->level) {
-            array_push($this->stackFrames, array($this->arguments, $this->current));
+            array_push($this->stackFrames, [$this->arguments, $this->current]);
+        }
+
+        if (!empty($variadicArguments)) {
+            $arguments = array_merge($arguments, $variadicArguments);
         }
 
         ++$this->level;

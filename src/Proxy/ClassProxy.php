@@ -401,7 +401,7 @@ class ClassProxy extends AbstractProxy
         $body = '';
 
         if (!empty($args)) {
-            $scope = "$scope, [$args]";
+            $scope = "$scope, $args";
         }
 
         $body .= "return self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($scope);";

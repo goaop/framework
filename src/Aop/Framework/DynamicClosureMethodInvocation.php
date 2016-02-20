@@ -78,13 +78,18 @@ class DynamicClosureMethodInvocation extends AbstractMethodInvocation
      *
      * @param null|object|string $instance Invocation instance (class name for static methods)
      * @param array $arguments List of arguments for method invocation
+     * @param array $variadicArguments Additional list of variadic arguments
      *
      * @return mixed Result of invocation
      */
-    final public function __invoke($instance = null, array $arguments = [])
+    final public function __invoke($instance = null, array $arguments = [], array $variadicArguments = [])
     {
         if ($this->level) {
             $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
+        }
+
+        if (!empty($variadicArguments)) {
+            $arguments = array_merge($arguments, $variadicArguments);
         }
 
         try {

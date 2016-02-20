@@ -18,7 +18,6 @@ use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionFunction;
-use ReflectionParameter;
 
 /**
  * Function proxy builder that is used to generate a proxy-function from the list of joinpoints
@@ -195,34 +194,7 @@ class FunctionProxy extends AbstractProxy
     {
         $class = '\\' . __CLASS__;
 
-        $dynamicArgs   = false;
-        $hasOptionals  = false;
-        $hasReferences = false;
-
-        $argValues = array_map(function(ReflectionParameter $param) use (&$dynamicArgs, &$hasOptionals, &$hasReferences) {
-            $byReference   = $param->isPassedByReference();
-            $dynamicArg    = $param->name == '...';
-            $dynamicArgs   = $dynamicArgs || $dynamicArg;
-            $hasOptionals  = $hasOptionals || ($param->isOptional() && !$param->isDefaultValueAvailable());
-            $hasReferences = $hasReferences || $byReference;
-
-            return ($byReference ? '&' : '') . '$' . $param->name;
-        }, $function->getParameters());
-
-        if ($dynamicArgs) {
-            // Remove last '...' argument
-            array_pop($argValues);
-        }
-
-        $args = join(', ', $argValues);
-
-        if ($dynamicArgs) {
-            $args = $hasReferences ? "[$args] + \\func_get_args()" : '\func_get_args()';
-        } elseif ($hasOptionals) {
-            $args = "\\array_slice([$args], 0, \\func_num_args())";
-        } else {
-            $args = "[$args]";
-        }
+        $args = $this->prepareArgsLine($function);
 
         return <<<BODY
 static \$__joinPoint = null;

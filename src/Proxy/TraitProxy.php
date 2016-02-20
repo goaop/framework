@@ -87,7 +87,7 @@ class TraitProxy extends ClassProxy
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $args = $this->prepareArgsLine($method);
-        $args = $scope . ($args ? ", [$args]" : '');
+        $args = $scope . ($args ? ", $args" : '');
 
         return <<<BODY
 static \$__joinPoint = null;
