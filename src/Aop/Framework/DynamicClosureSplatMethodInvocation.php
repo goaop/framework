@@ -10,8 +10,22 @@
 
 namespace Go\Aop\Framework;
 
-class DynamicClosureSplatMethodInvocation extends DynamicClosureMethodInvocation
+class DynamicClosureSplatMethodInvocation extends AbstractMethodInvocation
 {
+    /**
+     * Closure to use
+     *
+     * @var \Closure
+     */
+    protected $closureToCall = null;
+
+    /**
+     * Previous instance of invocation
+     *
+     * @var null|object|string
+     */
+    protected $previousInstance = null;
+
     /**
      * Invokes original method and return result from it
      *

@@ -10,8 +10,22 @@
 
 namespace Go\Aop\Framework;
 
-class StaticClosureMethodInvocation extends DynamicClosureMethodInvocation
+class StaticClosureMethodInvocation extends AbstractMethodInvocation
 {
+    /**
+     * Closure to use
+     *
+     * @var \Closure
+     */
+    protected $closureToCall = null;
+
+    /**
+     * Previous scope of invocation
+     *
+     * @var null|object|string
+     */
+    protected $previousScope = null;
+
     /**
      * Invokes original method and return result from it
      *
@@ -27,12 +41,12 @@ class StaticClosureMethodInvocation extends DynamicClosureMethodInvocation
         }
 
         // Rebind the closure if scope (class name) was changed since last time
-        if ($this->previousInstance !== $this->instance) {
+        if ($this->previousScope !== $this->instance) {
             if ($this->closureToCall === null) {
                 $this->closureToCall = $this->getStaticInvoker($this->className, $this->reflectionMethod->name);
             }
             $this->closureToCall = $this->closureToCall->bindTo(null, $this->instance);
-            $this->previousInstance = $this->instance;
+            $this->previousScope = $this->instance;
         }
 
         $closureToCall = $this->closureToCall;
@@ -52,7 +66,7 @@ class StaticClosureMethodInvocation extends DynamicClosureMethodInvocation
     protected static function getStaticInvoker($className, $method)
     {
         return function(array $args) use ($className, $method) {
-            return forward_static_call_array(array($className, $method), $args);
+            return forward_static_call_array([$className, $method], $args);
         };
     }
 }

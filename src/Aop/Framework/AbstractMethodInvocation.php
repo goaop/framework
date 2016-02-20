@@ -61,6 +61,44 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     }
 
     /**
+     * Invokes current method invocation with all interceptors
+     *
+     * @param null|object|string $instance Invocation instance (class name for static methods)
+     * @param array $arguments List of arguments for method invocation
+     * @param array $variadicArguments Additional list of variadic arguments
+     *
+     * @return mixed Result of invocation
+     */
+    final public function __invoke($instance = null, array $arguments = [], array $variadicArguments = [])
+    {
+        if ($this->level) {
+            $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
+        }
+
+        if (!empty($variadicArguments)) {
+            $arguments = array_merge($arguments, $variadicArguments);
+        }
+
+        try {
+            ++$this->level;
+
+            $this->current   = 0;
+            $this->instance  = $instance;
+            $this->arguments = $arguments;
+
+            $result = $this->proceed();
+        } finally {
+            --$this->level;
+        }
+
+        if ($this->level) {
+            list($this->arguments, $this->instance, $this->current) = array_pop($this->stackFrames);
+        }
+
+        return $result;
+    }
+
+    /**
      * Gets the method being called.
      *
      * @return AnnotatedReflectionMethod the method being called.
