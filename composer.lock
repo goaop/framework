@@ -131,16 +131,16 @@
         },
         {
             "name": "goaop/parser-reflection",
-            "version": "1.0.0",
+            "version": "1.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/goaop/parser-reflection.git",
-                "reference": "8c98194fb658c50fb3557a483970698e76999728"
+                "reference": "872c383e11331f24dffb3e30b48a2d756fe4437a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/goaop/parser-reflection/zipball/8c98194fb658c50fb3557a483970698e76999728",
-                "reference": "8c98194fb658c50fb3557a483970698e76999728",
+                "url": "https://api.github.com/repos/goaop/parser-reflection/zipball/872c383e11331f24dffb3e30b48a2d756fe4437a",
+                "reference": "872c383e11331f24dffb3e30b48a2d756fe4437a",
                 "shasum": ""
             },
             "require": {
@@ -173,7 +173,7 @@
                 }
             ],
             "description": "Provides reflection information, based on raw source",
-            "time": "2016-02-15 18:47:40"
+            "time": "2016-02-20 20:21:21"
         },
         {
             "name": "jakubledl/dissect",
