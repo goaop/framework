@@ -191,7 +191,7 @@ class ClassProxy extends AbstractProxy
      */
     public function override($methodName, $body)
     {
-        $this->methodsCode[$methodName] = $this->getOverriddenMethod($this->class->getMethod($methodName), $body);
+        $this->methodsCode[$methodName] = $this->getOverriddenFunction($this->class->getMethod($methodName), $body);
 
         return $this;
     }
@@ -472,33 +472,6 @@ class ClassProxy extends AbstractProxy
         } else {
             $this->setMethod(ReflectionMethod::IS_PUBLIC, '__construct', $byReference, $this->getConstructorBody(), '');
         }
-    }
-
-    /**
-     * Creates a method code from Reflection
-     *
-     * @param ReflectionMethod $method Reflection for method
-     * @param string $body Body of method
-     *
-     * @return string
-     */
-    protected function getOverriddenMethod(ReflectionMethod $method, $body)
-    {
-        $code = (
-            preg_replace('/ {4}|\t/', '', $method->getDocComment()) . "\n" . // Original Doc-block
-            join(' ', Reflection::getModifierNames($method->getModifiers())) . // List of modifiers
-            ' function ' . // 'function' keyword
-            ($method->returnsReference() ? '&' : '') . // By reference symbol
-            $method->name . // Name of the method
-            '(' . // Start of parameters list
-            join(', ', $this->getParameters($method->getParameters())) . // List of parameters
-            ")\n" . // End of parameters list
-            "{\n" . // Start of method body
-            $this->indent($body) . "\n" . // Method body
-            "}\n" // End of method body
-        );
-
-        return $code;
     }
 
     /**

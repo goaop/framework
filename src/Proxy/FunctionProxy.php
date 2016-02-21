@@ -149,41 +149,6 @@ class FunctionProxy extends AbstractProxy
     }
 
     /**
-     * Creates a function code from Reflection
-     *
-     * @param ReflectionFunction $function Reflection for function
-     * @param string $body Body of function
-     *
-     * @return string
-     */
-    protected function getOverriddenFunction(ReflectionFunction $function, $body)
-    {
-        static $inMemoryCache = [];
-
-        $functionName = $function->getName();
-        if (isset($inMemoryCache[$functionName])) {
-            return $inMemoryCache[$functionName];
-        }
-
-        $code = (
-            preg_replace('/ {4}|\t/', '', $function->getDocComment()) . "\n" . // Original doc-comment
-            'function ' . // 'function' keyword
-            ($function->returnsReference() ? '&' : '') . // By reference symbol
-            $functionName . // Function name
-            '(' . // Start of parameters
-            join(', ', $this->getParameters($function->getParameters())) . // List of parameters
-            ")\n" . // End of parameters
-            "{\n" . // Start of function body
-            $this->indent($body) . "\n" . // Body of function
-            "}\n" // End of function body
-        );
-
-        $inMemoryCache[$functionName] = $code;
-
-        return $code;
-    }
-
-    /**
      * Creates definition for trait method body
      *
      * @param ReflectionFunction $function Method reflection

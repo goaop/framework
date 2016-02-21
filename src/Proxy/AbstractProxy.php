@@ -10,7 +10,9 @@
 
 namespace Go\Proxy;
 
+use Reflection;
 use ReflectionFunctionAbstract;
+use ReflectionMethod;
 use ReflectionParameter;
 
 /**
@@ -190,5 +192,44 @@ abstract class AbstractProxy
         }
 
         return join(', ', $argumentsPart);
+    }
+
+    /**
+     * Creates a function code from Reflection
+     *
+     * @param ReflectionFunctionAbstract $functionLike Reflection for method
+     * @param string $body Body of method
+     *
+     * @return string
+     */
+    protected function getOverriddenFunction(ReflectionFunctionAbstract $functionLike, $body)
+    {
+        $reflectionReturnType = PHP_VERSION_ID >= 50700 ? $functionLike->getReturnType() : '';
+        $modifiersLine        = '';
+        if ($reflectionReturnType) {
+            $nsPrefix             = $reflectionReturnType->isBuiltin() ? '' : '\\';
+            $reflectionReturnType = $nsPrefix . (string)$reflectionReturnType;
+        }
+        if ($functionLike instanceof ReflectionMethod) {
+            $modifiersLine = join(' ', Reflection::getModifierNames($functionLike->getModifiers()));
+        }
+
+        $code = (
+            preg_replace('/ {4}|\t/', '', $functionLike->getDocComment()) . "\n" . // Original Doc-block
+            $modifiersLine . // List of modifiers (for methods)
+            ' function ' . // 'function' keyword
+            ($functionLike->returnsReference() ? '&' : '') . // By reference symbol
+            $functionLike->name . // Name of the function
+            '(' . // Start of parameters list
+            join(', ', $this->getParameters($functionLike->getParameters())) . // List of parameters
+            ")" . // End of parameters list
+            ($reflectionReturnType ? " : $reflectionReturnType" : '') . // Return type, if present
+            "\n" .
+            "{\n" . // Start of method body
+            $this->indent($body) . "\n" . // Method body
+            "}\n" // End of method body
+        );
+
+        return $code;
     }
 }

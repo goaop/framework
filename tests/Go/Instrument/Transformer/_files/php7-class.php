@@ -11,5 +11,13 @@ class TestPhp7Class
     public function arraySth(array $arg) {}
     public function variadicStringSthByRef(string &...$args) {}
     public function exceptionArg(\Exception $exception, Exception $localException) {}
-}
 
+    public function stringRth(string $arg) : string {}
+    public function floatRth(float $arg) : float {}
+    public function boolRth(bool $arg) : bool {}
+    public function intRth(int $arg) : int {}
+    public function callableRth(callable $arg) : callable {}
+    public function arrayRth(array $arg) : array {}
+    public function exceptionRth(\Exception $exception) : \Exception {}
+    public function noRth(LocalException $exception) {}
+}
