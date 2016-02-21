@@ -18,6 +18,7 @@ use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionFunction;
+use ReflectionFunctionAbstract;
 
 /**
  * Function proxy builder that is used to generate a proxy-function from the list of joinpoints
@@ -146,41 +147,6 @@ class FunctionProxy extends AbstractProxy
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->namespace->getName() . "',"
                 . var_export($this->advices, true) . ");";
-    }
-
-    /**
-     * Creates a function code from Reflection
-     *
-     * @param ReflectionFunction $function Reflection for function
-     * @param string $body Body of function
-     *
-     * @return string
-     */
-    protected function getOverriddenFunction(ReflectionFunction $function, $body)
-    {
-        static $inMemoryCache = [];
-
-        $functionName = $function->getName();
-        if (isset($inMemoryCache[$functionName])) {
-            return $inMemoryCache[$functionName];
-        }
-
-        $code = (
-            preg_replace('/ {4}|\t/', '', $function->getDocComment()) . "\n" . // Original doc-comment
-            'function ' . // 'function' keyword
-            ($function->returnsReference() ? '&' : '') . // By reference symbol
-            $functionName . // Function name
-            '(' . // Start of parameters
-            join(', ', $this->getParameters($function->getParameters())) . // List of parameters
-            ")\n" . // End of parameters
-            "{\n" . // Start of function body
-            $this->indent($body) . "\n" . // Body of function
-            "}\n" // End of function body
-        );
-
-        $inMemoryCache[$functionName] = $code;
-
-        return $code;
     }
 
     /**
