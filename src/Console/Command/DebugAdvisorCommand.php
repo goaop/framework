@@ -11,7 +11,6 @@
 namespace Go\Console\Command;
 
 use Go\Aop\Advisor;
-use Go\Aop\Pointcut;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectContainer;
 use Go\Core\AspectLoader;
