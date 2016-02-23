@@ -55,7 +55,7 @@ EOT
 
         $aspectName = $input->getOption('aspect');
         if (!$aspectName) {
-            $io->text('<info>' . get_class($this->aspectKernel). '</info> has following enabled aspects:');
+            $io->text('<info>' . get_class($this->aspectKernel) . '</info> has following enabled aspects:');
             $aspects = $container->getByTag('aspect');
         } else {
             $aspect    = $container->getAspect($aspectName);
@@ -112,7 +112,7 @@ EOT
         $aspectItems     = $aspectLoader->load($aspect);
         $aspectItemsInfo = [];
         foreach ($aspectItems as $itemId => $item) {
-            $itemType   = 'Unknown';
+            $itemType = 'Unknown';
             if ($item instanceof Pointcut) {
                 $itemType = 'Pointcut';
             }
@@ -129,7 +129,7 @@ EOT
      *
      * @param string $comment
      *
-     * @return mixed|string
+     * @return string
      */
     private function getPrettyText($comment)
     {

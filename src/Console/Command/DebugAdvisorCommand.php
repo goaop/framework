@@ -109,12 +109,12 @@ EOT
         $iterator->rewind();
 
         foreach ($iterator as $file) {
-            $reflectionFile       = new ReflectionFile((string)$file);
+            $reflectionFile       = new ReflectionFile((string) $file);
             $reflectionNamespaces = $reflectionFile->getFileNamespaces();
             foreach ($reflectionNamespaces as $reflectionNamespace) {
                 foreach ($reflectionNamespace->getClasses() as $reflectionClass) {
                     $advices = $adviceMatcher->getAdvicesForClass($reflectionClass, array($advisor));
-                    if ($advices) {
+                    if (!empty($advices)) {
                         $this->writeInfoAboutAdvices($io, $reflectionClass, $advices);
                     }
                 }
@@ -125,8 +125,8 @@ EOT
     private function writeInfoAboutAdvices(SymfonyStyle $io, ReflectionClass $reflectionClass, array $advices)
     {
         $className = $reflectionClass->getName();
-        foreach ($advices as $type=>$typedAdvices) {
-            foreach ($typedAdvices as $pointName=>$advice) {
+        foreach ($advices as $type => $typedAdvices) {
+            foreach ($typedAdvices as $pointName => $advice) {
                 $io->writeln("  -> matching <comment>{$type} {$className}->{$pointName}</comment>");
             }
         }
