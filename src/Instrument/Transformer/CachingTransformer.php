@@ -81,7 +81,10 @@ class CachingTransformer extends BaseSourceTransformer
         $cacheState    = $this->cacheManager->queryCacheState($originalUri);
         $cacheModified = $cacheState ? $cacheState['filemtime'] : 0;
 
-        if ($cacheModified < $lastModified || !$this->container->isFresh($cacheModified)) {
+        if ($cacheModified < $lastModified
+            || $cacheState['cacheUri'] !== $cacheUri
+            || !$this->container->isFresh($cacheModified)
+        ) {
             $wasProcessed = $this->processTransformers($metadata);
             if ($wasProcessed) {
                 $parentCacheDir = dirname($cacheUri);

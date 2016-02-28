@@ -56,6 +56,13 @@ abstract class AspectKernel
     protected static $containerClass = GoAspectContainer::class;
 
     /**
+     * Flag to determine if kernel was already initialized or not
+     *
+     * @var bool
+     */
+    protected $wasInitialized = false;
+
+    /**
      * Aspect container instance
      *
      * @var null|AspectContainer
@@ -88,6 +95,10 @@ abstract class AspectKernel
      */
     public function init(array $options = [])
     {
+        if ($this->wasInitialized) {
+            return;
+        }
+
         $this->options = $this->normalizeOptions($options);
         define('AOP_ROOT_DIR', $this->options['appDir']);
         define('AOP_CACHE_DIR', $this->options['cacheDir']);
@@ -113,6 +124,8 @@ abstract class AspectKernel
 
         // Register all AOP configuration in the container
         $this->configureAop($container);
+
+        $this->wasInitialized = true;
     }
 
     /**
