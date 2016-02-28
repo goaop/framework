@@ -169,7 +169,7 @@ class CachePathManager
      */
     public function flushCacheState()
     {
-        if (!empty($this->newCacheState)) {
+        if (!empty($this->newCacheState) && is_writable($this->cacheDir)) {
             $fullCacheMap = $this->newCacheState + $this->cacheState;
             $cachePath    = substr(var_export($this->cacheDir, true), 1, -1);
             $rootPath     = substr(var_export($this->appDir, true), 1, -1);
