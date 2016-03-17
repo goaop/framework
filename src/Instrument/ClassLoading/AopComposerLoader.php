@@ -72,10 +72,18 @@ class AopComposerLoader
         $prefixes     = $original->getPrefixes();
         $excludePaths = $options['excludePaths'];
 
-        // Let's exclude core dependencies from that list
-        $excludePaths[] = $prefixes['Dissect'][0];
-        $excludePaths[] = $prefixes['TokenReflection'][0];
-        $excludePaths[] = substr($prefixes['Doctrine\\Common\\Annotations\\'][0], 0, -16);
+        if (!empty($prefixes)) {
+            // Let's exclude core dependencies from that list
+            if (isset($prefixes['Dissect'])) {
+                $excludePaths[] = $prefixes['Dissect'][0];
+            }
+            if (isset($prefixes['TokenReflection'])) {
+                $excludePaths[] = $prefixes['TokenReflection'][0];
+            }
+            if (isset($prefixes['Doctrine\\Common\\Annotations\\'])) {
+                $excludePaths[] = substr($prefixes['Doctrine\\Common\\Annotations\\'][0], 0, -16);
+            }
+        }
 
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
         $this->fileEnumerator = $fileEnumerator;
