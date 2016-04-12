@@ -84,7 +84,7 @@ class CachingTransformer extends BaseSourceTransformer
             if ($wasProcessed) {
                 $parentCacheDir = dirname($cacheUri);
                 if (!is_dir($parentCacheDir)) {
-                    mkdir($parentCacheDir, 0770, true);
+                    mkdir($parentCacheDir, $this->cacheFileMode, true);
                 }
                 file_put_contents($cacheUri, $metadata->source);
                 if (!$cacheState && $this->cacheFileMode) {
