@@ -47,7 +47,7 @@ class CachingTransformer extends BaseSourceTransformer
     {
         parent::__construct($kernel);
         $this->cacheManager  = $cacheManager;
-        $this->cacheFileMode = (int) $this->options['cacheFileMode'];
+        $this->cacheFileMode = $this->options['cacheFileMode'];
         $this->transformers  = $transformers;
     }
 
@@ -84,12 +84,11 @@ class CachingTransformer extends BaseSourceTransformer
             if ($wasProcessed) {
                 $parentCacheDir = dirname($cacheUri);
                 if (!is_dir($parentCacheDir)) {
-                    mkdir($parentCacheDir, 0770, true);
+                    mkdir($parentCacheDir, $this->cacheFileMode, true);
                 }
-                file_put_contents($cacheUri, $metadata->source);
-                if (!$cacheState && $this->cacheFileMode) {
-                    chmod($cacheUri, $this->cacheFileMode);
-                }
+                file_put_contents($cacheUri, $metadata->source, LOCK_EX);
+                // For cache files we don't want executable bits by default
+                chmod($cacheUri, $this->cacheFileMode & (~0111));
             }
             $this->cacheManager->setCacheState($originalUri, array(
                 'filemtime' => isset($_SERVER['REQUEST_TIME']) ? $_SERVER['REQUEST_TIME'] : time(),

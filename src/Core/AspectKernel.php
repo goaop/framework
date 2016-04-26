@@ -179,7 +179,7 @@ abstract class AspectKernel
             'debug'                  => false,
             'appDir'                 => __DIR__ . '/../../../../../',
             'cacheDir'               => null,
-            'cacheFileMode'          => null,
+            'cacheFileMode'          => 0770 & ~umask(), // Respect user umask() policy
             'features'               => 0,
 
             'includePaths'           => [],
@@ -206,8 +206,9 @@ abstract class AspectKernel
 
         $options['appDir']   = PathResolver::realpath($options['appDir']);
         $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
-        $options['includePaths'] = PathResolver::realpath($options['includePaths']);
-        $options['excludePaths'] = PathResolver::realpath($options['excludePaths']);
+        $options['cacheFileMode'] = (int) $options['cacheFileMode'];
+        $options['includePaths']  = PathResolver::realpath($options['includePaths']);
+        $options['excludePaths']  = PathResolver::realpath($options['excludePaths']);
 
         return $options;
     }

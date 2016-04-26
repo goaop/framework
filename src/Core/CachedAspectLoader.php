@@ -31,6 +31,13 @@ class CachedAspectLoader extends AspectLoader
     protected $cacheDir;
 
     /**
+     * File mode for the cache files
+     *
+     * @var integer
+     */
+    protected $cacheFileMode;
+
+    /**
      * Identifier of original loader
      *
      * @var string
@@ -46,9 +53,10 @@ class CachedAspectLoader extends AspectLoader
      */
     public function __construct(AspectContainer $container, $loaderId, array $options = [])
     {
-        $this->cacheDir  = isset($options['cacheDir']) ? $options['cacheDir'] : null;
-        $this->loaderId  = $loaderId;
-        $this->container = $container;
+        $this->cacheDir      = isset($options['cacheDir']) ? $options['cacheDir'] : null;
+        $this->cacheFileMode = $options['cacheFileMode'];
+        $this->loaderId      = $loaderId;
+        $this->container     = $container;
     }
 
     /**
@@ -115,10 +123,13 @@ class CachedAspectLoader extends AspectLoader
      */
     protected function saveToCache($items, $fileName)
     {
-        $content = serialize($items);
-        if (!is_dir(dirname($fileName))) {
-            mkdir(dirname($fileName));
+        $content       = serialize($items);
+        $directoryName = dirname($fileName);
+        if (!is_dir($directoryName)) {
+            mkdir($directoryName, $this->cacheFileMode, true);
         }
-        file_put_contents($fileName, $content);
+        file_put_contents($fileName, $content, LOCK_EX);
+        // For cache files we don't want executable bits by default
+        chmod($fileName, $this->cacheFileMode & (~0111));
     }
 }

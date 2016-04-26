@@ -224,10 +224,12 @@ class WeavingTransformer extends BaseSourceTransformer
             if (!file_exists($functionFileName) || !$this->container->isFresh(filemtime($functionFileName))) {
                 $dirname = dirname($functionFileName);
                 if (!file_exists($dirname)) {
-                    mkdir($dirname, 0770, true);
+                    mkdir($dirname, $this->options['cacheFileMode'], true);
                 }
                 $source = new FunctionProxy($namespace, $functionAdvices);
-                file_put_contents($functionFileName, $source);
+                file_put_contents($functionFileName, $source, LOCK_EX);
+                // For cache files we don't want executable bits by default
+                chmod($functionFileName, $this->options['cacheFileMode'] & (~0111));
             }
             $content = 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
             $metadata->source .= $content;
@@ -261,7 +263,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $proxyFileName = $cacheDir . $fileName;
         $dirname       = dirname($proxyFileName);
         if (!file_exists($dirname)) {
-            mkdir($dirname, 0770, true);
+            mkdir($dirname, $this->options['cacheFileMode'], true);
         }
 
         $body      = '<?php' . PHP_EOL;
@@ -276,7 +278,9 @@ class WeavingTransformer extends BaseSourceTransformer
         }
 
         $body .= $child;
-        file_put_contents($proxyFileName, $body);
+        file_put_contents($proxyFileName, $body, LOCK_EX);
+        // For cache files we don't want executable bits by default
+        chmod($proxyFileName, $this->options['cacheFileMode'] & (~0111));
 
         return 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
     }
