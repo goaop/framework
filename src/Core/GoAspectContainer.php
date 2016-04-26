@@ -91,7 +91,8 @@ class GoAspectContainer extends Container implements AspectContainer
                 $reader = new FileCacheReader(
                     $reader,
                     $options['cacheDir'] . DIRECTORY_SEPARATOR . '_annotations' . DIRECTORY_SEPARATOR,
-                    $options['debug']
+                    $options['debug'],
+                    0777 & (~$options['cacheFileMode'])
                 );
             }
 

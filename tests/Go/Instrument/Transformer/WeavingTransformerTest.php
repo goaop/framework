@@ -52,10 +52,11 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $this->adviceMatcher = $this->getAdviceMatcherMock();
         $this->kernel        = $this->getKernelMock(
             array(
-                'appDir'       => dirname(__DIR__),
-                'cacheDir'     => null,
-                'includePaths' => [],
-                'excludePaths' => []
+                'appDir'        => dirname(__DIR__),
+                'cacheDir'      => null,
+                'cacheFileMode' => 0770,
+                'includePaths'  => [],
+                'excludePaths'  => []
             ),
             $container
         );

@@ -39,6 +39,13 @@ class CachePathManager
     protected $cacheDir;
 
     /**
+     * File mode
+     *
+     * @var integer
+     */
+    protected $fileMode;
+
+    /**
      * @var string|null
      */
     protected $appDir;
@@ -61,8 +68,9 @@ class CachePathManager
     {
         $this->kernel   = $kernel;
         $this->options  = $kernel->getOptions();
-        $this->cacheDir = $this->options['cacheDir'];
         $this->appDir   = $this->options['appDir'];
+        $this->cacheDir = $this->options['cacheDir'];
+        $this->fileMode = $this->options['cacheFileMode'];
 
         if ($this->cacheDir) {
             if (!is_dir($this->cacheDir)) {
@@ -72,7 +80,7 @@ class CachePathManager
                         "Can not create a directory {$this->cacheDir} for the cache.
                         Parent directory {$cacheRootDir} is not writable or not exist.");
                 }
-                mkdir($this->cacheDir, 0770);
+                mkdir($this->cacheDir, $this->fileMode, true);
             }
             if (!$this->kernel->hasFeature(Features::PREBUILT_CACHE) && !is_writable($this->cacheDir)) {
                 throw new \InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
@@ -178,9 +186,13 @@ class CachePathManager
                 '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
                 '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
             ));
-            file_put_contents($this->cacheDir . self::CACHE_FILE_NAME, $cacheData);
+            $fullCacheFileName = $this->cacheDir . self::CACHE_FILE_NAME;
+            file_put_contents($fullCacheFileName, $cacheData, LOCK_EX);
+            // For cache files we don't want executable bits by default
+            chmod($fullCacheFileName, $this->fileMode & (~0111));
+
             if (function_exists('opcache_invalidate')) {
-                opcache_invalidate($this->cacheDir . self::CACHE_FILE_NAME, true);
+                opcache_invalidate($fullCacheFileName, true);
             }
             $this->cacheState    = $this->newCacheState + $this->cacheState;
             $this->newCacheState = [];

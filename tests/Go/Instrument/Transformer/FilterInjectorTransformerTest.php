@@ -28,10 +28,11 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         if (!self::$transformer) {
             $kernelMock = $this->getKernelMock(
                 array(
-                    'cacheDir' => null,
-                    'appDir'   => '',
-                    'debug'    => false,
-                    'features' => 0
+                    'cacheDir'      => null,
+                    'cacheFileMode' => 0770,
+                    'appDir'        => '',
+                    'debug'         => false,
+                    'features'      => 0
                 ),
                 $this->getMock(GoAspectContainer::class)
             );
