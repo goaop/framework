@@ -40,6 +40,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             array(
                 'appDir'       => dirname(__DIR__),
                 'cacheDir'     => null,
+                'cacheFileMode' => 0777,
                 'includePaths' => [],
                 'excludePaths' => []
             ),

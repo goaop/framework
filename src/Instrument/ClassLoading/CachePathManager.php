@@ -39,6 +39,11 @@ class CachePathManager
     protected $cacheDir;
 
     /**
+     * @var int
+     */
+    protected $cacheFileMode;
+
+    /**
      * @var string|null
      */
     protected $appDir;
@@ -59,10 +64,11 @@ class CachePathManager
 
     public function __construct(AspectKernel $kernel)
     {
-        $this->kernel   = $kernel;
-        $this->options  = $kernel->getOptions();
-        $this->cacheDir = $this->options['cacheDir'];
-        $this->appDir   = $this->options['appDir'];
+        $this->kernel        = $kernel;
+        $this->options       = $kernel->getOptions();
+        $this->appDir        = $this->options['appDir'];
+        $this->cacheDir      = $this->options['cacheDir'];
+        $this->cacheFileMode = $this->options['cacheFileMode'];
 
         if ($this->cacheDir) {
             if (!is_dir($this->cacheDir)) {
@@ -72,7 +78,7 @@ class CachePathManager
                         "Can not create a directory {$this->cacheDir} for the cache.
                         Parent directory {$cacheRootDir} is not writable or not exist.");
                 }
-                mkdir($this->cacheDir, 0770);
+                mkdir($this->cacheDir, $this->cacheFileMode);
             }
             if (!$this->kernel->hasFeature(Features::PREBUILT_CACHE) && !is_writable($this->cacheDir)) {
                 throw new \InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
@@ -179,6 +185,7 @@ class CachePathManager
                 '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
             ));
             file_put_contents($this->cacheDir . self::CACHE_FILE_NAME, $cacheData);
+            chmod($this->cacheDir . self::CACHE_FILE_NAME, $this->cacheFileMode);
             if (function_exists('opcache_invalidate')) {
                 opcache_invalidate($this->cacheDir . self::CACHE_FILE_NAME, true);
             }

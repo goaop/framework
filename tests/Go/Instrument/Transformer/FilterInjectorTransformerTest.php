@@ -29,6 +29,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
             $kernelMock = $this->getKernelMock(
                 array(
                     'cacheDir' => null,
+                    'cacheFileMode' => 0777,
                     'appDir'   => '',
                     'debug'    => false,
                     'features' => 0

@@ -31,6 +31,11 @@ class CachedAspectLoader extends AspectLoader
     protected $cacheDir;
 
     /**
+     * @var int
+     */
+    protected $cacheFileMode;
+
+    /**
      * Identifier of original loader
      *
      * @var string
@@ -47,6 +52,7 @@ class CachedAspectLoader extends AspectLoader
     public function __construct(AspectContainer $container, $loaderId, array $options = [])
     {
         $this->cacheDir  = isset($options['cacheDir']) ? $options['cacheDir'] : null;
+        $this->cacheFileMode  = isset($options['cacheFileMode']) ? $options['cacheFileMode'] : 0777;
         $this->loaderId  = $loaderId;
         $this->container = $container;
     }
@@ -117,8 +123,9 @@ class CachedAspectLoader extends AspectLoader
     {
         $content = serialize($items);
         if (!is_dir(dirname($fileName))) {
-            mkdir(dirname($fileName));
+            mkdir(dirname($fileName), $this->cacheFileMode);
         }
         file_put_contents($fileName, $content);
+        chmod($fileName, $this->cacheFileMode);
     }
 }
