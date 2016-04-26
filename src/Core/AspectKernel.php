@@ -77,7 +77,7 @@ abstract class AspectKernel
     /**
      * Returns the single instance of kernel
      *
-     * @return AspectKernel
+     * @return static
      */
     public static function getInstance()
     {
