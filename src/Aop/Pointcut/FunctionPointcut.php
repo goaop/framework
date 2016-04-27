@@ -61,7 +61,6 @@ class FunctionPointcut implements Pointcut
      */
     public function matches($function)
     {
-        /** @var $function ReflectionFunction */
         if (!$function instanceof ReflectionFunction) {
             return false;
         }

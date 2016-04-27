@@ -92,13 +92,11 @@ class WeavingTransformer extends BaseSourceTransformer
         }
         $advisors = $this->container->getByTag('advisor');
 
-        /** @var $namespaces ReflectionFileNamespace[] */
         $namespaces = $parsedSource->getFileNamespaces();
         $lineOffset = 0;
 
         foreach ($namespaces as $namespace) {
 
-            /** @var $classes ReflectionClass[] */
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
 

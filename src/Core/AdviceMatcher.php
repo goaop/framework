@@ -166,7 +166,6 @@ class AdviceMatcher
 
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
-                /** @var $method ReflectionMethod| */
                 if ($filter->matches($method)) {
                     $prefix = $method->isStatic() ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
                     $classAdvices[$prefix][$method->name][$advisorId] = $advisor->getAdvice();
@@ -178,7 +177,6 @@ class AdviceMatcher
         if ($filterKind & Aop\PointFilter::KIND_PROPERTY) {
             $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED;
             foreach ($class->getProperties($mask) as $property) {
-                /** @var $property ReflectionProperty */
                 if ($filter->matches($property) && !$property->isStatic()) {
                     $classAdvices[AspectContainer::PROPERTY_PREFIX][$property->name][$advisorId] = $advisor->getAdvice();
                 }

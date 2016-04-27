@@ -120,7 +120,6 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
         try {
             $pointcut = $this->pointcutParser->parse($stream);
         } catch (UnexpectedTokenException $e) {
-            /** @var \Dissect\Lexer\Token $token */
             $token   = $e->getToken();
             $message = "Unexpected token %s in the `%s` before %s, defined in %s:%d." . PHP_EOL;
             $message .= "Expected one of: %s";

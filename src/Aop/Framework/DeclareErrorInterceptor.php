@@ -113,7 +113,6 @@ class DeclareErrorInterceptor extends BaseInterceptor
      */
     public function invoke(Joinpoint $joinpoint)
     {
-        /** @var ReflectionMethod|ReflectionProperty $reflection */
         $reflection    = $joinpoint->getStaticPart();
         $reflectorName = 'unknown';
         if ($reflection && method_exists($reflection, 'getName')) {

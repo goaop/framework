@@ -41,7 +41,6 @@ class InheritanceClassFilter implements PointFilter
      */
     public function matches($class)
     {
-        /** @var $point ReflectionClass */
         if (!$class instanceof ReflectionClass) {
             return false;
         }
