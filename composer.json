@@ -22,7 +22,7 @@
         "symfony/console": "Enables the usage of the command-line tool."
     },
 
-    "bin": ["bin/warmup"],
+    "bin": ["bin/aspect"],
     "authors": [
         {
             "name": "Lisachenko Alexander",
