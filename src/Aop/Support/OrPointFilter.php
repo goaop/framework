@@ -56,12 +56,15 @@ class OrPointFilter implements PointFilter
      * Performs matching of point of code
      *
      * @param mixed $point Specific part of code, can be any Reflection class
+     * @param null|mixed $context Related context, can be class or namespace
+     * @param null|string|object $instance Invocation instance or string for static calls
+     * @param null|array $arguments Dynamic arguments for method
      *
      * @return bool
      */
-    public function matches($point)
+    public function matches($point, $context = null, $instance = null, array $arguments = null)
     {
-        return $this->first->matches($point) || $this->second->matches($point);
+        return $this->first->matches($point, $context) || $this->second->matches($point, $context);
     }
 
     /**

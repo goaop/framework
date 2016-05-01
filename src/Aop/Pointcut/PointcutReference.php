@@ -55,14 +55,15 @@ class PointcutReference implements Pointcut
      * Performs matching of point of code
      *
      * @param mixed $point Specific part of code, can be any Reflection class
-     * @param object|string|null $instance [Optional] Instance for dynamic matching
-     * @param array $arguments [Optional] Extra arguments for dynamic matching
+     * @param null|mixed $context Related context, can be class or namespace
+     * @param null|string|object $instance Invocation instance or string for static calls
+     * @param null|array $arguments Dynamic arguments for method
      *
      * @return bool
      */
-    public function matches($point, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null)
     {
-        return $this->getPointcut()->matches($point, $instance, $arguments);
+        return $this->getPointcut()->matches($point, $context, $instance, $arguments);
     }
 
     /**

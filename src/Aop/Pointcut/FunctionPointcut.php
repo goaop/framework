@@ -56,10 +56,13 @@ class FunctionPointcut implements Pointcut
      * Performs matching of point of code
      *
      * @param mixed $function Specific part of code, can be any Reflection class
+     * @param mixed $context Related context, can be class or namespace
+     * @param null|string|object $instance Invocation instance or string for static calls
+     * @param null|array $arguments Dynamic arguments for method
      *
      * @return bool
      */
-    public function matches($function)
+    public function matches($function, $context = null, $instance = null, array $arguments = null)
     {
         if (!$function instanceof ReflectionFunction) {
             return false;

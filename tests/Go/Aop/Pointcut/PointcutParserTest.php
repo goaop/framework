@@ -107,6 +107,9 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
             // This will match static initialization pointcut
             array('staticinitialization(Some\Specific\Class\**)'),
 
+            // This will match all methods, but not inherited
+            array('execution(public **->*(*)) && !matchInherited()'),
+
             // This will match dynamic initialization pointcut
             array('initialization(Some\Specific\Class\**)'),
         );

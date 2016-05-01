@@ -29,6 +29,13 @@ class SimpleNamespaceFilter implements PointFilter
     protected $nsName = '';
 
     /**
+     * Pattern for regular expression matching
+     *
+     * @var string
+     */
+    protected $regexp;
+
+    /**
      * Namespace name matcher constructor
      *
      * @param string $namespaceName Name of the namespace to match or glob pattern
@@ -49,7 +56,7 @@ class SimpleNamespaceFilter implements PointFilter
      * {@inheritdoc}
      * @param ReflectionFileNamespace|string $ns
      */
-    public function matches($ns)
+    public function matches($ns, $context = null, $instance = null, array $arguments = null)
     {
         $isNamespaceIsObject = ($ns === (object) $ns);
 

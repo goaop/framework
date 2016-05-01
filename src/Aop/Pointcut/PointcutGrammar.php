@@ -77,6 +77,7 @@ class PointcutGrammar extends Grammar
             ->is('staticInitializationPointcut')
             ->is('cflowbelowPointcut')
             ->is('dynamicExecutionPointcut')
+            ->is('matchInheritedPointcut')
             ->is('pointcutReference');
 
         $this('accessPointcut')
@@ -151,6 +152,12 @@ class PointcutGrammar extends Grammar
             ->is('cflowbelow', '(', 'executionPointcut', ')')
             ->call(function($_0, $_1, $pointcut) {
                 return new CFlowBelowMethodPointcut($pointcut);
+            });
+
+        $this('matchInheritedPointcut')
+            ->is('matchInherited', '(', ')')
+            ->call(function() {
+                return new MatchInheritedPointcut();
             });
 
         $this('dynamicExecutionPointcut')

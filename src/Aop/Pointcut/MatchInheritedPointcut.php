@@ -2,7 +2,7 @@
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2016, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -11,30 +11,14 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
+use Go\Aop\PointFilter;
 
 /**
- * Canonical Pointcut instance that always matches.
+ * Pointcut that matches all inherited items, this is useful to filter inherited memebers via !matchInherited()
  */
-class TruePointcut implements Pointcut
+class MatchInheritedPointcut implements Pointcut
 {
     use PointcutClassFilterTrait;
-
-    /**
-     * Filter kind
-     *
-     * @var int
-     */
-    protected $filterKind = 0;
-
-    /**
-     * Default constructor can be used to specify concrete filter kind
-     *
-     * @param int $filterKind Kind of filter, e.g. KIND_METHOD
-     */
-    public function __construct($filterKind = self::KIND_ALL)
-    {
-        $this->filterKind = $filterKind;
-    }
 
     /**
      * Performs matching of point of code
@@ -48,7 +32,17 @@ class TruePointcut implements Pointcut
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null)
     {
-        return true;
+        if (!$context instanceof \ReflectionClass) {
+            return false;
+        };
+
+        if (!($point instanceof \ReflectionMethod) && !($point instanceof \ReflectionProperty)) {
+            return false;
+        }
+
+        $declaringClassName = $point->getDeclaringClass()->name;
+
+        return $context->isSubclassOf($declaringClassName);
     }
 
     /**
@@ -58,6 +52,6 @@ class TruePointcut implements Pointcut
      */
     public function getKind()
     {
-        return $this->filterKind;
+        return PointFilter::KIND_METHOD | PointFilter::KIND_PROPERTY;
     }
 }
