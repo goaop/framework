@@ -122,7 +122,7 @@ abstract class AbstractProxy
         $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();
         if ($isDefaultValueAvailable) {
             $defaultValue = var_export($parameter->getDefaultValue(), true);
-        } elseif ($parameter->isOptional()) {
+        } elseif ($parameter->isOptional() && !$parameter->isVariadic()) {
             $defaultValue = 'null';
         }
         $code = (

@@ -25,7 +25,7 @@ class FunctionInterceptorAspect implements Aspect
      *
      * @param FunctionInvocation $invocation
      *
-     * @Around("execution(Demo\Example\array_*(*)) && !execution(Demo\Example\array_multisort(*))")
+     * @Around("execution(Demo\Example\array_*(*))")
      *
      * @return mixed
      */
