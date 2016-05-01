@@ -57,15 +57,16 @@ class AndPointcut implements Pointcut
      * Performs matching of point of code
      *
      * @param mixed $point Specific part of code, can be any Reflection class
-     * @param object|string|null $instance [Optional] Instance for dynamic matching
-     * @param array $arguments [Optional] Extra arguments for dynamic matching
+     * @param null|mixed $context Related context, can be class or namespace
+     * @param null|string|object $instance Invocation instance or string for static calls
+     * @param null|array $arguments Dynamic arguments for method
      *
      * @return bool
      */
-    public function matches($point, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null)
     {
-        return $this->isMatchesPointcut($point, $this->first, $instance, $arguments)
-            && $this->isMatchesPointcut($point, $this->second, $instance, $arguments);
+        return $this->matchPart($this->first, $point, $context, $instance, $arguments)
+            && $this->matchPart($this->second, $point, $context, $instance, $arguments);
     }
 
     /**
@@ -81,20 +82,17 @@ class AndPointcut implements Pointcut
     /**
      * Checks if point filter matches the point
      *
-     * @param \ReflectionMethod|\ReflectionProperty $point
      * @param Pointcut $pointcut Pointcut part
+     * @param \ReflectionMethod|\ReflectionProperty $point
+     * @param mixed $context Related context, can be class or namespace
      * @param object|string|null $instance [Optional] Instance for dynamic matching
      * @param array $arguments [Optional] Extra arguments for dynamic matching
      *
      * @return bool
      */
-    protected function isMatchesPointcut($point, Pointcut $pointcut, $instance = null, array $arguments = null)
+    protected function matchPart(Pointcut $pointcut, $point, $context = null, $instance = null, array $arguments = null)
     {
-        $preFilter = method_exists($point, 'getDeclaringClass')
-            ? $point->getDeclaringClass()
-            : $point->getNamespaceName();
-
-        return $pointcut->matches($point, $instance, $arguments)
-            && $pointcut->getClassFilter()->matches($preFilter);
+        return $pointcut->matches($point, $context, $instance, $arguments)
+            && $pointcut->getClassFilter()->matches($context);
     }
 }

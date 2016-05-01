@@ -10,7 +10,6 @@
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\DynamicPointFilter;
 use ReflectionClass;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
@@ -19,7 +18,7 @@ use ReflectionMethod;
 /**
  * Flow pointcut is a dynamic checker that verifies stack trace to understand is it matches or not
  */
-class CFlowBelowMethodPointcut implements DynamicPointFilter, Pointcut
+class CFlowBelowMethodPointcut implements PointFilter, Pointcut
 {
     use PointcutClassFilterTrait;
 
@@ -56,12 +55,13 @@ class CFlowBelowMethodPointcut implements DynamicPointFilter, Pointcut
      * Performs matching of point of code
      *
      * @param mixed $point Specific part of code, can be any Reflection class
+     * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
      *
      * @return bool
      */
-    public function matches($point, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null)
     {
         // With single parameter (statically) always matches
         if (!$instance) {

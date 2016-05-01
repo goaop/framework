@@ -10,7 +10,7 @@
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\DynamicPointFilter;
+use Go\Aop\PointFilter;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Invocation;
 use Go\Aop\Intercept\Joinpoint;
@@ -27,9 +27,9 @@ class DynamicInvocationMatcherInterceptor implements Interceptor, Serializable
     /**
      * Instance of pointcut to dynamically match joinpoints with args
      *
-     * @var DynamicPointFilter
+     * @var PointFilter
      */
-    protected $dynamicPointFilter;
+    protected $pointFilter;
 
     /**
      * Overloaded property for storing instance of Interceptor
@@ -41,13 +41,13 @@ class DynamicInvocationMatcherInterceptor implements Interceptor, Serializable
     /**
      * Dynamic matcher constructor
      *
-     * @param DynamicPointFilter $pointFilter Instance of dynamic matcher
+     * @param PointFilter $pointFilter Instance of dynamic matcher
      * @param Interceptor $interceptor Instance of interceptor to invoke
      */
-    public function __construct(DynamicPointFilter $pointFilter, Interceptor $interceptor)
+    public function __construct(PointFilter $pointFilter, Interceptor $interceptor)
     {
-        $this->dynamicPointFilter = $pointFilter;
-        $this->interceptor        = $interceptor;
+        $this->pointFilter = $pointFilter;
+        $this->interceptor = $interceptor;
     }
 
     /**
@@ -57,7 +57,7 @@ class DynamicInvocationMatcherInterceptor implements Interceptor, Serializable
      */
     public function serialize()
     {
-        return serialize([$this->dynamicPointFilter, $this->interceptor]);
+        return serialize([$this->pointFilter, $this->interceptor]);
     }
 
     /**
@@ -68,7 +68,7 @@ class DynamicInvocationMatcherInterceptor implements Interceptor, Serializable
      */
     public function unserialize($serialized)
     {
-        list($this->dynamicPointFilter, $this->interceptor) = unserialize($serialized);
+        list($this->pointFilter, $this->interceptor) = unserialize($serialized);
     }
 
     /**
@@ -81,7 +81,10 @@ class DynamicInvocationMatcherInterceptor implements Interceptor, Serializable
     final public function invoke(Joinpoint $joinpoint)
     {
         if ($joinpoint instanceof Invocation) {
-            if ($this->dynamicPointFilter->matches($joinpoint->getStaticPart(), $joinpoint->getThis(), $joinpoint->getArguments())) {
+            $point    = $joinpoint->getStaticPart();
+            $instance = $joinpoint->getThis();
+            $context  = new \ReflectionClass($instance);
+            if ($this->pointFilter->matches($point, $context, $instance, $joinpoint->getArguments())) {
                 return $this->interceptor->invoke($joinpoint);
             }
         }

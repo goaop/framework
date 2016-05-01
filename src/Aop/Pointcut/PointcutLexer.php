@@ -31,6 +31,7 @@ class PointcutLexer extends SimpleLexer
         $this->token('cflowbelow');
         $this->token('initialization');
         $this->token('staticinitialization');
+        $this->token('matchInherited');
 
         // Parenthesis
         $this->token('(');
