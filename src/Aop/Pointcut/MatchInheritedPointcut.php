@@ -42,7 +42,7 @@ class MatchInheritedPointcut implements Pointcut
 
         $declaringClassName = $point->getDeclaringClass()->name;
 
-        return $context->isSubclassOf($declaringClassName);
+        return $context->name !== $declaringClassName && $context->isSubclassOf($declaringClassName);
     }
 
     /**
