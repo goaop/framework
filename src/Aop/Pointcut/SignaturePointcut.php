@@ -28,6 +28,13 @@ class SignaturePointcut implements Pointcut
     protected $name = '';
 
     /**
+     * Regular expression for pattern matching
+     *
+     * @var string
+     */
+    protected $regexp;
+
+    /**
      * Modifier filter for element
      *
      * @var PointFilter
@@ -62,11 +69,18 @@ class SignaturePointcut implements Pointcut
     }
 
     /**
-     * {@inheritdoc}
+     * Performs matching of point of code
+     *
+     * @param mixed $point Specific part of code, can be any Reflection class
+     * @param null|mixed $context Related context, can be class or namespace
+     * @param null|string|object $instance Invocation instance or string for static calls
+     * @param null|array $arguments Dynamic arguments for method
+     *
+     * @return bool
      */
-    public function matches($point)
+    public function matches($point, $context = null, $instance = null, array $arguments = null)
     {
-        if (!$this->modifierFilter->matches($point)) {
+        if (!$this->modifierFilter->matches($point, $context)) {
             return false;
         }
 

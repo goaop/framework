@@ -104,7 +104,7 @@ class AnnotationPointcut implements Pointcut
      * @param ParsedReflectionClass|ParsedReflectionMethod|ParsedReflectionProperty $point
      * {@inheritdoc}
      */
-    public function matches($point)
+    public function matches($point, $context = null, $instance = null, array $arguments = null)
     {
         $expectedClass = $this->expectedClass;
         if (!$point instanceof $expectedClass) {

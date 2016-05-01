@@ -26,7 +26,7 @@ trait PointcutClassFilterTrait
      *
      * @var null|PointFilter
      */
-    private $classFilter = null;
+    protected $classFilter = null;
 
     /**
      * Set the ClassFilter to use for this pointcut.

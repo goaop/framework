@@ -38,9 +38,16 @@ class InheritanceClassFilter implements PointFilter
     }
 
     /**
-     * {@inheritdoc}
+     * Performs matching of point of code
+     *
+     * @param mixed $class Specific part of code, can be any Reflection class
+     * @param null|mixed $context Related context, can be class or namespace
+     * @param null|string|object $instance Invocation instance or string for static calls
+     * @param null|array $arguments Dynamic arguments for method
+     *
+     * @return bool
      */
-    public function matches($class)
+    public function matches($class, $context = null, $instance = null, array $arguments = null)
     {
         /** @var $point ReflectionClass|ParsedReflectionClass */
         if (!$class instanceof ReflectionClass && !$class instanceof ParsedReflectionClass) {
