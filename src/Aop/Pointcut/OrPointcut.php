@@ -11,6 +11,7 @@
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
+use Go\Aop\PointFilter;
 use Go\Aop\Support\OrPointFilter;
 
 /**
@@ -48,5 +49,23 @@ class OrPointcut extends AndPointcut
     {
         return $this->matchPart($this->first, $point, $context, $instance, $arguments)
             || $this->matchPart($this->second, $point, $context, $instance, $arguments);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function matchPart(Pointcut $pointcut, $point, $context = null, $instance = null, array $arguments = null)
+    {
+        $pointcutKind = $pointcut->getKind();
+        // We need to recheck filter kind one more time, because of OR syntax
+        switch (true) {
+            case ($point instanceof \ReflectionMethod && ($pointcutKind & PointFilter::KIND_METHOD)):
+            case ($point instanceof \ReflectionProperty && ($pointcutKind & PointFilter::KIND_PROPERTY)):
+            case ($point instanceof \ReflectionClass && ($pointcutKind & PointFilter::KIND_CLASS)):
+                return parent::matchPart($pointcut, $point, $context, $instance, $arguments);
+
+            default:
+                return false;
+        }
     }
 }
