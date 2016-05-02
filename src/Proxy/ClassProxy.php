@@ -539,7 +539,7 @@ SETTER;
         }
         $assocProperties = $this->indent(join(',' . PHP_EOL, $assocProperties));
         $listProperties  = $this->indent(join(',' . PHP_EOL, $listProperties));
-        if ($constructor) {
+        if (isset($this->methodsCode['__construct'])) {
             $parentCall = $this->getJoinpointInvocationBody($constructor);
         } elseif ($isCallParent) {
             $parentCall = '\call_user_func_array(["parent", __FUNCTION__], \func_get_args());';
