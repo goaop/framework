@@ -35,7 +35,7 @@ trait PropertyInterceptionTrait
             $fieldAccess = self::$__joinPoints["prop:$name"];
             $fieldAccess->ensureScopeRule();
 
-            $value = &$fieldAccess->__invoke($this,FieldAccess::READ, $this->__properties[$name]);
+            $value = &$fieldAccess->__invoke($this, FieldAccess::READ, $this->__properties[$name]);
         } elseif (\method_exists(\get_parent_class(), __FUNCTION__)) {
             $value = parent::__get($name);
         } else {
