@@ -19,6 +19,8 @@ class PropertyDemo
 
     protected $protectedProperty = 456;
 
+    protected $indirectModificationCheck = [4, 5, 6];
+
     public function showProtected()
     {
         echo $this->protectedProperty, PHP_EOL;
@@ -27,5 +29,13 @@ class PropertyDemo
     public function setProtected($newValue)
     {
         $this->protectedProperty = $newValue;
+    }
+
+    public function __construct()
+    {
+        array_push($this->indirectModificationCheck, 7, 8, 9);
+        if (count($this->indirectModificationCheck) !== 6) {
+            throw new \RuntimeException("Indirect modification doesn't work!");
+        }
     }
 }

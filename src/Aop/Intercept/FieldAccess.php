@@ -42,13 +42,22 @@ interface FieldAccess extends Joinpoint
     public function getField();
 
     /**
+     * Gets the current value of property by reference
+     *
+     * @api
+     *
+     * @return mixed
+     */
+    public function &getValue();
+
+    /**
      * Gets the value that must be set to the field, applicable only for WRITE access type
      *
      * @api
      *
      * @return mixed
      */
-    public function getValueToSet();
+    public function &getValueToSet();
 
     /**
      * Returns the access type.
