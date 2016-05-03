@@ -462,63 +462,13 @@ class ClassProxy extends AbstractProxy
      */
     protected function addFieldInterceptorsCode(ReflectionMethod $constructor = null)
     {
-        $byReference = false;
-        $this->setProperty(ReflectionProperty::IS_PRIVATE, '__properties', 'array()');
-        $this->setMethod(ReflectionMethod::IS_PUBLIC, '__get', $byReference, $this->getMagicGetterBody(), '$name');
-        $this->setMethod(ReflectionMethod::IS_PUBLIC, '__set', $byReference, $this->getMagicSetterBody(), '$name, $value');
+        $this->addTrait(PropertyInterceptionTrait::class);
         $this->isFieldsIntercepted = true;
         if ($constructor) {
             $this->override('__construct', $this->getConstructorBody($constructor, true));
         } else {
-            $this->setMethod(ReflectionMethod::IS_PUBLIC, '__construct', $byReference, $this->getConstructorBody(), '');
+            $this->setMethod(ReflectionMethod::IS_PUBLIC, '__construct', false, $this->getConstructorBody(), '');
         }
-    }
-
-    /**
-     * Returns a code for magic getter to perform interception
-     *
-     * @return string
-     */
-    private function getMagicGetterBody()
-    {
-        return <<<'GETTER'
-if (\array_key_exists($name, $this->__properties)) {
-    return self::$__joinPoints["prop:$name"]->__invoke(
-        $this,
-        \Go\Aop\Intercept\FieldAccess::READ,
-        $this->__properties[$name]
-    );
-} elseif (\method_exists(\get_parent_class(), __FUNCTION__)) {
-    return parent::__get($name);
-} else {
-    trigger_error("Trying to access undeclared property {$name}");
-
-    return null;
-}
-GETTER;
-    }
-
-    /**
-     * Returns a code for magic setter to perform interception
-     *
-     * @return string
-     */
-    private function getMagicSetterBody()
-    {
-        return <<<'SETTER'
-if (\array_key_exists($name, $this->__properties)) {
-    $this->__properties[$name] = self::$__joinPoints["prop:$name"]->__invoke(
-        $this,
-        \Go\Aop\Intercept\FieldAccess::WRITE,
-        $this->__properties[$name],
-        $value
-    );
-} elseif (\method_exists(\get_parent_class(), __FUNCTION__)) {
-    parent::__set($name, $value);
-} else {
-    $this->$name = $value;
-}
-SETTER;
     }
 
     /**
@@ -534,7 +484,7 @@ SETTER;
         $assocProperties = [];
         $listProperties  = [];
         foreach ($this->interceptedProperties as $propertyName) {
-            $assocProperties[] = "'$propertyName' => \$this->$propertyName";
+            $assocProperties[] = "'$propertyName' => &\$this->$propertyName";
             $listProperties[]  = "\$this->$propertyName";
         }
         $assocProperties = $this->indent(join(',' . PHP_EOL, $assocProperties));

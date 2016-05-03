@@ -10,6 +10,7 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\AspectException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\Interceptor;
 use ReflectionProperty;
@@ -94,13 +95,53 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     }
 
     /**
+     * Gets the current value of property
+     *
+     * @return mixed
+     */
+    public function &getValue()
+    {
+        $value = &$this->value;
+
+        return $value;
+    }
+
+    /**
      * Gets the value that must be set to the field.
      *
      * @return mixed
      */
-    public function getValueToSet()
+    public function &getValueToSet()
     {
-        return $this->newValue;
+        $newValue = &$this->newValue;
+
+        return $newValue;
+    }
+
+    /**
+     * Checks scope rules for accessing property
+     *
+     * @param int $stackLevel Stack level for check
+     *
+     * @return true if access is OK
+     */
+    public function ensureScopeRule($stackLevel = 2)
+    {
+        $property = $this->reflectionProperty;
+
+        if ($property->isProtected()) {
+            $backTrace     = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $stackLevel+1);
+            $accessor      = isset($backTrace[$stackLevel]) ? $backTrace[$stackLevel] : [];
+            $propertyClass = $property->class;
+            if (isset($accessor['class'])) {
+                if ($accessor['class'] === $propertyClass || is_subclass_of($accessor['class'], $propertyClass)) {
+                    return true;
+                }
+            }
+            throw new AspectException("Cannot access protected property {$propertyClass}::{$property->name}");
+        }
+
+        return true;
     }
 
     /**
@@ -109,7 +150,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Typically this method is called inside previous closure, as instance of Joinpoint is passed to callback
      * Do not call this method directly, only inside callback closures.
      *
-     * @return mixed
+     * @return void For field interceptor there is no return values
      */
     final public function proceed()
     {
@@ -117,14 +158,8 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
             /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
-            return $currentInterceptor->invoke($this);
+            $currentInterceptor->invoke($this);
         }
-
-        if ($this->accessType === self::WRITE) {
-            return $this->getValueToSet();
-        }
-
-        return $this->value;
     }
 
     /**
@@ -137,10 +172,10 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @return mixed
      */
-    final public function __invoke($instance, $accessType, $originalValue, $newValue = NAN)
+    final public function &__invoke($instance, $accessType, &$originalValue, $newValue = NAN)
     {
         if ($this->level) {
-            array_push($this->stackFrames, array($this->instance, $this->accessType, $this->value, $this->newValue));
+            array_push($this->stackFrames, [$this->instance, $this->accessType, &$this->value, &$this->newValue]);
         }
 
         ++$this->level;
@@ -148,16 +183,22 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         $this->current    = 0;
         $this->instance   = $instance;
         $this->accessType = $accessType;
-        $this->value      = $originalValue;
+        $this->value      = &$originalValue;
         $this->newValue   = $newValue;
 
-        $result = $this->proceed();
+        $this->proceed();
 
         --$this->level;
 
         if ($this->level) {
             list($this->instance, $this->accessType, $this->value, $this->newValue) = array_pop($this->stackFrames);
         }
+
+        if ($accessType == self::READ) {
+            $result = &$this->value;
+        } else {
+            $result = &$this->newValue;
+        };
 
         return $result;
 
