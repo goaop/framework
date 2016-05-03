@@ -11,7 +11,6 @@
 namespace Go\Proxy;
 
 use Go\Aop\Framework\ClassFieldAccess;
-use Go\Aop\Intercept\FieldAccess;
 
 /**
  * Trait that holds all general logic for working with intercepted properties
@@ -35,7 +34,7 @@ trait PropertyInterceptionTrait
             $fieldAccess = self::$__joinPoints["prop:$name"];
             $fieldAccess->ensureScopeRule();
 
-            $value = &$fieldAccess->__invoke($this, FieldAccess::READ, $this->__properties[$name]);
+            $value = &$fieldAccess->__invoke($this, ClassFieldAccess::READ, $this->__properties[$name]);
         } elseif (\method_exists(\get_parent_class(), __FUNCTION__)) {
             $value = parent::__get($name);
         } else {
@@ -59,7 +58,7 @@ trait PropertyInterceptionTrait
 
             $this->__properties[$name] = $fieldAccess->__invoke(
                 $this,
-                FieldAccess::WRITE,
+                ClassFieldAccess::WRITE,
                 $this->__properties[$name],
                 $value
             );

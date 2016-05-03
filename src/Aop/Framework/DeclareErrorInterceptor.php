@@ -11,8 +11,6 @@
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Joinpoint;
-use ReflectionMethod;
-use ReflectionProperty;
 
 /**
  * Interceptor to dynamically trigger an user notice/warning/error on method call
