@@ -138,7 +138,11 @@ class AopComposerLoader
     }
 
     /**
-     * {@inheritDoc}
+     * Finds either the path to the file where the class is defined,
+     * or gets the appropriate php://filter stream for the given class.
+     *
+     * @param string $class
+     * @return string|false The path/resource if found, false otherwise.
      */
     public function findFile($class)
     {
