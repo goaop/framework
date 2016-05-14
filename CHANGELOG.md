@@ -1,5 +1,13 @@
 Changelog
 ======
+2.0.0 (May 14, 2016)
+* Dropped support for PHP<5.6, clean all old code
+* [BC BREAK] Removed ability to rebind closures, because of PHP restrictions, see #247
+* [BC BREAK] Removed getDefaultFeatures() method from the AspectKernel, no need in it since PHP5.6
+* Migrated from the `Andrewswille/Token-Reflection` to the `goaop/parser-reflection` library for PHP5.6 and PHP7.0 support
+* Added support for PHP5.6 and 7.0 features: variadic methods, scalar type hints, return type hints
+* [Feature] Command-line tools for debugging aspects and advisors
+
 1.0.0 (Feb 13, 2016)
 * Dropped support for PHP<5.5, clean all old code
 * Tagged public methods and interfaces with @api tag. No more changes for them in future.
