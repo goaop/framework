@@ -12,6 +12,9 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
+use TokenReflection\IReflectionClass;
+use TokenReflection\IReflectionMethod;
+use TokenReflection\IReflectionProperty;
 
 /**
  * Pointcut that matches all inherited items, this is useful to filter inherited memebers via !matchInherited()
@@ -32,11 +35,11 @@ class MatchInheritedPointcut implements Pointcut
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null)
     {
-        if (!$context instanceof \ReflectionClass) {
+        if (!$context instanceof IReflectionClass) {
             return false;
         };
 
-        if (!($point instanceof \ReflectionMethod) && !($point instanceof \ReflectionProperty)) {
+        if (!($point instanceof IReflectionMethod) && !($point instanceof IReflectionProperty)) {
             return false;
         }
 
