@@ -72,6 +72,7 @@
                     <li><a href="https://www.youtube.com/watch?v=BXKQ99-78bI" target="_blank">Aspect Oriented Programming in PHP</a></li>
                     <li><a href="http://tutsplus.s3.amazonaws.com/tutspremium/Quick-Tips/AspectMock-Is-Pretty-Neat.mp4" target="_blank">AspectMock Is Pretty Neat</a></li>
                     <li class="divider">Slides</li>
+                    <li><a href="http://www.slideshare.net/lisachenko/solving-crosscutting-concerns-in-php" target="_blank">Solving Cross-Cutting Concerns in PHP (at DPC16)</a></li>
                     <li><a href="http://www.slideshare.net/lisachenko/weaving-aspects-in-php-with-the-help-of-go-aop-library" target="_blank">Weaving aspects in PHP with the help of Go! AOP library</a></li>
                     <li><a href="http://www.slideshare.net/lisachenko/aspect-oriented-programming-in-php" target="_blank">Aspect-Oriented Programming in PHP (Russian)</a></li>
                   </ul>
