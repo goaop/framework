@@ -155,6 +155,7 @@ class AopComposerLoader
         $file = $this->original->findFile($class);
 
         if ($file) {
+            $file = realpath($file)?:$file;
             $cacheState = isset($this->cacheState[$file]) ? $this->cacheState[$file] : null;
             if ($cacheState && $isProduction) {
                 $file = $cacheState['cacheUri'] ?: $file;
