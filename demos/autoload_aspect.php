@@ -8,11 +8,10 @@
  * with this source code in the file LICENSE.
  */
 
-use Doctrine\Common\Annotations\AnnotationRegistry;
 use Demo\Aspect\AwesomeAspectKernel;
 use Go\Aop\Features;
 
-include __DIR__ . '/autoload.php';
+include __DIR__ . '/../vendor/autoload.php';
 
 // Initialize demo aspect container
 AwesomeAspectKernel::getInstance()->init(array(
@@ -22,5 +21,3 @@ AwesomeAspectKernel::getInstance()->init(array(
 
     'features' => Features::INTERCEPT_FUNCTIONS,
 ));
-
-AnnotationRegistry::registerFile(__DIR__ . '/Demo/Annotation/Cacheable.php');

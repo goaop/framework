@@ -128,7 +128,7 @@ use Demo\Highlighter;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 
 $isAOPDisabled = isset($_COOKIE['aop_on']) && $_COOKIE['aop_on'] == 'false';
-include __DIR__ . ($isAOPDisabled ? '/autoload.php' : '/autoload_aspect.php');
+include __DIR__ . ($isAOPDisabled ? '/../vendor/autoload.php' : '/autoload_aspect.php');
 
 $showCase   = isset($_GET['showcase']) ? $_GET['showcase'] : 'default';
 $example    = null;
