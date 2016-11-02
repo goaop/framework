@@ -27,4 +27,11 @@ interface Invocation extends Joinpoint
      * @return array the arguments of the invocation
      */
     public function getArguments();
+
+    /**
+     * Sets the arguments for current invocation
+     *
+     * @param array $arguments New list of arguments
+     */
+    public function setArguments(array $arguments);
 }
