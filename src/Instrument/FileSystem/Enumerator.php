@@ -15,6 +15,7 @@ namespace Go\Instrument\FileSystem;
  */
 class Enumerator
 {
+
     /**
      * Path to the root directory, where enumeration should start
      *
@@ -40,14 +41,14 @@ class Enumerator
      * Initializes an enumerator
      *
      * @param string $rootDirectory Path to the root directory
-     * @param array $includePaths List of additional include paths
-     * @param array $excludePaths List of additional exclude paths
+     * @param array  $includePaths  List of additional include paths
+     * @param array  $excludePaths  List of additional exclude paths
      */
     public function __construct($rootDirectory, array $includePaths = [], array $excludePaths = [])
     {
         $this->rootDirectory = $rootDirectory;
-        $this->includePaths  = $includePaths;
-        $this->excludePaths  = $excludePaths;
+        $this->includePaths = $includePaths;
+        $this->excludePaths = $excludePaths;
     }
 
     /**
@@ -78,24 +79,29 @@ class Enumerator
     public function getFilter()
     {
         $rootDirectory = $this->rootDirectory;
-        $includePaths  = $this->includePaths;
-        $excludePaths  = $this->excludePaths;
+        $includePaths = $this->includePaths;
+        $excludePaths = $this->excludePaths;
 
-        return function(\SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
+        // Parse wildcard paths
+        $excludePaths = array_map([$this, 'parseWildcardPath'], $excludePaths);
+        $includePaths = array_map([$this, 'parseWildcardPath'], $includePaths);
+
+        return function (\SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
             if ($file->getExtension() !== 'php') {
                 return false;
             };
 
-            $realPath = $file->getRealPath();
+            $fullPath = $file->getRealPath();
+            $filePath = $file->getPath();
             // Do not touch files that not under rootDirectory
-            if (strpos($realPath, $rootDirectory) !== 0) {
+            if (strpos($fullPath, $rootDirectory) !== 0) {
                 return false;
             }
 
             if (!empty($includePaths)) {
                 $found = false;
-                foreach ($includePaths as $includePath) {
-                    if (strpos($realPath, $includePath) === 0) {
+                foreach ($includePaths as $includePattern) {
+                    if (preg_match('%' . $includePattern . '%', $filePath)) {
                         $found = true;
                         break;
                     }
@@ -105,8 +111,8 @@ class Enumerator
                 }
             }
 
-            foreach ($excludePaths as $excludePath) {
-                if (strpos($realPath, $excludePath) === 0) {
+            foreach ($excludePaths as $excludePattern) {
+                if (preg_match('%' . $excludePattern . '%', $filePath)) {
                     return false;
                 }
             }
@@ -114,4 +120,22 @@ class Enumerator
             return true;
         };
     }
+
+    /**
+     * Replace possible wildcard with proper regex patterns
+     *
+     * @param string $path
+     *
+     * @return string
+     */
+    protected function parseWildcardPath($path)
+    {
+        // Recursive subfolder matching - replace double asterisk with .*
+        $path = preg_replace('%/\*\*/%', '/.*/', $path);
+        // Single subfolder matching - replace single asterisk with [^/]+
+        $path = preg_replace('%/\*/%', '/[^/]+/', $path);
+
+        return $path;
+    }
+
 }
