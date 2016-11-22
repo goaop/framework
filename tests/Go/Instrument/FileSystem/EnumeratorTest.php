@@ -7,12 +7,7 @@ use Go\Instrument\FileSystem\Enumerator;
 class EnumeratorTest extends \PHPUnit_Framework_TestCase
 {
 
-    static $fixtureBasePath;
-
-    static $testPaths = [
-        'base/sub/test',
-        'base/sub/sub/test'
-    ];
+    protected static $fixtureBasePath;
 
     /**
      * Set up fixture test folders and files
@@ -35,8 +30,13 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
             mkdir(static::$fixtureBasePath);
         }
 
+        $testPaths = [
+            'base/sub/test',
+            'base/sub/sub/test'
+        ];
+
         // Setup some files we test against
-        foreach (static::$testPaths as $path) {
+        foreach ($testPaths as $path) {
             $testPath = static::$fixtureBasePath . DIRECTORY_SEPARATOR . $path;
             mkdir($testPath, 0777, true);
             touch($testPath . DIRECTORY_SEPARATOR . 'TestClass.php');
@@ -54,8 +54,6 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     *
-     *
      * @return array
      */
     public function pathsProvider()
@@ -112,7 +110,7 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
     public function testExclude($expectedPaths, $includePaths, $excludePaths)
     {
         $basePath = static::$fixtureBasePath;
-        $addBasePath = function($path) use ($basePath) {
+        $addBasePath = function ($path) use ($basePath) {
             return $basePath . DIRECTORY_SEPARATOR . $path;
         };
 
