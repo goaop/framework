@@ -14,7 +14,6 @@
     <php>
         <!--Path to the autoload file that should be used. Use a composer autoloader by default-->
         <const name="AUTOLOAD_PATH" value="./vendor/autoload.php"/>
-        <const name="TEST_DIRECTORY" value="./tests"/>
     </php>
 
     <testsuites>

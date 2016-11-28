@@ -82,17 +82,14 @@ class Enumerator
         $includePaths = $this->includePaths;
         $excludePaths = $this->excludePaths;
 
-        // Parse wildcard paths
-        $excludePaths = array_map([$this, 'parseWildcardPath'], $excludePaths);
-        $includePaths = array_map([$this, 'parseWildcardPath'], $includePaths);
-
         return function (\SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
+
             if ($file->getExtension() !== 'php') {
                 return false;
             };
 
-            $fullPath = $file->getRealPath();
-            $filePath = $file->getPath();
+            $fullPath = $this->getFileFullPath($file);
+            $dir      = dirname($fullPath);
             // Do not touch files that not under rootDirectory
             if (strpos($fullPath, $rootDirectory) !== 0) {
                 return false;
@@ -101,7 +98,7 @@ class Enumerator
             if (!empty($includePaths)) {
                 $found = false;
                 foreach ($includePaths as $includePattern) {
-                    if (preg_match('%' . $includePattern . '%', $filePath)) {
+                    if (fnmatch($includePattern, $dir)) {
                         $found = true;
                         break;
                     }
@@ -112,7 +109,7 @@ class Enumerator
             }
 
             foreach ($excludePaths as $excludePattern) {
-                if (preg_match('%' . $excludePattern . '%', $filePath)) {
+                if (fnmatch($excludePattern, $dir)) {
                     return false;
                 }
             }
@@ -122,20 +119,18 @@ class Enumerator
     }
 
     /**
-     * Replace possible wildcard with proper regex patterns
+     * Return the real path of the given file
      *
-     * @param string $path
+     * This is used for testing purpose with virtual file system.
+     * In a vfs the 'realPath' methode will always return false.
+     * So we have a chance to mock this single function to return different path.
+     *
+     * @param \SplFileInfo $file
      *
      * @return string
      */
-    protected function parseWildcardPath($path)
-    {
-        // Recursive subfolder matching - replace double asterisk with .*
-        $path = preg_replace('%/\*\*/%', '/.*/', $path);
-        // Single subfolder matching - replace single asterisk with [^/]+
-        $path = preg_replace('%/\*/%', '/[^/]+/', $path);
-
-        return $path;
+    protected function getFileFullPath(\SplFileInfo $file) {
+        return $file->getRealPath();
     }
 
 }
