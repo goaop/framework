@@ -102,7 +102,7 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
         // VFS does not support getRealPath()
         $mock->expects($this->any())
             ->method('getFileFullPath')
-            ->will($this->returnCallback(function(\SplFileInfo $file) {
+            ->will($this->returnCallback(function (\SplFileInfo $file) {
                 return $file->getPathname();
             }));
 
