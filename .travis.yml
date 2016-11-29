@@ -10,7 +10,7 @@ before_script:
   - composer install
 
 script:
-  - phpunit --verbose --coverage-text --coverage-clover=clover.xml --colors
+  - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=clover.xml --colors
 
 after_script:
   - sh .travis.coverage.sh

@@ -16,7 +16,8 @@
 
     "require-dev": {
         "symfony/console": "~2.1|~3.0",
-        "adlawson/vfs": "^0.12"
+        "adlawson/vfs": "^0.12",
+        "phpunit/phpunit": "^4.8"
     },
 
     "suggest": {
@@ -34,6 +35,11 @@
     "autoload": {
         "psr-4": {"Go\\": "src/"}
     },
+
+    "autoload-dev": {
+        "psr-4": {"Go\\": "tests/Go/"}
+    },
+
     "minimum-stability": "stable",
     "extra": {
         "branch-alias": {
