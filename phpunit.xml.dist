@@ -11,11 +11,6 @@
          syntaxCheck="false"
          bootstrap="./tests/bootstrap.php"
 >
-    <php>
-        <!--Path to the autoload file that should be used. Use a composer autoloader by default-->
-        <const name="AUTOLOAD_PATH" value="./vendor/autoload.php"/>
-    </php>
-
     <testsuites>
         <testsuite name="Go! AOP Test Suite">
             <directory>./tests/Go/</directory>
