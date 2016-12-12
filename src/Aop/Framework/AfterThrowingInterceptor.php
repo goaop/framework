@@ -35,7 +35,7 @@ final class AfterThrowingInterceptor extends BaseInterceptor implements AdviceAf
             $result = $joinpoint->proceed();
         } catch (Exception $invocationException) {
             $adviceMethod = $this->adviceMethod;
-            $adviceMethod($joinpoint);
+            $adviceMethod($joinpoint, $invocationException);
 
             throw $invocationException;
         }
