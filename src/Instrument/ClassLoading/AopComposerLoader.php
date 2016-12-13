@@ -12,6 +12,7 @@ namespace Go\Instrument\ClassLoading;
 
 use Go\Core\AspectContainer;
 use Go\Instrument\FileSystem\Enumerator;
+use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Composer\Autoload\ClassLoader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
@@ -155,6 +156,7 @@ class AopComposerLoader
         $file = $this->original->findFile($class);
 
         if ($file) {
+            $file = PathResolver::realpath($file)?:$file;
             $cacheState = isset($this->cacheState[$file]) ? $this->cacheState[$file] : null;
             if ($cacheState && $isProduction) {
                 $file = $cacheState['cacheUri'] ?: $file;
