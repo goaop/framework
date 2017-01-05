@@ -161,12 +161,21 @@ class FunctionProxy extends AbstractProxy
 
         $args = $this->prepareArgsLine($function);
 
+        $return = 'return ';
+        if (PHP_VERSION_ID >= 70100 && $function->hasReturnType()) {
+            $returnType = (string) $function->getReturnType();
+            if ($returnType === 'void') {
+                // void return types should not return anything
+                $return = '';
+            }
+        }
+
         return <<<BODY
 static \$__joinPoint = null;
 if (!\$__joinPoint) {
     \$__joinPoint = {$class}::getJoinPoint('{$function->name}', __NAMESPACE__);
 }
-return \$__joinPoint->__invoke($args);
+{$return}\$__joinPoint->__invoke($args);
 BODY;
     }
 
