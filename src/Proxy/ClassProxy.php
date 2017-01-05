@@ -397,14 +397,21 @@ class ClassProxy extends AbstractProxy
         $scope    = $isStatic ? self::$staticLsbExpression : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
-        $args = $this->prepareArgsLine($method);
-        $body = '';
+        $args   = $this->prepareArgsLine($method);
+        $return = 'return ';
+        if (PHP_VERSION_ID >= 70100 && $method->hasReturnType()) {
+            $returnType = (string) $method->getReturnType();
+            if ($returnType === 'void') {
+                // void return types should not return anything
+                $return = '';
+            }
+        }
 
         if (!empty($args)) {
             $scope = "$scope, $args";
         }
 
-        $body .= "return self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($scope);";
+        $body = "{$return}self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($scope);";
 
         return $body;
     }

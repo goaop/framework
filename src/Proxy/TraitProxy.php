@@ -89,12 +89,21 @@ class TraitProxy extends ClassProxy
         $args = $this->prepareArgsLine($method);
         $args = $scope . ($args ? ", $args" : '');
 
+        $return = 'return ';
+        if (PHP_VERSION_ID >= 70100 && $method->hasReturnType()) {
+            $returnType = (string) $method->getReturnType();
+            if ($returnType === 'void') {
+                // void return types should not return anything
+                $return = '';
+            }
+        }
+
         return <<<BODY
 static \$__joinPoint = null;
 if (!\$__joinPoint) {
     \$__joinPoint = {$class}::getJoinPoint(__TRAIT__, __CLASS__, '{$prefix}', '{$method->name}');
 }
-return \$__joinPoint->__invoke($args);
+{$return}\$__joinPoint->__invoke($args);
 BODY;
     }
 
