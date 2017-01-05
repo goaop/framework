@@ -103,11 +103,12 @@ abstract class AbstractProxy
     protected function getParameterCode(ReflectionParameter $parameter)
     {
         $type = '';
-        if (PHP_VERSION_ID >= 50700) {
+        if (PHP_VERSION_ID >= 70000) {
             $reflectionType = $parameter->getType();
             if ($reflectionType) {
-                $nsPrefix = $reflectionType->isBuiltin() ? '' : '\\';
-                $type     = $nsPrefix . (string) $reflectionType;
+                $nullablePrefix = $reflectionType->allowsNull() ? '?' : '';
+                $nsPrefix       = $reflectionType->isBuiltin() ? '' : '\\';
+                $type           = $nullablePrefix . $nsPrefix . (string) $reflectionType;
             }
         } else {
             if ($parameter->isArray()) {
@@ -204,11 +205,13 @@ abstract class AbstractProxy
      */
     protected function getOverriddenFunction(ReflectionFunctionAbstract $functionLike, $body)
     {
-        $reflectionReturnType = PHP_VERSION_ID >= 50700 ? $functionLike->getReturnType() : '';
+        $reflectionReturnType = PHP_VERSION_ID >= 70000 ? $functionLike->getReturnType() : '';
         $modifiersLine        = '';
         if ($reflectionReturnType) {
-            $nsPrefix             = $reflectionReturnType->isBuiltin() ? '' : '\\';
-            $reflectionReturnType = $nsPrefix . (string)$reflectionReturnType;
+            $nullablePrefix = $reflectionReturnType->allowsNull() ? '?' : '';
+            $nsPrefix       = $reflectionReturnType->isBuiltin() ? '' : '\\';
+
+            $reflectionReturnType = $nullablePrefix . $nsPrefix . (string) $reflectionReturnType;
         }
         if ($functionLike instanceof ReflectionMethod) {
             $modifiersLine = join(' ', Reflection::getModifierNames($functionLike->getModifiers()));
