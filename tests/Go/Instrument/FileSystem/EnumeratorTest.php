@@ -3,7 +3,6 @@
 namespace Go\Instrument;
 
 use Go\Instrument\FileSystem\Enumerator;
-use org\bovigo\vfs\vfsStream;
 use Vfs\FileSystem;
 
 class EnumeratorTest extends \PHPUnit_Framework_TestCase
@@ -57,6 +56,12 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
                 ['vfs://base/sub/test'],
                 [],
                 ['vfs://base/sub/sub/test']
+            ],
+            [
+                // Exclude double sub folder just by base path
+                ['vfs://base/sub/test'],
+                [],
+                ['vfs://base/sub/sub']
             ],
             [
                 // Exclude all, expected shout be empty
