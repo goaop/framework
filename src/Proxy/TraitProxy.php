@@ -29,13 +29,6 @@ class TraitProxy extends ClassProxy
     protected static $traitAdvices = [];
 
     /**
-     * Overridden static property for TraitProxy
-     *
-     * {@inheritDoc}
-     */
-    protected static $invocationClassMap = [];
-
-    /**
      * Inject advices for given trait
      *
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
