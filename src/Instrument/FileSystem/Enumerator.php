@@ -89,7 +89,6 @@ class Enumerator
             };
 
             $fullPath = $this->getFileFullPath($file);
-            $dir      = dirname($fullPath);
             // Do not touch files that not under rootDirectory
             if (strpos($fullPath, $rootDirectory) !== 0) {
                 return false;
@@ -98,7 +97,7 @@ class Enumerator
             if (!empty($includePaths)) {
                 $found = false;
                 foreach ($includePaths as $includePattern) {
-                    if (fnmatch($includePattern, $dir)) {
+                    if (fnmatch("{$includePattern}*", $fullPath)) {
                         $found = true;
                         break;
                     }
@@ -109,7 +108,7 @@ class Enumerator
             }
 
             foreach ($excludePaths as $excludePattern) {
-                if (fnmatch($excludePattern, $dir)) {
+                if (fnmatch("{$excludePattern}*", $fullPath)) {
                     return false;
                 }
             }
