@@ -10,28 +10,117 @@
 
 namespace Go\Instrument\Transformer;
 
-use ArrayObject;
 use Go\Instrument\PathResolver;
 use InvalidArgumentException;
 
 /**
  * Stream metadata object
- *
- * @property bool   $timed_out     TRUE if the stream timed out while waiting for data on the last call to fread() or fgets().
- * @property bool   $blocked       TRUE if the stream is in blocking IO mode
- * @property bool   $eof           TRUE if the stream has reached end-of-file.
- * @property int    $unread_bytes  The number of bytes currently contained in the PHP's own internal buffer.
- * @property string $stream_type   A label describing the underlying implementation of the stream.
- * @property string $wrapper_type  A label describing the protocol wrapper implementation layered over the stream.
- * @property mixed  $wrapper_data  Wrapper-specific data attached to this stream.
- * @property array  $filters       Array containing the names of any filters that have been stacked onto this stream.
- * @property string $mode          The type of access required for this stream
- * @property bool   $seekable      Whether the current stream can be seeked.
- * @property string $uri           The URI/filename associated with this stream.
- * @property string $source        The contents of the stream.
  */
-class StreamMetaData extends ArrayObject
+class StreamMetaData
 {
+    /**
+     * Mapping between array keys and properties
+     *
+     * @var array
+     */
+    private static $propertyMap = [
+        'timed_out'    => 'isTimedOut',
+        'blocked'      => 'isBlocked',
+        'eof'          => 'isEOF',
+        'unread_bytes' => 'unreadBytesCount',
+        'stream_type'  => 'streamType',
+        'wrapper_type' => 'wrapperType',
+        'wrapper_data' => 'wrapperData',
+        'filters'      => 'filterList',
+        'mode'         => 'mode',
+        'seekable'     => 'isSeekable',
+        'uri'          => 'uri',
+    ];
+
+    /**
+     * TRUE if the stream timed out while waiting for data on the last call to fread() or fgets().
+     *
+     * @var bool
+     */
+    public $isTimedOut;
+
+    /**
+     * TRUE if the stream has reached end-of-file.
+     *
+     * @var bool
+     */
+    public $isBlocked;
+
+    /**
+     * TRUE if the stream has reached end-of-file.
+     *
+     * @var bool
+     */
+    public $isEOF;
+
+    /**
+     * The number of bytes currently contained in the PHP's own internal buffer.
+     *
+     * @var integer
+     */
+    public $unreadBytesCount;
+
+    /**
+     * A label describing the underlying implementation of the stream.
+     *
+     * @var string
+     */
+    public $streamType;
+
+    /**
+     * A label describing the protocol wrapper implementation layered over the stream.
+     *
+     * @var string
+     */
+    public $wrapperType;
+
+    /**
+     * Wrapper-specific data attached to this stream.
+     *
+     * @var mixed
+     */
+    public $wrapperData;
+
+    /**
+     * Array containing the names of any filters that have been stacked onto this stream.
+     *
+     * @var array
+     */
+    public $filterList;
+
+    /**
+     * The type of access required for this stream
+     *
+     * @var string
+     */
+    public $mode;
+
+    /**
+     * Whether the current stream can be seeked.
+     *
+     * @var bool
+     */
+    public $isSeekable;
+
+    /**
+     * The URI/filename associated with this stream.
+     *
+     * @var string
+     */
+    public $uri;
+
+    /**
+     * The contents of the stream.
+     *
+     * @var string
+     */
+    public $source;
+
     /**
      * Creates metadata object from stream
      *
@@ -44,13 +133,14 @@ class StreamMetaData extends ArrayObject
         if (!is_resource($stream)) {
             throw new InvalidArgumentException("Stream should be valid resource");
         }
-        $metadata = stream_get_meta_data($stream);
-        if ($source) {
-            $metadata['source'] = $source;
-        }
+        $metadata     = stream_get_meta_data($stream);
+        $this->source = $source;
         if (preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
             $metadata['uri'] = PathResolver::realpath($matches[1]);
         }
-        parent::__construct($metadata, ArrayObject::ARRAY_AS_PROPS);
+        foreach ($metadata as $key=>$value) {
+            $mappedKey = self::$propertyMap[$key];
+            $this->$mappedKey = $value;
+        }
     }
 }
