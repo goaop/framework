@@ -106,7 +106,7 @@ abstract class AbstractProxy
         if (PHP_VERSION_ID >= 70000) {
             $reflectionType = $parameter->getType();
             if ($reflectionType) {
-                $nullablePrefix = $reflectionType->allowsNull() ? '?' : '';
+                $nullablePrefix = (PHP_VERSION_ID >= 70100 && $reflectionType->allowsNull()) ? '?' : '';
                 $nsPrefix       = $reflectionType->isBuiltin() ? '' : '\\';
                 $type           = $nullablePrefix . $nsPrefix . (string) $reflectionType;
             }
