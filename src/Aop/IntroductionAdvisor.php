@@ -29,7 +29,7 @@ interface IntroductionAdvisor extends Advisor
      *
      * @return PointFilter The class filter
      */
-    public function getClassFilter();
+    public function getClassFilter() : PointFilter;
 
     /**
      * Can the advised interfaces be implemented by the introduction advice?

@@ -92,7 +92,7 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
      *
      * @return PointFilter The class filter
      */
-    public function getClassFilter()
+    public function getClassFilter() : PointFilter
     {
         return $this->classFilter;
     }
