@@ -1,7 +1,7 @@
 Go! Aspect-Oriented Framework for PHP
 -----------------
 
-Go! AOP is a modern aspect-oriented framework in plain PHP with rich features for the new level of software development. Framework allows to solve a cross-cutting issues in the traditional object-oriented PHP code by providing a highly efficient and transparent hook system for your exisiting code.
+Go! AOP is a modern aspect-oriented framework in plain PHP with rich features for the new level of software development. The framework allows cross-cutting issues to be solved in the traditional object-oriented PHP code by providing a highly efficient and transparent hook system for your exisiting code.
 
 [![Build Status](https://secure.travis-ci.org/goaop/framework.png?branch=master)](https://travis-ci.org/goaop/framework)
 [![GitHub release](https://img.shields.io/github/release/goaop/framework.svg)](https://github.com/goaop/framework/releases/latest)
@@ -33,11 +33,11 @@ Features
 What is AOP?
 ------------
 
-[AOP (Aspect-Oriented Programming)](http://en.wikipedia.org/wiki/Aspect-oriented_programming) is an approach to cross-cutting concerns, where the concerns are designed and implemented
+[AOP (Aspect-Oriented Programming)](http://en.wikipedia.org/wiki/Aspect-oriented_programming) is an approach to cross-cutting concerns, where these concerns are designed and implemented 
 in a "modular" way (that is, with appropriate encapsulation, lack of duplication, etc.), then integrated into all the relevant
 execution points in a succinct and robust way, e.g. through declarative or programmatic means.
 
-In AOP terms, the execution points are called join points, a particular set of them is called a pointcut and the new
+In AOP terms, the execution points are called join points. A set of those points is called a pointcut and the new
 behavior that is executed before, after, or "around" a join point is called advice. You can read more about AOP in
 [Introduction](http://go.aopphp.com/docs/introduction/) section.
 
@@ -66,13 +66,13 @@ Composer will install the framework to your project's `vendor/goaop/framework` d
 
 ### Step 2: Create an application aspect kernel
 
-The aim of this framework is to provide easy AOP integration to your application.
-Your first step then is to create the `AspectKernel` class
+The aim of this framework is to provide easy AOP integration for your application.
+You have to first create the `AspectKernel` class
 for your application. This class will manage all aspects of your
 application in one place.
 
 The framework provides base class to make it easier to create your own kernel.
-To create your application kernel extend the abstract class `Go\Core\AspectKernel`
+To create your application kernel, extend the abstract class `Go\Core\AspectKernel`
 
 ``` php
 <?php
@@ -124,8 +124,7 @@ $applicationAspectKernel->init(array(
 
 ### 4. Create an aspect
 
-Aspect is the key element of AOP philosophy. And Go! AOP framework just uses simple PHP classes for declaring aspects!
-Therefore it's possible to use all features of OOP for aspect classes.
+Aspect is the key element of AOP philosophy. Go! AOP framework just uses simple PHP classes for declaring aspects, which makes it possible to use all features of OOP for aspect classes.
 As an example let's intercept all the methods and display their names:
 
 ``` php
@@ -172,7 +171,7 @@ Easy, isn't it? We declared here that we want to install a hook before the execu
 all dynamic public methods in the class Example. This is done with the help of annotation
 `@Before("execution(public Example->*(*))")`
 Hooks can be of any types, you will see them later.
-But we doesn't change any code in the class Example! I can feel you astonishment now )
+But we don't change any code in the class Example! I can feel your astonishment now.
 
 ### 5. Register the aspect in the aspect kernel
 
