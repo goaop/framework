@@ -11,12 +11,11 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Support;
 
-use InvalidArgumentException;
-use ReflectionClass;
 use Go\Aop\Advice;
-use Go\Aop\PointFilter;
-use Go\Aop\IntroductionInfo;
 use Go\Aop\IntroductionAdvisor;
+use Go\Aop\IntroductionInfo;
+use Go\Aop\PointFilter;
+use ReflectionClass;
 
 /**
  * Introduction advisor delegating to the given object.
@@ -25,7 +24,9 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
 {
 
     /**
-     * @var null|IntroductionInfo
+     * Introduction information
+     *
+     * @var IntroductionInfo
      */
     private $advice = null;
 
@@ -37,7 +38,10 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     private $classFilter;
 
     /**
-     * Create a DefaultIntroductionAdvisor for the given advice.
+     * Creates an advisor for declaring mixins via traits and interfaces.
+     *
+     * @param PointFilter $classFilter Class filter
+     * @param IntroductionInfo $info Introduction information
      */
     public function __construct(PointFilter $classFilter, IntroductionInfo $info)
     {
@@ -74,9 +78,9 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     /**
      * Returns an advice to apply
      *
-     * @return Advice|IntroductionInfo|null
+     * @return Advice|IntroductionInfo
      */
-    public function getAdvice()
+    public function getAdvice() : Advice
     {
         return $this->advice;
     }

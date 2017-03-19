@@ -23,5 +23,5 @@ interface Advisor
      *
      * @return Advice The advice that should apply if the pointcut matches
      */
-    public function getAdvice();
+    public function getAdvice() : Advice;
 }

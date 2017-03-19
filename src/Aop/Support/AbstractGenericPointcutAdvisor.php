@@ -39,9 +39,9 @@ abstract class AbstractGenericPointcutAdvisor implements PointcutAdvisor
     /**
      * Returns an advice to apply
      *
-     * @return Advice|null
+     * @return Advice
      */
-    public function getAdvice()
+    public function getAdvice() : Advice
     {
         return $this->advice;
     }
