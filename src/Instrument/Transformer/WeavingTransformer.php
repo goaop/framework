@@ -246,7 +246,7 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @return string
      */
-    private function saveProxyToCache($class, $child)
+    private function saveProxyToCache($class, $child) : string
     {
         static $cacheDirSuffix = '/_proxies/';
 
@@ -254,7 +254,7 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Without cache we should rewrite original file
         if (!$cacheDir) {
-            return $child;
+            return (string) $child;
         }
         $cacheDir = $cacheDir . $cacheDirSuffix;
         $fileName = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());
