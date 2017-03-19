@@ -27,17 +27,16 @@ abstract class AbstractInvocation extends AbstractJoinpoint implements Invocatio
 
     /**
      * Get the arguments as an array object.
-     * It is possible to change element values within this array to change the arguments
-     *
-     * @return array the arguments of the invocation
      */
-    public function getArguments()
+    public function getArguments() : array
     {
         return $this->arguments;
     }
 
     /**
      * Sets the arguments for current invocation
+     *
+     * @api
      *
      * @param array $arguments New list of arguments
      */

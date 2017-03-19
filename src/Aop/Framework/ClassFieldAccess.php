@@ -64,7 +64,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * @param string $fieldName Field name
      * @param $advices array List of advices for this invocation
      */
-    public function __construct($className, $fieldName, array $advices)
+    public function __construct(string $className, string $fieldName, array $advices)
     {
         parent::__construct($advices);
 
@@ -77,20 +77,16 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Returns the access type.
-     *
-     * @return integer
      */
-    public function getAccessType()
+    public function getAccessType() : int
     {
         return $this->accessType;
     }
 
     /**
      * Gets the field being accessed.
-     *
-     * @return ReflectionProperty the field being accessed.
      */
-    public function getField()
+    public function getField() : ReflectionProperty
     {
         return $this->reflectionProperty;
     }
@@ -123,8 +119,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Checks scope rules for accessing property
      *
      * @param int $stackLevel Stack level for check
-     *
-     * @return true if access is OK
      */
     public function ensureScopeRule($stackLevel = 2)
     {
@@ -136,13 +130,11 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
             $propertyClass = $property->class;
             if (isset($accessor['class'])) {
                 if ($accessor['class'] === $propertyClass || is_subclass_of($accessor['class'], $propertyClass)) {
-                    return true;
+                    return;
                 }
             }
             throw new AspectException("Cannot access protected property {$propertyClass}::{$property->name}");
         }
-
-        return true;
     }
 
     /**

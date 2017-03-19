@@ -29,7 +29,7 @@ interface MethodInvocation extends Invocation
      *
      * @return ReflectionMethod|AnnotatedReflectionMethod the method being called.
      */
-    public function getMethod();
+    public function getMethod() : ReflectionMethod;
 
     /**
      * Invokes current method invocation with all interceptors

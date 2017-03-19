@@ -37,10 +37,8 @@ interface FieldAccess extends Joinpoint
      * Gets the field being accessed.
      *
      * @api
-     *
-     * @return ReflectionProperty the field being accessed.
      */
-    public function getField();
+    public function getField() : ReflectionProperty;
 
     /**
      * Gets the current value of property by reference
@@ -64,8 +62,6 @@ interface FieldAccess extends Joinpoint
      * Returns the access type.
      *
      * @api
-     *
-     * @return integer
      */
-    public function getAccessType();
+    public function getAccessType() : int;
 }

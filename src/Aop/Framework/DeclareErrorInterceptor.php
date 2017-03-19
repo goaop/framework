@@ -41,9 +41,9 @@ class DeclareErrorInterceptor extends BaseInterceptor
      *
      * @param string $message Text message for error
      * @param int $level Level of error
-     * @param string|null $pointcutExpression Pointcut expression
+     * @param string $pointcutExpression Pointcut expression
      */
-    public function __construct($message, $level, $pointcutExpression)
+    public function __construct(string $message, int $level, string $pointcutExpression)
     {
         $adviceMethod  = self::getDeclareErrorAdvice();
         $this->message = $message;
@@ -80,28 +80,6 @@ class DeclareErrorInterceptor extends BaseInterceptor
     }
 
     /**
-     * Returns an advice
-     *
-     * @return \Closure
-     */
-    private static function getDeclareErrorAdvice()
-    {
-        static $adviceMethod = null;
-        if (!$adviceMethod) {
-            $adviceMethod = function($object, $reflectorName, $message, $level = E_USER_NOTICE) {
-                $class   = is_string($object) ? $object : get_class($object);
-                $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', [
-                    $class . '->' . $reflectorName,
-                    $message
-                ]);
-                trigger_error($message, $level);
-            };
-        }
-
-        return $adviceMethod;
-    }
-
-    /**
      * Implement this method to perform extra treatments before and
      * after the invocation. Polite implementations would certainly
      * like to invoke {@link Joinpoint::proceed()}.
@@ -121,5 +99,25 @@ class DeclareErrorInterceptor extends BaseInterceptor
         $adviceMethod($joinpoint->getThis(), $reflectorName, $this->message, $this->level);
 
         return $joinpoint->proceed();
+    }
+
+    /**
+     * Returns an advice
+     */
+    private static function getDeclareErrorAdvice() : \Closure
+    {
+        static $adviceMethod = null;
+        if (!$adviceMethod) {
+            $adviceMethod = function($object, $reflectorName, $message, $level = E_USER_NOTICE) {
+                $class   = is_string($object) ? $object : get_class($object);
+                $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', [
+                    $class . '->' . $reflectorName,
+                    $message
+                ]);
+                trigger_error($message, $level);
+            };
+        }
+
+        return $adviceMethod;
     }
 }

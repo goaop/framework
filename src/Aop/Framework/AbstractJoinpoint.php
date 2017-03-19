@@ -73,7 +73,7 @@ abstract class AbstractJoinpoint implements Joinpoint
      * @param array|Advice[] $advices
      * @return array|Advice[] Sorted list of advices
      */
-    public static function sortAdvices(array $advices)
+    public static function sortAdvices(array $advices) : array
     {
         $sortedAdvices = $advices;
         uasort($sortedAdvices, function(Advice $first, Advice $second) {

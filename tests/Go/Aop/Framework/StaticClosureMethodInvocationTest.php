@@ -20,7 +20,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticSelfMethodInvocation($methodName, $expectedResult)
     {
         $childClass = $this->createMock(First::class);
-        $invocation = new StaticClosureMethodInvocation($childClass, $methodName, []);
+        $invocation = new StaticClosureMethodInvocation(get_class($childClass), $methodName, []);
 
         $result = $invocation($childClass);
         $this->assertEquals($expectedResult, $result);

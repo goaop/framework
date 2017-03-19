@@ -11,6 +11,8 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
+
 /**
  * Static closure method invocation is responsible to call static methods via closure
  */
@@ -19,7 +21,7 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
     /**
      * Closure to use
      *
-     * @var \Closure
+     * @var Closure
      */
     protected $closureToCall = null;
 
@@ -65,9 +67,9 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
      * @param string $className Class name to forward request
      * @param string $method Method name to call
      *
-     * @return \Closure
+     * @return Closure
      */
-    protected static function getStaticInvoker($className, $method)
+    protected static function getStaticInvoker($className, $method) : Closure
     {
         return function(array $args) use ($className, $method) {
             return forward_static_call_array([$className, $method], $args);

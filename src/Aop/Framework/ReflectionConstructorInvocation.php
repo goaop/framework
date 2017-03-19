@@ -53,10 +53,10 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      * Constructor for constructor invocation :)
      *
      * @param string $className Class name
-     * @param $advices array List of advices for this invocation
      * @param string $type
+     * @param $advices array List of advices for this invocation
      */
-    public function __construct($className, $type, array $advices)
+    public function __construct(string $className, string $type, array $advices)
     {
         $this->class       = new ReflectionClass($className);
         $this->constructor = $constructor = $this->class->getConstructor();

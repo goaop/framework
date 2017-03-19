@@ -58,10 +58,8 @@ abstract class BaseAdvice implements OrderedAdvice
 
     /**
      * Returns the advice order
-     *
-     * @return int
      */
-    public function getAdviceOrder()
+    public function getAdviceOrder() : int
     {
         return $this->order;
     }
