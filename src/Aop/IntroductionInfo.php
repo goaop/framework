@@ -26,12 +26,12 @@ interface IntroductionInfo extends Advice
      *
      * @return array|string[] the introduced interfaces
      */
-    public function getInterfaces();
+    public function getInterfaces() : array;
 
     /**
      * Return the list of traits with realization of introduced interfaces
      *
      * @return array|string[] the implementations
      */
-    public function getTraits();
+    public function getTraits() : array;
 }

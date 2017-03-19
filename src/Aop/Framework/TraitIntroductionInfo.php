@@ -50,7 +50,7 @@ class TraitIntroductionInfo implements IntroductionInfo
      *
      * @return array|string[] introduced interfaces
      */
-    public function getInterfaces()
+    public function getInterfaces() : array
     {
         return $this->introducedInterfaces;
     }
@@ -60,7 +60,7 @@ class TraitIntroductionInfo implements IntroductionInfo
      *
      * @return array|string[] trait implementations
      */
-    public function getTraits()
+    public function getTraits() : array
     {
         return $this->introducedTraits;
     }
