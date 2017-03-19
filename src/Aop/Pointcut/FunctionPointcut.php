@@ -87,7 +87,7 @@ class FunctionPointcut implements Pointcut
      *
      * @return PointFilter
      */
-    public function getClassFilter()
+    public function getClassFilter() : PointFilter
     {
         return $this->nsFilter;
     }
