@@ -20,7 +20,7 @@ class PathResolverTest extends \PHPUnit_Framework_TestCase
      */
     public function testCanResolveArray()
     {
-        $this->assertEquals(array(__DIR__ , __FILE__), PathResolver::realpath(array(__DIR__ , __FILE__)));
+        $this->assertEquals([__DIR__ , __FILE__], PathResolver::realpath([__DIR__ , __FILE__]));
     }
 
     /**
@@ -35,10 +35,10 @@ class PathResolverTest extends \PHPUnit_Framework_TestCase
     {
         // Trick to get scheme name and path in one action. If no scheme, then there will be only one part
         $components = explode('://', $expected, 2);
-        list ($pathScheme, $localPath) = isset($components[1]) ? $components : array(null, $components[0]);
+        list ($pathScheme, $localPath) = isset($components[1]) ? $components : [null, $components[0]];
 
         // resolve path parts (single dot, double dot and double delimiters)
-        $localPath  = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $localPath);
+        $localPath  = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $localPath);
         if ($pathScheme) {
             $localPath = "$pathScheme://$localPath";
         }
@@ -57,22 +57,22 @@ class PathResolverTest extends \PHPUnit_Framework_TestCase
         $curDir = getcwd();
         $parent = dirname($curDir);
 
-        return array(
-            array('/some/absolute/file' , '/some/absolute/file'),
-            array('/some/absolute/file/../points/' , '/some/absolute/points/'),
-            array('/some/./point.php' , '/some/point.php'),
+        return [
+            ['/some/absolute/file' , '/some/absolute/file'],
+            ['/some/absolute/file/../points/' , '/some/absolute/points/'],
+            ['/some/./point.php' , '/some/point.php'],
 
-            array('relative/to/the/dir' , "$curDir/relative/to/the/dir"),
-            array('../relative/filename' , "$parent/relative/filename"),
-            array('./point/file' , "$curDir/point/file"),
+            ['relative/to/the/dir' , "$curDir/relative/to/the/dir"],
+            ['../relative/filename' , "$parent/relative/filename"],
+            ['./point/file' , "$curDir/point/file"],
 
-            array('C:\\Windows\\..\\filename', 'C:\\filename'),
+            ['C:\\Windows\\..\\filename', 'C:\\filename'],
 
-            array('http://localhost/file.name' , 'http://localhost/file.name'),
-            array('http://localhost/some/../relative.file' , 'http://localhost/relative.file'),
+            ['http://localhost/file.name' , 'http://localhost/file.name'],
+            ['http://localhost/some/../relative.file' , 'http://localhost/relative.file'],
 
-            array('phar://go.phar/some/path' , 'phar://go.phar/some/path'),
-            array('phar://go.phar/some/../relative.file' , 'phar://go.phar/relative.file'),
-        );
+            ['phar://go.phar/some/path' , 'phar://go.phar/some/path'],
+            ['phar://go.phar/some/../relative.file' , 'phar://go.phar/relative.file'],
+        ];
     }
 }

@@ -25,10 +25,10 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->transformer = new MagicConstantTransformer(
-            $this->getKernelMock(array(
+            $this->getKernelMock([
                 'cacheDir' => __DIR__,
                 'appDir'   => dirname(__DIR__),
-            ))
+            ])
         );
 
         if (defined("HHVM_VERSION")) {
@@ -56,7 +56,7 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
             false,
             true,
             true,
-            array('getOptions')
+            ['getOptions']
         );
         $mock->expects($this->any())
             ->method('getOptions')

@@ -28,7 +28,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
 
         $interceptor = $this->getMockForAbstractClass(
             BaseInterceptor::class,
-            array($advice)
+            [$advice]
         );
         $this->assertEquals($advice, $interceptor->getRawAdvice());
     }

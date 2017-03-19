@@ -36,11 +36,11 @@ class PathResolver
         }
 
         if (is_array($somePath)) {
-            return array_map(array(__CLASS__, __FUNCTION__), $somePath);
+            return array_map([__CLASS__, __FUNCTION__], $somePath);
         }
         // Trick to get scheme name and path in one action. If no scheme, then there will be only one part
         $components = explode('://', $somePath, 2);
-        list ($pathScheme, $path) = isset($components[1]) ? $components : array(null, $components[0]);
+        list ($pathScheme, $path) = isset($components[1]) ? $components : [null, $components[0]];
 
         // Optimization to bypass complex logic for simple paths (eg. not in phar archives)
         if (!$pathScheme && ($fastPath = stream_resolve_include_path($somePath))) {
@@ -53,7 +53,7 @@ class PathResolver
         }
 
         // resolve path parts (single dot, double dot and double delimiters)
-        $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
+        $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
         if (strpos($path, '.') !== false) {
             $parts     = explode(DIRECTORY_SEPARATOR, $path);
             $absolutes = [];

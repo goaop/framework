@@ -51,11 +51,11 @@ class AndPointFilterTest extends \PHPUnit_Framework_TestCase
     {
         $true  = TruePointFilter::getInstance();
         $false = new NotPointFilter($true);
-        return array(
-            array($false, $false, false),
-            array($false, $true, false),
-            array($true, $false, false),
-            array($true, $true, true)
-        );
+        return [
+            [$false, $false, false],
+            [$false, $true, false],
+            [$true, $false, false],
+            [$true, $true, true]
+        ];
     }
 }

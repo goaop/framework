@@ -23,6 +23,6 @@ class BeforeInterceptorTest extends AbstractInterceptorTest
         $result = $interceptor->invoke($invocation);
 
         $this->assertEquals('invocation', $result, "Advice should not affect the return value of invocation");
-        $this->assertEquals(array('advice', 'invocation'), $sequence, "Before advice should be invoked before invocation");
+        $this->assertEquals(['advice', 'invocation'], $sequence, "Before advice should be invoked before invocation");
     }
 }

@@ -74,7 +74,7 @@ class AnnotatedReflectionMethod extends ReflectionMethod
         $className  = $this->getDeclaringClass()->name;
         $methodName = $this->name;
         $closure = function (...$args) use ($methodName, $className) {
-            $result = forward_static_call_array(array($className, $methodName), $args);
+            $result = forward_static_call_array([$className, $methodName], $args);
 
             return $result;
         };

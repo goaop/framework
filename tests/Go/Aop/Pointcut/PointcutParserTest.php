@@ -57,63 +57,63 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
 
     public function validPointcutDefinitions()
     {
-        return array(
+        return [
             // Execution pointcuts
-            array('execution(public Example->method(*))'),
-            array('execution(public Example->method|method1|method2(*))'),
-            array('execution(final public Example\Aspect\*->method*(*))'),
-            array('execution(protected|public **::*someStatic*Method*(*))'),
+            ['execution(public Example->method(*))'],
+            ['execution(public Example->method|method1|method2(*))'],
+            ['execution(final public Example\Aspect\*->method*(*))'],
+            ['execution(protected|public **::*someStatic*Method*(*))'],
 
             // This will match property that has First\Second\Annotation\Class annotation
-            array('@access(First\Second\Annotation\Class)'),
+            ['@access(First\Second\Annotation\Class)'],
 
             // This will match method execution that has First\Second\Annotation\Class annotation
-            array('@execution(First\Second\Annotation\Class)'),
+            ['@execution(First\Second\Annotation\Class)'],
 
             // This will match all the methods in all classes of Go\Aspects\Blog\Package.
-            array('within(Go\Aspects\Blog\Package\*)'),
+            ['within(Go\Aspects\Blog\Package\*)'],
             // This will match all the methods in all classes of Go\Aspects\Blog\Package and its sub packages.
-            array('within(Go\Aspects\Blog\Package\**)'),
+            ['within(Go\Aspects\Blog\Package\**)'],
             // This will match all the methods in the DemoClass.
-            array('within(Go\Aspects\Blog\Package\DemoClass)'),
+            ['within(Go\Aspects\Blog\Package\DemoClass)'],
             // This will match all the methods which are in classes which implement DemoInterface.
-            array('within(DemoInterface+)'),
+            ['within(DemoInterface+)'],
             // This will match all the methods in the class with specific annotation.
-            array('@within(First\Second\Annotation\Class)'),
+            ['@within(First\Second\Annotation\Class)'],
 
             // Access pointcuts
-            array('access(public|protected Example\Aspect\*->property*)'),
-            array('access(protected Test\Class*->someProtected*Property)'),
+            ['access(public|protected Example\Aspect\*->property*)'],
+            ['access(protected Test\Class*->someProtected*Property)'],
 
             // Logic pointcuts
-            array('!within(DemoInterface\Test+)'),
-            array('within(DemoInterface+) && within(Some\Namespace\**)'),
-            array('within(DemoInterface+) || within(Some\Namespace\**)'),
+            ['!within(DemoInterface\Test+)'],
+            ['within(DemoInterface+) && within(Some\Namespace\**)'],
+            ['within(DemoInterface+) || within(Some\Namespace\**)'],
 
             // Parenthesis
-            array('within(DemoInterface+) && ( within(**) || within(*) )'),
+            ['within(DemoInterface+) && ( within(**) || within(*) )'],
 
             // Control flow execution pointcuts
-            array('cflowbelow(execution(public Example->method(*)))'),
+            ['cflowbelow(execution(public Example->method(*)))'],
 
             // Function pointcut
-            array('execution(Demo\*\Test\**\*(*))'),
-            array('execution(Demo\Namespace\array_*_er(*))'),
-            array('execution(**\*(*))'),
+            ['execution(Demo\*\Test\**\*(*))'],
+            ['execution(Demo\Namespace\array_*_er(*))'],
+            ['execution(**\*(*))'],
 
             // Dynamic pointcut for methods via __callStatic and __call
-            array('dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))'),
-            array('dynamic(public Demo\Example\DynamicMethodsDemo->save*(*))'),
+            ['dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))'],
+            ['dynamic(public Demo\Example\DynamicMethodsDemo->save*(*))'],
 
             // This will match static initialization pointcut
-            array('staticinitialization(Some\Specific\Class\**)'),
+            ['staticinitialization(Some\Specific\Class\**)'],
 
             // This will match all methods, but not inherited
-            array('execution(public **->*(*)) && !matchInherited()'),
+            ['execution(public **->*(*)) && !matchInherited()'],
 
             // This will match dynamic initialization pointcut
-            array('initialization(Some\Specific\Class\**)'),
-        );
+            ['initialization(Some\Specific\Class\**)'],
+        ];
     }
 
 }

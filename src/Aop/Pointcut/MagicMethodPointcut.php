@@ -53,11 +53,11 @@ class MagicMethodPointcut implements PointFilter, Pointcut
     public function __construct($methodName, PointFilter $modifierFilter = null)
     {
         $this->methodName     = $methodName;
-        $this->regexp         = strtr(preg_quote($this->methodName, '/'), array(
+        $this->regexp         = strtr(preg_quote($this->methodName, '/'), [
             '\\*' => '.*?',
             '\\?' => '.',
             '\\|' => '|'
-        ));
+        ]);
         $this->modifierFilter = $modifierFilter;
     }
 

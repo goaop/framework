@@ -91,10 +91,10 @@ class CachingTransformer extends BaseSourceTransformer
                 // For cache files we don't want executable bits by default
                 chmod($cacheUri, $this->cacheFileMode & (~0111));
             }
-            $this->cacheManager->setCacheState($originalUri, array(
+            $this->cacheManager->setCacheState($originalUri, [
                 'filemtime' => isset($_SERVER['REQUEST_TIME']) ? $_SERVER['REQUEST_TIME'] : time(),
                 'cacheUri'  => $wasProcessed ? $cacheUri : null
-            ));
+            ]);
 
             return $wasProcessed;
         }

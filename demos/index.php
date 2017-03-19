@@ -171,14 +171,14 @@ switch ($showCase) {
         $example = new DynamicMethodsDemo();
         $example->saveById(123); // intercept magic dynamic method
         $example->load(456); // notice, that advice for this magic method is not called
-        DynamicMethodsDemo::find(array('id' =>124)); //intercept magic static method
+        DynamicMethodsDemo::find(['id' =>124]); //intercept magic static method
         break;
 
     case 'function-interceptor':
         $aspectName = 'Demo\Aspect\FunctionInterceptorAspect';
 
         $example = new FunctionDemo();
-        $example->testArrayFunctions(array('test' => 1, 'code' => 2, 'more' => 1));
+        $example->testArrayFunctions(['test' => 1, 'code' => 2, 'more' => 1]);
         $example->testFileContent();
         break;
 

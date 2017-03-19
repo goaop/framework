@@ -35,13 +35,13 @@ class GoAspectContainerTest extends TestCase
 
     public function internalServicesList()
     {
-        return array(
-            array('aspect.loader'),
-            array('aspect.advice_matcher'),
-            array('aspect.annotation.reader'),
-            array('aspect.pointcut.lexer'),
-            array('aspect.pointcut.parser'),
-        );
+        return [
+            ['aspect.loader'],
+            ['aspect.advice_matcher'],
+            ['aspect.annotation.reader'],
+            ['aspect.pointcut.lexer'],
+            ['aspect.pointcut.parser'],
+        ];
     }
 
     /**
@@ -55,7 +55,7 @@ class GoAspectContainerTest extends TestCase
         $this->assertSame($pointcut, $this->container->getPointcut('test'));
         // Verify that tag is working
         $pointcuts = $this->container->getByTag('pointcut');
-        $this->assertSame(array('pointcut.test' => $pointcut), $pointcuts);
+        $this->assertSame(['pointcut.test' => $pointcut], $pointcuts);
     }
 
     /**
@@ -68,7 +68,7 @@ class GoAspectContainerTest extends TestCase
 
         // Verify that tag is working
         $advisors = $this->container->getByTag('advisor');
-        $this->assertSame(array('advisor.test' => $advisor), $advisors);
+        $this->assertSame(['advisor.test' => $advisor], $advisors);
     }
 
     /**
@@ -84,7 +84,7 @@ class GoAspectContainerTest extends TestCase
         $this->assertSame($aspect, $this->container->getAspect($aspectClass));
         // Verify that tag is working
         $aspects = $this->container->getByTag('aspect');
-        $this->assertSame(array("aspect.{$aspectClass}" => $aspect), $aspects);
+        $this->assertSame(["aspect.{$aspectClass}" => $aspect], $aspects);
     }
 
     /**

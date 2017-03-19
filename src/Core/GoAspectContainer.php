@@ -141,7 +141,7 @@ class GoAspectContainer extends Container implements AspectContainer
      */
     public function registerPointcut(Aop\Pointcut $pointcut, $id)
     {
-        $this->set("pointcut.{$id}", $pointcut, array('pointcut'));
+        $this->set("pointcut.{$id}", $pointcut, ['pointcut']);
     }
 
     /**
@@ -164,7 +164,7 @@ class GoAspectContainer extends Container implements AspectContainer
      */
     public function registerAdvisor(Aop\Advisor $advisor, $id)
     {
-        $this->set("advisor.{$id}", $advisor, array('advisor'));
+        $this->set("advisor.{$id}", $advisor, ['advisor']);
     }
 
     /**
@@ -187,7 +187,7 @@ class GoAspectContainer extends Container implements AspectContainer
     public function registerAspect(Aop\Aspect $aspect)
     {
         $refAspect = new ReflectionClass($aspect);
-        $this->set("aspect.{$refAspect->name}", $aspect, array('aspect'));
+        $this->set("aspect.{$refAspect->name}", $aspect, ['aspect']);
         $this->addResource($refAspect->getFileName());
     }
 

@@ -26,7 +26,7 @@ class AroundInterceptorTest extends AbstractInterceptorTest
         $result = $interceptor->invoke($invocation);
 
         $this->assertEquals('advice', $result, "Advice should change the return value of invocation");
-        $this->assertEquals(array('advice'), $sequence, "Only advice should be invoked");
+        $this->assertEquals(['advice'], $sequence, "Only advice should be invoked");
     }
 
     public function testInvocationIsCalledWithinAdvice()
@@ -43,6 +43,6 @@ class AroundInterceptorTest extends AbstractInterceptorTest
         $interceptor = new AroundInterceptor($advice);
         $result = $interceptor->invoke($invocation);
         $this->assertEquals('invocation', $result, "Advice should return an original return value");
-        $this->assertEquals(array('advice', 'invocation', 'advice'), $sequence, "Around logic should work");
+        $this->assertEquals(['advice', 'invocation', 'advice'], $sequence, "Around logic should work");
     }
 }

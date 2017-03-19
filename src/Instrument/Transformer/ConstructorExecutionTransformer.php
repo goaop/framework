@@ -89,14 +89,14 @@ class ConstructorExecutionTransformer implements SourceTransformer
         $isClassName       = true;
         $classNamePosition = 0;
         foreach ($tokenStream as $index=>$token) {
-            list ($token, $tokenValue) = (array) $token + array(1 => $token);
+            list ($token, $tokenValue) = (array) $token + [1 => $token];
             if ($isWaitingClass && $token !== T_WHITESPACE && $token !== T_COMMENT) {
                 $classNamePosition++;
                 if ($token === T_VARIABLE && $classNamePosition === 1) {
                     $isWaitingEnd   = true;
                     $isWaitingClass = false;
                 }
-                if (in_array($tokenStream[$index + 1], array('(', ';', ')', '.'))) {
+                if (in_array($tokenStream[$index + 1], ['(', ';', ')', '.'])) {
                     $isWaitingEnd   = true;
                     $isWaitingClass = false;
                 }

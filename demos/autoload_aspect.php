@@ -15,10 +15,10 @@ use Go\Aop\Features;
 include __DIR__ . '/../vendor/autoload.php';
 
 // Initialize demo aspect container
-AwesomeAspectKernel::getInstance()->init(array(
+AwesomeAspectKernel::getInstance()->init([
     'debug'    => true,
     'appDir'   => __DIR__ . '/../demos',
     'cacheDir' => __DIR__ . '/cache',
 
     'features' => Features::INTERCEPT_FUNCTIONS,
-));
+]);

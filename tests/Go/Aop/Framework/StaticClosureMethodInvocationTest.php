@@ -23,7 +23,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
      */
     public function testStaticSelfMethodInvocation($methodName, $expectedResult)
     {
-        $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array('none'));
+        $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, ['none']);
         $invocation = new self::$invocationClass($childClass, $methodName, []);
 
         $result = $invocation($childClass);
@@ -37,7 +37,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
      */
     public function testStaticSelfNotOverridden($methodName, $expectedResult)
     {
-        $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array($methodName));
+        $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, [$methodName]);
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, []);
 
         $result = $invocation($childClass);
@@ -51,7 +51,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
      */
     public function testStaticLsbIsWorking($methodName)
     {
-        $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, array($methodName));
+        $childClass = $this->getMockClass(self::FIRST_CLASS_NAME, [$methodName]);
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, []);
 
         $result = $invocation($childClass);
@@ -64,7 +64,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticPassByReference', []);
 
         $value  = 'test';
-        $result = $invocation($child, array(&$value));
+        $result = $invocation($child, [&$value]);
         $this->assertEquals(null, $result);
         $this->assertEquals(null, $value);
     }
@@ -87,7 +87,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
             $value = 'ok';
         });
 
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticSelfPublic', array($advice));
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticSelfPublic', [$advice]);
 
         $result = $invocation($child, []);
         $this->assertEquals('ok', $value);
@@ -126,19 +126,19 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
     public function staticSelfMethodsBatch()
     {
-        return array(
-            array('staticSelfPublic', T_PUBLIC),
-            array('staticSelfProtected', T_PROTECTED),
-            array('staticSelfPublicAccessPrivate', T_PRIVATE),
-        );
+        return [
+            ['staticSelfPublic', T_PUBLIC],
+            ['staticSelfProtected', T_PROTECTED],
+            ['staticSelfPublicAccessPrivate', T_PRIVATE],
+        ];
     }
 
     public function staticLsbMethodsBatch()
     {
-        return array(
-            array('staticLsbPublic'),
-            array('staticLsbProtected'),
-        );
+        return [
+            ['staticLsbPublic'],
+            ['staticLsbProtected'],
+        ];
     }
 
 }

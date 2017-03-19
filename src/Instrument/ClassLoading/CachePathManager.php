@@ -183,10 +183,10 @@ class CachePathManager
             $cachePath    = substr(var_export($this->cacheDir, true), 1, -1);
             $rootPath     = substr(var_export($this->appDir, true), 1, -1);
             $cacheData    = '<?php return ' . var_export($fullCacheMap, true) . ';';
-            $cacheData    = strtr($cacheData, array(
+            $cacheData    = strtr($cacheData, [
                 '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
                 '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
-            ));
+            ]);
             $fullCacheFileName = $this->cacheDir . self::CACHE_FILE_NAME;
             file_put_contents($fullCacheFileName, $cacheData, LOCK_EX);
             // For cache files we don't want executable bits by default

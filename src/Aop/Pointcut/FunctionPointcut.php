@@ -47,10 +47,10 @@ class FunctionPointcut implements Pointcut
     public function __construct($functionName)
     {
         $this->functionName = $functionName;
-        $this->regexp       = strtr(preg_quote($this->functionName, '/'), array(
+        $this->regexp       = strtr(preg_quote($this->functionName, '/'), [
             '\\*' => '.*?',
             '\\?' => '.'
-        ));
+        ]);
     }
 
     /**

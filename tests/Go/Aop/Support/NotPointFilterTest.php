@@ -30,9 +30,9 @@ class NotPointFilterTest extends \PHPUnit_Framework_TestCase
     {
         $true  = TruePointFilter::getInstance();
         $false = new NotPointFilter($true);
-        return array(
-            array($false, true),
-            array($true, false)
-        );
+        return [
+            [$false, true],
+            [$true, false]
+        ];
     }
 }

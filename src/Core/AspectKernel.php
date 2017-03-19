@@ -38,9 +38,9 @@ abstract class AspectKernel
      *
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'features' => 0
-    );
+    ];
 
     /**
      * Single instance of kernel
@@ -176,7 +176,7 @@ abstract class AspectKernel
      */
     protected function getDefaultOptions()
     {
-        return array(
+        return [
             'debug'                  => false,
             'appDir'                 => __DIR__ . '/../../../../../',
             'cacheDir'               => null,
@@ -186,7 +186,7 @@ abstract class AspectKernel
             'includePaths'           => [],
             'excludePaths'           => [],
             'containerClass'         => static::$containerClass,
-        );
+        ];
     }
 
 
@@ -256,9 +256,9 @@ abstract class AspectKernel
             return $transformers;
         };
 
-        return array(
+        return [
             new CachingTransformer($this, $sourceTransformers, $cacheManager)
-        );
+        ];
     }
 
     /**

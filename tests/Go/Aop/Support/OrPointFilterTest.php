@@ -51,11 +51,11 @@ class OrPointFilterTest extends \PHPUnit_Framework_TestCase
     {
         $true  = TruePointFilter::getInstance();
         $false = new NotPointFilter($true);
-        return array(
-            array($false, $false, false),
-            array($false, $true, true),
-            array($true, $false, true),
-            array($true, $true, true)
-        );
+        return [
+            [$false, $false, false],
+            [$false, $true, true],
+            [$true, $false, true],
+            [$true, $true, true]
+        ];
     }
 }

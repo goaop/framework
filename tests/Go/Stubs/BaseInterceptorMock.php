@@ -25,11 +25,11 @@ class BaseInterceptorMock extends BaseInterceptor
      */
     public static function serializeAdvice(\Closure $adviceMethod)
     {
-        return array(
+        return [
             'scope'  => 'aspect',
             'method' => 'Go\Aop\Framework\{closure}',
             'aspect' => 'Go\Aop\Framework\BaseInterceptorTest'
-        );
+        ];
     }
 
     /**
