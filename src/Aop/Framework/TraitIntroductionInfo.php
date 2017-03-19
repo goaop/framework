@@ -46,9 +46,7 @@ class TraitIntroductionInfo implements IntroductionInfo
     }
 
     /**
-     * Return the additional interfaces introduced by this Advisor or Advice.
-     *
-     * @return array|string[] introduced interfaces
+     * Returns the list of additional interface names introduced by this Advisor or Advice.
      */
     public function getInterfaces() : array
     {
@@ -56,9 +54,7 @@ class TraitIntroductionInfo implements IntroductionInfo
     }
 
     /**
-     * Return the list of traits with realization of introduced interfaces
-     *
-     * @return array|string[] trait implementations
+     * Returns the list of trait names with realization of introduced interfaces
      */
     public function getTraits() : array
     {

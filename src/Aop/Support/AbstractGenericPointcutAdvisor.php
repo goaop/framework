@@ -38,8 +38,6 @@ abstract class AbstractGenericPointcutAdvisor implements PointcutAdvisor
 
     /**
      * Returns an advice to apply
-     *
-     * @return Advice
      */
     public function getAdvice() : Advice
     {

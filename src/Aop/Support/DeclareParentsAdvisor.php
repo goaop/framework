@@ -89,8 +89,6 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
      * Return the filter determining which target classes this introduction should apply to.
      *
      * This represents the class part of a pointcut. Note that method matching doesn't make sense to introductions.
-     *
-     * @return PointFilter The class filter
      */
     public function getClassFilter() : PointFilter
     {
