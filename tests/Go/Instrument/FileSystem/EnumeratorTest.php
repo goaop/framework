@@ -1,9 +1,8 @@
 <?php
 declare(strict_types = 1);
 
-namespace Go\Instrument;
+namespace Go\Instrument\FileSystem;
 
-use Go\Instrument\FileSystem\Enumerator;
 use Vfs\FileSystem;
 
 class EnumeratorTest extends \PHPUnit_Framework_TestCase

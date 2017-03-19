@@ -34,7 +34,7 @@ class AfterThrowingInterceptorTest extends AbstractInterceptorTest
         $invocation = $this->getInvocation($sequence, true);
 
         $interceptor = new AfterThrowingInterceptor($advice);
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
         try {
             $interceptor->invoke($invocation);
         } catch (\Exception $e) {

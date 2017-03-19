@@ -42,6 +42,11 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
                 'unit.test',
                 $this->getMockBuilder(CachePathManager::class)->setConstructorArgs([$kernelMock])->getMock()
             );
+            $cachePathManager = $this
+                ->getMockBuilder(CachePathManager::class)
+                ->setConstructorArgs([$kernelMock])
+                ->getMock();
+            self::$transformer = new FilterInjectorTransformer($kernelMock, 'unit.test', $cachePathManager);
         }
         $stream = fopen('php://input', 'r');
         $this->metadata = new StreamMetaData($stream);

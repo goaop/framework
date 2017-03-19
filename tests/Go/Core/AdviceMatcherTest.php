@@ -37,7 +37,10 @@ class AdviceMatcherTest extends TestCase
     {
         $container = $this->createMock(AspectContainer::class);
         $reader    = $this->createMock(Reader::class);
-        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs([$container, $reader])->getMock();
+        $loader    = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$container, $reader])
+            ->getMock();
 
         $this->adviceMatcher = new AdviceMatcher($loader, $container);
 
