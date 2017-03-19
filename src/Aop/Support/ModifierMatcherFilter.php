@@ -45,7 +45,7 @@ class ModifierMatcherFilter implements PointFilter
      *
      * @param int $initialMask Default mask for "and"
      */
-    public function __construct($initialMask = 0)
+    public function __construct(int $initialMask = 0)
     {
         $this->andMask = $initialMask;
     }
@@ -60,7 +60,7 @@ class ModifierMatcherFilter implements PointFilter
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
     {
         $modifiers = $point->getModifiers();
 
@@ -74,7 +74,7 @@ class ModifierMatcherFilter implements PointFilter
      * @param integer $bitMask
      * @return $this
      */
-    public function andMatch($bitMask)
+    public function andMatch(int $bitMask)
     {
         $this->andMask |= $bitMask;
 
@@ -87,7 +87,7 @@ class ModifierMatcherFilter implements PointFilter
      * @param integer $bitMask
      * @return $this
      */
-    public function orMatch($bitMask)
+    public function orMatch(int $bitMask)
     {
         $this->orMask |= $bitMask;
 
@@ -100,7 +100,7 @@ class ModifierMatcherFilter implements PointFilter
      * @param integer $bitMask
      * @return $this
      */
-    public function notMatch($bitMask)
+    public function notMatch(int $bitMask)
     {
         $this->notMask |= $bitMask;
 
@@ -109,10 +109,8 @@ class ModifierMatcherFilter implements PointFilter
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind() : int
     {
         return self::KIND_ALL;
     }
@@ -124,7 +122,7 @@ class ModifierMatcherFilter implements PointFilter
      *
      * @return ModifierMatcherFilter
      */
-    public function merge(ModifierMatcherFilter $filter)
+    public function merge(ModifierMatcherFilter $filter) : self
     {
         $newFilter = clone $this;
         $newFilter->andMask |= $filter->andMask;

@@ -31,7 +31,7 @@ class MatchInheritedPointcut implements Pointcut
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
     {
         if (!$context instanceof \ReflectionClass) {
             return false;
@@ -48,10 +48,8 @@ class MatchInheritedPointcut implements Pointcut
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind() : int
     {
         return PointFilter::KIND_METHOD | PointFilter::KIND_PROPERTY;
     }

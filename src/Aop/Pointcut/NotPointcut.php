@@ -53,7 +53,7 @@ class NotPointcut implements Pointcut
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
     {
         $isMatchesPre = $this->pointcut->getClassFilter()->matches($context);
         if (!$isMatchesPre) {
@@ -69,10 +69,8 @@ class NotPointcut implements Pointcut
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind() : int
     {
         return $this->kind;
     }

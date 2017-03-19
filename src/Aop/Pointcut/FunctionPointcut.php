@@ -44,7 +44,7 @@ class FunctionPointcut implements Pointcut
      *
      * @param string $functionName Name of the function to match or glob pattern
      */
-    public function __construct($functionName)
+    public function __construct(string $functionName)
     {
         $this->functionName = $functionName;
         $this->regexp       = strtr(preg_quote($this->functionName, '/'), [
@@ -63,7 +63,7 @@ class FunctionPointcut implements Pointcut
      *
      * @return bool
      */
-    public function matches($function, $context = null, $instance = null, array $arguments = null)
+    public function matches($function, $context = null, $instance = null, array $arguments = null) : bool
     {
         if (!$function instanceof ReflectionFunction) {
             return false;
@@ -74,10 +74,8 @@ class FunctionPointcut implements Pointcut
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind() : int
     {
         return self::KIND_FUNCTION;
     }

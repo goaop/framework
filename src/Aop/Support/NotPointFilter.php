@@ -23,14 +23,14 @@ class NotPointFilter implements PointFilter
      *
      * @var int
      */
-    private $kind = 0;
+    private $kind;
 
     /**
      * First part of filter
      *
      * @var PointFilter|null
      */
-    private $first = null;
+    private $first;
 
     /**
      * Not constructor
@@ -53,17 +53,15 @@ class NotPointFilter implements PointFilter
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
     {
         return !$this->first->matches($point, $context);
     }
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind() : int
     {
         return $this->kind;
     }

@@ -25,14 +25,14 @@ class InheritanceClassFilter implements PointFilter
      *
      * @var string
      */
-    protected $parentClass = '';
+    protected $parentClass;
 
     /**
      * Inheritance class matcher constructor
      *
      * @param string $parentClassName Name of the parent class or interface to match
      */
-    public function __construct($parentClassName)
+    public function __construct(string $parentClassName)
     {
         $this->parentClass = $parentClassName;
     }
@@ -47,7 +47,7 @@ class InheritanceClassFilter implements PointFilter
      *
      * @return bool
      */
-    public function matches($class, $context = null, $instance = null, array $arguments = null)
+    public function matches($class, $context = null, $instance = null, array $arguments = null) : bool
     {
         if (!$class instanceof ReflectionClass) {
             return false;
@@ -58,10 +58,8 @@ class InheritanceClassFilter implements PointFilter
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind() : int
     {
         return self::KIND_CLASS;
     }

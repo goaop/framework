@@ -46,7 +46,7 @@ class PointcutReference implements Pointcut
      * @param AspectContainer $container Instance of container
      * @param string $pointcutName Referenced pointcut
      */
-    public function __construct(AspectContainer $container, $pointcutName)
+    public function __construct(AspectContainer $container, string $pointcutName)
     {
         $this->container    = $container;
         $this->pointcutName = $pointcutName;
@@ -62,17 +62,15 @@ class PointcutReference implements Pointcut
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
     {
         return $this->getPointcut()->matches($point, $context, $instance, $arguments);
     }
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind() : int
     {
         return $this->getPointcut()->getKind();
     }
@@ -83,20 +81,6 @@ class PointcutReference implements Pointcut
     public function getClassFilter() : PointFilter
     {
         return $this->getPointcut()->getClassFilter();
-    }
-
-    /**
-     * Returns a real pointcut from the container
-     *
-     * @return Pointcut
-     */
-    public function getPointcut()
-    {
-        if (!$this->pointcut) {
-            $this->pointcut = $this->container->getPointcut($this->pointcutName);
-        }
-
-        return $this->pointcut;
     }
 
     /**
@@ -113,5 +97,17 @@ class PointcutReference implements Pointcut
     public function __wakeup()
     {
         $this->container = AspectKernel::getInstance()->getContainer();
+    }
+
+    /**
+     * Returns a real pointcut from the container
+     */
+    private function getPointcut() : Pointcut
+    {
+        if (!$this->pointcut) {
+            $this->pointcut = $this->container->getPointcut($this->pointcutName);
+        }
+
+        return $this->pointcut;
     }
 }

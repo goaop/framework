@@ -48,14 +48,12 @@ interface PointFilter
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
      *
-     * @return bool
+     * @return bool True if point matches
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null);
+    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool;
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind();
+    public function getKind() : int;
 }
