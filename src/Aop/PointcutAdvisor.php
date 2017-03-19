@@ -20,8 +20,6 @@ interface PointcutAdvisor extends Advisor
 {
     /**
      * Get the Pointcut that drives this advisor.
-     *
-     * @return Pointcut The pointcut
      */
-    public function getPointcut();
+    public function getPointcut() : Pointcut;
 }

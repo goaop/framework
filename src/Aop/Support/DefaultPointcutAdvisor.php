@@ -63,10 +63,8 @@ class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
 
     /**
      * Get the Pointcut that drives this advisor.
-     *
-     * @return Pointcut The pointcut
      */
-    public function getPointcut()
+    public function getPointcut() : Pointcut
     {
         return $this->pointcut;
     }

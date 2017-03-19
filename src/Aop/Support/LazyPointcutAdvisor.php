@@ -47,7 +47,7 @@ class LazyPointcutAdvisor extends AbstractGenericPointcutAdvisor
      * @param string $pointcutExpression The Pointcut targeting the Advice
      * @param Advice $advice The Advice to run when Pointcut matches
      */
-    public function __construct(AspectContainer $container, $pointcutExpression, Advice $advice)
+    public function __construct(AspectContainer $container, string $pointcutExpression, Advice $advice)
     {
         $this->container          = $container;
         $this->pointcutExpression = $pointcutExpression;
@@ -56,15 +56,12 @@ class LazyPointcutAdvisor extends AbstractGenericPointcutAdvisor
 
     /**
      * Get the Pointcut that drives this advisor.
-     *
-     * @return Pointcut The pointcut
      */
-    public function getPointcut()
+    public function getPointcut() : Pointcut
     {
         if (!$this->pointcut) {
 
             // Inject this dependencies and make them lazy!
-            // should be extracted from AbstractAspectLoaderExtension into separate class
 
             /** @var Pointcut\PointcutLexer $lexer */
             $lexer = $this->container->get('aspect.pointcut.lexer');
