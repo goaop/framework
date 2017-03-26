@@ -14,6 +14,7 @@ namespace Go\Aop\Support;
 use Go\Aop\Advice;
 use Go\Aop\IntroductionAdvisor;
 use Go\Aop\IntroductionInfo;
+use Go\Aop\Pointcut\PointcutClassFilterTrait;
 use Go\Aop\PointFilter;
 use ReflectionClass;
 
@@ -22,6 +23,7 @@ use ReflectionClass;
  */
 class DeclareParentsAdvisor implements IntroductionAdvisor
 {
+    use PointcutClassFilterTrait;
 
     /**
      * Introduction information
@@ -29,13 +31,6 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
      * @var IntroductionInfo
      */
     private $advice = null;
-
-    /**
-     * Type pattern the introduction is restricted to
-     *
-     * @var PointFilter
-     */
-    private $classFilter;
 
     /**
      * Creates an advisor for declaring mixins via traits and interfaces.
@@ -83,25 +78,5 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     public function getAdvice() : Advice
     {
         return $this->advice;
-    }
-
-    /**
-     * Return the filter determining which target classes this introduction should apply to.
-     *
-     * This represents the class part of a pointcut. Note that method matching doesn't make sense to introductions.
-     */
-    public function getClassFilter() : PointFilter
-    {
-        return $this->classFilter;
-    }
-
-    /**
-     * Set the class filter for advisor
-     *
-     * @param PointFilter $classFilter Filter for classes
-     */
-    public function setClassFilter(PointFilter $classFilter)
-    {
-        $this->classFilter = $classFilter;
     }
 }
