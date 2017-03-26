@@ -46,7 +46,7 @@ class PointcutBuilder
      * @param string $pointcutExpression Pointcut, e.g. "within(**)"
      * @param Closure $advice Advice to call
      */
-    public function before($pointcutExpression, Closure $advice)
+    public function before(string $pointcutExpression, Closure $advice)
     {
         $advice = new BeforeInterceptor($advice, 0, $pointcutExpression);
         $this->registerAdviceInContainer($pointcutExpression, $advice);
@@ -58,7 +58,7 @@ class PointcutBuilder
      * @param string $pointcutExpression Pointcut, e.g. "within(**)"
      * @param Closure $advice Advice to call
      */
-    public function after($pointcutExpression, Closure $advice)
+    public function after(string $pointcutExpression, Closure $advice)
     {
         $advice = new AfterInterceptor($advice, 0, $pointcutExpression);
         $this->registerAdviceInContainer($pointcutExpression, $advice);
@@ -70,7 +70,7 @@ class PointcutBuilder
      * @param string $pointcutExpression Pointcut, e.g. "within(**)"
      * @param Closure $advice Advice to call
      */
-    public function afterThrowing($pointcutExpression, Closure $advice)
+    public function afterThrowing(string $pointcutExpression, Closure $advice)
     {
         $advice = new AfterThrowingInterceptor($advice, 0, $pointcutExpression);
         $this->registerAdviceInContainer($pointcutExpression, $advice);
@@ -82,7 +82,7 @@ class PointcutBuilder
      * @param string $pointcutExpression Pointcut, e.g. "within(**)"
      * @param Closure $advice Advice to call
      */
-    public function around($pointcutExpression, Closure $advice)
+    public function around(string $pointcutExpression, Closure $advice)
     {
         $advice = new AroundInterceptor($advice, 0, $pointcutExpression);
         $this->registerAdviceInContainer($pointcutExpression, $advice);
@@ -95,7 +95,7 @@ class PointcutBuilder
      * @param string $message Error message to show
      * @param integer $level Error level to trigger
      */
-    public function declareError($pointcutExpression, $message, $level = E_USER_ERROR)
+    public function declareError(string $pointcutExpression, string $message, int $level = E_USER_ERROR)
     {
         $advice = new DeclareErrorInterceptor($message, $level, $pointcutExpression);
         $this->registerAdviceInContainer($pointcutExpression, $advice);
@@ -108,7 +108,7 @@ class PointcutBuilder
      * @param string $pointcutExpression Pointcut expression string
      * @param Advice $advice Instance of advice
      */
-    private function registerAdviceInContainer($pointcutExpression, Advice $advice)
+    private function registerAdviceInContainer(string $pointcutExpression, Advice $advice)
     {
         $this->container->registerAdvisor(
             new LazyPointcutAdvisor($this->container, $pointcutExpression, $advice),
@@ -123,7 +123,7 @@ class PointcutBuilder
      *
      * @return string
      */
-    private function getPointcutId($pointcutExpression)
+    private function getPointcutId(string $pointcutExpression) : string
     {
         static $index = 0;
 
