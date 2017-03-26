@@ -11,11 +11,10 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\PointFilter;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Invocation;
 use Go\Aop\Intercept\Joinpoint;
-use Serializable;
+use Go\Aop\PointFilter;
 
 /**
  * Dynamic invocation matcher combines a pointcut and interceptor.
@@ -23,7 +22,7 @@ use Serializable;
  * For each invocation interceptor asks the pointcut if it matches the invocation.
  * Matcher will receive reflection point, object instance and invocation arguments to make a decision
  */
-class DynamicInvocationMatcherInterceptor implements Interceptor, Serializable
+class DynamicInvocationMatcherInterceptor implements Interceptor
 {
     /**
      * Instance of pointcut to dynamically match joinpoints with args
@@ -49,27 +48,6 @@ class DynamicInvocationMatcherInterceptor implements Interceptor, Serializable
     {
         $this->pointFilter = $pointFilter;
         $this->interceptor = $interceptor;
-    }
-
-    /**
-     * Serializes an interceptor into string representation
-     *
-     * @return string the string representation of the object or null
-     */
-    public function serialize()
-    {
-        return serialize([$this->pointFilter, $this->interceptor]);
-    }
-
-    /**
-     * Unserialize an interceptor from the string
-     *
-     * @param string $serialized The string representation of the object.
-     * @return void
-     */
-    public function unserialize($serialized)
-    {
-        list($this->pointFilter, $this->interceptor) = unserialize($serialized);
     }
 
     /**
