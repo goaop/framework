@@ -61,13 +61,18 @@ class GoAspectContainer extends Container implements AspectContainer
         });
 
         $this->share('aspect.cached.loader', function(Container $container) {
-            $cachedAspectLoader = new CachedAspectLoader(
-                $container,
-                'aspect.loader',
-                $container->get('kernel.options')
-            );
+            $options = $container->get('kernel.options');
+            if (!empty($options['cacheDir'])) {
+                $loader = new CachedAspectLoader(
+                    $container,
+                    'aspect.loader',
+                    $container->get('kernel.options')
+                );
+            } else {
+                $loader = $container->get('aspect.loader');
+            }
 
-            return $cachedAspectLoader;
+            return $loader;
         });
 
         $this->share('aspect.advisor.accessor', function(Container $container) {
