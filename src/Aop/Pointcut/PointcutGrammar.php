@@ -11,6 +11,7 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Pointcut;
 
+use Closure;
 use Dissect\Lexer\Token;
 use Dissect\Parser\Grammar;
 use Doctrine\Common\Annotations\Reader;
@@ -312,14 +313,12 @@ class PointcutGrammar extends Grammar
 
     /**
      * Returns callable for converting node(s) to the string
-     *
-     * @return \Closure
      */
-    private function getNodeToStringConverter()
+    private function getNodeToStringConverter() : Closure
     {
-        return function() {
+        return function(...$arguments) {
             $value = '';
-            foreach (func_get_args() as $node) {
+            foreach ($arguments as $node) {
                 if (is_scalar($node)) {
                     $value .= $node;
                 } else {
@@ -333,10 +332,8 @@ class PointcutGrammar extends Grammar
 
     /**
      * Returns callable for converting node value for modifiers to the constant value
-     *
-     * @return \Closure
      */
-    private function getModifierConverter()
+    private function getModifierConverter() : Closure
     {
         return function(Token $token) {
             $name = strtoupper($token->getValue());
