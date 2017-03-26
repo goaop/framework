@@ -78,17 +78,4 @@ class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
     {
         $this->pointcut = $pointcut;
     }
-
-    /**
-     * Return string representation of object
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        $pointcutClass = get_class($this->getPointcut());
-        $adviceClass   = get_class($this->getAdvice());
-
-        return get_called_class() . ": pointcut [{$pointcutClass}]; advice [{$adviceClass}]";
-    }
 }

@@ -104,17 +104,4 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     {
         $this->classFilter = $classFilter;
     }
-
-    /**
-     * Return string representation of object
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        $adviceClass      = get_class($this->advice);
-        $interfaceClasses = join(',', $this->advice->getInterfaces());
-
-        return get_called_class() . ": advice [{$adviceClass}]; interfaces [{$interfaceClasses}] ";
-    }
 }

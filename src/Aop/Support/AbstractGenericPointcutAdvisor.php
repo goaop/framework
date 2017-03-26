@@ -43,16 +43,4 @@ abstract class AbstractGenericPointcutAdvisor implements PointcutAdvisor
     {
         return $this->advice;
     }
-
-    /**
-     * Return string representation of object
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        $adviceClass = get_class($this->getAdvice());
-
-        return get_called_class() . ": advice [{$adviceClass}]";
-    }
 }
