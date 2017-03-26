@@ -14,6 +14,7 @@ namespace Go\Aop\Support;
 use Go\Aop\Advice;
 use Go\Aop\Framework\DynamicInvocationMatcherInterceptor;
 use Go\Aop\Pointcut;
+use Go\Aop\PointcutAdvisor;
 use Go\Aop\PointFilter;
 
 /**
@@ -22,7 +23,7 @@ use Go\Aop\PointFilter;
  * This is the most commonly used Advisor implementation. It can be used with any pointcut and advice type,
  * except for introductions. There is normally no need to subclass this class, or to implement custom Advisors.
  */
-class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
+class DefaultPointcutAdvisor extends AbstractGenericAdvisor implements PointcutAdvisor
 {
 
     /**
@@ -60,22 +61,11 @@ class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
         return $advice;
     }
 
-
     /**
      * Get the Pointcut that drives this advisor.
      */
     public function getPointcut() : Pointcut
     {
         return $this->pointcut;
-    }
-
-    /**
-     * Specify the pointcut targeting the advice.
-     *
-     * @param Pointcut $pointcut The Pointcut targeting the Advice
-     */
-    public function setPointcut(Pointcut $pointcut)
-    {
-        $this->pointcut = $pointcut;
     }
 }

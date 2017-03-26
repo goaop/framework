@@ -21,7 +21,7 @@ use ReflectionClass;
 /**
  * Introduction advisor delegating to the given object.
  */
-class DeclareParentsAdvisor implements IntroductionAdvisor
+class DeclareParentsAdvisor extends AbstractGenericAdvisor implements IntroductionAdvisor
 {
     use PointcutClassFilterTrait;
 
@@ -30,7 +30,7 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
      *
      * @var IntroductionInfo
      */
-    private $advice = null;
+    protected $advice;
 
     /**
      * Creates an advisor for declaring mixins via traits and interfaces.
@@ -41,7 +41,7 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     public function __construct(PointFilter $classFilter, IntroductionInfo $info)
     {
         $this->classFilter = $classFilter;
-        $this->advice      = $info;
+        parent::__construct($info);
     }
 
     /**
@@ -68,15 +68,5 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
                 throw new \DomainException("Implementation requires method {$interfaceMethod->name}");
             }
         }
-    }
-
-    /**
-     * Returns an advice to apply
-     *
-     * @return Advice|IntroductionInfo
-     */
-    public function getAdvice() : Advice
-    {
-        return $this->advice;
     }
 }

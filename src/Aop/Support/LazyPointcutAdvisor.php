@@ -13,12 +13,13 @@ namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
 use Go\Aop\Pointcut;
+use Go\Aop\PointcutAdvisor;
 use Go\Core\AspectContainer;
 
 /**
  * Lazy pointcut advisor is used to create a delayed pointcut only when needed
  */
-class LazyPointcutAdvisor extends AbstractGenericPointcutAdvisor
+class LazyPointcutAdvisor extends AbstractGenericAdvisor implements PointcutAdvisor
 {
 
     /**
