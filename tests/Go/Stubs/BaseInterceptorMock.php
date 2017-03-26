@@ -3,9 +3,9 @@ declare(strict_types = 1);
 
 namespace Go\Stubs;
 
+use Closure;
 use Go\Aop\Framework\BaseInterceptor;
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Pointcut;
 
 class BaseInterceptorMock extends BaseInterceptor
 {
@@ -23,7 +23,7 @@ class BaseInterceptorMock extends BaseInterceptor
     /**
      * {@inheritdoc}
      */
-    public static function serializeAdvice(\Closure $adviceMethod)
+    public static function serializeAdvice(Closure $adviceMethod) : array
     {
         return [
             'scope'  => 'aspect',
@@ -35,7 +35,7 @@ class BaseInterceptorMock extends BaseInterceptor
     /**
      * {@inheritdoc}
      */
-    public static function unserializeAdvice(array $adviceData)
+    public static function unserializeAdvice(array $adviceData) : Closure
     {
         return self::$advice;
     }

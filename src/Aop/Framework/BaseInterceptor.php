@@ -50,8 +50,6 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
 
     /**
      * Getter for extracting the advice closure from Interceptor
-     *
-     * @return Closure
      */
     public function getRawAdvice() : Closure
     {
