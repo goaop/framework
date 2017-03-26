@@ -167,7 +167,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     final public function &__invoke($instance, $accessType, &$originalValue, $newValue = NAN)
     {
-        if ($this->level) {
+        if ($this->level > 0) {
             array_push($this->stackFrames, [$this->instance, $this->accessType, &$this->value, &$this->newValue]);
         }
 
@@ -183,7 +183,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
         --$this->level;
 
-        if ($this->level) {
+        if ($this->level > 0) {
             list($this->instance, $this->accessType, $this->value, $this->newValue) = array_pop($this->stackFrames);
         }
 

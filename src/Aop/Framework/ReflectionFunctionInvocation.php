@@ -97,7 +97,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
      */
     final public function __invoke(array $arguments = [], array $variadicArguments = [])
     {
-        if ($this->level) {
+        if ($this->level > 0) {
             array_push($this->stackFrames, [$this->arguments, $this->current]);
         }
 
@@ -114,7 +114,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
 
         --$this->level;
 
-        if ($this->level) {
+        if ($this->level > 0) {
             list($this->arguments, $this->current) = array_pop($this->stackFrames);
         }
 

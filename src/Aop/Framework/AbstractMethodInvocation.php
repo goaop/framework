@@ -72,7 +72,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      */
     final public function __invoke($instance = null, array $arguments = [], array $variadicArguments = [])
     {
-        if ($this->level) {
+        if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
         }
 
@@ -92,7 +92,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
             --$this->level;
         }
 
-        if ($this->level) {
+        if ($this->level > 0) {
             list($this->arguments, $this->instance, $this->current) = array_pop($this->stackFrames);
         }
 
