@@ -28,10 +28,8 @@ class TruePointFilter implements PointFilter
 
     /**
      * Singleton pattern
-     *
-     * @return self
      */
-    public static function getInstance()
+    public static function getInstance() : self
     {
         static $instance = null;
         if (!$instance) {
