@@ -72,7 +72,7 @@ class AspectLoader
      */
     public function registerLoaderExtension(AspectLoaderExtension $loader)
     {
-        $targets = (array) $loader->getTarget();
+        $targets = $loader->getTargets();
         foreach ($targets as $target) {
             $this->loaders[$target][] = $loader;
         }

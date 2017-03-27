@@ -31,19 +31,17 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      *
      * @return string
      */
-    public function getKind()
+    public function getKind() : string
     {
         return self::KIND_ANNOTATION;
     }
 
     /**
      * Introduction aspect loader works only with properties of aspect
-     *
-     * @return string|array
      */
-    public function getTarget()
+    public function getTargets() : array
     {
-        return self::TARGET_PROPERTY;
+        return [self::TARGET_PROPERTY];
     }
 
     /**
@@ -55,7 +53,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      *
      * @return boolean true if extension is able to create an advisor from reflection and metaInformation
      */
-    public function supports(Aspect $aspect, $reflection, $metaInformation = null)
+    public function supports(Aspect $aspect, $reflection, $metaInformation = null) : bool
     {
         return
             ($metaInformation instanceof Annotation\DeclareParents) ||
@@ -73,7 +71,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      *
      * @return array|Pointcut[]|Advisor[]
      */
-    public function load(Aspect $aspect, $reflection, $metaInformation = null)
+    public function load(Aspect $aspect, $reflection, $metaInformation = null) : array
     {
         $loadedItems = [];
         $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation);

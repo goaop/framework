@@ -27,7 +27,7 @@ class DeclareError extends BaseAnnotation
     /**
      * Interface name to add
      *
-     * @var string
+     * @var integer
      */
     public $level = E_USER_NOTICE;
 }

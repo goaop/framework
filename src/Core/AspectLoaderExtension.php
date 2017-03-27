@@ -50,17 +50,13 @@ interface AspectLoaderExtension
      * Return kind of loader, can be one of KIND_REFLECTION or KIND_ANNOTATION
      *
      * For loader that works with annotations additional metaInformation will be passed
-     *
-     * @return string
      */
-    public function getKind();
+    public function getKind() : string;
 
     /**
      * Returns one or more target for loader, see TARGET_XXX constants
-     *
-     * @return string|array
      */
-    public function getTarget();
+    public function getTargets() : array;
 
     /**
      * Checks if loader is able to handle specific point of aspect
@@ -71,7 +67,7 @@ interface AspectLoaderExtension
      *
      * @return boolean true if extension is able to create an advisor from reflection and metaInformation
      */
-    public function supports(Aspect $aspect, $reflection, $metaInformation = null);
+    public function supports(Aspect $aspect, $reflection, $metaInformation = null) : bool;
 
     /**
      * Loads definition from specific point of aspect into the container
@@ -82,5 +78,5 @@ interface AspectLoaderExtension
      *
      * @return array|Pointcut[]|Advisor[]
      */
-    public function load(Aspect $aspect, $reflection, $metaInformation = null);
+    public function load(Aspect $aspect, $reflection, $metaInformation = null) : array;
 }
