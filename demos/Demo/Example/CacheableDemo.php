@@ -32,7 +32,7 @@ class CacheableDemo
     public function getReport($from)
     {
         // long calculation for 100ms
-        usleep(0.1 * 1e6);
+        usleep(100 * 1000);
 
         return $from;
     }
