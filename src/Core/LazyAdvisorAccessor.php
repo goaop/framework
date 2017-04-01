@@ -20,7 +20,7 @@ use Go\Aop\Advisor;
 class LazyAdvisorAccessor
 {
     /**
-     * @var AspectContainer|Container
+     * @var AspectContainer
      */
     protected $container;
 

@@ -11,19 +11,21 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
+use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\FileCacheReader;
-use ReflectionClass;
-use Go\Aop;
-use Go\Aop\Pointcut\PointcutLexer;
+use Go\Aop\Advisor;
+use Go\Aop\Aspect;
+use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutGrammar;
+use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\ClassLoading\CachePathManager;
-use Doctrine\Common\Annotations\AnnotationReader;
+use ReflectionClass;
 
 /**
  * Aspect container contains list of all pointcuts and advisors
  */
-class GoAspectContainer extends Container implements AspectContainer
+class GoAspectContainer extends Container
 {
     /**
      * List of resources for application
@@ -126,9 +128,9 @@ class GoAspectContainer extends Container implements AspectContainer
      *
      * @param string $id Pointcut identifier
      *
-     * @return Aop\Pointcut
+     * @return Pointcut
      */
-    public function getPointcut($id)
+    public function getPointcut(string $id) : Pointcut
     {
         return $this->get("pointcut.{$id}");
     }
@@ -136,10 +138,10 @@ class GoAspectContainer extends Container implements AspectContainer
     /**
      * Store the pointcut in the container
      *
-     * @param Aop\Pointcut $pointcut Instance
+     * @param Pointcut $pointcut Instance
      * @param string $id Key for pointcut
      */
-    public function registerPointcut(Aop\Pointcut $pointcut, $id)
+    public function registerPointcut(Pointcut $pointcut, string $id)
     {
         $this->set("pointcut.{$id}", $pointcut, ['pointcut']);
     }
@@ -149,9 +151,9 @@ class GoAspectContainer extends Container implements AspectContainer
      *
      * @param string $id Advisor identifier
      *
-     * @return Aop\Advisor
+     * @return Advisor
      */
-    public function getAdvisor($id)
+    public function getAdvisor(string $id) : Advisor
     {
         return $this->get("advisor.{$id}");
     }
@@ -159,10 +161,10 @@ class GoAspectContainer extends Container implements AspectContainer
     /**
      * Store the advisor in the container
      *
-     * @param Aop\Advisor $advisor Instance
+     * @param Advisor $advisor Instance
      * @param string $id Key for advisor
      */
-    public function registerAdvisor(Aop\Advisor $advisor, $id)
+    public function registerAdvisor(Advisor $advisor, string $id)
     {
         $this->set("advisor.{$id}", $advisor, ['advisor']);
     }
@@ -172,9 +174,9 @@ class GoAspectContainer extends Container implements AspectContainer
      *
      * @param string $aspectName Aspect name
      *
-     * @return Aop\Aspect
+     * @return Aspect
      */
-    public function getAspect($aspectName)
+    public function getAspect(string $aspectName) : Aspect
     {
         return $this->get("aspect.{$aspectName}");
     }
@@ -182,9 +184,9 @@ class GoAspectContainer extends Container implements AspectContainer
     /**
      * Register an aspect in the container
      *
-     * @param Aop\Aspect $aspect Instance of concrete aspect
+     * @param Aspect $aspect Instance of concrete aspect
      */
-    public function registerAspect(Aop\Aspect $aspect)
+    public function registerAspect(Aspect $aspect)
     {
         $refAspect = new ReflectionClass($aspect);
         $this->set("aspect.{$refAspect->name}", $aspect, ['aspect']);
@@ -193,10 +195,11 @@ class GoAspectContainer extends Container implements AspectContainer
 
     /**
      * Add an AOP resource to the container
-     *
      * Resources is used to check the freshness of AOP cache
+     *
+     * @param string $resource Path to the resource
      */
-    public function addResource($resource)
+    public function addResource(string $resource)
     {
         $this->resources[]  = $resource;
         $this->maxTimestamp = 0;
@@ -204,10 +207,8 @@ class GoAspectContainer extends Container implements AspectContainer
 
     /**
      * Returns list of AOP resources
-     *
-     * @return array
      */
-    public function getResources()
+    public function getResources() : array
     {
         return $this->resources;
     }
@@ -219,7 +220,7 @@ class GoAspectContainer extends Container implements AspectContainer
      *
      * @return bool Whether or not concrete file is fresh
      */
-    public function isFresh($timestamp)
+    public function isFresh(int $timestamp) : bool
     {
         if (!$this->maxTimestamp && !empty($this->resources)) {
             $this->maxTimestamp = max(array_map('filemtime', $this->resources));
