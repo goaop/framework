@@ -14,6 +14,7 @@ namespace Go\Core;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
+use Reflector;
 
 /**
  * Extension interface that defines an API for aspect loaders
@@ -73,10 +74,10 @@ interface AspectLoaderExtension
      * Loads definition from specific point of aspect into the container
      *
      * @param Aspect $aspect Instance of aspect
-     * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
+     * @param Reflector $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
      *
      * @return array|Pointcut[]|Advisor[]
      */
-    public function load(Aspect $aspect, $reflection, $metaInformation = null) : array;
+    public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null) : array;
 }
