@@ -29,7 +29,7 @@ class AopComposerLoader
      *
      * @var ClassLoader
      */
-    protected $original = null;
+    protected $original;
 
     /**
      * AOP kernel options
@@ -99,7 +99,7 @@ class AopComposerLoader
      *
      * @return bool was initialization sucessful or not
      */
-    public static function init(array $options = [], AspectContainer $container)
+    public static function init(array $options = [], AspectContainer $container) : bool
     {
         $loaders = spl_autoload_functions();
 
@@ -129,8 +129,10 @@ class AopComposerLoader
 
     /**
      * Autoload a class by it's name
+     *
+     * @param string $class Class name
      */
-    public function loadClass($class)
+    public function loadClass(string $class)
     {
         $file = $this->findFile($class);
 
@@ -146,7 +148,7 @@ class AopComposerLoader
      * @param string $class
      * @return string|false The path/resource if found, false otherwise.
      */
-    public function findFile($class)
+    public function findFile(string $class)
     {
         static $isAllowedFilter = null, $isProduction = false;
         if (!$isAllowedFilter) {
@@ -172,10 +174,8 @@ class AopComposerLoader
 
     /**
      * Whether or not loader was initialized
-     *
-     * @return bool
      */
-    public static function wasInitialized()
+    public static function wasInitialized() : bool
     {
         return self::$wasInitialized;
     }

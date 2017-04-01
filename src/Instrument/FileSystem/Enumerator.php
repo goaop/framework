@@ -11,6 +11,9 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\FileSystem;
 
+use Closure;
+use SplFileInfo;
+
 /**
  * Enumerates files in the concrete directory, applying filtration logic
  */
@@ -45,7 +48,7 @@ class Enumerator
      * @param array  $includePaths  List of additional include paths
      * @param array  $excludePaths  List of additional exclude paths
      */
-    public function __construct($rootDirectory, array $includePaths = [], array $excludePaths = [])
+    public function __construct(string $rootDirectory, array $includePaths = [], array $excludePaths = [])
     {
         $this->rootDirectory = $rootDirectory;
         $this->includePaths = $includePaths;
@@ -55,7 +58,7 @@ class Enumerator
     /**
      * Returns an enumerator for files
      *
-     * @return \CallbackFilterIterator|\RecursiveIteratorIterator|\SplFileInfo[]
+     * @return \CallbackFilterIterator|\RecursiveIteratorIterator|SplFileInfo[]
      */
     public function enumerate()
     {
@@ -74,10 +77,8 @@ class Enumerator
 
     /**
      * Returns a filter callback for enumerating files
-     *
-     * @return \Closure
      */
-    public function getFilter()
+    public function getFilter() : Closure
     {
         $rootDirectory = $this->rootDirectory;
         $includePaths = $this->includePaths;
@@ -125,11 +126,11 @@ class Enumerator
      * In a vfs the 'realPath' methode will always return false.
      * So we have a chance to mock this single function to return different path.
      *
-     * @param \SplFileInfo $file
+     * @param SplFileInfo $file
      *
      * @return string
      */
-    protected function getFileFullPath(\SplFileInfo $file)
+    protected function getFileFullPath(SplFileInfo $file) : string
     {
         return $file->getRealPath();
     }

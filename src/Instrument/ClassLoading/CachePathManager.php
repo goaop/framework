@@ -108,7 +108,7 @@ class CachePathManager
      *
      * @param string $cacheDir New cache directory
      */
-    public function setCacheDir($cacheDir)
+    public function setCacheDir(string $cacheDir)
     {
         $this->cacheDir = $cacheDir;
     }
@@ -117,7 +117,7 @@ class CachePathManager
      * @param string $resource
      * @return bool|string
      */
-    public function getCachePathForResource($resource)
+    public function getCachePathForResource(string $resource)
     {
         if (!$this->cacheDir) {
             return false;
@@ -133,7 +133,7 @@ class CachePathManager
      *
      * @return array|null Information or null if no record in the cache
      */
-    public function queryCacheState($resource = null)
+    public function queryCacheState(string $resource = null)
     {
         if (!$resource) {
             return $this->cacheState;
@@ -158,7 +158,7 @@ class CachePathManager
      * @param string $resource Name of the file
      * @param array $metadata Miscellaneous information about resource
      */
-    public function setCacheState($resource, array $metadata)
+    public function setCacheState(string $resource, array $metadata)
     {
         $this->newCacheState[$resource] = $metadata;
     }
