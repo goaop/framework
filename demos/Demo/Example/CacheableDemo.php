@@ -29,7 +29,7 @@ class CacheableDemo
      *
      * @return string
      */
-    public function getReport($from)
+    public function getReport(string $from) : string
     {
         // long calculation for 100ms
         usleep(100 * 1000);

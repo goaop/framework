@@ -140,10 +140,10 @@ switch ($showCase) {
         $aspectName = 'Demo\Aspect\CachingAspect';
 
         $example = new CacheableDemo();
-        $result  = $example->getReport(12345); // First call will take 0.1 second
+        $result  = $example->getReport('Test'); // First call will take 0.1 second
         echo "Result is: ", $result, PHP_EOL;
 
-        $result = $example->getReport(12346); // This call is cached and result should be '12345'
+        $result = $example->getReport('Test1'); // This call is cached and result should be 'Test'
         echo "Result is: ", $result, PHP_EOL;
         break;
 

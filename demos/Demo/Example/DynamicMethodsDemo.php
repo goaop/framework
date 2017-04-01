@@ -27,7 +27,7 @@ class DynamicMethodsDemo
      * @param string $name Method name
      * @param array $args Method arguments
      */
-    public function __call($name, array $args)
+    public function __call(string $name, array $args)
     {
         echo "I'm method: {$name}", PHP_EOL;
     }
@@ -38,7 +38,7 @@ class DynamicMethodsDemo
      * @param string $name Method name
      * @param array $args Method arguments
      */
-    public static function __callStatic($name, array $args)
+    public static function __callStatic(string $name, array $args)
     {
         echo "I'm static method: {$name}", PHP_EOL;
     }

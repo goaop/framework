@@ -23,9 +23,9 @@ class LoggingDemo
      * Executes a task and logs all incoming arguments
      *
      * @Loggable
-     * @param mixed $task Some specific argument
+     * @param string $task Some specific argument
      */
-    public function execute($task)
+    public function execute(string $task)
     {
         $this->perform($task, 'first');
         $this->perform($task, 'second');
@@ -36,10 +36,10 @@ class LoggingDemo
      *
      * @Loggable
      *
-     * @param mixed $task Specific task
+     * @param string $task Specific task
      * @param string $level
      */
-    protected function perform($task, $level)
+    protected function perform(string $task, string $level)
     {
         // some logic here
     }
@@ -51,7 +51,7 @@ class LoggingDemo
      *
      * @param string $task Some specific argument
      */
-    public static function runByName($task)
+    public static function runByName(string $task)
     {
         $instance = new static(); // Go! AOP requires LSB to work correctly
         $instance->execute($task);

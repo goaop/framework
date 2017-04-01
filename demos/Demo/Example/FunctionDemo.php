@@ -22,7 +22,7 @@ class FunctionDemo
      *
      * @param array $data Incoming array
      *
-     * @return array|mixed Outcoming array
+     * @return array Outcoming array
      */
     public function testArrayFunctions(array $data = [])
     {
