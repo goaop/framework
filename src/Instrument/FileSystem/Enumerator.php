@@ -97,7 +97,7 @@ class Enumerator
             if (!empty($includePaths)) {
                 $found = false;
                 foreach ($includePaths as $includePattern) {
-                    if (fnmatch("{$includePattern}*", $fullPath)) {
+                    if (fnmatch("{$includePattern}*", $fullPath, FNM_NOESCAPE)) {
                         $found = true;
                         break;
                     }
@@ -108,7 +108,7 @@ class Enumerator
             }
 
             foreach ($excludePaths as $excludePattern) {
-                if (fnmatch("{$excludePattern}*", $fullPath)) {
+                if (fnmatch("{$excludePattern}*", $fullPath, FNM_NOESCAPE)) {
                     return false;
                 }
             }
