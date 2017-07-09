@@ -210,8 +210,9 @@ mapping issue in Doctrine. Workaround is in form of event subscriber,
 when Doctrine is bootstraped in your project. For details how to do that,
 see [http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html](http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html).
 
-Event listener modify metadata entity definition for generated Go! Aop proxies
-as mapped superclass, that will sort out issues which you may stumble upon.
+Event subscriber will modify metadata entity definition for generated Go! Aop proxies
+as mapped superclass. That would sort out issues on which you may stumble upon when
+weaving Doctrine entities.
 
 ### 7. Contribution
 
