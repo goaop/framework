@@ -26,7 +26,7 @@ Features
 * Ability to change the return value of any methods/functions via `Around` type of advice.
 * Rich pointcut grammar syntax for defining pointcuts in the source code.
 * Native debugging for AOP with XDebug. The code with weaved aspects is fully readable and native. You can put a breakpoint in the original class or in the aspect and it will work (for debug mode)!
-* Can be integrated with any existing PHP frameworks and libraries.
+* Can be integrated with any existing PHP frameworks and libraries (with or without additional configuration).
 * Highly optimized for production use: support of opcode cachers, lazy loading of advices and aspects, joinpoints caching, no runtime checks of pointcuts, no runtime annotations parsing, no evals and `__call` methods, no slow proxies and `call_user_func_array()`. Fast bootstraping process (2-20ms) and advice invocation.
 
 
@@ -194,7 +194,26 @@ use Aspect\MonitorAspect;
 
 Now you are ready to use the power of aspects! Feel free to change anything everywhere. If you like this project, you could support it <a href="https://flattr.com/submit/auto?fid=83r77w&url=https%3A%2F%2Fgithub.com%2Fgoaop%2Fframework" target="_blank"><img src="https://button.flattr.com/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0"></a> [![Gratipay](https://img.shields.io/gratipay/lisachenko.svg)](https://gratipay.com/lisachenko/)
 
-### 6. Contribution
+### 6. Optional configurations
+
+#### 6.1 Support for weaving Doctrine entities
+
+Weaving Doctrine entities can not be supported out of the box due to the fact
+that Go! AOP generates two sets of classes for each weaved entity, a concrete class and
+proxy with pointcuts. Doctrine will interpret both of those classes as concrete entities
+and assign for both of them same metadata, which would mess up the database and relations
+(see [https://github.com/goaop/framework/issues/327](https://github.com/goaop/framework/issues/327)).
+
+Therefore, a workaround is provided with this library which will sort out
+mapping issue in Doctrine. Workaround is in form of event subscriber,
+`Go\Bridge\Doctrine\MetadataLoadInterceptor` which has to be registered
+when Doctrine is bootstraped in your project. For details how to do that,
+see [http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html](http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html).
+
+Event listener modify metadata entity definition for generated Go! Aop proxies
+as mapped superclass, that will sort out issues which you may stumble upon.
+
+### 7. Contribution
 
 To contribute changes see the [Contribute Readme](CONTRIBUTE.md)
 
