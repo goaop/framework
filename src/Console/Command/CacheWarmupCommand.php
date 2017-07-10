@@ -45,7 +45,8 @@ EOT
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        parent::execute($input, $output);
+        $this->loadAspectKernel($input, $output);
+
         $options = $this->aspectKernel->getOptions();
 
         if (empty($options['cacheDir'])) {
