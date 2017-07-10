@@ -49,7 +49,8 @@ EOT
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        parent::execute($input, $output);
+        $this->loadAspectKernel($input, $output);
+
         $io = new SymfonyStyle($input, $output);
         $io->title('Advisor debug information');
 

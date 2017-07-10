@@ -37,16 +37,26 @@ class BaseAspectCommand extends Command
     }
 
     /**
-     * {@inheritDoc}
+     * Loads aspect kernel.
+     *
+     * Aspect kernel is loaded by executing loader and fetching singleton instance.
+     * If your application environment initializes aspect kernel differently, you may
+     * modify this metod to get aspect kernel suitable to your needs.
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function loadAspectKernel(InputInterface $input, OutputInterface $output)
     {
         $loader = $input->getArgument('loader');
         $path   = stream_resolve_include_path($loader);
         if (!is_readable($path)) {
             throw new \InvalidArgumentException("Invalid loader path: {$loader}");
         }
+
+        ob_start();
         include_once $path;
+        ob_clean();
 
         if (!class_exists(AspectKernel::class, false)) {
             $message = "Kernel was not initialized yet, please configure it in the {$path}";
