@@ -32,9 +32,7 @@ class MetadataLoadInterceptorTest extends \PHPUnit_Framework_TestCase
          * @var ClassMetadata $metadata
          */
         foreach ($metadatas as $metadata) {
-
             $metadata->isMappedSuperclass = false;
-
             $metadataInterceptor->loadClassMetadata(new LoadClassMetadataEventArgs($metadata, $entityManager));
 
             $this->assertFalse($metadata->isMappedSuperclass);
@@ -59,7 +57,6 @@ class MetadataLoadInterceptorTest extends \PHPUnit_Framework_TestCase
         $metadata->fieldNames['mapped_field'] = 'mappedField';
         $metadata->columnNames['mappedField'] = 'mapped_field';
 
-
         $metadataInterceptor->loadClassMetadata(new LoadClassMetadataEventArgs($metadata, $entityManager));
 
         $this->assertTrue($metadata->isMappedSuperclass);
@@ -83,4 +80,3 @@ class Entity__AopProxied
 {
     use SimpleTrait;
 }
-

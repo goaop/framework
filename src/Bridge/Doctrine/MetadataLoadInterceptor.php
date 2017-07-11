@@ -19,8 +19,6 @@ use Go\Core\AspectContainer;
  * Class MetadataLoadInterceptor
  *
  * Support for weaving Doctrine entities.
- *
- * @package Go\Bridge\Doctrine
  */
 final class MetadataLoadInterceptor implements EventSubscriber
 {
@@ -57,11 +55,10 @@ final class MetadataLoadInterceptor implements EventSubscriber
         $metadata = $args->getClassMetadata();
 
         if (1 === preg_match(sprintf('/.+(%s)$/', AspectContainer::AOP_PROXIED_SUFFIX), $metadata->name)) {
-
-            $metadata->isMappedSuperclass = true;
-            $metadata->isEmbeddedClass = false;
-            $metadata->table = [];
-            $metadata->customRepositoryClassName = null;
+            $metadata->isMappedSuperclass           = true;
+            $metadata->isEmbeddedClass              = false;
+            $metadata->table                        = [];
+            $metadata->customRepositoryClassName    = null;
 
             $this->removeMappingsFromTraits($metadata);
         }
@@ -78,14 +75,12 @@ final class MetadataLoadInterceptor implements EventSubscriber
         $traits = $this->getTraits($metadata->name);
 
         foreach ($traits as $trait) {
-
             $trait = new \ReflectionClass($trait);
 
             /**
              * @var \ReflectionProperty $property
              */
             foreach ($trait->getProperties() as $property) {
-
                 $name = $property->getName();
 
                 if (isset($metadata->fieldMappings[$name])) {
