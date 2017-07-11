@@ -75,7 +75,6 @@ trait SimpleTrait
     private $mappedField;
 }
 
-
 class Entity__AopProxied
 {
     use SimpleTrait;
