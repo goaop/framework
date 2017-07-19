@@ -19,9 +19,6 @@ class DebugAdvisorCommandTest extends TestCase
         $this->assertTrue($process->isSuccessful(), 'Unable to execute "cache:warmup:aop" command.');
     }
 
-    /**
-     * @test
-     */
     public function testItDisplaysAdvisorsDebugInfo()
     {
         $process = $process = new Process(sprintf('php %s debug:advisor %s',
@@ -46,9 +43,6 @@ class DebugAdvisorCommandTest extends TestCase
         }
     }
 
-    /**
-     * @test
-     */
     public function testItDisplaysStatedAdvisorDebugInfo()
     {
         $process = $process = new Process(sprintf('php %s debug:advisor %s --advisor="Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod"',

@@ -19,9 +19,6 @@ class DebugAspectCommandTest extends TestCase
         $this->assertTrue($process->isSuccessful(), 'Unable to execute "cache:warmup:aop" command.');
     }
 
-    /**
-     * @test
-     */
     public function testItDisplaysAspectsDebugInfo()
     {
         $process = $process = new Process(sprintf('php %s debug:aspect %s',

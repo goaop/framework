@@ -13,4 +13,3 @@ $applicationAspectKernel->init(array(
         __DIR__ . '/../src/'
     )
 ));
-
