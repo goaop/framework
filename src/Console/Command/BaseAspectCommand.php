@@ -18,6 +18,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Base command for all aspect commands
+ *
+ * @codeCoverageIgnore
  */
 class BaseAspectCommand extends Command
 {

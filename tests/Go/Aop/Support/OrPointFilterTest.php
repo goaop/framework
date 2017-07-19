@@ -19,13 +19,13 @@ class OrPointFilterTest extends \PHPUnit_Framework_TestCase
      */
     public function testKindIsCombined()
     {
-        $first = $this->getMock(PointFilter::class);
+        $first = $this->createMock(PointFilter::class);
         $first
             ->expects($this->any())
             ->method('getKind')
             ->will($this->returnValue(PointFilter::KIND_METHOD | PointFilter::KIND_PROPERTY));
 
-        $second = $this->getMock(PointFilter::class);
+        $second = $this->createMock(PointFilter::class);
         $second
             ->expects($this->any())
             ->method('getKind')

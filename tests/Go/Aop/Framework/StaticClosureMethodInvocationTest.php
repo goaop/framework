@@ -59,7 +59,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
     public function testValueChangedByReference()
     {
-        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
+        $child      = $this->createMock(self::FIRST_CLASS_NAME);
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticPassByReference', []);
 
         $value  = 'test';
@@ -80,7 +80,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
     public function testAdviceIsCalledForInvocation()
     {
-        $child  = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
+        $child  = $this->createMock(self::FIRST_CLASS_NAME);
         $value  = 'test';
         $advice = new BeforeInterceptor(function () use (&$value) {
             $value = 'ok';
@@ -95,7 +95,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
     public function testInvocationWithDynamicArguments()
     {
-        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
+        $child      = $this->createMock(self::FIRST_CLASS_NAME);
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticVariableArgsTest', []);
 
         $args     = [];
@@ -110,7 +110,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
     public function testInvocationWithVariadicArguments()
     {
-        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
+        $child      = $this->createMock(self::FIRST_CLASS_NAME);
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'staticVariadicArgsTest', []);
 
         $args     = [];

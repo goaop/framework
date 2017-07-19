@@ -34,12 +34,12 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
                     'debug'         => false,
                     'features'      => 0
                 ),
-                $this->getMock(GoAspectContainer::class)
+                $this->createMock(GoAspectContainer::class)
             );
             self::$transformer = new FilterInjectorTransformer(
                 $kernelMock,
                 'unit.test',
-                $this->getMock(CachePathManager::class, [], array($kernelMock))
+                $this->getMockBuilder(CachePathManager::class)->setConstructorArgs(array($kernelMock))->getMock()
             );
         }
         $stream = fopen('php://input', 'r');

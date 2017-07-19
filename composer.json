@@ -17,8 +17,10 @@
     "require-dev": {
         "symfony/console": "^2.7|^3.0",
         "adlawson/vfs": "^0.12",
-        "phpunit/phpunit": "^4.8",
-        "doctrine/orm": "^2.5"
+        "phpunit/phpunit": "^5.7",
+        "doctrine/orm": "^2.5",
+        "symfony/filesystem": "^3.3",
+        "symfony/process": "^3.3"
     },
 
     "suggest": {
@@ -34,11 +36,18 @@
     ],
 
     "autoload": {
-        "psr-4": {"Go\\": "src/"}
+        "psr-4": {
+            "Go\\": "src/"
+        }
     },
     "autoload-dev": {
-        "psr-0": {"Demo\\": "demos/"},
-        "psr-4": {"Go\\": "tests/Go/"}
+        "psr-0": {
+            "Demo\\": "demos/"
+        },
+        "psr-4": {
+            "Go\\": "tests/Go/",
+            "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
+        }
     },
 
     "minimum-stability": "stable",

@@ -34,9 +34,9 @@ class AdviceMatcherTest extends TestCase
 
     protected function setUp()
     {
-        $container = $this->getMock(AspectContainer::class);
-        $reader    = $this->getMock(Reader::class);
-        $loader    = $this->getMock(AspectLoader::class, [], array($container, $reader));
+        $container = $this->createMock(AspectContainer::class);
+        $reader    = $this->createMock(Reader::class);
+        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs(array($container, $reader))->getMock();
 
         $this->adviceMatcher = new AdviceMatcher($loader, $container);
 
@@ -61,7 +61,7 @@ class AdviceMatcherTest extends TestCase
     {
         $funcName = __FUNCTION__;
 
-        $pointcut = $this->getMock(Pointcut::class);
+        $pointcut = $this->createMock(Pointcut::class);
         $pointcut
             ->expects($this->any())
             ->method('getClassFilter')
@@ -77,7 +77,7 @@ class AdviceMatcherTest extends TestCase
             ->method('getKind')
             ->will($this->returnValue(Pointcut::KIND_METHOD));
 
-        $advice = $this->getMock(Advice::class);
+        $advice = $this->createMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
         $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, array($advisor));
@@ -93,7 +93,7 @@ class AdviceMatcherTest extends TestCase
     {
         $propName = 'adviceMatcher'; // $this->adviceMatcher;
 
-        $pointcut = $this->getMock(Pointcut::class);
+        $pointcut = $this->createMock(Pointcut::class);
         $pointcut
             ->expects($this->any())
             ->method('getClassFilter')
@@ -109,7 +109,7 @@ class AdviceMatcherTest extends TestCase
             ->method('getKind')
             ->will($this->returnValue(Pointcut::KIND_PROPERTY));
 
-        $advice = $this->getMock(Advice::class);
+        $advice = $this->createMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
         $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, array($advisor));

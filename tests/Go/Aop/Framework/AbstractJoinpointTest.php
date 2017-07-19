@@ -31,8 +31,8 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
             // #0
             array(
                 array(
-                    $this->getMock(AdviceAfter::class),
-                    $this->getMock(AdviceBefore::class)
+                    $this->createMock(AdviceAfter::class),
+                    $this->createMock(AdviceBefore::class)
                 ),
                 array(
                     AdviceBefore::class,
@@ -42,8 +42,8 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
             // #1
             array(
                 array(
-                    $this->getMock(AdviceAfter::class),
-                    $this->getMock(AdviceAround::class)
+                    $this->createMock(AdviceAfter::class),
+                    $this->createMock(AdviceAround::class)
                 ),
                 array(
                     AdviceAfter::class,
@@ -53,8 +53,8 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
             // #2
             array(
                 array(
-                    $this->getMock(AdviceBefore::class),
-                    $this->getMock(AdviceAfter::class)
+                    $this->createMock(AdviceBefore::class),
+                    $this->createMock(AdviceAfter::class)
                 ),
                 array(
                     AdviceBefore::class,
@@ -64,8 +64,8 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
             // #3
             array(
                 array(
-                    $this->getMock(AdviceBefore::class),
-                    $this->getMock(AdviceAround::class)
+                    $this->createMock(AdviceBefore::class),
+                    $this->createMock(AdviceAround::class)
                 ),
                 array(
                     AdviceBefore::class,
@@ -75,8 +75,8 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
             // #4
             array(
                 array(
-                    $this->getMock(AdviceAround::class),
-                    $this->getMock(AdviceAfter::class)
+                    $this->createMock(AdviceAround::class),
+                    $this->createMock(AdviceAfter::class)
                 ),
                 array(
                     AdviceAfter::class,
@@ -86,8 +86,8 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
             // #5
             array(
                 array(
-                    $this->getMock(AdviceAround::class),
-                    $this->getMock(AdviceBefore::class)
+                    $this->createMock(AdviceAround::class),
+                    $this->createMock(AdviceBefore::class)
                 ),
                 array(
                     AdviceBefore::class,
@@ -97,10 +97,10 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
             // #6
             array(
                 array(
-                    $this->getMock(AdviceBefore::class),
-                    $this->getMock(AdviceAround::class),
-                    $this->getMock(AdviceBefore::class),
-                    $this->getMock(AdviceAfter::class),
+                    $this->createMock(AdviceBefore::class),
+                    $this->createMock(AdviceAround::class),
+                    $this->createMock(AdviceBefore::class),
+                    $this->createMock(AdviceAfter::class),
                 ),
                 array(
                     AdviceBefore::class,
@@ -132,7 +132,7 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
      */
     private function getOrderedAdvice($order, $name)
     {
-        $mock = $this->getMock(OrderedAdvice::class, [], [], $name);
+        $mock = $this->createMock(OrderedAdvice::class, [], [], $name);
         $mock
             ->expects($this->any())
             ->method('getAdviceOrder')
