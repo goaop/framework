@@ -13,6 +13,7 @@ namespace Go\Instrument\ClassLoading;
 use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
+use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -39,7 +40,7 @@ class CacheWarmer
     public function __construct(AspectKernel $aspectKernel, OutputInterface $output = null)
     {
         $this->aspectKernel = $aspectKernel;
-        $this->output = $output;
+        $this->output       = $output !== null ? $output : new NullOutput();
     }
 
     /**
@@ -54,18 +55,22 @@ class CacheWarmer
         }
 
         $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
-        $iterator = $enumerator->enumerate();
-        $total = iterator_count($iterator);
+        $iterator   = $enumerator->enumerate();
+        $total      = iterator_count($iterator);
 
-        $this->writeln(sprintf('Total <info>%s</info> files to process.', $total));
-        $this->newline();
+        $this->output->writeln(sprintf('Total <info>%s</info> files to process.', $total));
+        $this->output->writeln('');
         $iterator->rewind();
 
         set_error_handler(function ($errno, $errstr, $errfile, $errline) {
             throw new \ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
 
-        $errors = [];
+        $errors       = [];
+        $displayException = \Closure::bind(function ($exception, $path) use (&$errors) {
+            $this->output->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: %s', $path));
+            $errors[$path] = $exception->getMessage();
+        }, $this);
 
         foreach ($iterator as $file) {
             $path = $file->getRealPath();
@@ -77,62 +82,23 @@ class CacheWarmer
                     '/resource=' . $path
                 );
 
-                $this->writeln(sprintf('<fg=green;options=bold>[OK]</>: <comment>%s</comment>', $path));
+                $this->output->writeln(sprintf('<fg=green;options=bold>[OK]</>: <comment>%s</comment>', $path));
+            } catch (\Throwable $e) {
+                $displayException($e, $path);
             } catch (\Exception $e) {
-                $this->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: %s', $path));
-                $errors[$path] = $e->getMessage();
+                $displayException($e, $path);
             }
         }
 
         restore_error_handler();
 
-        if ($this->isVerbose()) {
+        if ($this->output->isVerbose()) {
             foreach ($errors as $path => $error) {
-                $this->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: File "%s" is not processed correctly due to exception: "%s".', $path, $error));
+                $this->output->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: File "%s" is not processed correctly due to exception: "%s".', $path, $error));
             }
         }
 
-        $this->newline();
-        $this->writeln(sprintf('<fg=green;>[DONE]</>: Total processed %s, %s errors.', $total, count($errors)));
-    }
-
-    /**
-     * Proxy to OutputInterface->writeln() method dumping new line.
-     */
-    private function newline()
-    {
-        if (null === $this->output) {
-            return;
-        }
-
         $this->output->writeln('');
-    }
-
-    /**
-     * Proxy to OutputInterface->writeln() method.
-     *
-     * @param string $message Message text.
-     */
-    private function writeln($message)
-    {
-        if (null === $this->output) {
-            return;
-        }
-
-        $this->output->writeln($message);
-    }
-
-    /**
-     * Check if output verbosity is verbose.
-     *
-     * @return bool
-     */
-    private function isVerbose()
-    {
-        if (null === $this->output) {
-            return false;
-        }
-
-        return $this->output->isVerbose();
+        $this->output->writeln(sprintf('<fg=green;>[DONE]</>: Total processed %s, %s errors.', $total, count($errors)));
     }
 }
