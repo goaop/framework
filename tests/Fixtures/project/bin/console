@@ -1,0 +1,19 @@
+#!/usr/bin/env php
+<?php
+
+include_once __DIR__ . '/../../../../vendor/autoload.php';
+
+use Symfony\Component\Console\Application;
+use Go\Console\Command\CacheWarmupCommand;
+use Go\Console\Command\DebugAdvisorCommand;
+use Go\Console\Command\DebugAspectCommand;
+
+$application = new Application();
+
+$application->addCommands([
+    new CacheWarmupCommand(),
+    new DebugAdvisorCommand(),
+    new DebugAspectCommand(),
+]);
+
+$application->run();

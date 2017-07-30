@@ -48,7 +48,7 @@ class GoAspectContainerTest extends TestCase
      */
     public function testPointcutCanBeRegisteredAndReceived()
     {
-        $pointcut = $this->getMock(Pointcut::class);
+        $pointcut = $this->createMock(Pointcut::class);
         $this->container->registerPointcut($pointcut, 'test');
 
         $this->assertSame($pointcut, $this->container->getPointcut('test'));
@@ -62,7 +62,7 @@ class GoAspectContainerTest extends TestCase
      */
     public function testAdvisorCanBeRegistered()
     {
-        $advisor = $this->getMock(Advisor::class);
+        $advisor = $this->createMock(Advisor::class);
         $this->container->registerAdvisor($advisor, 'test');
 
         // Verify that tag is working
@@ -75,7 +75,7 @@ class GoAspectContainerTest extends TestCase
      */
     public function testAspectCanBeRegisteredAndReceived()
     {
-        $aspect = $this->getMock(Aspect::class);
+        $aspect = $this->createMock(Aspect::class);
         $aspectClass = get_class($aspect);
 
         $this->container->registerAspect($aspect);

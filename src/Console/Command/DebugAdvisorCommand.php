@@ -24,6 +24,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Console command to debug an advisors
+ *
+ * @codeCoverageIgnore
  */
 class DebugAdvisorCommand extends BaseAspectCommand
 {

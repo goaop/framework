@@ -21,6 +21,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Console command for querying an information about aspects
+ *
+ * @codeCoverageIgnore
  */
 class DebugAspectCommand extends BaseAspectCommand
 {

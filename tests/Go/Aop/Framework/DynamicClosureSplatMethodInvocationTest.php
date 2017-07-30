@@ -33,7 +33,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
      */
     public function testDynamicMethodInvocation($methodName, $expectedResult)
     {
-        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
+        $child      = $this->createMock(self::FIRST_CLASS_NAME);
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, $methodName, []);
 
         $result = $invocation($child);
@@ -42,7 +42,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
 
     public function testValueChangedByReference()
     {
-        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
+        $child      = $this->createMock(self::FIRST_CLASS_NAME);
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'passByReference', []);
 
         $value  = 'test';
@@ -53,7 +53,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
 
     public function testInvocationWithDynamicArguments()
     {
-        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
+        $child      = $this->createMock(self::FIRST_CLASS_NAME);
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'variableArgsTest', []);
 
         $args     = [];
@@ -68,7 +68,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
 
     public function testInvocationWithVariadicArguments()
     {
-        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
+        $child      = $this->createMock(self::FIRST_CLASS_NAME);
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'variadicArgsTest', []);
 
         $args     = [];
@@ -83,7 +83,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
 
     public function testRecursionWorks()
     {
-        $child      = $this->getMock(self::FIRST_CLASS_NAME, array('recursion'));
+        $child      = $this->createMock(self::FIRST_CLASS_NAME);
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'recursion', []);
 
         $child->expects($this->exactly(5))->method('recursion')->will($this->returnCallback(
@@ -98,9 +98,9 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
 
     public function testInterceptorIsCalledForInvocation()
     {
-        $child  = $this->getMock(self::FIRST_CLASS_NAME, array('none'));
+        $child  = $this->createMock(self::FIRST_CLASS_NAME);
         $value  = 'test';
-        $advice = $this->getMock(Interceptor::class);
+        $advice = $this->createMock(Interceptor::class);
         $advice->expects($this->once())
             ->method('invoke')
             ->will($this->returnCallback(function (MethodInvocation $object) use (&$value) {
