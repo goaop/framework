@@ -37,11 +37,6 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
                 ],
                 $this->createMock(GoAspectContainer::class)
             );
-            self::$transformer = new FilterInjectorTransformer(
-                $kernelMock,
-                'unit.test',
-                $this->getMockBuilder(CachePathManager::class)->setConstructorArgs([$kernelMock])->getMock()
-            );
             $cachePathManager = $this
                 ->getMockBuilder(CachePathManager::class)
                 ->setConstructorArgs([$kernelMock])
