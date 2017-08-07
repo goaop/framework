@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -21,16 +22,12 @@ interface IntroductionInfo extends Advice
 {
 
     /**
-     * Return the additional interfaces introduced by this Advisor or Advice.
-     *
-     * @return array|string[] the introduced interfaces
+     * Returns the list of additional interface names introduced by this Advisor or Advice.
      */
-    public function getInterfaces();
+    public function getInterfaces() : array;
 
     /**
-     * Return the list of traits with realization of introduced interfaces
-     *
-     * @return array|string[] the implementations
+     * Returns the list of trait names with realization of introduced interfaces
      */
-    public function getTraits();
+    public function getTraits() : array;
 }

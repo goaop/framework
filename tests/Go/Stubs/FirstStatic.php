@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Stubs;
 
@@ -19,6 +20,6 @@ class FirstStatic extends First
     // Recursion test
     public static function staticLsbRecursion($value, $level = 0)
     {
-        return static::$invocation->__invoke(__CLASS__, array($value, $level));
+        return static::$invocation->__invoke(__CLASS__, [$value, $level]);
     }
 }

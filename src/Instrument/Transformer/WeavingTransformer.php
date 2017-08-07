@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -166,7 +167,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $childClassArray   = explode("\n", $contentToInclude);
         $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
 
-        $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
+        $dataArray = array_merge($currentClassArray, [''], $childClassArray, [''], $dataArray);
 
         $metadata->source = implode("\n", $dataArray);
 
@@ -245,7 +246,7 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @return string
      */
-    private function saveProxyToCache($class, $child)
+    private function saveProxyToCache($class, $child) : string
     {
         static $cacheDirSuffix = '/_proxies/';
 
@@ -253,7 +254,7 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Without cache we should rewrite original file
         if (!$cacheDir) {
-            return $child;
+            return (string) $child;
         }
         $cacheDir = $cacheDir . $cacheDirSuffix;
         $fileName = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());

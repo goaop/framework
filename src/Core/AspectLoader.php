@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -15,6 +16,7 @@ use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use ReflectionClass;
+use Reflector;
 
 /**
  * Loader of aspects into the container
@@ -25,9 +27,9 @@ class AspectLoader
     /**
      * Aspect container instance
      *
-     * @var null|AspectContainer
+     * @var AspectContainer
      */
-    protected $container = null;
+    protected $container;
 
     /**
      * List of aspect loaders
@@ -39,9 +41,9 @@ class AspectLoader
     /**
      * Annotation reader for aspects
      *
-     * @var Reader|null
+     * @var Reader
      */
-    protected $annotationReader = null;
+    protected $annotationReader;
 
     /**
      * List of aspects that was loaded
@@ -71,7 +73,7 @@ class AspectLoader
      */
     public function registerLoaderExtension(AspectLoaderExtension $loader)
     {
-        $targets = (array) $loader->getTarget();
+        $targets = $loader->getTargets();
         foreach ($targets as $target) {
             $this->loaders[$target][] = $loader;
         }
@@ -86,7 +88,7 @@ class AspectLoader
      *
      * @return array|Pointcut[]|Advisor[]
      */
-    public function load(Aspect $aspect)
+    public function load(Aspect $aspect) : array
     {
         $loadedItems = [];
         $refAspect   = new \ReflectionClass($aspect);
@@ -138,7 +140,7 @@ class AspectLoader
      *
      * @return array|Aspect[]
      */
-    public function getUnloadedAspects()
+    public function getUnloadedAspects() : array
     {
         $unloadedAspects = [];
 
@@ -155,14 +157,14 @@ class AspectLoader
      * Load definitions from specific aspect part into the aspect container
      *
      * @param Aspect $aspect Aspect instance
-     * @param \ReflectionClass|\ReflectionMethod|\ReflectionProperty $refPoint Reflection instance
+     * @param Reflector $reflector Reflection instance
      * @param array|AspectLoaderExtension[] $loaders List of loaders that can produce advisors from aspect class
      *
      * @throws \InvalidArgumentException If kind of loader isn't supported
      *
      * @return array|Pointcut[]|Advisor[]
      */
-    protected function loadFrom(Aspect $aspect, $refPoint, array $loaders)
+    protected function loadFrom(Aspect $aspect, Reflector $reflector, array $loaders) : array
     {
         $loadedItems = [];
 
@@ -172,16 +174,16 @@ class AspectLoader
             switch ($loaderKind) {
 
                 case AspectLoaderExtension::KIND_REFLECTION:
-                    if ($loader->supports($aspect, $refPoint)) {
-                        $loadedItems += $loader->load($aspect, $refPoint);
+                    if ($loader->supports($aspect, $reflector)) {
+                        $loadedItems += $loader->load($aspect, $reflector);
                     }
                     break;
 
                 case AspectLoaderExtension::KIND_ANNOTATION:
-                    $annotations = $this->getAnnotations($refPoint);
+                    $annotations = $this->getAnnotations($reflector);
                     foreach ($annotations as $annotation) {
-                        if ($loader->supports($aspect, $refPoint, $annotation)) {
-                            $loadedItems += $loader->load($aspect, $refPoint, $annotation);
+                        if ($loader->supports($aspect, $reflector, $annotation)) {
+                            $loadedItems += $loader->load($aspect, $reflector, $annotation);
                         }
                     }
                     break;
@@ -198,25 +200,25 @@ class AspectLoader
     /**
      * Return list of annotations for reflection point
      *
-     * @param \ReflectionClass|\ReflectionMethod|\ReflectionProperty $refPoint Reflection instance
+     * @param Reflector $reflector Reflection instance
      *
      * @return array list of annotations
      * @throws \InvalidArgumentException if $refPoint is unsupported
      */
-    protected function getAnnotations($refPoint)
+    protected function getAnnotations(Reflector $reflector) : array
     {
         switch (true) {
-            case ($refPoint instanceof \ReflectionClass):
-                return $this->annotationReader->getClassAnnotations($refPoint);
+            case ($reflector instanceof \ReflectionClass):
+                return $this->annotationReader->getClassAnnotations($reflector);
 
-            case ($refPoint instanceof \ReflectionMethod):
-                return $this->annotationReader->getMethodAnnotations($refPoint);
+            case ($reflector instanceof \ReflectionMethod):
+                return $this->annotationReader->getMethodAnnotations($reflector);
 
-            case ($refPoint instanceof \ReflectionProperty):
-                return $this->annotationReader->getPropertyAnnotations($refPoint);
+            case ($reflector instanceof \ReflectionProperty):
+                return $this->annotationReader->getPropertyAnnotations($reflector);
 
             default:
-                throw new \InvalidArgumentException("Unsupported reflection point " . get_class($refPoint));
+                throw new \InvalidArgumentException("Unsupported reflection point " . get_class($reflector));
         }
     }
 }

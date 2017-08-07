@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -32,27 +33,23 @@ class AnnotatedReflectionMethod extends ReflectionMethod
      * @param string $annotationName The name of the annotation.
      * @return mixed The Annotation or NULL, if the requested annotation does not exist.
      */
-    public function getAnnotation($annotationName)
+    public function getAnnotation(string $annotationName)
     {
         return self::getReader()->getMethodAnnotation($this, $annotationName);
     }
 
     /**
      * Gets the annotations applied to a method.
-     *
-     * @return array An array of Annotations.
      */
-    public function getAnnotations()
+    public function getAnnotations() : array
     {
         return self::getReader()->getMethodAnnotations($this);
     }
 
     /**
      * Returns an annotation reader
-     *
-     * @return Reader $reader
      */
-    private static function getReader()
+    private static function getReader() : Reader
     {
         if (!self::$annotationReader) {
             self::$annotationReader = AspectKernel::getInstance()->getContainer()->get('aspect.annotation.reader');
@@ -73,7 +70,7 @@ class AnnotatedReflectionMethod extends ReflectionMethod
         $className  = $this->getDeclaringClass()->name;
         $methodName = $this->name;
         $closure = function (...$args) use ($methodName, $className) {
-            $result = forward_static_call_array(array($className, $methodName), $args);
+            $result = forward_static_call_array([$className, $methodName], $args);
 
             return $result;
         };

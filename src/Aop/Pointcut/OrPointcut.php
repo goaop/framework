@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -45,7 +46,7 @@ class OrPointcut extends AndPointcut
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
     {
         return $this->matchPart($this->first, $point, $context, $instance, $arguments)
             || $this->matchPart($this->second, $point, $context, $instance, $arguments);

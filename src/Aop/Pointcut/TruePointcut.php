@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -24,14 +25,14 @@ class TruePointcut implements Pointcut
      *
      * @var int
      */
-    protected $filterKind = 0;
+    protected $filterKind;
 
     /**
      * Default constructor can be used to specify concrete filter kind
      *
      * @param int $filterKind Kind of filter, e.g. KIND_METHOD
      */
-    public function __construct($filterKind = self::KIND_ALL)
+    public function __construct(int $filterKind = self::KIND_ALL)
     {
         $this->filterKind = $filterKind;
     }
@@ -46,17 +47,15 @@ class TruePointcut implements Pointcut
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
     {
         return true;
     }
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind() : int
     {
         return $this->filterKind;
     }

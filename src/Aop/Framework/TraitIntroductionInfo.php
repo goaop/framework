@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -45,21 +46,17 @@ class TraitIntroductionInfo implements IntroductionInfo
     }
 
     /**
-     * Return the additional interfaces introduced by this Advisor or Advice.
-     *
-     * @return array|string[] introduced interfaces
+     * Returns the list of additional interface names introduced by this Advisor or Advice.
      */
-    public function getInterfaces()
+    public function getInterfaces() : array
     {
         return $this->introducedInterfaces;
     }
 
     /**
-     * Return the list of traits with realization of introduced interfaces
-     *
-     * @return array|string[] trait implementations
+     * Returns the list of trait names with realization of introduced interfaces
      */
-    public function getTraits()
+    public function getTraits() : array
     {
         return $this->introducedTraits;
     }

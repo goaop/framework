@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -42,7 +43,7 @@ class AdviceMatcher
      * @param AspectLoader $loader Instance of aspect loader
      * @param bool $isInterceptFunctions Optional flag to enable function interception
      */
-    public function __construct(AspectLoader $loader, $isInterceptFunctions = false)
+    public function __construct(AspectLoader $loader, bool $isInterceptFunctions = false)
     {
         $this->loader = $loader;
 
@@ -57,9 +58,9 @@ class AdviceMatcher
      *
      * @return array
      */
-    public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors)
+    public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors) : array
     {
-        if (!$this->isInterceptFunctions || $namespace->getName() == 'no-namespace') {
+        if (!$this->isInterceptFunctions) {
             return [];
         }
 
@@ -91,7 +92,7 @@ class AdviceMatcher
      *
      * @return array|Aop\Advice[] List of advices for class
      */
-    public function getAdvicesForClass(ReflectionClass $class, array $advisors)
+    public function getAdvicesForClass(ReflectionClass $class, array $advisors) : array
     {
         $classAdvices = [];
         $parentClass  = $class->getParentClass();
@@ -141,8 +142,8 @@ class AdviceMatcher
     private function getAdvicesFromAdvisor(
         ReflectionClass $class,
         Aop\PointcutAdvisor $advisor,
-        $advisorId,
-        Aop\PointFilter $filter)
+        string $advisorId,
+        Aop\PointFilter $filter) : array
     {
         $classAdvices = [];
         $filterKind   = $filter->getKind();
@@ -198,7 +199,7 @@ class AdviceMatcher
     private function getIntroductionFromAdvisor(
         ReflectionClass $class,
         Aop\IntroductionAdvisor $advisor,
-        $advisorId)
+        string $advisorId) : array
     {
         $classAdvices = [];
         // Do not make introduction for traits
@@ -226,8 +227,8 @@ class AdviceMatcher
     private function getFunctionAdvicesFromAdvisor(
         ReflectionFileNamespace $namespace,
         Aop\PointcutAdvisor $advisor,
-        $advisorId,
-        Aop\PointFilter $pointcut)
+        string $advisorId,
+        Aop\PointFilter $pointcut) : array
     {
         $functions = [];
         $advices   = [];

@@ -1,7 +1,9 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
@@ -24,10 +26,10 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->transformer = new MagicConstantTransformer(
-            $this->getKernelMock(array(
+            $this->getKernelMock([
                 'cacheDir' => __DIR__,
                 'appDir'   => dirname(__DIR__),
-            ))
+            ])
         );
 
         if (defined("HHVM_VERSION")) {
@@ -55,13 +57,19 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
             false,
             true,
             true,
-            array('getOptions')
+            ['getOptions', 'getContainer']
         );
         $mock->expects($this->any())
             ->method('getOptions')
             ->will(
                 $this->returnValue($options)
             );
+        $mock->expects($this->any())
+            ->method('getContainer')
+            ->will(
+                $this->returnValue($this->createMock(AspectContainer::class))
+            );
+
         return $mock;
     }
 

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -37,16 +38,16 @@ abstract class AspectKernel
      *
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'features' => 0
-    );
+    ];
 
     /**
      * Single instance of kernel
      *
-     * @var null|static
+     * @var static
      */
-    protected static $instance = null;
+    protected static $instance;
 
     /**
      * Default class name for container, can be redefined in children
@@ -65,9 +66,9 @@ abstract class AspectKernel
     /**
      * Aspect container instance
      *
-     * @var null|AspectContainer
+     * @var AspectContainer
      */
-    protected $container = null;
+    protected $container;
 
     /**
      * Protected constructor is used to prevent direct creation, but allows customization if needed
@@ -76,10 +77,8 @@ abstract class AspectKernel
 
     /**
      * Returns the single instance of kernel
-     *
-     * @return static
      */
-    public static function getInstance()
+    public static function getInstance() : self
     {
         if (!self::$instance) {
             self::$instance = new static();
@@ -130,10 +129,8 @@ abstract class AspectKernel
 
     /**
      * Returns an aspect container
-     *
-     * @return null|AspectContainer
      */
-    public function getContainer()
+    public function getContainer() : AspectContainer
     {
         return $this->container;
     }
@@ -145,17 +142,15 @@ abstract class AspectKernel
      *
      * @return bool Whether specific feature enabled or not
      */
-    public function hasFeature($featureToCheck)
+    public function hasFeature(int $featureToCheck) : bool
     {
         return ($this->options['features'] & $featureToCheck) !== 0;
     }
 
     /**
      * Returns list of kernel options
-     *
-     * @return array
      */
-    public function getOptions()
+    public function getOptions() : array
     {
         return $this->options;
     }
@@ -170,22 +165,19 @@ abstract class AspectKernel
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
-     *
-     * @return array
      */
-    protected function getDefaultOptions()
+    protected function getDefaultOptions() : array
     {
-        return array(
-            'debug'                  => false,
-            'appDir'                 => __DIR__ . '/../../../../../',
-            'cacheDir'               => null,
-            'cacheFileMode'          => 0770 & ~umask(), // Respect user umask() policy
-            'features'               => 0,
-
-            'includePaths'           => [],
-            'excludePaths'           => [],
-            'containerClass'         => static::$containerClass,
-        );
+        return [
+            'debug'          => false,
+            'appDir'         => __DIR__ . '/../../../../../',
+            'cacheDir'       => null,
+            'cacheFileMode'  => 0770 & ~umask(), // Respect user umask() policy
+            'features'       => 0,
+            'includePaths'   => [],
+            'excludePaths'   => [],
+            'containerClass' => static::$containerClass,
+        ];
     }
 
 
@@ -196,7 +188,7 @@ abstract class AspectKernel
      *
      * @return array
      */
-    protected function normalizeOptions(array $options)
+    protected function normalizeOptions(array $options) : array
     {
         $options = array_replace($this->getDefaultOptions(), $options);
         if ($options['cacheDir']) {
@@ -255,9 +247,9 @@ abstract class AspectKernel
             return $transformers;
         };
 
-        return array(
+        return [
             new CachingTransformer($this, $sourceTransformers, $cacheManager)
-        );
+        ];
     }
 
     /**

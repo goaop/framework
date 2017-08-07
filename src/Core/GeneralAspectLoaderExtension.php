@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,14 +11,18 @@
 
 namespace Go\Core;
 
+use Closure;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Framework;
+use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
-use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
+use Go\Lang\Annotation\BaseInterceptor;
+use ReflectionMethod;
+use Reflector;
 
 /**
  * General aspect loader add common support for general advices, declared as annotations
@@ -27,24 +32,18 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
 
     /**
      * General aspect loader works with annotations from aspect
-     *
-     * For extension that works with annotations additional metaInformation will be passed
-     *
-     * @return string
      */
-    public function getKind()
+    public function getKind() : string
     {
         return self::KIND_ANNOTATION;
     }
 
     /**
      * General aspect loader works only with methods of aspect
-     *
-     * @return string|array
      */
-    public function getTarget()
+    public function getTargets() : array
     {
-        return self::TARGET_METHOD;
+        return [self::TARGET_METHOD];
     }
 
     /**
@@ -56,7 +55,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      *
      * @return boolean true if extension is able to create an advisor from reflection and metaInformation
      */
-    public function supports(Aspect $aspect, $reflection, $metaInformation = null)
+    public function supports(Aspect $aspect, $reflection, $metaInformation = null) : bool
     {
         return $metaInformation instanceof Annotation\Interceptor
                 || $metaInformation instanceof Annotation\Pointcut;
@@ -66,14 +65,14 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      * Loads definition from specific point of aspect into the container
      *
      * @param Aspect $aspect Instance of aspect
-     * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
+     * @param Reflector|ReflectionMethod $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
      *
      * @return array|Pointcut[]|Advisor[]
      *
      * @throws \UnexpectedValueException
      */
-    public function load(Aspect $aspect, $reflection, $metaInformation = null)
+    public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null) : array
     {
         $loadedItems    = [];
         $pointcut       = $this->parsePointcut($aspect, $reflection, $metaInformation);
@@ -100,12 +99,15 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     }
 
     /**
-     * @param $metaInformation
-     * @param $adviceCallback
-     * @return \Go\Aop\Intercept\Interceptor
-     * @throws \UnexpectedValueException
+     * Returns an interceptor instance by meta-type annotation
+     *
+     * @param BaseInterceptor $metaInformation Meta-information from the annotation
+     * @param Closure $adviceCallback Advice closure
+     * @return Interceptor Instance of interceptor by meta-information
+     *
+     * @throws \UnexpectedValueException For unsupported annotations
      */
-    protected function getInterceptor($metaInformation, $adviceCallback)
+    protected function getInterceptor(BaseInterceptor $metaInformation, Closure $adviceCallback) : Interceptor
     {
         $adviceOrder        = $metaInformation->order;
         $pointcutExpression = $metaInformation->value;

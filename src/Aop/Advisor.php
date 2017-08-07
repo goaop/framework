@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -19,8 +20,6 @@ interface Advisor
      * Return the advice part of this aspect. An advice may be an interceptor, a before advice, a throws advice, etc.
      *
      * @api
-     *
-     * @return Advice The advice that should apply if the pointcut matches
      */
-    public function getAdvice();
+    public function getAdvice() : Advice;
 }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -55,16 +56,16 @@ class SignaturePointcut implements Pointcut
      * @param string $name Name of the entity to match or glob pattern
      * @param PointFilter $modifierFilter Method modifier filter
      */
-    public function __construct($filterKind, $name, PointFilter $modifierFilter)
+    public function __construct(int $filterKind, string $name, PointFilter $modifierFilter)
     {
         $this->filterKind = $filterKind;
         $this->name       = $name;
-        $this->regexp     = strtr(preg_quote($this->name, '/'), array(
+        $this->regexp     = strtr(preg_quote($this->name, '/'), [
             '\\*'    => '[^\\\\]+?',
             '\\*\\*' => '.+?',
             '\\?'    => '.',
             '\\|'    => '|'
-        ));
+        ]);
         $this->modifierFilter = $modifierFilter;
     }
 
@@ -78,7 +79,7 @@ class SignaturePointcut implements Pointcut
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
     {
         if (!$this->modifierFilter->matches($point, $context)) {
             return false;
@@ -89,10 +90,8 @@ class SignaturePointcut implements Pointcut
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind() : int
     {
         return $this->filterKind;
     }

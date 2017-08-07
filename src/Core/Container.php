@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,10 +11,12 @@
 
 namespace Go\Core;
 
+use Closure;
+
 /**
  * DI-container
  */
-class Container
+abstract class Container implements AspectContainer
 {
     /**
      * List of services in the container
@@ -36,7 +39,7 @@ class Container
      * @param mixed $value Value to store
      * @param array $tags Additional tags
      */
-    public function set($id, $value, array $tags = [])
+    public function set(string $id, $value, array $tags = [])
     {
         $this->values[$id] = $value;
         foreach ($tags as $tag) {
@@ -48,16 +51,11 @@ class Container
      * Set a shared value in the container
      *
      * @param string $id Identifier
-     * @param callable $value Value to store
+     * @param Closure $value Value to store
      * @param array $tags Additional tags
-     *
-     * @throws \InvalidArgumentException if value is not callable
      */
-    public function share($id, $value, array $tags = [])
+    public function share(string $id, Closure $value, array $tags = [])
     {
-        if (!is_callable($value)) {
-            throw new \InvalidArgumentException("Only callable values can be shared in the container");
-        }
         $value = function($container) use ($value) {
             static $sharedValue;
 
@@ -78,7 +76,7 @@ class Container
      * @return mixed
      * @throws \OutOfBoundsException if service was not found
      */
-    public function get($id)
+    public function get(string $id)
     {
         if (!isset($this->values[$id])) {
             throw new \OutOfBoundsException("Value {$id} is not defined in the container");
@@ -97,7 +95,7 @@ class Container
      *
      * @return bool
      */
-    public function has($id)
+    public function has(string $id) : bool
     {
         return isset($this->values[$id]);
     }
@@ -108,7 +106,7 @@ class Container
      * @param string $tag Tag to select
      * @return array
      */
-    public function getByTag($tag)
+    public function getByTag(string $tag) : array
     {
         $result = [];
         if (isset($this->tags[$tag])) {

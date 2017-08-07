@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -107,7 +108,7 @@ class CachePathManager
      *
      * @param string $cacheDir New cache directory
      */
-    public function setCacheDir($cacheDir)
+    public function setCacheDir(string $cacheDir)
     {
         $this->cacheDir = $cacheDir;
     }
@@ -116,7 +117,7 @@ class CachePathManager
      * @param string $resource
      * @return bool|string
      */
-    public function getCachePathForResource($resource)
+    public function getCachePathForResource(string $resource)
     {
         if (!$this->cacheDir) {
             return false;
@@ -132,7 +133,7 @@ class CachePathManager
      *
      * @return array|null Information or null if no record in the cache
      */
-    public function queryCacheState($resource = null)
+    public function queryCacheState(string $resource = null)
     {
         if (!$resource) {
             return $this->cacheState;
@@ -157,7 +158,7 @@ class CachePathManager
      * @param string $resource Name of the file
      * @param array $metadata Miscellaneous information about resource
      */
-    public function setCacheState($resource, array $metadata)
+    public function setCacheState(string $resource, array $metadata)
     {
         $this->newCacheState[$resource] = $metadata;
     }
@@ -182,10 +183,10 @@ class CachePathManager
             $cachePath    = substr(var_export($this->cacheDir, true), 1, -1);
             $rootPath     = substr(var_export($this->appDir, true), 1, -1);
             $cacheData    = '<?php return ' . var_export($fullCacheMap, true) . ';';
-            $cacheData    = strtr($cacheData, array(
+            $cacheData    = strtr($cacheData, [
                 '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
                 '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
-            ));
+            ]);
             $fullCacheFileName = $this->cacheDir . self::CACHE_FILE_NAME;
             file_put_contents($fullCacheFileName, $cacheData, LOCK_EX);
             // For cache files we don't want executable bits by default

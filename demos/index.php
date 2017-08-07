@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -139,10 +140,10 @@ switch ($showCase) {
         $aspectName = 'Demo\Aspect\CachingAspect';
 
         $example = new CacheableDemo();
-        $result  = $example->getReport(12345); // First call will take 0.1 second
+        $result  = $example->getReport('Test'); // First call will take 0.1 second
         echo "Result is: ", $result, PHP_EOL;
 
-        $result = $example->getReport(12346); // This call is cached and result should be '12345'
+        $result = $example->getReport('Test1'); // This call is cached and result should be 'Test'
         echo "Result is: ", $result, PHP_EOL;
         break;
 
@@ -170,14 +171,14 @@ switch ($showCase) {
         $example = new DynamicMethodsDemo();
         $example->saveById(123); // intercept magic dynamic method
         $example->load(456); // notice, that advice for this magic method is not called
-        DynamicMethodsDemo::find(array('id' =>124)); //intercept magic static method
+        DynamicMethodsDemo::find(['id' =>124]); //intercept magic static method
         break;
 
     case 'function-interceptor':
         $aspectName = 'Demo\Aspect\FunctionInterceptorAspect';
 
         $example = new FunctionDemo();
-        $example->testArrayFunctions(array('test' => 1, 'code' => 2, 'more' => 1));
+        $example->testArrayFunctions(['test' => 1, 'code' => 2, 'more' => 1]);
         $example->testFileContent();
         break;
 

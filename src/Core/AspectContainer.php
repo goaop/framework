@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,7 +11,9 @@
 
 namespace Go\Core;
 
-use Go\Aop;
+use Go\Aop\Advisor;
+use Go\Aop\Aspect;
+use Go\Aop\Pointcut;
 
 /**
  * Aspect container interface
@@ -58,77 +61,94 @@ interface AspectContainer
     const AOP_PROXIED_SUFFIX = '__AopProxied';
 
     /**
+     * Return a service or value from the container
+     *
+     * @param string $id Identifier
+     *
+     * @return mixed
+     * @throws \OutOfBoundsException if service was not found
+     */
+    public function get(string $id);
+
+    /**
      * Return list of service tagged with marker
      *
      * @param string $tag Tag to select
      * @return array
      */
-    public function getByTag($tag);
+    public function getByTag(string $tag) : array;
 
     /**
      * Returns a pointcut by identifier
      *
      * @param string $id Pointcut identifier
      *
-     * @return Aop\Pointcut
+     * @return Pointcut
      */
-    public function getPointcut($id);
+    public function getPointcut(string $id) : Pointcut;
+
+    /**
+     * Checks if item with specified id is present in the container
+     *
+     * @param string $id Identifier
+     *
+     * @return bool
+     */
+    public function has(string $id) : bool;
 
     /**
      * Store the pointcut in the container
      *
-     * @param Aop\Pointcut $pointcut Instance
+     * @param Pointcut $pointcut Instance
      * @param string $id Key for pointcut
      */
-    public function registerPointcut(Aop\Pointcut $pointcut, $id);
+    public function registerPointcut(Pointcut $pointcut, string $id);
 
     /**
      * Returns an advisor by identifier
      *
      * @param string $id Advisor identifier
      *
-     * @return Aop\Advisor
+     * @return Advisor
      */
-    public function getAdvisor($id);
+    public function getAdvisor(string $id) : Advisor;
 
     /**
      * Store the advisor in the container
      *
-     * @param Aop\Advisor $advisor Instance
+     * @param Advisor $advisor Instance
      * @param string $id Key for advisor
      */
-    public function registerAdvisor(Aop\Advisor $advisor, $id);
+    public function registerAdvisor(Advisor $advisor, string $id);
 
     /**
      * Register an aspect in the container
      *
-     * @param Aop\Aspect $aspect Instance of concrete aspect
+     * @param Aspect $aspect Instance of concrete aspect
      */
-    public function registerAspect(Aop\Aspect $aspect);
+    public function registerAspect(Aspect $aspect);
 
     /**
      * Returns an aspect by id or class name
      *
      * @param string $aspectName Aspect name
      *
-     * @return Aop\Aspect
+     * @return Aspect
      */
-    public function getAspect($aspectName);
+    public function getAspect(string $aspectName) : Aspect;
 
     /**
      * Add an AOP resource to the container
+     * Resources is used to check the freshness of AOP cache
      *
      * @param string $resource Path to the resource
-     * Resources is used to check the freshness of AOP cache
      */
-    public function addResource($resource);
+    public function addResource(string $resource);
 
     /**
      * Returns the list of AOP resources
-     *
-     * @return array
      */
-    public function getResources();
+    public function getResources() : array;
 
     /**
      * Checks the freshness of AOP cache
@@ -137,5 +157,14 @@ interface AspectContainer
      *
      * @return bool Whether or not concrete file is fresh
      */
-    public function isFresh($timestamp);
+    public function isFresh(int $timestamp) : bool;
+
+    /**
+     * Set a service into the container
+     *
+     * @param string $id Identifier
+     * @param mixed $value Value to store
+     * @param array $tags Additional tags
+     */
+    public function set(string $id, $value, array $tags = []);
 }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -33,7 +34,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
      *
      * @internal param ReflectionClass $reflectionClass Reflection of class
      */
-    public function __construct($className, $type, array $advices)
+    public function __construct(string $className, string $type, array $advices)
     {
         if (strpos($className, AspectContainer::AOP_PROXIED_SUFFIX)) {
             $originalClass = substr($className, 0, -strlen(AspectContainer::AOP_PROXIED_SUFFIX));

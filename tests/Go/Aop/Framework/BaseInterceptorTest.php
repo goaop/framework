@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -27,7 +28,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
 
         $interceptor = $this->getMockForAbstractClass(
             BaseInterceptor::class,
-            array($advice)
+            [$advice]
         );
         $this->assertEquals($advice, $interceptor->getRawAdvice());
     }

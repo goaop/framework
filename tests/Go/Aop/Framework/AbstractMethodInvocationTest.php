@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
@@ -13,7 +14,7 @@ class AbstractMethodInvocationTest extends \PHPUnit_Framework_TestCase
     {
         $this->invocation = $this->getMockForAbstractClass(
             AbstractMethodInvocation::class,
-            array(__CLASS__, __FUNCTION__, [])
+            [__CLASS__, __FUNCTION__, []]
         );
     }
 

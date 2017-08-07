@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -78,7 +79,7 @@ EOT
             $expression = '';
             try {
                 $pointcutExpression = new \ReflectionProperty($advice, 'pointcutExpression');
-                $pointcutExpression->setAccessible('true');
+                $pointcutExpression->setAccessible(true);
                 $expression = $pointcutExpression->getValue($advice);
             } catch (\ReflectionException $e) {
                 // nothing here, just ignore
@@ -116,7 +117,7 @@ EOT
             $reflectionNamespaces = $reflectionFile->getFileNamespaces();
             foreach ($reflectionNamespaces as $reflectionNamespace) {
                 foreach ($reflectionNamespace->getClasses() as $reflectionClass) {
-                    $advices = $adviceMatcher->getAdvicesForClass($reflectionClass, array($advisor));
+                    $advices = $adviceMatcher->getAdvicesForClass($reflectionClass, [$advisorId => $advisor]);
                     if (!empty($advices)) {
                         $this->writeInfoAboutAdvices($io, $reflectionClass, $advices);
                     }

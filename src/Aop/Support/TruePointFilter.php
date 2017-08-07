@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -27,10 +28,8 @@ class TruePointFilter implements PointFilter
 
     /**
      * Singleton pattern
-     *
-     * @return self
      */
-    public static function getInstance()
+    public static function getInstance() : self
     {
         static $instance = null;
         if (!$instance) {
@@ -50,17 +49,15 @@ class TruePointFilter implements PointFilter
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
     {
         return true;
     }
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind() : int
     {
         return self::KIND_ALL;
     }

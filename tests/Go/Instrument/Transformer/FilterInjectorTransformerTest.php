@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
@@ -27,20 +28,20 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     {
         if (!self::$transformer) {
             $kernelMock = $this->getKernelMock(
-                array(
+                [
                     'cacheDir'      => null,
                     'cacheFileMode' => 0770,
                     'appDir'        => '',
                     'debug'         => false,
                     'features'      => 0
-                ),
+                ],
                 $this->createMock(GoAspectContainer::class)
             );
-            self::$transformer = new FilterInjectorTransformer(
-                $kernelMock,
-                'unit.test',
-                $this->getMockBuilder(CachePathManager::class)->setConstructorArgs(array($kernelMock))->getMock()
-            );
+            $cachePathManager = $this
+                ->getMockBuilder(CachePathManager::class)
+                ->setConstructorArgs([$kernelMock])
+                ->getMock();
+            self::$transformer = new FilterInjectorTransformer($kernelMock, 'unit.test', $cachePathManager);
         }
         $stream = fopen('php://input', 'r');
         $this->metadata = new StreamMetaData($stream);
@@ -61,7 +62,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
             false,
             true,
             true,
-            array('getOptions', 'getContainer')
+            ['getOptions', 'getContainer']
         );
         $mock->expects($this->any())
             ->method('getOptions')

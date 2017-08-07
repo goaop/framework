@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -23,7 +24,7 @@ class AfterInterceptorTest extends AbstractInterceptorTest
         $result = $interceptor->invoke($invocation);
 
         $this->assertEquals('invocation', $result, "Advice should not affect the return value of invocation");
-        $this->assertEquals(array('invocation', 'advice'), $sequence, "After advice should be invoked after invocation");
+        $this->assertEquals(['invocation', 'advice'], $sequence, "After advice should be invoked after invocation");
     }
 
     public function testAdviceIsCalledAfterExceptionInInvocation()
@@ -33,11 +34,11 @@ class AfterInterceptorTest extends AbstractInterceptorTest
         $invocation = $this->getInvocation($sequence, true);
 
         $interceptor = new AfterInterceptor($advice);
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
         try {
             $interceptor->invoke($invocation);
         } catch (\Exception $e) {
-            $this->assertEquals(array('invocation', 'advice'), $sequence, "After advice should be invoked after invocation");
+            $this->assertEquals(['invocation', 'advice'], $sequence, "After advice should be invoked after invocation");
             throw $e;
         }
     }

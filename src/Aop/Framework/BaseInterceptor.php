@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -40,7 +41,7 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
      * @param integer $order Order of interceptor
      * @param string $pointcutExpression Pointcut expression or advice name
      */
-    public function __construct(Closure $adviceMethod, $order = 0, $pointcutExpression = '')
+    public function __construct(Closure $adviceMethod, int $order = 0, string $pointcutExpression = '')
     {
         $this->adviceMethod       = $adviceMethod;
         $this->order              = $order;
@@ -49,10 +50,8 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
 
     /**
      * Getter for extracting the advice closure from Interceptor
-     *
-     * @return callable|null
      */
-    public function getRawAdvice()
+    public function getRawAdvice() : Closure
     {
         return $this->adviceMethod;
     }
