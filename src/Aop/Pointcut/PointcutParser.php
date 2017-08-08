@@ -10,6 +10,7 @@
 
 namespace Go\Aop\Pointcut;
 
+use Dissect\Lexer\TokenStream\TokenStream;
 use Dissect\Parser\LALR1\Parser;
 
 /**
@@ -24,5 +25,13 @@ class PointcutParser extends Parser
     {
         $parseTable = include 'PointcutParseTable.php';
         parent::__construct($grammar, $parseTable);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function parse(TokenStream $stream)
+    {
+        return new AndPointcut(parent::parse($stream), new ClassDeclaresPointcut());
     }
 }
