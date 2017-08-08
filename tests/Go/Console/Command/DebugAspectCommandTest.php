@@ -2,35 +2,18 @@
 
 namespace Go\Console\Command;
 
-use PHPUnit_Framework_TestCase as TestCase;
-use Symfony\Component\Process\Process;
+use Go\Functional\BaseFunctionalTest;
 
-class DebugAspectCommandTest extends TestCase
+class DebugAspectCommandTest extends BaseFunctionalTest
 {
     public function setUp()
     {
-        $process = new Process(sprintf('php %s cache:warmup:aop %s',
-            realpath(__DIR__.'/../../../Fixtures/project/bin/console'),
-            realpath(__DIR__.'/../../../Fixtures/project/web/index.php')
-        ));
-
-        $process->run();
-
-        $this->assertTrue($process->isSuccessful(), 'Unable to execute "cache:warmup:aop" command.');
+        self::warmUp();
     }
 
     public function testItDisplaysAspectsDebugInfo()
     {
-        $process = $process = new Process(sprintf('php %s debug:aspect %s',
-            realpath(__DIR__.'/../../../Fixtures/project/bin/console'),
-            realpath(__DIR__.'/../../../Fixtures/project/web/index.php')
-        ));
-        
-        $process->run();
-
-        $this->assertTrue($process->isSuccessful(), 'Unable to execute "debug:aspect" command.');
-
-        $output = $process->getOutput();
+        $output = self::exec('debug:aspect');
 
         $expected = [
             'Go\Tests\TestProject\ApplicationAspectKernel has following enabled aspects',
