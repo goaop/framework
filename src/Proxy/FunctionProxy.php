@@ -78,7 +78,7 @@ class FunctionProxy extends AbstractProxy
      *
      * @return FunctionInvocation
      */
-    public static function getJoinPoint($joinPointName, $namespace)
+    public static function getJoinPoint(string $joinPointName, string $namespace): FunctionInvocation
     {
         /** @var LazyAdvisorAccessor $accessor */
         static $accessor = null;
@@ -104,10 +104,8 @@ class FunctionProxy extends AbstractProxy
      *
      * @param string $namespace Aop child proxy class
      * @param array|Advice[] $advices List of advices to inject into class
-     *
-     * @return void
      */
-    public static function injectJoinPoints($namespace, array $advices = [])
+    public static function injectJoinPoints(string $namespace, array $advices = [])
     {
         self::$functionAdvices[$namespace] = $advices;
     }
@@ -117,14 +115,10 @@ class FunctionProxy extends AbstractProxy
      *
      * @param ReflectionFunction $function Function reflection
      * @param string $body New body for function
-     *
-     * @return $this
      */
-    public function override(ReflectionFunction $function, $body)
+    public function override(ReflectionFunction $function, string $body)
     {
         $this->functionsCode[$function->name] = $this->getOverriddenFunction($function, $body);
-
-        return $this;
     }
 
     /**
@@ -156,7 +150,7 @@ class FunctionProxy extends AbstractProxy
      *
      * @return string new method body
      */
-    protected function getJoinpointInvocationBody(ReflectionFunction $function)
+    protected function getJoinpointInvocationBody(ReflectionFunction $function): string
     {
         $class = '\\' . __CLASS__;
 
