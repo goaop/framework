@@ -10,7 +10,6 @@
 
 namespace Go\Aop\Pointcut;
 
-use Dissect\Lexer\TokenStream\TokenStream;
 use Dissect\Parser\LALR1\Parser;
 
 /**
