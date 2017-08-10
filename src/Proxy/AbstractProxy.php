@@ -67,7 +67,7 @@ abstract class AbstractProxy
      *
      * @return string Indented text
      */
-    protected function indent($text)
+    protected function indent(string $text): string
     {
         $pad   = str_pad('', $this->indent, ' ');
         $lines = array_map(function($line) use ($pad) {
@@ -82,9 +82,9 @@ abstract class AbstractProxy
      *
      * @param array|ReflectionParameter[] $parameters List of parameters
      *
-     * @return array
+     * @return array|string[]
      */
-    protected function getParameters(array $parameters)
+    protected function getParameters(array $parameters): array
     {
         $parameterDefinitions = [];
         foreach ($parameters as $parameter) {
@@ -101,24 +101,14 @@ abstract class AbstractProxy
      *
      * @return string
      */
-    protected function getParameterCode(ReflectionParameter $parameter)
+    protected function getParameterCode(ReflectionParameter $parameter): string
     {
         $type = '';
-        if (PHP_VERSION_ID >= 70000) {
-            $reflectionType = $parameter->getType();
-            if ($reflectionType) {
-                $nullablePrefix = (PHP_VERSION_ID >= 70100 && $reflectionType->allowsNull()) ? '?' : '';
-                $nsPrefix       = $reflectionType->isBuiltin() ? '' : '\\';
-                $type           = $nullablePrefix . $nsPrefix . (string) $reflectionType;
-            }
-        } else {
-            if ($parameter->isArray()) {
-                $type = 'array';
-            } elseif ($parameter->isCallable()) {
-                $type = 'callable';
-            } elseif ($parameter->getClass()) {
-                $type = '\\' . $parameter->getClass()->name;
-            }
+        $reflectionType = $parameter->getType();
+        if ($reflectionType) {
+            $nullablePrefix = (PHP_VERSION_ID >= 70100 && $reflectionType->allowsNull()) ? '?' : '';
+            $nsPrefix       = $reflectionType->isBuiltin() ? '' : '\\';
+            $type           = $nullablePrefix . $nsPrefix . (string) $reflectionType;
         }
         $defaultValue = null;
         $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();
@@ -142,11 +132,11 @@ abstract class AbstractProxy
     /**
      * Replace concrete advices with list of ids
      *
-     * @param $advices
+     * @param array $advices List of advices
      *
      * @return array flatten list of advices
      */
-    private function flattenAdvices($advices)
+    private function flattenAdvices(array $advices): array
     {
         $flattenAdvices = [];
         foreach ($advices as $type => $typedAdvices) {
@@ -167,7 +157,7 @@ abstract class AbstractProxy
      *
      * @return string
      */
-    protected function prepareArgsLine(ReflectionFunctionAbstract $functionLike)
+    protected function prepareArgsLine(ReflectionFunctionAbstract $functionLike): string
     {
         $argumentsPart = [];
         $arguments     = [];
@@ -204,9 +194,9 @@ abstract class AbstractProxy
      *
      * @return string
      */
-    protected function getOverriddenFunction(ReflectionFunctionAbstract $functionLike, $body)
+    protected function getOverriddenFunction(ReflectionFunctionAbstract $functionLike, string $body): string
     {
-        $reflectionReturnType = PHP_VERSION_ID >= 70000 ? $functionLike->getReturnType() : '';
+        $reflectionReturnType = $functionLike->getReturnType();
         $modifiersLine        = '';
         if ($reflectionReturnType) {
             $nullablePrefix = $reflectionReturnType->allowsNull() ? '?' : '';

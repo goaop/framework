@@ -19,6 +19,7 @@ use Go\Aop\Framework\StaticClosureMethodInvocation;
 use Go\Aop\Framework\StaticInitializationJoinpoint;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\IntroductionInfo;
+use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
@@ -124,7 +125,7 @@ class ClassProxy extends AbstractProxy
         $this->name            = $parent->getShortName();
         $this->parentClassName = $parent->getShortName();
 
-        $this->addInterface('\Go\Aop\Proxy');
+        $this->addInterface(Proxy::class);
         $this->addJoinpointsProperty();
 
         foreach ($classAdvices as $type => $typedAdvices) {
@@ -172,14 +173,10 @@ class ClassProxy extends AbstractProxy
      * Updates parent name for child
      *
      * @param string $newParentName New class name
-     *
-     * @return static
      */
-    public function setParentName($newParentName)
+    public function setParentName(string $newParentName)
     {
         $this->parentClassName = $newParentName;
-
-        return $this;
     }
 
     /**
@@ -187,14 +184,10 @@ class ClassProxy extends AbstractProxy
      *
      * @param string $methodName Method name to override
      * @param string $body New body for method
-     *
-     * @return static
      */
-    public function override($methodName, $body)
+    public function override(string $methodName, string $body)
     {
         $this->methodsCode[$methodName] = $this->getOverriddenFunction($this->class->getMethod($methodName), $body);
-
-        return $this;
     }
 
     /**
@@ -205,10 +198,8 @@ class ClassProxy extends AbstractProxy
      * @param bool $byReference Is method should return value by reference
      * @param string $body Body of method
      * @param string $parameters Definition of parameters
-     *
-     * @return static
      */
-    public function setMethod($methodFlags, $methodName, $byReference, $body, $parameters)
+    public function setMethod(int $methodFlags, string $methodName, bool $byReference, string $body, string $parameters)
     {
         $this->methodsCode[$methodName] = (
             "/**\n * Method was created automatically, do not change it manually\n */\n" .
@@ -223,8 +214,6 @@ class ClassProxy extends AbstractProxy
             $this->indent($body) . "\n" . // Method body
             "}\n" // End of method body
         );
-
-        return $this;
     }
 
     /**
@@ -234,10 +223,8 @@ class ClassProxy extends AbstractProxy
      *
      * @param string $className Aop child proxy class
      * @param array|Advice[] $advices List of advices to inject into class
-     *
-     * @return void
      */
-    public static function injectJoinPoints($className, array $advices = [])
+    public static function injectJoinPoints(string $className, array $advices = [])
     {
         $reflectionClass  = new ReflectionClass($className);
         $joinPoints       = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
@@ -264,7 +251,7 @@ class ClassProxy extends AbstractProxy
      *
      * @return array|Joinpoint[] returns list of joinpoint ready to use
      */
-    protected static function wrapWithJoinPoints($classAdvices, $className)
+    protected static function wrapWithJoinPoints(array $classAdvices, string $className): array
     {
         /** @var LazyAdvisorAccessor $accessor */
         static $accessor = null;
@@ -298,19 +285,10 @@ class ClassProxy extends AbstractProxy
     /**
      * Add an interface for child
      *
-     * @param string|ReflectionClass $interface
-     *
-     * @throws \InvalidArgumentException If object is not an interface
+     * @param string $interfaceName Name of the interface to add
      */
-    public function addInterface($interface)
+    public function addInterface(string $interfaceName)
     {
-        $interfaceName = $interface;
-        if ($interface instanceof ReflectionClass) {
-            if (!$interface->isInterface()) {
-                throw new \InvalidArgumentException("Interface expected to add");
-            }
-            $interfaceName = $interface->name;
-        }
         // Use absolute namespace to prevent NS-conflicts
         $this->interfaces[] = '\\' . ltrim($interfaceName, '\\');
     }
@@ -318,19 +296,10 @@ class ClassProxy extends AbstractProxy
     /**
      * Add a trait for child
      *
-     * @param string|ReflectionClass $trait
-     *
-     * @throws \InvalidArgumentException If object is not a trait
+     * @param string $traitName Name of the trait to add
      */
-    public function addTrait($trait)
+    public function addTrait(string $traitName)
     {
-        $traitName = $trait;
-        if ($trait instanceof ReflectionClass) {
-            if (!$trait->isTrait()) {
-                throw new \InvalidArgumentException("Trait expected to add");
-            }
-            $traitName = $trait->name;
-        }
         // Use absolute namespace to prevent NS-conflicts
         $this->traits[] = '\\' . ltrim($traitName, '\\');
     }
@@ -341,27 +310,21 @@ class ClassProxy extends AbstractProxy
      * @param int $propFlags See ReflectionProperty modifiers
      * @param string $propName Name of the property
      * @param null|string $defaultText Default value, should be string text!
-     *
-     * @return static
      */
-    public function setProperty($propFlags, $propName, $defaultText = null)
+    public function setProperty(int $propFlags, string $propName, string $defaultText = null)
     {
         $this->propertiesCode[$propName] = (
             "/**\n * Property was created automatically, do not change it manually\n */\n" . // Doc-block
             join(' ', Reflection::getModifierNames($propFlags)) . // List of modifiers for property
-            ' $' . // Space and vaiable symbol
+            ' $' . // Space and variable symbol
             $propName . // Name of the property
-            (is_string($defaultText) ? " = $defaultText" : '') . // Default value if present
+            (isset($defaultText) ? " = $defaultText" : '') . // Default value if present
             ";\n" // End of line with property definition
         );
-
-        return $this;
     }
 
     /**
      * Adds a definition for joinpoints private property in the class
-     *
-     * @return void
      */
     protected function addJoinpointsProperty()
     {
@@ -392,7 +355,7 @@ class ClassProxy extends AbstractProxy
      *
      * @return string new method body
      */
-    protected function getJoinpointInvocationBody(ReflectionMethod $method)
+    protected function getJoinpointInvocationBody(ReflectionMethod $method): string
     {
         $isStatic = $method->isStatic();
         $scope    = $isStatic ? self::$staticLsbExpression : '$this';
@@ -487,7 +450,7 @@ class ClassProxy extends AbstractProxy
      *
      * @return string
      */
-    private function getConstructorBody(ReflectionMethod $constructor = null, $isCallParent = false)
+    private function getConstructorBody(ReflectionMethod $constructor = null, bool $isCallParent = false): string
     {
         $assocProperties = [];
         $listProperties  = [];
