@@ -47,7 +47,6 @@ class ModifierMatcherFilter implements PointFilter
     public function __construct($initialMask = 0)
     {
         $this->andMask = $initialMask;
-        $this->notMask = \ReflectionMethod::IS_ABSTRACT;
     }
 
     /**
