@@ -4,6 +4,7 @@ namespace Go\Tests\TestProject;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\LoggingAspect;
 use Psr\Log\NullLogger;
 
@@ -19,5 +20,6 @@ class ApplicationAspectKernel extends AspectKernel
     protected function configureAop(AspectContainer $container)
     {
         $container->registerAspect(new LoggingAspect(new NullLogger()));
+        $container->registerAspect(new DoSomethingAspect());
     }
 }
