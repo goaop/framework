@@ -8,10 +8,10 @@ use Symfony\Component\Process\Process;
 
 abstract class BaseFunctionalTest extends TestCase
 {
-    protected static $projectDir = __DIR__.'/../../Fixtures/project';
-    protected static $aspectCacheDir = __DIR__.'/../../Fixtures/project/var/cache/aspect';
-    protected static $consolePath = __DIR__.'/../../Fixtures/project/bin/console';
-    protected static $frontControllerPath = __DIR__.'/../../Fixtures/project/web/index.php';
+    protected static $projectDir            = __DIR__ . '/../../Fixtures/project';
+    protected static $aspectCacheDir        = __DIR__ . '/../../Fixtures/project/var/cache/aspect';
+    protected static $consolePath           = __DIR__ . '/../../Fixtures/project/bin/console';
+    protected static $frontControllerPath   = __DIR__ . '/../../Fixtures/project/web/index.php';
 
     protected static function clearCache()
     {
@@ -29,12 +29,14 @@ abstract class BaseFunctionalTest extends TestCase
 
     protected static function exec($command, $args = '')
     {
-        $process = new Process(sprintf('php %s %s %s %s',
+        $commandStatement = sprintf('php %s %s %s %s',
             self::$consolePath,
             $command,
             self::$frontControllerPath,
             $args
-        ));
+        );
+
+        $process = new Process($commandStatement);
 
         $process->run();
 

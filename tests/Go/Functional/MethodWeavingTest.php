@@ -21,7 +21,5 @@ class MethodWeavingTest extends BaseFunctionalTest
         // it does not weaves AbstractBar class
         $this->assertFalse(file_exists(self::$aspectCacheDir.'/_proxies/src/Application/AbstractBar.php'));
         $this->assertFalse(file_exists(self::$aspectCacheDir.'/src/Application/AbstractBar.php'));
-
-
     }
 }
