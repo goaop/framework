@@ -3,35 +3,19 @@ declare(strict_types = 1);
 
 namespace Go\Console\Command;
 
-use PHPUnit_Framework_TestCase as TestCase;
-use Symfony\Component\Process\Process;
+use Go\Functional\BaseFunctionalTest;
+use Go\Instrument\FileSystem\Enumerator;
 
-class DebugAdvisorCommandTest extends TestCase
+class DebugAdvisorCommandTest extends BaseFunctionalTest
 {
     public function setUp()
     {
-        $process = new Process(sprintf('php %s cache:warmup:aop %s',
-            realpath(__DIR__.'/../../../Fixtures/project/bin/console'),
-            realpath(__DIR__.'/../../../Fixtures/project/web/index.php')
-        ));
-
-        $process->run();
-
-        $this->assertTrue($process->isSuccessful(), 'Unable to execute "cache:warmup:aop" command.');
+        self::warmUp();
     }
 
     public function testItDisplaysAdvisorsDebugInfo()
     {
-        $process = $process = new Process(sprintf('php %s debug:advisor %s',
-            realpath(__DIR__.'/../../../Fixtures/project/bin/console'),
-            realpath(__DIR__.'/../../../Fixtures/project/web/index.php')
-        ));
-
-        $process->run();
-
-        $this->assertTrue($process->isSuccessful(), 'Unable to execute "debug:advisor" command.');
-
-        $output = $process->getOutput();
+        $output = self::exec('debug:advisor');
 
         $expected = [
             'List of registered advisors in the container',
@@ -46,19 +30,13 @@ class DebugAdvisorCommandTest extends TestCase
 
     public function testItDisplaysStatedAdvisorDebugInfo()
     {
-        $process = $process = new Process(sprintf('php %s debug:advisor %s --advisor="Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod"',
-            realpath(__DIR__.'/../../../Fixtures/project/bin/console'),
-            realpath(__DIR__.'/../../../Fixtures/project/web/index.php')
-        ));
+        $output = self::exec('debug:advisor', '--advisor="Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod"');
 
-        $process->run();
-
-        $this->assertTrue($process->isSuccessful(), 'Unable to execute "debug:advisor" command.');
-
-        $output = $process->getOutput();
+        $enumerator = new Enumerator(realpath(self::$projectDir.'/src'));
+        $srcFilesCount = iterator_count($enumerator->enumerate());
 
         $expected = [
-            'Total 4 files to analyze.',
+            sprintf('Total %s files to analyze.', $srcFilesCount),
             '-> matching method Go\Tests\TestProject\Application\Main->doSomething',
         ];
 

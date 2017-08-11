@@ -167,6 +167,11 @@ class AdviceMatcher
 
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
+                // abstract methods can not be weaved
+                if ($method->isAbstract()) {
+                    continue;
+                }
+
                 if ($filter->matches($method, $class)) {
                     $prefix = $method->isStatic() ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
                     $classAdvices[$prefix][$method->name][$advisorId] = $advisor->getAdvice();
