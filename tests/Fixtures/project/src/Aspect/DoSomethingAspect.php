@@ -13,7 +13,7 @@ class DoSomethingAspect implements Aspect
      *
      * @param MethodInvocation $invocation
      *
-     * @Pointcut\After("execution(public Go\Tests\TestProject\Application\*->doSomething(*))")
+     * @Pointcut\After("execution(public Go\Tests\TestProject\Application\*->doSomething(*)) || execution(public Go\Tests\TestProject\Application\*->doSomethingElse(*))")
      */
     public function afterDoSomething()
     {

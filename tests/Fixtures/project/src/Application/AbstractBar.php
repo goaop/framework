@@ -4,7 +4,7 @@ namespace Go\Tests\TestProject\Application;
 
 abstract class AbstractBar implements FooInterface
 {
-    public abstract function doSomethingElse();
+    abstract public function doSomethingElse();
 
     public function doSomeThirdThing()
     {
