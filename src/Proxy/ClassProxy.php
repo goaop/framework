@@ -211,7 +211,7 @@ class ClassProxy extends AbstractProxy
     {
         $this->methodsCode[$methodName] = (
             "/**\n * Method was created automatically, do not change it manually\n */\n" .
-            join(' ', Reflection::getModifierNames($methodFlags)) . // List of method modifiers
+            implode(' ', Reflection::getModifierNames($methodFlags)) . // List of method modifiers
             ' function ' . // 'function' keyword
             ($byReference ? '&' : '') . // Return value by reference
             $methodName . // Method name
@@ -347,7 +347,7 @@ class ClassProxy extends AbstractProxy
     {
         $this->propertiesCode[$propName] = (
             "/**\n * Property was created automatically, do not change it manually\n */\n" . // Doc-block
-            join(' ', Reflection::getModifierNames($propFlags)) . // List of modifiers for property
+            implode(' ', Reflection::getModifierNames($propFlags)) . // List of modifiers for property
             ' $' . // Space and vaiable symbol
             $propName . // Name of the property
             (is_string($defaultText) ? " = $defaultText" : '') . // Default value if present
@@ -437,7 +437,7 @@ class ClassProxy extends AbstractProxy
             $this->addFieldInterceptorsCode($ctor);
         }
 
-        $prefix = join(' ', Reflection::getModifierNames($this->class->getModifiers()));
+        $prefix = implode(' ', Reflection::getModifierNames($this->class->getModifiers()));
 
         $classCode = (
             $this->class->getDocComment() . "\n" . // Original doc-block
@@ -446,11 +446,11 @@ class ClassProxy extends AbstractProxy
             $this->name . // Name of the class
             ' extends ' . // 'extends' keyword with
             $this->parentClassName . // Name of the parent class
-            ($this->interfaces ? ' implements ' . join(', ', $this->interfaces) : '') . "\n" . // Interfaces list
+            ($this->interfaces ? ' implements ' . implode(', ', $this->interfaces) : '') . "\n" . // Interfaces list
             "{\n" . // Start of class definition
-            ($this->traits ? $this->indent('use ' . join(', ', $this->traits) . ';' . "\n") : '') . "\n" . // Traits list
-            $this->indent(join("\n", $this->propertiesCode)) . "\n" . // Property definitions
-            $this->indent(join("\n", $this->methodsCode)) . "\n" . // Method definitions
+            ($this->traits ? $this->indent('use ' . implode(', ', $this->traits) . ';' . "\n") : '') . "\n" . // Traits list
+            $this->indent(implode("\n", $this->propertiesCode)) . "\n" . // Property definitions
+            $this->indent(implode("\n", $this->methodsCode)) . "\n" . // Method definitions
             "}" // End of class definition
         );
 
@@ -494,8 +494,8 @@ class ClassProxy extends AbstractProxy
             $assocProperties[] = "'$propertyName' => &\$this->$propertyName";
             $listProperties[]  = "\$this->$propertyName";
         }
-        $assocProperties = $this->indent(join(',' . PHP_EOL, $assocProperties));
-        $listProperties  = $this->indent(join(',' . PHP_EOL, $listProperties));
+        $assocProperties = $this->indent(implode(',' . PHP_EOL, $assocProperties));
+        $listProperties  = $this->indent(implode(',' . PHP_EOL, $listProperties));
         if (isset($this->methodsCode['__construct'])) {
             $parentCall = $this->getJoinpointInvocationBody($constructor);
         } elseif ($isCallParent) {

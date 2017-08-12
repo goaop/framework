@@ -103,7 +103,7 @@ class First
      */
     public function variableArgsTest()
     {
-        return join('', func_get_args());
+        return implode('', func_get_args());
     }
 
     /**
@@ -113,7 +113,7 @@ class First
      */
     public function variadicArgsTest(...$args)
     {
-        return join('', $args);
+        return implode('', $args);
     }
 
     /**
@@ -126,7 +126,7 @@ class First
      */
     public static function staticVariableArgsTest()
     {
-        return join('', func_get_args());
+        return implode('', func_get_args());
     }
 
     /**
@@ -136,6 +136,6 @@ class First
      */
     public static function staticVariadicArgsTest(...$args)
     {
-        return join('', $args);
+        return implode('', $args);
     }
 }
