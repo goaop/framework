@@ -74,7 +74,7 @@ abstract class AbstractProxy
             return $pad . $line;
         }, explode("\n", $text));
 
-        return join("\n", $lines);
+        return implode("\n", $lines);
     }
 
     /**
@@ -176,14 +176,14 @@ abstract class AbstractProxy
         }
         if (!empty($arguments)) {
             // Unshifting to keep correct order
-            $argumentLine = '[' . join(', ', $arguments) . ']';
+            $argumentLine = '[' . implode(', ', $arguments) . ']';
             if ($hasOptionals) {
                 $argumentLine = "\\array_slice($argumentLine, 0, \\func_num_args())";
             }
             array_unshift($argumentsPart, $argumentLine);
         }
 
-        return join(', ', $argumentsPart);
+        return implode(', ', $argumentsPart);
     }
 
     /**
@@ -205,7 +205,7 @@ abstract class AbstractProxy
             $reflectionReturnType = $nullablePrefix . $nsPrefix . (string) $reflectionReturnType;
         }
         if ($functionLike instanceof ReflectionMethod) {
-            $modifiersLine = join(' ', Reflection::getModifierNames($functionLike->getModifiers()));
+            $modifiersLine = implode(' ', Reflection::getModifierNames($functionLike->getModifiers()));
         }
 
         $code = (
@@ -215,7 +215,7 @@ abstract class AbstractProxy
             ($functionLike->returnsReference() ? '&' : '') . // By reference symbol
             $functionLike->name . // Name of the function
             '(' . // Start of parameters list
-            join(', ', $this->getParameters($functionLike->getParameters())) . // List of parameters
+            implode(', ', $this->getParameters($functionLike->getParameters())) . // List of parameters
             ")" . // End of parameters list
             ($reflectionReturnType ? " : $reflectionReturnType" : '') . // Return type, if present
             "\n" .

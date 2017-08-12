@@ -125,10 +125,10 @@ BODY;
             $this->name . "\n" . // Name of the trait
             "{\n" . // Start of trait body
             $this->indent(
-                'use ' . join(', ', [-1 => $this->parentClassName] + $this->traits) .
+                'use ' . implode(', ', [-1 => $this->parentClassName] + $this->traits) .
                 $this->getMethodAliasesCode()
             ) . "\n" . // Use traits and aliases section
-            $this->indent(join("\n", $this->methodsCode)) . "\n" . // Method definitions
+            $this->indent(implode("\n", $this->methodsCode)) . "\n" . // Method definitions
             "}" // End of trait body
         );
 
@@ -152,6 +152,6 @@ BODY;
             $aliasesLines[] = "{$this->parentClassName}::{$methodName} as protected {$methodName}➩;";
         }
 
-        return "{\n " . $this->indent(join("\n", $aliasesLines)) . "\n}";
+        return "{\n " . $this->indent(implode("\n", $aliasesLines)) . "\n}";
     }
 }

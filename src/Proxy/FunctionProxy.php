@@ -132,7 +132,7 @@ class FunctionProxy extends AbstractProxy
             'namespace ' . // 'namespace' keyword
             $this->namespace->getName() . // Name
             ";\n" . // End of namespace name
-            join("\n", $this->functionsCode) // Function definitions
+            implode("\n", $this->functionsCode) // Function definitions
         );
 
         return $functionsCode

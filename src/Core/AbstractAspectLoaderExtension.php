@@ -135,7 +135,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                 method_exists($reflection, 'getStartLine')
                     ? $reflection->getStartLine()
                     : 0,
-                join(', ', $e->getExpected())
+                implode(', ', $e->getExpected())
             );
             throw new \UnexpectedValueException($message, 0, $e);
         }
