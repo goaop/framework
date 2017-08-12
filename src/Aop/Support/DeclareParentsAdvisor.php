@@ -110,7 +110,7 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     public function __toString()
     {
         $adviceClass      = get_class($this->advice);
-        $interfaceClasses = join(',', $this->advice->getInterfaces());
+        $interfaceClasses = implode(',', $this->advice->getInterfaces());
 
         return get_called_class() . ": advice [{$adviceClass}]; interfaces [{$interfaceClasses}] ";
     }
