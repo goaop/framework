@@ -33,14 +33,14 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      *
      * @var null|Lexer
      */
-    protected $pointcutLexer = null;
+    protected $pointcutLexer;
 
     /**
      * Instance of pointcut parser
      *
      * @var null|Parser
      */
-    protected $pointcutParser = null;
+    protected $pointcutParser;
 
     /**
      * Default initialization of dependencies

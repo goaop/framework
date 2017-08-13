@@ -28,7 +28,7 @@ class AopComposerLoader
      *
      * @var ClassLoader
      */
-    protected $original = null;
+    protected $original;
 
     /**
      * AOP kernel options

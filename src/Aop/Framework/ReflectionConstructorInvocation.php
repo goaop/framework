@@ -25,21 +25,21 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      *
      * @var ReflectionClass
      */
-    protected $class = null;
+    protected $class;
 
     /**
      * Instance of created class, can be used for Around or After types of advices
      *
      * @var object|null
      */
-    protected $instance = null;
+    protected $instance;
 
     /**
      * Instance of reflection constructor for class
      *
      * @var null|ReflectionMethod
      */
-    private $constructor = null;
+    private $constructor;
 
     /**
      * Number of constructor arguments

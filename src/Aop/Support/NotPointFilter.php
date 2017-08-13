@@ -29,7 +29,7 @@ class NotPointFilter implements PointFilter
      *
      * @var PointFilter|null
      */
-    private $first = null;
+    private $first;
 
     /**
      * Not constructor

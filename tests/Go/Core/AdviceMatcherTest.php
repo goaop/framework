@@ -18,9 +18,9 @@ class AdviceMatcherTest extends TestCase
     /**
      * @var null|AdviceMatcher
      */
-    protected $adviceMatcher = null;
+    protected $adviceMatcher;
 
-    protected $reflectionClass = null;
+    protected $reflectionClass;
 
     /**
      * This method is called before the first test of this test class is run.

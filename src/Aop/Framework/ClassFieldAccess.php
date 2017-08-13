@@ -26,7 +26,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @var object
      */
-    protected $instance = null;
+    protected $instance;
 
     /**
      * Instance of reflection property
@@ -40,7 +40,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @var mixed
      */
-    protected $newValue = null;
+    protected $newValue;
 
     /**
      * Access type for field access
@@ -54,7 +54,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @var mixed
      */
-    private $value = null;
+    private $value;
 
     /**
      * Constructor for field access

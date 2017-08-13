@@ -23,12 +23,12 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
     /**
      * @var null|Lexer
      */
-    protected $lexer = null;
+    protected $lexer;
 
     /**
      * @var null|PointcutParser
      */
-    protected $parser = null;
+    protected $parser;
 
     /**
      * {@inheritdoc}

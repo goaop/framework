@@ -26,7 +26,7 @@ class DeclareParentsAdvisor implements IntroductionAdvisor
     /**
      * @var null|IntroductionInfo
      */
-    private $advice = null;
+    private $advice;
 
     /**
      * Type pattern the introduction is restricted to

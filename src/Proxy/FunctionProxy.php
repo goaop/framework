@@ -80,7 +80,7 @@ class FunctionProxy extends AbstractProxy
     public static function getJoinPoint($joinPointName, $namespace)
     {
         /** @var LazyAdvisorAccessor $accessor */
-        static $accessor = null;
+        static $accessor;
 
         if (!$accessor) {
             $accessor = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
@@ -171,7 +171,7 @@ class FunctionProxy extends AbstractProxy
         }
 
         return <<<BODY
-static \$__joinPoint = null;
+static \$__joinPoint;
 if (!\$__joinPoint) {
     \$__joinPoint = {$class}::getJoinPoint('{$function->name}', __NAMESPACE__);
 }
