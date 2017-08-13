@@ -14,6 +14,7 @@ use Dissect\Lexer\Token;
 use Dissect\Parser\Grammar;
 use Doctrine\Common\Annotations\Reader;
 use Go\Aop\PointFilter;
+use Go\Aop\Support\AndPointFilter;
 use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
 use Go\Aop\Support\SimpleNamespaceFilter;
@@ -164,9 +165,12 @@ class PointcutGrammar extends Grammar
             // ideally, this should be 'dynamic', 'methodExecutionReference'
             ->is('dynamic', '(', 'memberReference', '(', 'argumentList', ')', ')')
             ->call(function($_0, $_1, ClassMemberReference $reference) {
-                $memberFilter = $reference->getVisibilityFilter();
-                $memberFilter = $memberFilter->merge($reference->getAccessTypeFilter());
-                $pointcut     = new MagicMethodPointcut(
+                $memberFilter = new AndPointFilter(
+                    $reference->getVisibilityFilter(),
+                    $reference->getAccessTypeFilter()
+                );
+
+                $pointcut = new MagicMethodPointcut(
                     $reference->getMemberNamePattern(),
                     $memberFilter);
                 $pointcut->setClassFilter($reference->getClassFilter());
@@ -183,9 +187,12 @@ class PointcutGrammar extends Grammar
         $this('propertyAccessReference')
             ->is('memberReference')
             ->call(function(ClassMemberReference $reference) {
-                $memberFilter = $reference->getVisibilityFilter();
-                $memberFilter = $memberFilter->merge($reference->getAccessTypeFilter());
-                $pointcut     = new SignaturePointcut(
+                $memberFilter = new AndPointFilter(
+                    $reference->getVisibilityFilter(),
+                    $reference->getAccessTypeFilter()
+                );
+
+                $pointcut = new SignaturePointcut(
                     PointFilter::KIND_PROPERTY,
                     $reference->getMemberNamePattern(),
                     $memberFilter);
@@ -198,10 +205,12 @@ class PointcutGrammar extends Grammar
         $this('methodExecutionReference')
             ->is('memberReference', '(', 'argumentList', ')')
             ->call(function(ClassMemberReference $reference) {
+                $memberFilter = new AndPointFilter(
+                    $reference->getVisibilityFilter(),
+                    $reference->getAccessTypeFilter()
+                );
 
-                $memberFilter = $reference->getVisibilityFilter();
-                $memberFilter = $memberFilter->merge($reference->getAccessTypeFilter());
-                $pointcut     = new SignaturePointcut(
+                $pointcut = new SignaturePointcut(
                     PointFilter::KIND_METHOD,
                     $reference->getMemberNamePattern(),
                     $memberFilter);
