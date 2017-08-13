@@ -35,7 +35,7 @@ class AnnotationPointcut implements Pointcut
      *
      * @var null|Reader
      */
-    protected $annotationReader = null;
+    protected $annotationReader;
 
     /**
      * Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY, KIND_TRAIT

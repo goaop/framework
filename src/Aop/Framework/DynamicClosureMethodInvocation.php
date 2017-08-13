@@ -21,14 +21,14 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
      *
      * @var \Closure
      */
-    protected $closureToCall = null;
+    protected $closureToCall;
 
     /**
      * Previous instance of invocation
      *
      * @var null|object|string
      */
-    protected $previousInstance = null;
+    protected $previousInstance;
 
     /**
      * Invokes original method and return result from it

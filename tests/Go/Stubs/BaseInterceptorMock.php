@@ -9,7 +9,7 @@ use Go\Aop\Intercept\Joinpoint;
 
 class BaseInterceptorMock extends BaseInterceptor
 {
-    private static $advice = null;
+    private static $advice;
 
     /**
      * {@inheritdoc}

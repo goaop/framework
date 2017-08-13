@@ -26,7 +26,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
      *
      * @var null|ReflectionFunction
      */
-    protected $reflectionFunction = null;
+    protected $reflectionFunction;
 
     /**
      * Constructor for function invocation

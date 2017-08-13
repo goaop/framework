@@ -61,7 +61,7 @@ class ConstructorExecutionTransformer implements SourceTransformer
      */
     public static function getInstance()
     {
-        static $instance = null;
+        static $instance;
         if (!$instance) {
             $instance = new static;
         }

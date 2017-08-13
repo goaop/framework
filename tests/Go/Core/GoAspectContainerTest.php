@@ -13,7 +13,7 @@ class GoAspectContainerTest extends TestCase
     /**
      * @var null|GoAspectContainer
      */
-    protected $container = null;
+    protected $container;
 
     protected function setUp()
     {

@@ -28,7 +28,7 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
      *
      * @var null|PointFilter
      */
-    protected $internalClassFilter = null;
+    protected $internalClassFilter;
 
     /**
      * Filter for the points

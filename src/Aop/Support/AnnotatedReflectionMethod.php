@@ -25,7 +25,7 @@ class AnnotatedReflectionMethod extends ReflectionMethod
      *
      * @var Reader
      */
-    private static $annotationReader = null;
+    private static $annotationReader;
 
     /**
      * Gets a method annotation.

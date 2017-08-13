@@ -106,7 +106,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
      */
     private static function getDeclareErrorAdvice() : \Closure
     {
-        static $adviceMethod = null;
+        static $adviceMethod;
         if (!$adviceMethod) {
             $adviceMethod = function($object, $reflectorName, $message, $level = E_USER_NOTICE) {
                 $class   = is_string($object) ? $object : get_class($object);

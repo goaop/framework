@@ -23,14 +23,14 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
      *
      * @var Closure
      */
-    protected $closureToCall = null;
+    protected $closureToCall;
 
     /**
      * Previous scope of invocation
      *
      * @var null|object|string
      */
-    protected $previousScope = null;
+    protected $previousScope;
 
     /**
      * Invokes original method and return result from it

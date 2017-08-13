@@ -20,17 +20,17 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * @var null|AspectKernel|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $kernel = null;
+    protected $kernel;
 
     /**
      * @var null|AdviceMatcher
      */
-    protected $adviceMatcher = null;
+    protected $adviceMatcher;
 
     /**
      * @var null|CachePathManager|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $cachePathManager = null;
+    protected $cachePathManager;
 
     /**
      * {@inheritDoc}

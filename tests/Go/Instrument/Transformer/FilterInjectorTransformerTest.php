@@ -19,7 +19,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * @var StreamMetaData|null
      */
-    protected $metadata = null;
+    protected $metadata;
 
     /**
      * {@inheritDoc}

@@ -60,7 +60,7 @@ class TraitProxy extends ClassProxy
         string $methodName
     ): MethodInvocation {
         /** @var LazyAdvisorAccessor $accessor */
-        static $accessor = null;
+        static $accessor;
 
         if (!isset($accessor)) {
             $aspectKernel = AspectKernel::getInstance();
@@ -106,7 +106,7 @@ class TraitProxy extends ClassProxy
         }
 
         return <<<BODY
-static \$__joinPoint = null;
+static \$__joinPoint;
 if (!\$__joinPoint) {
     \$__joinPoint = {$class}::getJoinPoint(__TRAIT__, __CLASS__, '{$prefix}', '{$method->name}');
 }

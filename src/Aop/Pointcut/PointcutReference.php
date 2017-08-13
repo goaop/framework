@@ -24,7 +24,7 @@ class PointcutReference implements Pointcut
     /**
      * @var Pointcut
      */
-    protected $pointcut = null;
+    protected $pointcut;
 
     /**
      * Name of the pointcut to fetch from the container

@@ -10,7 +10,7 @@ class FirstStatic extends First
     /**
      * @var Invocation|null
      */
-    protected static $invocation = null;
+    protected static $invocation;
 
     public function __construct(Invocation $invocation)
     {

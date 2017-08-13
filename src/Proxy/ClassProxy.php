@@ -38,14 +38,14 @@ class ClassProxy extends AbstractProxy
      *
      * @var null|ReflectionClass
      */
-    protected $class = null;
+    protected $class;
 
     /**
      * Parent class name, can be changed manually
      *
      * @var string
      */
-    protected $parentClassName = null;
+    protected $parentClassName;
 
     /**
      * Source code for methods
@@ -254,7 +254,7 @@ class ClassProxy extends AbstractProxy
     protected static function wrapWithJoinPoints(array $classAdvices, string $className): array
     {
         /** @var LazyAdvisorAccessor $accessor */
-        static $accessor = null;
+        static $accessor;
 
         if (!isset($accessor)) {
             $aspectKernel = AspectKernel::getInstance();
