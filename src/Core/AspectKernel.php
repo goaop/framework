@@ -46,7 +46,7 @@ abstract class AspectKernel
      *
      * @var null|static
      */
-    protected static $instance = null;
+    protected static $instance;
 
     /**
      * Default class name for container, can be redefined in children
@@ -67,7 +67,7 @@ abstract class AspectKernel
      *
      * @var null|AspectContainer
      */
-    protected $container = null;
+    protected $container;
 
     /**
      * Protected constructor is used to prevent direct creation, but allows customization if needed

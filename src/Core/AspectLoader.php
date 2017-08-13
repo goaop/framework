@@ -27,7 +27,7 @@ class AspectLoader
      *
      * @var null|AspectContainer
      */
-    protected $container = null;
+    protected $container;
 
     /**
      * List of aspect loaders
@@ -41,7 +41,7 @@ class AspectLoader
      *
      * @var Reader|null
      */
-    protected $annotationReader = null;
+    protected $annotationReader;
 
     /**
      * List of aspects that was loaded

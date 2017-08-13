@@ -30,14 +30,14 @@ class OrPointFilter implements PointFilter
      *
      * @var PointFilter|null
      */
-    private $first = null;
+    private $first;
 
     /**
      * Second part of filter
      *
      * @var PointFilter|null
      */
-    private $second = null;
+    private $second;
 
     /**
      * Or constructor

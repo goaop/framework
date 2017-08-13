@@ -32,5 +32,5 @@ class IntroductionAspect implements Aspect
      *
      * @var null
      */
-    protected $introduction = null;
+    protected $introduction;
 }

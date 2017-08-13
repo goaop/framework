@@ -32,7 +32,7 @@ class TruePointFilter implements PointFilter
      */
     public static function getInstance()
     {
-        static $instance = null;
+        static $instance;
         if (!$instance) {
             $instance = new self();
         }

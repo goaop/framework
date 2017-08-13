@@ -28,7 +28,7 @@ class BaseAspectCommand extends Command
      *
      * @var null|AspectKernel
      */
-    protected $aspectKernel = null;
+    protected $aspectKernel;
 
     /**
      * {@inheritDoc}
