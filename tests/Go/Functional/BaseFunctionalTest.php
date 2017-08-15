@@ -22,14 +22,17 @@ abstract class BaseFunctionalTest extends TestCase
         }
     }
 
-    protected static function warmUp()
+    protected static function warmUp($configuration = null)
     {
-        return self::exec('cache:warmup:aop');
+        return self::exec('cache:warmup:aop', '', $configuration);
     }
 
-    protected static function exec($command, $args = '')
+    protected static function exec($command, $args = '', $configuration = null)
     {
-        $commandStatement = sprintf('php %s %s %s %s',
+        $configuration = ($configuration) ? sprintf('GO_AOP_CONFIGURATION=%s ', $configuration) : '';
+
+        $commandStatement = sprintf('%sphp %s %s %s %s',
+            $configuration,
             self::$consolePath,
             $command,
             self::$frontControllerPath,
@@ -40,7 +43,7 @@ abstract class BaseFunctionalTest extends TestCase
 
         $process->run();
 
-        self::assertTrue($process->isSuccessful(), sprintf('Unable to execute "%s" command.', $command));
+        self::assertTrue($process->isSuccessful(), sprintf('Unable to execute "%s" command, got output: "%s".', $command, $process->getOutput()));
 
         return $process->getOutput();
     }
