@@ -6,6 +6,7 @@ class MethodWeavingTest extends BaseFunctionalTest
 {
     public function setUp()
     {
+        self::clearCache();
         self::warmUp();
     }
 

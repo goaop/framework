@@ -27,7 +27,7 @@ abstract class BaseFunctionalTest extends TestCase
         return self::exec('cache:warmup:aop', '', $configuration);
     }
 
-    protected static function exec($command, $args = '', $configuration = null)
+    protected static function exec($command, $args = '', $configuration = null, $success = true)
     {
         $configuration = ($configuration) ? sprintf('GO_AOP_CONFIGURATION=%s ', $configuration) : '';
 
@@ -43,7 +43,9 @@ abstract class BaseFunctionalTest extends TestCase
 
         $process->run();
 
-        self::assertTrue($process->isSuccessful(), sprintf('Unable to execute "%s" command, got output: "%s".', $command, $process->getOutput()));
+        $assert = ($success) ? 'assertTrue' : 'assertFalse';
+
+        self::{$assert}($process->isSuccessful(), sprintf('Unable to execute "%s" command, got output: "%s".', $command, $process->getOutput()));
 
         return $process->getOutput();
     }
