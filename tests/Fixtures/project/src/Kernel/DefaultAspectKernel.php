@@ -1,6 +1,6 @@
 <?php
 
-namespace Go\Tests\TestProject;
+namespace Go\Tests\TestProject\Kernel;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -9,14 +9,10 @@ use Go\Tests\TestProject\Aspect\Issue293Aspect;
 use Go\Tests\TestProject\Aspect\LoggingAspect;
 use Psr\Log\NullLogger;
 
-class ApplicationAspectKernel extends AspectKernel
+class DefaultAspectKernel extends AspectKernel
 {
     /**
-     * Configure an AspectContainer with advisors, aspects and pointcuts
-     *
-     * @param AspectContainer $container
-     *
-     * @return void
+     * {@inheritdoc}
      */
     protected function configureAop(AspectContainer $container)
     {

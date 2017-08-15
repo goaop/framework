@@ -8,6 +8,7 @@ class DebugAspectCommandTest extends BaseFunctionalTest
 {
     public function setUp()
     {
+        self::clearCache();
         self::warmUp();
     }
 
@@ -16,7 +17,7 @@ class DebugAspectCommandTest extends BaseFunctionalTest
         $output = self::exec('debug:aspect');
 
         $expected = [
-            'Go\Tests\TestProject\ApplicationAspectKernel has following enabled aspects',
+            'Go\Tests\TestProject\Kernel\DefaultAspectKernel has following enabled aspects',
             'Go\Tests\TestProject\Aspect\LoggingAspect',
             'Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod'
         ];

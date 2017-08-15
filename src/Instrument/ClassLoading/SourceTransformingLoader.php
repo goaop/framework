@@ -10,6 +10,7 @@
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Exception\CircularWeavingException;
 use php_user_filter as PhpStreamFilter;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\SourceTransformer;
@@ -49,6 +50,13 @@ class SourceTransformingLoader extends PhpStreamFilter
      * @var string
      */
     protected static $filterId;
+
+    /**
+     * Transformation log
+     *
+     * @var string
+     */
+    protected static $log = [];
 
     /**
      * Register current loader as stream filter in PHP
@@ -130,11 +138,19 @@ class SourceTransformingLoader extends PhpStreamFilter
     public static function transformCode(StreamMetaData $metadata)
     {
         $result = null;
+
         foreach (self::$transformers as $transformer) {
             $result = $transformer->transform($metadata);
             if ($result === false) {
                 break;
             }
+        }
+
+        if ($result) {
+            if (isset(self::$log[$metadata->uri])) {
+                throw new CircularWeavingException(sprintf('Circular weaving detected at file: "%s".', $metadata->uri));
+            }
+            self::$log[$metadata->uri] = true;
         }
 
         return $result;

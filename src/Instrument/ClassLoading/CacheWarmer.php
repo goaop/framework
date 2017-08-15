@@ -11,6 +11,7 @@
 namespace Go\Instrument\ClassLoading;
 
 use Go\Core\AspectKernel;
+use Go\Exception\CircularWeavingException;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Symfony\Component\Console\Output\NullOutput;
@@ -83,6 +84,9 @@ class CacheWarmer
                 );
 
                 $this->output->writeln(sprintf('<fg=green;options=bold>[OK]</>: <comment>%s</comment>', $path));
+            } catch (CircularWeavingException $e) {
+                $this->output->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: File "%s" is not processed correctly due to detected circular weaving.', $path));
+                throw $e;
             } catch (\Throwable $e) {
                 $displayException($e, $path);
             } catch (\Exception $e) {
