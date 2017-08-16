@@ -25,5 +25,3 @@ class InconsistentlyWeavingAspect implements Aspect
         echo 'I weave badly.';
     }
 }
-
-

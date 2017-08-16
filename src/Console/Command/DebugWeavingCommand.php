@@ -9,6 +9,7 @@
  */
 
 namespace Go\Console\Command;
+
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\CacheWarmer;
 use Symfony\Component\Console\Input\InputInterface;
@@ -62,7 +63,6 @@ EOT
         $errors = 0;
 
         foreach ($this->getProxies($cachePathManager) as $path => $content) {
-
             if (!isset($proxies[$path])) {
                 $io->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: Proxy on path "%s" is generated on second "warmup" pass.', $path));
                 $errors++;
@@ -89,14 +89,13 @@ EOT
     private function getProxies(CachePathManager $cachePathManager)
     {
         $path = $cachePathManager->getCacheDir() . '/_proxies';
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS),\RecursiveIteratorIterator::CHILD_FIRST);
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS), \RecursiveIteratorIterator::CHILD_FIRST);
         $proxies = [];
 
         /**
          * @var \SplFileInfo $value
          */
-        foreach($iterator as $value) {
-
+        foreach ($iterator as $value) {
             if ($value->isFile()) {
                 $proxies[$value->getPathname()] = file_get_contents($value->getPathname());
             }
