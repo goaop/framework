@@ -174,10 +174,12 @@ class CachePathManager
 
     /**
      * Flushes the cache state into the file
+     *
+     * @var bool $force Should be flushed regardless of its state.
      */
-    public function flushCacheState()
+    public function flushCacheState($force = false)
     {
-        if (!empty($this->newCacheState) && is_writable($this->cacheDir)) {
+        if ((!empty($this->newCacheState) && is_writable($this->cacheDir)) || $force) {
             $fullCacheMap = $this->newCacheState + $this->cacheState;
             $cachePath    = substr(var_export($this->cacheDir, true), 1, -1);
             $rootPath     = substr(var_export($this->appDir, true), 1, -1);
@@ -197,5 +199,16 @@ class CachePathManager
             $this->cacheState    = $this->newCacheState + $this->cacheState;
             $this->newCacheState = [];
         }
+    }
+
+    /**
+     * Clear the cache state.
+     */
+    public function clearCacheState()
+    {
+        $this->cacheState       = [];
+        $this->newCacheState    = [];
+
+        $this->flushCacheState(true);
     }
 }

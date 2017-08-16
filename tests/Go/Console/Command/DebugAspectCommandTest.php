@@ -8,6 +8,7 @@ class DebugAspectCommandTest extends BaseFunctionalTest
 {
     public function setUp()
     {
+        self::clearCache();
         self::warmUp();
     }
 
