@@ -18,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * Console command for querying an information about aspects
+ * Console command for debugging weaving issues due to circular dependencies.
  *
  * @codeCoverageIgnore
  */
@@ -52,7 +52,7 @@ EOT
         $io->title('Weaving debug information');
 
         $cachePathManager = $this->aspectKernel->getContainer()->get('aspect.cache.path.manager');
-        $warmer = new CacheWarmer($this->aspectKernel, new NullOutput());
+        $warmer           = new CacheWarmer($this->aspectKernel, new NullOutput());
         $warmer->warmUp();
 
         $proxies = $this->getProxies($cachePathManager);
@@ -64,33 +64,40 @@ EOT
 
         foreach ($this->getProxies($cachePathManager) as $path => $content) {
             if (!isset($proxies[$path])) {
-                $io->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: Proxy on path "%s" is generated on second "warmup" pass.', $path));
+                $io->error(sprintf('Proxy on path "%s" is generated on second "warmup" pass.', $path));
                 $errors++;
                 continue;
             }
 
             if (isset($proxies[$path]) && $proxies[$path] !== $content) {
-                $io->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: Proxy on path "%s" is weaved differnlty on second "warmup" pass.', $path));
+                $io->error(sprintf('Proxy on path "%s" is weaved differnlty on second "warmup" pass.', $path));
                 $errors++;
                 continue;
             }
 
-            $io->writeln(sprintf('<fg=green;options=bold>[OK]</>: <comment>Proxy  on path "%s" is consistently weaved.</comment>', $path));
+            $io->note(sprintf('Proxy  on path "%s" is consistently weaved.', $path));
         }
 
         if ($errors > 0) {
             $io->error(sprintf('Weaving is unstable, there are %s reported error(s).', $errors));
-            return -1;
+            return 1;
         }
 
-        $io->success('Weaving is stabile, there are no errors reported.');
+        $io->success('Weaving is stable, there are no errors reported.');
     }
 
+    /**
+     * Get Go! AOP generated proxy classes (paths and their contents) from cache.
+     *
+     * @param CachePathManager $cachePathManager
+     *
+     * @return array
+     */
     private function getProxies(CachePathManager $cachePathManager)
     {
-        $path = $cachePathManager->getCacheDir() . '/_proxies';
+        $path     = $cachePathManager->getCacheDir() . '/_proxies';
         $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS), \RecursiveIteratorIterator::CHILD_FIRST);
-        $proxies = [];
+        $proxies  = [];
 
         /**
          * @var \SplFileInfo $value

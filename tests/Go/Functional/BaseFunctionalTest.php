@@ -1,51 +1,162 @@
 <?php
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
 namespace Go\Functional;
 
+use Go\Instrument\PathResolver;
+use Go\ParserReflection\ReflectionClass;
 use PHPUnit_Framework_TestCase as TestCase;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 
+/**
+ * Base class for functional tests.
+ */
 abstract class BaseFunctionalTest extends TestCase
 {
-    protected static $projectDir            = __DIR__ . '/../../Fixtures/project';
-    protected static $aspectCacheDir        = __DIR__ . '/../../Fixtures/project/var/cache/aspect';
-    protected static $consolePath           = __DIR__ . '/../../Fixtures/project/bin/console';
-    protected static $frontControllerPath   = __DIR__ . '/../../Fixtures/project/web/index.php';
+    /**
+     * Configuration which ought to be used in this test suite.
+     *
+     * @var array
+     */
+    protected $configuration;
 
-    protected static function clearCache()
+    /**
+     * {@inheritdoc}
+     */
+    public function setUp()
+    {
+        $this->loadConfiguration();
+        $this->clearCache();
+        $this->warmUp();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function tearDown()
+    {
+        $this->clearCache();
+    }
+
+    /**
+     * Clear Go! AOP cache.
+     */
+    protected function clearCache()
     {
         $filesystem = new Filesystem();
 
-        if ($filesystem->exists(self::$aspectCacheDir)) {
-            $filesystem->remove(self::$aspectCacheDir);
+        if ($filesystem->exists($this->configuration['cacheDir'])) {
+            $filesystem->remove($this->configuration['cacheDir']);
         }
     }
 
-    protected static function warmUp($configuration = null)
+    /**
+     * Warms up Go! AOP cache.
+     *
+     * @return string Command output.
+     */
+    protected function warmUp()
     {
-        return self::exec('cache:warmup:aop', '', $configuration);
+        return $this->execute('cache:warmup:aop');
     }
 
-    protected static function exec($command, $args = '', $configuration = null, $expectSuccess = true)
+    /**
+     * Get configuration name.
+     *
+     * Get configuration name from available configurations settings defined in
+     * /tests/Fixtures/project/web/configuration.php used for executing this
+     * functional test suite.
+     *
+     * Override this method to use desired configuration settings.
+     *
+     * @return string
+     */
+    protected function getConfigurationName()
     {
-        $configuration = ($configuration) ? sprintf('GO_AOP_CONFIGURATION=%s ', $configuration) : '';
+        return 'default';
+    }
 
-        $commandStatement = sprintf('%sphp %s %s %s %s',
-            $configuration,
-            self::$consolePath,
+    /**
+     * Load configuration settings.
+     *
+     * Load configuration settings which ought to be used in this test suite,
+     * defined in /tests/Fixtures/project/web/configuration.php.
+     */
+    protected function loadConfiguration()
+    {
+        if (!$this->configuration) {
+            $configurations = require __DIR__.'/../../Fixtures/project/web/configuration.php';
+            $this->configuration = $configurations[$this->getConfigurationName()];
+        }
+    }
+
+    /**
+     * Execute console command.
+     *
+     * @param string $command Command to execute.
+     * @param string|null $args Command arguments to append, if any.
+     * @param bool $expectSuccess Should command be executed successfully
+     *
+     * @return string Console output.
+     */
+    protected function execute($command, $args = null, $expectSuccess = true)
+    {
+        $commandStatement = sprintf('GO_AOP_CONFIGURATION=%s php %s %s %s %s',
+            $this->getConfigurationName(),
+            $this->configuration['console'],
             $command,
-            self::$frontControllerPath,
-            $args
+            $this->configuration['frontController'],
+            (null !== $args) ? $args : ''
         );
 
         $process = new Process($commandStatement);
 
         $process->run();
 
-        $assert = ($expectSuccess) ? 'assertTrue' : 'assertFalse';
-        self::{$assert}($process->isSuccessful(), sprintf('Unable to execute "%s" command, got output: "%s".', $command, $process->getOutput()));
+        if ($expectSuccess) {
+            $this->assertTrue($process->isSuccessful(), sprintf('Unable to execute "%s" command, got output: "%s".', $command, $process->getOutput()));
+        } else {
+            $this->assertFalse($process->isSuccessful(), sprintf('Command "%s" excuted successfully, even if it is expected to fail, got output: "%s".', $command, $process->getOutput()));
+        }
 
         return $process->getOutput();
+    }
+
+    /**
+     * Assert that class is weaved.
+     *
+     * @param string $class Full qualified class name which is subject of weaving.
+     * @param string $message Assertion info message.
+     */
+    protected function assertClassIsWeaved($class, $message = '')
+    {
+        $filename = (new ReflectionClass($class))->getFileName();
+        $suffix = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
+
+        $this->assertFileExists($this->configuration['cacheDir'].$suffix, $message);
+        $this->assertFileExists($this->configuration['cacheDir'].'/_proxies'.$suffix, $message);
+    }
+
+    /**
+     * Assert that class is not weaved.
+     *
+     * @param string $class Full qualified class name which is not subject of weaving.
+     * @param string $message Assertion info message.
+     */
+    protected function assertClassIsNotWeaved($class, $message = '')
+    {
+        $filename = (new ReflectionClass($class))->getFileName();
+        $suffix = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
+
+        $this->assertFileNotExists($this->configuration['cacheDir'].$suffix, $message);
+        $this->assertFileNotExists($this->configuration['cacheDir'].'/_proxies'.$suffix, $message);
     }
 }
