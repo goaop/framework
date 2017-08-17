@@ -3,14 +3,8 @@ declare(strict_types = 1);
 
 include_once __DIR__ . '/../../../../vendor/autoload.php';
 
-use Go\Tests\TestProject\ApplicationAspectKernel;
+$configuration = ($env = getenv('GO_AOP_CONFIGURATION')) ? $env : 'default' ;
+$settings = require __DIR__.'/configuration.php';
 
-$applicationAspectKernel = ApplicationAspectKernel::getInstance();
-$applicationAspectKernel->init(array(
-    'appDir' => __DIR__ . '/../',
-    'debug' => true,
-    'cacheDir'  => __DIR__ . '/../var/cache/aspect',
-    'includePaths' => array(
-        __DIR__ . '/../src/'
-    )
-));
+$applicationAspectKernel = $settings[$configuration]['kernel']::getInstance();
+$applicationAspectKernel->init($settings[$configuration]);

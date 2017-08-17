@@ -1,16 +1,16 @@
 <?php
-declare(strict_types = 1);
+declare(strict_types=1);
 
-namespace Go\Tests\TestProject;
+namespace Go\Tests\TestProject\Kernel;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
-use Go\Tests\TestProject\Aspect\DoSomethingAspect;
-use Go\Tests\TestProject\Aspect\Issue293Aspect;
+use Go\Tests\TestProject\Application\InconsistentlyWeavedClass;
+use Go\Tests\TestProject\Aspect\InconsistentlyWeavingAspect;
 use Go\Tests\TestProject\Aspect\LoggingAspect;
 use Psr\Log\NullLogger;
 
-class ApplicationAspectKernel extends AspectKernel
+class InconsistentlyWeavingAspectKernel extends AspectKernel
 {
     /**
      * Configure an AspectContainer with advisors, aspects and pointcuts
@@ -22,7 +22,6 @@ class ApplicationAspectKernel extends AspectKernel
     protected function configureAop(AspectContainer $container)
     {
         $container->registerAspect(new LoggingAspect(new NullLogger()));
-        $container->registerAspect(new DoSomethingAspect());
-        $container->registerAspect(new Issue293Aspect());
+        $container->registerAspect(new InconsistentlyWeavingAspect(new InconsistentlyWeavedClass()));
     }
 }

@@ -8,6 +8,7 @@ use Symfony\Component\Console\Application;
 use Go\Console\Command\CacheWarmupCommand;
 use Go\Console\Command\DebugAdvisorCommand;
 use Go\Console\Command\DebugAspectCommand;
+use Go\Console\Command\DebugWeavingCommand;
 
 $application = new Application();
 
@@ -15,6 +16,7 @@ $application->addCommands([
     new CacheWarmupCommand(),
     new DebugAdvisorCommand(),
     new DebugAspectCommand(),
+    new DebugWeavingCommand(),
 ]);
 
 $application->run();
