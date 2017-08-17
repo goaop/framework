@@ -3,7 +3,7 @@ language: php
 php:
   - 7.0
   - 7.1
-  - hhvm
+  - 7.2
 
 before_script:
   - composer install
@@ -16,4 +16,4 @@ after_script:
 
 matrix:
   allow_failures:
-    - php: hhvm
+    - php: 7.2
