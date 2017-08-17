@@ -19,6 +19,6 @@ class CacheWarmupCommandTest extends BaseFunctionalTest
 
         $this->warmUp();
 
-        $this->assertClassIsWeaved(Main::class);
+        $this->assertClassIsWoven(Main::class);
     }
 }

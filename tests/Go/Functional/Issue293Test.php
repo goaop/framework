@@ -12,9 +12,9 @@ class Issue293Test extends BaseFunctionalTest
      */
     public function testItDoesNotWeaveDynamicMethodsForComplexStaticPointcut()
     {
-        $this->assertClassIsWeaved(Issue293StaticMembers::class);
+        $this->assertClassIsWoven(Issue293StaticMembers::class);
 
         // it does not weaves Issue293DynamicMembers class
-        $this->assertClassIsNotWeaved(Issue293DynamicMembers::class);
+        $this->assertClassIsNotWoven(Issue293DynamicMembers::class);
     }
 }

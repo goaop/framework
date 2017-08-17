@@ -136,12 +136,12 @@ abstract class BaseFunctionalTest extends TestCase
     }
 
     /**
-     * Assert that class is weaved.
+     * Assert that class is woven.
      *
      * @param string $class Full qualified class name which is subject of weaving.
      * @param string $message Assertion info message.
      */
-    protected function assertClassIsWeaved($class, $message = '')
+    protected function assertClassIsWoven($class, $message = '')
     {
         $filename = (new ReflectionClass($class))->getFileName();
         $suffix = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
@@ -151,12 +151,12 @@ abstract class BaseFunctionalTest extends TestCase
     }
 
     /**
-     * Assert that class is not weaved.
+     * Assert that class is not woven.
      *
      * @param string $class Full qualified class name which is not subject of weaving.
      * @param string $message Assertion info message.
      */
-    protected function assertClassIsNotWeaved($class, $message = '')
+    protected function assertClassIsNotWoven($class, $message = '')
     {
         $filename = (new ReflectionClass($class))->getFileName();
         $suffix = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));

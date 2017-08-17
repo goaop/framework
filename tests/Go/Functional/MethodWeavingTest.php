@@ -13,9 +13,9 @@ class MethodWeavingTest extends BaseFunctionalTest
     public function testItDoesNotWeaveAbstractMethods()
     {
         // it weaves Main class
-        $this->assertClassIsWeaved(Main::class);
+        $this->assertClassIsWoven(Main::class);
 
         // it does not weaves AbstractBar class
-        $this->assertClassIsNotWeaved(AbstractBar::class);
+        $this->assertClassIsNotWoven(AbstractBar::class);
     }
 }
