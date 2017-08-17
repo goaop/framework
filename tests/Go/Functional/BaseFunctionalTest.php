@@ -104,10 +104,11 @@ abstract class BaseFunctionalTest extends TestCase
      * @param string $command Command to execute.
      * @param string|null $args Command arguments to append, if any.
      * @param bool $expectSuccess Should command be executed successfully
+     * @param null|int $expectedExitCode If provided, exit code will be asserted.
      *
      * @return string Console output.
      */
-    protected function execute($command, $args = null, $expectSuccess = true)
+    protected function execute($command, $args = null, $expectSuccess = true, $expectedExitCode = null)
     {
         $commandStatement = sprintf('GO_AOP_CONFIGURATION=%s php %s %s %s %s',
             $this->getConfigurationName(),
@@ -125,6 +126,10 @@ abstract class BaseFunctionalTest extends TestCase
             $this->assertTrue($process->isSuccessful(), sprintf('Unable to execute "%s" command, got output: "%s".', $command, $process->getOutput()));
         } else {
             $this->assertFalse($process->isSuccessful(), sprintf('Command "%s" excuted successfully, even if it is expected to fail, got output: "%s".', $command, $process->getOutput()));
+        }
+
+        if (null !== $expectedExitCode) {
+            $this->assertEquals($expectedExitCode, $process->getExitCode(), 'Assert that exit code is matched.');
         }
 
         return $process->getOutput();

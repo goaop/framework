@@ -80,7 +80,7 @@ EOT
 
         if ($errors > 0) {
             $io->error(sprintf('Weaving is unstable, there are %s reported error(s).', $errors));
-            return 1;
+            return $errors;
         }
 
         $io->success('Weaving is stable, there are no errors reported.');
