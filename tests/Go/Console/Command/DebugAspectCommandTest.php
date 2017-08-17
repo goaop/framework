@@ -6,17 +6,12 @@ use Go\Functional\BaseFunctionalTest;
 
 class DebugAspectCommandTest extends BaseFunctionalTest
 {
-    public function setUp()
-    {
-        self::warmUp();
-    }
-
     public function testItDisplaysAspectsDebugInfo()
     {
-        $output = self::exec('debug:aspect');
+        $output = $this->execute('debug:aspect');
 
         $expected = [
-            'Go\Tests\TestProject\ApplicationAspectKernel has following enabled aspects',
+            'Go\Tests\TestProject\Kernel\DefaultAspectKernel has following enabled aspects',
             'Go\Tests\TestProject\Aspect\LoggingAspect',
             'Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod'
         ];

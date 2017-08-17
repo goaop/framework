@@ -3,21 +3,22 @@
 namespace Go\Console\Command;
 
 use Go\Functional\BaseFunctionalTest;
+use Go\Tests\TestProject\Application\Main;
 
 class CacheWarmupCommandTest extends BaseFunctionalTest
 {
     public function setUp()
     {
-        self::clearCache();
+        $this->loadConfiguration();
+        $this->clearCache();
     }
 
     public function testItWarmsUpCache()
     {
-        $this->assertFalse(file_exists(self::$aspectCacheDir));
+        $this->assertFalse(file_exists($this->configuration['cacheDir']));
 
-        self::warmUp();
+        $this->warmUp();
 
-        $this->assertTrue(file_exists(self::$aspectCacheDir.'/_proxies/src/Application/Main.php'));
-        $this->assertTrue(file_exists(self::$aspectCacheDir.'/src/Application/Main.php'));
+        $this->assertClassIsWoven(Main::class);
     }
 }
