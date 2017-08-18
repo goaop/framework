@@ -232,18 +232,18 @@ class ClassProxy extends AbstractProxy
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
      *
      * @param string $className Aop child proxy class
-     * @param array|Advice[] $advices List of advices to inject into class
      *
      * @return void
      */
-    public static function injectJoinPoints($className, array $advices = [])
+    public static function injectJoinPoints($className)
     {
-        $reflectionClass  = new ReflectionClass($className);
-        $joinPoints       = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
+        $reflectionClass    = new ReflectionClass($className);
+        $joinPointsProperty = $reflectionClass->getProperty('__joinPoints');
 
-        $prop = $reflectionClass->getProperty('__joinPoints');
-        $prop->setAccessible(true);
-        $prop->setValue($joinPoints);
+        $joinPointsProperty->setAccessible(true);
+        $advices    = $joinPointsProperty->getValue();
+        $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
+        $joinPointsProperty->setValue($joinPoints);
 
         $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';
         if (isset($joinPoints[$staticInit])) {
@@ -364,10 +364,16 @@ class ClassProxy extends AbstractProxy
      */
     protected function addJoinpointsProperty()
     {
+        $exportedAdvices = strtr(json_encode($this->advices, JSON_PRETTY_PRINT), [
+            '{' => '[',
+            '}' => ']',
+            '"' => '\'',
+            ':' => ' =>'
+        ]);
         $this->setProperty(
             ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_STATIC,
             '__joinPoints',
-            '[]'
+            $exportedAdvices
         );
     }
 
@@ -457,9 +463,7 @@ class ClassProxy extends AbstractProxy
         return $classCode
             // Inject advices on call
             . PHP_EOL
-            . '\\' . __CLASS__ . "::injectJoinPoints('"
-                . $this->class->name . "',"
-                . var_export($this->advices, true) . ");";
+            . '\\' . __CLASS__ . "::injectJoinPoints(" . $this->class->getShortName() . "::class);";
     }
 
     /**
