@@ -25,7 +25,58 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
     /**
      * Property was created automatically, do not change it manually
      */
-    private static $__joinPoints = [];
+    private static $__joinPoints = [
+        'method' => [
+            'stringSth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->stringSth'
+            ],
+            'floatSth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->floatSth'
+            ],
+            'boolSth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->boolSth'
+            ],
+            'intSth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->intSth'
+            ],
+            'callableSth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->callableSth'
+            ],
+            'arraySth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->arraySth'
+            ],
+            'variadicStringSthByRef' => [
+                'advisor.Test\\ns1\\TestPhp7Class->variadicStringSthByRef'
+            ],
+            'exceptionArg' => [
+                'advisor.Test\\ns1\\TestPhp7Class->exceptionArg'
+            ],
+            'stringRth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->stringRth'
+            ],
+            'floatRth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->floatRth'
+            ],
+            'boolRth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->boolRth'
+            ],
+            'intRth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->intRth'
+            ],
+            'callableRth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->callableRth'
+            ],
+            'arrayRth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->arrayRth'
+            ],
+            'exceptionRth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->exceptionRth'
+            ],
+            'noRth' => [
+                'advisor.Test\\ns1\\TestPhp7Class->noRth'
+            ]
+        ]
+    ];
     public function stringSth(string $arg)
     {
         return self::$__joinPoints['method:stringSth']->__invoke($this, [$arg]);
@@ -91,72 +142,4 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
         return self::$__joinPoints['method:noRth']->__invoke($this, [$exception]);
     }
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestPhp7Class',array (
-  'method' =>
-  array (
-    'stringSth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->stringSth',
-    ),
-    'floatSth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->floatSth',
-    ),
-    'boolSth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->boolSth',
-    ),
-    'intSth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->intSth',
-    ),
-    'callableSth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->callableSth',
-    ),
-    'arraySth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->arraySth',
-    ),
-    'variadicStringSthByRef' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->variadicStringSthByRef',
-    ),
-    'exceptionArg' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->exceptionArg',
-    ),
-    'stringRth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->stringRth',
-    ),
-    'floatRth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->floatRth',
-    ),
-    'boolRth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->boolRth',
-    ),
-    'intRth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->intRth',
-    ),
-    'callableRth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->callableRth',
-    ),
-    'arrayRth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->arrayRth',
-    ),
-    'exceptionRth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->exceptionRth',
-    ),
-    'noRth' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestPhp7Class->noRth',
-    ),
-  ),
-));
+\Go\Proxy\ClassProxy::injectJoinPoints(TestPhp7Class::class);
