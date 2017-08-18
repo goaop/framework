@@ -25,6 +25,11 @@ class CachePathManager
     const CACHE_FILE_NAME = '/_transformation.cache';
 
     /**
+     * Name of the file with class maps
+     */
+    const CACHE_MAP_FILE_NAME = '/_classmap.cache';
+
+    /**
      * @var array
      */
     protected $options = [];
@@ -65,6 +70,20 @@ class CachePathManager
      */
     protected $newCacheState = [];
 
+    /**
+     * Map of classes to the filenames
+     *
+     * @var array
+     */
+    protected $classMap = [];
+
+    /**
+     * New classmap items, that was not present in $classMap
+     *
+     * @var array
+     */
+    protected $newClassMap = [];
+
     public function __construct(AspectKernel $kernel)
     {
         $this->kernel   = $kernel;
@@ -89,6 +108,9 @@ class CachePathManager
 
             if (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
                 $this->cacheState = include $this->cacheDir . self::CACHE_FILE_NAME;
+            }
+            if (file_exists($this->cacheDir . self::CACHE_MAP_FILE_NAME)) {
+                $this->classMap = include $this->cacheDir . self::CACHE_MAP_FILE_NAME;
             }
         }
     }
@@ -133,21 +155,28 @@ class CachePathManager
      *
      * @return array|null Information or null if no record in the cache
      */
-    public function queryCacheState(string $resource = null)
+    public function &queryCacheState(string $resource = null)
     {
+        $result = [];
         if ($resource === null) {
-            return $this->cacheState;
-        }
-
-        if (isset($this->newCacheState[$resource])) {
-            return $this->newCacheState[$resource];
+            $result = &$this->cacheState;
         }
 
         if (isset($this->cacheState[$resource])) {
-            return $this->cacheState[$resource];
+            $result = &$this->cacheState[$resource];
         }
 
-        return null;
+        return $result;
+    }
+
+    /**
+     * Returns an information about class mapping
+     */
+    public function &queryClassMap(): array
+    {
+        $result = &$this->classMap;
+
+        return $result;
     }
 
     /**
@@ -161,6 +190,21 @@ class CachePathManager
     public function setCacheState(string $resource, array $metadata)
     {
         $this->newCacheState[$resource] = $metadata;
+        $this->cacheState[$resource]    = $metadata;
+    }
+
+    /**
+     * Put a mapping for the class
+     *
+     * This data will be persisted during object destruction
+     *
+     * @param string $class         Name of the class
+     * @param array  $classFileName Miscellaneous information about resource
+     */
+    public function addClassMap(string $class, $classFileName)
+    {
+        $this->newClassMap[$class] = $classFileName;
+        $this->classMap[$class]    = $classFileName;
     }
 
     /**
@@ -180,6 +224,7 @@ class CachePathManager
      */
     public function flushCacheState($force = false)
     {
+
         if ((!empty($this->newCacheState) && is_writable($this->cacheDir)) || $force) {
             $fullCacheMap = $this->newCacheState + $this->cacheState;
             $cachePath    = substr(var_export($this->cacheDir, true), 1, -1);
@@ -197,8 +242,25 @@ class CachePathManager
             if (function_exists('opcache_invalidate')) {
                 opcache_invalidate($fullCacheFileName, true);
             }
-            $this->cacheState    = $this->newCacheState + $this->cacheState;
             $this->newCacheState = [];
+        }
+        if (!empty($this->newClassMap) && is_writable($this->cacheDir)) {
+            $cachePath = substr(var_export($this->cacheDir, true), 1, -1);
+            $rootPath  = substr(var_export($this->appDir, true), 1, -1);
+            $cacheData = '<?php return ' . var_export($this->classMap, true) . ';';
+            $cacheData = strtr($cacheData, array(
+                '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
+                '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
+            ));
+            $fullCacheFileName = $this->cacheDir . self::CACHE_MAP_FILE_NAME;
+            file_put_contents($fullCacheFileName, $cacheData, LOCK_EX);
+            // For cache files we don't want executable bits by default
+            chmod($fullCacheFileName, $this->fileMode & (~0111));
+
+            if (function_exists('opcache_invalidate')) {
+                opcache_invalidate($fullCacheFileName, true);
+            }
+            $this->newClassMap = [];
         }
     }
 

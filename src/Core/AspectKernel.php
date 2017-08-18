@@ -13,6 +13,7 @@ namespace Go\Core;
 
 use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
+use Go\Instrument\ClassLoading\AopComposerManipulator;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
@@ -120,7 +121,8 @@ abstract class AspectKernel
             $this->addKernelResourcesToContainer($container);
         }
 
-        AopComposerLoader::init($this->options, $container);
+        //AopComposerLoader::init($this->options, $container);
+        AopComposerManipulator::init($this->options, $container);
 
         // Register all AOP configuration in the container
         $this->configureAop($container);
@@ -194,7 +196,10 @@ abstract class AspectKernel
     protected function normalizeOptions(array $options): array
     {
         $options = array_replace($this->getDefaultOptions(), $options);
-
+        if ($options['cacheDir']) {
+            $options['excludePaths'][] = $options['cacheDir'];
+        }
+        $options['appDir']   = PathResolver::realpath($options['appDir']);
         $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
 
         if (!$options['cacheDir']) {

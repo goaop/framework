@@ -291,6 +291,10 @@ class WeavingTransformer extends BaseSourceTransformer
         if (!file_exists($dirname)) {
             mkdir($dirname, $this->options['cacheFileMode'], true);
         }
+        $this->cachePathManager->addClassMap(
+            $class->getName(),
+            'file://' . $this->cachePathManager->getCachePathForResource($class->getFileName())
+        );
 
         $body = '<?php' . PHP_EOL . $childCode;
 
