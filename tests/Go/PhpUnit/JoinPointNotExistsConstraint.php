@@ -53,7 +53,6 @@ class JoinPointNotExistsConstraint extends Constraint
         }
 
         foreach ($joinPoints[$access][$other->getMethod()] as $expression) {
-
             if ($other->getJoinPoint() === $expression) {
                 return false;
             }

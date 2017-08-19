@@ -55,9 +55,7 @@ class JoinPointExistsConstraint extends Constraint
         $exists     = false;
         $validIndex = (($index = $other->getIndex()) === null);
 
-
         foreach ($joinPoints[$access][$other->getMethod()] as $position => $expression) {
-
             if ($other->getJoinPoint() === $expression) {
                 $exists = true;
 
