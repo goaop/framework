@@ -10,8 +10,11 @@
 
 namespace Go\Functional;
 
-use Go\Instrument\PathResolver;
-use Go\ParserReflection\ReflectionClass;
+use Go\PhpUnit\ClassIsNotWovenConstraint;
+use Go\PhpUnit\ClassWovenConstraint;
+use Go\PhpUnit\JoinPoint;
+use Go\PhpUnit\JoinPointExistsConstraint;
+use Go\PhpUnit\JoinPointNotExistsConstraint;
 use PHPUnit_Framework_TestCase as TestCase;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
@@ -93,7 +96,7 @@ abstract class BaseFunctionalTest extends TestCase
     protected function loadConfiguration()
     {
         if (!$this->configuration) {
-            $configurations = require __DIR__.'/../../Fixtures/project/web/configuration.php';
+            $configurations      = require __DIR__ . '/../../Fixtures/project/web/configuration.php';
             $this->configuration = $configurations[$this->getConfigurationName()];
         }
     }
@@ -143,11 +146,7 @@ abstract class BaseFunctionalTest extends TestCase
      */
     protected function assertClassIsWoven($class, $message = '')
     {
-        $filename = (new ReflectionClass($class))->getFileName();
-        $suffix = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
-
-        $this->assertFileExists($this->configuration['cacheDir'].$suffix, $message);
-        $this->assertFileExists($this->configuration['cacheDir'].'/_proxies'.$suffix, $message);
+        self::assertThat($class, new ClassWovenConstraint($this->configuration), $message);
     }
 
     /**
@@ -158,10 +157,60 @@ abstract class BaseFunctionalTest extends TestCase
      */
     protected function assertClassIsNotWoven($class, $message = '')
     {
-        $filename = (new ReflectionClass($class))->getFileName();
-        $suffix = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
+        self::assertThat($class, new ClassIsNotWovenConstraint($this->configuration), $message);
+    }
 
-        $this->assertFileNotExists($this->configuration['cacheDir'].$suffix, $message);
-        $this->assertFileNotExists($this->configuration['cacheDir'].'/_proxies'.$suffix, $message);
+    /**
+     * Assert that class has static method join point.
+     *
+     * @param string $class Full qualified class name which is subject of weaving.
+     * @param string $staticMethodName Name of static method.
+     * @param string $joinPoint Join point expression.
+     * @param null|int $index Index of join point expression, od null if order is not important.
+     * @param string $message Assertion info message.
+     */
+    protected function assertStaticMethodJoinPointExists($class, $staticMethodName, $joinPoint, $index = null, $message = '')
+    {
+        self::assertThat(new JoinPoint($class, $staticMethodName, $joinPoint, true, $index), new JoinPointExistsConstraint($this->configuration), $message);
+    }
+
+    /**
+     * Assert that class does not have static method join point.
+     *
+     * @param string $class Full qualified class name which is subject of weaving.
+     * @param string $staticMethodName Name of static method.
+     * @param string $joinPoint Join point expression.
+     * @param string $message Assertion info message.
+     */
+    protected function assertStaticMethodJoinPointNotExists($class, $staticMethodName, $joinPoint, $message = '')
+    {
+        self::assertThat(new JoinPoint($class, $staticMethodName, $joinPoint, true), new JoinPointNotExistsConstraint($this->configuration), $message);
+    }
+
+    /**
+     * Assert that class has method join point.
+     *
+     * @param string $class Full qualified class name which is subject of weaving.
+     * @param string $methodName Name of method.
+     * @param string $joinPoint Join point expression.
+     * @param null|int $index Index of join point expression, od null if order is not important.
+     * @param string $message Assertion info message.
+     */
+    protected function assertMethodJoinPointExists($class, $methodName, $joinPoint, $index = null, $message = '')
+    {
+        self::assertThat(new JoinPoint($class, $methodName, $joinPoint, false, $index), new JoinPointExistsConstraint($this->configuration), $message);
+    }
+
+    /**
+     * Assert that class does not have method join point.
+     *
+     * @param string $class Full qualified class name which is subject of weaving.
+     * @param string $methodName Name of method.
+     * @param string $joinPoint Join point expression.
+     * @param string $message Assertion info message.
+     */
+    protected function assertMethodJoinPointNotExists($class, $methodName, $joinPoint, $message = '')
+    {
+        self::assertThat(new JoinPoint($class, $methodName, $joinPoint, false), new JoinPointNotExistsConstraint($this->configuration), $message);
     }
 }
