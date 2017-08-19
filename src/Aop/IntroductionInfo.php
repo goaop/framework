@@ -21,16 +21,16 @@ interface IntroductionInfo extends Advice
 {
 
     /**
-     * Return the additional interfaces introduced by this Advisor or Advice.
+     * Return the additional interface introduced by this Advisor or Advice.
      *
-     * @return array|string[] the introduced interfaces
+     * @return string The introduced interface or empty
      */
-    public function getInterfaces();
+    public function getInterface();
 
     /**
-     * Return the list of traits with realization of introduced interfaces
+     * Return the additional trait with realization of introduced interface
      *
-     * @return array|string[] the implementations
+     * @return string The trait name to use or empty
      */
-    public function getTraits();
+    public function getTrait();
 }
