@@ -11,8 +11,8 @@
 namespace Go\PhpUnit;
 
 use Go\TestUtils\JoinPointsExtractor;
-use \PHPUnit_Framework_Constraint as Constraint;
-use \ReflectionClass;
+use PHPUnit_Framework_Constraint as Constraint;
+use ReflectionClass;
 use Go\Instrument\PathResolver;
 
 /**

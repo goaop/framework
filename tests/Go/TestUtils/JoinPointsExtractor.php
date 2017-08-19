@@ -61,17 +61,23 @@ final class JoinPointsExtractor extends NodeVisitorAbstract
      */
     public function enterNode(Node $node)
     {
-        if (
-            $node instanceof Stmt\Property
-            &&
-            $node->isPrivate()
-            &&
-            $node->isStatic()
-            &&
-            '__joinPoints' === $node->props[0]->name
-        ) {
-            $this->joinPoints = $node->props[0]->default;
+        if (!$node instanceof Stmt\Property) {
+            return;
         }
+
+        if (!$node->isPrivate()) {
+            return;
+        }
+
+        if (!$node->isStatic()) {
+            return;
+        }
+
+        if (!'__joinPoints' === $node->props[0]->name) {
+            return;
+        }
+
+        $this->joinPoints = $node->props[0]->default;
     }
 
     /**

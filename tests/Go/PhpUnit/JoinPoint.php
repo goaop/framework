@@ -7,6 +7,7 @@
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
  */
+
 namespace Go\PhpUnit;
 
 /**
@@ -41,11 +42,11 @@ final class JoinPoint
 
     public function __construct($class, $method, $joinPoint, $static = false, $index = null)
     {
-        $this->class = $class;
-        $this->method = $method;
+        $this->class     = $class;
+        $this->method    = $method;
         $this->joinPoint = $joinPoint;
-        $this->static = $static;
-        $this->index = $index;
+        $this->static    = $static;
+        $this->index     = $index;
 
         if (null !== $index && $index < 0) {
             throw new \InvalidArgumentException(sprintf('Expected "NULL" or integer greater or equal to 0, got "%s".', $index));

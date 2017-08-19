@@ -10,8 +10,8 @@
 
 namespace Go\PhpUnit;
 
-use \PHPUnit_Framework_Constraint as Constraint;
-use \ReflectionClass;
+use PHPUnit_Framework_Constraint as Constraint;
+use ReflectionClass;
 use Go\Instrument\PathResolver;
 
 /**
@@ -38,10 +38,13 @@ class ClassWovenConstraint extends Constraint
         $filename = (new ReflectionClass($other))->getFileName();
         $suffix   = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
 
-        return
-            file_exists($this->configuration['cacheDir'] . $suffix)
-            &&
-            file_exists($this->configuration['cacheDir'] . '/_proxies' . $suffix);
+        $transformedFileExists = file_exists($this->configuration['cacheDir'] . $suffix);
+        $proxyFileExists       = file_exists($this->configuration['cacheDir'] . '/_proxies' . $suffix);
+
+        // if any of files is missing, assert has to fail
+        $classWoven = $transformedFileExists && $proxyFileExists;
+
+        return $classWoven;
     }
 
     /**
