@@ -19,8 +19,8 @@ namespace Go\Lang\Annotation;
  *
  * @Attributes({
  *   @Attribute("value", type = "string", required=true),
- *   @Attribute("interface", type = "array"),
- *   @Attribute("defaultImpl", type = "array")
+ *   @Attribute("interface", type = "string"),
+ *   @Attribute("defaultImpl", type = "string")
  * })
  */
 class DeclareParents extends BaseAnnotation

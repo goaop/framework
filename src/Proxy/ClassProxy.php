@@ -149,11 +149,13 @@ class ClassProxy extends AbstractProxy
                 case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
                     foreach ($typedAdvices as $advice) {
                         /** @var $advice IntroductionInfo */
-                        foreach ($advice->getInterfaces() as $interface) {
-                            $this->addInterface($interface);
+                        $introducedTrait = $advice->getTrait();
+                        if (!empty($introducedTrait)) {
+                            $this->addTrait($introducedTrait);
                         }
-                        foreach ($advice->getTraits() as $trait) {
-                            $this->addTrait($trait);
+                        $introducedInterface = $advice->getInterface();
+                        if (!empty($introducedInterface)) {
+                            $this->addInterface($introducedInterface);
                         }
                     }
                     break;

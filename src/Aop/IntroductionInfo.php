@@ -20,14 +20,13 @@ namespace Go\Aop;
  */
 interface IntroductionInfo extends Advice
 {
+    /**
+     * Returns the additional interface introduced by this Advisor or Advice.
+     */
+    public function getInterface(): string;
 
     /**
-     * Returns the list of additional interface names introduced by this Advisor or Advice.
+     * Return the additional trait with realization of introduced interface
      */
-    public function getInterfaces() : array;
-
-    /**
-     * Returns the list of trait names with realization of introduced interfaces
-     */
-    public function getTraits() : array;
+    public function getTrait(): string;
 }
