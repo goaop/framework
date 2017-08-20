@@ -42,7 +42,7 @@ use Go\Aop\Advice;
  * }
  * </pre>
  *
- * @see ClassAdvisorIdentifier
+ * @see Joinpoint
  * @api
  */
 interface Interceptor extends Advice
