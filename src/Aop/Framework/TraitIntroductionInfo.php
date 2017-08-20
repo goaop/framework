@@ -23,14 +23,14 @@ class TraitIntroductionInfo implements IntroductionInfo
      *
      * @var string
      */
-    private $introducedInterface = '';
+    private $introducedInterface;
 
     /**
      * Trait to use
      *
      * @var string
      */
-    private $introducedTrait = '';
+    private $introducedTrait;
 
     /**
      * Create a DefaultIntroductionAdvisor for the given advice.
