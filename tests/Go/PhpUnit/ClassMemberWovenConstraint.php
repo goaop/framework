@@ -10,10 +10,8 @@
 
 namespace Go\PhpUnit;
 
-use Go\TestUtils\AdvisorIdentifiersExtractor;
+use Go\ParserReflection\ReflectionClass;
 use PHPUnit_Framework_Constraint as Constraint;
-use ReflectionClass;
-use Go\Instrument\PathResolver;
 
 /**
  * Asserts that class member is woven for given class.
@@ -40,15 +38,15 @@ class ClassMemberWovenConstraint extends Constraint
             throw new \InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));
         }
 
-        $joinPoints = AdvisorIdentifiersExtractor::extract($this->getPathToProxy($other->getClass()));
+        $wovenAdvisorIdentifiers = $this->getWovenAdvisorIdentifiers($other->getClass());
 
-        $access = $other->getTarget();
+        $target = $other->getTarget();
 
-        if (!isset($joinPoints[$access])) {
+        if (!isset($wovenAdvisorIdentifiers[$target])) {
             return false;
         }
 
-        if (!isset($joinPoints[$access][$other->getSubject()])) {
+        if (!isset($wovenAdvisorIdentifiers[$target][$other->getSubject()])) {
             return false;
         }
 
@@ -57,7 +55,7 @@ class ClassMemberWovenConstraint extends Constraint
         }
 
         $index        = $other->getIndex();
-        $advisorIndex = array_search($other->getAdvisorIdentifier(), $joinPoints[$access][$other->getSubject()], true);
+        $advisorIndex = array_search($other->getAdvisorIdentifier(), $wovenAdvisorIdentifiers[$target][$other->getSubject()], true);
         $isIndexValid = ($index === null) || ($advisorIndex === $index);
 
         return $advisorIndex !== false && $isIndexValid;
@@ -72,17 +70,19 @@ class ClassMemberWovenConstraint extends Constraint
     }
 
     /**
-     * Get path to proxied class.
+     * Get woven advisor identifiers.
      *
-     * @param string $class Full qualified class name which is subject of weaving
-     *
-     * @return string Path to proxy class.
+     * @param string $class
+     * @return array
      */
-    private function getPathToProxy($class)
+    private function getWovenAdvisorIdentifiers($class)
     {
-        $filename = (new ReflectionClass($class))->getFileName();
-        $suffix   = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
+        ClassLocator::initialize($this->configuration);
 
-        return $this->configuration['cacheDir'] . '/_proxies' . $suffix;
+        $advisorIdentifiers = (new ReflectionClass($class))->getStaticPropertyValue('__joinPoints')->getValue();
+
+        ClassLocator::restore();
+
+        return $advisorIdentifiers;
     }
 }

@@ -40,15 +40,15 @@ class ClassMemberNotWovenConstraint extends Constraint
             throw new \InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));
         }
 
-        $joinPoints = AdvisorIdentifiersExtractor::extract($this->getPathToProxy($other->getClass()));
+        $wovenAdvisorIdentifiers = $this->getWovenAdvisorIdentifiers($other->getClass());
 
-        $access = $other->getTarget();
+        $target = $other->getTarget();
 
-        if (!isset($joinPoints[$access])) {
+        if (!isset($wovenAdvisorIdentifiers[$target])) {
             return true;
         }
 
-        if (!isset($joinPoints[$access][$other->getSubject()])) {
+        if (!isset($wovenAdvisorIdentifiers[$target][$other->getSubject()])) {
             return true;
         }
 
@@ -56,7 +56,7 @@ class ClassMemberNotWovenConstraint extends Constraint
             return false; // if advisor identifier is not specified, that means that any matches, so weaving exists.
         }
 
-        return !in_array($other->getAdvisorIdentifier(), $joinPoints[$access][$other->getSubject()], true);
+        return !in_array($other->getAdvisorIdentifier(), $wovenAdvisorIdentifiers[$target][$other->getSubject()], true);
     }
 
     /**
@@ -68,17 +68,19 @@ class ClassMemberNotWovenConstraint extends Constraint
     }
 
     /**
-     * Get path to proxied class.
+     * Get woven advisor identifiers.
      *
-     * @param string $class Full qualified class name which is subject of weaving
-     *
-     * @return string Path to proxy class.
+     * @param string $class
+     * @return array
      */
-    private function getPathToProxy($class)
+    private function getWovenAdvisorIdentifiers($class)
     {
-        $filename = (new ReflectionClass($class))->getFileName();
-        $suffix   = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
+        ClassLocator::initialize($this->configuration);
 
-        return $this->configuration['cacheDir'] . '/_proxies' . $suffix;
+        $advisorIdentifiers = (new ReflectionClass($class))->getStaticPropertyValue('__joinPoints')->getValue();
+
+        ClassLocator::restore();
+
+        return $advisorIdentifiers;
     }
 }
