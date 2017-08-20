@@ -19,48 +19,48 @@ class TraitIntroductionInfo implements IntroductionInfo
 {
 
     /**
-     * List of interfaces to introduce
+     * Introduced interface
      *
-     * @var array
+     * @var string
      */
-    private $introducedInterfaces;
+    private $introducedInterface = '';
 
     /**
-     * List of traits to include
+     * Trait to use
      *
-     * @var array
+     * @var string
      */
-    private $introducedTraits;
+    private $introducedTrait = '';
 
     /**
      * Create a DefaultIntroductionAdvisor for the given advice.
      *
-     * @param string|string[] $introducedInterfaces List of introduced interfaces
-     * @param string|string[] $introducedTraits List of introduced traits
+     * @param string $introducedTrait Introduced trait
+     * @param string $introducedInterface Introduced interface
      */
-    public function __construct($introducedInterfaces, $introducedTraits)
+    public function __construct($introducedTrait, $introducedInterface)
     {
-        $this->introducedInterfaces = (array) $introducedInterfaces;
-        $this->introducedTraits     = (array) $introducedTraits;
+        $this->introducedTrait     = $introducedTrait;
+        $this->introducedInterface = $introducedInterface;
     }
 
     /**
-     * Return the additional interfaces introduced by this Advisor or Advice.
+     * Return the additional interface introduced by this Advisor or Advice.
      *
-     * @return array|string[] introduced interfaces
+     * @return string The introduced interface or empty
      */
-    public function getInterfaces()
+    public function getInterface()
     {
-        return $this->introducedInterfaces;
+        return $this->introducedInterface;
     }
 
     /**
-     * Return the list of traits with realization of introduced interfaces
+     * Return the additional trait with realization of introduced interface
      *
-     * @return array|string[] trait implementations
+     * @return string The trait name to use or empty
      */
-    public function getTraits()
+    public function getTrait()
     {
-        return $this->introducedTraits;
+        return $this->introducedTrait;
     }
 }

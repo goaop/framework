@@ -80,9 +80,9 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 
         switch (true) {
             case ($metaInformation instanceof Annotation\DeclareParents):
-                $interface = $metaInformation->interface;
                 $implement = $metaInformation->defaultImpl;
-                $advice    = new Framework\TraitIntroductionInfo($interface, $implement);
+                $interface = $metaInformation->interface;
+                $advice    = new Framework\TraitIntroductionInfo($implement, $interface);
                 $advisor   = new Support\DeclareParentsAdvisor($pointcut->getClassFilter(), $advice);
                 $loadedItems[$propertyId] = $advisor;
                 break;

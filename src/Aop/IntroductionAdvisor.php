@@ -29,14 +29,4 @@ interface IntroductionAdvisor extends Advisor
      * @return PointFilter The class filter
      */
     public function getClassFilter();
-
-    /**
-     * Can the advised interfaces be implemented by the introduction advice?
-     *
-     * Invoked before adding an IntroductionAdvisor.
-     *
-     * @return void
-     * @throws \InvalidArgumentException if the advised interfaces can't be implemented by the introduction advice
-     */
-    public function validateInterfaces();
 }
