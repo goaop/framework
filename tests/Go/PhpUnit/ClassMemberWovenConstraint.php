@@ -52,6 +52,10 @@ class ClassMemberWovenConstraint extends Constraint
             return false;
         }
 
+        if (null === $other->getAdvisorIdentifier()) {
+            return true; // if advisor identifier is not specified, that means that any matches, so weaving exists.
+        }
+
         $index        = $other->getIndex();
         $advisorIndex = array_search($other->getAdvisorIdentifier(), $joinPoints[$access][$other->getSubject()], true);
         $isIndexValid = ($index === null) || ($advisorIndex === $index);

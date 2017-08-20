@@ -147,7 +147,9 @@ abstract class BaseFunctionalTest extends TestCase
      */
     protected function assertClassIsWoven($class, $message = '')
     {
-        self::assertThat($class, new ClassWovenConstraint($this->configuration), $message);
+        $constraint = new ClassWovenConstraint($this->configuration);
+
+        self::assertThat($class, $constraint, $message);
     }
 
     /**
@@ -158,7 +160,9 @@ abstract class BaseFunctionalTest extends TestCase
      */
     protected function assertClassIsNotWoven($class, $message = '')
     {
-        self::assertThat($class, new ClassIsNotWovenConstraint($this->configuration), $message);
+        $constraint = new ClassIsNotWovenConstraint($this->configuration);
+
+        self::assertThat($class, $constraint, $message);
     }
 
     /**
@@ -166,13 +170,22 @@ abstract class BaseFunctionalTest extends TestCase
      *
      * @param string $class Full qualified class name which is subject of weaving.
      * @param string $staticMethodName Name of static method.
-     * @param string $advisorIdentifier Expected advisor identifier to be registered within proxy class.
+     * @param null|string $advisorIdentifier Expected advisor identifier to be registered within proxy class, or NULL if any.
      * @param null|int $index Index of advisor identifier, or null if order is not important.
      * @param string $message Assertion info message.
      */
-    protected function assertStaticMethodWoven($class, $staticMethodName, $advisorIdentifier, $index = null, $message = '')
+    protected function assertStaticMethodWoven($class, $staticMethodName, $advisorIdentifier = null, $index = null, $message = '')
     {
-        self::assertThat(new ClassAdvisorIdentifier($class, $staticMethodName, $advisorIdentifier, AspectContainer::STATIC_METHOD_PREFIX, $index), new ClassMemberWovenConstraint($this->configuration), $message);
+        $identifier = new ClassAdvisorIdentifier(
+            $class,
+            $staticMethodName,
+            AspectContainer::STATIC_METHOD_PREFIX,
+            $advisorIdentifier,
+            $index
+        );
+        $constraint = new ClassMemberWovenConstraint($this->configuration);
+
+        self::assertThat($identifier, $constraint, $message);
     }
 
     /**
@@ -180,12 +193,20 @@ abstract class BaseFunctionalTest extends TestCase
      *
      * @param string $class Full qualified class name which is subject of weaving.
      * @param string $staticMethodName Name of static method.
-     * @param string $advisorIdentifier Expected advisor identifier to be registered within proxy class.
+     * @param null|string $advisorIdentifier Expected advisor identifier to be registered within proxy class, or NULL if any.
      * @param string $message Assertion info message.
      */
-    protected function assertStaticMethodNotWoven($class, $staticMethodName, $advisorIdentifier, $message = '')
+    protected function assertStaticMethodNotWoven($class, $staticMethodName, $advisorIdentifier = null, $message = '')
     {
-        self::assertThat(new ClassAdvisorIdentifier($class, $staticMethodName, $advisorIdentifier, AspectContainer::STATIC_METHOD_PREFIX), new ClassMemberNotWovenConstraint($this->configuration), $message);
+        $identifier = new ClassAdvisorIdentifier(
+            $class,
+            $staticMethodName,
+            AspectContainer::STATIC_METHOD_PREFIX,
+            $advisorIdentifier
+        );
+        $constraint = new ClassMemberNotWovenConstraint($this->configuration);
+
+        self::assertThat($identifier, $constraint, $message);
     }
 
     /**
@@ -193,13 +214,22 @@ abstract class BaseFunctionalTest extends TestCase
      *
      * @param string $class Full qualified class name which is subject of weaving.
      * @param string $methodName Name of method.
-     * @param string $advisorIdentifier Expected advisor identifier to be registered within proxy class.
+     * @param null|string $advisorIdentifier Expected advisor identifier to be registered within proxy class, or NULL if any.
      * @param null|int $index Index of advisor identifier, or null if order is not important.
      * @param string $message Assertion info message.
      */
-    protected function assertMethodWoven($class, $methodName, $advisorIdentifier, $index = null, $message = '')
+    protected function assertMethodWoven($class, $methodName, $advisorIdentifier = null, $index = null, $message = '')
     {
-        self::assertThat(new ClassAdvisorIdentifier($class, $methodName, $advisorIdentifier, AspectContainer::METHOD_PREFIX, $index), new ClassMemberWovenConstraint($this->configuration), $message);
+        $identifier = new ClassAdvisorIdentifier(
+            $class,
+            $methodName,
+            AspectContainer::METHOD_PREFIX,
+            $advisorIdentifier,
+            $index
+        );
+        $constraint = new ClassMemberWovenConstraint($this->configuration);
+
+        self::assertThat($identifier, $constraint, $message);
     }
 
     /**
@@ -207,12 +237,20 @@ abstract class BaseFunctionalTest extends TestCase
      *
      * @param string $class Full qualified class name which is subject of weaving.
      * @param string $methodName Name of method.
-     * @param string $advisorIdentifier Expected advisor identifier to be registered within proxy class.
+     * @param null|string $advisorIdentifier Expected advisor identifier to be registered within proxy class, or NULL if any.
      * @param string $message Assertion info message.
      */
-    protected function assertMethodNotWoven($class, $methodName, $advisorIdentifier, $message = '')
+    protected function assertMethodNotWoven($class, $methodName, $advisorIdentifier = null, $message = '')
     {
-        self::assertThat(new ClassAdvisorIdentifier($class, $methodName, $advisorIdentifier, AspectContainer::METHOD_PREFIX), new ClassMemberNotWovenConstraint($this->configuration), $message);
+        $identifier = new ClassAdvisorIdentifier(
+            $class,
+            $methodName,
+            AspectContainer::METHOD_PREFIX,
+            $advisorIdentifier
+        );
+        $constraint = new ClassMemberNotWovenConstraint($this->configuration);
+
+        self::assertThat($identifier, $constraint, $message);
     }
 
     /**
@@ -220,13 +258,22 @@ abstract class BaseFunctionalTest extends TestCase
      *
      * @param string $class Full qualified class name which is subject of weaving.
      * @param string $propertyName Property name.
-     * @param string $advisorIdentifier Expected advisor identifier to be registered within proxy class.
+     * @param null|string $advisorIdentifier Expected advisor identifier to be registered within proxy class, or NULL if any.
      * @param null|int $index Index of advisor identifier, or null if order is not important.
      * @param string $message Assertion info message.
      */
-    protected function assertPropertyWoven($class, $propertyName, $advisorIdentifier, $index = null, $message = '')
+    protected function assertPropertyWoven($class, $propertyName, $advisorIdentifier = null, $index = null, $message = '')
     {
-        self::assertThat(new ClassAdvisorIdentifier($class, $propertyName, $advisorIdentifier, AspectContainer::PROPERTY_PREFIX, $index), new ClassMemberWovenConstraint($this->configuration), $message);
+        $identifier = new ClassAdvisorIdentifier(
+            $class,
+            $propertyName,
+            AspectContainer::PROPERTY_PREFIX,
+            $advisorIdentifier,
+            $index
+        );
+        $constraint = new ClassMemberWovenConstraint($this->configuration);
+
+        self::assertThat($identifier, $constraint, $message);
     }
 
     /**
@@ -234,11 +281,19 @@ abstract class BaseFunctionalTest extends TestCase
      *
      * @param string $class Full qualified class name which is subject of weaving.
      * @param string $propertyName Property name.
-     * @param string $advisorIdentifier Expected advisor identifier to be registered within proxy class.
+     * @param null|string $advisorIdentifier Expected advisor identifier to be registered within proxy class, or NULL if any.
      * @param string $message Assertion info message.
      */
-    protected function assertPropertyNotWoven($class, $propertyName, $advisorIdentifier, $message = '')
+    protected function assertPropertyNotWoven($class, $propertyName, $advisorIdentifier = null, $message = '')
     {
-        self::assertThat(new ClassAdvisorIdentifier($class, $propertyName, $advisorIdentifier, AspectContainer::PROPERTY_PREFIX), new ClassMemberNotWovenConstraint($this->configuration), $message);
+        $identifier = new ClassAdvisorIdentifier(
+            $class,
+            $propertyName,
+            $advisorIdentifier,
+            AspectContainer::PROPERTY_PREFIX
+        );
+        $constraint = new ClassMemberNotWovenConstraint($this->configuration);
+
+        self::assertThat($identifier, $constraint, $message);
     }
 }

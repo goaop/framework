@@ -28,19 +28,19 @@ final class ClassAdvisorIdentifier
     /**
      * @var string
      */
-    private $advisorIdentifier;
+    private $target;
 
     /**
      * @var string
      */
-    private $target;
+    private $advisorIdentifier;
 
     /**
      * @var null|int
      */
     private $index;
 
-    public function __construct($class, $subject, $advisorIdentifier, $target, $index = null)
+    public function __construct($class, $subject, $target, $advisorIdentifier = null, $index = null)
     {
         $this->class             = is_object($class) ? get_class($class) : $class;
         $this->subject           = $subject;
@@ -70,16 +70,6 @@ final class ClassAdvisorIdentifier
     }
 
     /**
-     * Get get advisor identifier.
-     *
-     * @return string
-     */
-    public function getAdvisorIdentifier()
-    {
-        return $this->advisorIdentifier;
-    }
-
-    /**
      * Get weaving target.
      *
      * @see \Go\Core\AspectContainer::METHOD_PREFIX
@@ -91,6 +81,16 @@ final class ClassAdvisorIdentifier
     public function getTarget()
     {
         return $this->target;
+    }
+
+    /**
+     * Get get advisor identifier.
+     *
+     * @return string
+     */
+    public function getAdvisorIdentifier()
+    {
+        return $this->advisorIdentifier;
     }
 
     /**
