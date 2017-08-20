@@ -19,14 +19,14 @@ use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard as Printer;
 
 /**
- * Extracts join points definitions from woven class proxy by parsing and traversing class AST.
+ * Extracts advisor identifiers from woven class proxy without loading class into memory.
  */
-final class JoinPointsExtractor extends NodeVisitorAbstract
+final class AdvisorIdentifiersExtractor extends NodeVisitorAbstract
 {
     /**
      * @var null|Node\Expr\Array_
      */
-    private $joinPoints = null;
+    private $advisorIdentifiers = null;
 
     /**
      * @var null|Parser
@@ -39,7 +39,7 @@ final class JoinPointsExtractor extends NodeVisitorAbstract
     private static $traverser;
 
     /**
-     * @var null|JoinPointsExtractor
+     * @var null|AdvisorIdentifiersExtractor
      */
     private static $extractor;
 
@@ -53,7 +53,7 @@ final class JoinPointsExtractor extends NodeVisitorAbstract
      */
     public function beforeTraverse(array $nodes)
     {
-        $this->joinPoints = null;
+        $this->advisorIdentifiers = null;
     }
 
     /**
@@ -77,7 +77,7 @@ final class JoinPointsExtractor extends NodeVisitorAbstract
             return;
         }
 
-        $this->joinPoints = $node->props[0]->default;
+        $this->advisorIdentifiers = $node->props[0]->default;
     }
 
     /**
@@ -87,17 +87,17 @@ final class JoinPointsExtractor extends NodeVisitorAbstract
      */
     public function getExtractedAst()
     {
-        return $this->joinPoints;
+        return $this->advisorIdentifiers;
     }
 
     /**
-     * Extract join points from woven class
+     * Extract advisor identifiers from woven class without loading class into memory.
      *
      * @param string $class Either PHP code of class, or path to class file.
      *
-     * @return array Value of private static "__joinPoints" property.
+     * @return array Evaluated value of private static "__joinPoints" property.
      */
-    public static function extractJoinPoints($class)
+    public static function extract($class)
     {
         if (file_exists($class)) {
             $class = file_get_contents($class);
@@ -106,7 +106,7 @@ final class JoinPointsExtractor extends NodeVisitorAbstract
         if (null === self::$parser) {
             self::$parser    = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
             self::$traverser = new NodeTraverser();
-            self::$extractor = new JoinPointsExtractor();
+            self::$extractor = new AdvisorIdentifiersExtractor();
             self::$printer   = new Printer();
 
             self::$traverser->addVisitor(self::$extractor);

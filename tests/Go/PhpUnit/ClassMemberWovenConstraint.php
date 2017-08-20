@@ -10,15 +10,15 @@
 
 namespace Go\PhpUnit;
 
-use Go\TestUtils\JoinPointsExtractor;
+use Go\TestUtils\AdvisorIdentifiersExtractor;
 use PHPUnit_Framework_Constraint as Constraint;
 use ReflectionClass;
 use Go\Instrument\PathResolver;
 
 /**
- * Asserts that join point does not exists for given class.
+ * Asserts that class member is woven for given class.
  */
-class JoinPointNotExistsConstraint extends Constraint
+class ClassMemberWovenConstraint extends Constraint
 {
     /**
      * @var array
@@ -36,29 +36,27 @@ class JoinPointNotExistsConstraint extends Constraint
      */
     public function matches($other)
     {
-        if (!$other instanceof JoinPoint) {
-            throw new \InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', JoinPoint::class, is_object($other) ? get_class($other) : gettype($other)));
+        if (!$other instanceof ClassAdvisorIdentifier) {
+            throw new \InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));
         }
 
-        $joinPoints = JoinPointsExtractor::extractJoinPoints($this->getPathToProxy($other->getClass()));
+        $joinPoints = AdvisorIdentifiersExtractor::extract($this->getPathToProxy($other->getClass()));
 
-        $access = $other->isStatic() ? 'static' : 'method';
+        $access = $other->getTarget();
 
         if (!isset($joinPoints[$access])) {
-            return true;
+            return false;
         }
 
-        if (!isset($joinPoints[$access][$other->getMethod()])) {
-            return true;
+        if (!isset($joinPoints[$access][$other->getSubject()])) {
+            return false;
         }
 
-        foreach ($joinPoints[$access][$other->getMethod()] as $expression) {
-            if ($other->getJoinPoint() === $expression) {
-                return false;
-            }
-        }
+        $index        = $other->getIndex();
+        $advisorIndex = array_search($other->getAdvisorIdentifier(), $joinPoints[$access][$other->getSubject()], true);
+        $isIndexValid = ($index === null) || ($advisorIndex === $index);
 
-        return true;
+        return $advisorIndex !== false && $isIndexValid;
     }
 
     /**
@@ -66,7 +64,7 @@ class JoinPointNotExistsConstraint extends Constraint
      */
     public function toString()
     {
-        return 'join point does not exists.';
+        return 'join point exists.';
     }
 
     /**
