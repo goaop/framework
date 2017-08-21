@@ -17,7 +17,7 @@ use PHPUnit_Framework_Constraint as Constraint;
 /**
  * Asserts that class is not woven.
  */
-class ClassWovenConstraint extends Constraint
+final class ClassWovenConstraint extends Constraint
 {
     /**
      * @var array

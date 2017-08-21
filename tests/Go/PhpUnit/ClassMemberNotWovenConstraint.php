@@ -19,7 +19,7 @@ use PHPUnit_Framework_Constraint as Constraint;
 /**
  *Asserts that class member is not woven for given class.
  */
-class ClassMemberNotWovenConstraint extends Constraint
+final class ClassMemberNotWovenConstraint extends Constraint
 {
     /**
      * @var array
