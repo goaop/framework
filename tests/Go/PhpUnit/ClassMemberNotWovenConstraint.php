@@ -10,10 +10,11 @@
 
 namespace Go\PhpUnit;
 
-use Go\TestUtils\AdvisorIdentifiersExtractor;
-use PHPUnit_Framework_Constraint as Constraint;
-use ReflectionClass;
 use Go\Instrument\PathResolver;
+use Go\ParserReflection\ReflectionClass;
+use Go\ParserReflection\ReflectionEngine;
+use Go\ParserReflection\ReflectionFile;
+use PHPUnit_Framework_Constraint as Constraint;
 
 /**
  *Asserts that class member is not woven for given class.
@@ -70,16 +71,28 @@ class ClassMemberNotWovenConstraint extends Constraint
     /**
      * Get woven advisor identifiers.
      *
-     * @param string $class
+     * @param string $className
+     *
      * @return array
      */
-    private function getWovenAdvisorIdentifiers($class)
+    private function getWovenAdvisorIdentifiers($className)
     {
-        ClassLocator::initialize($this->configuration);
+        $parsedReflectionClass = new ReflectionClass($className);
+        $originalClassFile     = $parsedReflectionClass->getFileName();
+        $originalNamespace     = $parsedReflectionClass->getNamespaceName();
 
-        $advisorIdentifiers = (new ReflectionClass($class))->getStaticPropertyValue('__joinPoints')->getValue();
+        $fileRelativePath = substr($originalClassFile, strlen(PathResolver::realpath($this->configuration['appDir'])));
+        $proxyFileName    = $this->configuration['cacheDir'] . '/_proxies' . $fileRelativePath;
+        $proxyFileContent = file_get_contents($proxyFileName);
 
-        ClassLocator::restore();
+        // To prevent deep analysis of parents, we just cut everything after "extends"
+        $proxyFileContent = preg_replace('/extends.*/', '', $proxyFileContent);
+        $proxyFileAST     = ReflectionEngine::parseFile($proxyFileName, $proxyFileContent);
+
+        $proxyReflectionFile  = new ReflectionFile($proxyFileName, $proxyFileAST);
+        $proxyClassReflection = $proxyReflectionFile->getFileNamespace($originalNamespace)->getClass($className);
+
+        $advisorIdentifiers = $proxyClassReflection->getStaticPropertyValue('__joinPoints');
 
         return $advisorIdentifiers;
     }

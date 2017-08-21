@@ -10,9 +10,9 @@
 
 namespace Go\PhpUnit;
 
-use PHPUnit_Framework_Constraint as Constraint;
-use ReflectionClass;
 use Go\Instrument\PathResolver;
+use Go\ParserReflection\ReflectionClass;
+use PHPUnit_Framework_Constraint as Constraint;
 
 /**
  * Asserts that class is not woven.
