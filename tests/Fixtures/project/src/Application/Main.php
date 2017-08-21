@@ -7,6 +7,12 @@ use Go\Tests\TestProject\Annotation as Aop;
 
 class Main extends AbstractBar
 {
+    private $privateClassProperty;
+
+    protected $protectedClassProperty;
+
+    public $publicClassProperty;
+
     /**
      * @Aop\Loggable()
      */
