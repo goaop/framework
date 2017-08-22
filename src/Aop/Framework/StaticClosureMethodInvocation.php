@@ -40,7 +40,6 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor \Go\Aop\Intercept\Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);

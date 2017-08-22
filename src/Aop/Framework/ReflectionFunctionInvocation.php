@@ -12,7 +12,6 @@ declare(strict_types = 1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\FunctionInvocation;
-use Go\Aop\Intercept\Interceptor;
 use ReflectionFunction;
 
 /**
@@ -48,7 +47,6 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);

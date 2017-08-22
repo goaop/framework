@@ -13,7 +13,6 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\AspectException;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Intercept\Interceptor;
 use ReflectionProperty;
 
 /**
@@ -148,7 +147,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     final public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             $currentInterceptor->invoke($this);
