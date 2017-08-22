@@ -11,7 +11,6 @@
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\ConstructorInvocation;
-use Go\Aop\Intercept\Interceptor;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -83,7 +82,6 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     final public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current];
             $this->current++;
 
