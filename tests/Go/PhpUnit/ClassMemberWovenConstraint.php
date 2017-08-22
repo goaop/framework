@@ -11,10 +11,6 @@ declare(strict_types=1);
 
 namespace Go\PhpUnit;
 
-use Go\Instrument\PathResolver;
-use Go\ParserReflection\ReflectionClass;
-use Go\ParserReflection\ReflectionEngine;
-use Go\ParserReflection\ReflectionFile;
 use PHPUnit_Framework_Constraint as Constraint;
 
 /**
@@ -42,9 +38,13 @@ final class ClassMemberWovenConstraint extends Constraint
             throw new \InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));
         }
 
-        $wovenAdvisorIdentifiers = $this->getWovenAdvisorIdentifiers($other->getClass());
+        $reflectionClass         = ProxyClassReflectionHelper::createReflectionClass($other->getClass(), $this->configuration);
+        $wovenAdvisorIdentifiers = $reflectionClass->getStaticPropertyValue('__joinPoints', null);
+        $target                  = $other->getTarget();
 
-        $target = $other->getTarget();
+        if (null === $wovenAdvisorIdentifiers) { // there are no advisor identifiers
+            return false;
+        }
 
         if (!isset($wovenAdvisorIdentifiers[$target])) {
             return false;
@@ -70,35 +70,6 @@ final class ClassMemberWovenConstraint extends Constraint
      */
     public function toString()
     {
-        return 'join point exists.';
-    }
-
-    /**
-     * Get woven advisor identifiers.
-     *
-     * @param string $className
-     *
-     * @return array
-     */
-    private function getWovenAdvisorIdentifiers($className): array
-    {
-        $parsedReflectionClass = new ReflectionClass($className);
-        $originalClassFile     = $parsedReflectionClass->getFileName();
-        $originalNamespace     = $parsedReflectionClass->getNamespaceName();
-
-        $fileRelativePath = substr($originalClassFile, strlen(PathResolver::realpath($this->configuration['appDir'])));
-        $proxyFileName    = $this->configuration['cacheDir'] . '/_proxies' . $fileRelativePath;
-        $proxyFileContent = file_get_contents($proxyFileName);
-
-        // To prevent deep analysis of parents, we just cut everything after "extends"
-        $proxyFileContent = preg_replace('/extends.*/', '', $proxyFileContent);
-        $proxyFileAST     = ReflectionEngine::parseFile($proxyFileName, $proxyFileContent);
-
-        $proxyReflectionFile  = new ReflectionFile($proxyFileName, $proxyFileAST);
-        $proxyClassReflection = $proxyReflectionFile->getFileNamespace($originalNamespace)->getClass($className);
-
-        $advisorIdentifiers = $proxyClassReflection->getStaticPropertyValue('__joinPoints');
-
-        return $advisorIdentifiers;
+        return 'class member woven.';
     }
 }

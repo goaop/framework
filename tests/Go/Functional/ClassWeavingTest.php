@@ -34,4 +34,10 @@ class ClassWeavingTest extends BaseFunctionalTest
         // it does not weaves AbstractBar class
         $this->assertClassIsNotWoven(AbstractBar::class);
     }
+
+    public function testClassInitializationWeaving()
+    {
+        $this->assertClassInitializationWoven(Main::class, 'advisor.Go\\Tests\\TestProject\\Aspect\\InitializationAspect->beforeInstanceInitialization');
+        $this->assertClassStaticInitializationWoven(Main::class, 'advisor.Go\\Tests\\TestProject\\Aspect\\InitializationAspect->afterClassStaticInitialization');
+    }
 }
