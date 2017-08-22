@@ -37,7 +37,7 @@ final class ClassMemberNotWovenConstraint extends Constraint
             throw new \InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));
         }
 
-        $reflectionClass         = ReflectionClass::create($other->getClass(), $this->configuration);
+        $reflectionClass         = ProxyClassReflectionHelper::createReflectionClass($other->getClass(), $this->configuration);
         $wovenAdvisorIdentifiers = $reflectionClass->getStaticPropertyValue('__joinPoints', null);
         $target                  = $other->getTarget();
 

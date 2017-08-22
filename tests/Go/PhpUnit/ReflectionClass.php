@@ -11,13 +11,18 @@
 namespace Go\PhpUnit;
 
 use Go\Instrument\PathResolver;
-use Go\ParserReflection\ReflectionClass as BaseReflectionClass;
+use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
 
-final class ReflectionClass extends BaseReflectionClass
+final class ProxyClassReflectionHelper
 {
-    public static function create($className, array $configuration)
+    private function __construct()
+    {
+        // noop
+    }
+
+    public static function createReflectionClass($className, array $configuration)
     {
         $parsedReflectionClass = new ReflectionClass($className);
         $originalClassFile     = $parsedReflectionClass->getFileName();
