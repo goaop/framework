@@ -78,7 +78,7 @@ abstract class AspectKernel
     /**
      * Returns the single instance of kernel
      */
-    public static function getInstance() : self
+    public static function getInstance(): self
     {
         if (!self::$instance) {
             self::$instance = new static();
@@ -130,7 +130,7 @@ abstract class AspectKernel
     /**
      * Returns an aspect container
      */
-    public function getContainer() : AspectContainer
+    public function getContainer(): AspectContainer
     {
         return $this->container;
     }
@@ -142,7 +142,7 @@ abstract class AspectKernel
      *
      * @return bool Whether specific feature enabled or not
      */
-    public function hasFeature(int $featureToCheck) : bool
+    public function hasFeature(int $featureToCheck): bool
     {
         return ($this->options['features'] & $featureToCheck) !== 0;
     }
@@ -150,7 +150,7 @@ abstract class AspectKernel
     /**
      * Returns list of kernel options
      */
-    public function getOptions() : array
+    public function getOptions(): array
     {
         return $this->options;
     }
@@ -166,7 +166,7 @@ abstract class AspectKernel
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
      */
-    protected function getDefaultOptions() : array
+    protected function getDefaultOptions(): array
     {
         return [
             'debug'          => false,
@@ -188,7 +188,7 @@ abstract class AspectKernel
      *
      * @return array
      */
-    protected function normalizeOptions(array $options) : array
+    protected function normalizeOptions(array $options): array
     {
         $options = array_replace($this->getDefaultOptions(), $options);
         if ($options['cacheDir']) {

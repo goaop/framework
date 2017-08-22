@@ -33,7 +33,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     /**
      * General aspect loader works with annotations from aspect
      */
-    public function getKind() : string
+    public function getKind(): string
     {
         return self::KIND_ANNOTATION;
     }
@@ -41,7 +41,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     /**
      * General aspect loader works only with methods of aspect
      */
-    public function getTargets() : array
+    public function getTargets(): array
     {
         return [self::TARGET_METHOD];
     }
@@ -55,7 +55,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      *
      * @return boolean true if extension is able to create an advisor from reflection and metaInformation
      */
-    public function supports(Aspect $aspect, $reflection, $metaInformation = null) : bool
+    public function supports(Aspect $aspect, $reflection, $metaInformation = null): bool
     {
         return $metaInformation instanceof Annotation\Interceptor
                 || $metaInformation instanceof Annotation\Pointcut;
@@ -72,7 +72,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      *
      * @throws \UnexpectedValueException
      */
-    public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null) : array
+    public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null): array
     {
         $loadedItems    = [];
         $pointcut       = $this->parsePointcut($aspect, $reflection, $metaInformation);
@@ -107,7 +107,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      *
      * @throws \UnexpectedValueException For unsupported annotations
      */
-    protected function getInterceptor(BaseInterceptor $metaInformation, Closure $adviceCallback) : Interceptor
+    protected function getInterceptor(BaseInterceptor $metaInformation, Closure $adviceCallback): Interceptor
     {
         $adviceOrder        = $metaInformation->order;
         $pointcutExpression = $metaInformation->value;

@@ -104,7 +104,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      *
      * @return ReflectionMethod|AnnotatedReflectionMethod the method being called.
      */
-    public function getMethod() : ReflectionMethod
+    public function getMethod(): ReflectionMethod
     {
         return $this->reflectionMethod;
     }

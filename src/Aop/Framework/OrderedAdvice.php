@@ -21,5 +21,5 @@ interface OrderedAdvice extends Advice
     /**
      * Returns the advice order
      */
-    public function getAdviceOrder() : int;
+    public function getAdviceOrder(): int;
 }

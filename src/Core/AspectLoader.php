@@ -88,7 +88,7 @@ class AspectLoader
      *
      * @return array|Pointcut[]|Advisor[]
      */
-    public function load(Aspect $aspect) : array
+    public function load(Aspect $aspect): array
     {
         $loadedItems = [];
         $refAspect   = new \ReflectionClass($aspect);
@@ -140,7 +140,7 @@ class AspectLoader
      *
      * @return array|Aspect[]
      */
-    public function getUnloadedAspects() : array
+    public function getUnloadedAspects(): array
     {
         $unloadedAspects = [];
 
@@ -164,7 +164,7 @@ class AspectLoader
      *
      * @return array|Pointcut[]|Advisor[]
      */
-    protected function loadFrom(Aspect $aspect, Reflector $reflector, array $loaders) : array
+    protected function loadFrom(Aspect $aspect, Reflector $reflector, array $loaders): array
     {
         $loadedItems = [];
 
@@ -205,7 +205,7 @@ class AspectLoader
      * @return array list of annotations
      * @throws \InvalidArgumentException if $refPoint is unsupported
      */
-    protected function getAnnotations(Reflector $reflector) : array
+    protected function getAnnotations(Reflector $reflector): array
     {
         switch (true) {
             case ($reflector instanceof \ReflectionClass):

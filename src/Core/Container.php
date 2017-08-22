@@ -95,7 +95,7 @@ abstract class Container implements AspectContainer
      *
      * @return bool
      */
-    public function has(string $id) : bool
+    public function has(string $id): bool
     {
         return isset($this->values[$id]);
     }
@@ -106,7 +106,7 @@ abstract class Container implements AspectContainer
      * @param string $tag Tag to select
      * @return array
      */
-    public function getByTag(string $tag) : array
+    public function getByTag(string $tag): array
     {
         $result = [];
         if (isset($this->tags[$tag])) {

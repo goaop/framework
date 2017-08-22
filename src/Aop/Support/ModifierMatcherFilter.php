@@ -60,7 +60,7 @@ class ModifierMatcherFilter implements PointFilter
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         $modifiers = $point->getModifiers();
 
@@ -110,7 +110,7 @@ class ModifierMatcherFilter implements PointFilter
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return self::KIND_ALL;
     }

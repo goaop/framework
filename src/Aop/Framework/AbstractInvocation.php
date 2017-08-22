@@ -28,7 +28,7 @@ abstract class AbstractInvocation extends AbstractJoinpoint implements Invocatio
     /**
      * Get the arguments as an array object.
      */
-    public function getArguments() : array
+    public function getArguments(): array
     {
         return $this->arguments;
     }

@@ -47,7 +47,7 @@ class InheritanceClassFilter implements PointFilter
      *
      * @return bool
      */
-    public function matches($class, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($class, $context = null, $instance = null, array $arguments = null): bool
     {
         if (!$class instanceof ReflectionClass) {
             return false;
@@ -59,7 +59,7 @@ class InheritanceClassFilter implements PointFilter
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return self::KIND_CLASS;
     }

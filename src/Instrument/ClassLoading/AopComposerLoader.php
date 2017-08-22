@@ -99,7 +99,7 @@ class AopComposerLoader
      *
      * @return bool was initialization sucessful or not
      */
-    public static function init(array $options = [], AspectContainer $container) : bool
+    public static function init(array $options = [], AspectContainer $container): bool
     {
         $loaders = spl_autoload_functions();
 
@@ -175,7 +175,7 @@ class AopComposerLoader
     /**
      * Whether or not loader was initialized
      */
-    public static function wasInitialized() : bool
+    public static function wasInitialized(): bool
     {
         return self::$wasInitialized;
     }

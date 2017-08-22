@@ -79,7 +79,7 @@ class SignaturePointcut implements Pointcut
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         if (!$this->modifierFilter->matches($point, $context)) {
             return false;
@@ -91,7 +91,7 @@ class SignaturePointcut implements Pointcut
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return $this->filterKind;
     }

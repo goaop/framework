@@ -62,7 +62,7 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         // With single parameter (statically) always matches
         if (!$instance) {
@@ -90,7 +90,7 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return PointFilter::KIND_METHOD | PointFilter::KIND_DYNAMIC;
     }

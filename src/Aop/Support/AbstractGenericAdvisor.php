@@ -39,7 +39,7 @@ abstract class AbstractGenericAdvisor implements Advisor
     /**
      * Returns an advice to apply
      */
-    public function getAdvice() : Advice
+    public function getAdvice(): Advice
     {
         return $this->advice;
     }

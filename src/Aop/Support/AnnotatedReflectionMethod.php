@@ -41,7 +41,7 @@ class AnnotatedReflectionMethod extends ReflectionMethod
     /**
      * Gets the annotations applied to a method.
      */
-    public function getAnnotations() : array
+    public function getAnnotations(): array
     {
         return self::getReader()->getMethodAnnotations($this);
     }
@@ -49,7 +49,7 @@ class AnnotatedReflectionMethod extends ReflectionMethod
     /**
      * Returns an annotation reader
      */
-    private static function getReader() : Reader
+    private static function getReader(): Reader
     {
         if (!self::$annotationReader) {
             self::$annotationReader = AspectKernel::getInstance()->getContainer()->get('aspect.annotation.reader');

@@ -63,7 +63,7 @@ class CachedAspectLoader extends AspectLoader
     /**
      * {@inheritdoc}
      */
-    public function load(Aspect $aspect) : array
+    public function load(Aspect $aspect): array
     {
         $refAspect = new ReflectionClass($aspect);
         $fileName  = $this->cacheDir . '/_aspect/' . sha1($refAspect->getName());

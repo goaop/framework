@@ -77,7 +77,7 @@ class SourceTransformingLoader extends PhpStreamFilter
      *
      * @throws \RuntimeException if filter was not registered
      */
-    public static function getId() : string
+    public static function getId(): string
     {
         if (empty(self::$filterId)) {
             throw new \RuntimeException('Stream filter was not registered');

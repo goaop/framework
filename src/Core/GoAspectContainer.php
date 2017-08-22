@@ -130,7 +130,7 @@ class GoAspectContainer extends Container
      *
      * @return Pointcut
      */
-    public function getPointcut(string $id) : Pointcut
+    public function getPointcut(string $id): Pointcut
     {
         return $this->get("pointcut.{$id}");
     }
@@ -153,7 +153,7 @@ class GoAspectContainer extends Container
      *
      * @return Advisor
      */
-    public function getAdvisor(string $id) : Advisor
+    public function getAdvisor(string $id): Advisor
     {
         return $this->get("advisor.{$id}");
     }
@@ -176,7 +176,7 @@ class GoAspectContainer extends Container
      *
      * @return Aspect
      */
-    public function getAspect(string $aspectName) : Aspect
+    public function getAspect(string $aspectName): Aspect
     {
         return $this->get("aspect.{$aspectName}");
     }
@@ -208,7 +208,7 @@ class GoAspectContainer extends Container
     /**
      * Returns list of AOP resources
      */
-    public function getResources() : array
+    public function getResources(): array
     {
         return $this->resources;
     }
@@ -220,7 +220,7 @@ class GoAspectContainer extends Container
      *
      * @return bool Whether or not concrete file is fresh
      */
-    public function isFresh(int $timestamp) : bool
+    public function isFresh(int $timestamp): bool
     {
         if (!$this->maxTimestamp && !empty($this->resources)) {
             $this->maxTimestamp = max(array_map('filemtime', $this->resources));

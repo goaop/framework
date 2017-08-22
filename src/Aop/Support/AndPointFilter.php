@@ -63,7 +63,7 @@ class AndPointFilter implements PointFilter
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         return $this->first->matches($point, $context) && $this->second->matches($point, $context);
     }
@@ -71,7 +71,7 @@ class AndPointFilter implements PointFilter
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return $this->kind;
     }

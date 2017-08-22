@@ -25,7 +25,7 @@ interface Invocation extends Joinpoint
      *
      * @api
      */
-    public function getArguments() : array;
+    public function getArguments(): array;
 
     /**
      * Sets the arguments for current invocation

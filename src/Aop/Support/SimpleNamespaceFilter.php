@@ -57,7 +57,7 @@ class SimpleNamespaceFilter implements PointFilter
      * {@inheritdoc}
      * @param ReflectionFileNamespace|string $ns
      */
-    public function matches($ns, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($ns, $context = null, $instance = null, array $arguments = null): bool
     {
         $isNamespaceIsObject = ($ns === (object) $ns);
 
@@ -73,7 +73,7 @@ class SimpleNamespaceFilter implements PointFilter
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return 0;
     }

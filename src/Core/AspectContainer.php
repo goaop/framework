@@ -76,7 +76,7 @@ interface AspectContainer
      * @param string $tag Tag to select
      * @return array
      */
-    public function getByTag(string $tag) : array;
+    public function getByTag(string $tag): array;
 
     /**
      * Returns a pointcut by identifier
@@ -85,7 +85,7 @@ interface AspectContainer
      *
      * @return Pointcut
      */
-    public function getPointcut(string $id) : Pointcut;
+    public function getPointcut(string $id): Pointcut;
 
     /**
      * Checks if item with specified id is present in the container
@@ -94,7 +94,7 @@ interface AspectContainer
      *
      * @return bool
      */
-    public function has(string $id) : bool;
+    public function has(string $id): bool;
 
     /**
      * Store the pointcut in the container
@@ -111,7 +111,7 @@ interface AspectContainer
      *
      * @return Advisor
      */
-    public function getAdvisor(string $id) : Advisor;
+    public function getAdvisor(string $id): Advisor;
 
     /**
      * Store the advisor in the container
@@ -135,7 +135,7 @@ interface AspectContainer
      *
      * @return Aspect
      */
-    public function getAspect(string $aspectName) : Aspect;
+    public function getAspect(string $aspectName): Aspect;
 
     /**
      * Add an AOP resource to the container
@@ -148,7 +148,7 @@ interface AspectContainer
     /**
      * Returns the list of AOP resources
      */
-    public function getResources() : array;
+    public function getResources(): array;
 
     /**
      * Checks the freshness of AOP cache
@@ -157,7 +157,7 @@ interface AspectContainer
      *
      * @return bool Whether or not concrete file is fresh
      */
-    public function isFresh(int $timestamp) : bool;
+    public function isFresh(int $timestamp): bool;
 
     /**
      * Set a service into the container

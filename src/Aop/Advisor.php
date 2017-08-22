@@ -21,5 +21,5 @@ interface Advisor
      *
      * @api
      */
-    public function getAdvice() : Advice;
+    public function getAdvice(): Advice;
 }

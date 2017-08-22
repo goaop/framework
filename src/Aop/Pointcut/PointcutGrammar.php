@@ -323,7 +323,7 @@ class PointcutGrammar extends Grammar
     /**
      * Returns callable for converting node(s) to the string
      */
-    private function getNodeToStringConverter() : Closure
+    private function getNodeToStringConverter(): Closure
     {
         return function(...$arguments) {
             $value = '';
@@ -342,7 +342,7 @@ class PointcutGrammar extends Grammar
     /**
      * Returns callable for converting node value for modifiers to the constant value
      */
-    private function getModifierConverter() : Closure
+    private function getModifierConverter(): Closure
     {
         return function(Token $token) {
             $name = strtoupper($token->getValue());

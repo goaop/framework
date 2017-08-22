@@ -123,7 +123,7 @@ class PointcutBuilder
      *
      * @return string
      */
-    private function getPointcutId(string $pointcutExpression) : string
+    private function getPointcutId(string $pointcutExpression): string
     {
         static $index = 0;
 

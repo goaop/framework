@@ -78,7 +78,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Returns the access type.
      */
-    public function getAccessType() : int
+    public function getAccessType(): int
     {
         return $this->accessType;
     }
@@ -86,7 +86,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Gets the field being accessed.
      */
-    public function getField() : ReflectionProperty
+    public function getField(): ReflectionProperty
     {
         return $this->reflectionProperty;
     }

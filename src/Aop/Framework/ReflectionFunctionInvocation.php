@@ -60,7 +60,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     /**
      * Gets the function being called.
      */
-    public function getFunction() : ReflectionFunction
+    public function getFunction(): ReflectionFunction
     {
         return $this->reflectionFunction;
     }

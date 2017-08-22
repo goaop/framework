@@ -53,7 +53,7 @@ class NotPointFilter implements PointFilter
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         return !$this->first->matches($point, $context);
     }
@@ -61,7 +61,7 @@ class NotPointFilter implements PointFilter
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return $this->kind;
     }

@@ -23,5 +23,5 @@ interface Pointcut extends PointFilter
     /**
      * Return the class filter for this pointcut.
      */
-    public function getClassFilter() : PointFilter;
+    public function getClassFilter(): PointFilter;
 }

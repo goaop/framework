@@ -64,7 +64,7 @@ class AndPointcut implements Pointcut
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         return $this->matchPart($this->first, $point, $context, $instance, $arguments)
             && $this->matchPart($this->second, $point, $context, $instance, $arguments);
@@ -73,7 +73,7 @@ class AndPointcut implements Pointcut
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return $this->kind;
     }

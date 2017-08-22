@@ -62,7 +62,7 @@ class PointcutReference implements Pointcut
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         return $this->getPointcut()->matches($point, $context, $instance, $arguments);
     }
@@ -70,7 +70,7 @@ class PointcutReference implements Pointcut
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return $this->getPointcut()->getKind();
     }
@@ -78,7 +78,7 @@ class PointcutReference implements Pointcut
     /**
      * Return the class filter for this pointcut.
      */
-    public function getClassFilter() : PointFilter
+    public function getClassFilter(): PointFilter
     {
         return $this->getPointcut()->getClassFilter();
     }
@@ -102,7 +102,7 @@ class PointcutReference implements Pointcut
     /**
      * Returns a real pointcut from the container
      */
-    private function getPointcut() : Pointcut
+    private function getPointcut(): Pointcut
     {
         if (!$this->pointcut) {
             $this->pointcut = $this->container->getPointcut($this->pointcutName);

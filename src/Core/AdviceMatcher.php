@@ -58,7 +58,7 @@ class AdviceMatcher
      *
      * @return array
      */
-    public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors) : array
+    public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors): array
     {
         if (!$this->isInterceptFunctions) {
             return [];
@@ -92,7 +92,7 @@ class AdviceMatcher
      *
      * @return array|Aop\Advice[] List of advices for class
      */
-    public function getAdvicesForClass(ReflectionClass $class, array $advisors) : array
+    public function getAdvicesForClass(ReflectionClass $class, array $advisors): array
     {
         $classAdvices = [];
         $parentClass  = $class->getParentClass();
@@ -143,8 +143,8 @@ class AdviceMatcher
         ReflectionClass $class,
         Aop\PointcutAdvisor $advisor,
         string $advisorId,
-        Aop\PointFilter $filter) : array
-    {
+        Aop\PointFilter $filter
+    ): array {
         $classAdvices = [];
         $filterKind   = $filter->getKind();
 
@@ -204,8 +204,8 @@ class AdviceMatcher
     private function getIntroductionFromAdvisor(
         ReflectionClass $class,
         Aop\IntroductionAdvisor $advisor,
-        string $advisorId) : array
-    {
+        string $advisorId
+    ): array {
         $classAdvices = [];
         // Do not make introduction for traits
         if ($class->isTrait()) {
@@ -233,8 +233,8 @@ class AdviceMatcher
         ReflectionFileNamespace $namespace,
         Aop\PointcutAdvisor $advisor,
         string $advisorId,
-        Aop\PointFilter $pointcut) : array
-    {
+        Aop\PointFilter $pointcut
+    ): array {
         $functions = [];
         $advices   = [];
 

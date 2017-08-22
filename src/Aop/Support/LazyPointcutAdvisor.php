@@ -58,7 +58,7 @@ class LazyPointcutAdvisor extends AbstractGenericAdvisor implements PointcutAdvi
     /**
      * Get the Pointcut that drives this advisor.
      */
-    public function getPointcut() : Pointcut
+    public function getPointcut(): Pointcut
     {
         if (!$this->pointcut) {
 

@@ -63,7 +63,7 @@ class FunctionPointcut implements Pointcut
      *
      * @return bool
      */
-    public function matches($function, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($function, $context = null, $instance = null, array $arguments = null): bool
     {
         if (!$function instanceof ReflectionFunction) {
             return false;
@@ -75,7 +75,7 @@ class FunctionPointcut implements Pointcut
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return self::KIND_FUNCTION;
     }
@@ -83,7 +83,7 @@ class FunctionPointcut implements Pointcut
     /**
      * Return the class filter for this pointcut.
      */
-    public function getClassFilter() : PointFilter
+    public function getClassFilter(): PointFilter
     {
         return $this->nsFilter;
     }

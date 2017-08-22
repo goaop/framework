@@ -48,7 +48,7 @@ class DefaultPointcutAdvisor extends AbstractGenericAdvisor implements PointcutA
     /**
      * {@inheritdoc}
      */
-    public function getAdvice() : Advice
+    public function getAdvice(): Advice
     {
         $advice = parent::getAdvice();
         if ($this->pointcut->getKind() & PointFilter::KIND_DYNAMIC) {
@@ -64,7 +64,7 @@ class DefaultPointcutAdvisor extends AbstractGenericAdvisor implements PointcutA
     /**
      * Get the Pointcut that drives this advisor.
      */
-    public function getPointcut() : Pointcut
+    public function getPointcut(): Pointcut
     {
         return $this->pointcut;
     }

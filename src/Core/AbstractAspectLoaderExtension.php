@@ -65,7 +65,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * @throws \UnexpectedValueException if there was an error during parsing
      * @return Pointcut|PointFilter
      */
-    protected function parsePointcut(Aspect $aspect, $reflection, $metaInformation) : PointFilter
+    protected function parsePointcut(Aspect $aspect, $reflection, $metaInformation): PointFilter
     {
         $stream = $this->makeLexicalAnalyze($aspect, $reflection, $metaInformation);
 
@@ -82,7 +82,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * @return TokenStream
      * @throws \UnexpectedValueException
      */
-    protected function makeLexicalAnalyze(Aspect $aspect, $reflection, $metaInformation) : TokenStream
+    protected function makeLexicalAnalyze(Aspect $aspect, $reflection, $metaInformation): TokenStream
     {
         try {
             $resolvedThisPointcut = str_replace('$this', get_class($aspect), $metaInformation->value);
@@ -116,7 +116,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      *
      * @throws \UnexpectedValueException
      */
-    protected function parseTokenStream($reflection, $metaInformation, TokenStream $stream) : PointFilter
+    protected function parseTokenStream($reflection, $metaInformation, TokenStream $stream): PointFilter
     {
         try {
             $pointcut = $this->pointcutParser->parse($stream);

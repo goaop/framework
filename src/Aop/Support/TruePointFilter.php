@@ -29,7 +29,7 @@ class TruePointFilter implements PointFilter
     /**
      * Singleton pattern
      */
-    public static function getInstance() : self
+    public static function getInstance(): self
     {
         static $instance;
         if (!$instance) {
@@ -49,7 +49,7 @@ class TruePointFilter implements PointFilter
      *
      * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         return true;
     }
@@ -57,7 +57,7 @@ class TruePointFilter implements PointFilter
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int
+    public function getKind(): int
     {
         return self::KIND_ALL;
     }

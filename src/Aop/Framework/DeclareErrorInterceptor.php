@@ -104,7 +104,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
     /**
      * Returns an advice
      */
-    private static function getDeclareErrorAdvice() : \Closure
+    private static function getDeclareErrorAdvice(): \Closure
     {
         static $adviceMethod;
         if (!$adviceMethod) {

@@ -246,7 +246,7 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @return string
      */
-    private function saveProxyToCache($class, $child) : string
+    private function saveProxyToCache($class, $child): string
     {
         static $cacheDirSuffix = '/_proxies/';
 

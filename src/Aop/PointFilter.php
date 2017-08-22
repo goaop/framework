@@ -50,10 +50,10 @@ interface PointFilter
      *
      * @return bool True if point matches
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null) : bool;
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool;
 
     /**
      * Returns the kind of point filter
      */
-    public function getKind() : int;
+    public function getKind(): int;
 }

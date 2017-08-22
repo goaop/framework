@@ -78,7 +78,7 @@ class Enumerator
     /**
      * Returns a filter callback for enumerating files
      */
-    public function getFilter() : Closure
+    public function getFilter(): Closure
     {
         $rootDirectory = $this->rootDirectory;
         $includePaths = $this->includePaths;
@@ -130,7 +130,7 @@ class Enumerator
      *
      * @return string
      */
-    protected function getFileFullPath(SplFileInfo $file) : string
+    protected function getFileFullPath(SplFileInfo $file): string
     {
         return $file->getRealPath();
     }

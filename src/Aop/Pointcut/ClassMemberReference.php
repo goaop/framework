@@ -67,22 +67,22 @@ class ClassMemberReference
         $this->memberNamePattern = $memberNamePattern;
     }
 
-    public function getClassFilter() : PointFilter
+    public function getClassFilter(): PointFilter
     {
         return $this->classFilter;
     }
 
-    public function getVisibilityFilter() : ModifierMatcherFilter
+    public function getVisibilityFilter(): ModifierMatcherFilter
     {
         return $this->visibilityFilter;
     }
 
-    public function getAccessTypeFilter() : ModifierMatcherFilter
+    public function getAccessTypeFilter(): ModifierMatcherFilter
     {
         return $this->accessTypeFilter;
     }
 
-    public function getMemberNamePattern() : string
+    public function getMemberNamePattern(): string
     {
         return $this->memberNamePattern;
     }

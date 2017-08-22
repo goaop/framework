@@ -42,7 +42,7 @@ trait PointcutClassFilterTrait
     /**
      * Return the class filter for this pointcut.
      */
-    public function getClassFilter() : PointFilter
+    public function getClassFilter(): PointFilter
     {
         if (!$this->classFilter) {
             $this->classFilter = TruePointFilter::getInstance();

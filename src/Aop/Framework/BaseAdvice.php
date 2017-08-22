@@ -59,7 +59,7 @@ abstract class BaseAdvice implements OrderedAdvice
     /**
      * Returns the advice order
      */
-    public function getAdviceOrder() : int
+    public function getAdviceOrder(): int
     {
         return $this->order;
     }
@@ -71,7 +71,7 @@ abstract class BaseAdvice implements OrderedAdvice
      *
      * @return array
      */
-    public static function serializeAdvice(Closure $adviceMethod) : array
+    public static function serializeAdvice(Closure $adviceMethod): array
     {
         $refAdvice = new ReflectionFunction($adviceMethod);
 
@@ -88,7 +88,7 @@ abstract class BaseAdvice implements OrderedAdvice
      *
      * @return Closure
      */
-    public static function unserializeAdvice(array $adviceData) : Closure
+    public static function unserializeAdvice(array $adviceData): Closure
     {
         $aspectName = $adviceData['aspect'];
         $methodName = $adviceData['method'];

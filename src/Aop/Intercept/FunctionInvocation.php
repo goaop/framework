@@ -26,7 +26,7 @@ interface FunctionInvocation extends Invocation
     /**
      * Gets the function being called.
      */
-    public function getFunction() : ReflectionFunction;
+    public function getFunction(): ReflectionFunction;
 
     /**
      * Invokes current function invocation with all interceptors
