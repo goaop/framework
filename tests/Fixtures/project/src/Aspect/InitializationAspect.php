@@ -18,9 +18,9 @@ class InitializationAspect implements Aspect
     }
 
     /**
-     * Before class initialization.
+     * After class initialization.
      *
-     * @Pointcut\Before("staticinitialization(Go\Tests\TestProject\Application\Main)")
+     * @Pointcut\After("staticinitialization(Go\Tests\TestProject\Application\Main)")
      */
     public function afterClassStaticInitialization()
     {
