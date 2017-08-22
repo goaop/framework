@@ -15,6 +15,10 @@ use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
 
+/**
+ * Utility functions that helps initialization of reflection classes that introspects classes and its members
+ * by parsing its AST (without loading class into memory).
+ */
 final class ProxyClassReflectionHelper
 {
     private function __construct()
@@ -22,6 +26,13 @@ final class ProxyClassReflectionHelper
         // noop
     }
 
+    /**
+     * Creates \Go\ParserReflection\ReflectionClass instance that introspects class without loading class into memory.
+     *
+     * @param string $className Full qualified class name for which \Go\ParserReflection\ReflectionClass ought to be initialized
+     * @param array $configuration Configuration used for Go! AOP project setup
+     * @return \Go\ParserReflection\ReflectionClass
+     */
     public static function createReflectionClass($className, array $configuration)
     {
         $parsedReflectionClass = new ReflectionClass($className);
