@@ -75,6 +75,8 @@ final class ClassAdvisorIdentifier
      * @see \Go\Core\AspectContainer::METHOD_PREFIX
      * @see \Go\Core\AspectContainer::PROPERTY_PREFIX
      * @see \Go\Core\AspectContainer::STATIC_METHOD_PREFIX
+     * @see \Go\Core\AspectContainer::INIT_PREFIX
+     * @see \Go\Core\AspectContainer::STATIC_INIT_PREFIX
      *
      * @return string
      */
