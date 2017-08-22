@@ -33,8 +33,7 @@ final class AfterInterceptor extends BaseInterceptor implements AdviceAfter
         try {
             $result = $joinpoint->proceed();
         } finally {
-            $adviceMethod = $this->adviceMethod;
-            $adviceMethod($joinpoint);
+            ($this->adviceMethod)($joinpoint);
         }
 
         return $result;

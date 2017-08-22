@@ -30,8 +30,6 @@ final class AroundInterceptor extends BaseInterceptor implements AdviceAround
      */
     public function invoke(Joinpoint $joinpoint)
     {
-        $adviceMethod = $this->adviceMethod;
-
-        return $adviceMethod($joinpoint);
+        return ($this->adviceMethod)($joinpoint);
     }
 }

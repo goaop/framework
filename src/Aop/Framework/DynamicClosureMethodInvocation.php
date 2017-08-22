@@ -55,8 +55,6 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
             $this->previousInstance = $this->instance;
         }
 
-        $closureToCall = $this->closureToCall;
-
-        return $closureToCall(...$this->arguments);
+        return ($this->closureToCall)(...$this->arguments);
     }
 }

@@ -54,9 +54,7 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
             $this->previousScope = $this->instance;
         }
 
-        $closureToCall = $this->closureToCall;
-
-        return $closureToCall($this->arguments);
+        return ($this->closureToCall)($this->arguments);
 
     }
 
