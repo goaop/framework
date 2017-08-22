@@ -160,7 +160,7 @@ class AopComposerLoader
 
         if ($file) {
             $file = PathResolver::realpath($file)?:$file;
-            $cacheState = isset($this->cacheState[$file]) ? $this->cacheState[$file] : null;
+            $cacheState = $this->cacheState[$file] ?? null;
             if ($cacheState && $isProduction) {
                 $file = $cacheState['cacheUri'] ?: $file;
             } elseif ($isAllowedFilter(new \SplFileInfo($file))) {

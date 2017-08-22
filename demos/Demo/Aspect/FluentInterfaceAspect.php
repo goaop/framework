@@ -38,6 +38,6 @@ class FluentInterfaceAspect implements Aspect
     {
         $result = $invocation->proceed();
 
-        return $result !== null ? $result : $invocation->getThis();
+        return $result ?? $invocation->getThis();
     }
 }

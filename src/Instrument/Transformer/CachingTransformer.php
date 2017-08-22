@@ -92,7 +92,7 @@ class CachingTransformer extends BaseSourceTransformer
                 chmod($cacheUri, $this->cacheFileMode & (~0111));
             }
             $this->cacheManager->setCacheState($originalUri, [
-                'filemtime' => isset($_SERVER['REQUEST_TIME']) ? $_SERVER['REQUEST_TIME'] : time(),
+                'filemtime' => $_SERVER['REQUEST_TIME'] ?? time(),
                 'cacheUri'  => $wasProcessed ? $cacheUri : null
             ]);
 

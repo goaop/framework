@@ -41,7 +41,7 @@ class CacheWarmer
     public function __construct(AspectKernel $aspectKernel, OutputInterface $output = null)
     {
         $this->aspectKernel = $aspectKernel;
-        $this->output       = $output !== null ? $output : new NullOutput();
+        $this->output       = $output ?? new NullOutput();
     }
 
     /**

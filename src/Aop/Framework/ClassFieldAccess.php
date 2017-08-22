@@ -125,7 +125,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
         if ($property->isProtected()) {
             $backTrace     = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $stackLevel+1);
-            $accessor      = isset($backTrace[$stackLevel]) ? $backTrace[$stackLevel] : [];
+            $accessor      = $backTrace[$stackLevel] ?? [];
             $propertyClass = $property->class;
             if (isset($accessor['class'])) {
                 if ($accessor['class'] === $propertyClass || is_subclass_of($accessor['class'], $propertyClass)) {

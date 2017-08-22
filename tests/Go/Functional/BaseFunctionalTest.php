@@ -118,7 +118,7 @@ abstract class BaseFunctionalTest extends TestCase
             $this->configuration['console'],
             $command,
             $this->configuration['frontController'],
-            (null !== $args) ? $args : ''
+            $args ?? ''
         );
 
         $process = new Process($commandStatement);

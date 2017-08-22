@@ -54,7 +54,7 @@ class CachedAspectLoader extends AspectLoader
      */
     public function __construct(AspectContainer $container, $loaderId, array $options = [])
     {
-        $this->cacheDir      = isset($options['cacheDir']) ? $options['cacheDir'] : null;
+        $this->cacheDir      = $options['cacheDir'] ?? null;
         $this->cacheFileMode = $options['cacheFileMode'];
         $this->loaderId      = $loaderId;
         $this->container     = $container;
