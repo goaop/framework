@@ -167,7 +167,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $childClassArray   = explode("\n", $contentToInclude);
         $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
 
-        $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
+        $dataArray = array_merge($currentClassArray, [''], $childClassArray, [''], $dataArray);
 
         $metadata->source = implode("\n", $dataArray);
 

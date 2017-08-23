@@ -44,12 +44,12 @@ class SimpleNamespaceFilter implements PointFilter
     {
         $namespaceName = trim($namespaceName, '\\');
         $this->nsName  = $namespaceName;
-        $this->regexp  = strtr(preg_quote($this->nsName, '/'), array(
+        $this->regexp  = strtr(preg_quote($this->nsName, '/'), [
             '\\*'    => '[^\\\\]+',
             '\\*\\*' => '.+',
             '\\?'    => '.',
             '\\|'    => '|'
-        ));
+        ]);
     }
 
     /**

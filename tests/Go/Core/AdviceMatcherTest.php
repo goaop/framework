@@ -36,7 +36,7 @@ class AdviceMatcherTest extends TestCase
     {
         $container = $this->createMock(AspectContainer::class);
         $reader    = $this->createMock(Reader::class);
-        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs(array($container, $reader))->getMock();
+        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs([$container, $reader])->getMock();
 
         $this->adviceMatcher = new AdviceMatcher($loader, $container);
 
@@ -80,7 +80,7 @@ class AdviceMatcherTest extends TestCase
         $advice = $this->createMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
-        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, array($advisor));
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, [$advisor]);
         $this->assertArrayHasKey(AspectContainer::METHOD_PREFIX, $advices);
         $this->assertArrayHasKey($funcName, $advices[AspectContainer::METHOD_PREFIX]);
         $this->assertCount(1, $advices[AspectContainer::METHOD_PREFIX]);
@@ -112,7 +112,7 @@ class AdviceMatcherTest extends TestCase
         $advice = $this->createMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
-        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, array($advisor));
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, [$advisor]);
         $this->assertArrayHasKey(AspectContainer::PROPERTY_PREFIX, $advices);
         $this->assertArrayHasKey($propName, $advices[AspectContainer::PROPERTY_PREFIX]);
         $this->assertCount(1, $advices[AspectContainer::PROPERTY_PREFIX]);

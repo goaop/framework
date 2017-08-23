@@ -125,12 +125,12 @@ class FilterInjectorTransformer implements SourceTransformer
         if ((strpos($metadata->source, 'include') === false) && (strpos($metadata->source, 'require') === false)) {
             return self::RESULT_ABSTAIN;
         }
-        static $lookFor = array(
+        static $lookFor = [
             T_INCLUDE      => true,
             T_INCLUDE_ONCE => true,
             T_REQUIRE      => true,
             T_REQUIRE_ONCE => true
-        );
+        ];
         $tokenStream = token_get_all($metadata->source);
 
         $transformedSource = '';
@@ -168,7 +168,7 @@ class FilterInjectorTransformer implements SourceTransformer
                 $isWaitingEnd = false;
                 $transformedSource .= ', __DIR__)';
             }
-            list ($token, $value) = (array) $token + array(1 => $token);
+            list ($token, $value) = (array) $token + [1 => $token];
             $transformedSource .= $value;
             if (!$isWaitingEnd && isset($lookFor[$token])) {
                 $isWaitingEnd = true;
