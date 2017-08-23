@@ -75,9 +75,9 @@ class WeavingTransformer extends BaseSourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return int See RESULT_XXX constants in the interface
+     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata): string
     {
         $totalTransformations = 0;
 

@@ -56,9 +56,9 @@ class CachingTransformer extends BaseSourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return int See RESULT_XXX constants in the interface
+     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata): string
     {
         // Do not create a cache
         if (!$this->cacheManager->getCacheDir()) {
@@ -113,9 +113,9 @@ class CachingTransformer extends BaseSourceTransformer
      * Iterates over transformers
      *
      * @param StreamMetaData $metadata Metadata for source code
-     * @return int See RESULT_XXX constants in the interface
+     * @return string See RESULT_XXX constants in the interface
      */
-    private function processTransformers(StreamMetaData $metadata)
+    private function processTransformers(StreamMetaData $metadata): string
     {
         $overallResult = self::RESULT_ABSTAIN;
         if (is_callable($this->transformers)) {
