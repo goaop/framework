@@ -125,18 +125,16 @@ class SourceTransformingLoader extends PhpStreamFilter
      * Transforms source code by passing it through all transformers
      *
      * @param StreamMetaData|null $metadata Metadata from stream
-     * @return void|bool Return false if transformation should be stopped
+     *
+     * @return void
      */
     public static function transformCode(StreamMetaData $metadata)
     {
-        $result = null;
         foreach (self::$transformers as $transformer) {
             $result = $transformer->transform($metadata);
-            if ($result === false) {
+            if ($result === SourceTransformer::RESULT_ABORTED) {
                 break;
             }
         }
-
-        return $result;
     }
 }
