@@ -38,9 +38,7 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            $currentInterceptor = $this->advices[$this->current++];
-
-            return $currentInterceptor->invoke($this);
+            return ($this->advices[$this->current++])->invoke($this);
         }
 
         // Fill the closure only once if it's empty
