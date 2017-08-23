@@ -216,7 +216,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace, $advisors);
         $cacheDir        = $this->cachePathManager->getCacheDir();
         if (!empty($functionAdvices) && $cacheDir) {
-            $cacheDir = $cacheDir . $cacheDirSuffix;
+            $cacheDir .= $cacheDirSuffix;
             $fileName = str_replace('\\', '/', $namespace->getName()) . '.php';
 
             $functionFileName = $cacheDir . $fileName;
@@ -256,7 +256,7 @@ class WeavingTransformer extends BaseSourceTransformer
         if (!$cacheDir) {
             return $child;
         }
-        $cacheDir = $cacheDir . $cacheDirSuffix;
+        $cacheDir .= $cacheDirSuffix;
         $fileName = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());
 
         $proxyFileName = $cacheDir . $fileName;

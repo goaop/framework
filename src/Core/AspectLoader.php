@@ -14,7 +14,6 @@ use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
-use ReflectionClass;
 
 /**
  * Loader of aspects into the container
@@ -216,7 +215,7 @@ class AspectLoader
                 return $this->annotationReader->getPropertyAnnotations($refPoint);
 
             default:
-                throw new \InvalidArgumentException("Unsupported reflection point " . get_class($refPoint));
+                throw new \InvalidArgumentException('Unsupported reflection point ' . get_class($refPoint));
         }
     }
 }

@@ -20,37 +20,37 @@ interface AspectContainer
     /**
      * Prefix for function interceptor
      */
-    const FUNCTION_PREFIX = "func";
+    const FUNCTION_PREFIX = 'func';
 
     /**
      * Prefix for properties interceptor
      */
-    const PROPERTY_PREFIX = "prop";
+    const PROPERTY_PREFIX = 'prop';
 
     /**
      * Prefix for method interceptor
      */
-    const METHOD_PREFIX = "method";
+    const METHOD_PREFIX = 'method';
 
     /**
      * Prefix for static method interceptor
      */
-    const STATIC_METHOD_PREFIX = "static";
+    const STATIC_METHOD_PREFIX = 'static';
 
     /**
      * Trait introduction prefix
      */
-    const INTRODUCTION_TRAIT_PREFIX = "introduction";
+    const INTRODUCTION_TRAIT_PREFIX = 'introduction';
 
     /**
      * Initialization prefix, is used for initialization pointcuts
      */
-    const INIT_PREFIX = "init";
+    const INIT_PREFIX = 'init';
 
     /**
      * Initialization prefix, is used for initialization pointcuts
      */
-    const STATIC_INIT_PREFIX = "staticinit";
+    const STATIC_INIT_PREFIX = 'staticinit';
 
     /**
      * Suffix, that will be added to all proxied class names

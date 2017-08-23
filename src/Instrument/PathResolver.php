@@ -57,9 +57,10 @@ class PathResolver
             $parts     = explode(DIRECTORY_SEPARATOR, $path);
             $absolutes = [];
             foreach ($parts as $part) {
-                if ('.' == $part) {
+                if ('.' === $part) {
                     continue;
-                } elseif ('..' == $part) {
+                }
+                if ('..' === $part) {
                     array_pop($absolutes);
                 } else {
                     $absolutes[] = $part;

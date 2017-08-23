@@ -90,6 +90,6 @@ class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
         $pointcutClass = get_class($this->getPointcut());
         $adviceClass   = get_class($this->getAdvice());
 
-        return get_called_class() . ": pointcut [{$pointcutClass}]; advice [{$adviceClass}]";
+        return static::class . ": pointcut [{$pointcutClass}]; advice [{$adviceClass}]";
     }
 }

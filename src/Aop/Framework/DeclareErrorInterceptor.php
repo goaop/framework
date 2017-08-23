@@ -26,14 +26,14 @@ class DeclareErrorInterceptor extends BaseInterceptor
      *
      * @var string
      */
-    private $message = '';
+    private $message;
 
     /**
      * Default level of error
      *
      * @var int
      */
-    private $level = E_USER_NOTICE;
+    private $level;
 
     /**
      * Default constructor for interceptor

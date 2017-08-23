@@ -34,7 +34,7 @@ class MatchInheritedPointcut implements Pointcut
     {
         if (!$context instanceof \ReflectionClass) {
             return false;
-        };
+        }
 
         if (!($point instanceof \ReflectionMethod) && !($point instanceof \ReflectionProperty)) {
             return false;

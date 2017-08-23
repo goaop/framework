@@ -274,14 +274,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     private function loadTest($name)
     {
         $fileName = __DIR__ . '/_files/' . $name . '.php';
-
-        if (defined("HHVM_VERSION")) {
-            // Workaround for https://github.com/facebook/hhvm/issues/2485
-            $stream = fopen($fileName, 'r');
-            stream_filter_append($stream, 'string.tolower');
-        } else {
-            $stream = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
-        }
+        $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
         $source   = file_get_contents($fileName);
         $metadata = new StreamMetaData($stream, $source);
         fclose($stream);

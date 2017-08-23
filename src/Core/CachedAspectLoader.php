@@ -96,7 +96,7 @@ class CachedAspectLoader extends AspectLoader
 
             return $this->loader;
         }
-        throw new \RuntimeException("Not implemented");
+        throw new \RuntimeException('Not implemented');
     }
 
 

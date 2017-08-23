@@ -15,7 +15,6 @@ use Go\Aop\Aspect;
 use Go\Aop\Framework;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
-use Go\Aop\Support;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
 
@@ -93,7 +92,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
                 break;
 
             default:
-                throw new \UnexpectedValueException("Unsupported pointcut class: " . get_class($pointcut));
+                throw new \UnexpectedValueException('Unsupported pointcut class: ' . get_class($pointcut));
         }
 
         return $loadedItems;
@@ -123,7 +122,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
                 return new Framework\AfterThrowingInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
             default:
-                throw new \UnexpectedValueException("Unsupported method meta class: " . get_class($metaInformation));
+                throw new \UnexpectedValueException('Unsupported method meta class: ' . get_class($metaInformation));
         }
     }
 }

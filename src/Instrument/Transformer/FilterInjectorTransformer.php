@@ -71,7 +71,7 @@ class FilterInjectorTransformer implements SourceTransformer
     protected static function configure(AspectKernel $kernel, $filterName, CachePathManager $cacheManager)
     {
         if (self::$kernel) {
-            throw new \RuntimeException("Filter injector can be configured only once.");
+            throw new \RuntimeException('Filter injector can be configured only once.');
         }
         self::$kernel           = $kernel;
         self::$options          = $kernel->getOptions();
@@ -108,7 +108,7 @@ class FilterInjectorTransformer implements SourceTransformer
 
         // If the cache is disabled or no cache yet, then use on-fly method
         if (!$cacheDir || $debug || !file_exists($cachedResource)) {
-            return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
+            return self::PHP_FILTER_READ . self::$filterName . '/resource=' . $resource;
         }
 
         return $cachedResource;
@@ -162,7 +162,7 @@ class FilterInjectorTransformer implements SourceTransformer
                 $isTernaryOperator = false;
             }
 
-            if ($isWaitingEnd && !$isTernaryOperator && $insideBracesCount == 0
+            if ($isWaitingEnd && !$isTernaryOperator && $insideBracesCount === 0
                 && ($token === ';' || $token === ',' || $token === ':' || $lastBrace)
             ) {
                 $isWaitingEnd = false;

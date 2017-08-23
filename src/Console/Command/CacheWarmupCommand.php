@@ -30,7 +30,7 @@ class CacheWarmupCommand extends BaseAspectCommand
         parent::configure();
         $this
             ->setName('cache:warmup:aop')
-            ->setDescription("Warm up the cache with woven aspects")
+            ->setDescription('Warm up the cache with woven aspects')
             ->setHelp(<<<EOT
 Initializes the kernel and, if successful, warm up the cache for PHP
 files under the application directory.
