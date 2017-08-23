@@ -73,12 +73,12 @@ class ConstructorExecutionTransformer implements SourceTransformer
      *
      * @param StreamMetaData $metadata Metadata for source
      *
-     * @return void|bool Return false if transformation should be stopped
+     * @return int See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata = null)
+    public function transform(StreamMetaData $metadata)
     {
         if (strpos($metadata->source, 'new ') === false) {
-            return;
+            return self::RESULT_ABSTAIN;
         }
 
         $tokenStream       = token_get_all($metadata->source);
@@ -87,6 +87,7 @@ class ConstructorExecutionTransformer implements SourceTransformer
         $isWaitingEnd      = false;
         $isClassName       = true;
         $classNamePosition = 0;
+        $weavingResult     = self::RESULT_ABSTAIN;
         foreach ($tokenStream as $index=>$token) {
             list ($token, $tokenValue) = (array) $token + array(1 => $token);
             if ($isWaitingClass && $token !== T_WHITESPACE && $token !== T_COMMENT) {
@@ -107,7 +108,9 @@ class ConstructorExecutionTransformer implements SourceTransformer
                 $tokenValue = '\\' . __CLASS__ . '::getInstance()->{';
                 $isWaitingClass = true;
                 $isClassName    = true;
+
                 $classNamePosition = 0;
+                $weavingResult     = self::RESULT_TRANSFORMED;
             }
             $transformedSource .= $tokenValue;
 
@@ -118,6 +121,8 @@ class ConstructorExecutionTransformer implements SourceTransformer
             }
         }
         $metadata->source = $transformedSource;
+
+        return $weavingResult;
     }
 
     /**

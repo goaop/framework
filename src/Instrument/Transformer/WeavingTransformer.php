@@ -74,7 +74,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return boolean Return false if transformation should be stopped
+     * @return int See RESULT_XXX constants in the interface
      */
     public function transform(StreamMetaData $metadata)
     {
@@ -111,8 +111,9 @@ class WeavingTransformer extends BaseSourceTransformer
             $totalTransformations += (integer) $wasFunctionsProcessed;
         }
 
-        // If we return false this will indicate no more transformation for following transformers
-        return $totalTransformations > 0;
+        $result = ($totalTransformations > 0) ? self::RESULT_TRANSFORMED : self::RESULT_ABSTAIN;
+
+        return $result;
     }
 
     /**
