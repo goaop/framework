@@ -16,12 +16,26 @@ namespace Go\Instrument\Transformer;
  */
 interface SourceTransformer
 {
+    /**
+     * Transformer decided to stop whole transformation process, all changes should be reverted
+     */
+    const RESULT_ABORTED = 'aborted';
+
+    /**
+     * Transformer voted to abstain transformation, need to process following transformers to get result
+     */
+    const RESULT_ABSTAIN = 'abstain';
+
+    /**
+     * Source code was transformed, can process next transformers if needed
+     */
+    const RESULT_TRANSFORMED = 'transformed';
 
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return void|bool Return false if transformation should be stopped
+     * @return int See RESULT_XXX constants in the interface
      */
     public function transform(StreamMetaData $metadata);
 }

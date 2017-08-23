@@ -51,13 +51,13 @@ class MagicConstantTransformer extends BaseSourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return void|bool Return false if transformation should be stopped
+     * @return int See RESULT_XXX constants in the interface
      */
     public function transform(StreamMetaData $metadata)
     {
         // Make the job only when we use cache directory
         if (!self::$rewriteToPath) {
-            return;
+            return self::RESULT_ABSTAIN;
         }
 
         $hasReflectionFilename = strpos($metadata->source, 'getFileName') !== false;
@@ -65,7 +65,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
             (strpos($metadata->source, '__FILE__') !== false);
 
         if (!$hasMagicConstants && !$hasReflectionFilename) {
-            return;
+            return self::RESULT_ABSTAIN;
         }
 
         // Resolve magic constants
@@ -81,6 +81,8 @@ class MagicConstantTransformer extends BaseSourceTransformer
                 $metadata->source
             );
         }
+
+        return self::RESULT_TRANSFORMED;
     }
 
     /**
