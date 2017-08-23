@@ -88,7 +88,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             $resolvedThisPointcut = str_replace('$this', get_class($aspect), $metaInformation->value);
             $stream = $this->pointcutLexer->lex($resolvedThisPointcut);
         } catch (RecognitionException $e) {
-            $message = "Can not recognize the lexical structure `%s` before %s, defined in %s:%d";
+            $message = 'Can not recognize the lexical structure `%s` before %s, defined in %s:%d';
             $message = sprintf(
                 $message,
                 $metaInformation->value,
@@ -122,8 +122,8 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             $pointcut = $this->pointcutParser->parse($stream);
         } catch (UnexpectedTokenException $e) {
             $token   = $e->getToken();
-            $message = "Unexpected token %s in the `%s` before %s, defined in %s:%d." . PHP_EOL;
-            $message .= "Expected one of: %s";
+            $message = 'Unexpected token %s in the `%s` before %s, defined in %s:%d.' . PHP_EOL;
+            $message .= 'Expected one of: %s';
             $message = sprintf(
                 $message,
                 $token->getValue(),

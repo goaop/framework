@@ -23,7 +23,7 @@ class NamespacedReflectionFunction extends ReflectionFunction
      *
      * @var string
      */
-    private $namespace = '';
+    private $namespace;
 
     /**
      * Extends the logic with passing the namespace name

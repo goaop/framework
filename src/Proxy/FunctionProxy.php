@@ -140,7 +140,7 @@ class FunctionProxy extends AbstractProxy
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->namespace->getName() . "',"
-                . var_export($this->advices, true) . ");";
+                . var_export($this->advices, true) . ');';
     }
 
     /**

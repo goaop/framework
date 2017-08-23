@@ -48,8 +48,8 @@ class PointcutBuilder
      */
     public function before(string $pointcutExpression, Closure $advice)
     {
-        $advice = new BeforeInterceptor($advice, 0, $pointcutExpression);
-        $this->registerAdviceInContainer($pointcutExpression, $advice);
+        $interceptor = new BeforeInterceptor($advice, 0, $pointcutExpression);
+        $this->registerAdviceInContainer($pointcutExpression, $interceptor);
     }
 
     /**
@@ -60,8 +60,8 @@ class PointcutBuilder
      */
     public function after(string $pointcutExpression, Closure $advice)
     {
-        $advice = new AfterInterceptor($advice, 0, $pointcutExpression);
-        $this->registerAdviceInContainer($pointcutExpression, $advice);
+        $interceptor = new AfterInterceptor($advice, 0, $pointcutExpression);
+        $this->registerAdviceInContainer($pointcutExpression, $interceptor);
     }
 
     /**
@@ -72,8 +72,8 @@ class PointcutBuilder
      */
     public function afterThrowing(string $pointcutExpression, Closure $advice)
     {
-        $advice = new AfterThrowingInterceptor($advice, 0, $pointcutExpression);
-        $this->registerAdviceInContainer($pointcutExpression, $advice);
+        $interceptor = new AfterThrowingInterceptor($advice, 0, $pointcutExpression);
+        $this->registerAdviceInContainer($pointcutExpression, $interceptor);
     }
 
     /**
@@ -84,8 +84,8 @@ class PointcutBuilder
      */
     public function around(string $pointcutExpression, Closure $advice)
     {
-        $advice = new AroundInterceptor($advice, 0, $pointcutExpression);
-        $this->registerAdviceInContainer($pointcutExpression, $advice);
+        $interceptor = new AroundInterceptor($advice, 0, $pointcutExpression);
+        $this->registerAdviceInContainer($pointcutExpression, $interceptor);
     }
 
     /**
@@ -97,8 +97,8 @@ class PointcutBuilder
      */
     public function declareError(string $pointcutExpression, string $message, int $level = E_USER_ERROR)
     {
-        $advice = new DeclareErrorInterceptor($message, $level, $pointcutExpression);
-        $this->registerAdviceInContainer($pointcutExpression, $advice);
+        $interceptor = new DeclareErrorInterceptor($message, $level, $pointcutExpression);
+        $this->registerAdviceInContainer($pointcutExpression, $interceptor);
     }
 
 

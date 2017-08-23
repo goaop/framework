@@ -129,7 +129,7 @@ BODY;
                 $this->getMethodAliasesCode()
             ) . "\n" . // Use traits and aliases section
             $this->indent(implode("\n", $this->methodsCode)) . "\n" . // Method definitions
-            "}" // End of trait body
+            '}' // End of trait body
         );
 
         return $classCode
@@ -137,7 +137,7 @@ BODY;
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->class->name . "',"
-                . var_export($this->advices, true) . ");";
+                . var_export($this->advices, true) . ');';
     }
 
     /**

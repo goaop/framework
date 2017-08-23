@@ -83,9 +83,9 @@ abstract class Container implements AspectContainer
         }
         if (is_callable($this->values[$id])) {
             return $this->values[$id]($this);
-        } else {
-            return $this->values[$id];
         }
+
+        return $this->values[$id];
     }
 
     /**

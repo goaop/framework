@@ -97,7 +97,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                 break;
 
             default:
-                throw new \UnexpectedValueException("Unsupported pointcut class: " . get_class($pointcut));
+                throw new \UnexpectedValueException('Unsupported pointcut class: ' . get_class($pointcut));
 
         }
 

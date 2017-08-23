@@ -88,7 +88,7 @@ class Enumerator
 
             if ($file->getExtension() !== 'php') {
                 return false;
-            };
+            }
 
             $fullPath = $this->getFileFullPath($file);
             // Do not touch files that not under rootDirectory

@@ -113,7 +113,7 @@ class ClassProxy extends AbstractProxy
      * Generates an child code by parent class reflection and joinpoints for it
      *
      * @param ReflectionClass $parent Parent class reflection
-     * @param array|Advice[] $classAdvices List of advices for class
+     * @param array|Advice[][] $classAdvices List of advices for class
      *
      * @throws \InvalidArgumentException if there are unknown type of advices
      */
@@ -423,13 +423,13 @@ class ClassProxy extends AbstractProxy
             ($this->traits ? $this->indent('use ' . implode(', ', $this->traits) . ';' . "\n") : '') . "\n" . // Traits list
             $this->indent(implode("\n", $this->propertiesCode)) . "\n" . // Property definitions
             $this->indent(implode("\n", $this->methodsCode)) . "\n" . // Method definitions
-            "}" // End of class definition
+            '}' // End of class definition
         );
 
         return $classCode
             // Inject advices on call
             . PHP_EOL
-            . '\\' . __CLASS__ . "::injectJoinPoints(" . $this->class->getShortName() . "::class);";
+            . '\\' . __CLASS__ . '::injectJoinPoints(' . $this->class->getShortName() . '::class);';
     }
 
     /**
@@ -466,12 +466,11 @@ class ClassProxy extends AbstractProxy
         }
         $assocProperties = $this->indent(implode(',' . PHP_EOL, $assocProperties));
         $listProperties  = $this->indent(implode(',' . PHP_EOL, $listProperties));
+        $parentCall      = '';
         if (isset($this->methodsCode['__construct'])) {
             $parentCall = $this->getJoinpointInvocationBody($constructor);
         } elseif ($isCallParent) {
             $parentCall = '\call_user_func_array(["parent", __FUNCTION__], \func_get_args());';
-        } else {
-            $parentCall = '';
         }
 
         return <<<CTOR

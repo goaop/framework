@@ -48,7 +48,7 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
         // Rebind the closure if scope (class name) was changed since last time
         if ($this->previousScope !== $this->instance) {
             if ($this->closureToCall === null) {
-                $this->closureToCall = $this->getStaticInvoker($this->className, $this->reflectionMethod->name);
+                $this->closureToCall = static::getStaticInvoker($this->className, $this->reflectionMethod->name);
             }
             $this->closureToCall = $this->closureToCall->bindTo(null, $this->instance);
             $this->previousScope = $this->instance;

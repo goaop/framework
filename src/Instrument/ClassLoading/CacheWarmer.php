@@ -67,11 +67,12 @@ class CacheWarmer
             throw new \ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
 
-        $errors       = [];
-        $displayException = \Closure::bind(function ($exception, $path) use (&$errors) {
+        $errors = [];
+
+        $displayException = function (\Exception $exception, $path) use (&$errors) {
             $this->output->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: %s', $path));
             $errors[$path] = $exception->getMessage();
-        }, $this);
+        };
 
         foreach ($iterator as $file) {
             $path = $file->getRealPath();

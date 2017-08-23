@@ -122,8 +122,8 @@ abstract class AbstractProxy
             ($parameter->isPassedByReference() ? '&' : '') . // By reference sign
             ($parameter->isVariadic() ? '...' : '') . // Variadic symbol
             '$' . // Variable symbol
-            ($parameter->name) . // Name of the argument
-            ($defaultValue !== null ? (" = " . $defaultValue) : '') // Default value if present
+            $parameter->name . // Name of the argument
+            ($defaultValue !== null ? (' = ' . $defaultValue) : '') // Default value if present
         );
 
         return $code;
@@ -216,7 +216,7 @@ abstract class AbstractProxy
             $functionLike->name . // Name of the function
             '(' . // Start of parameters list
             implode(', ', $this->getParameters($functionLike->getParameters())) . // List of parameters
-            ")" . // End of parameters list
+            ')' . // End of parameters list
             ($reflectionReturnType ? " : $reflectionReturnType" : '') . // Return type, if present
             "\n" .
             "{\n" . // Start of method body

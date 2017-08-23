@@ -36,8 +36,8 @@ class DebugAspectCommand extends BaseAspectCommand
         parent::configure();
         $this
             ->setName('debug:aspect')
-            ->addOption('aspect', null, InputOption::VALUE_OPTIONAL, "Optional aspect name to filter")
-            ->setDescription("Provides an interface for querying the information about aspects")
+            ->addOption('aspect', null, InputOption::VALUE_OPTIONAL, 'Optional aspect name to filter')
+            ->setDescription('Provides an interface for querying the information about aspects')
             ->setHelp(<<<EOT
 Allows to query an information about enabled aspects.
 EOT

@@ -36,10 +36,9 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
      */
     public function __construct(string $className, string $type, array $advices)
     {
-        if (strpos($className, AspectContainer::AOP_PROXIED_SUFFIX)) {
-            $originalClass = substr($className, 0, -strlen(AspectContainer::AOP_PROXIED_SUFFIX));
-        } else {
-            $originalClass = $className;
+        $originalClass = $className;
+        if (strpos($originalClass, AspectContainer::AOP_PROXIED_SUFFIX)) {
+            $originalClass = substr($originalClass, 0, -strlen(AspectContainer::AOP_PROXIED_SUFFIX));
         }
         $this->reflectionClass = new \ReflectionClass($originalClass);
         parent::__construct($advices);
@@ -100,7 +99,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
     final public function __toString()
     {
         return sprintf(
-            "staticinitialization(%s)",
+            'staticinitialization(%s)',
             $this->reflectionClass->getName()
         );
     }

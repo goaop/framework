@@ -35,7 +35,7 @@ class AdviceMatcher
      *
      * @var bool
      */
-    private $isInterceptFunctions = false;
+    private $isInterceptFunctions;
 
     /**
      * Constructor
@@ -97,10 +97,9 @@ class AdviceMatcher
         $classAdvices = [];
         $parentClass  = $class->getParentClass();
 
+        $originalClass = $class;
         if ($parentClass && preg_match('/' . AspectContainer::AOP_PROXIED_SUFFIX . '$/', $parentClass->name)) {
             $originalClass = $parentClass;
-        } else {
-            $originalClass = $class;
         }
 
         foreach ($advisors as $advisorId => $advisor) {

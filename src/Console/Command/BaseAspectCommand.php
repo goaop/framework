@@ -36,7 +36,7 @@ class BaseAspectCommand extends Command
      */
     protected function configure()
     {
-        $this->addArgument('loader', InputArgument::REQUIRED, "Path to the aspect loader file");
+        $this->addArgument('loader', InputArgument::REQUIRED, 'Path to the aspect loader file');
     }
 
     /**
