@@ -10,7 +10,7 @@
 
 namespace Go\Core;
 
-use Doctrine\Common\Cache\PhpFileCache;
+use Doctrine\Common\Cache\FilesystemCache;
 use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
@@ -216,9 +216,9 @@ abstract class AspectKernel
         $options['excludePaths']   = PathResolver::realpath($options['excludePaths']);
 
         if (null === $options['annotationCache']) {
-            $options['annotationCache'] = new PhpFileCache(
+            $options['annotationCache'] = new FilesystemCache(
                 $options['cacheDir'] . DIRECTORY_SEPARATOR . '_annotations' . DIRECTORY_SEPARATOR,
-                '.php',
+                '.annotations.cache',
                 0777 & (~$options['cacheFileMode'])
             );
         }
