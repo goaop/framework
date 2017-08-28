@@ -196,7 +196,19 @@ Now you are ready to use the power of aspects! Feel free to change anything ever
 
 ### 6. Optional configurations
 
-#### 6.1 Support for weaving Doctrine entities
+#### 6.1 Custom annotation cache
+
+By default, Go! AOP uses `Doctrine\Common\Cache\PhpFileCache` for caching
+annotations. However, should you need to use any other caching engine
+for annotation, you may configure cache driver via `annotationCache` configuration
+option of your application aspect kernel. Only requirement is
+that cache driver implements `Doctrine\Common\Cache\Cache` interface.
+
+This can be very usefull when deploying to read-only filesystems. In that
+case, you may use, per example, `Doctrine\Common\Cache\ArrayCache` or some
+memory-based cache driver.
+
+#### 6.2 Support for weaving Doctrine entities (experimental, alpha)
 
 Weaving Doctrine entities can not be supported out of the box due to the fact
 that Go! AOP generates two sets of classes for each weaved entity, a concrete class and

@@ -10,7 +10,7 @@
 
 namespace Go\Core;
 
-use Doctrine\Common\Annotations\FileCacheReader;
+use Doctrine\Common\Annotations\CachedReader;
 use ReflectionClass;
 use Go\Aop;
 use Go\Aop\Pointcut\PointcutLexer;
@@ -91,12 +91,11 @@ class GoAspectContainer extends Container implements AspectContainer
         $this->share('aspect.annotation.reader', function(Container $container) {
             $options = $container->get('kernel.options');
             $reader  = new AnnotationReader();
-            if (!empty($options['cacheDir'])) {
-                $reader = new FileCacheReader(
+            if (!empty($options['annotationCache'])) {
+                $reader = new CachedReader(
                     $reader,
-                    $options['cacheDir'] . DIRECTORY_SEPARATOR . '_annotations' . DIRECTORY_SEPARATOR,
-                    $options['debug'],
-                    0777 & (~$options['cacheFileMode'])
+                    $options['annotationCache'],
+                    $options['debug']
                 );
             }
 
