@@ -202,7 +202,7 @@ abstract class AspectKernel
     {
         $options = array_replace($this->getDefaultOptions(), $options);
 
-        $options['cacheDir'] = PathResolver::realpath($options['cacheDir'], $options['debug']);
+        $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
 
         if (!$options['cacheDir']) {
             throw new \RuntimeException('You need to provide valid cache directory for Go! AOP framework.');
