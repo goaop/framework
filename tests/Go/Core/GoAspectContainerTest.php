@@ -38,6 +38,7 @@ class GoAspectContainerTest extends TestCase
         return [
             ['aspect.loader'],
             ['aspect.advice_matcher'],
+            ['aspect.annotation.cache'],
             ['aspect.annotation.reader'],
             ['aspect.pointcut.lexer'],
             ['aspect.pointcut.parser'],
