@@ -37,6 +37,7 @@ class GoAspectContainerTest extends TestCase
         return array(
             array('aspect.loader'),
             array('aspect.advice_matcher'),
+            array('aspect.annotation.cache'),
             array('aspect.annotation.reader'),
             array('aspect.pointcut.lexer'),
             array('aspect.pointcut.parser'),

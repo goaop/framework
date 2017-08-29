@@ -198,13 +198,13 @@ Now you are ready to use the power of aspects! Feel free to change anything ever
 
 #### 6.1 Custom annotation cache
 
-By default, Go! AOP uses `Doctrine\Common\Cache\PhpFileCache` for caching
-annotations. However, should you need to use any other caching engine
+By default, Go! AOP uses `Doctrine\Common\Cache\FilesystemCache` for caching
+annotations. However, if you need to use any other caching engine
 for annotation, you may configure cache driver via `annotationCache` configuration
 option of your application aspect kernel. Only requirement is
 that cache driver implements `Doctrine\Common\Cache\Cache` interface.
 
-This can be very usefull when deploying to read-only filesystems. In that
+This can be very useful when deploying to read-only filesystems. In that
 case, you may use, per example, `Doctrine\Common\Cache\ArrayCache` or some
 memory-based cache driver.
 

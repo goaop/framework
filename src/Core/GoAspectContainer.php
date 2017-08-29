@@ -11,6 +11,7 @@
 namespace Go\Core;
 
 use Doctrine\Common\Annotations\CachedReader;
+use Doctrine\Common\Cache as DoctrineCache;
 use ReflectionClass;
 use Go\Aop;
 use Go\Aop\Pointcut\PointcutLexer;
@@ -88,19 +89,35 @@ class GoAspectContainer extends Container implements AspectContainer
             );
         });
 
-        $this->share('aspect.annotation.reader', function(Container $container) {
+        $this->share('aspect.annotation.cache', function(Container $container) {
             $options = $container->get('kernel.options');
-            $reader  = new AnnotationReader();
+
             if (!empty($options['annotationCache'])) {
-                $reader = new CachedReader(
-                    $reader,
-                    $options['annotationCache'],
-                    $options['debug']
+                return $options['annotationCache'];
+            }
+
+            if (!empty($options['cacheDir'])) {
+                return new DoctrineCache\FilesystemCache(
+                    $options['cacheDir'] . DIRECTORY_SEPARATOR . '_annotations' . DIRECTORY_SEPARATOR,
+                    '.annotations.cache',
+                    0777 & (~$options['cacheFileMode'])
                 );
             }
 
-            return $reader;
+            return new DoctrineCache\ArrayCache();
         });
+
+        $this->share('aspect.annotation.reader', function(Container $container) {
+            $options = $container->get('kernel.options');
+            $options['debug'] = isset($options['debug']) ? $options['debug'] : false;
+
+            return new CachedReader(
+                new AnnotationReader(),
+                $container->get('aspect.annotation.cache'),
+                $options['debug']
+            );
+        });
+
         $this->share('aspect.cache.path.manager', function(Container $container) {
             return new CachePathManager($container->get('kernel'));
         });
