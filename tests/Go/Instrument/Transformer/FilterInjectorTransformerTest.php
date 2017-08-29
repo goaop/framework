@@ -27,19 +27,19 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
     {
         if (!self::$transformer) {
             $kernelMock = $this->getKernelMock(
-                array(
+                [
                     'cacheDir'      => null,
                     'cacheFileMode' => 0770,
                     'appDir'        => '',
                     'debug'         => false,
                     'features'      => 0
-                ),
+                ],
                 $this->createMock(GoAspectContainer::class)
             );
             self::$transformer = new FilterInjectorTransformer(
                 $kernelMock,
                 'unit.test',
-                $this->getMockBuilder(CachePathManager::class)->setConstructorArgs(array($kernelMock))->getMock()
+                $this->getMockBuilder(CachePathManager::class)->setConstructorArgs([$kernelMock])->getMock()
             );
         }
         $stream = fopen('php://input', 'r');
@@ -61,7 +61,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
             false,
             true,
             true,
-            array('getOptions', 'getContainer')
+            ['getOptions', 'getContainer']
         );
         $mock->expects($this->any())
             ->method('getOptions')

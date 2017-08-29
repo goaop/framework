@@ -34,7 +34,7 @@ class AdviceMatcher
      *
      * @var bool
      */
-    private $isInterceptFunctions = false;
+    private $isInterceptFunctions;
 
     /**
      * Constructor
@@ -59,7 +59,7 @@ class AdviceMatcher
      */
     public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors)
     {
-        if (!$this->isInterceptFunctions || $namespace->getName() == 'no-namespace') {
+        if (!$this->isInterceptFunctions || $namespace->getName() === 'no-namespace') {
             return [];
         }
 
@@ -96,10 +96,9 @@ class AdviceMatcher
         $classAdvices = [];
         $parentClass  = $class->getParentClass();
 
+        $originalClass = $class;
         if ($parentClass && preg_match('/' . AspectContainer::AOP_PROXIED_SUFFIX . '$/', $parentClass->name)) {
             $originalClass = $parentClass;
-        } else {
-            $originalClass = $class;
         }
 
         foreach ($advisors as $advisorId => $advisor) {

@@ -47,7 +47,7 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
         $this->internalClassFilter = $pointcut->getClassFilter();
         $this->internalPointFilter = $pointcut;
         if (!($this->internalPointFilter->getKind() & PointFilter::KIND_METHOD)) {
-            throw new \InvalidArgumentException("Only method filters are valid for control flow");
+            throw new \InvalidArgumentException('Only method filters are valid for control flow');
         }
     }
 

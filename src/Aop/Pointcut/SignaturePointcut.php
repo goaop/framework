@@ -59,12 +59,12 @@ class SignaturePointcut implements Pointcut
     {
         $this->filterKind = $filterKind;
         $this->name       = $name;
-        $this->regexp     = strtr(preg_quote($this->name, '/'), array(
+        $this->regexp     = strtr(preg_quote($this->name, '/'), [
             '\\*'    => '[^\\\\]+?',
             '\\*\\*' => '.+?',
             '\\?'    => '.',
             '\\|'    => '|'
-        ));
+        ]);
         $this->modifierFilter = $modifierFilter;
     }
 

@@ -23,7 +23,7 @@ class AndPointFilter implements PointFilter
      *
      * @var int
      */
-    private $kind = 0;
+    private $kind;
 
     /**
      * First part of filter

@@ -56,28 +56,8 @@ class AnnotatedReflectionMethod extends ReflectionMethod
     {
         if (!self::$annotationReader) {
             self::$annotationReader = AspectKernel::getInstance()->getContainer()->get('aspect.annotation.reader');
-        };
-
-        return self::$annotationReader;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getClosure($object)
-    {
-        if (!defined('HHVM_VERSION')) {
-            return parent::getClosure($object);
         }
 
-        $className  = $this->getDeclaringClass()->name;
-        $methodName = $this->name;
-        $closure = function (...$args) use ($methodName, $className) {
-            $result = forward_static_call_array(array($className, $methodName), $args);
-
-            return $result;
-        };
-
-        return $closure->bindTo($object, $this->class);
+        return self::$annotationReader;
     }
 }

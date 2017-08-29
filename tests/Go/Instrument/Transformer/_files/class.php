@@ -14,7 +14,7 @@ class TestClass {
     public function publicMethodDynamicArguments($a, &$b)
     {
         $args = func_get_args();
-        call_user_func_array(array($this, 'publicMethodFixedArguments'), $args);
+        call_user_func_array([$this, 'publicMethodFixedArguments'], $args);
     }
 
     public function publicMethodFixedArguments($a, $b, $c = null) {}

@@ -173,7 +173,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     final public function &__invoke($instance, $accessType, &$originalValue, $newValue = NAN)
     {
         if ($this->level) {
-            array_push($this->stackFrames, [$this->instance, $this->accessType, &$this->value, &$this->newValue]);
+            $this->stackFrames[] = [$this->instance, $this->accessType, &$this->value, &$this->newValue];
         }
 
         ++$this->level;
@@ -192,11 +192,11 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
             list($this->instance, $this->accessType, $this->value, $this->newValue) = array_pop($this->stackFrames);
         }
 
-        if ($accessType == self::READ) {
+        if ($accessType === self::READ) {
             $result = &$this->value;
         } else {
             $result = &$this->newValue;
-        };
+        }
 
         return $result;
 
@@ -232,8 +232,8 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     final public function __toString()
     {
         return sprintf(
-            "%s(%s%s%s)",
-            $this->accessType == self::READ ? 'get' : 'set',
+            '%s(%s%s%s)',
+            $this->accessType === self::READ ? 'get' : 'set',
             is_object($this->instance) ? get_class($this->instance) : $this->instance,
             $this->reflectionProperty->isStatic() ? '::' : '->',
             $this->reflectionProperty->name

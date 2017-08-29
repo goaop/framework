@@ -150,7 +150,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     final public function __toString()
     {
         return sprintf(
-            "initialization(%s)",
+            'initialization(%s)',
             $this->class->name
         );
     }

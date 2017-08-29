@@ -23,7 +23,7 @@ class AfterInterceptorTest extends AbstractInterceptorTest
         $result = $interceptor->invoke($invocation);
 
         $this->assertEquals('invocation', $result, "Advice should not affect the return value of invocation");
-        $this->assertEquals(array('invocation', 'advice'), $sequence, "After advice should be invoked after invocation");
+        $this->assertEquals(['invocation', 'advice'], $sequence, "After advice should be invoked after invocation");
     }
 
     public function testAdviceIsCalledAfterExceptionInInvocation()
@@ -37,7 +37,7 @@ class AfterInterceptorTest extends AbstractInterceptorTest
         try {
             $interceptor->invoke($invocation);
         } catch (\Exception $e) {
-            $this->assertEquals(array('invocation', 'advice'), $sequence, "After advice should be invoked after invocation");
+            $this->assertEquals(['invocation', 'advice'], $sequence, "After advice should be invoked after invocation");
             throw $e;
         }
     }

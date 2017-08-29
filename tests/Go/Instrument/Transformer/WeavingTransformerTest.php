@@ -33,24 +33,24 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $container = $this->getContainerMock();
         $reader    = $this->createMock(Reader::class);
-        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs(array($container, $reader))->getMock();
+        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs([$container, $reader])->getMock();
 
         $this->adviceMatcher = $this->getAdviceMatcherMock();
         $this->kernel        = $this->getKernelMock(
-            array(
+            [
                 'appDir'        => dirname(__DIR__),
                 'cacheDir'      => null,
                 'cacheFileMode' => 0770,
                 'includePaths'  => [],
                 'excludePaths'  => []
-            ),
+            ],
             $container
         );
 
         $this->transformer = new WeavingTransformer(
             $this->kernel,
             $this->adviceMatcher,
-            $this->getMockBuilder(CachePathManager::class)->setConstructorArgs(array($this->kernel))->getMock(),
+            $this->getMockBuilder(CachePathManager::class)->setConstructorArgs([$this->kernel])->getMock(),
             $loader
         );
     }
@@ -156,19 +156,19 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $container = $this->getContainerMock();
         $reader    = $this->createMock(Reader::class);
-        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs(array($container, $reader))->getMock();
+        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs([$container, $reader])->getMock();
 
         $this->transformer = new WeavingTransformer(
             $this->getKernelMock(
-                array(
+                [
                     'appDir'       => dirname(__DIR__),
-                    'includePaths' => array(__DIR__),
+                    'includePaths' => [__DIR__],
                     'excludePaths' => []
-                ),
+                ],
                 $container
             ),
             $this->adviceMatcher,
-            $this->getMockBuilder(CachePathManager::class)->setConstructorArgs(array($this->kernel))->getMock(),
+            $this->getMockBuilder(CachePathManager::class)->setConstructorArgs([$this->kernel])->getMock(),
             $loader
         );
         $metadata = $this->loadTest('class');
@@ -202,10 +202,10 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     {
         return strtr(
             preg_replace('/\s+$/m', '', $value),
-            array(
+            [
                 "\r\n" => PHP_EOL,
                 "\n"   => PHP_EOL,
-            )
+            ]
         );
     }
 
@@ -225,7 +225,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             false,
             true,
             true,
-            array('getOptions', 'getContainer', 'hasFeature')
+            ['getOptions', 'getContainer', 'hasFeature']
         );
         $mock->expects($this->any())
             ->method('getOptions')
@@ -253,7 +253,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             ->method('getAdvicesForClass')
             ->will(
                 $this->returnCallback(function (\ReflectionClass $refClass) {
-                    $advices  = array();
+                    $advices  = [];
                     foreach ($refClass->getMethods() as $method) {
                         $advisorId = "advisor.{$refClass->name}->{$method->name}";
                         $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
@@ -274,14 +274,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     private function loadTest($name)
     {
         $fileName = __DIR__ . '/_files/' . $name . '.php';
-
-        if (defined("HHVM_VERSION")) {
-            // Workaround for https://github.com/facebook/hhvm/issues/2485
-            $stream = fopen($fileName, 'r');
-            stream_filter_append($stream, 'string.tolower');
-        } else {
-            $stream = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
-        }
+        $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
         $source   = file_get_contents($fileName);
         $metadata = new StreamMetaData($stream, $source);
         fclose($stream);
@@ -301,9 +294,9 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $container
             ->expects($this->any())
             ->method('getByTag')
-            ->will($this->returnValueMap(array(
-                array('advisor', [])
-            )));
+            ->will($this->returnValueMap([
+                ['advisor', []]
+            ]));
 
         return $container;
     }

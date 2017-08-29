@@ -1,8 +1,0 @@
-application: go-aop
-version: 1
-runtime: php
-api_version: 1
-
-handlers:
-    - url: /.*
-        script: demos/index.php
