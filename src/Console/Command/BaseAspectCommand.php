@@ -44,7 +44,7 @@ class BaseAspectCommand extends Command
      *
      * Aspect kernel is loaded by executing loader and fetching singleton instance.
      * If your application environment initializes aspect kernel differently, you may
-     * modify this metod to get aspect kernel suitable to your needs.
+     * modify this method to get aspect kernel suitable to your needs.
      *
      * @param InputInterface $input
      * @param OutputInterface $output
