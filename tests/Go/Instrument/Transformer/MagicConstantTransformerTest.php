@@ -29,10 +29,6 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
                 'appDir'   => dirname(__DIR__),
             ])
         );
-
-        $stream = fopen('php://filter/string.tolower/resource=' . __FILE__, 'r');
-        $this->metadata = new StreamMetaData($stream);
-        fclose($stream);
     }
 
     /**
@@ -61,41 +57,42 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
 
     public function testTransformerReturnsWithoutMagicConsts()
     {
-        $this->metadata->source = '<?php echo "simple test, no magic constants" ?>';
-        $expected = $this->metadata->source;
-        $this->transformer->transform($this->metadata);
-        $this->assertSame($expected, $this->metadata->source);
+        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, no magic constants" ?>');
+        $expected = $metadata->source;
+        $this->transformer->transform($metadata);
+        $this->assertSame($expected, $metadata->source);
     }
 
     public function testTransformerCanResolveDirMagicConst()
     {
-        $this->metadata->source = '<?php echo __DIR__; ?>';
+        $metadata = new StreamMetaData(fopen(__FILE__, 'rb'), '<?php echo __DIR__; ?>');
         $expected = '<?php echo \''.__DIR__.'\'; ?>';
-        $this->transformer->transform($this->metadata);
-        $this->assertEquals($expected, $this->metadata->source);
+        $this->transformer->transform($metadata);
+        $this->assertEquals($expected, $metadata->source);
     }
 
     public function testTransformerCanResolveFileMagicConst()
     {
-        $this->metadata->source = '<?php echo __FILE__; ?>';
+        $metadata = new StreamMetaData(fopen(__FILE__, 'rb'), '<?php echo __FILE__; ?>');
         $expected = '<?php echo \''.__FILE__.'\'; ?>';
-        $this->transformer->transform($this->metadata);
-        $this->assertEquals($expected, $this->metadata->source);
+        $this->transformer->transform($metadata);
+        $this->assertEquals($expected, $metadata->source);
     }
 
     public function testTransformerDoesNotReplaceStringWithConst()
     {
+        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "__FILE__"; ?>');
         $expected = '<?php echo "__FILE__"; ?>';
-        $this->metadata->source = $expected;
-        $this->transformer->transform($this->metadata);
-        $this->assertEquals($expected, $this->metadata->source);
+        $this->transformer->transform($metadata);
+        $this->assertEquals($expected, $metadata->source);
     }
 
     public function testTransformerWrapsReflectionFileName()
     {
-        $this->metadata->source = '<?php $class = new ReflectionClass("stdClass"); echo $class->getFileName(); ?>';
-        $this->transformer->transform($this->metadata);
-        $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $this->metadata->source);
+        $source   = '<?php $class = new ReflectionClass("stdClass"); echo $class->getFileName(); ?>';
+        $metadata = new StreamMetaData(fopen('php://input', 'rb'), $source);
+        $this->transformer->transform($metadata);
+        $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $metadata->source);
     }
 
     public function testTransformerResolvesFileName()
