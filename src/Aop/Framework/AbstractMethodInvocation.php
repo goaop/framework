@@ -77,7 +77,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
         }
 
         if (!empty($variadicArguments)) {
-            $arguments = array_merge($arguments, $variadicArguments);
+            $arguments = \array_merge($arguments, $variadicArguments);
         }
 
         try {
@@ -87,16 +87,14 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
             $this->instance  = $instance;
             $this->arguments = $arguments;
 
-            $result = $this->proceed();
+            return $this->proceed();
         } finally {
             --$this->level;
-        }
 
-        if ($this->level > 0) {
-            list($this->arguments, $this->instance, $this->current) = array_pop($this->stackFrames);
+            if ($this->level > 0) {
+                list($this->arguments, $this->instance, $this->current) = \array_pop($this->stackFrames);
+            }
         }
-
-        return $result;
     }
 
     /**
