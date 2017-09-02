@@ -37,9 +37,9 @@ abstract class AspectKernel
      *
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'features' => 0
-    );
+    ];
 
     /**
      * Single instance of kernel
@@ -167,6 +167,7 @@ abstract class AspectKernel
      *   appDir   - string Path to the application root directory.
      *   cacheDir - string Path to the cache directory where compiled classes will be stored
      *   cacheFileMode - integer Binary mask of permission bits that is set to cache files
+     *   annotationCache - Doctrine\Common\Cache\Cache. If not provided, Doctrine\Common\Cache\PhpFileCache is used.
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
@@ -175,17 +176,17 @@ abstract class AspectKernel
      */
     protected function getDefaultOptions()
     {
-        return array(
+        return [
             'debug'                  => false,
             'appDir'                 => __DIR__ . '/../../../../../',
             'cacheDir'               => null,
             'cacheFileMode'          => 0770 & ~umask(), // Respect user umask() policy
             'features'               => 0,
-
+            'annotationCache'        => null,
             'includePaths'           => [],
             'excludePaths'           => [],
             'containerClass'         => static::$containerClass,
-        );
+        ];
     }
 
 
@@ -199,16 +200,19 @@ abstract class AspectKernel
     protected function normalizeOptions(array $options)
     {
         $options = array_replace($this->getDefaultOptions(), $options);
-        if ($options['cacheDir']) {
-            $options['excludePaths'][] = $options['cacheDir'];
-        }
-        $options['excludePaths'][] = __DIR__ . '/../';
 
-        $options['appDir']   = PathResolver::realpath($options['appDir']);
         $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
-        $options['cacheFileMode'] = (int) $options['cacheFileMode'];
-        $options['includePaths']  = PathResolver::realpath($options['includePaths']);
-        $options['excludePaths']  = PathResolver::realpath($options['excludePaths']);
+
+        if (!$options['cacheDir']) {
+            throw new \RuntimeException('You need to provide valid cache directory for Go! AOP framework.');
+        }
+
+        $options['excludePaths'][] = $options['cacheDir'];
+        $options['excludePaths'][] = __DIR__ . '/../';
+        $options['appDir']         = PathResolver::realpath($options['appDir']);
+        $options['cacheFileMode']  = (int) $options['cacheFileMode'];
+        $options['includePaths']   = PathResolver::realpath($options['includePaths']);
+        $options['excludePaths']   = PathResolver::realpath($options['excludePaths']);
 
         return $options;
     }
@@ -254,9 +258,9 @@ abstract class AspectKernel
             return $transformers;
         };
 
-        return array(
+        return [
             new CachingTransformer($this, $sourceTransformers, $cacheManager)
-        );
+        ];
     }
 
     /**

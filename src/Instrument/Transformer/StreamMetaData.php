@@ -131,7 +131,7 @@ class StreamMetaData
     public function __construct($stream, $source = null)
     {
         if (!is_resource($stream)) {
-            throw new InvalidArgumentException("Stream should be valid resource");
+            throw new InvalidArgumentException('Stream should be valid resource');
         }
         $metadata     = stream_get_meta_data($stream);
         $this->source = $source;

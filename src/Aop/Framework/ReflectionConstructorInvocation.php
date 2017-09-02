@@ -88,11 +88,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
             return $currentInterceptor->invoke($this);
         }
 
-        if (!$this->constructorArguments) {
-            $this->instance = $this->class->newInstance();
-        } else {
-            $this->instance = $this->class->newInstanceArgs($this->arguments);
-        }
+        $this->instance = $this->class->newInstance(...$this->arguments);
 
         return $this->instance;
     }
@@ -150,7 +146,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     final public function __toString()
     {
         return sprintf(
-            "initialization(%s)",
+            'initialization(%s)',
             $this->class->name
         );
     }

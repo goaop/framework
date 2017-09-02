@@ -26,14 +26,14 @@ class DeclareErrorInterceptor extends BaseInterceptor
      *
      * @var string
      */
-    private $message = '';
+    private $message;
 
     /**
      * Default level of error
      *
      * @var int
      */
-    private $level = E_USER_NOTICE;
+    private $level;
 
     /**
      * Default constructor for interceptor
@@ -89,10 +89,10 @@ class DeclareErrorInterceptor extends BaseInterceptor
         if (!$adviceMethod) {
             $adviceMethod = function($object, $reflectorName, $message, $level = E_USER_NOTICE) {
                 $class   = is_string($object) ? $object : get_class($object);
-                $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', array(
+                $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', [
                     $class . '->' . $reflectorName,
                     $message
-                ));
+                ]);
                 trigger_error($message, $level);
             };
         }

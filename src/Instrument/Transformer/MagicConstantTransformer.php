@@ -50,7 +50,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return int See RESULT_XXX constants in the interface
+     * @return string See RESULT_XXX constants in the interface
      */
     public function transform(StreamMetaData $metadata)
     {
@@ -94,8 +94,8 @@ class MagicConstantTransformer extends BaseSourceTransformer
     public static function resolveFileName($fileName)
     {
         return str_replace(
-            array(self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'),
-            array(self::$rootPath, ''),
+            [self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'],
+            [self::$rootPath, ''],
             $fileName
         );
     }
@@ -108,15 +108,15 @@ class MagicConstantTransformer extends BaseSourceTransformer
     private function replaceMagicConstants(StreamMetaData $metadata)
     {
         $originalUri = $metadata->uri;
-        $replacement = array(
+        $replacement = [
             T_FILE => $originalUri,
             T_DIR  => dirname($originalUri)
-        );
+        ];
         $tokenStream = token_get_all($metadata->source);
 
         $transformedSource = '';
         foreach ($tokenStream as $token) {
-            list ($token, $value) = (array) $token + array(1 => $token);
+            list ($token, $value) = (array) $token + [1 => $token];
             if (isset($replacement[$token])) {
                 $value = "'" . $replacement[$token] . "'";
             }

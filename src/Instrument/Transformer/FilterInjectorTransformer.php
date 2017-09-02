@@ -71,7 +71,7 @@ class FilterInjectorTransformer implements SourceTransformer
     protected static function configure(AspectKernel $kernel, $filterName, CachePathManager $cacheManager)
     {
         if (self::$kernel) {
-            throw new \RuntimeException("Filter injector can be configured only once.");
+            throw new \RuntimeException('Filter injector can be configured only once.');
         }
         self::$kernel           = $kernel;
         self::$options          = $kernel->getOptions();
@@ -108,7 +108,7 @@ class FilterInjectorTransformer implements SourceTransformer
 
         // If the cache is disabled or no cache yet, then use on-fly method
         if (!$cacheDir || $debug || !file_exists($cachedResource)) {
-            return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
+            return self::PHP_FILTER_READ . self::$filterName . '/resource=' . $resource;
         }
 
         return $cachedResource;
@@ -118,19 +118,19 @@ class FilterInjectorTransformer implements SourceTransformer
      * Wrap all includes into rewrite filter
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return int See RESULT_XXX constants in the interface
+     * @return string See RESULT_XXX constants in the interface
      */
     public function transform(StreamMetaData $metadata)
     {
         if ((strpos($metadata->source, 'include') === false) && (strpos($metadata->source, 'require') === false)) {
             return self::RESULT_ABSTAIN;
         }
-        static $lookFor = array(
+        static $lookFor = [
             T_INCLUDE      => true,
             T_INCLUDE_ONCE => true,
             T_REQUIRE      => true,
             T_REQUIRE_ONCE => true
-        );
+        ];
         $tokenStream = token_get_all($metadata->source);
 
         $transformedSource = '';
@@ -162,13 +162,13 @@ class FilterInjectorTransformer implements SourceTransformer
                 $isTernaryOperator = false;
             }
 
-            if ($isWaitingEnd && !$isTernaryOperator && $insideBracesCount == 0
+            if ($isWaitingEnd && !$isTernaryOperator && $insideBracesCount === 0
                 && ($token === ';' || $token === ',' || $token === ':' || $lastBrace)
             ) {
                 $isWaitingEnd = false;
                 $transformedSource .= ', __DIR__)';
             }
-            list ($token, $value) = (array) $token + array(1 => $token);
+            list ($token, $value) = (array) $token + [1 => $token];
             $transformedSource .= $value;
             if (!$isWaitingEnd && isset($lookFor[$token])) {
                 $isWaitingEnd = true;

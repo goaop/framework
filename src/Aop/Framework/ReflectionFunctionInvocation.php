@@ -97,7 +97,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     final public function __invoke(array $arguments = [], array $variadicArguments = [])
     {
         if ($this->level) {
-            array_push($this->stackFrames, [$this->arguments, $this->current]);
+            $this->stackFrames[] = [$this->arguments, $this->current];
         }
 
         if (!empty($variadicArguments)) {
@@ -128,7 +128,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     final public function __toString()
     {
         return sprintf(
-            "execution(%s())",
+            'execution(%s())',
             $this->reflectionFunction->getName()
         );
     }

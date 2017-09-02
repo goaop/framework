@@ -56,7 +56,7 @@ class Container
     public function share($id, $value, array $tags = [])
     {
         if (!is_callable($value)) {
-            throw new \InvalidArgumentException("Only callable values can be shared in the container");
+            throw new \InvalidArgumentException('Only callable values can be shared in the container');
         }
         $value = function($container) use ($value) {
             static $sharedValue;
@@ -85,9 +85,9 @@ class Container
         }
         if (is_callable($this->values[$id])) {
             return $this->values[$id]($this);
-        } else {
-            return $this->values[$id];
         }
+
+        return $this->values[$id];
     }
 
     /**

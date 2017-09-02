@@ -10,7 +10,8 @@
 
 namespace Go\Core;
 
-use Doctrine\Common\Annotations\FileCacheReader;
+use Doctrine\Common\Annotations\CachedReader;
+use Doctrine\Common\Cache as DoctrineCache;
 use ReflectionClass;
 use Go\Aop;
 use Go\Aop\Pointcut\PointcutLexer;
@@ -88,20 +89,35 @@ class GoAspectContainer extends Container implements AspectContainer
             );
         });
 
-        $this->share('aspect.annotation.reader', function(Container $container) {
+        $this->share('aspect.annotation.cache', function(Container $container) {
             $options = $container->get('kernel.options');
-            $reader  = new AnnotationReader();
+
+            if (!empty($options['annotationCache'])) {
+                return $options['annotationCache'];
+            }
+
             if (!empty($options['cacheDir'])) {
-                $reader = new FileCacheReader(
-                    $reader,
+                return new DoctrineCache\FilesystemCache(
                     $options['cacheDir'] . DIRECTORY_SEPARATOR . '_annotations' . DIRECTORY_SEPARATOR,
-                    $options['debug'],
+                    '.annotations.cache',
                     0777 & (~$options['cacheFileMode'])
                 );
             }
 
-            return $reader;
+            return new DoctrineCache\ArrayCache();
         });
+
+        $this->share('aspect.annotation.reader', function(Container $container) {
+            $options = $container->get('kernel.options');
+            $options['debug'] = isset($options['debug']) ? $options['debug'] : false;
+
+            return new CachedReader(
+                new AnnotationReader(),
+                $container->get('aspect.annotation.cache'),
+                $options['debug']
+            );
+        });
+
         $this->share('aspect.cache.path.manager', function(Container $container) {
             return new CachePathManager($container->get('kernel'));
         });
@@ -140,7 +156,7 @@ class GoAspectContainer extends Container implements AspectContainer
      */
     public function registerPointcut(Aop\Pointcut $pointcut, $id)
     {
-        $this->set("pointcut.{$id}", $pointcut, array('pointcut'));
+        $this->set("pointcut.{$id}", $pointcut, ['pointcut']);
     }
 
     /**
@@ -163,7 +179,7 @@ class GoAspectContainer extends Container implements AspectContainer
      */
     public function registerAdvisor(Aop\Advisor $advisor, $id)
     {
-        $this->set("advisor.{$id}", $advisor, array('advisor'));
+        $this->set("advisor.{$id}", $advisor, ['advisor']);
     }
 
     /**
@@ -186,7 +202,7 @@ class GoAspectContainer extends Container implements AspectContainer
     public function registerAspect(Aop\Aspect $aspect)
     {
         $refAspect = new ReflectionClass($aspect);
-        $this->set("aspect.{$refAspect->name}", $aspect, array('aspect'));
+        $this->set("aspect.{$refAspect->name}", $aspect, ['aspect']);
         $this->addResource($refAspect->getFileName());
     }
 

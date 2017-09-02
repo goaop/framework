@@ -24,19 +24,13 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->transformer = new MagicConstantTransformer(
-            $this->getKernelMock(array(
+            $this->getKernelMock([
                 'cacheDir' => __DIR__,
                 'appDir'   => dirname(__DIR__),
-            ))
+            ])
         );
 
-        if (defined("HHVM_VERSION")) {
-            // Workaround for https://github.com/facebook/hhvm/issues/2485
-            $stream = fopen(__FILE__, 'r');
-            stream_filter_append($stream, 'string.tolower');
-        } else {
-            $stream = fopen('php://filter/string.tolower/resource=' . __FILE__, 'r');
-        }
+        $stream = fopen('php://filter/string.tolower/resource=' . __FILE__, 'r');
         $this->metadata = new StreamMetaData($stream);
         fclose($stream);
     }
@@ -55,7 +49,7 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
             false,
             true,
             true,
-            array('getOptions')
+            ['getOptions']
         );
         $mock->expects($this->any())
             ->method('getOptions')

@@ -71,7 +71,7 @@ class PointcutLexer extends SimpleLexer
         $this->regex('WSP', "/^[ \r\n\t]+/");
 
         // Comments
-        $this->regex('CMT', "|^//.*|");
+        $this->regex('CMT', '|^//.*|');
         $this->skip('CMT', 'WSP');
     }
 }

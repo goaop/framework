@@ -111,11 +111,11 @@ BODY;
             $this->name . "\n" . // Name of the trait
             "{\n" . // Start of trait body
             $this->indent(
-                'use ' . implode(', ', array(-1 => $this->parentClassName) + $this->traits) .
+                'use ' . implode(', ', [-1 => $this->parentClassName] + $this->traits) .
                 $this->getMethodAliasesCode()
             ) . "\n" . // Use traits and aliases section
             $this->indent(implode("\n", $this->methodsCode)) . "\n" . // Method definitions
-            "}" // End of trait body
+            '}' // End of trait body
         );
 
         return $classCode
@@ -123,7 +123,7 @@ BODY;
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->class->name . "',"
-                . var_export($this->advices, true) . ");";
+                . var_export($this->advices, true) . ');';
     }
 
     private function getMethodAliasesCode()

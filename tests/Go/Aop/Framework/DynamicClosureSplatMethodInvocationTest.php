@@ -46,7 +46,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
         $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'passByReference', []);
 
         $value  = 'test';
-        $result = $invocation($child, array(&$value));
+        $result = $invocation($child, [&$value]);
         $this->assertEquals(null, $result);
         $this->assertEquals(null, $value);
     }
@@ -88,7 +88,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
 
         $child->expects($this->exactly(5))->method('recursion')->will($this->returnCallback(
             function ($value, $level) use ($child, $invocation) {
-                return $invocation($child, array($value, $level));
+                return $invocation($child, [$value, $level]);
             }
         ));
 
@@ -108,7 +108,7 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
                 return $object->proceed();
             }));
 
-        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'publicMethod', array($advice));
+        $invocation = new self::$invocationClass(self::FIRST_CLASS_NAME, 'publicMethod', [$advice]);
 
         $result = $invocation($child, []);
         $this->assertEquals('ok', $value);
@@ -117,10 +117,10 @@ class DynamicClosureSplatMethodInvocationTest extends \PHPUnit_Framework_TestCas
 
     public function dynamicMethodsBatch()
     {
-        return array(
-            array('publicMethod', T_PUBLIC),
-            array('protectedMethod', T_PROTECTED),
+        return [
+            ['publicMethod', T_PUBLIC],
+            ['protectedMethod', T_PROTECTED],
             // array('privateMethod', T_PRIVATE), This will throw an ReflectionException, need to add use case for that
-        );
+        ];
     }
 }
