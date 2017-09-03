@@ -143,7 +143,7 @@ class StreamMetaData
     {
         $transformedSource = '';
         foreach ($this->tokenStream as $token) {
-            $transformedSource .= $token[1];
+            $transformedSource .= isset($token[1]) ? $token[1] : $token;
         }
 
         return $transformedSource;
