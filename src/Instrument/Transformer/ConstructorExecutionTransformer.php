@@ -13,37 +13,14 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Core\AspectContainer;
+use PhpParser\Node;
+use PhpParser\NodeTraverser;
 
 /**
  * Transforms the source code to add an ability to intercept new instances creation
  *
  * @see https://github.com/php/php-src/blob/master/Zend/zend_language_parser.y
  *
- * new_expr:
- *   T_NEW
- *   class_name_reference
- *   ctor_arguments
- *
- * class_name_reference:
- *   class_name
- *   | new_variable
- *
- * class_name:
- *   T_STATIC
- *   | name
- *
- * namespace_name:
- *   T_STRING
- *   | namespace_name T_NS_SEPARATOR T_STRING
- *
- * name:
- *   namespace_name
- *   | T_NAMESPACE T_NS_SEPARATOR namespace_name
- *   | T_NS_SEPARATOR namespace_name
- *
- * ctor_arguments:
- *   / empty /
- *   | argument_list
  */
 class ConstructorExecutionTransformer implements SourceTransformer
 {
@@ -78,52 +55,34 @@ class ConstructorExecutionTransformer implements SourceTransformer
      */
     public function transform(StreamMetaData $metadata): string
     {
-        if (strpos($metadata->source, 'new ') === false) {
+        $newExpressionFinder = new NodeFinderVisitor([Node\Expr\New_::class]);
+
+        // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($newExpressionFinder);
+        $traverser->traverse($metadata->syntaxTree);
+
+        /** @var Node\Expr\New_[] $newExpressions */
+        $newExpressions = $newExpressionFinder->getFoundNodes();
+
+        if (empty($newExpressions)) {
             return self::RESULT_ABSTAIN;
         }
 
-        $tokenStream       = token_get_all($metadata->source);
-        $transformedSource = '';
-        $isWaitingClass    = false;
-        $isWaitingEnd      = false;
-        $isClassName       = true;
-        $classNamePosition = 0;
-        $weavingResult     = self::RESULT_ABSTAIN;
-        foreach ($tokenStream as $index=>$token) {
-            list ($token, $tokenValue) = (array) $token + [1 => $token];
-            if ($isWaitingClass && $token !== T_WHITESPACE && $token !== T_COMMENT) {
-                $classNamePosition++;
-                if ($token === T_VARIABLE && $classNamePosition === 1) {
-                    $isWaitingEnd   = true;
-                    $isWaitingClass = false;
-                }
-                if (in_array($tokenStream[$index + 1], ['(', ';', ')', '.'])) {
-                    $isWaitingEnd   = true;
-                    $isWaitingClass = false;
-                }
-                if ($isClassName && $token !== T_NS_SEPARATOR && $token !== T_STRING && $token !== T_STATIC) {
-                    $isClassName = false;
-                }
-            }
-            if ($token === T_NEW) {
-                $tokenValue = '\\' . __CLASS__ . '::getInstance()->{';
-                $isWaitingClass = true;
-                $isClassName    = true;
+        foreach ($newExpressions as $newExpressionNode) {
+            $startPosition = $newExpressionNode->getAttribute('startTokenPos');
 
-                $classNamePosition = 0;
-                $weavingResult     = self::RESULT_TRANSFORMED;
+            $metadata->tokenStream[$startPosition][1] = '\\' . __CLASS__ . '::getInstance()->{';
+            if ($metadata->tokenStream[$startPosition+1][0] === T_WHITESPACE) {
+                unset($metadata->tokenStream[$startPosition+1]);
             }
-            $transformedSource .= $tokenValue;
-
-            if ($isWaitingEnd) {
-                $transformedSource .= $isClassName ? '::class' : '';
-                $transformedSource .= '}';
-                $isWaitingEnd = false;
-            }
+            $isExplicitClass  = $newExpressionNode->class instanceof Node\Name;
+            $endClassNamePos  = $newExpressionNode->class->getAttribute('endTokenPos');
+            $expressionSuffix = $isExplicitClass ? '::class}' : '}';
+            $metadata->tokenStream[$endClassNamePos][1] .= $expressionSuffix;
         }
-        $metadata->source = $transformedSource;
 
-        return $weavingResult;
+        return self::RESULT_TRANSFORMED;
     }
 
     /**
@@ -159,7 +118,7 @@ class ConstructorExecutionTransformer implements SourceTransformer
      *
      * @return object
      */
-    protected static function construct($fullClassName, array $arguments = [])
+    protected static function construct(string $fullClassName, array $arguments = [])
     {
         $fullClassName = ltrim($fullClassName, '\\');
         if (!isset(self::$constructorInvocationsCache[$fullClassName])) {
