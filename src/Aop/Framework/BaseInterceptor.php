@@ -80,7 +80,7 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
     {
         $vars = unserialize($serialized);
         $vars['adviceMethod'] = static::unserializeAdvice($vars['adviceMethod']);
-        foreach ($vars as $key=>$value) {
+        foreach ($vars as $key => $value) {
             $this->$key = $value;
         }
     }

@@ -69,7 +69,7 @@ abstract class AbstractProxy
     protected function indent($text)
     {
         $pad   = str_pad('', $this->indent, ' ');
-        $lines = array_map(function($line) use ($pad) {
+        $lines = array_map(function ($line) use ($pad) {
             return $pad . $line;
         }, explode("\n", $text));
 

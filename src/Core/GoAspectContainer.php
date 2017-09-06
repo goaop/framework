@@ -45,7 +45,7 @@ class GoAspectContainer extends Container implements AspectContainer
     public function __construct()
     {
         // Register all services in the container
-        $this->share('aspect.loader', function(Container $container) {
+        $this->share('aspect.loader', function (Container $container) {
             $aspectLoader = new AspectLoader(
                 $container,
                 $container->get('aspect.annotation.reader')
@@ -60,7 +60,7 @@ class GoAspectContainer extends Container implements AspectContainer
             return $aspectLoader;
         });
 
-        $this->share('aspect.cached.loader', function(Container $container) {
+        $this->share('aspect.cached.loader', function (Container $container) {
             $options = $container->get('kernel.options');
             if (!empty($options['cacheDir'])) {
                 $loader = new CachedAspectLoader(
@@ -75,21 +75,21 @@ class GoAspectContainer extends Container implements AspectContainer
             return $loader;
         });
 
-        $this->share('aspect.advisor.accessor', function(Container $container) {
+        $this->share('aspect.advisor.accessor', function (Container $container) {
             return new LazyAdvisorAccessor(
                 $container,
                 $container->get('aspect.cached.loader')
             );
         });
 
-        $this->share('aspect.advice_matcher', function(Container $container) {
+        $this->share('aspect.advice_matcher', function (Container $container) {
             return new AdviceMatcher(
                 $container->get('aspect.loader'),
                 $container->get('kernel.interceptFunctions')
             );
         });
 
-        $this->share('aspect.annotation.cache', function(Container $container) {
+        $this->share('aspect.annotation.cache', function (Container $container) {
             $options = $container->get('kernel.options');
 
             if (!empty($options['annotationCache'])) {
@@ -107,7 +107,7 @@ class GoAspectContainer extends Container implements AspectContainer
             return new DoctrineCache\ArrayCache();
         });
 
-        $this->share('aspect.annotation.reader', function(Container $container) {
+        $this->share('aspect.annotation.reader', function (Container $container) {
             $options = $container->get('kernel.options');
             $options['debug'] = isset($options['debug']) ? $options['debug'] : false;
 
@@ -118,15 +118,15 @@ class GoAspectContainer extends Container implements AspectContainer
             );
         });
 
-        $this->share('aspect.cache.path.manager', function(Container $container) {
+        $this->share('aspect.cache.path.manager', function (Container $container) {
             return new CachePathManager($container->get('kernel'));
         });
 
         // Pointcut services
-        $this->share('aspect.pointcut.lexer', function() {
+        $this->share('aspect.pointcut.lexer', function () {
             return new PointcutLexer();
         });
-        $this->share('aspect.pointcut.parser', function(Container $container) {
+        $this->share('aspect.pointcut.parser', function (Container $container) {
             return new PointcutParser(
                 new PointcutGrammar(
                     $container,

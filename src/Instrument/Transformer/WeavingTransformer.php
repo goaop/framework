@@ -61,8 +61,7 @@ class WeavingTransformer extends BaseSourceTransformer
         AdviceMatcher $adviceMatcher,
         CachePathManager $cachePathManager,
         AspectLoader $loader
-    )
-    {
+    ) {
         parent::__construct($kernel);
         $this->adviceMatcher    = $adviceMatcher;
         $this->cachePathManager = $cachePathManager;
@@ -90,10 +89,8 @@ class WeavingTransformer extends BaseSourceTransformer
         $namespaces = $parsedSource->getFileNamespaces();
 
         foreach ($namespaces as $namespace) {
-
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
-
                 // Skip interfaces and aspects
                 if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames())) {
                     continue;
@@ -242,13 +239,7 @@ class WeavingTransformer extends BaseSourceTransformer
     {
         static $cacheDirSuffix = '/_proxies/';
 
-        $cacheDir = $this->cachePathManager->getCacheDir();
-
-        // Without cache we should rewrite original file
-        if (!$cacheDir) {
-            return $child;
-        }
-        $cacheDir .= $cacheDirSuffix;
+        $cacheDir = $this->cachePathManager->getCacheDir() . $cacheDirSuffix;
         $fileName = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());
 
         $proxyFileName = $cacheDir . $fileName;

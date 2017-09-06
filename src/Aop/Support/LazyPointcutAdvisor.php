@@ -60,8 +60,7 @@ class LazyPointcutAdvisor extends AbstractGenericPointcutAdvisor
      */
     public function getPointcut()
     {
-        if (!$this->pointcut) {
-
+        if ($this->pointcut === null) {
             // Inject this dependencies and make them lazy!
             // should be extracted from AbstractAspectLoaderExtension into separate class
 

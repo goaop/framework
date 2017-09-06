@@ -166,10 +166,8 @@ class AspectLoader
         $loadedItems = [];
 
         foreach ($loaders as $loader) {
-
             $loaderKind = $loader->getKind();
             switch ($loaderKind) {
-
                 case AspectLoaderExtension::KIND_REFLECTION:
                     if ($loader->supports($aspect, $refPoint)) {
                         $loadedItems += $loader->load($aspect, $refPoint);
@@ -187,7 +185,6 @@ class AspectLoader
 
                 default:
                     throw new \InvalidArgumentException("Unsupported loader kind {$loaderKind}");
-
             }
         }
 

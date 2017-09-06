@@ -66,9 +66,7 @@ class AdviceMatcher
         $advices = [];
 
         foreach ($advisors as $advisorId => $advisor) {
-
             if ($advisor instanceof Aop\PointcutAdvisor) {
-
                 $pointcut = $advisor->getPointcut();
                 $isFunctionAdvisor = $pointcut->getKind() & Aop\PointFilter::KIND_FUNCTION;
                 if ($isFunctionAdvisor && $pointcut->getClassFilter()->matches($namespace)) {
@@ -102,9 +100,7 @@ class AdviceMatcher
         }
 
         foreach ($advisors as $advisorId => $advisor) {
-
             if ($advisor instanceof Aop\PointcutAdvisor) {
-
                 $pointcut = $advisor->getPointcut();
                 if ($pointcut->getClassFilter()->matches($class)) {
                     $classAdvices = array_merge_recursive(
@@ -141,8 +137,8 @@ class AdviceMatcher
         ReflectionClass $class,
         Aop\PointcutAdvisor $advisor,
         $advisorId,
-        Aop\PointFilter $filter)
-    {
+        Aop\PointFilter $filter
+    ) {
         $classAdvices = [];
         $filterKind   = $filter->getKind();
 
@@ -162,7 +158,6 @@ class AdviceMatcher
 
         // Check methods in class only for method filters
         if ($filterKind & Aop\PointFilter::KIND_METHOD) {
-
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
                 // abstract methods can not be weaved
@@ -202,8 +197,8 @@ class AdviceMatcher
     private function getIntroductionFromAdvisor(
         ReflectionClass $class,
         Aop\IntroductionAdvisor $advisor,
-        $advisorId)
-    {
+        $advisorId
+    ) {
         $classAdvices = [];
         // Do not make introduction for traits
         if ($class->isTrait()) {
@@ -231,8 +226,8 @@ class AdviceMatcher
         ReflectionFileNamespace $namespace,
         Aop\PointcutAdvisor $advisor,
         $advisorId,
-        Aop\PointFilter $pointcut)
-    {
+        Aop\PointFilter $pointcut
+    ) {
         $functions = [];
         $advices   = [];
 
@@ -241,7 +236,7 @@ class AdviceMatcher
             $functions[$functionName] = new NamespacedReflectionFunction($functionName, $namespace->getName());
         }
 
-        foreach ($functions as $functionName=>$function) {
+        foreach ($functions as $functionName => $function) {
             if ($pointcut->matches($function, $namespace)) {
                 $advices[AspectContainer::FUNCTION_PREFIX][$functionName][$advisorId] = $advisor->getAdvice();
             }

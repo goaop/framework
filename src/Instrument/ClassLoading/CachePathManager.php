@@ -134,7 +134,7 @@ class CachePathManager
      */
     public function queryCacheState($resource = null)
     {
-        if (!$resource) {
+        if ($resource === null) {
             return $this->cacheState;
         }
 
