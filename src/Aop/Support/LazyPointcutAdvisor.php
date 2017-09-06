@@ -60,8 +60,7 @@ class LazyPointcutAdvisor extends AbstractGenericAdvisor implements PointcutAdvi
      */
     public function getPointcut(): Pointcut
     {
-        if (!$this->pointcut) {
-
+        if ($this->pointcut === null) {
             // Inject this dependencies and make them lazy!
 
             /** @var Pointcut\PointcutLexer $lexer */

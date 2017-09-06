@@ -97,9 +97,9 @@ class AopComposerLoader
      * @param array $options Aspect kernel options
      * @param AspectContainer $container
      *
-     * @return bool was initialization sucessful or not
+     * @return bool was initialization successful or not
      */
-    public static function init(array $options = [], AspectContainer $container): bool
+    public static function init(array $options, AspectContainer $container): bool
     {
         $loaders = spl_autoload_functions();
 
@@ -130,13 +130,13 @@ class AopComposerLoader
     /**
      * Autoload a class by it's name
      *
-     * @param string $class Class name
+     * @param string $class Name of the class to load
      */
     public function loadClass(string $class)
     {
         $file = $this->findFile($class);
 
-        if ($file) {
+        if ($file !== false) {
             include $file;
         }
     }
@@ -158,7 +158,7 @@ class AopComposerLoader
 
         $file = $this->original->findFile($class);
 
-        if ($file) {
+        if ($file !== false) {
             $file = PathResolver::realpath($file)?:$file;
             $cacheState = $this->cacheState[$file] ?? null;
             if ($cacheState && $isProduction) {

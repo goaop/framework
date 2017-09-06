@@ -74,7 +74,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
     {
         $vars = unserialize($serialized);
         $vars['adviceMethod'] = self::getDeclareErrorAdvice();
-        foreach ($vars as $key=>$value) {
+        foreach ($vars as $key => $value) {
             $this->$key = $value;
         }
     }
@@ -107,7 +107,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
     {
         static $adviceMethod;
         if (!$adviceMethod) {
-            $adviceMethod = function($object, $reflectorName, $message, $level = E_USER_NOTICE) {
+            $adviceMethod = function ($object, $reflectorName, $message, $level = E_USER_NOTICE) {
                 $class   = is_string($object) ? $object : get_class($object);
                 $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', [
                     $class . '->' . $reflectorName,

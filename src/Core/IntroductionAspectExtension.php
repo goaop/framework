@@ -88,7 +88,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                 $loadedItems[$propertyId] = $advisor;
                 break;
 
-            case ($metaInformation instanceof Annotation\DeclareError):
+            case (($metaInformation instanceof Annotation\DeclareError) && ($pointcut instanceof Pointcut)):
                 $reflection->setAccessible(true);
                 $message = $reflection->getValue($aspect);
                 $level   = $metaInformation->level;
@@ -98,7 +98,6 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 
             default:
                 throw new \UnexpectedValueException('Unsupported pointcut class: ' . get_class($pointcut));
-
         }
 
         return $loadedItems;

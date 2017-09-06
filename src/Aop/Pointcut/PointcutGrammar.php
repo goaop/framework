@@ -43,28 +43,28 @@ class PointcutGrammar extends Grammar
 
         $this('pointcutExpression')
             ->is('pointcutExpression', '||', 'conjugatedExpression')
-            ->call(function($first, $_0, $second) {
+            ->call(function ($first, $_0, $second) {
                 return new OrPointcut($first, $second);
             })
             ->is('conjugatedExpression');
 
         $this('conjugatedExpression')
             ->is('conjugatedExpression', '&&', 'negatedExpression')
-            ->call(function($first, $_0, $second) {
+            ->call(function ($first, $_0, $second) {
                 return new AndPointcut($first, $second);
             })
             ->is('negatedExpression');
 
         $this('negatedExpression')
             ->is('!', 'brakedExpression')
-            ->call(function($_0, $item) {
+            ->call(function ($_0, $item) {
                 return new NotPointcut($item);
             })
             ->is('brakedExpression');
 
         $this('brakedExpression')
             ->is('(', 'pointcutExpression', ')')
-            ->call(function($_0, $e, $_1) {
+            ->call(function ($_0, $e, $_1) {
                 return $e;
             })
             ->is('singlePointcut');
@@ -85,23 +85,23 @@ class PointcutGrammar extends Grammar
 
         $this('accessPointcut')
             ->is('access', '(', 'propertyAccessReference', ')')
-            ->call(function($_0, $_1, $propertyReference) {
+            ->call(function ($_0, $_1, $propertyReference) {
                 return $propertyReference;
             });
 
         $this('executionPointcut')
             ->is('execution', '(', 'methodExecutionReference', ')')
-            ->call(function($_0, $_1, $methodReference) {
+            ->call(function ($_0, $_1, $methodReference) {
                 return $methodReference;
             })
             ->is('execution', '(', 'functionExecutionReference', ')')
-            ->call(function($_0, $_1, $functionReference) {
+            ->call(function ($_0, $_1, $functionReference) {
                 return $functionReference;
             });
 
         $this('withinPointcut')
             ->is('within', '(', 'classFilter', ')')
-            ->call(function($_0, $_1, $classFilter) {
+            ->call(function ($_0, $_1, $classFilter) {
                 $pointcut = new TruePointcut(PointFilter::KIND_ALL);
                 $pointcut->setClassFilter($classFilter);
 
@@ -110,21 +110,21 @@ class PointcutGrammar extends Grammar
 
         $this('annotatedAccessPointcut')
             ->is('annotation', 'access', '(', 'namespaceName', ')')
-            ->call(function($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
+            ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $kindProperty = PointFilter::KIND_PROPERTY;
                 return new AnnotationPointcut($kindProperty, $annotationReader, $annotationClassName);
             });
 
         $this('annotatedExecutionPointcut')
             ->is('annotation', 'execution', '(', 'namespaceName', ')')
-            ->call(function($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
+            ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $kindMethod = PointFilter::KIND_METHOD;
                 return new AnnotationPointcut($kindMethod, $annotationReader, $annotationClassName);
             });
 
         $this('annotatedWithinPointcut')
             ->is('annotation', 'within', '(', 'namespaceName', ')')
-            ->call(function($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
+            ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $pointcut    = new TruePointcut(PointFilter::KIND_ALL);
                 $kindClass   = PointFilter::KIND_CLASS;
                 $classFilter = new AnnotationPointcut($kindClass, $annotationReader, $annotationClassName);
@@ -135,7 +135,7 @@ class PointcutGrammar extends Grammar
 
         $this('initializationPointcut')
             ->is('initialization', '(', 'classFilter', ')')
-            ->call(function($_0, $_1, $classFilter) {
+            ->call(function ($_0, $_1, $classFilter) {
                 $pointcut = new TruePointcut(PointFilter::KIND_INIT + PointFilter::KIND_CLASS);
                 $pointcut->setClassFilter($classFilter);
 
@@ -144,7 +144,7 @@ class PointcutGrammar extends Grammar
 
         $this('staticInitializationPointcut')
             ->is('staticinitialization', '(', 'classFilter', ')')
-            ->call(function($_0, $_1, $classFilter) {
+            ->call(function ($_0, $_1, $classFilter) {
                 $pointcut = new TruePointcut(PointFilter::KIND_STATIC_INIT + PointFilter::KIND_CLASS);
                 $pointcut->setClassFilter($classFilter);
 
@@ -153,20 +153,20 @@ class PointcutGrammar extends Grammar
 
         $this('cflowbelowPointcut')
             ->is('cflowbelow', '(', 'executionPointcut', ')')
-            ->call(function($_0, $_1, $pointcut) {
+            ->call(function ($_0, $_1, $pointcut) {
                 return new CFlowBelowMethodPointcut($pointcut);
             });
 
         $this('matchInheritedPointcut')
             ->is('matchInherited', '(', ')')
-            ->call(function() {
+            ->call(function () {
                 return new MatchInheritedPointcut();
             });
 
         $this('dynamicExecutionPointcut')
             // ideally, this should be 'dynamic', 'methodExecutionReference'
             ->is('dynamic', '(', 'memberReference', '(', 'argumentList', ')', ')')
-            ->call(function($_0, $_1, ClassMemberReference $reference) {
+            ->call(function ($_0, $_1, ClassMemberReference $reference) {
                 $memberFilter = new AndPointFilter(
                     $reference->getVisibilityFilter(),
                     $reference->getAccessTypeFilter()
@@ -182,13 +182,13 @@ class PointcutGrammar extends Grammar
 
         $this('pointcutReference')
             ->is('namespaceName', '->', 'namePatternPart')
-            ->call(function($className, $_0, $name) use ($container) {
+            ->call(function ($className, $_0, $name) use ($container) {
                 return new PointcutReference($container, "{$className}->{$name}");
             });
 
         $this('propertyAccessReference')
             ->is('memberReference')
-            ->call(function(ClassMemberReference $reference) {
+            ->call(function (ClassMemberReference $reference) {
                 $memberFilter = new AndPointFilter(
                     $reference->getVisibilityFilter(),
                     $reference->getAccessTypeFilter()
@@ -206,7 +206,7 @@ class PointcutGrammar extends Grammar
 
         $this('methodExecutionReference')
             ->is('memberReference', '(', 'argumentList', ')')
-            ->call(function(ClassMemberReference $reference) {
+            ->call(function (ClassMemberReference $reference) {
                 $memberFilter = new AndPointFilter(
                     $reference->getVisibilityFilter(),
                     $reference->getAccessTypeFilter()
@@ -224,7 +224,7 @@ class PointcutGrammar extends Grammar
 
         $this('functionExecutionReference')
             ->is('namespacePattern', 'nsSeparator', 'namePatternPart', '(', 'argumentList', ')')
-            ->call(function($namespacePattern, $_0, $namePattern) {
+            ->call(function ($namespacePattern, $_0, $namePattern) {
                 $nsFilter = new SimpleNamespaceFilter($namespacePattern);
                 $pointcut = new FunctionPointcut($namePattern);
                 $pointcut->setNamespaceFilter($nsFilter);
@@ -234,7 +234,7 @@ class PointcutGrammar extends Grammar
 
         $this('memberReference')
             ->is('memberModifiers', 'classFilter', 'memberAccessType', 'namePatternPart')
-            ->call(function(
+            ->call(function (
                 ModifierMatcherFilter $memberModifiers,
                 PointFilter $classFilter,
                 ModifierMatcherFilter $memberAccessType,
@@ -251,7 +251,7 @@ class PointcutGrammar extends Grammar
 
         $this('classFilter')
             ->is('namespacePattern')
-            ->call(function($pattern) {
+            ->call(function ($pattern) {
                 $truePointFilter = TruePointFilter::getInstance();
 
                 return $pattern === '**'
@@ -259,7 +259,7 @@ class PointcutGrammar extends Grammar
                     : new SignaturePointcut(PointFilter::KIND_CLASS, $pattern, $truePointFilter);
             })
             ->is('namespacePattern', '+')
-            ->call(function($parentClassName) {
+            ->call(function ($parentClassName) {
                 return new InheritanceClassFilter($parentClassName);
             });
 
@@ -268,11 +268,11 @@ class PointcutGrammar extends Grammar
 
         $this('memberAccessType')
             ->is('::')
-            ->call(function() {
+            ->call(function () {
                 return new ModifierMatcherFilter(\ReflectionMethod::IS_STATIC);
             })
             ->is('->')
-            ->call(function() {
+            ->call(function () {
                 $modifierMatcherFilter = new ModifierMatcherFilter();
                 $modifierMatcherFilter->notMatch(\ReflectionMethod::IS_STATIC);
 
@@ -298,15 +298,15 @@ class PointcutGrammar extends Grammar
 
         $this('memberModifiers')
             ->is('memberModifier', '|', 'memberModifiers')
-            ->call(function($modifier, $_0, ModifierMatcherFilter $matcher) {
+            ->call(function ($modifier, $_0, ModifierMatcherFilter $matcher) {
                 return $matcher->orMatch($modifier);
             })
             ->is('memberModifier', 'memberModifiers')
-            ->call(function($modifier, ModifierMatcherFilter $matcher) {
+            ->call(function ($modifier, ModifierMatcherFilter $matcher) {
                 return $matcher->andMatch($modifier);
             })
             ->is('memberModifier')
-            ->call(function($modifier) {
+            ->call(function ($modifier) {
                 return new ModifierMatcherFilter($modifier);
             });
 
@@ -325,9 +325,9 @@ class PointcutGrammar extends Grammar
      */
     private function getNodeToStringConverter(): Closure
     {
-        return function(...$arguments) {
+        return function(...$nodes) {
             $value = '';
-            foreach ($arguments as $node) {
+            foreach ($nodes as $node) {
                 if (is_scalar($node)) {
                     $value .= $node;
                 } else {
@@ -344,7 +344,7 @@ class PointcutGrammar extends Grammar
      */
     private function getModifierConverter(): Closure
     {
-        return function(Token $token) {
+        return function (Token $token) {
             $name = strtoupper($token->getValue());
 
             return constant("ReflectionMethod::IS_{$name}");

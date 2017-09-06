@@ -34,11 +34,11 @@ class FunctionProxy extends AbstractProxy
     protected static $functionAdvices = [];
 
     /**
-     * Name for the current namespace
+     * File namespace
      *
-     * @var string
+     * @var ReflectionFileNamespace
      */
-    protected $namespace = '';
+    protected $namespace;
 
     /**
      * Source code for functions

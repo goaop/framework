@@ -17,7 +17,6 @@ use Go\Aop\Aspect;
 use Go\Aop\Framework;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Pointcut;
-use Go\Aop\PointFilter;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
 use Go\Lang\Annotation\BaseInterceptor;
@@ -85,7 +84,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
                 $loadedItems[$methodId] = $pointcut;
                 break;
 
-            case ($pointcut instanceof PointFilter):
+            case ($pointcut instanceof Pointcut):
                 $advice = $this->getInterceptor($metaInformation, $adviceCallback);
 
                 $loadedItems[$methodId] = new DefaultPointcutAdvisor($pointcut, $advice);

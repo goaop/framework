@@ -59,8 +59,8 @@ class ClassMemberReference
         PointFilter $classFilter,
         ModifierMatcherFilter $visibilityFilter,
         ModifierMatcherFilter $accessTypeFilter,
-        string $memberNamePattern)
-    {
+        string $memberNamePattern
+    ) {
         $this->classFilter       = $classFilter;
         $this->visibilityFilter  = $visibilityFilter;
         $this->accessTypeFilter  = $accessTypeFilter;

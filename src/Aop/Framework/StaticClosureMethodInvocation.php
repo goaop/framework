@@ -68,7 +68,7 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
      */
     protected static function getStaticInvoker($className, $method): Closure
     {
-        return function(array $args) use ($className, $method) {
+        return function (array $args) use ($className, $method) {
             return forward_static_call_array([$className, $method], $args);
         };
     }

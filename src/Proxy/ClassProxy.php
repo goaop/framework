@@ -129,7 +129,6 @@ class ClassProxy extends AbstractProxy
         $this->addJoinpointsProperty();
 
         foreach ($classAdvices as $type => $typedAdvices) {
-
             switch ($type) {
                 case AspectContainer::METHOD_PREFIX:
                 case AspectContainer::STATIC_METHOD_PREFIX:
@@ -467,7 +466,7 @@ class ClassProxy extends AbstractProxy
         $assocProperties = $this->indent(implode(',' . PHP_EOL, $assocProperties));
         $listProperties  = $this->indent(implode(',' . PHP_EOL, $listProperties));
         $parentCall      = '';
-        if (isset($this->methodsCode['__construct'])) {
+        if ($constructor !== null && isset($this->methodsCode['__construct'])) {
             $parentCall = $this->getJoinpointInvocationBody($constructor);
         } elseif ($isCallParent) {
             $parentCall = '\call_user_func_array(["parent", __FUNCTION__], \func_get_args());';

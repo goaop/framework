@@ -18,8 +18,8 @@ use Go\Instrument\Transformer\SourceTransformer;
 /**
  * Php class loader filter for processing php code
  *
- * @property resource $stream Stream resource
- */
+ * @property resource $stream Stream instance of underlying resource
+*/
 class SourceTransformingLoader extends PhpStreamFilter
 {
     /**

@@ -13,6 +13,7 @@ namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
 use Go\Aop\Framework\DynamicInvocationMatcherInterceptor;
+use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Pointcut;
 use Go\Aop\PointcutAdvisor;
 use Go\Aop\PointFilter;
@@ -51,7 +52,7 @@ class DefaultPointcutAdvisor extends AbstractGenericAdvisor implements PointcutA
     public function getAdvice(): Advice
     {
         $advice = parent::getAdvice();
-        if ($this->pointcut->getKind() & PointFilter::KIND_DYNAMIC) {
+        if (($advice instanceof Interceptor) && ($this->pointcut->getKind() & PointFilter::KIND_DYNAMIC)) {
             $advice = new DynamicInvocationMatcherInterceptor(
                 $this->pointcut,
                 $advice

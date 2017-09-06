@@ -101,7 +101,7 @@ class StreamMetaData
         if (preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
             $metadata['uri'] = PathResolver::realpath($matches[1]);
         }
-        foreach ($metadata as $key=>$value) {
+        foreach ($metadata as $key => $value) {
             if (!isset(self::$propertyMap[$key])) {
                 continue;
             }

@@ -56,7 +56,7 @@ abstract class Container implements AspectContainer
      */
     public function share(string $id, Closure $value, array $tags = [])
     {
-        $value = function($container) use ($value) {
+        $value = function ($container) use ($value) {
             static $sharedValue;
 
             if (null === $sharedValue) {
