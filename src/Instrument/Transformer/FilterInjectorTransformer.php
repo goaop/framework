@@ -13,6 +13,8 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
+use PhpParser\Node\Expr\Include_;
+use PhpParser\NodeTraverser;
 
 /**
  * Transformer that injects source filter for "require" and "include" operations
@@ -97,7 +99,7 @@ class FilterInjectorTransformer implements SourceTransformer
         }
 
         $resource = (string) $originalResource;
-        if ($resource['0'] !== '/') {
+        if ($resource[0] !== '/') {
             $shouldCheckExistence = true;
             $resource
                 =  PathResolver::realpath($resource, $shouldCheckExistence)
@@ -122,66 +124,32 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public function transform(StreamMetaData $metadata)
     {
-        if ((strpos($metadata->source, 'include') === false) && (strpos($metadata->source, 'require') === false)) {
+        $includeExpressionFinder = new NodeFinderVisitor([Include_::class]);
+
+        // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($includeExpressionFinder);
+        $traverser->traverse($metadata->syntaxTree);
+
+        /** @var Include_[] $includeExpressions */
+        $includeExpressions = $includeExpressionFinder->getFoundNodes();
+
+        if (empty($includeExpressions)) {
             return self::RESULT_ABSTAIN;
         }
-        static $lookFor = [
-            T_INCLUDE      => true,
-            T_INCLUDE_ONCE => true,
-            T_REQUIRE      => true,
-            T_REQUIRE_ONCE => true
-        ];
-        $tokenStream = token_get_all($metadata->source);
 
-        $transformedSource = '';
-        $isWaitingEnd      = false;
+        foreach ($includeExpressions as $includeExpression) {
+            $startPosition = $includeExpression->getAttribute('startTokenPos');
+            $endPosition   = $includeExpression->getAttribute('endTokenPos');
 
-        $insideBracesCount = 0;
-        $isBracesFinished  = false;
-        $isTernaryOperator = false;
-        foreach ($tokenStream as $token) {
-            if ($isWaitingEnd && $token === '(') {
-                if ($isWaitingEnd) {
-                    $insideBracesCount++;
-                }
-            } elseif ($isWaitingEnd && $token === ')') {
-                if ($insideBracesCount > 0) {
-                    $insideBracesCount--;
-                } else {
-                    $isBracesFinished = true;
-                }
+            $metadata->tokenStream[$startPosition][1] .= ' \\' . __CLASS__ . '::rewrite(';
+            if ($metadata->tokenStream[$startPosition+1][0] === T_WHITESPACE) {
+                unset($metadata->tokenStream[$startPosition+1]);
             }
 
-            $lastBrace = ($isBracesFinished && $token === ')');
-
-            if ($isWaitingEnd && $token === '?') {
-                $isTernaryOperator = true;
-            }
-
-            if ($isTernaryOperator && ($token === ';' || $lastBrace)) {
-                $isTernaryOperator = false;
-            }
-
-            if ($isWaitingEnd && !$isTernaryOperator && $insideBracesCount === 0
-                && ($token === ';' || $token === ',' || $token === ':' || $lastBrace)
-            ) {
-                $isWaitingEnd = false;
-                $transformedSource .= ', __DIR__)';
-            }
-            list ($token, $value) = (array) $token + [1 => $token];
-            $transformedSource .= $value;
-            if (!$isWaitingEnd && isset($lookFor[$token])) {
-                $isWaitingEnd = true;
-                $isBracesFinished = $isTernaryOperator = false;
-                $transformedSource .= ' \\' . __CLASS__ . '::rewrite(';
-            }
+            $metadata->tokenStream[$endPosition][1] .= ', __DIR__)';
         }
-        $transformationResult = ($metadata->source !== $transformedSource)
-            ? self::RESULT_TRANSFORMED
-            : self::RESULT_ABSTAIN;
 
-        $metadata->source = $transformedSource;
-
-        return $transformationResult;
+        return self::RESULT_TRANSFORMED;
     }
 }

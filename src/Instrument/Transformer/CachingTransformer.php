@@ -59,11 +59,6 @@ class CachingTransformer extends BaseSourceTransformer
      */
     public function transform(StreamMetaData $metadata)
     {
-        // Do not create a cache
-        if (!$this->cacheManager->getCacheDir()) {
-            return $this->processTransformers($metadata);
-        }
-
         $originalUri      = $metadata->uri;
         $processingResult = self::RESULT_ABSTAIN;
         $cacheUri         = $this->cacheManager->getCachePathForResource($originalUri);
@@ -102,7 +97,8 @@ class CachingTransformer extends BaseSourceTransformer
             $processingResult = isset($cacheState['cacheUri']) ? self::RESULT_TRANSFORMED : self::RESULT_ABORTED;
         }
         if ($processingResult === self::RESULT_TRANSFORMED) {
-            $metadata->source = file_get_contents($cacheUri);
+            // Just replace all tokens in the stream
+            $metadata->tokenStream = token_get_all(file_get_contents($cacheUri));
         }
 
         return $processingResult;

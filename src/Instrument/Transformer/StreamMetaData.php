@@ -11,10 +11,14 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Instrument\PathResolver;
+use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
+use PhpParser\Node;
 
 /**
  * Stream metadata object
+ *
+ * @property-read string $source
  */
 class StreamMetaData
 {
@@ -24,46 +28,12 @@ class StreamMetaData
      * @var array
      */
     private static $propertyMap = [
-        'timed_out'    => 'isTimedOut',
-        'blocked'      => 'isBlocked',
-        'eof'          => 'isEOF',
-        'unread_bytes' => 'unreadBytesCount',
         'stream_type'  => 'streamType',
         'wrapper_type' => 'wrapperType',
         'wrapper_data' => 'wrapperData',
         'filters'      => 'filterList',
-        'mode'         => 'mode',
-        'seekable'     => 'isSeekable',
         'uri'          => 'uri',
     ];
-
-    /**
-     * TRUE if the stream timed out while waiting for data on the last call to fread() or fgets().
-     *
-     * @var bool
-     */
-    public $isTimedOut;
-
-    /**
-     * TRUE if the stream has reached end-of-file.
-     *
-     * @var bool
-     */
-    public $isBlocked;
-
-    /**
-     * TRUE if the stream has reached end-of-file.
-     *
-     * @var bool
-     */
-    public $isEOF;
-
-    /**
-     * The number of bytes currently contained in the PHP's own internal buffer.
-     *
-     * @var integer
-     */
-    public $unreadBytesCount;
 
     /**
      * A label describing the underlying implementation of the stream.
@@ -94,20 +64,6 @@ class StreamMetaData
     public $filterList;
 
     /**
-     * The type of access required for this stream
-     *
-     * @var string
-     */
-    public $mode;
-
-    /**
-     * Whether the current stream can be seeked.
-     *
-     * @var bool
-     */
-    public $isSeekable;
-
-    /**
      * The URI/filename associated with this stream.
      *
      * @var string
@@ -115,11 +71,18 @@ class StreamMetaData
     public $uri;
 
     /**
-     * The contents of the stream.
+     * Information about syntax tree
      *
-     * @var string
+     * @var Node[]
      */
-    public $source;
+    public $syntaxTree;
+
+    /**
+     * List of source tokens
+     *
+     * @var array
+     */
+    public $tokenStream = [];
 
     /**
      * Creates metadata object from stream
@@ -133,14 +96,71 @@ class StreamMetaData
         if (!is_resource($stream)) {
             throw new InvalidArgumentException('Stream should be valid resource');
         }
-        $metadata     = stream_get_meta_data($stream);
-        $this->source = $source;
+        $metadata = stream_get_meta_data($stream);
         if (preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
             $metadata['uri'] = PathResolver::realpath($matches[1]);
         }
         foreach ($metadata as $key=>$value) {
+            if (!isset(self::$propertyMap[$key])) {
+                continue;
+            }
             $mappedKey = self::$propertyMap[$key];
             $this->$mappedKey = $value;
+        }
+        $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
+        $this->setSource($source);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function __get($name)
+    {
+        if ($name === 'source') {
+            return $this->getSource();
+        }
+
+        return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function __set($name, $value)
+    {
+        if ($name === 'source') {
+            trigger_error('Setting StreamMetaData->source is deprecated, use tokenStream instead', E_USER_DEPRECATED);
+            $this->setSource($value);
+        }
+    }
+
+    /**
+     * Returns source code directly from tokens
+     *
+     * @return string
+     */
+    private function getSource()
+    {
+        $transformedSource = '';
+        foreach ($this->tokenStream as $token) {
+            $transformedSource .= isset($token[1]) ? $token[1] : $token;
+        }
+
+        return $transformedSource;
+    }
+
+    /**
+     * Sets the new source for this file
+     *
+     * @TODO: Unfortunately, AST won't be changed, so please be accurate during transformation
+     *
+     * @param string $newSource
+     */
+    private function setSource($newSource)
+    {
+        $rawTokens = token_get_all($newSource);
+        foreach ($rawTokens as $index => $rawToken) {
+            $this->tokenStream[$index] = \is_array($rawToken) ? $rawToken : [T_STRING, $rawToken];
         }
     }
 }
