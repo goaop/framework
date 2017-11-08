@@ -14,7 +14,7 @@ class TestClassTypehint extends TestClassTypehint__AopProxied implements \Go\Aop
      */
     private static $__joinPoints = [];
 
-    public function publicMethodFixedArguments(Exception $a, $b, $c = NULL)
+    public function publicMethodFixedArguments(\Exception $a, $b, $c = NULL)
     {
         return self::$__joinPoints['method:publicMethodFixedArguments']->__invoke($this, \array_slice([$a, $b, $c], 0, \func_num_args()));
     }
