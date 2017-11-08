@@ -121,6 +121,19 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Main test case for method with typehint
+     */
+    public function testWeaverForTypeHint()
+    {
+        $metadata = $this->loadTest('class-typehint');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('class-typehint-woven')->source);
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
      * Check that weaver can work with final class
      */
     public function testWeaverForFinalClass()
