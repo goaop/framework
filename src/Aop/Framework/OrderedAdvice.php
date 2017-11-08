@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -19,8 +20,6 @@ interface OrderedAdvice extends Advice
 {
     /**
      * Returns the advice order
-     *
-     * @return int
      */
-    public function getAdviceOrder();
+    public function getAdviceOrder(): int;
 }

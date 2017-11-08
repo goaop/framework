@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -32,5 +33,5 @@ class IntroductionAspect implements Aspect
      *
      * @var null
      */
-    protected $introduction = null;
+    protected $introduction;
 }

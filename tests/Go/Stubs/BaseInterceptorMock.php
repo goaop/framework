@@ -1,14 +1,15 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Stubs;
 
+use Closure;
 use Go\Aop\Framework\BaseInterceptor;
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Pointcut;
 
 class BaseInterceptorMock extends BaseInterceptor
 {
-    private static $advice = null;
+    private static $advice;
 
     /**
      * {@inheritdoc}
@@ -22,19 +23,19 @@ class BaseInterceptorMock extends BaseInterceptor
     /**
      * {@inheritdoc}
      */
-    public static function serializeAdvice(\Closure $adviceMethod)
+    public static function serializeAdvice(Closure $adviceMethod) : array
     {
-        return array(
+        return [
             'scope'  => 'aspect',
             'method' => 'Go\Aop\Framework\{closure}',
             'aspect' => 'Go\Aop\Framework\BaseInterceptorTest'
-        );
+        ];
     }
 
     /**
      * {@inheritdoc}
      */
-    public static function unserializeAdvice(array $adviceData)
+    public static function unserializeAdvice(array $adviceData) : Closure
     {
         return self::$advice;
     }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -17,50 +18,45 @@ use Go\Aop\IntroductionInfo;
  */
 class TraitIntroductionInfo implements IntroductionInfo
 {
+    /**
+     * Introduced interface
+     *
+     * @var string
+     */
+    private $introducedInterface;
 
     /**
-     * List of interfaces to introduce
+     * Trait to use
      *
-     * @var array
+     * @var string
      */
-    private $introducedInterfaces;
-
-    /**
-     * List of traits to include
-     *
-     * @var array
-     */
-    private $introducedTraits;
+    private $introducedTrait;
 
     /**
      * Create a DefaultIntroductionAdvisor for the given advice.
      *
-     * @param string|string[] $introducedInterfaces List of introduced interfaces
-     * @param string|string[] $introducedTraits List of introduced traits
+     * @param string $introducedTrait Introduced trait
+     * @param string $introducedInterface Introduced interface
      */
-    public function __construct($introducedInterfaces, $introducedTraits)
+    public function __construct(string $introducedTrait, string $introducedInterface)
     {
-        $this->introducedInterfaces = (array) $introducedInterfaces;
-        $this->introducedTraits     = (array) $introducedTraits;
+        $this->introducedTrait     = $introducedTrait;
+        $this->introducedInterface = $introducedInterface;
     }
 
     /**
-     * Return the additional interfaces introduced by this Advisor or Advice.
-     *
-     * @return array|string[] introduced interfaces
+     * Returns the additional interface introduced by this Advisor or Advice.
      */
-    public function getInterfaces()
+    public function getInterface(): string
     {
-        return $this->introducedInterfaces;
+        return $this->introducedInterface;
     }
 
     /**
-     * Return the list of traits with realization of introduced interfaces
-     *
-     * @return array|string[] trait implementations
+     * Returns the additional trait with realization of introduced interface
      */
-    public function getTraits()
+    public function getTrait(): string
     {
-        return $this->introducedTraits;
+        return $this->introducedTrait;
     }
 }

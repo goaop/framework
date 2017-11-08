@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -18,8 +19,8 @@ namespace Go\Lang\Annotation;
  *
  * @Attributes({
  *   @Attribute("value", type = "string", required=true),
- *   @Attribute("interface", type = "array"),
- *   @Attribute("defaultImpl", type = "array")
+ *   @Attribute("interface", type = "string"),
+ *   @Attribute("defaultImpl", type = "string")
  * })
  */
 class DeclareParents extends BaseAnnotation
@@ -29,12 +30,12 @@ class DeclareParents extends BaseAnnotation
      *
      * @var string
      */
-    public $defaultImpl = null;
+    public $defaultImpl;
 
     /**
      * Interface name to add
      *
      * @var string
      */
-    public $interface = null;
+    public $interface;
 }

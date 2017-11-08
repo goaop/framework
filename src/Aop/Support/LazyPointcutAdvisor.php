@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -12,12 +13,13 @@ namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
 use Go\Aop\Pointcut;
+use Go\Aop\PointcutAdvisor;
 use Go\Core\AspectContainer;
 
 /**
  * Lazy pointcut advisor is used to create a delayed pointcut only when needed
  */
-class LazyPointcutAdvisor extends AbstractGenericPointcutAdvisor
+class LazyPointcutAdvisor extends AbstractGenericAdvisor implements PointcutAdvisor
 {
 
     /**
@@ -46,7 +48,7 @@ class LazyPointcutAdvisor extends AbstractGenericPointcutAdvisor
      * @param string $pointcutExpression The Pointcut targeting the Advice
      * @param Advice $advice The Advice to run when Pointcut matches
      */
-    public function __construct(AspectContainer $container, $pointcutExpression, Advice $advice)
+    public function __construct(AspectContainer $container, string $pointcutExpression, Advice $advice)
     {
         $this->container          = $container;
         $this->pointcutExpression = $pointcutExpression;
@@ -55,15 +57,11 @@ class LazyPointcutAdvisor extends AbstractGenericPointcutAdvisor
 
     /**
      * Get the Pointcut that drives this advisor.
-     *
-     * @return Pointcut The pointcut
      */
-    public function getPointcut()
+    public function getPointcut(): Pointcut
     {
-        if (!$this->pointcut) {
-
+        if ($this->pointcut === null) {
             // Inject this dependencies and make them lazy!
-            // should be extracted from AbstractAspectLoaderExtension into separate class
 
             /** @var Pointcut\PointcutLexer $lexer */
             $lexer = $this->container->get('aspect.pointcut.lexer');

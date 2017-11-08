@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -32,14 +33,11 @@ final class AfterThrowingInterceptor extends BaseInterceptor implements AdviceAf
     public function invoke(Joinpoint $joinpoint)
     {
         try {
-            $result = $joinpoint->proceed();
+            return $joinpoint->proceed();
         } catch (Exception $invocationException) {
-            $adviceMethod = $this->adviceMethod;
-            $adviceMethod($joinpoint, $invocationException);
+            ($this->adviceMethod)($joinpoint, $invocationException);
 
             throw $invocationException;
         }
-
-        return $result;
     }
 }

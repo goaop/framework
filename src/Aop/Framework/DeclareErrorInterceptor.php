@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -26,23 +27,23 @@ class DeclareErrorInterceptor extends BaseInterceptor
      *
      * @var string
      */
-    private $message = '';
+    private $message;
 
     /**
      * Default level of error
      *
      * @var int
      */
-    private $level = E_USER_NOTICE;
+    private $level;
 
     /**
      * Default constructor for interceptor
      *
      * @param string $message Text message for error
      * @param int $level Level of error
-     * @param string|null $pointcutExpression Pointcut expression
+     * @param string $pointcutExpression Pointcut expression
      */
-    public function __construct($message, $level, $pointcutExpression)
+    public function __construct(string $message, int $level, string $pointcutExpression)
     {
         $adviceMethod  = self::getDeclareErrorAdvice();
         $this->message = $message;
@@ -73,31 +74,9 @@ class DeclareErrorInterceptor extends BaseInterceptor
     {
         $vars = unserialize($serialized);
         $vars['adviceMethod'] = self::getDeclareErrorAdvice();
-        foreach ($vars as $key=>$value) {
+        foreach ($vars as $key => $value) {
             $this->$key = $value;
         }
-    }
-
-    /**
-     * Returns an advice
-     *
-     * @return \Closure
-     */
-    private static function getDeclareErrorAdvice()
-    {
-        static $adviceMethod = null;
-        if (!$adviceMethod) {
-            $adviceMethod = function($object, $reflectorName, $message, $level = E_USER_NOTICE) {
-                $class   = is_string($object) ? $object : get_class($object);
-                $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', array(
-                    $class . '->' . $reflectorName,
-                    $message
-                ));
-                trigger_error($message, $level);
-            };
-        }
-
-        return $adviceMethod;
     }
 
     /**
@@ -116,9 +95,28 @@ class DeclareErrorInterceptor extends BaseInterceptor
         if ($reflection && method_exists($reflection, 'getName')) {
             $reflectorName = $reflection->getName();
         }
-        $adviceMethod = $this->adviceMethod;
-        $adviceMethod($joinpoint->getThis(), $reflectorName, $this->message, $this->level);
+        ($this->adviceMethod)($joinpoint->getThis(), $reflectorName, $this->message, $this->level);
 
         return $joinpoint->proceed();
+    }
+
+    /**
+     * Returns an advice
+     */
+    private static function getDeclareErrorAdvice(): \Closure
+    {
+        static $adviceMethod;
+        if (!$adviceMethod) {
+            $adviceMethod = function ($object, $reflectorName, $message, $level = E_USER_NOTICE) {
+                $class   = is_string($object) ? $object : get_class($object);
+                $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', [
+                    $class . '->' . $reflectorName,
+                    $message
+                ]);
+                trigger_error($message, $level);
+            };
+        }
+
+        return $adviceMethod;
     }
 }

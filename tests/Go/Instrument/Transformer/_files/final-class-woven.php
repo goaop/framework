@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace Test\ns1;
 
 class TestFinalClass__AopProxied {
@@ -18,7 +19,22 @@ final class TestFinalClass extends TestFinalClass__AopProxied implements \Go\Aop
     /**
      * Property was created automatically, do not change it manually
      */
-    private static $__joinPoints = [];
+    private static $__joinPoints = [
+        'method' => [
+            'publicMethod' => [
+                'advisor.Test\\ns1\\TestFinalClass->publicMethod'
+            ],
+            'protectedMethod' => [
+                'advisor.Test\\ns1\\TestFinalClass->protectedMethod'
+            ],
+            'publicStaticMethod' => [
+                'advisor.Test\\ns1\\TestFinalClass->publicStaticMethod'
+            ],
+            'protectedStaticMethod' => [
+                'advisor.Test\\ns1\\TestFinalClass->protectedStaticMethod'
+            ]
+        ]
+    ];
 
     public function publicMethod()
     {
@@ -40,24 +56,4 @@ final class TestFinalClass extends TestFinalClass__AopProxied implements \Go\Aop
         return self::$__joinPoints['static:protectedStaticMethod']->__invoke(static::class);
     }
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestFinalClass',array (
-  'method' =>
-  array (
-    'publicMethod' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestFinalClass->publicMethod',
-    ),
-    'protectedMethod' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestFinalClass->protectedMethod',
-    ),
-    'publicStaticMethod' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestFinalClass->publicStaticMethod',
-    ),
-    'protectedStaticMethod' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestFinalClass->protectedStaticMethod',
-    ),
-  ),
-));
+\Go\Proxy\ClassProxy::injectJoinPoints(TestFinalClass::class);

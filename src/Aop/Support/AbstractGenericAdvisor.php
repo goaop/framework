@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -11,12 +12,12 @@
 namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
-use Go\Aop\PointcutAdvisor;
+use Go\Aop\Advisor;
 
 /**
  * Abstract generic PointcutAdvisor that allows for any Advice to be configured.
  */
-abstract class AbstractGenericPointcutAdvisor implements PointcutAdvisor
+abstract class AbstractGenericAdvisor implements Advisor
 {
     /**
      * Instance of advice
@@ -37,23 +38,9 @@ abstract class AbstractGenericPointcutAdvisor implements PointcutAdvisor
 
     /**
      * Returns an advice to apply
-     *
-     * @return Advice|null
      */
-    public function getAdvice()
+    public function getAdvice(): Advice
     {
         return $this->advice;
-    }
-
-    /**
-     * Return string representation of object
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        $adviceClass = get_class($this->getAdvice());
-
-        return get_called_class() . ": advice [{$adviceClass}]";
     }
 }

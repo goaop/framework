@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -66,14 +67,14 @@ abstract class AbstractProxy
      *
      * @return string Indented text
      */
-    protected function indent($text)
+    protected function indent(string $text): string
     {
         $pad   = str_pad('', $this->indent, ' ');
-        $lines = array_map(function($line) use ($pad) {
+        $lines = array_map(function ($line) use ($pad) {
             return $pad . $line;
         }, explode("\n", $text));
 
-        return join("\n", $lines);
+        return implode("\n", $lines);
     }
 
     /**
@@ -81,9 +82,9 @@ abstract class AbstractProxy
      *
      * @param array|ReflectionParameter[] $parameters List of parameters
      *
-     * @return array
+     * @return array|string[]
      */
-    protected function getParameters(array $parameters)
+    protected function getParameters(array $parameters): array
     {
         $parameterDefinitions = [];
         foreach ($parameters as $parameter) {
@@ -100,27 +101,17 @@ abstract class AbstractProxy
      *
      * @return string
      */
-    protected function getParameterCode(ReflectionParameter $parameter)
+    protected function getParameterCode(ReflectionParameter $parameter): string
     {
         $type = '';
-        if (PHP_VERSION_ID >= 70000) {
-            $reflectionType = $parameter->getType();
-            if ($reflectionType) {
-                $nullablePrefix = (PHP_VERSION_ID >= 70100 && $reflectionType->allowsNull()) ? '?' : '';
-                $nsPrefix       = $reflectionType->isBuiltin() ? '' : '\\';
-                $type           = $nullablePrefix . $nsPrefix . (string) $reflectionType;
-                // prevent double "\\" prefix for global namespace type hints:
-                if (substr($type, 0, 2) === '\\\\') {
-                    $type = substr($type, 1);
-                }
-            }
-        } else {
-            if ($parameter->isArray()) {
-                $type = 'array';
-            } elseif ($parameter->isCallable()) {
-                $type = 'callable';
-            } elseif ($parameter->getClass()) {
-                $type = '\\' . $parameter->getClass()->name;
+        $reflectionType = $parameter->getType();
+        if ($reflectionType) {
+            $nullablePrefix = (PHP_VERSION_ID >= 70100 && $reflectionType->allowsNull()) ? '?' : '';
+            $nsPrefix       = $reflectionType->isBuiltin() ? '' : '\\';
+            $type           = $nullablePrefix . $nsPrefix . (string) $reflectionType;
+            // prevent double "\\" prefix for global namespace type hints:
+            if (substr($type, 0, 2) === '\\\\') {
+                $type = substr($type, 1);
             }
         }
         $defaultValue = null;
@@ -135,8 +126,8 @@ abstract class AbstractProxy
             ($parameter->isPassedByReference() ? '&' : '') . // By reference sign
             ($parameter->isVariadic() ? '...' : '') . // Variadic symbol
             '$' . // Variable symbol
-            ($parameter->name) . // Name of the argument
-            ($defaultValue !== null ? (" = " . $defaultValue) : '') // Default value if present
+            $parameter->name . // Name of the argument
+            ($defaultValue !== null ? (' = ' . $defaultValue) : '') // Default value if present
         );
 
         return $code;
@@ -145,11 +136,11 @@ abstract class AbstractProxy
     /**
      * Replace concrete advices with list of ids
      *
-     * @param $advices
+     * @param array $advices List of advices
      *
      * @return array flatten list of advices
      */
-    private function flattenAdvices($advices)
+    private function flattenAdvices(array $advices): array
     {
         $flattenAdvices = [];
         foreach ($advices as $type => $typedAdvices) {
@@ -170,7 +161,7 @@ abstract class AbstractProxy
      *
      * @return string
      */
-    protected function prepareArgsLine(ReflectionFunctionAbstract $functionLike)
+    protected function prepareArgsLine(ReflectionFunctionAbstract $functionLike): string
     {
         $argumentsPart = [];
         $arguments     = [];
@@ -189,14 +180,14 @@ abstract class AbstractProxy
         }
         if (!empty($arguments)) {
             // Unshifting to keep correct order
-            $argumentLine = '[' . join(', ', $arguments) . ']';
+            $argumentLine = '[' . implode(', ', $arguments) . ']';
             if ($hasOptionals) {
                 $argumentLine = "\\array_slice($argumentLine, 0, \\func_num_args())";
             }
             array_unshift($argumentsPart, $argumentLine);
         }
 
-        return join(', ', $argumentsPart);
+        return implode(', ', $argumentsPart);
     }
 
     /**
@@ -207,9 +198,9 @@ abstract class AbstractProxy
      *
      * @return string
      */
-    protected function getOverriddenFunction(ReflectionFunctionAbstract $functionLike, $body)
+    protected function getOverriddenFunction(ReflectionFunctionAbstract $functionLike, string $body): string
     {
-        $reflectionReturnType = PHP_VERSION_ID >= 70000 ? $functionLike->getReturnType() : '';
+        $reflectionReturnType = $functionLike->getReturnType();
         $modifiersLine        = '';
         if ($reflectionReturnType) {
             $nullablePrefix = $reflectionReturnType->allowsNull() ? '?' : '';
@@ -218,7 +209,7 @@ abstract class AbstractProxy
             $reflectionReturnType = $nullablePrefix . $nsPrefix . (string) $reflectionReturnType;
         }
         if ($functionLike instanceof ReflectionMethod) {
-            $modifiersLine = join(' ', Reflection::getModifierNames($functionLike->getModifiers()));
+            $modifiersLine = implode(' ', Reflection::getModifierNames($functionLike->getModifiers()));
         }
 
         $code = (
@@ -228,8 +219,8 @@ abstract class AbstractProxy
             ($functionLike->returnsReference() ? '&' : '') . // By reference symbol
             $functionLike->name . // Name of the function
             '(' . // Start of parameters list
-            join(', ', $this->getParameters($functionLike->getParameters())) . // List of parameters
-            ")" . // End of parameters list
+            implode(', ', $this->getParameters($functionLike->getParameters())) . // List of parameters
+            ')' . // End of parameters list
             ($reflectionReturnType ? " : $reflectionReturnType" : '') . // Return type, if present
             "\n" .
             "{\n" . // Start of method body

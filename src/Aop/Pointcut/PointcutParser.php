@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -22,7 +23,7 @@ class PointcutParser extends Parser
      */
     public function __construct(PointcutGrammar $grammar)
     {
-        $parseTable = include 'PointcutParseTable.php';
+        $parseTable = include __DIR__ . '/PointcutParseTable.php';
         parent::__construct($grammar, $parseTable);
     }
 }

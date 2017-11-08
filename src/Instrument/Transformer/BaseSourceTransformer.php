@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -29,12 +30,12 @@ abstract class BaseSourceTransformer implements SourceTransformer
     /**
      * @var AspectKernel|null
      */
-    protected $kernel = null;
+    protected $kernel;
 
     /**
      * @var AspectContainer|null
      */
-    protected $container = null;
+    protected $container;
 
     /**
      * Default constructor for transformer

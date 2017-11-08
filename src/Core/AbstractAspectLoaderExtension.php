@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -31,16 +32,16 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     /**
      * Instance of pointcut lexer
      *
-     * @var null|Lexer
+     * @var Lexer
      */
-    protected $pointcutLexer = null;
+    protected $pointcutLexer;
 
     /**
      * Instance of pointcut parser
      *
-     * @var null|Parser
+     * @var Parser
      */
-    protected $pointcutParser = null;
+    protected $pointcutParser;
 
     /**
      * Default initialization of dependencies
@@ -64,7 +65,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * @throws \UnexpectedValueException if there was an error during parsing
      * @return Pointcut|PointFilter
      */
-    protected function parsePointcut(Aspect $aspect, $reflection, $metaInformation)
+    protected function parsePointcut(Aspect $aspect, $reflection, $metaInformation): PointFilter
     {
         $stream = $this->makeLexicalAnalyze($aspect, $reflection, $metaInformation);
 
@@ -81,13 +82,13 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * @return TokenStream
      * @throws \UnexpectedValueException
      */
-    protected function makeLexicalAnalyze(Aspect $aspect, $reflection, $metaInformation)
+    protected function makeLexicalAnalyze(Aspect $aspect, $reflection, $metaInformation): TokenStream
     {
         try {
             $resolvedThisPointcut = str_replace('$this', get_class($aspect), $metaInformation->value);
             $stream = $this->pointcutLexer->lex($resolvedThisPointcut);
         } catch (RecognitionException $e) {
-            $message = "Can not recognize the lexical structure `%s` before %s, defined in %s:%d";
+            $message = 'Can not recognize the lexical structure `%s` before %s, defined in %s:%d';
             $message = sprintf(
                 $message,
                 $metaInformation->value,
@@ -111,18 +112,18 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * @param ReflectionMethod|ReflectionProperty $reflection
      * @param Annotation\BaseAnnotation $metaInformation
      * @param TokenStream $stream
-     * @return Pointcut
+     * @return Pointcut|PointFilter
      *
      * @throws \UnexpectedValueException
      */
-    protected function parseTokenStream($reflection, $metaInformation, $stream)
+    protected function parseTokenStream($reflection, $metaInformation, TokenStream $stream): PointFilter
     {
         try {
             $pointcut = $this->pointcutParser->parse($stream);
         } catch (UnexpectedTokenException $e) {
             $token   = $e->getToken();
-            $message = "Unexpected token %s in the `%s` before %s, defined in %s:%d." . PHP_EOL;
-            $message .= "Expected one of: %s";
+            $message = 'Unexpected token %s in the `%s` before %s, defined in %s:%d.' . PHP_EOL;
+            $message .= 'Expected one of: %s';
             $message = sprintf(
                 $message,
                 $token->getValue(),
@@ -134,7 +135,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                 method_exists($reflection, 'getStartLine')
                     ? $reflection->getStartLine()
                     : 0,
-                join(', ', $e->getExpected())
+                implode(', ', $e->getExpected())
             );
             throw new \UnexpectedValueException($message, 0, $e);
         }

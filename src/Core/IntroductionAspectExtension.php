@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -16,6 +17,8 @@ use Go\Aop\Framework;
 use Go\Aop\Pointcut;
 use Go\Aop\Support;
 use Go\Lang\Annotation;
+use ReflectionProperty;
+use Reflector;
 
 /**
  * Introduction aspect extension
@@ -30,19 +33,17 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      *
      * @return string
      */
-    public function getKind()
+    public function getKind(): string
     {
         return self::KIND_ANNOTATION;
     }
 
     /**
      * Introduction aspect loader works only with properties of aspect
-     *
-     * @return string|array
      */
-    public function getTarget()
+    public function getTargets(): array
     {
-        return self::TARGET_PROPERTY;
+        return [self::TARGET_PROPERTY];
     }
 
     /**
@@ -54,7 +55,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      *
      * @return boolean true if extension is able to create an advisor from reflection and metaInformation
      */
-    public function supports(Aspect $aspect, $reflection, $metaInformation = null)
+    public function supports(Aspect $aspect, $reflection, $metaInformation = null): bool
     {
         return
             ($metaInformation instanceof Annotation\DeclareParents) ||
@@ -65,14 +66,14 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      * Loads definition from specific point of aspect into the container
      *
      * @param Aspect $aspect Instance of aspect
-     * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
+     * @param Reflector|ReflectionProperty $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information
      *
      * @throws \UnexpectedValueException
      *
      * @return array|Pointcut[]|Advisor[]
      */
-    public function load(Aspect $aspect, $reflection, $metaInformation = null)
+    public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null): array
     {
         $loadedItems = [];
         $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation);
@@ -80,14 +81,14 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 
         switch (true) {
             case ($metaInformation instanceof Annotation\DeclareParents):
-                $interface = $metaInformation->interface;
                 $implement = $metaInformation->defaultImpl;
-                $advice    = new Framework\TraitIntroductionInfo($interface, $implement);
+                $interface = $metaInformation->interface;
+                $advice    = new Framework\TraitIntroductionInfo($implement, $interface);
                 $advisor   = new Support\DeclareParentsAdvisor($pointcut->getClassFilter(), $advice);
                 $loadedItems[$propertyId] = $advisor;
                 break;
 
-            case ($metaInformation instanceof Annotation\DeclareError):
+            case (($metaInformation instanceof Annotation\DeclareError) && ($pointcut instanceof Pointcut)):
                 $reflection->setAccessible(true);
                 $message = $reflection->getValue($aspect);
                 $level   = $metaInformation->level;
@@ -96,8 +97,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                 break;
 
             default:
-                throw new \UnexpectedValueException("Unsupported pointcut class: " . get_class($pointcut));
-
+                throw new \UnexpectedValueException('Unsupported pointcut class: ' . get_class($pointcut));
         }
 
         return $loadedItems;

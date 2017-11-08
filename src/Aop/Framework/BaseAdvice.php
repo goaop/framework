@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -51,16 +52,14 @@ abstract class BaseAdvice implements OrderedAdvice
     /**
      * Local cache of advices for faster unserialization on big projects
      *
-     * @var array|Closure[]
+     * @var Closure[]
      */
     protected static $localAdvicesCache = [];
 
     /**
      * Returns the advice order
-     *
-     * @return int
      */
-    public function getAdviceOrder()
+    public function getAdviceOrder(): int
     {
         return $this->order;
     }
@@ -72,7 +71,7 @@ abstract class BaseAdvice implements OrderedAdvice
      *
      * @return array
      */
-    public static function serializeAdvice(Closure $adviceMethod)
+    public static function serializeAdvice(Closure $adviceMethod): array
     {
         $refAdvice = new ReflectionFunction($adviceMethod);
 
@@ -89,7 +88,7 @@ abstract class BaseAdvice implements OrderedAdvice
      *
      * @return Closure
      */
-    public static function unserializeAdvice(array $adviceData)
+    public static function unserializeAdvice(array $adviceData): Closure
     {
         $aspectName = $adviceData['aspect'];
         $methodName = $adviceData['method'];

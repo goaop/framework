@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -26,7 +27,7 @@ class SimpleNamespaceFilter implements PointFilter
      *
      * @var string
      */
-    protected $nsName = '';
+    protected $nsName;
 
     /**
      * Pattern for regular expression matching
@@ -40,23 +41,23 @@ class SimpleNamespaceFilter implements PointFilter
      *
      * @param string $namespaceName Name of the namespace to match or glob pattern
      */
-    public function __construct($namespaceName)
+    public function __construct(string $namespaceName)
     {
         $namespaceName = trim($namespaceName, '\\');
         $this->nsName  = $namespaceName;
-        $this->regexp  = strtr(preg_quote($this->nsName, '/'), array(
+        $this->regexp  = strtr(preg_quote($this->nsName, '/'), [
             '\\*'    => '[^\\\\]+',
             '\\*\\*' => '.+',
             '\\?'    => '.',
             '\\|'    => '|'
-        ));
+        ]);
     }
 
     /**
      * {@inheritdoc}
      * @param ReflectionFileNamespace|string $ns
      */
-    public function matches($ns, $context = null, $instance = null, array $arguments = null)
+    public function matches($ns, $context = null, $instance = null, array $arguments = null): bool
     {
         $isNamespaceIsObject = ($ns === (object) $ns);
 
@@ -64,17 +65,15 @@ class SimpleNamespaceFilter implements PointFilter
             return false;
         }
 
-        $nsName = $isNamespaceIsObject ? $ns->getName() : $ns;
+        $nsName = ($ns instanceof ReflectionFileNamespace) ? $ns->getName() : $ns;
 
         return ($nsName === $this->nsName) || (bool) preg_match("/^(?:{$this->regexp})$/", $nsName);
     }
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind(): int
     {
         return 0;
     }

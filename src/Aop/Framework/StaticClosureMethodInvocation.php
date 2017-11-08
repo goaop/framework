@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,6 +11,8 @@
 
 namespace Go\Aop\Framework;
 
+use Closure;
+
 /**
  * Static closure method invocation is responsible to call static methods via closure
  */
@@ -18,16 +21,16 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
     /**
      * Closure to use
      *
-     * @var \Closure
+     * @var Closure
      */
-    protected $closureToCall = null;
+    protected $closureToCall;
 
     /**
      * Previous scope of invocation
      *
      * @var null|object|string
      */
-    protected $previousScope = null;
+    protected $previousScope;
 
     /**
      * Invokes original method and return result from it
@@ -37,7 +40,6 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor \Go\Aop\Intercept\Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);
@@ -46,15 +48,13 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
         // Rebind the closure if scope (class name) was changed since last time
         if ($this->previousScope !== $this->instance) {
             if ($this->closureToCall === null) {
-                $this->closureToCall = $this->getStaticInvoker($this->className, $this->reflectionMethod->name);
+                $this->closureToCall = static::getStaticInvoker($this->className, $this->reflectionMethod->name);
             }
             $this->closureToCall = $this->closureToCall->bindTo(null, $this->instance);
             $this->previousScope = $this->instance;
         }
 
-        $closureToCall = $this->closureToCall;
-
-        return $closureToCall($this->arguments);
+        return ($this->closureToCall)($this->arguments);
 
     }
 
@@ -64,11 +64,11 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
      * @param string $className Class name to forward request
      * @param string $method Method name to call
      *
-     * @return \Closure
+     * @return Closure
      */
-    protected static function getStaticInvoker($className, $method)
+    protected static function getStaticInvoker($className, $method): Closure
     {
-        return function(array $args) use ($className, $method) {
+        return function (array $args) use ($className, $method) {
             return forward_static_call_array([$className, $method], $args);
         };
     }

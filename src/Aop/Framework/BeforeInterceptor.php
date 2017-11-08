@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -29,8 +30,7 @@ final class BeforeInterceptor extends BaseInterceptor implements AdviceBefore
      */
     public function invoke(Joinpoint $joinpoint)
     {
-        $adviceMethod = $this->adviceMethod;
-        $adviceMethod($joinpoint);
+        ($this->adviceMethod)($joinpoint);
 
         return $joinpoint->proceed();
     }

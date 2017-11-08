@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -11,7 +12,6 @@
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\FunctionInvocation;
-use Go\Aop\Intercept\Interceptor;
 use ReflectionFunction;
 
 /**
@@ -25,7 +25,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
      *
      * @var null|ReflectionFunction
      */
-    protected $reflectionFunction = null;
+    protected $reflectionFunction;
 
     /**
      * Constructor for function invocation
@@ -47,7 +47,6 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);
@@ -58,10 +57,8 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
 
     /**
      * Gets the function being called.
-     *
-     * @return ReflectionFunction the method being called.
      */
-    public function getFunction()
+    public function getFunction(): ReflectionFunction
     {
         return $this->reflectionFunction;
     }
@@ -98,8 +95,8 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
      */
     final public function __invoke(array $arguments = [], array $variadicArguments = [])
     {
-        if ($this->level) {
-            array_push($this->stackFrames, [$this->arguments, $this->current]);
+        if ($this->level > 0) {
+            $this->stackFrames[] = [$this->arguments, $this->current];
         }
 
         if (!empty($variadicArguments)) {
@@ -115,7 +112,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
 
         --$this->level;
 
-        if ($this->level) {
+        if ($this->level > 0) {
             list($this->arguments, $this->current) = array_pop($this->stackFrames);
         }
 
@@ -130,7 +127,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     final public function __toString()
     {
         return sprintf(
-            "execution(%s())",
+            'execution(%s())',
             $this->reflectionFunction->getName()
         );
     }

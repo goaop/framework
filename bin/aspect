@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -12,6 +13,7 @@
 use Go\Console\Command\DebugAdvisorCommand;
 use Go\Console\Command\DebugAspectCommand;
 use Go\Console\Command\CacheWarmupCommand;
+use Go\Console\Command\DebugWeavingCommand;
 use Go\Core\AspectKernel;
 use Symfony\Component\Console\Application;
 
@@ -40,4 +42,5 @@ $app = new Application('Go! AOP', AspectKernel::VERSION);
 $app->add(new CacheWarmupCommand());
 $app->add(new DebugAspectCommand());
 $app->add(new DebugAdvisorCommand());
+$app->add(new DebugWeavingCommand());
 $app->run();

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Core;
 
@@ -18,9 +19,9 @@ class AdviceMatcherTest extends TestCase
     /**
      * @var null|AdviceMatcher
      */
-    protected $adviceMatcher = null;
+    protected $adviceMatcher;
 
-    protected $reflectionClass = null;
+    protected $reflectionClass;
 
     /**
      * This method is called before the first test of this test class is run.
@@ -34,11 +35,14 @@ class AdviceMatcherTest extends TestCase
 
     protected function setUp()
     {
-        $container = $this->getMock(AspectContainer::class);
-        $reader    = $this->getMock(Reader::class);
-        $loader    = $this->getMock(AspectLoader::class, [], array($container, $reader));
+        $container = $this->createMock(AspectContainer::class);
+        $reader    = $this->createMock(Reader::class);
+        $loader    = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$container, $reader])
+            ->getMock();
 
-        $this->adviceMatcher = new AdviceMatcher($loader, $container);
+        $this->adviceMatcher = new AdviceMatcher($loader);
 
         $reflectionFile        = new ReflectionFile(__FILE__);
         $this->reflectionClass = $reflectionFile->getFileNamespace(__NAMESPACE__)->getClass(__CLASS__);
@@ -61,7 +65,7 @@ class AdviceMatcherTest extends TestCase
     {
         $funcName = __FUNCTION__;
 
-        $pointcut = $this->getMock(Pointcut::class);
+        $pointcut = $this->createMock(Pointcut::class);
         $pointcut
             ->expects($this->any())
             ->method('getClassFilter')
@@ -77,10 +81,10 @@ class AdviceMatcherTest extends TestCase
             ->method('getKind')
             ->will($this->returnValue(Pointcut::KIND_METHOD));
 
-        $advice = $this->getMock(Advice::class);
+        $advice = $this->createMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
-        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, array($advisor));
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]);
         $this->assertArrayHasKey(AspectContainer::METHOD_PREFIX, $advices);
         $this->assertArrayHasKey($funcName, $advices[AspectContainer::METHOD_PREFIX]);
         $this->assertCount(1, $advices[AspectContainer::METHOD_PREFIX]);
@@ -93,7 +97,7 @@ class AdviceMatcherTest extends TestCase
     {
         $propName = 'adviceMatcher'; // $this->adviceMatcher;
 
-        $pointcut = $this->getMock(Pointcut::class);
+        $pointcut = $this->createMock(Pointcut::class);
         $pointcut
             ->expects($this->any())
             ->method('getClassFilter')
@@ -109,10 +113,10 @@ class AdviceMatcherTest extends TestCase
             ->method('getKind')
             ->will($this->returnValue(Pointcut::KIND_PROPERTY));
 
-        $advice = $this->getMock(Advice::class);
+        $advice = $this->createMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
-        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, array($advisor));
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]);
         $this->assertArrayHasKey(AspectContainer::PROPERTY_PREFIX, $advices);
         $this->assertArrayHasKey($propName, $advices[AspectContainer::PROPERTY_PREFIX]);
         $this->assertCount(1, $advices[AspectContainer::PROPERTY_PREFIX]);

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -53,7 +54,7 @@ class CachedAspectLoader extends AspectLoader
      */
     public function __construct(AspectContainer $container, $loaderId, array $options = [])
     {
-        $this->cacheDir      = isset($options['cacheDir']) ? $options['cacheDir'] : null;
+        $this->cacheDir      = $options['cacheDir'] ?? null;
         $this->cacheFileMode = $options['cacheFileMode'];
         $this->loaderId      = $loaderId;
         $this->container     = $container;
@@ -62,7 +63,7 @@ class CachedAspectLoader extends AspectLoader
     /**
      * {@inheritdoc}
      */
-    public function load(Aspect $aspect)
+    public function load(Aspect $aspect): array
     {
         $refAspect = new ReflectionClass($aspect);
         $fileName  = $this->cacheDir . '/_aspect/' . sha1($refAspect->getName());
@@ -96,7 +97,7 @@ class CachedAspectLoader extends AspectLoader
 
             return $this->loader;
         }
-        throw new \RuntimeException("Not implemented");
+        throw new \RuntimeException('Not implemented');
     }
 
 

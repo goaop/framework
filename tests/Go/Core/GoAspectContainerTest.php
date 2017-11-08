@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Core;
 
@@ -12,7 +13,7 @@ class GoAspectContainerTest extends TestCase
     /**
      * @var null|GoAspectContainer
      */
-    protected $container = null;
+    protected $container;
 
     protected function setUp()
     {
@@ -34,13 +35,14 @@ class GoAspectContainerTest extends TestCase
 
     public function internalServicesList()
     {
-        return array(
-            array('aspect.loader'),
-            array('aspect.advice_matcher'),
-            array('aspect.annotation.reader'),
-            array('aspect.pointcut.lexer'),
-            array('aspect.pointcut.parser'),
-        );
+        return [
+            ['aspect.loader'],
+            ['aspect.advice_matcher'],
+            ['aspect.annotation.cache'],
+            ['aspect.annotation.reader'],
+            ['aspect.pointcut.lexer'],
+            ['aspect.pointcut.parser'],
+        ];
     }
 
     /**
@@ -48,13 +50,13 @@ class GoAspectContainerTest extends TestCase
      */
     public function testPointcutCanBeRegisteredAndReceived()
     {
-        $pointcut = $this->getMock(Pointcut::class);
+        $pointcut = $this->createMock(Pointcut::class);
         $this->container->registerPointcut($pointcut, 'test');
 
         $this->assertSame($pointcut, $this->container->getPointcut('test'));
         // Verify that tag is working
         $pointcuts = $this->container->getByTag('pointcut');
-        $this->assertSame(array('pointcut.test' => $pointcut), $pointcuts);
+        $this->assertSame(['pointcut.test' => $pointcut], $pointcuts);
     }
 
     /**
@@ -62,12 +64,12 @@ class GoAspectContainerTest extends TestCase
      */
     public function testAdvisorCanBeRegistered()
     {
-        $advisor = $this->getMock(Advisor::class);
+        $advisor = $this->createMock(Advisor::class);
         $this->container->registerAdvisor($advisor, 'test');
 
         // Verify that tag is working
         $advisors = $this->container->getByTag('advisor');
-        $this->assertSame(array('advisor.test' => $advisor), $advisors);
+        $this->assertSame(['advisor.test' => $advisor], $advisors);
     }
 
     /**
@@ -75,7 +77,7 @@ class GoAspectContainerTest extends TestCase
      */
     public function testAspectCanBeRegisteredAndReceived()
     {
-        $aspect = $this->getMock(Aspect::class);
+        $aspect = $this->createMock(Aspect::class);
         $aspectClass = get_class($aspect);
 
         $this->container->registerAspect($aspect);
@@ -83,7 +85,7 @@ class GoAspectContainerTest extends TestCase
         $this->assertSame($aspect, $this->container->getAspect($aspectClass));
         // Verify that tag is working
         $aspects = $this->container->getByTag('aspect');
-        $this->assertSame(array("aspect.{$aspectClass}" => $aspect), $aspects);
+        $this->assertSame(["aspect.{$aspectClass}" => $aspect], $aspects);
     }
 
     /**

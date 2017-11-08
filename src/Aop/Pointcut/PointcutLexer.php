@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -71,7 +72,7 @@ class PointcutLexer extends SimpleLexer
         $this->regex('WSP', "/^[ \r\n\t]+/");
 
         // Comments
-        $this->regex('CMT', "|^//.*|");
+        $this->regex('CMT', '|^//.*|');
         $this->skip('CMT', 'WSP');
     }
 }

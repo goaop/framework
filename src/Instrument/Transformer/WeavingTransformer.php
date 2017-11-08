@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -18,13 +19,12 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
-use Go\ParserReflection\ReflectionEngine;
+use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionFile;
 use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Proxy\ClassProxy;
 use Go\Proxy\FunctionProxy;
 use Go\Proxy\TraitProxy;
-use ReflectionClass;
 
 /**
  * Main transformer that performs weaving of aspects into the source code
@@ -62,8 +62,7 @@ class WeavingTransformer extends BaseSourceTransformer
         AdviceMatcher $adviceMatcher,
         CachePathManager $cachePathManager,
         AspectLoader $loader
-    )
-    {
+    ) {
         parent::__construct($kernel);
         $this->adviceMatcher    = $adviceMatcher;
         $this->cachePathManager = $cachePathManager;
@@ -74,16 +73,12 @@ class WeavingTransformer extends BaseSourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return boolean Return false if transformation should be stopped
+     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata): string
     {
         $totalTransformations = 0;
-
-        $fileName = $metadata->uri;
-
-        $astTree      = ReflectionEngine::parseFile($fileName, $metadata->source);
-        $parsedSource = new ReflectionFile($fileName, $astTree);
+        $parsedSource         = new ReflectionFile($metadata->uri, $metadata->syntaxTree);
 
         // Check if we have some new aspects that weren't loaded yet
         $unloadedAspects = $this->aspectLoader->getUnloadedAspects();
@@ -93,26 +88,24 @@ class WeavingTransformer extends BaseSourceTransformer
         $advisors = $this->container->getByTag('advisor');
 
         $namespaces = $parsedSource->getFileNamespaces();
-        $lineOffset = 0;
 
         foreach ($namespaces as $namespace) {
-
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
-
                 // Skip interfaces and aspects
                 if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames())) {
                     continue;
                 }
-                $wasClassProcessed = $this->processSingleClass($advisors, $metadata, $class, $lineOffset);
+                $wasClassProcessed = $this->processSingleClass($advisors, $metadata, $class);
                 $totalTransformations += (integer) $wasClassProcessed;
             }
             $wasFunctionsProcessed = $this->processFunctions($advisors, $metadata, $namespace);
             $totalTransformations += (integer) $wasFunctionsProcessed;
         }
 
-        // If we return false this will indicate no more transformation for following transformers
-        return $totalTransformations > 0;
+        $result = ($totalTransformations > 0) ? self::RESULT_TRANSFORMED : self::RESULT_ABSTAIN;
+
+        return $result;
     }
 
     /**
@@ -121,11 +114,10 @@ class WeavingTransformer extends BaseSourceTransformer
      * @param array|Advisor[] $advisors
      * @param StreamMetaData $metadata Source stream information
      * @param ReflectionClass $class Instance of class to analyze
-     * @param integer $lineOffset Current offset, will be updated to store the last position
      *
      * @return bool True if was class processed, false otherwise
      */
-    private function processSingleClass(array $advisors, StreamMetaData $metadata, ReflectionClass $class, &$lineOffset)
+    private function processSingleClass(array $advisors, StreamMetaData $metadata, ReflectionClass $class): bool
     {
         $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
 
@@ -143,11 +135,11 @@ class WeavingTransformer extends BaseSourceTransformer
             }
         }
 
-        // Prepare new parent name
-        $newParentName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
+        // Prepare new class name
+        $newClassName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
 
         // Replace original class name with new
-        $metadata->source = $this->adjustOriginalClass($class, $metadata->source, $newParentName);
+        $this->adjustOriginalClass($class, $metadata, $newClassName);
 
         // Prepare child Aop proxy
         $child = $class->isTrait()
@@ -155,20 +147,13 @@ class WeavingTransformer extends BaseSourceTransformer
             : new ClassProxy($class, $advices);
 
         // Set new parent name instead of original
-        $child->setParentName($newParentName);
+        $child->setParentName($newClassName);
         $contentToInclude = $this->saveProxyToCache($class, $child);
 
-        // Add child to source
-        $lastLine  = $class->getEndLine() + $lineOffset; // returns the last line of class
-        $dataArray = explode("\n", $metadata->source);
+        // Get last token for this class
+        $lastClassToken = $class->getNode()->getAttribute('endTokenPos');
 
-        $currentClassArray = array_splice($dataArray, 0, $lastLine);
-        $childClassArray   = explode("\n", $contentToInclude);
-        $lineOffset += count($childClassArray) + 2; // returns LoC for child class + 2 blank lines
-
-        $dataArray = array_merge($currentClassArray, array(''), $childClassArray, array(''), $dataArray);
-
-        $metadata->source = implode("\n", $dataArray);
+        $metadata->tokenStream[$lastClassToken][1] .= PHP_EOL . $contentToInclude;
 
         return true;
     }
@@ -177,25 +162,29 @@ class WeavingTransformer extends BaseSourceTransformer
      * Adjust definition of original class source to enable extending
      *
      * @param ReflectionClass $class Instance of class reflection
-     * @param string $source Source code
-     * @param string $newParentName New name for the parent class
-     *
-     * @return string Replaced code for class
+     * @param StreamMetaData $streamMetaData Source code metadata
+     * @param string $newClassName New name for the class
      */
-    private function adjustOriginalClass($class, $source, $newParentName)
+    private function adjustOriginalClass(ReflectionClass $class, StreamMetaData $streamMetaData, string $newClassName)
     {
-        $type = $class->isTrait() ? 'trait' : 'class';
-        $source = preg_replace(
-            "/{$type}\s+(" . $class->getShortName() . ')(\b)/iS',
-            "{$type} {$newParentName}$2",
-            $source
-        );
-        if ($class->isFinal()) {
-            // Remove final from class, child will be final instead
-            $source = str_replace("final {$type}", $type, $source);
-        }
-
-        return $source;
+        $classNode = $class->getNode();
+        $position  = $classNode->getAttribute('startTokenPos');
+        do {
+            if (isset($streamMetaData->tokenStream[$position])) {
+                $token = $streamMetaData->tokenStream[$position];
+                // Remove final and following whitespace from the class, child will be final instead
+                if ($token[0] === T_FINAL) {
+                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position+1]);
+                }
+                // First string is class/trait name
+                if ($token[0] === T_STRING) {
+                    $streamMetaData->tokenStream[$position][1] = $newClassName;
+                    // We have finished our job, can break this loop
+                    break;
+                }
+            }
+            ++$position;
+        } while (true);
     }
 
     /**
@@ -207,15 +196,18 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @return boolean True if functions were processed, false otherwise
      */
-    private function processFunctions(array $advisors, StreamMetaData $metadata, $namespace)
-    {
+    private function processFunctions(
+        array $advisors,
+        StreamMetaData $metadata,
+        ReflectionFileNamespace $namespace
+    ): bool {
         static $cacheDirSuffix = '/_functions/';
 
         $wasProcessedFunctions = false;
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace, $advisors);
         $cacheDir        = $this->cachePathManager->getCacheDir();
-        if (!empty($functionAdvices) && $cacheDir) {
-            $cacheDir = $cacheDir . $cacheDirSuffix;
+        if (!empty($functionAdvices)) {
+            $cacheDir .= $cacheDirSuffix;
             $fileName = str_replace('\\', '/', $namespace->getName()) . '.php';
 
             $functionFileName = $cacheDir . $fileName;
@@ -229,8 +221,10 @@ class WeavingTransformer extends BaseSourceTransformer
                 // For cache files we don't want executable bits by default
                 chmod($functionFileName, $this->options['cacheFileMode'] & (~0111));
             }
-            $content = 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
-            $metadata->source .= $content;
+            $content = 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';';
+
+            $lastTokenPosition = $namespace->getLastTokenPosition();
+            $metadata->tokenStream[$lastTokenPosition][1] .= PHP_EOL . $content;
             $wasProcessedFunctions = true;
         }
 
@@ -245,17 +239,11 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @return string
      */
-    private function saveProxyToCache($class, $child)
+    private function saveProxyToCache(ReflectionClass $class, $child): string
     {
         static $cacheDirSuffix = '/_proxies/';
 
-        $cacheDir = $this->cachePathManager->getCacheDir();
-
-        // Without cache we should rewrite original file
-        if (!$cacheDir) {
-            return $child;
-        }
-        $cacheDir = $cacheDir . $cacheDirSuffix;
+        $cacheDir = $this->cachePathManager->getCacheDir() . $cacheDirSuffix;
         $fileName = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());
 
         $proxyFileName = $cacheDir . $fileName;
@@ -280,7 +268,7 @@ class WeavingTransformer extends BaseSourceTransformer
         // For cache files we don't want executable bits by default
         chmod($proxyFileName, $this->options['cacheFileMode'] & (~0111));
 
-        return 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';' . PHP_EOL;
+        return 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';';
     }
 
     /**

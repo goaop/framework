@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -11,6 +12,11 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectKernel;
+use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Scalar\MagicConst;
+use PhpParser\Node\Scalar\MagicConst\Dir;
+use PhpParser\Node\Scalar\MagicConst\File;
+use PhpParser\NodeTraverser;
 
 /**
  * Transformer that replaces magic __DIR__ and __FILE__ constants in the source code
@@ -50,36 +56,15 @@ class MagicConstantTransformer extends BaseSourceTransformer
      * This method may transform the supplied source and return a new replacement for it
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return void|bool Return false if transformation should be stopped
+     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata): string
     {
-        // Make the job only when we use cache directory
-        if (!self::$rewriteToPath) {
-            return;
-        }
+        $this->replaceMagicDirFileConstants($metadata);
+        $this->wrapReflectionGetFileName($metadata);
 
-        $hasReflectionFilename = strpos($metadata->source, 'getFileName') !== false;
-        $hasMagicConstants     = (strpos($metadata->source, '__DIR__') !== false) ||
-            (strpos($metadata->source, '__FILE__') !== false);
-
-        if (!$hasMagicConstants && !$hasReflectionFilename) {
-            return;
-        }
-
-        // Resolve magic constants
-        if ($hasMagicConstants) {
-            $this->replaceMagicConstants($metadata);
-        }
-
-        if ($hasReflectionFilename) {
-            // need to make more reliable solution
-            $metadata->source = preg_replace(
-                '/\$([\w\$\-\>\:\(\)]*?getFileName\(\))/S',
-                '\\' . __CLASS__ . '::resolveFileName(\$\1)',
-                $metadata->source
-            );
-        }
+        // We should always vote abstain, because if there is only changes for magic constants, we can drop them
+        return self::RESULT_ABSTAIN;
     }
 
     /**
@@ -89,37 +74,63 @@ class MagicConstantTransformer extends BaseSourceTransformer
      *
      * @return string Resolved file name
      */
-    public static function resolveFileName($fileName)
+    public static function resolveFileName(string $fileName): string
     {
         return str_replace(
-            array(self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'),
-            array(self::$rootPath, ''),
+            [self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'],
+            [self::$rootPath, ''],
             $fileName
         );
     }
 
     /**
-     * Replace only magic constants in the code
+     * Wraps all possible getFileName() methods from ReflectionFile
      *
      * @param StreamMetaData $metadata
      */
-    private function replaceMagicConstants(StreamMetaData $metadata)
+    private function wrapReflectionGetFileName(StreamMetaData $metadata)
     {
-        $originalUri = $metadata->uri;
-        $replacement = array(
-            T_FILE => $originalUri,
-            T_DIR  => dirname($originalUri)
-        );
-        $tokenStream = token_get_all($metadata->source);
+        $methodCallFinder = new NodeFinderVisitor([MethodCall::class]);
+        $traverser        = new NodeTraverser();
+        $traverser->addVisitor($methodCallFinder);
+        $traverser->traverse($metadata->syntaxTree);
 
-        $transformedSource = '';
-        foreach ($tokenStream as $token) {
-            list ($token, $value) = (array) $token + array(1 => $token);
-            if (isset($replacement[$token])) {
-                $value = "'" . $replacement[$token] . "'";
+        /** @var MethodCall[] $methodCalls */
+        $methodCalls = $methodCallFinder->getFoundNodes();
+        foreach ($methodCalls as $methodCallNode) {
+            if ($methodCallNode->name !== 'getFileName') {
+                continue;
             }
-            $transformedSource .= $value;
+            $startPosition    = $methodCallNode->getAttribute('startTokenPos');
+            $endPosition      = $methodCallNode->getAttribute('endTokenPos');
+            $expressionPrefix = '\\' . __CLASS__ . '::resolveFileName(';
+
+            $metadata->tokenStream[$startPosition][1] = $expressionPrefix . $metadata->tokenStream[$startPosition][1];
+            $metadata->tokenStream[$endPosition][1] .= ')';
         }
-        $metadata->source = $transformedSource;
+    }
+
+    /**
+     * Replaces all magic __DIR__ and __FILE__ constants in the file with calculated value
+     *
+     * @param StreamMetaData $metadata
+     */
+    private function replaceMagicDirFileConstants(StreamMetaData $metadata)
+    {
+        $magicConstFinder = new NodeFinderVisitor([Dir::class, File::class]);
+        $traverser        = new NodeTraverser();
+        $traverser->addVisitor($magicConstFinder);
+        $traverser->traverse($metadata->syntaxTree);
+
+        /** @var MagicConst[] $magicConstants */
+        $magicConstants = $magicConstFinder->getFoundNodes();
+        $magicFileValue = $metadata->uri;
+        $magicDirValue  = dirname($magicFileValue);
+        foreach ($magicConstants as $magicConstantNode) {
+            $tokenPosition = $magicConstantNode->getAttribute('startTokenPos');
+            $replacement   = $magicConstantNode instanceof Dir ? $magicDirValue : $magicFileValue;
+
+            $metadata->tokenStream[$tokenPosition][1] = "'{$replacement}'";
+        }
     }
 }

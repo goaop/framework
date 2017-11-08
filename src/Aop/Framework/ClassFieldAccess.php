@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -12,7 +13,6 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\AspectException;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Intercept\Interceptor;
 use ReflectionProperty;
 
 /**
@@ -26,7 +26,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @var object
      */
-    protected $instance = null;
+    protected $instance;
 
     /**
      * Instance of reflection property
@@ -40,7 +40,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @var mixed
      */
-    protected $newValue = null;
+    protected $newValue;
 
     /**
      * Access type for field access
@@ -54,7 +54,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @var mixed
      */
-    private $value = null;
+    private $value;
 
     /**
      * Constructor for field access
@@ -63,7 +63,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * @param string $fieldName Field name
      * @param $advices array List of advices for this invocation
      */
-    public function __construct($className, $fieldName, array $advices)
+    public function __construct(string $className, string $fieldName, array $advices)
     {
         parent::__construct($advices);
 
@@ -76,20 +76,16 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Returns the access type.
-     *
-     * @return integer
      */
-    public function getAccessType()
+    public function getAccessType(): int
     {
         return $this->accessType;
     }
 
     /**
      * Gets the field being accessed.
-     *
-     * @return ReflectionProperty the field being accessed.
      */
-    public function getField()
+    public function getField(): ReflectionProperty
     {
         return $this->reflectionProperty;
     }
@@ -122,8 +118,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Checks scope rules for accessing property
      *
      * @param int $stackLevel Stack level for check
-     *
-     * @return true if access is OK
      */
     public function ensureScopeRule($stackLevel = 2)
     {
@@ -131,17 +125,15 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
         if ($property->isProtected()) {
             $backTrace     = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $stackLevel+1);
-            $accessor      = isset($backTrace[$stackLevel]) ? $backTrace[$stackLevel] : [];
+            $accessor      = $backTrace[$stackLevel] ?? [];
             $propertyClass = $property->class;
             if (isset($accessor['class'])) {
                 if ($accessor['class'] === $propertyClass || is_subclass_of($accessor['class'], $propertyClass)) {
-                    return true;
+                    return;
                 }
             }
             throw new AspectException("Cannot access protected property {$propertyClass}::{$property->name}");
         }
-
-        return true;
     }
 
     /**
@@ -155,7 +147,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     final public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             $currentInterceptor->invoke($this);
@@ -174,8 +165,8 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     final public function &__invoke($instance, $accessType, &$originalValue, $newValue = NAN)
     {
-        if ($this->level) {
-            array_push($this->stackFrames, [$this->instance, $this->accessType, &$this->value, &$this->newValue]);
+        if ($this->level > 0) {
+            $this->stackFrames[] = [$this->instance, $this->accessType, &$this->value, &$this->newValue];
         }
 
         ++$this->level;
@@ -190,15 +181,15 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
         --$this->level;
 
-        if ($this->level) {
+        if ($this->level > 0) {
             list($this->instance, $this->accessType, $this->value, $this->newValue) = array_pop($this->stackFrames);
         }
 
-        if ($accessType == self::READ) {
+        if ($accessType === self::READ) {
             $result = &$this->value;
         } else {
             $result = &$this->newValue;
-        };
+        }
 
         return $result;
 
@@ -234,8 +225,8 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     final public function __toString()
     {
         return sprintf(
-            "%s(%s%s%s)",
-            $this->accessType == self::READ ? 'get' : 'set',
+            '%s(%s%s%s)',
+            $this->accessType === self::READ ? 'get' : 'set',
             is_object($this->instance) ? get_class($this->instance) : $this->instance,
             $this->reflectionProperty->isStatic() ? '::' : '->',
             $this->reflectionProperty->name

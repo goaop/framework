@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -14,6 +15,7 @@ use Go\Aop\Advice;
 use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceBefore;
 use Go\Aop\AdviceAround;
+use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
 
 /**
@@ -31,7 +33,7 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * List of advices
      *
-     * @var array|Advice[]
+     * @var array|Advice[]|Interceptor[]
      */
     protected $advices = [];
 
@@ -72,10 +74,10 @@ abstract class AbstractJoinpoint implements Joinpoint
      * @param array|Advice[] $advices
      * @return array|Advice[] Sorted list of advices
      */
-    public static function sortAdvices(array $advices)
+    public static function sortAdvices(array $advices): array
     {
         $sortedAdvices = $advices;
-        uasort($sortedAdvices, function(Advice $first, Advice $second) {
+        uasort($sortedAdvices, function (Advice $first, Advice $second) {
             switch (true) {
                 case $first instanceof AdviceBefore && !($second instanceof AdviceBefore):
                     return -1;

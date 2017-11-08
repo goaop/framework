@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -48,7 +49,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      * @param string $methodName Method to invoke
      * @param $advices array List of advices for this invocation
      */
-    public function __construct($className, $methodName, array $advices)
+    public function __construct(string $className, string $methodName, array $advices)
     {
         parent::__construct($advices);
         $this->className        = $className;
@@ -71,12 +72,12 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      */
     final public function __invoke($instance = null, array $arguments = [], array $variadicArguments = [])
     {
-        if ($this->level) {
+        if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
         }
 
         if (!empty($variadicArguments)) {
-            $arguments = array_merge($arguments, $variadicArguments);
+            $arguments = \array_merge($arguments, $variadicArguments);
         }
 
         try {
@@ -86,24 +87,22 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
             $this->instance  = $instance;
             $this->arguments = $arguments;
 
-            $result = $this->proceed();
+            return $this->proceed();
         } finally {
             --$this->level;
-        }
 
-        if ($this->level) {
-            list($this->arguments, $this->instance, $this->current) = array_pop($this->stackFrames);
+            if ($this->level > 0) {
+                list($this->arguments, $this->instance, $this->current) = \array_pop($this->stackFrames);
+            }
         }
-
-        return $result;
     }
 
     /**
      * Gets the method being called.
      *
-     * @return AnnotatedReflectionMethod the method being called.
+     * @return ReflectionMethod|AnnotatedReflectionMethod the method being called.
      */
-    public function getMethod()
+    public function getMethod(): ReflectionMethod
     {
         return $this->reflectionMethod;
     }
@@ -137,7 +136,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     final public function __toString()
     {
         return sprintf(
-            "execution(%s%s%s())",
+            'execution(%s%s%s())',
             is_object($this->instance) ? get_class($this->instance) : $this->instance,
             $this->reflectionMethod->isStatic() ? '::' : '->',
             $this->reflectionMethod->name

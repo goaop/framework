@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -42,7 +43,7 @@ abstract class AbstractInterceptorTest extends TestCase
      */
     protected function getInvocation(&$sequenceRecorder, $throwException = false)
     {
-        $invocation = $this->getMock(static::INVOCATION_CLASS);
+        $invocation = $this->getMockBuilder(static::INVOCATION_CLASS)->getMock();
         $invocation
             ->expects($this->any())
             ->method('proceed')

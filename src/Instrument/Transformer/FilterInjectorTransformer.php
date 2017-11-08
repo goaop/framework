@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -13,6 +14,8 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
+use PhpParser\Node\Expr\Include_;
+use PhpParser\NodeTraverser;
 
 /**
  * Transformer that injects source filter for "require" and "include" operations
@@ -56,7 +59,7 @@ class FilterInjectorTransformer implements SourceTransformer
      * @param string $filterName Name of the filter to inject
      * @param CachePathManager $cacheManager Manager for cache files
      */
-    public function __construct(AspectKernel $kernel, $filterName, CachePathManager $cacheManager)
+    public function __construct(AspectKernel $kernel, string $filterName, CachePathManager $cacheManager)
     {
         self::configure($kernel, $filterName, $cacheManager);
     }
@@ -68,10 +71,10 @@ class FilterInjectorTransformer implements SourceTransformer
      * @param string $filterName Name of the filter to inject
      * @param CachePathManager $cacheManager Cache manager
      */
-    protected static function configure(AspectKernel $kernel, $filterName, CachePathManager $cacheManager)
+    protected static function configure(AspectKernel $kernel, string $filterName, CachePathManager $cacheManager)
     {
         if (self::$kernel) {
-            throw new \RuntimeException("Filter injector can be configured only once.");
+            throw new \RuntimeException('Filter injector can be configured only once.');
         }
         self::$kernel           = $kernel;
         self::$options          = $kernel->getOptions();
@@ -89,7 +92,7 @@ class FilterInjectorTransformer implements SourceTransformer
      *
      * @return string Transformed path to the resource
      */
-    public static function rewrite($originalResource, $originalDir = '')
+    public static function rewrite($originalResource, string $originalDir = ''): string
     {
         static $appDir, $cacheDir, $debug;
         if (!$appDir) {
@@ -97,7 +100,7 @@ class FilterInjectorTransformer implements SourceTransformer
         }
 
         $resource = (string) $originalResource;
-        if ($resource['0'] !== '/') {
+        if ($resource[0] !== '/') {
             $shouldCheckExistence = true;
             $resource
                 =  PathResolver::realpath($resource, $shouldCheckExistence)
@@ -108,7 +111,7 @@ class FilterInjectorTransformer implements SourceTransformer
 
         // If the cache is disabled or no cache yet, then use on-fly method
         if (!$cacheDir || $debug || !file_exists($cachedResource)) {
-            return self::PHP_FILTER_READ . self::$filterName . "/resource=" . $resource;
+            return self::PHP_FILTER_READ . self::$filterName . '/resource=' . $resource;
         }
 
         return $cachedResource;
@@ -118,64 +121,36 @@ class FilterInjectorTransformer implements SourceTransformer
      * Wrap all includes into rewrite filter
      *
      * @param StreamMetaData $metadata Metadata for source
-     * @return void|bool Return false if transformation should be stopped
+     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata): string
     {
-        if ((strpos($metadata->source, 'include') === false) && (strpos($metadata->source, 'require') === false)) {
-            return;
+        $includeExpressionFinder = new NodeFinderVisitor([Include_::class]);
+
+        // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($includeExpressionFinder);
+        $traverser->traverse($metadata->syntaxTree);
+
+        /** @var Include_[] $includeExpressions */
+        $includeExpressions = $includeExpressionFinder->getFoundNodes();
+
+        if (empty($includeExpressions)) {
+            return self::RESULT_ABSTAIN;
         }
-        static $lookFor = array(
-            T_INCLUDE      => true,
-            T_INCLUDE_ONCE => true,
-            T_REQUIRE      => true,
-            T_REQUIRE_ONCE => true
-        );
-        $tokenStream       = token_get_all($metadata->source);
 
-        $transformedSource = '';
-        $isWaitingEnd      = false;
+        foreach ($includeExpressions as $includeExpression) {
+            $startPosition = $includeExpression->getAttribute('startTokenPos');
+            $endPosition   = $includeExpression->getAttribute('endTokenPos');
 
-        $insideBracesCount = 0;
-        $isBracesFinished  = false;
-        $isTernaryOperator = false;
-        foreach ($tokenStream as $token) {
-            if ($isWaitingEnd && $token === '(') {
-                if ($isWaitingEnd) {
-                    $insideBracesCount++;
-                }
-            } elseif ($isWaitingEnd && $token === ')') {
-                if ($insideBracesCount > 0) {
-                    $insideBracesCount--;
-                } else {
-                    $isBracesFinished = true;
-                }
+            $metadata->tokenStream[$startPosition][1] .= ' \\' . __CLASS__ . '::rewrite(';
+            if ($metadata->tokenStream[$startPosition+1][0] === T_WHITESPACE) {
+                unset($metadata->tokenStream[$startPosition+1]);
             }
 
-            $lastBrace = ($isBracesFinished && $token === ')');
-
-            if ($isWaitingEnd && $token === '?') {
-                $isTernaryOperator = true;
-            }
-
-            if ($isTernaryOperator && ($token === ';' || $lastBrace)) {
-                $isTernaryOperator = false;
-            }
-
-            if ($isWaitingEnd && !$isTernaryOperator && $insideBracesCount == 0
-                && ($token === ';' || $token === ',' || $token === ':' || $lastBrace)
-            ) {
-                $isWaitingEnd = false;
-                $transformedSource .= ', __DIR__)';
-            }
-            list ($token, $value) = (array) $token + array(1 => $token);
-            $transformedSource .= $value;
-            if (!$isWaitingEnd && isset($lookFor[$token])) {
-                $isWaitingEnd = true;
-                $isBracesFinished = $isTernaryOperator = false;
-                $transformedSource .= ' \\' . __CLASS__ . '::rewrite(';
-            }
+            $metadata->tokenStream[$endPosition][1] .= ', __DIR__)';
         }
-        $metadata->source = $transformedSource;
+
+        return self::RESULT_TRANSFORMED;
     }
 }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -20,14 +21,14 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
      *
      * @var \Closure
      */
-    protected $closureToCall = null;
+    protected $closureToCall;
 
     /**
      * Previous instance of invocation
      *
      * @var null|object|string
      */
-    protected $previousInstance = null;
+    protected $previousInstance;
 
     /**
      * Invokes original method and return result from it
@@ -37,7 +38,6 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
     public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor \Go\Aop\Intercept\Interceptor */
             $currentInterceptor = $this->advices[$this->current++];
 
             return $currentInterceptor->invoke($this);
@@ -55,8 +55,6 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
             $this->previousInstance = $this->instance;
         }
 
-        $closureToCall = $this->closureToCall;
-
-        return $closureToCall(...$this->arguments);
+        return ($this->closureToCall)(...$this->arguments);
     }
 }

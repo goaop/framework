@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -19,7 +20,7 @@ use Go\Aop\Advisor;
 class LazyAdvisorAccessor
 {
     /**
-     * @var AspectContainer|Container
+     * @var AspectContainer
      */
     protected $container;
 

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -11,7 +12,6 @@
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\ConstructorInvocation;
-use Go\Aop\Intercept\Interceptor;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -25,21 +25,21 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      *
      * @var ReflectionClass
      */
-    protected $class = null;
+    protected $class;
 
     /**
      * Instance of created class, can be used for Around or After types of advices
      *
      * @var object|null
      */
-    protected $instance = null;
+    protected $instance;
 
     /**
      * Instance of reflection constructor for class
      *
      * @var null|ReflectionMethod
      */
-    private $constructor = null;
+    private $constructor;
 
     /**
      * Number of constructor arguments
@@ -52,10 +52,10 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      * Constructor for constructor invocation :)
      *
      * @param string $className Class name
-     * @param $advices array List of advices for this invocation
      * @param string $type
+     * @param $advices array List of advices for this invocation
      */
-    public function __construct($className, $type, array $advices)
+    public function __construct(string $className, string $type, array $advices)
     {
         $this->class       = new ReflectionClass($className);
         $this->constructor = $constructor = $this->class->getConstructor();
@@ -83,18 +83,13 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     final public function proceed()
     {
         if (isset($this->advices[$this->current])) {
-            /** @var $currentInterceptor Interceptor */
             $currentInterceptor = $this->advices[$this->current];
             $this->current++;
 
             return $currentInterceptor->invoke($this);
         }
 
-        if (!$this->constructorArguments) {
-            $this->instance = $this->class->newInstance();
-        } else {
-            $this->instance = $this->class->newInstanceArgs($this->arguments);
-        }
+        $this->instance = $this->class->newInstance(...$this->arguments);
 
         return $this->instance;
     }
@@ -152,7 +147,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     final public function __toString()
     {
         return sprintf(
-            "initialization(%s)",
+            'initialization(%s)',
             $this->class->name
         );
     }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -16,7 +17,9 @@ use Go\Instrument\Transformer\SourceTransformer;
 
 /**
  * Php class loader filter for processing php code
- */
+ *
+ * @property resource $stream Stream instance of underlying resource
+*/
 class SourceTransformingLoader extends PhpStreamFilter
 {
     /**
@@ -56,7 +59,7 @@ class SourceTransformingLoader extends PhpStreamFilter
      * @param string $filterId Identifier for the filter
      * @throws \RuntimeException If registration was failed
      */
-    public static function register($filterId = self::FILTER_IDENTIFIER)
+    public static function register(string $filterId = self::FILTER_IDENTIFIER)
     {
         if (!empty(self::$filterId)) {
             throw new \RuntimeException('Stream filter already registered');
@@ -73,9 +76,8 @@ class SourceTransformingLoader extends PhpStreamFilter
      * Returns the name of registered filter
      *
      * @throws \RuntimeException if filter was not registered
-     * @return string
      */
-    public static function getId()
+    public static function getId(): string
     {
         if (empty(self::$filterId)) {
             throw new \RuntimeException('Stream filter was not registered');
@@ -113,8 +115,6 @@ class SourceTransformingLoader extends PhpStreamFilter
      * Adds a SourceTransformer to be applied by this LoadTimeWeaver.
      *
      * @param $transformer SourceTransformer Transformer for source code
-     *
-     * @return void
      */
     public static function addTransformer(SourceTransformer $transformer)
     {
@@ -125,18 +125,16 @@ class SourceTransformingLoader extends PhpStreamFilter
      * Transforms source code by passing it through all transformers
      *
      * @param StreamMetaData|null $metadata Metadata from stream
-     * @return void|bool Return false if transformation should be stopped
+     *
+     * @return void
      */
     public static function transformCode(StreamMetaData $metadata)
     {
-        $result = null;
         foreach (self::$transformers as $transformer) {
             $result = $transformer->transform($metadata);
-            if ($result === false) {
+            if ($result === SourceTransformer::RESULT_ABORTED) {
                 break;
             }
         }
-
-        return $result;
     }
 }

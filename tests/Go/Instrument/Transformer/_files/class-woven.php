@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace Test\ns1;
 
 class TestClass__AopProxied {
@@ -14,7 +15,7 @@ class TestClass__AopProxied {
     public function publicMethodDynamicArguments($a, &$b)
     {
         $args = func_get_args();
-        call_user_func_array(array($this, 'publicMethodFixedArguments'), $args);
+        call_user_func_array([$this, 'publicMethodFixedArguments'], $args);
     }
 
     public function publicMethodFixedArguments($a, $b, $c = null) {}
@@ -27,7 +28,28 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
     /**
      * Property was created automatically, do not change it manually
      */
-    private static $__joinPoints = [];
+    private static $__joinPoints = [
+        'method' => [
+            'publicMethod' => [
+                'advisor.Test\\ns1\\TestClass->publicMethod'
+            ],
+            'protectedMethod' => [
+                'advisor.Test\\ns1\\TestClass->protectedMethod'
+            ],
+            'publicStaticMethod' => [
+                'advisor.Test\\ns1\\TestClass->publicStaticMethod'
+            ],
+            'protectedStaticMethod' => [
+                'advisor.Test\\ns1\\TestClass->protectedStaticMethod'
+            ],
+            'publicMethodDynamicArguments' => [
+                'advisor.Test\\ns1\\TestClass->publicMethodDynamicArguments'
+            ],
+            'publicMethodFixedArguments' => [
+                'advisor.Test\\ns1\\TestClass->publicMethodFixedArguments'
+            ]
+        ]
+    ];
 
     public function publicMethod()
     {
@@ -60,32 +82,4 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
     }
 
 }
-\Go\Proxy\ClassProxy::injectJoinPoints('Test\ns1\TestClass',array (
-  'method' =>
-  array (
-    'publicMethod' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestClass->publicMethod',
-    ),
-    'protectedMethod' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestClass->protectedMethod',
-    ),
-    'publicStaticMethod' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestClass->publicStaticMethod',
-    ),
-    'protectedStaticMethod' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestClass->protectedStaticMethod',
-    ),
-    'publicMethodDynamicArguments' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestClass->publicMethodDynamicArguments',
-    ),
-    'publicMethodFixedArguments' =>
-    array (
-      0 => 'advisor.Test\\ns1\\TestClass->publicMethodFixedArguments',
-    ),
-  ),
-));
+\Go\Proxy\ClassProxy::injectJoinPoints(TestClass::class);

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,6 +11,7 @@
 
 namespace Go\Proxy;
 
+use Go\Aop\Intercept\MethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
@@ -35,32 +37,44 @@ class TraitProxy extends ClassProxy
      *
      * @param string $className Aop child proxy class
      * @param array|\Go\Aop\Advice[] $traitAdvices List of advices to inject into class
-     *
-     * @return void
      */
-    public static function injectJoinPoints($className, array $traitAdvices = [])
+    public static function injectJoinPoints(string $className, array $traitAdvices = [])
     {
         self::$traitAdvices[$className] = $traitAdvices;
     }
 
-    public static function getJoinPoint($traitName, $className, $joinPointType, $pointName)
-    {
+    /**
+     * Returns a joinpoint for the specific trait
+     *
+     * @param string $traitName Name of the trait
+     * @param string $className Name of the class
+     * @param string $joinPointType Type of joinpoint (static or dynamic method)
+     * @param string $methodName Name of the method
+     *
+     * @return MethodInvocation
+     */
+    public static function getJoinPoint(
+        string $traitName,
+        string $className,
+        string $joinPointType,
+        string $methodName
+    ): MethodInvocation {
         /** @var LazyAdvisorAccessor $accessor */
-        static $accessor = null;
+        static $accessor;
 
         if (!isset($accessor)) {
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
         }
 
-        $advices = self::$traitAdvices[$traitName][$joinPointType][$pointName];
+        $advices = self::$traitAdvices[$traitName][$joinPointType][$methodName];
 
         $filledAdvices = [];
         foreach ($advices as $advisorName) {
             $filledAdvices[] = $accessor->$advisorName;
         }
 
-        $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $pointName . '➩', $filledAdvices);
+        $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $methodName . '➩', $filledAdvices);
 
         return $joinpoint;
     }
@@ -72,7 +86,7 @@ class TraitProxy extends ClassProxy
      *
      * @return string new method body
      */
-    protected function getJoinpointInvocationBody(ReflectionMethod $method)
+    protected function getJoinpointInvocationBody(ReflectionMethod $method): string
     {
         $isStatic = $method->isStatic();
         $class    = '\\' . __CLASS__;
@@ -92,7 +106,7 @@ class TraitProxy extends ClassProxy
         }
 
         return <<<BODY
-static \$__joinPoint = null;
+static \$__joinPoint;
 if (!\$__joinPoint) {
     \$__joinPoint = {$class}::getJoinPoint(__TRAIT__, __CLASS__, '{$prefix}', '{$method->name}');
 }
@@ -111,11 +125,11 @@ BODY;
             $this->name . "\n" . // Name of the trait
             "{\n" . // Start of trait body
             $this->indent(
-                'use ' . join(', ', array(-1 => $this->parentClassName) + $this->traits) .
+                'use ' . implode(', ', [-1 => $this->parentClassName] + $this->traits) .
                 $this->getMethodAliasesCode()
             ) . "\n" . // Use traits and aliases section
-            $this->indent(join("\n", $this->methodsCode)) . "\n" . // Method definitions
-            "}" // End of trait body
+            $this->indent(implode("\n", $this->methodsCode)) . "\n" . // Method definitions
+            '}' // End of trait body
         );
 
         return $classCode
@@ -123,16 +137,21 @@ BODY;
             . PHP_EOL
             . '\\' . __CLASS__ . "::injectJoinPoints('"
                 . $this->class->name . "',"
-                . var_export($this->advices, true) . ");";
+                . var_export($this->advices, true) . ');';
     }
 
-    private function getMethodAliasesCode()
+    /**
+     * Returns prepared aliased code for usage in trait section
+     *
+     * @return string
+     */
+    private function getMethodAliasesCode(): string
     {
         $aliasesLines = [];
         foreach (array_keys($this->methodsCode) as $methodName) {
             $aliasesLines[] = "{$this->parentClassName}::{$methodName} as protected {$methodName}➩;";
         }
 
-        return "{\n " . $this->indent(join("\n", $aliasesLines)) . "\n}";
+        return "{\n " . $this->indent(implode("\n", $aliasesLines)) . "\n}";
     }
 }

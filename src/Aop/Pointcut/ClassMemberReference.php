@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -58,42 +59,30 @@ class ClassMemberReference
         PointFilter $classFilter,
         ModifierMatcherFilter $visibilityFilter,
         ModifierMatcherFilter $accessTypeFilter,
-        $memberNamePattern)
-    {
+        string $memberNamePattern
+    ) {
         $this->classFilter       = $classFilter;
         $this->visibilityFilter  = $visibilityFilter;
         $this->accessTypeFilter  = $accessTypeFilter;
         $this->memberNamePattern = $memberNamePattern;
     }
 
-    /**
-     * @return PointFilter
-     */
-    public function getClassFilter()
+    public function getClassFilter(): PointFilter
     {
         return $this->classFilter;
     }
 
-    /**
-     * @return ModifierMatcherFilter
-     */
-    public function getVisibilityFilter()
+    public function getVisibilityFilter(): ModifierMatcherFilter
     {
         return $this->visibilityFilter;
     }
 
-    /**
-     * @return ModifierMatcherFilter
-     */
-    public function getAccessTypeFilter()
+    public function getAccessTypeFilter(): ModifierMatcherFilter
     {
         return $this->accessTypeFilter;
     }
 
-    /**
-     * @return string
-     */
-    public function getMemberNamePattern()
+    public function getMemberNamePattern(): string
     {
         return $this->memberNamePattern;
     }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -20,13 +21,13 @@ class AndPointFilterTest extends \PHPUnit_Framework_TestCase
      */
     public function testKindIsIntersected()
     {
-        $first = $this->getMock(PointFilter::class);
+        $first = $this->createMock(PointFilter::class);
         $first
             ->expects($this->any())
             ->method('getKind')
             ->will($this->returnValue(PointFilter::KIND_METHOD | PointFilter::KIND_PROPERTY));
 
-        $second = $this->getMock(PointFilter::class);
+        $second = $this->createMock(PointFilter::class);
         $second
             ->expects($this->any())
             ->method('getKind')
@@ -50,11 +51,11 @@ class AndPointFilterTest extends \PHPUnit_Framework_TestCase
     {
         $true  = TruePointFilter::getInstance();
         $false = new NotPointFilter($true);
-        return array(
-            array($false, $false, false),
-            array($false, $true, false),
-            array($true, $false, false),
-            array($true, $true, true)
-        );
+        return [
+            [$false, $false, false],
+            [$false, $true, false],
+            [$true, $false, false],
+            [$true, $true, true]
+        ];
     }
 }

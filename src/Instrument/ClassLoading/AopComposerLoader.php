@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -28,7 +29,7 @@ class AopComposerLoader
      *
      * @var ClassLoader
      */
-    protected $original = null;
+    protected $original;
 
     /**
      * AOP kernel options
@@ -96,9 +97,9 @@ class AopComposerLoader
      * @param array $options Aspect kernel options
      * @param AspectContainer $container
      *
-     * @return bool was initialization sucessful or not
+     * @return bool was initialization successful or not
      */
-    public static function init(array $options = [], AspectContainer $container)
+    public static function init(array $options, AspectContainer $container): bool
     {
         $loaders = spl_autoload_functions();
 
@@ -128,12 +129,14 @@ class AopComposerLoader
 
     /**
      * Autoload a class by it's name
+     *
+     * @param string $class Name of the class to load
      */
-    public function loadClass($class)
+    public function loadClass(string $class)
     {
         $file = $this->findFile($class);
 
-        if ($file) {
+        if ($file !== false) {
             include $file;
         }
     }
@@ -145,7 +148,7 @@ class AopComposerLoader
      * @param string $class
      * @return string|false The path/resource if found, false otherwise.
      */
-    public function findFile($class)
+    public function findFile(string $class)
     {
         static $isAllowedFilter = null, $isProduction = false;
         if (!$isAllowedFilter) {
@@ -155,9 +158,9 @@ class AopComposerLoader
 
         $file = $this->original->findFile($class);
 
-        if ($file) {
+        if ($file !== false) {
             $file = PathResolver::realpath($file)?:$file;
-            $cacheState = isset($this->cacheState[$file]) ? $this->cacheState[$file] : null;
+            $cacheState = $this->cacheState[$file] ?? null;
             if ($cacheState && $isProduction) {
                 $file = $cacheState['cacheUri'] ?: $file;
             } elseif ($isAllowedFilter(new \SplFileInfo($file))) {
@@ -171,10 +174,8 @@ class AopComposerLoader
 
     /**
      * Whether or not loader was initialized
-     *
-     * @return bool
      */
-    public static function wasInitialized()
+    public static function wasInitialized(): bool
     {
         return self::$wasInitialized;
     }

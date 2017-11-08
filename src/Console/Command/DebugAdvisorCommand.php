@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -24,6 +25,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Console command to debug an advisors
+ *
+ * @codeCoverageIgnore
  */
 class DebugAdvisorCommand extends BaseAspectCommand
 {
@@ -36,8 +39,8 @@ class DebugAdvisorCommand extends BaseAspectCommand
         parent::configure();
         $this
             ->setName('debug:advisor')
-            ->addOption('advisor', null, InputOption::VALUE_OPTIONAL, "Identifier of advisor")
-            ->setDescription("Provides an interface for checking and debugging advisors")
+            ->addOption('advisor', null, InputOption::VALUE_OPTIONAL, 'Identifier of advisor')
+            ->setDescription('Provides an interface for checking and debugging advisors')
             ->setHelp(<<<EOT
 Allows to query an information about matching joinpoints for specified advisor.
 EOT
@@ -76,11 +79,11 @@ EOT
             $expression = '';
             try {
                 $pointcutExpression = new \ReflectionProperty($advice, 'pointcutExpression');
-                $pointcutExpression->setAccessible('true');
+                $pointcutExpression->setAccessible(true);
                 $expression = $pointcutExpression->getValue($advice);
             } catch (\ReflectionException $e) {
                 // nothing here, just ignore
-            };
+            }
             $tableRows[] = [$id, $expression];
         }
         $io->table(['Id', 'Expression'], $tableRows);
@@ -114,7 +117,7 @@ EOT
             $reflectionNamespaces = $reflectionFile->getFileNamespaces();
             foreach ($reflectionNamespaces as $reflectionNamespace) {
                 foreach ($reflectionNamespace->getClasses() as $reflectionClass) {
-                    $advices = $adviceMatcher->getAdvicesForClass($reflectionClass, array($advisor));
+                    $advices = $adviceMatcher->getAdvicesForClass($reflectionClass, [$advisorId => $advisor]);
                     if (!empty($advices)) {
                         $this->writeInfoAboutAdvices($io, $reflectionClass, $advices);
                     }

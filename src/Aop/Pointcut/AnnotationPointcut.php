@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -34,7 +35,7 @@ class AnnotationPointcut implements Pointcut
      *
      * @var null|Reader
      */
-    protected $annotationReader = null;
+    protected $annotationReader;
 
     /**
      * Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY, KIND_TRAIT
@@ -76,7 +77,7 @@ class AnnotationPointcut implements Pointcut
      * @param Reader $reader Reader of annotations
      * @param string $annotationName Annotation class name to match
      */
-    public function __construct($filterKind, Reader $reader, $annotationName)
+    public function __construct(int $filterKind, Reader $reader, string $annotationName)
     {
         if (!isset(self::$mappings[$filterKind])) {
             throw new \InvalidArgumentException("Unsupported filter kind {$filterKind}");
@@ -89,10 +90,9 @@ class AnnotationPointcut implements Pointcut
     }
 
     /**
-     * @param ReflectionClass|ReflectionMethod|ReflectionProperty $point
      * {@inheritdoc}
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         $expectedClass = $this->expectedClass;
         if (!$point instanceof $expectedClass) {
@@ -106,10 +106,8 @@ class AnnotationPointcut implements Pointcut
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind(): int
     {
         return $this->filterKind;
     }

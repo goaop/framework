@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -26,7 +27,7 @@ trait PointcutClassFilterTrait
      *
      * @var null|PointFilter
      */
-    protected $classFilter = null;
+    protected $classFilter;
 
     /**
      * Set the ClassFilter to use for this pointcut.
@@ -40,10 +41,8 @@ trait PointcutClassFilterTrait
 
     /**
      * Return the class filter for this pointcut.
-     *
-     * @return PointFilter
      */
-    public function getClassFilter()
+    public function getClassFilter(): PointFilter
     {
         if (!$this->classFilter) {
             $this->classFilter = TruePointFilter::getInstance();

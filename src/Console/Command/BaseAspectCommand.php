@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -18,6 +19,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Base command for all aspect commands
+ *
+ * @codeCoverageIgnore
  */
 class BaseAspectCommand extends Command
 {
@@ -26,14 +29,14 @@ class BaseAspectCommand extends Command
      *
      * @var null|AspectKernel
      */
-    protected $aspectKernel = null;
+    protected $aspectKernel;
 
     /**
      * {@inheritDoc}
      */
     protected function configure()
     {
-        $this->addArgument('loader', InputArgument::REQUIRED, "Path to the aspect loader file");
+        $this->addArgument('loader', InputArgument::REQUIRED, 'Path to the aspect loader file');
     }
 
     /**
@@ -41,7 +44,7 @@ class BaseAspectCommand extends Command
      *
      * Aspect kernel is loaded by executing loader and fetching singleton instance.
      * If your application environment initializes aspect kernel differently, you may
-     * modify this metod to get aspect kernel suitable to your needs.
+     * modify this method to get aspect kernel suitable to your needs.
      *
      * @param InputInterface $input
      * @param OutputInterface $output
