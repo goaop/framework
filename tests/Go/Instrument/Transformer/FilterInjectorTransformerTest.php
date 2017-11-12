@@ -6,6 +6,7 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectKernel;
 use Go\Core\GoAspectContainer;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\Instrument\PathResolver;
 
 class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
 {
@@ -128,7 +129,7 @@ class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
         $actualPath   = FilterInjectorTransformer::rewrite('_files/class.php', __DIR__);
         $expectedPath = FilterInjectorTransformer::PHP_FILTER_READ
                 . 'unit.test/resource='
-                . stream_resolve_include_path(__DIR__ . '/_files/class.php');
+                . PathResolver::realpath(__DIR__ . '/_files/class.php');
         $this->assertEquals($expectedPath, $actualPath);
     }
 

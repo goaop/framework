@@ -89,8 +89,10 @@ final class ClassAdvisorIdentifier
 
     /**
      * Get get advisor identifier.
+     *
+     * @return string|null
      */
-    public function getAdvisorIdentifier(): string
+    public function getAdvisorIdentifier()
     {
         return $this->advisorIdentifier;
     }

@@ -40,9 +40,12 @@ final class ProxyClassReflectionHelper
         $originalClassFile     = $parsedReflectionClass->getFileName();
         $originalNamespace     = $parsedReflectionClass->getNamespaceName();
 
-        $fileRelativePath = substr($originalClassFile, strlen(PathResolver::realpath($configuration['appDir'])));
-        $proxyFileName    = $configuration['cacheDir'] . '/_proxies' . $fileRelativePath;
-        $proxyFileContent = file_get_contents($proxyFileName);
+        $appDir            = PathResolver::realpath($configuration['appDir']);
+        $relativePath      = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
+        $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
+        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
+        $proxyFileName     = $configuration['cacheDir'] . '/_proxies/' . $proxyRelativePath;
+        $proxyFileContent  = file_get_contents($proxyFileName);
 
         // To prevent deep analysis of parents, we just cut everything after "extends"
         $proxyFileContent = preg_replace('/extends.*/', '', $proxyFileContent);
