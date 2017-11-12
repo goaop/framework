@@ -239,18 +239,19 @@ class WeavingTransformer extends BaseSourceTransformer
     {
         static $cacheDirSuffix = '/_proxies/';
 
-        $cacheDir = $this->cachePathManager->getCacheDir() . $cacheDirSuffix;
-        $fileName = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());
-
-        $proxyFileName = $cacheDir . $fileName;
-        $dirname       = dirname($proxyFileName);
+        $cacheDir          = $this->cachePathManager->getCacheDir() . $cacheDirSuffix;
+        $relativePath      = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());
+        $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $class->getName()) . '.php';
+        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
+        $proxyFileName     = $cacheDir . $proxyRelativePath;
+        $dirname           = dirname($proxyFileName);
         if (!file_exists($dirname)) {
             mkdir($dirname, $this->options['cacheFileMode'], true);
         }
 
-        $body      = '<?php' . PHP_EOL;
-        $namespace = $class->getNamespaceName();
-        if ($namespace) {
+        $body       = '<?php' . PHP_EOL;
+        $namespace  = $class->getNamespaceName();
+        if (!empty($namespace)) {
             $body .= "namespace {$namespace};" . PHP_EOL . PHP_EOL;
         }
 
@@ -260,11 +261,12 @@ class WeavingTransformer extends BaseSourceTransformer
         }
 
         $body .= $child;
-        file_put_contents($proxyFileName, $body, LOCK_EX);
+        $isVirtualSystem = strpos($proxyFileName, 'vfs') === 0;
+        file_put_contents($proxyFileName, $body, $isVirtualSystem ? 0 : LOCK_EX);
         // For cache files we don't want executable bits by default
         chmod($proxyFileName, $this->options['cacheFileMode'] & (~0111));
 
-        return 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';';
+        return 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $proxyRelativePath, true) . ';';
     }
 
     /**

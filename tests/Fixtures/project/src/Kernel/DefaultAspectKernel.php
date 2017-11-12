@@ -9,6 +9,7 @@ use Go\Tests\TestProject\Aspect\InitializationAspect;
 use Go\Tests\TestProject\Aspect\Issue293Aspect;
 use Go\Tests\TestProject\Aspect\LoggingAspect;
 use Go\Tests\TestProject\Aspect\PropertyInterceptAspect;
+use Go\Tests\TestProject\Aspect\WeavingAspect;
 use Psr\Log\NullLogger;
 
 class DefaultAspectKernel extends AspectKernel
@@ -23,5 +24,6 @@ class DefaultAspectKernel extends AspectKernel
         $container->registerAspect(new PropertyInterceptAspect());
         $container->registerAspect(new Issue293Aspect());
         $container->registerAspect(new InitializationAspect());
+        $container->registerAspect(new WeavingAspect());
     }
 }

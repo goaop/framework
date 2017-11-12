@@ -8,9 +8,15 @@ use Go\Core\AdviceMatcher;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Vfs\FileSystem;
 
 class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
 {
+    /**
+     * @var FileSystem
+     */
+    protected static $fileSystem;
+
     /**
      * @var WeavingTransformer
      */
@@ -27,6 +33,20 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     protected $adviceMatcher;
 
     /**
+     * @var null|CachePathManager|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $cachePathManager;
+
+    /**
+     * @inheritDoc
+     */
+    public static function setUpBeforeClass()
+    {
+        static::$fileSystem = FileSystem::factory('vfs://');
+        static::$fileSystem->mount();
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function setUp()
@@ -39,18 +59,23 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $this->kernel        = $this->getKernelMock(
             [
                 'appDir'        => dirname(__DIR__),
-                'cacheDir'      => null,
+                'cacheDir'      => 'vfs://',
                 'cacheFileMode' => 0770,
                 'includePaths'  => [],
                 'excludePaths'  => []
             ],
             $container
         );
+        $this->cachePathManager = $this
+            ->getMockBuilder(CachePathManager::class)
+            ->setConstructorArgs([$this->kernel])
+            ->enableProxyingToOriginalMethods()
+            ->getMock();
 
         $this->transformer = new WeavingTransformer(
             $this->kernel,
             $this->adviceMatcher,
-            $this->getMockBuilder(CachePathManager::class)->setConstructorArgs([$this->kernel])->getMock(),
+            $this->cachePathManager,
             $loader
         );
     }
@@ -82,19 +107,6 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Do not make anything for interface class
-     */
-    public function testInterfaceIsSkipped()
-    {
-        $metadata = $this->loadTest('interface');
-        $this->transformer->transform($metadata);
-
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('interface')->source);
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
      * Do not make anything for aspect class
      */
     public function testAspectIsSkipped()
@@ -104,32 +116,6 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
 
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTest('aspect')->source);
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
-     * Main test case for class
-     */
-    public function testWeaverForNormalClass()
-    {
-        $metadata = $this->loadTest('class');
-        $this->transformer->transform($metadata);
-
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven')->source);
-        $this->assertEquals($expected, $actual);
-    }
-
-    /**
-     * Check that weaver can work with final class
-     */
-    public function testWeaverForFinalClass()
-    {
-        $metadata = $this->loadTest('final-class');
-        $this->transformer->transform($metadata);
-
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('final-class-woven')->source);
         $this->assertEquals($expected, $actual);
     }
 
@@ -156,22 +142,31 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $container = $this->getContainerMock();
         $reader    = $this->createMock(Reader::class);
-        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs([$container, $reader])->getMock();
+        $loader    = $this->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$container, $reader])
+            ->getMock();
 
+        $kernel = $this->getKernelMock(
+            [
+                'appDir'        => dirname(__DIR__),
+                'cacheDir'      => 'vfs://',
+                'includePaths'  => [__DIR__],
+                'excludePaths'  => [],
+                'cacheFileMode' => 0770,
+            ],
+            $container
+        );
+        $cachePathManager  = $this->getMockBuilder(CachePathManager::class)
+            ->setConstructorArgs([$kernel])
+            ->enableProxyingToOriginalMethods()
+            ->getMock();
         $this->transformer = new WeavingTransformer(
-            $this->getKernelMock(
-                [
-                    'appDir'       => dirname(__DIR__),
-                    'includePaths' => [__DIR__],
-                    'excludePaths' => []
-                ],
-                $container
-            ),
+            $kernel,
             $this->adviceMatcher,
-            $this->getMockBuilder(CachePathManager::class)->setConstructorArgs([$this->kernel])->getMock(),
+            $cachePathManager,
             $loader
         );
-        $metadata = $this->loadTest('class');
+        $metadata          = $this->loadTest('class');
         $this->transformer->transform($metadata);
 
         $actual   = $this->normalizeWhitespaces($metadata->source);
