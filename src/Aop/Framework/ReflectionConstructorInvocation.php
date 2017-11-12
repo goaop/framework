@@ -41,13 +41,6 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     private $constructor;
 
     /**
-     * Number of constructor arguments
-     *
-     * @var int
-     */
-    private $constructorArguments = 0;
-
-    /**
      * Constructor for constructor invocation :)
      *
      * @param string $className Class name
@@ -62,10 +55,6 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
         // Give an access to call protected constructor
         if ($constructor && $constructor->isProtected()) {
             $constructor->setAccessible(true);
-        }
-
-        if ($constructor) {
-            $this->constructorArguments = $constructor->getNumberOfParameters();
         }
 
         parent::__construct($advices);
