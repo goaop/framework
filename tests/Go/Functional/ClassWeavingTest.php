@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Go\Functional;
 
 use Go\Tests\TestProject\Application\AbstractBar;
+use Go\Tests\TestProject\Application\FinalClass;
+use Go\Tests\TestProject\Application\FooInterface;
 use Go\Tests\TestProject\Application\Main;
 
 class ClassWeavingTest extends BaseFunctionalTest
@@ -39,5 +41,24 @@ class ClassWeavingTest extends BaseFunctionalTest
     {
         $this->assertClassInitializationWoven(Main::class, 'advisor.Go\\Tests\\TestProject\\Aspect\\InitializationAspect->beforeInstanceInitialization');
         $this->assertClassStaticInitializationWoven(Main::class, 'advisor.Go\\Tests\\TestProject\\Aspect\\InitializationAspect->afterClassStaticInitialization');
+    }
+
+    public function testItWeavesFinalClasses()
+    {
+        // it weaves FinalClass class
+        $this->assertClassIsWoven(FinalClass::class);
+
+        /* @see \Go\Tests\TestProject\Application\FinalClass::somePublicMethod */
+        // it weaves somePublicMethod
+        $this->assertMethodWoven(FinalClass::class, 'somePublicMethod');
+
+        /* @see \Go\Tests\TestProject\Application\FinalClass::someFinalPublicMethod() */
+        // it should not match and weave someFinalPublicMethod
+        // $this->assertMethodNotWoven(FinalClass::class, 'someFinalPublicMethod');
+    }
+
+    public function testItDoesNotWeaveInterfaces()
+    {
+        $this->assertClassIsNotWoven(FooInterface::class);
     }
 }
