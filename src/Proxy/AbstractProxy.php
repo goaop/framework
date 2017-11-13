@@ -108,11 +108,7 @@ abstract class AbstractProxy
         if ($reflectionType) {
             $nullablePrefix = (PHP_VERSION_ID >= 70100 && $reflectionType->allowsNull()) ? '?' : '';
             $nsPrefix       = $reflectionType->isBuiltin() ? '' : '\\';
-            $type           = $nullablePrefix . $nsPrefix . (string) $reflectionType;
-            // prevent double "\\" prefix for global namespace type hints:
-            if (substr($type, 0, 2) === '\\\\') {
-                $type = substr($type, 1);
-            }
+            $type           = $nullablePrefix . $nsPrefix . ltrim((string) $reflectionType, '\\');
         }
         $defaultValue = null;
         $isDefaultValueAvailable = $parameter->isDefaultValueAvailable();
