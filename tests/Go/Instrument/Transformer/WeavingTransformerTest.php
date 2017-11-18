@@ -124,13 +124,29 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Main test case for method with typehint
+     */
+    public function testWeaverForTypeHint()
+    {
+        $metadata = $this->loadTest('class-typehint');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('class-typehint-woven')->source);
+        $this->assertEquals($expected, $actual);
+
+        $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '_proxies/Transformer/_files/class-typehint.php/TestClassTypehint.php');
+        $this->assertFalse(strpos($proxyContent, '\\\\Exception'));
+    }
+
+    /**
      * Check that weaver can work with PHP7 classes
      */
     public function testWeaverForPhp7Class()
     {
         if (PHP_VERSION_ID < 50700) {
             $this->markTestSkipped("PHP7 version is required to run this test");
-        }
+    }
         $metadata = $this->loadTest('php7-class');
         $this->transformer->transform($metadata);
 
