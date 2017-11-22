@@ -111,6 +111,7 @@ class PointcutGrammar extends Grammar
             ->is('annotation', 'access', '(', 'namespaceName', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $kindProperty = PointFilter::KIND_PROPERTY;
+
                 return new AnnotationPointcut($kindProperty, $annotationReader, $annotationClassName);
             });
 
@@ -118,6 +119,7 @@ class PointcutGrammar extends Grammar
             ->is('annotation', 'execution', '(', 'namespaceName', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $kindMethod = PointFilter::KIND_METHOD;
+
                 return new AnnotationPointcut($kindMethod, $annotationReader, $annotationClassName);
             });
 
@@ -171,9 +173,7 @@ class PointcutGrammar extends Grammar
                     $reference->getAccessTypeFilter()
                 );
 
-                $pointcut = new MagicMethodPointcut(
-                    $reference->getMemberNamePattern(),
-                    $memberFilter);
+                $pointcut = new MagicMethodPointcut($reference->getMemberNamePattern(), $memberFilter);
                 $pointcut->setClassFilter($reference->getClassFilter());
 
                 return $pointcut;
@@ -214,7 +214,8 @@ class PointcutGrammar extends Grammar
                 $pointcut = new SignaturePointcut(
                     PointFilter::KIND_METHOD,
                     $reference->getMemberNamePattern(),
-                    $memberFilter);
+                    $memberFilter
+                );
 
                 $pointcut->setClassFilter($reference->getClassFilter());
 
@@ -231,7 +232,8 @@ class PointcutGrammar extends Grammar
                 $pointcut = new SignaturePointcut(
                     PointFilter::KIND_METHOD,
                     $reference->getMemberNamePattern(),
-                    $memberFilter);
+                    $memberFilter
+                );
 
                 $pointcut->setClassFilter($reference->getClassFilter());
 
@@ -269,7 +271,8 @@ class PointcutGrammar extends Grammar
                     $classFilter,
                     $memberModifiers,
                     $memberAccessType,
-                    $namePattern);
+                    $namePattern
+                );
 
                 return $reference;
             });
@@ -352,7 +355,7 @@ class PointcutGrammar extends Grammar
      */
     private function getNodeToStringConverter()
     {
-        return function(...$nodes) {
+        return function (...$nodes) {
             $value = '';
             foreach ($nodes as $node) {
                 if (is_scalar($node)) {
