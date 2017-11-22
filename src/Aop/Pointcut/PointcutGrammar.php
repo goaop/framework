@@ -17,6 +17,7 @@ use Go\Aop\PointFilter;
 use Go\Aop\Support\AndPointFilter;
 use Go\Aop\Support\InheritanceClassFilter;
 use Go\Aop\Support\ModifierMatcherFilter;
+use Go\Aop\Support\ReturnTypeFilter;
 use Go\Aop\Support\SimpleNamespaceFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Core\AspectContainer;
@@ -110,6 +111,7 @@ class PointcutGrammar extends Grammar
             ->is('annotation', 'access', '(', 'namespaceName', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $kindProperty = PointFilter::KIND_PROPERTY;
+
                 return new AnnotationPointcut($kindProperty, $annotationReader, $annotationClassName);
             });
 
@@ -117,6 +119,7 @@ class PointcutGrammar extends Grammar
             ->is('annotation', 'execution', '(', 'namespaceName', ')')
             ->call(function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
                 $kindMethod = PointFilter::KIND_METHOD;
+
                 return new AnnotationPointcut($kindMethod, $annotationReader, $annotationClassName);
             });
 
@@ -170,9 +173,7 @@ class PointcutGrammar extends Grammar
                     $reference->getAccessTypeFilter()
                 );
 
-                $pointcut = new MagicMethodPointcut(
-                    $reference->getMemberNamePattern(),
-                    $memberFilter);
+                $pointcut = new MagicMethodPointcut($reference->getMemberNamePattern(), $memberFilter);
                 $pointcut->setClassFilter($reference->getClassFilter());
 
                 return $pointcut;
@@ -213,7 +214,26 @@ class PointcutGrammar extends Grammar
                 $pointcut = new SignaturePointcut(
                     PointFilter::KIND_METHOD,
                     $reference->getMemberNamePattern(),
-                    $memberFilter);
+                    $memberFilter
+                );
+
+                $pointcut->setClassFilter($reference->getClassFilter());
+
+                return $pointcut;
+            })
+            ->is('memberReference', '(', 'argumentList', ')', ':', 'namespaceName')
+            ->call(function (ClassMemberReference $reference, $_0, $_1, $_2, $_3, $returnType) {
+                $memberFilter = new AndPointFilter(
+                    $reference->getVisibilityFilter(),
+                    $reference->getAccessTypeFilter(),
+                    new ReturnTypeFilter($returnType)
+                );
+
+                $pointcut = new SignaturePointcut(
+                    PointFilter::KIND_METHOD,
+                    $reference->getMemberNamePattern(),
+                    $memberFilter
+                );
 
                 $pointcut->setClassFilter($reference->getClassFilter());
 
@@ -225,6 +245,15 @@ class PointcutGrammar extends Grammar
             ->call(function ($namespacePattern, $_0, $namePattern) {
                 $nsFilter = new SimpleNamespaceFilter($namespacePattern);
                 $pointcut = new FunctionPointcut($namePattern);
+                $pointcut->setNamespaceFilter($nsFilter);
+
+                return $pointcut;
+            })
+            ->is('namespacePattern', 'nsSeparator', 'namePatternPart', '(', 'argumentList', ')', ':', 'namespaceName')
+            ->call(function ($namespacePattern, $_0, $namePattern, $_1, $_2, $_3, $_4, $returnType) {
+                $nsFilter   = new SimpleNamespaceFilter($namespacePattern);
+                $typeFilter = new ReturnTypeFilter($returnType);
+                $pointcut   = new FunctionPointcut($namePattern, $typeFilter);
                 $pointcut->setNamespaceFilter($nsFilter);
 
                 return $pointcut;
@@ -242,7 +271,8 @@ class PointcutGrammar extends Grammar
                     $classFilter,
                     $memberModifiers,
                     $memberAccessType,
-                    $namePattern);
+                    $namePattern
+                );
 
                 return $reference;
             });
@@ -325,7 +355,7 @@ class PointcutGrammar extends Grammar
      */
     private function getNodeToStringConverter()
     {
-        return function(...$nodes) {
+        return function (...$nodes) {
             $value = '';
             foreach ($nodes as $node) {
                 if (is_scalar($node)) {

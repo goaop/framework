@@ -39,14 +39,23 @@ class FunctionPointcut implements Pointcut
     protected $regexp;
 
     /**
+     * Additional return type filter (if present)
+     *
+     * @var PointFilter|null
+     */
+    protected $returnTypeFilter;
+
+    /**
      * Function matcher constructor
      *
      * @param string $functionName Name of the function to match or glob pattern
+     * @param PointFilter|null $returnTypeFilter Additional return type filter
      */
-    public function __construct($functionName)
+    public function __construct($functionName, PointFilter $returnTypeFilter = null)
     {
-        $this->functionName = $functionName;
-        $this->regexp       = strtr(preg_quote($this->functionName, '/'), [
+        $this->functionName     = $functionName;
+        $this->returnTypeFilter = $returnTypeFilter;
+        $this->regexp           = strtr(preg_quote($this->functionName, '/'), [
             '\\*' => '.*?',
             '\\?' => '.'
         ]);
@@ -65,6 +74,10 @@ class FunctionPointcut implements Pointcut
     public function matches($function, $context = null, $instance = null, array $arguments = null)
     {
         if (!$function instanceof ReflectionFunction) {
+            return false;
+        }
+
+        if (($this->returnTypeFilter !== null) && !$this->returnTypeFilter->matches($function, $context)) {
             return false;
         }
 
