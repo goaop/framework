@@ -64,6 +64,9 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
             ['execution(final public Example\Aspect\*->method*(*))'],
             ['execution(protected|public **::*someStatic*Method*(*))'],
 
+            // Return-type hints for PHP7
+            ['execution(public Example->method(*): string)'],
+
             // This will match property that has First\Second\Annotation\Class annotation
             ['@access(First\Second\Annotation\Class)'],
 
@@ -100,6 +103,10 @@ class PointcutParserTest extends \PHPUnit_Framework_TestCase
             ['execution(Demo\*\Test\**\*(*))'],
             ['execution(Demo\Namespace\array_*_er(*))'],
             ['execution(**\*(*))'],
+
+            // Function with return-type
+            ['execution(Demo\*\Test\**\*(*): bool)'],
+
 
             // Dynamic pointcut for methods via __callStatic and __call
             ['dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))'],

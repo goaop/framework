@@ -63,6 +63,9 @@ class PointcutLexer extends SimpleLexer
         // NS separator
         $this->token('nsSeparator', '\\');
 
+        // Return-type specifier
+        $this->token(':');
+
         // Special wildcard tokens
         $this->token('+');
         $this->token('*');

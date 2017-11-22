@@ -24,33 +24,26 @@ class OrPointFilter implements PointFilter
      *
      * @var int
      */
-    private $kind;
+    private $kind = 0;
 
     /**
-     * First part of filter
+     * List of filters to combine
      *
-     * @var PointFilter
+     * @var PointFilter[]
      */
-    private $first;
-
-    /**
-     * Second part of filter
-     *
-     * @var PointFilter
-     */
-    private $second;
+    private $filters;
 
     /**
      * Or constructor
      *
-     * @param PointFilter $first First part of filter
-     * @param PointFilter $second Second part of filter to match
+     * @param PointFilter[] $filters List of filters to combine
      */
-    public function __construct(PointFilter $first, PointFilter $second)
+    public function __construct(PointFilter ...$filters)
     {
-        $this->kind   = $first->getKind() | $second->getKind();
-        $this->first  = $first;
-        $this->second = $second;
+        foreach ($filters as $filter) {
+            $this->kind |= $filter->getKind();
+        }
+        $this->filters = $filters;
     }
 
     /**
@@ -65,7 +58,13 @@ class OrPointFilter implements PointFilter
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
-        return $this->first->matches($point, $context) || $this->second->matches($point, $context);
+        foreach ($this->filters as $filter) {
+            if ($filter->matches($point, $context)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
