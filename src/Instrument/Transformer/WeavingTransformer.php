@@ -21,6 +21,7 @@ use Go\Instrument\ClassLoading\CachePathManager;
 use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionFile;
 use Go\ParserReflection\ReflectionFileNamespace;
+use Go\ParserReflection\ReflectionMethod;
 use Go\Proxy\ClassProxy;
 use Go\Proxy\FunctionProxy;
 use Go\Proxy\TraitProxy;
@@ -138,7 +139,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $newClassName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
 
         // Replace original class name with new
-        $this->adjustOriginalClass($class, $metadata, $newClassName);
+        $this->adjustOriginalClass($class, $advices, $metadata, $newClassName);
 
         // Prepare child Aop proxy
         $child = $class->isTrait()
@@ -161,11 +162,16 @@ class WeavingTransformer extends BaseSourceTransformer
      * Adjust definition of original class source to enable extending
      *
      * @param ReflectionClass $class Instance of class reflection
+     * @param array $advices List of class advices (used to check for final methods and make them non-final)
      * @param StreamMetaData $streamMetaData Source code metadata
      * @param string $newClassName New name for the class
      */
-    private function adjustOriginalClass(ReflectionClass $class, StreamMetaData $streamMetaData, $newClassName)
-    {
+    private function adjustOriginalClass(
+        ReflectionClass $class,
+        array $advices,
+        StreamMetaData $streamMetaData,
+        $newClassName
+    ) {
         $classNode = $class->getNode();
         $position  = $classNode->getAttribute('startTokenPos');
         do {
@@ -184,6 +190,30 @@ class WeavingTransformer extends BaseSourceTransformer
             }
             ++$position;
         } while (true);
+
+        foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
+            if (!$finalMethod instanceof ReflectionMethod || $finalMethod->getDeclaringClass()->name !== $class->name) {
+                continue;
+            }
+            $hasDynamicAdvice = isset($advices[AspectContainer::METHOD_PREFIX][$finalMethod->name]);
+            $hasStaticAdvice  = isset($advices[AspectContainer::STATIC_METHOD_PREFIX][$finalMethod->name]);
+            if (!$hasDynamicAdvice && !$hasStaticAdvice) {
+                continue;
+            }
+            $methodNode = $finalMethod->getNode();
+            $position   = $methodNode->getAttribute('startTokenPos');
+            do {
+                if (isset($streamMetaData->tokenStream[$position])) {
+                    $token = $streamMetaData->tokenStream[$position];
+                    // Remove final and following whitespace from the method, child will be final instead
+                    if ($token[0] === T_FINAL) {
+                        unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position+1]);
+                        break;
+                    }
+                }
+                ++$position;
+            } while (true);
+        }
     }
 
     /**
