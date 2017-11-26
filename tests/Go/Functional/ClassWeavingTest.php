@@ -52,8 +52,12 @@ class ClassWeavingTest extends BaseFunctionalTest
         $this->assertMethodWoven(FinalClass::class, 'somePublicMethod');
 
         /* @see \Go\Tests\TestProject\Application\FinalClass::someFinalPublicMethod() */
-        // it should not match and weave someFinalPublicMethod
-        // $this->assertMethodNotWoven(FinalClass::class, 'someFinalPublicMethod');
+        // it should match and weave someFinalPublicMethod
+        $this->assertMethodWoven(FinalClass::class, 'someFinalPublicMethod');
+
+        /* @see \Go\Tests\TestProject\Application\ParentWithFinalMethod::someFinalParentMethod() */
+        // it should not match with parent final method in the class
+        $this->assertMethodNotWoven(FinalClass::class, 'someFinalParentMethod');
     }
 
     public function testItDoesNotWeaveInterfaces()
