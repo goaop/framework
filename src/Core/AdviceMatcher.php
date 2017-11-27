@@ -161,8 +161,9 @@ class AdviceMatcher
         if ($filterKind & Aop\PointFilter::KIND_METHOD) {
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
-                // abstract methods can not be weaved
-                if ($method->isAbstract()) {
+                // abstract and parent final methods could not be woven
+                $isParentFinalMethod = ($method->getDeclaringClass()->name !== $class->name) && $method->isFinal();
+                if ($isParentFinalMethod || $method->isAbstract()) {
                     continue;
                 }
 

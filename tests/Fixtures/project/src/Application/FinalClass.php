@@ -1,10 +1,9 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Tests\TestProject\Application;
 
-use Go\Tests\TestProject\Annotation as Aop;
-
-final class FinalClass
+final class FinalClass extends ParentWithFinalMethod
 {
     public function somePublicMethod()
     {

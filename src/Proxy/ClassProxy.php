@@ -349,10 +349,7 @@ class ClassProxy extends AbstractProxy
      */
     protected function overrideMethod(ReflectionMethod $method)
     {
-        // temporary disable override of final methods
-        if (!$method->isFinal() && !$method->isAbstract()) {
-            $this->override($method->name, $this->getJoinpointInvocationBody($method));
-        }
+        $this->override($method->name, $this->getJoinpointInvocationBody($method));
     }
 
     /**
