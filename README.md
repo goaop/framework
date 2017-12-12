@@ -53,12 +53,21 @@ Go! AOP framework can be installed with composer. Installation is quite easy:
 4. Create an aspect
 5. Register the aspect in the aspect kernel
 
+### Step 0 (optional): Try demo examples in the framework
+
+Ask composer to create new project in empty directory:
+
+```bash
+composer create-project goaop/framework
+```
+After that just configure your web server to `demos/` folder and open it in your browser. Then you can look at some demo examples before going deeper into installing it in your project.
+
 ### Step 1: Download the library using composer
 
-Ask composer to download the Go! AOP framework with its dependencies by running the command:
+Ask composer to download the latest version of Go! AOP framework with its dependencies by running the command:
 
 ``` bash
-$ composer require goaop/framework
+composer require goaop/framework
 ```
 
 Composer will install the framework to your project's `vendor/goaop/framework` directory.
@@ -111,15 +120,15 @@ include __DIR__ . '/vendor/autoload.php'; // use composer
 
 // Initialize an application aspect container
 $applicationAspectKernel = ApplicationAspectKernel::getInstance();
-$applicationAspectKernel->init(array(
-        'debug' => true, // use 'false' for production mode
-        // Cache directory
-        'cacheDir'  => __DIR__ . '/path/to/cache/for/aop',
+$applicationAspectKernel->init([
+        'debug'        => true, // use 'false' for production mode
+        'appDir'       => __DIR__ . '/..', // Application root directory
+        'cacheDir'     => __DIR__ . '/path/to/cache/for/aop', // Cache directory
         // Include paths restricts the directories where aspects should be applied, or empty for all source files
-        'includePaths' => array(
+        'includePaths' => [
             __DIR__ . '/../src/'
-        )
-));
+        ]
+]);
 ```
 
 ### 4. Create an aspect
