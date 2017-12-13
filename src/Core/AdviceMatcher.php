@@ -70,12 +70,13 @@ class AdviceMatcher
                 $pointcut = $advisor->getPointcut();
                 $isFunctionAdvisor = $pointcut->getKind() & Aop\PointFilter::KIND_FUNCTION;
                 if ($isFunctionAdvisor && $pointcut->getClassFilter()->matches($namespace)) {
-                    $advices = array_merge_recursive(
-                        $advices,
-                        $this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $advisorId, $pointcut)
-                    );
+                    $advices[] = $this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $advisorId, $pointcut);
                 }
             }
+        }
+
+        if (count($advices) > 0) {
+            $advices = array_merge_recursive(...$advices);
         }
 
         return $advices;
@@ -103,21 +104,18 @@ class AdviceMatcher
             if ($advisor instanceof Aop\PointcutAdvisor) {
                 $pointcut = $advisor->getPointcut();
                 if ($pointcut->getClassFilter()->matches($class)) {
-                    $classAdvices = array_merge_recursive(
-                        $classAdvices,
-                        $this->getAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut)
-                    );
+                    $classAdvices[] = $this->getAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut);
                 }
             }
 
             if ($advisor instanceof Aop\IntroductionAdvisor) {
                 if ($advisor->getClassFilter()->matches($class)) {
-                    $classAdvices = array_merge_recursive(
-                        $classAdvices,
-                        $this->getIntroductionFromAdvisor($originalClass, $advisor, $advisorId)
-                    );
+                    $classAdvices[] = $this->getIntroductionFromAdvisor($originalClass, $advisor, $advisorId);
                 }
             }
+        }
+        if (count($classAdvices) > 0) {
+            $classAdvices = array_merge_recursive(...$classAdvices);
         }
 
         return $classAdvices;
