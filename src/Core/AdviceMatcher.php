@@ -96,7 +96,7 @@ class AdviceMatcher
         $parentClass  = $class->getParentClass();
 
         $originalClass = $class;
-        if ($parentClass && preg_match('/' . AspectContainer::AOP_PROXIED_SUFFIX . '$/', $parentClass->name)) {
+        if ($parentClass && strpos($parentClass->name, AspectContainer::AOP_PROXIED_SUFFIX) !== false) {
             $originalClass = $parentClass;
         }
 
