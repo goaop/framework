@@ -20,10 +20,6 @@ environment:
   - dependencies: current
     php_ver_target: 5.6
   - dependencies: current
-    php_ver_target: 7.0
-  - dependencies: current
-    php_ver_target: 7.1
-  - dependencies: current
     php_ver_target: 7.2
   #- dependencies: highest
   #  php_ver_target: 7.0
@@ -56,4 +52,13 @@ install:
 
 test_script:
   - cd c:\projects\goaop
-  - vendor/bin/phpunit --colors=always
+  - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=clover.xml --colors
+
+on_finish:
+# Upload test results via rest-api
+  - ps: |
+        $wc = New-Object 'System.Net.WebClient'
+        Get-ChildItem . -Name -Recurse 'clover.xml'  |
+        Foreach-Object {
+            $wc.UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $_))
+        }
