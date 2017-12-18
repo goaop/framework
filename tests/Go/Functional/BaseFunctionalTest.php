@@ -18,6 +18,7 @@ use Go\PhpUnit\ClassMemberWovenConstraint;
 use Go\PhpUnit\ClassMemberNotWovenConstraint;
 use PHPUnit_Framework_TestCase as TestCase;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -114,16 +115,17 @@ abstract class BaseFunctionalTest extends TestCase
      */
     protected function execute($command, $args = null, $expectSuccess = true, $expectedExitCode = null)
     {
-        $commandStatement = sprintf('GO_AOP_CONFIGURATION=%s php %s %s %s %s',
-            $this->getConfigurationName(),
+        $phpExecutable    = (new PhpExecutableFinder())->find();
+        $commandStatement = sprintf('%s %s %s %s %s',
+            $phpExecutable,
             $this->configuration['console'],
             $command,
             $this->configuration['frontController'],
             (null !== $args) ? $args : ''
         );
 
-        $process = new Process($commandStatement);
-
+        $process = new Process($commandStatement, null, ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()]);
+        $process->inheritEnvironmentVariables();
         $process->run();
 
         if ($expectSuccess) {
