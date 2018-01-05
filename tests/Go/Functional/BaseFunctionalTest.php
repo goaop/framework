@@ -11,6 +11,7 @@
 namespace Go\Functional;
 
 use Go\Core\AspectContainer;
+use Go\Instrument\PathResolver;
 use Go\PhpUnit\ClassIsNotWovenConstraint;
 use Go\PhpUnit\ClassWovenConstraint;
 use Go\PhpUnit\ClassAdvisorIdentifier;
@@ -57,9 +58,10 @@ abstract class BaseFunctionalTest extends TestCase
     protected function clearCache()
     {
         $filesystem = new Filesystem();
-
-        if ($filesystem->exists($this->configuration['cacheDir'])) {
-            $filesystem->remove($this->configuration['cacheDir']);
+        // We need to normalize path to prevent Windows 260-length filename trouble
+        $absoluteCacheDir = PathResolver::realpath($this->configuration['cacheDir']);
+        if ($filesystem->exists($absoluteCacheDir)) {
+            $filesystem->remove($absoluteCacheDir);
         }
     }
 
