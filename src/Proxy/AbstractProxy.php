@@ -108,7 +108,7 @@ abstract class AbstractProxy
             if ($reflectionType) {
                 $nullablePrefix = (PHP_VERSION_ID >= 70100 && $reflectionType->allowsNull()) ? '?' : '';
                 $nsPrefix       = $reflectionType->isBuiltin() ? '' : '\\';
-                $type           = $nullablePrefix . $nsPrefix . (string) $reflectionType;
+                $type           = $nullablePrefix . $nsPrefix . ltrim((string) $reflectionType, '\\');
             }
         } else {
             if ($parameter->isArray()) {
@@ -116,7 +116,7 @@ abstract class AbstractProxy
             } elseif ($parameter->isCallable()) {
                 $type = 'callable';
             } elseif ($parameter->getClass()) {
-                $type = '\\' . $parameter->getClass()->name;
+                $type = '\\' . ltrim($parameter->getClass()->name, '\\');
             }
         }
         $defaultValue = null;
@@ -211,7 +211,7 @@ abstract class AbstractProxy
             $nullablePrefix = $reflectionReturnType->allowsNull() ? '?' : '';
             $nsPrefix       = $reflectionReturnType->isBuiltin() ? '' : '\\';
 
-            $reflectionReturnType = $nullablePrefix . $nsPrefix . (string) $reflectionReturnType;
+            $reflectionReturnType = $nullablePrefix . $nsPrefix . ltrim((string) $reflectionReturnType, '\\');
         }
         if ($functionLike instanceof ReflectionMethod) {
             $modifiersLine = implode(' ', Reflection::getModifierNames($functionLike->getModifiers()));
