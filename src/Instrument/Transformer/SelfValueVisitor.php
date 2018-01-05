@@ -32,7 +32,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     /**
      * Current namespace
      *
-     * @var null|Name
+     * @var null|Name|string
      */
     protected $namespace;
 
@@ -124,11 +124,11 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     /**
      * Helper method for resolving type nodes
      *
-     * @param Node|null $node Instance of node
+     * @param Node|string|null $node Instance of node
      *
      * @return Node|Name|FullyQualified
      */
-    private function resolveType(Node $node = null)
+    private function resolveType($node)
     {
         if ($node instanceof Node\NullableType) {
             $node->type = $this->resolveType($node->type);
