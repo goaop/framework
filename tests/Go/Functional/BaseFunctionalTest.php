@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Go\Functional;
 
 use Go\Core\AspectContainer;
+use Go\Instrument\PathResolver;
 use Go\PhpUnit\ClassIsNotWovenConstraint;
 use Go\PhpUnit\ClassWovenConstraint;
 use Go\PhpUnit\ClassAdvisorIdentifier;
@@ -19,6 +20,7 @@ use Go\PhpUnit\ClassMemberWovenConstraint;
 use Go\PhpUnit\ClassMemberNotWovenConstraint;
 use PHPUnit_Framework_TestCase as TestCase;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -57,9 +59,10 @@ abstract class BaseFunctionalTest extends TestCase
     protected function clearCache()
     {
         $filesystem = new Filesystem();
-
-        if ($filesystem->exists($this->configuration['cacheDir'])) {
-            $filesystem->remove($this->configuration['cacheDir']);
+        // We need to normalize path to prevent Windows 260-length filename trouble
+        $absoluteCacheDir = PathResolver::realpath($this->configuration['cacheDir']);
+        if ($filesystem->exists($absoluteCacheDir)) {
+            $filesystem->remove($absoluteCacheDir);
         }
     }
 
@@ -113,16 +116,17 @@ abstract class BaseFunctionalTest extends TestCase
      */
     protected function execute($command, $args = null, $expectSuccess = true, $expectedExitCode = null): string
     {
-        $commandStatement = sprintf('GO_AOP_CONFIGURATION=%s php %s %s %s %s',
-            $this->getConfigurationName(),
+        $phpExecutable    = (new PhpExecutableFinder())->find();
+        $commandStatement = sprintf('%s %s --no-ansi %s %s %s',
+            $phpExecutable,
             $this->configuration['console'],
             $command,
             $this->configuration['frontController'],
             $args ?? ''
         );
 
-        $process = new Process($commandStatement);
-
+        $process = new Process($commandStatement, null, ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()]);
+        $process->inheritEnvironmentVariables();
         $process->run();
 
         if ($expectSuccess) {

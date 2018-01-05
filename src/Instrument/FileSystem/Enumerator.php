@@ -65,7 +65,7 @@ class Enumerator
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator(
                 $this->rootDirectory,
-                \FilesystemIterator::SKIP_DOTS
+                \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS
             )
         );
 
