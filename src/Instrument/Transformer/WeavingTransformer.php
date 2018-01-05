@@ -271,8 +271,7 @@ class WeavingTransformer extends BaseSourceTransformer
 
         $cacheDir          = $this->cachePathManager->getCacheDir() . $cacheDirSuffix;
         $relativePath      = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());
-        $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $class->getName()) . '.php';
-        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
+        $proxyRelativePath = str_replace('\\', '/', $relativePath . '/' . $class->getName() . '.php');
         $proxyFileName     = $cacheDir . $proxyRelativePath;
         $dirname           = dirname($proxyFileName);
         if (!file_exists($dirname)) {
