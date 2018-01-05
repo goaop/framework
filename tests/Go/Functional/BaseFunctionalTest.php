@@ -118,7 +118,7 @@ abstract class BaseFunctionalTest extends TestCase
     protected function execute($command, $args = null, $expectSuccess = true, $expectedExitCode = null)
     {
         $phpExecutable    = (new PhpExecutableFinder())->find();
-        $commandStatement = sprintf('%s %s %s %s %s',
+        $commandStatement = sprintf('%s %s --no-ansi %s %s %s',
             $phpExecutable,
             $this->configuration['console'],
             $command,
