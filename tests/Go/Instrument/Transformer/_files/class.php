@@ -18,5 +18,11 @@ class TestClass {
     }
 
     public function publicMethodFixedArguments($a, $b, $c = null) {}
+
+    /**
+     * `self` value is handled on AST level via SelfValueTransformer class
+     * @see \Go\Instrument\Transformer\SelfValueTransformer
+     */
+    public function methodWithSpecialTypeArguments(/* self */ $instance) {}
 }
 
