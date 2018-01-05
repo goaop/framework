@@ -21,4 +21,10 @@ class TestPhp7Class
     public function arrayRth(array $arg) : array {}
     public function exceptionRth(\Exception $exception) : \Exception {}
     public function noRth(LocalException $exception) {}
+
+    /**
+     * `self` value is handled on AST level via SelfValueTransformer class
+     * @see \Go\Instrument\Transformer\SelfValueTransformer
+     */
+    public function returnSelf()/*: self */ {}
 }

@@ -153,6 +153,11 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTest('php7-class-woven')->source);
         $this->assertEquals($expected, $actual);
+        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
+            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTest('php7-class-proxy')->source);
+            $this->assertEquals($expectedProxyContent, $actualProxyContent);
+        }
     }
 
     /**
@@ -193,6 +198,11 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTest('class-woven')->source);
         $this->assertEquals($expected, $actual);
+        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
+            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTest('class-proxy')->source);
+            $this->assertEquals($expectedProxyContent, $actualProxyContent);
+        }
     }
 
     /**

@@ -16,6 +16,7 @@ use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
+use Go\Instrument\Transformer\SelfValueTransformer;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use Go\Instrument\Transformer\CachingTransformer;
@@ -240,6 +241,7 @@ abstract class AspectKernel
                 $transformers[] = $filterInjector;
             }
             $aspectContainer = $aspectKernel->getContainer();
+            $transformers[]  = new SelfValueTransformer($aspectKernel);
             $transformers[]  = new WeavingTransformer(
                 $aspectKernel,
                 $aspectContainer->get('aspect.advice_matcher'),
