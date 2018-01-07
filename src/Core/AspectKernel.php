@@ -230,23 +230,21 @@ abstract class AspectKernel
         $cacheManager     = $this->getContainer()->get('aspect.cache.path.manager');
         $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
         $magicTransformer = new MagicConstantTransformer($this);
-        $aspectKernel     = $this;
 
-        $sourceTransformers = function () use ($filterInjector, $magicTransformer, $aspectKernel, $cacheManager) {
+        $sourceTransformers = function () use ($filterInjector, $magicTransformer, $cacheManager) {
             $transformers = [];
-            if ($aspectKernel->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
+            if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
                 $transformers[] = new ConstructorExecutionTransformer();
             }
-            if ($aspectKernel->hasFeature(Features::INTERCEPT_INCLUDES)) {
+            if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
                 $transformers[] = $filterInjector;
             }
-            $aspectContainer = $aspectKernel->getContainer();
-            $transformers[]  = new SelfValueTransformer($aspectKernel);
+            $transformers[]  = new SelfValueTransformer($this);
             $transformers[]  = new WeavingTransformer(
-                $aspectKernel,
-                $aspectContainer->get('aspect.advice_matcher'),
+                $this,
+                $this->container->get('aspect.advice_matcher'),
                 $cacheManager,
-                $aspectContainer->get('aspect.cached.loader')
+                $this->container->get('aspect.cached.loader')
             );
             $transformers[] = $magicTransformer;
 
