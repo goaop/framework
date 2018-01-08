@@ -13,6 +13,7 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
+use Go\Aop\Features;
 use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectContainer;
@@ -37,6 +38,13 @@ class WeavingTransformer extends BaseSourceTransformer
      * @var AdviceMatcher
      */
     protected $adviceMatcher;
+
+    /**
+     * Should we use parameter widening for our decorators
+     *
+     * @var bool
+     */
+    protected $useParameterWidening = false;
 
     /**
      * @var CachePathManager
@@ -68,6 +76,9 @@ class WeavingTransformer extends BaseSourceTransformer
         $this->adviceMatcher    = $adviceMatcher;
         $this->cachePathManager = $cachePathManager;
         $this->aspectLoader     = $loader;
+        if (PHP_VERSION_ID >= 70200) {
+            $this->useParameterWidening = $kernel->hasFeature(Features::PARAMETER_WIDENING);
+        }
     }
 
     /**
@@ -144,8 +155,8 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Prepare child Aop proxy
         $child = $class->isTrait()
-            ? new TraitProxy($class, $advices)
-            : new ClassProxy($class, $advices);
+            ? new TraitProxy($class, $advices, $this->useParameterWidening)
+            : new ClassProxy($class, $advices, $this->useParameterWidening);
 
         // Set new parent name instead of original
         $child->setParentName($newClassName);

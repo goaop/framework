@@ -40,4 +40,11 @@ interface Features
      * This flag is usable for read-only file systems (GAE, phar, etc)
      */
     const PREBUILT_CACHE = 64;
+
+    /**
+     * Enables usage of parameter widening for PHP>=7.2.0
+     *
+     * @see https://wiki.php.net/rfc/parameter-no-type-variance
+     */
+    const PARAMETER_WIDENING = 128;
 }

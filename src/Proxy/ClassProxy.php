@@ -114,12 +114,13 @@ class ClassProxy extends AbstractProxy
      *
      * @param ReflectionClass $parent Parent class reflection
      * @param array|Advice[][] $classAdvices List of advices for class
+     * @param bool $useParameterWidening Enables usage of parameter widening feature
      *
      * @throws \InvalidArgumentException if there are unknown type of advices
      */
-    public function __construct(ReflectionClass $parent, array $classAdvices)
+    public function __construct(ReflectionClass $parent, array $classAdvices, bool $useParameterWidening)
     {
-        parent::__construct($classAdvices);
+        parent::__construct($classAdvices, $useParameterWidening);
 
         $this->class           = $parent;
         $this->name            = $parent->getShortName();

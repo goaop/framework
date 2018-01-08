@@ -44,13 +44,24 @@ abstract class AbstractProxy
     protected static $staticLsbExpression = 'static::class';
 
     /**
+     * Whether or not proxy should use parameter widening
+     *
+     * @see https://wiki.php.net/rfc/parameter-no-type-variance
+     *
+     * @var bool
+     */
+    private $useParameterWidening;
+
+    /**
      * Constructs an abstract proxy class
      *
      * @param array $advices List of advices
+     * @param bool $useParameterWidening Should proxy use parameter widening feature
      */
-    public function __construct(array $advices = [])
+    public function __construct(array $advices = [], bool $useParameterWidening = false)
     {
-        $this->advices = $this->flattenAdvices($advices);
+        $this->advices              = $this->flattenAdvices($advices);
+        $this->useParameterWidening = $useParameterWidening;
     }
 
     /**
@@ -105,7 +116,7 @@ abstract class AbstractProxy
     {
         $type = '';
         $reflectionType = $parameter->getType();
-        if ($reflectionType) {
+        if ($reflectionType !== null && $this->useParameterWidening === false) {
             $nullablePrefix = (PHP_VERSION_ID >= 70100 && $reflectionType->allowsNull()) ? '?' : '';
             $nsPrefix       = $reflectionType->isBuiltin() ? '' : '\\';
             $type           = $nullablePrefix . $nsPrefix . ltrim((string) $reflectionType, '\\');
