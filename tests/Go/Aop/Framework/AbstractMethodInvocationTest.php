@@ -28,4 +28,12 @@ class AbstractMethodInvocationTest extends \PHPUnit_Framework_TestCase
     {
         $this->assertInstanceOf('ReflectionMethod', $this->invocation->getStaticPart());
     }
+
+    public function testProvidesAccessToAnnotations()
+    {
+        $method = $this->invocation->getMethod();
+
+        $this->assertTrue(method_exists($method, 'getAnnotation'));
+        $this->assertTrue(method_exists($method, 'getAnnotations'));
+    }
 }
