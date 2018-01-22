@@ -17,7 +17,7 @@ namespace Go\Aop\Support;
 interface AnnotationAccess
 {
     /**
-     * Gets a annotation.
+     * Gets annotation.
      *
      * @param string $annotationName The name of the annotation.
      * @return mixed The Annotation or NULL, if the requested annotation does not exist.

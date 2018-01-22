@@ -28,7 +28,7 @@ class AnnotatedReflectionMethod extends ReflectionMethod implements AnnotationAc
     private static $annotationReader;
 
     /**
-     * Gets a method annotation.
+     * Gets method annotation.
      *
      * @param string $annotationName The name of the annotation.
      * @return mixed The Annotation or NULL, if the requested annotation does not exist.

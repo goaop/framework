@@ -28,7 +28,7 @@ class AnnotatedReflectionProperty extends ReflectionProperty implements Annotati
     private static $annotationReader;
 
     /**
-     * Gets a property annotation.
+     * Gets property annotation.
      *
      * @param string $annotationName The name of the annotation.
      * @return mixed The Annotation or NULL, if the requested annotation does not exist.
