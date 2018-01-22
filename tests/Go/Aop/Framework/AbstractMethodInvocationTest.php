@@ -3,6 +3,8 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Support\AnnotationAccess;
+
 class AbstractMethodInvocationTest extends \PHPUnit_Framework_TestCase
 {
     /**
@@ -31,9 +33,6 @@ class AbstractMethodInvocationTest extends \PHPUnit_Framework_TestCase
 
     public function testProvidesAccessToAnnotations()
     {
-        $method = $this->invocation->getMethod();
-
-        $this->assertTrue(method_exists($method, 'getAnnotation'));
-        $this->assertTrue(method_exists($method, 'getAnnotations'));
+        $this->assertInstanceOf(AnnotationAccess::class, $this->invocation->getMethod());
     }
 }

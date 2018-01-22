@@ -18,7 +18,7 @@ use ReflectionProperty;
 /**
  * Extended version of ReflectionProperty with annotation support
  */
-class AnnotatedReflectionProperty extends ReflectionProperty
+class AnnotatedReflectionProperty extends ReflectionProperty implements AnnotationAccess
 {
     /**
      * Annotation reader

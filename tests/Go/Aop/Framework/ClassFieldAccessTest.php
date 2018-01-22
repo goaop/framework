@@ -3,6 +3,8 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Support\AnnotationAccess;
+
 class ClassFieldAccessTest extends \PHPUnit_Framework_TestCase
 {
     /**
@@ -28,9 +30,6 @@ class ClassFieldAccessTest extends \PHPUnit_Framework_TestCase
 
     public function testProvidesAccessToAnnotations()
     {
-        $field = $this->classField->getField();
-
-        $this->assertTrue(method_exists($field, 'getAnnotation'));
-        $this->assertTrue(method_exists($field, 'getAnnotations'));
+        $this->assertInstanceOf(AnnotationAccess::class, $this->classField->getField());
     }
 }

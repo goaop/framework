@@ -18,7 +18,7 @@ use ReflectionMethod;
 /**
  * Extended version of ReflectionMethod with annotation support
  */
-class AnnotatedReflectionMethod extends ReflectionMethod
+class AnnotatedReflectionMethod extends ReflectionMethod implements AnnotationAccess
 {
     /**
      * Annotation reader
