@@ -13,12 +13,12 @@ namespace Go\Aop\Support;
 
 use Doctrine\Common\Annotations\Reader;
 use Go\Core\AspectKernel;
-use ReflectionMethod;
+use ReflectionProperty;
 
 /**
- * Extended version of ReflectionMethod with annotation support
+ * Extended version of ReflectionProperty with annotation support
  */
-class AnnotatedReflectionMethod extends ReflectionMethod implements AnnotationAccess
+class AnnotatedReflectionProperty extends ReflectionProperty implements AnnotationAccess
 {
     /**
      * Annotation reader
@@ -28,22 +28,22 @@ class AnnotatedReflectionMethod extends ReflectionMethod implements AnnotationAc
     private static $annotationReader;
 
     /**
-     * Gets method annotation.
+     * Gets property annotation.
      *
      * @param string $annotationName The name of the annotation.
      * @return mixed The Annotation or NULL, if the requested annotation does not exist.
      */
     public function getAnnotation(string $annotationName)
     {
-        return self::getReader()->getMethodAnnotation($this, $annotationName);
+        return self::getReader()->getPropertyAnnotation($this, $annotationName);
     }
 
     /**
-     * Gets the annotations applied to a method.
+     * Gets the annotations applied to a property.
      */
     public function getAnnotations(): array
     {
-        return self::getReader()->getMethodAnnotations($this);
+        return self::getReader()->getPropertyAnnotations($this);
     }
 
     /**

@@ -3,6 +3,8 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Support\AnnotationAccess;
+
 class AbstractMethodInvocationTest extends \PHPUnit_Framework_TestCase
 {
     /**
@@ -27,5 +29,10 @@ class AbstractMethodInvocationTest extends \PHPUnit_Framework_TestCase
     public function testStaticPartEqualsToReflectionMethod()
     {
         $this->assertInstanceOf('ReflectionMethod', $this->invocation->getStaticPart());
+    }
+
+    public function testProvidesAccessToAnnotations()
+    {
+        $this->assertInstanceOf(AnnotationAccess::class, $this->invocation->getMethod());
     }
 }
