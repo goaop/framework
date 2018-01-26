@@ -260,7 +260,16 @@ if ($example):
       <div class="panel-body well panel-collapse collapse out" id="collapseTwo">
 <?php
 $refObject = new ReflectionObject($example);
-Highlighter::highlight(MagicConstantTransformer::resolveFileName($refObject->getFileName()));
+
+/**
+ * Get filename without proxy additions
+ */
+$path = $refObject->getFileName();
+$basename = basename($path);
+$explodedPath = explode($basename, $path);
+$path = array_shift($explodedPath) . $basename;
+
+Highlighter::highlight(MagicConstantTransformer::resolveFileName($path));
 ?>
       </div>
     </div>
