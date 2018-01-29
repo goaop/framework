@@ -24,9 +24,9 @@ use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionFile;
 use Go\ParserReflection\ReflectionFileNamespace;
 use Go\ParserReflection\ReflectionMethod;
-use Go\Proxy\ClassProxy;
-use Go\Proxy\FunctionProxy;
-use Go\Proxy\TraitProxy;
+use Go\Proxy\ClassProxyGenerator;
+use Go\Proxy\FunctionProxyGenerator;
+use Go\Proxy\TraitProxyGenerator;
 
 /**
  * Main transformer that performs weaving of aspects into the source code
@@ -138,29 +138,27 @@ class WeavingTransformer extends BaseSourceTransformer
             return false;
         }
 
-        // Sort advices in advance to keep the correct order in cache
-        foreach ($advices as &$typeAdvices) {
-            foreach ($typeAdvices as &$joinpointAdvices) {
-                if (is_array($joinpointAdvices)) {
-                    $joinpointAdvices = AbstractJoinpoint::sortAdvices($joinpointAdvices);
-                }
-            }
-        }
+        // Sort advices in advance to keep the correct order in cache, and leave only keys for the cache
+        $advices = AbstractJoinpoint::flatAndSortAdvices($advices);
 
         // Prepare new class name
         $newClassName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
 
         // Replace original class name with new
         $this->adjustOriginalClass($class, $advices, $metadata, $newClassName);
+        $newParentName = $class->getNamespaceName() . '\\' . $newClassName;
 
         // Prepare child Aop proxy
-        $child = $class->isTrait()
-            ? new TraitProxy($class, $advices, $this->useParameterWidening)
-            : new ClassProxy($class, $advices, $this->useParameterWidening);
+        $childProxyGenerator = $class->isTrait()
+            ? new TraitProxyGenerator($class, $newParentName, $advices, $this->useParameterWidening)
+            : new ClassProxyGenerator($class, $newParentName, $advices, $this->useParameterWidening);
 
-        // Set new parent name instead of original
-        $child->setParentName($newClassName);
-        $contentToInclude = $this->saveProxyToCache($class, $child);
+        $refNamespace = new ReflectionFileNamespace($class->getFileName(), $class->getNamespaceName());
+        foreach ($refNamespace->getNamespaceAliases() as $fqdn => $alias) {
+            $childProxyGenerator->addUse($fqdn, $alias);
+        }
+
+        $contentToInclude = $this->saveProxyToCache($class, $childProxyGenerator->generate());
 
         // Get last token for this class
         $lastClassToken = $class->getNode()->getAttribute('endTokenPos');
@@ -253,12 +251,13 @@ class WeavingTransformer extends BaseSourceTransformer
 
             $functionFileName = $cacheDir . $fileName;
             if (!file_exists($functionFileName) || !$this->container->isFresh(filemtime($functionFileName))) {
-                $dirname = dirname($functionFileName);
+                $functionAdvices = AbstractJoinpoint::flatAndSortAdvices($functionAdvices);
+                $dirname         = dirname($functionFileName);
                 if (!file_exists($dirname)) {
                     mkdir($dirname, $this->options['cacheFileMode'], true);
                 }
-                $source = new FunctionProxy($namespace, $functionAdvices);
-                file_put_contents($functionFileName, $source, LOCK_EX);
+                $generator = new FunctionProxyGenerator($namespace, $functionAdvices, $this->useParameterWidening);
+                file_put_contents($functionFileName, $generator->generate(), LOCK_EX);
                 // For cache files we don't want executable bits by default
                 chmod($functionFileName, $this->options['cacheFileMode'] & (~0111));
             }
@@ -276,11 +275,11 @@ class WeavingTransformer extends BaseSourceTransformer
      * Save AOP proxy to the separate file anr returns the php source code for inclusion
      *
      * @param ReflectionClass $class Original class reflection
-     * @param string|ClassProxy $child
+     * @param string          $childCode Content of generated child proxy
      *
      * @return string
      */
-    private function saveProxyToCache(ReflectionClass $class, $child): string
+    private function saveProxyToCache(ReflectionClass $class, string $childCode): string
     {
         static $cacheDirSuffix = '/_proxies/';
 
@@ -293,18 +292,8 @@ class WeavingTransformer extends BaseSourceTransformer
             mkdir($dirname, $this->options['cacheFileMode'], true);
         }
 
-        $body       = '<?php' . PHP_EOL;
-        $namespace  = $class->getNamespaceName();
-        if (!empty($namespace)) {
-            $body .= "namespace {$namespace};" . PHP_EOL . PHP_EOL;
-        }
+        $body = '<?php' . PHP_EOL . $childCode;
 
-        $refNamespace = new ReflectionFileNamespace($class->getFileName(), $namespace);
-        foreach ($refNamespace->getNamespaceAliases() as $fqdn => $alias) {
-            $body .= "use {$fqdn} as {$alias};" . PHP_EOL;
-        }
-
-        $body .= $child;
         $isVirtualSystem = strpos($proxyFileName, 'vfs') === 0;
         file_put_contents($proxyFileName, $body, $isVirtualSystem ? 0 : LOCK_EX);
         // For cache files we don't want executable bits by default

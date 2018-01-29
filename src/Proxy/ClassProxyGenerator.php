@@ -18,41 +18,26 @@ use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Aop\Framework\StaticClosureMethodInvocation;
 use Go\Aop\Framework\StaticInitializationJoinpoint;
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\IntroductionInfo;
 use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
-use Reflection;
+use Go\Proxy\Part\FunctionCallArgumentListGenerator;
+use Go\Proxy\Part\InterceptedConstructorGenerator;
+use Go\Proxy\Part\InterceptedMethodGenerator;
+use Go\Proxy\Part\JoinPointPropertyGenerator;
+use Go\Proxy\Part\PropertyInterceptionTrait;
 use ReflectionClass;
 use ReflectionMethod;
-use ReflectionProperty;
+use Zend\Code\Generator\ClassGenerator;
+use Zend\Code\Generator\DocBlockGenerator;
+use Zend\Code\Reflection\DocBlockReflection;
 
 /**
  * Class proxy builder that is used to generate a child class from the list of joinpoints
  */
-class ClassProxy extends AbstractProxy
+class ClassProxyGenerator
 {
-    /**
-     * Parent class reflection
-     *
-     * @var null|ReflectionClass
-     */
-    protected $class;
-
-    /**
-     * Parent class name, can be changed manually
-     *
-     * @var string
-     */
-    protected $parentClassName;
-
-    /**
-     * Source code for methods
-     *
-     * @var array Name of method => source code for it
-     */
-    protected $methodsCode = [];
 
     /**
      * Static mappings for class name for excluding if..else check
@@ -68,154 +53,81 @@ class ClassProxy extends AbstractProxy
     ];
 
     /**
-     * List of additional interfaces to implement
+     * List of advices that are used for generation of child
      *
      * @var array
      */
-    protected $interfaces = [];
+    protected $advices = [];
 
     /**
-     * List of additional traits for using
-     *
-     * @var array
+     * @var ClassGenerator
      */
-    protected $traits = [];
+    protected $generator;
 
     /**
-     * Source code for properties
+     * Generates an child code by original class reflection and joinpoints for it
      *
-     * @var array Name of property => source code for it
+     * @param ReflectionClass $originalClass        Original class reflection
+     * @param string          $parentClassName      Parent class name to use
+     * @param string[][]      $classAdvices         List of advices for class
+     * @param bool            $useParameterWidening Enables usage of parameter widening feature
      */
-    protected $propertiesCode = [];
+    public function __construct(
+        ReflectionClass $originalClass,
+        string $parentClassName,
+        array $classAdvices,
+        bool $useParameterWidening
+    ) {
+        $this->advices         = $classAdvices;
+        $dynamicMethodAdvices  = $classAdvices[AspectContainer::METHOD_PREFIX] ?? [];
+        $staticMethodAdvices   = $classAdvices[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
+        $propertyAdvices       = $classAdvices[AspectContainer::PROPERTY_PREFIX] ?? [];
+        $interceptedMethods    = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
+        $interceptedProperties = array_keys($propertyAdvices);
+        $introducedInterfaces  = $classAdvices[AspectContainer::INTRODUCTION_INTERFACE_PREFIX] ?? [];
+        $introducedTraits      = $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX] ?? [];
 
-    /**
-     * Name for the current class
-     *
-     * @var string
-     */
-    protected $name = '';
+        $generatedProperties = [new JoinPointPropertyGenerator($classAdvices)];
+        $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
 
-    /**
-     * Flag to determine if we need to add a code for property interceptors
-     *
-     * @var bool
-     */
-    private $isFieldsIntercepted = false;
+        $introducedInterfaces[] = '\\' . Proxy::class;
 
-    /**
-     * List of intercepted properties names
-     *
-     * @var array
-     */
-    private $interceptedProperties = [];
-
-    /**
-     * Generates an child code by parent class reflection and joinpoints for it
-     *
-     * @param ReflectionClass $parent Parent class reflection
-     * @param array|Advice[][] $classAdvices List of advices for class
-     * @param bool $useParameterWidening Enables usage of parameter widening feature
-     *
-     * @throws \InvalidArgumentException if there are unknown type of advices
-     */
-    public function __construct(ReflectionClass $parent, array $classAdvices, bool $useParameterWidening)
-    {
-        parent::__construct($classAdvices, $useParameterWidening);
-
-        $this->class           = $parent;
-        $this->name            = $parent->getShortName();
-        $this->parentClassName = $parent->getShortName();
-
-        $this->addInterface(Proxy::class);
-        $this->addJoinpointsProperty();
-
-        foreach ($classAdvices as $type => $typedAdvices) {
-            switch ($type) {
-                case AspectContainer::METHOD_PREFIX:
-                case AspectContainer::STATIC_METHOD_PREFIX:
-                    foreach ($typedAdvices as $joinPointName => $advice) {
-                        $method = $parent->getMethod($joinPointName);
-                        $this->overrideMethod($method);
-                    }
-                    break;
-
-                case AspectContainer::PROPERTY_PREFIX:
-                    foreach ($typedAdvices as $joinPointName => $advice) {
-                        $property = $parent->getProperty($joinPointName);
-                        $this->interceptProperty($property);
-                    }
-                    break;
-
-                case AspectContainer::INTRODUCTION_TRAIT_PREFIX:
-                    foreach ($typedAdvices as $advice) {
-                        /** @var $advice IntroductionInfo */
-                        $introducedTrait = $advice->getTrait();
-                        if (!empty($introducedTrait)) {
-                            $this->addTrait($introducedTrait);
-                        }
-                        $introducedInterface = $advice->getInterface();
-                        if (!empty($introducedInterface)) {
-                            $this->addInterface($introducedInterface);
-                        }
-                    }
-                    break;
-
-                case AspectContainer::INIT_PREFIX:
-                case AspectContainer::STATIC_INIT_PREFIX:
-                    break; // No changes for class
-
-                default:
-                    throw new \InvalidArgumentException("Unsupported point `$type`");
-            }
+        if (!empty($interceptedProperties)) {
+            $generatedMethods['__construct'] = new InterceptedConstructorGenerator(
+                $interceptedProperties,
+                $originalClass->getConstructor(),
+                $generatedMethods['__construct'] ?? null,
+                $useParameterWidening
+            );
+            $introducedTraits[] = '\\' . PropertyInterceptionTrait::class;
         }
-    }
 
-
-    /**
-     * Updates parent name for child
-     *
-     * @param string $newParentName New class name
-     */
-    public function setParentName(string $newParentName)
-    {
-        $this->parentClassName = $newParentName;
-    }
-
-    /**
-     * Override parent method with new body
-     *
-     * @param string $methodName Method name to override
-     * @param string $body New body for method
-     */
-    public function override(string $methodName, string $body)
-    {
-        $this->methodsCode[$methodName] = $this->getOverriddenFunction($this->class->getMethod($methodName), $body);
-    }
-
-    /**
-     * Creates a method
-     *
-     * @param int $methodFlags See ReflectionMethod modifiers
-     * @param string $methodName Name of the method
-     * @param bool $byReference Is method should return value by reference
-     * @param string $body Body of method
-     * @param string $parameters Definition of parameters
-     */
-    public function setMethod(int $methodFlags, string $methodName, bool $byReference, string $body, string $parameters)
-    {
-        $this->methodsCode[$methodName] = (
-            "/**\n * Method was created automatically, do not change it manually\n */\n" .
-            implode(' ', Reflection::getModifierNames($methodFlags)) . // List of method modifiers
-            ' function ' . // 'function' keyword
-            ($byReference ? '&' : '') . // Return value by reference
-            $methodName . // Method name
-            '(' . // Start of parameter list
-            $parameters . // List of parameters
-            ")\n" . // End of parameter list
-            "{\n" . // Start of method body
-            $this->indent($body) . "\n" . // Method body
-            "}\n" // End of method body
+        $this->generator = new ClassGenerator(
+            $originalClass->getShortName(),
+            $originalClass->getNamespaceName(),
+            $originalClass->isFinal() ? ClassGenerator::FLAG_FINAL : null,
+            $parentClassName,
+            $introducedInterfaces,
+            $generatedProperties,
+            $generatedMethods
         );
+        if ($originalClass->getDocComment()) {
+            $reflectionDocBlock = new DocBlockReflection($originalClass->getDocComment());
+            $this->generator->setDocBlock(DocBlockGenerator::fromReflection($reflectionDocBlock));
+        }
+
+        $this->generator->addTraits($introducedTraits);
+    }
+
+    /**
+     * Adds use alias for this class
+     *
+     * @param string      $use Name to use
+     * @param string|null $useAlias Alias for this class name or null if not set
+     */
+    public function addUse(string $use, string $useAlias = null)
+    {
+        $this->generator->addUse($use, $useAlias);
     }
 
     /**
@@ -228,7 +140,7 @@ class ClassProxy extends AbstractProxy
     public static function injectJoinPoints(string $className)
     {
         $reflectionClass    = new ReflectionClass($className);
-        $joinPointsProperty = $reflectionClass->getProperty('__joinPoints');
+        $joinPointsProperty = $reflectionClass->getProperty(JoinPointPropertyGenerator::NAME);
 
         $joinPointsProperty->setAccessible(true);
         $advices    = $joinPointsProperty->getValue();
@@ -242,9 +154,21 @@ class ClassProxy extends AbstractProxy
     }
 
     /**
+     * Generates the source code of child class
+     */
+    public function generate(): string
+    {
+        $classCode = $this->generator->generate();
+
+        return $classCode
+            // Inject advices on call
+            . '\\' . __CLASS__ . '::injectJoinPoints(' . $this->generator->getName() . '::class);';
+    }
+
+    /**
      * Wrap advices with joinpoint object
      *
-     * @param array|Advice[] $classAdvices Advices for specific class
+     * @param array|Advice[][][] $classAdvices Advices for specific class
      * @param string $className Name of the original class to use
      *
      * @throws \UnexpectedValueException If joinPoint type is unknown
@@ -285,72 +209,24 @@ class ClassProxy extends AbstractProxy
     }
 
     /**
-     * Add an interface for child
+     * Returns list of intercepted methods
      *
-     * @param string $interfaceName Name of the interface to add
-     */
-    public function addInterface(string $interfaceName)
-    {
-        // Use absolute namespace to prevent NS-conflicts
-        $this->interfaces[] = '\\' . ltrim($interfaceName, '\\');
-    }
-
-    /**
-     * Add a trait for child
+     * @param ReflectionClass $originalClass Instance of original reflection
+     * @param array           $methodNames List of methods to intercept
      *
-     * @param string $traitName Name of the trait to add
+     * @return InterceptedMethodGenerator[]
      */
-    public function addTrait(string $traitName)
+    protected function interceptMethods(ReflectionClass $originalClass, array $methodNames): array
     {
-        // Use absolute namespace to prevent NS-conflicts
-        $this->traits[] = '\\' . ltrim($traitName, '\\');
-    }
+        $interceptedMethods = [];
+        foreach ($methodNames as $methodName) {
+            $reflectionMethod = $originalClass->getMethod($methodName);
+            $methodBody       = $this->getJoinpointInvocationBody($reflectionMethod);
 
-    /**
-     * Creates a property
-     *
-     * @param int $propFlags See ReflectionProperty modifiers
-     * @param string $propName Name of the property
-     * @param null|string $defaultText Default value, should be string text!
-     */
-    public function setProperty(int $propFlags, string $propName, string $defaultText = null)
-    {
-        $this->propertiesCode[$propName] = (
-            "/**\n * Property was created automatically, do not change it manually\n */\n" . // Doc-block
-            implode(' ', Reflection::getModifierNames($propFlags)) . // List of modifiers for property
-            ' $' . // Space and variable symbol
-            $propName . // Name of the property
-            (isset($defaultText) ? " = $defaultText" : '') . // Default value if present
-            ";\n" // End of line with property definition
-        );
-    }
+            $interceptedMethods[$methodName] = new InterceptedMethodGenerator($reflectionMethod, $methodBody);
+        }
 
-    /**
-     * Adds a definition for joinpoints private property in the class
-     */
-    protected function addJoinpointsProperty()
-    {
-        $exportedAdvices = strtr(json_encode($this->advices, JSON_PRETTY_PRINT), [
-            '{' => '[',
-            '}' => ']',
-            '"' => '\'',
-            ':' => ' =>'
-        ]);
-        $this->setProperty(
-            ReflectionProperty::IS_PRIVATE | ReflectionProperty::IS_STATIC,
-            '__joinPoints',
-            $exportedAdvices
-        );
-    }
-
-    /**
-     * Override parent method with joinpoint invocation
-     *
-     * @param ReflectionMethod $method Method reflection
-     */
-    protected function overrideMethod(ReflectionMethod $method)
-    {
-        $this->override($method->name, $this->getJoinpointInvocationBody($method));
+        return $interceptedMethods;
     }
 
     /**
@@ -363,10 +239,11 @@ class ClassProxy extends AbstractProxy
     protected function getJoinpointInvocationBody(ReflectionMethod $method): string
     {
         $isStatic = $method->isStatic();
-        $scope    = $isStatic ? self::$staticLsbExpression : '$this';
+        $scope    = $isStatic ? 'static::class' : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
-        $args   = $this->prepareArgsLine($method);
+        $argumentList = new FunctionCallArgumentListGenerator($method);
+        $argumentCode = $argumentList->generate();
         $return = 'return ';
         if (PHP_VERSION_ID >= 70100 && $method->hasReturnType()) {
             $returnType = (string) $method->getReturnType();
@@ -376,108 +253,12 @@ class ClassProxy extends AbstractProxy
             }
         }
 
-        if (!empty($args)) {
-            $scope = "$scope, $args";
+        if (!empty($argumentCode)) {
+            $scope = "$scope, $argumentCode";
         }
 
         $body = "{$return}self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($scope);";
 
         return $body;
-    }
-
-    /**
-     * Makes property intercepted
-     *
-     * @param ReflectionProperty $property Reflection of property to intercept
-     */
-    protected function interceptProperty(ReflectionProperty $property)
-    {
-        $this->interceptedProperties[] = is_object($property) ? $property->name : $property;
-        $this->isFieldsIntercepted = true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function __toString()
-    {
-        $ctor = $this->class->getConstructor();
-        if ($this->isFieldsIntercepted && (!$ctor || !$ctor->isPrivate())) {
-            $this->addFieldInterceptorsCode($ctor);
-        }
-
-        $prefix = implode(' ', Reflection::getModifierNames($this->class->getModifiers()));
-
-        $classCode = (
-            $this->class->getDocComment() . "\n" . // Original doc-block
-            ($prefix ? "$prefix " : '') . // List of class modifiers
-            'class ' . // 'class' keyword with one space
-            $this->name . // Name of the class
-            ' extends ' . // 'extends' keyword with
-            $this->parentClassName . // Name of the parent class
-            ($this->interfaces ? ' implements ' . implode(', ', $this->interfaces) : '') . "\n" . // Interfaces list
-            "{\n" . // Start of class definition
-            ($this->traits ? $this->indent('use ' . implode(', ', $this->traits) . ';' . "\n") : '') . "\n" . // Traits list
-            $this->indent(implode("\n", $this->propertiesCode)) . "\n" . // Property definitions
-            $this->indent(implode("\n", $this->methodsCode)) . "\n" . // Method definitions
-            '}' // End of class definition
-        );
-
-        return $classCode
-            // Inject advices on call
-            . PHP_EOL
-            . '\\' . __CLASS__ . '::injectJoinPoints(' . $this->class->getShortName() . '::class);';
-    }
-
-    /**
-     * Add code for intercepting properties
-     *
-     * @param null|ReflectionMethod $constructor Constructor reflection or null
-     */
-    protected function addFieldInterceptorsCode(ReflectionMethod $constructor = null)
-    {
-        $this->addTrait(PropertyInterceptionTrait::class);
-        $this->isFieldsIntercepted = true;
-        if ($constructor) {
-            $this->override('__construct', $this->getConstructorBody($constructor, true));
-        } else {
-            $this->setMethod(ReflectionMethod::IS_PUBLIC, '__construct', false, $this->getConstructorBody(), '');
-        }
-    }
-
-    /**
-     * Returns constructor code
-     *
-     * @param ReflectionMethod $constructor Constructor reflection
-     * @param bool $isCallParent Is there is a need to call parent code
-     *
-     * @return string
-     */
-    private function getConstructorBody(ReflectionMethod $constructor = null, bool $isCallParent = false): string
-    {
-        $assocProperties = [];
-        $listProperties  = [];
-        foreach ($this->interceptedProperties as $propertyName) {
-            $assocProperties[] = "'$propertyName' => &\$this->$propertyName";
-            $listProperties[]  = "\$this->$propertyName";
-        }
-        $assocProperties = $this->indent(implode(',' . PHP_EOL, $assocProperties));
-        $listProperties  = $this->indent(implode(',' . PHP_EOL, $listProperties));
-        $parentCall      = '';
-        if ($constructor !== null && isset($this->methodsCode['__construct'])) {
-            $parentCall = $this->getJoinpointInvocationBody($constructor);
-        } elseif ($isCallParent) {
-            $parentCall = '\call_user_func_array(["parent", __FUNCTION__], \func_get_args());';
-        }
-
-        return <<<CTOR
-\$this->__properties = array(
-$assocProperties
-);
-unset(
-$listProperties
-);
-$parentCall
-CTOR;
     }
 }

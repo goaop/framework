@@ -11,72 +11,97 @@ declare(strict_types = 1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Advice;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
-use Go\Core\LazyAdvisorAccessor;
+use Go\Proxy\Part\FunctionCallArgumentListGenerator;
+use ReflectionClass;
 use ReflectionMethod;
+use Zend\Code\Generator\DocBlockGenerator;
+use Zend\Code\Generator\TraitGenerator;
+use Zend\Code\Generator\ValueGenerator;
+use Zend\Code\Reflection\DocBlockReflection;
 
 /**
  * Trait proxy builder that is used to generate a trait from the list of joinpoints
  */
-class TraitProxy extends ClassProxy
+class TraitProxyGenerator extends ClassProxyGenerator
 {
 
     /**
-     * List of advices for traits
+     * Generates an child code by original class reflection and joinpoints for it
      *
-     * @var array
+     * @param ReflectionClass $originalTrait        Original class reflection
+     * @param string          $parentTraitName      Parent trait name to use
+     * @param string[][]      $traitAdvices         List of advices for class
+     * @param bool            $useParameterWidening Enables usage of parameter widening feature
      */
-    protected static $traitAdvices = [];
+    public function __construct(
+        ReflectionClass $originalTrait,
+        string $parentTraitName,
+        array $traitAdvices,
+        bool $useParameterWidening
+    ) {
+        $this->advices        = $traitAdvices;
+        $dynamicMethodAdvices = $traitAdvices[AspectContainer::METHOD_PREFIX] ?? [];
+        $staticMethodAdvices  = $traitAdvices[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
+        $interceptedMethods   = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
+        $generatedMethods     = $this->interceptMethods($originalTrait, $interceptedMethods);
 
-    /**
-     * Inject advices for given trait
-     *
-     * NB This method will be used as a callback during source code evaluation to inject joinpoints
-     *
-     * @param string $className Aop child proxy class
-     * @param array|\Go\Aop\Advice[] $traitAdvices List of advices to inject into class
-     */
-    public static function injectJoinPoints(string $className, array $traitAdvices = [])
-    {
-        self::$traitAdvices[$className] = $traitAdvices;
+        $this->generator = new TraitGenerator(
+            $originalTrait->getShortName(),
+            $originalTrait->getNamespaceName(),
+            null,
+            null,
+            [],
+            [],
+            $generatedMethods,
+            DocBlockGenerator::fromReflection(new DocBlockReflection($originalTrait->getDocComment()))
+        );
+
+        // Normalize FQDN
+        $namespaceParts       = explode('\\', $parentTraitName);
+        $parentNormalizedName = end($namespaceParts);
+        $this->generator->addTrait($parentNormalizedName);
+
+        foreach ($interceptedMethods as $methodName) {
+            $fullName = $parentNormalizedName . '::' . $methodName;
+            $this->generator->addTraitAlias($fullName, $methodName . '➩', ReflectionMethod::IS_PROTECTED);
+        }
     }
 
     /**
      * Returns a joinpoint for the specific trait
      *
-     * @param string $traitName Name of the trait
-     * @param string $className Name of the class
+     * @param string $className     Name of the class
      * @param string $joinPointType Type of joinpoint (static or dynamic method)
-     * @param string $methodName Name of the method
+     * @param string $methodName    Name of the method
+     * @param array  $advices       List of advices for this trait method
      *
      * @return MethodInvocation
      */
     public static function getJoinPoint(
-        string $traitName,
         string $className,
         string $joinPointType,
-        string $methodName
+        string $methodName,
+        array $advices
     ): MethodInvocation {
-        /** @var LazyAdvisorAccessor $accessor */
         static $accessor;
 
-        if (!isset($accessor)) {
+        if ($accessor === null) {
             $aspectKernel = AspectKernel::getInstance();
             $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
         }
-
-        $advices = self::$traitAdvices[$traitName][$joinPointType][$methodName];
 
         $filledAdvices = [];
         foreach ($advices as $advisorName) {
             $filledAdvices[] = $accessor->$advisorName;
         }
 
-        $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $methodName . '➩', $filledAdvices);
+        $joinPoint = new self::$invocationClassMap[$joinPointType]($className, $methodName . '➩', $filledAdvices);
 
-        return $joinpoint;
+        return $joinPoint;
     }
 
     /**
@@ -90,11 +115,12 @@ class TraitProxy extends ClassProxy
     {
         $isStatic = $method->isStatic();
         $class    = '\\' . __CLASS__;
-        $scope    = $isStatic ? self::$staticLsbExpression : '$this';
+        $scope    = $isStatic ? 'static::class' : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
-        $args = $this->prepareArgsLine($method);
-        $args = $scope . ($args ? ", $args" : '');
+        $argumentList = new FunctionCallArgumentListGenerator($method);
+        $argumentCode = $argumentList->generate();
+        $argumentCode = $scope . ($argumentCode ? ", $argumentCode" : '');
 
         $return = 'return ';
         if (PHP_VERSION_ID >= 70100 && $method->hasReturnType()) {
@@ -105,53 +131,24 @@ class TraitProxy extends ClassProxy
             }
         }
 
+        $advicesArray = new ValueGenerator($this->advices[$prefix][$method->name], ValueGenerator::TYPE_ARRAY_SHORT);
+        $advicesArray->setArrayDepth(1);
+        $advicesCode = $advicesArray->generate();
+
         return <<<BODY
 static \$__joinPoint;
-if (!\$__joinPoint) {
-    \$__joinPoint = {$class}::getJoinPoint(__TRAIT__, __CLASS__, '{$prefix}', '{$method->name}');
+if (\$__joinPoint === null) {
+    \$__joinPoint = {$class}::getJoinPoint(__CLASS__, '{$prefix}', '{$method->name}', {$advicesCode});
 }
-{$return}\$__joinPoint->__invoke($args);
+{$return}\$__joinPoint->__invoke($argumentCode);
 BODY;
     }
 
     /**
      * {@inheritDoc}
      */
-    public function __toString()
+    public function generate(): string
     {
-        $classCode = (
-            $this->class->getDocComment() . "\n" . // Original doc-block
-            'trait ' . // 'trait' keyword
-            $this->name . "\n" . // Name of the trait
-            "{\n" . // Start of trait body
-            $this->indent(
-                'use ' . implode(', ', [-1 => $this->parentClassName] + $this->traits) .
-                $this->getMethodAliasesCode()
-            ) . "\n" . // Use traits and aliases section
-            $this->indent(implode("\n", $this->methodsCode)) . "\n" . // Method definitions
-            '}' // End of trait body
-        );
-
-        return $classCode
-            // Inject advices on call
-            . PHP_EOL
-            . '\\' . __CLASS__ . "::injectJoinPoints('"
-                . $this->class->name . "',"
-                . var_export($this->advices, true) . ');';
-    }
-
-    /**
-     * Returns prepared aliased code for usage in trait section
-     *
-     * @return string
-     */
-    private function getMethodAliasesCode(): string
-    {
-        $aliasesLines = [];
-        foreach (array_keys($this->methodsCode) as $methodName) {
-            $aliasesLines[] = "{$this->parentClassName}::{$methodName} as protected {$methodName}➩;";
-        }
-
-        return "{\n " . $this->indent(implode("\n", $aliasesLines)) . "\n}";
+        return $this->generator->generate();
     }
 }

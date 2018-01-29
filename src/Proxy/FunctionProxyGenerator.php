@@ -11,83 +11,79 @@ declare(strict_types = 1);
 
 namespace Go\Proxy;
 
-use Go\Aop\Advice;
 use Go\Aop\Framework\ReflectionFunctionInvocation;
 use Go\Aop\Intercept\FunctionInvocation;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
-use Go\Core\LazyAdvisorAccessor;
 use Go\ParserReflection\ReflectionFileNamespace;
+use Go\Proxy\Part\FunctionCallArgumentListGenerator;
+use Go\Proxy\Part\InterceptedFunctionGenerator;
 use ReflectionFunction;
+use Zend\Code\Generator\FileGenerator;
+use Zend\Code\Generator\ValueGenerator;
 
 /**
  * Function proxy builder that is used to generate a proxy-function from the list of joinpoints
  */
-class FunctionProxy extends AbstractProxy
+class FunctionProxyGenerator
 {
-
     /**
-     * List of advices for functions
+     * List of advices that are used for generation of child
      *
      * @var array
      */
-    protected static $functionAdvices = [];
+    protected $advices = [];
 
     /**
-     * File namespace
-     *
-     * @var ReflectionFileNamespace
+     * @var FileGenerator
      */
-    protected $namespace;
-
-    /**
-     * Source code for functions
-     *
-     * @var array Name of the function => source code for it
-     */
-    protected $functionsCode = [];
+    protected $fileGenerator;
 
     /**
      * Constructs functions stub class from namespace Reflection
      *
-     * @param ReflectionFileNamespace $namespace Reflection of namespace
-     * @param array $advices List of function advices
+     * @param ReflectionFileNamespace $namespace            Reflection of namespace
+     * @param string[][]              $advices              List of function advices
+     * @param bool                    $useParameterWidening Enables usage of parameter widening feature
      *
-     * @throws \InvalidArgumentException for invalid classes
+     * @throws \ReflectionException If there is an advice for unknown function
      */
-    public function __construct(ReflectionFileNamespace $namespace, array $advices = [])
-    {
-        parent::__construct($advices);
-        $this->namespace = $namespace;
+    public function __construct(
+        ReflectionFileNamespace $namespace,
+        array $advices = [],
+        bool $useParameterWidening = false
+    ) {
+        $this->advices       = $advices;
+        $this->fileGenerator = new FileGenerator();
+        $this->fileGenerator->setNamespace($namespace->getName());
 
-        if (empty($advices[AspectContainer::FUNCTION_PREFIX])) {
-            return;
+        $functionsContent = [];
+        $functionAdvices  = $advices[AspectContainer::FUNCTION_PREFIX] ?? [];
+        foreach (array_keys($functionAdvices) as $functionName) {
+            $functionReflection  = new ReflectionFunction($functionName);
+            $functionBody        = $this->getJoinpointInvocationBody($functionReflection);
+            $interceptedFunction = new InterceptedFunctionGenerator($functionReflection, $functionBody, $useParameterWidening);
+            $functionsContent[]  = $interceptedFunction->generate();
         }
 
-        foreach ($advices[AspectContainer::FUNCTION_PREFIX] as $pointName => $value) {
-            $function = new ReflectionFunction($pointName);
-            $this->override($function, $this->getJoinpointInvocationBody($function));
-        }
+        $this->fileGenerator->setBody(implode("\n", $functionsContent));
     }
 
     /**
      * Returns a joinpoint for specific function in the namespace
      *
      * @param string $joinPointName Special joinpoint name
-     * @param string $namespace Name of the namespace
+     * @param array  $advices       List of advices
      *
      * @return FunctionInvocation
      */
-    public static function getJoinPoint(string $joinPointName, string $namespace): FunctionInvocation
+    public static function getJoinPoint(string $joinPointName, array $advices): FunctionInvocation
     {
-        /** @var LazyAdvisorAccessor $accessor */
         static $accessor;
 
-        if (!$accessor) {
+        if ($accessor === null) {
             $accessor = AspectKernel::getInstance()->getContainer()->get('aspect.advisor.accessor');
         }
-
-        $advices = self::$functionAdvices[$namespace][AspectContainer::FUNCTION_PREFIX][$joinPointName];
 
         $filledAdvices = [];
         foreach ($advices as $advisorName) {
@@ -98,49 +94,11 @@ class FunctionProxy extends AbstractProxy
     }
 
     /**
-     * Inject advices for given trait
-     *
-     * NB This method will be used as a callback during source code evaluation to inject joinpoints
-     *
-     * @param string $namespace Aop child proxy class
-     * @param array|Advice[] $advices List of advices to inject into class
+     * Generates the source code of function proxies in given namespace
      */
-    public static function injectJoinPoints(string $namespace, array $advices = [])
+    public function generate(): string
     {
-        self::$functionAdvices[$namespace] = $advices;
-    }
-
-    /**
-     * Override function with new body
-     *
-     * @param ReflectionFunction $function Function reflection
-     * @param string $body New body for function
-     */
-    public function override(ReflectionFunction $function, string $body)
-    {
-        $this->functionsCode[$function->name] = $this->getOverriddenFunction($function, $body);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function __toString()
-    {
-        $functionsCode = (
-            "<?php\n" . // Start of file header
-            $this->namespace->getDocComment() . "\n" . // Doc-comment for file
-            'namespace ' . // 'namespace' keyword
-            $this->namespace->getName() . // Name
-            ";\n" . // End of namespace name
-            implode("\n", $this->functionsCode) // Function definitions
-        );
-
-        return $functionsCode
-            // Inject advices on call
-            . PHP_EOL
-            . '\\' . __CLASS__ . "::injectJoinPoints('"
-                . $this->namespace->getName() . "',"
-                . var_export($this->advices, true) . ');';
+        return $this->fileGenerator->generate();
     }
 
     /**
@@ -154,7 +112,8 @@ class FunctionProxy extends AbstractProxy
     {
         $class = '\\' . __CLASS__;
 
-        $args = $this->prepareArgsLine($function);
+        $argumentList = new FunctionCallArgumentListGenerator($function);
+        $argumentCode = $argumentList->generate();
 
         $return = 'return ';
         if (PHP_VERSION_ID >= 70100 && $function->hasReturnType()) {
@@ -165,12 +124,17 @@ class FunctionProxy extends AbstractProxy
             }
         }
 
+        $functionAdvices = $this->advices[AspectContainer::FUNCTION_PREFIX][$function->name];
+        $advicesArray    = new ValueGenerator($functionAdvices, ValueGenerator::TYPE_ARRAY_SHORT);
+        $advicesArray->setArrayDepth(1);
+        $advicesCode = $advicesArray->generate();
+
         return <<<BODY
 static \$__joinPoint;
-if (!\$__joinPoint) {
-    \$__joinPoint = {$class}::getJoinPoint('{$function->name}', __NAMESPACE__);
+if (\$__joinPoint === null) {
+    \$__joinPoint = {$class}::getJoinPoint('{$function->name}', {$advicesCode});
 }
-{$return}\$__joinPoint->__invoke($args);
+{$return}\$__joinPoint->__invoke($argumentCode);
 BODY;
     }
 
