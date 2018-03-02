@@ -13,7 +13,7 @@ $ composer install
 To run tests simply run the `phpunit` executable in the `vendor/bin`
 
 ```bash
-$ ./vender/bin/phpunit
+$ ./vendor/bin/phpunit
 ```
 
 You should get an output similar to this
