@@ -137,5 +137,4 @@ if (\$__joinPoint === null) {
 {$return}\$__joinPoint->__invoke($argumentCode);
 BODY;
     }
-
 }

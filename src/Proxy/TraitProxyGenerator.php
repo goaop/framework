@@ -11,7 +11,6 @@ declare(strict_types = 1);
 
 namespace Go\Proxy;
 
-use Go\Aop\Advice;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
