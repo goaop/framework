@@ -12,7 +12,8 @@
         "jakubledl/dissect": "~1.0",
         "doctrine/annotations": "^1.2.3",
         "goaop/parser-reflection": "~1.4",
-        "doctrine/cache": "^1.5"
+        "doctrine/cache": "^1.5",
+        "zendframework/zend-code": "^3.1"
     },
 
     "require-dev": {

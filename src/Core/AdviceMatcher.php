@@ -205,9 +205,20 @@ class AdviceMatcher
             return $classAdvices;
         }
 
-        $advice = $advisor->getAdvice();
+        /** @var Aop\IntroductionInfo $introduction */
+        $introduction    = $advisor->getAdvice();
+        $introducedTrait = $introduction->getTrait();
+        if (!empty($introducedTrait)) {
+            $introducedTrait = '\\' . ltrim($introducedTrait, '\\');
 
-        $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX][$advisorId] = $advice;
+            $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX][$advisorId] = $introducedTrait;
+        }
+        $introducedInterface = $introduction->getInterface();
+        if (!empty($introducedInterface)) {
+            $introducedInterface = '\\' . ltrim($introducedInterface, '\\');
+
+            $classAdvices[AspectContainer::INTRODUCTION_INTERFACE_PREFIX][$advisorId] = $introducedInterface;
+        }
 
         return $classAdvices;
     }

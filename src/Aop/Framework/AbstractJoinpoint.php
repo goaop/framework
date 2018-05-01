@@ -98,4 +98,27 @@ abstract class AbstractJoinpoint implements Joinpoint
 
         return $sortedAdvices;
     }
+
+    /**
+     * Replace concrete advices with list of ids
+     *
+     * @param Advice[][][] $advices List of advices
+     *
+     * @return array Flatten list of advices
+     */
+    public static function flatAndSortAdvices(array $advices): array
+    {
+        $flattenAdvices = [];
+        foreach ($advices as $type => $typedAdvices) {
+            foreach ($typedAdvices as $name => $concreteAdvices) {
+                if (is_array($concreteAdvices)) {
+                    $flattenAdvices[$type][$name] = array_keys(self::sortAdvices($concreteAdvices));
+                } else {
+                    $flattenAdvices[$type][$name] = $concreteAdvices;
+                }
+            }
+        }
+
+        return $flattenAdvices;
+    }
 }

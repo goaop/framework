@@ -43,7 +43,12 @@ interface AspectContainer
     /**
      * Trait introduction prefix
      */
-    const INTRODUCTION_TRAIT_PREFIX = 'introduction';
+    const INTRODUCTION_TRAIT_PREFIX = 'trait';
+
+    /**
+     * Interface introduction prefix
+     */
+    const INTRODUCTION_INTERFACE_PREFIX = 'interface';
 
     /**
      * Initialization prefix, is used for initialization pointcuts
