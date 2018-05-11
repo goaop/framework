@@ -161,30 +161,31 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
             $this->stackFrames[] = [$this->instance, $this->accessType, &$this->value, &$this->newValue];
         }
 
-        ++$this->level;
+        try {
+            ++$this->level;
 
-        $this->current    = 0;
-        $this->instance   = $instance;
-        $this->accessType = $accessType;
-        $this->value      = &$originalValue;
-        $this->newValue   = $newValue;
+            $this->current    = 0;
+            $this->instance   = $instance;
+            $this->accessType = $accessType;
+            $this->value      = &$originalValue;
+            $this->newValue   = $newValue;
 
-        $this->proceed();
+            $this->proceed();
 
-        --$this->level;
+            if ($accessType === self::READ) {
+                $result = &$this->value;
+            } else {
+                $result = &$this->newValue;
+            }
 
-        if ($this->level > 0) {
-            list($this->instance, $this->accessType, $this->value, $this->newValue) = array_pop($this->stackFrames);
+            return $result;
+        } finally {
+            --$this->level;
+
+            if ($this->level > 0) {
+                [$this->instance, $this->accessType, $this->value, $this->newValue] = array_pop($this->stackFrames);
+            }
         }
-
-        if ($accessType === self::READ) {
-            $result = &$this->value;
-        } else {
-            $result = &$this->newValue;
-        }
-
-        return $result;
-
     }
 
     /**

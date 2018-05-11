@@ -104,17 +104,19 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
             $arguments = \array_merge($arguments, $variadicArguments);
         }
 
-        ++$this->level;
+        try {
+            ++$this->level;
 
-        $this->current   = 0;
-        $this->arguments = $arguments;
+            $this->current   = 0;
+            $this->arguments = $arguments;
 
-        $result = $this->proceed();
+            $result = $this->proceed();
+        } finally {
+            --$this->level;
 
-        --$this->level;
-
-        if ($this->level > 0) {
-            list($this->arguments, $this->current) = array_pop($this->stackFrames);
+            if ($this->level > 0) {
+                [$this->arguments, $this->current] = \array_pop($this->stackFrames);
+            }
         }
 
         return $result;
