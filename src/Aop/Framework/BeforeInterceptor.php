@@ -22,11 +22,7 @@ use Go\Aop\Intercept\Joinpoint;
 final class BeforeInterceptor extends BaseInterceptor implements AdviceBefore
 {
     /**
-     * Before invoker for joinpoint
-     *
-     * @param Joinpoint $joinpoint the concrete joinpoint
-     *
-     * @return mixed the result of the call to {@link Joinpoint::proceed()},
+     * @inheritdoc
      */
     public function invoke(Joinpoint $joinpoint)
     {

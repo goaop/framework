@@ -65,7 +65,7 @@ EOT
         }
     }
 
-    private function showAdvisorsList(SymfonyStyle $io)
+    private function showAdvisorsList(SymfonyStyle $io): void
     {
         $io->writeln('List of registered advisors in the container');
 
@@ -94,7 +94,7 @@ EOT
         ]);
     }
 
-    private function showAdvisorInformation(SymfonyStyle $io, $advisorId)
+    private function showAdvisorInformation(SymfonyStyle $io, string $advisorId): void
     {
         $aspectContainer = $this->aspectKernel->getContainer();
 
@@ -126,7 +126,7 @@ EOT
         }
     }
 
-    private function writeInfoAboutAdvices(SymfonyStyle $io, ReflectionClass $reflectionClass, array $advices)
+    private function writeInfoAboutAdvices(SymfonyStyle $io, ReflectionClass $reflectionClass, array $advices): void
     {
         $className = $reflectionClass->getName();
         foreach ($advices as $type => $typedAdvices) {
@@ -137,13 +137,11 @@ EOT
     }
 
     /**
-     * Collects list of advisors from the container
-     *
-     * @param AspectContainer $aspectContainer Container instance
+     * Collects list of advisors from the given aspect container
      *
      * @return Advisor[] List of advisors in the container
      */
-    private function loadAdvisorsList(AspectContainer $aspectContainer)
+    private function loadAdvisorsList(AspectContainer $aspectContainer): array
     {
         /** @var AspectLoader $aspectLoader */
         $aspectLoader   = $aspectContainer->get('aspect.cached.loader');

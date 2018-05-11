@@ -23,11 +23,7 @@ use Go\Aop\Intercept\Joinpoint;
 final class AfterThrowingInterceptor extends BaseInterceptor implements AdviceAfter
 {
     /**
-     * After throwing exception invoker
-     *
-     * @param Joinpoint $joinpoint the concrete joinpoint
-     *
-     * @return mixed the result of the call to {@link Joinpoint::proceed()}
+     * @inheritdoc
      * @throws Exception
      */
     public function invoke(Joinpoint $joinpoint)

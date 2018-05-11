@@ -60,8 +60,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Constructor for field access
      *
-     * @param string $className Class name
-     * @param string $fieldName Field name
      * @param $advices array List of advices for this invocation
      */
     public function __construct(string $className, string $fieldName, array $advices)
@@ -86,7 +84,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Gets the field being accessed.
      *
-     * @return ReflectionProperty|AnnotatedReflectionProperty the property which is being accessed.
+     * @return AnnotatedReflectionProperty the property which is being accessed.
      */
     public function getField(): ReflectionProperty
     {
@@ -95,8 +93,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Gets the current value of property
-     *
-     * @return mixed
      */
     public function &getValue()
     {
@@ -107,8 +103,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Gets the value that must be set to the field.
-     *
-     * @return mixed
      */
     public function &getValueToSet()
     {
@@ -119,10 +113,8 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Checks scope rules for accessing property
-     *
-     * @param int $stackLevel Stack level for check
      */
-    public function ensureScopeRule($stackLevel = 2)
+    public function ensureScopeRule(int $stackLevel = 2): void
     {
         $property = $this->reflectionProperty;
 
@@ -141,9 +133,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Proceed to the next interceptor in the Chain
-     *
-     * Typically this method is called inside previous closure, as instance of Joinpoint is passed to callback
-     * Do not call this method directly, only inside callback closures.
      *
      * @return void For field interceptor there is no return values
      */
@@ -166,7 +155,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @return mixed
      */
-    final public function &__invoke($instance, $accessType, &$originalValue, $newValue = NAN)
+    final public function &__invoke(object $instance, int $accessType, &$originalValue, $newValue = NAN)
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->instance, $this->accessType, &$this->value, &$this->newValue];
@@ -222,10 +211,8 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Returns a friendly description of current joinpoint
-     *
-     * @return string
      */
-    final public function __toString()
+    final public function __toString(): string
     {
         return sprintf(
             '%s(%s%s%s)',

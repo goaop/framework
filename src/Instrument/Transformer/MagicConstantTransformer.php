@@ -55,7 +55,6 @@ class MagicConstantTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
-     * @param StreamMetaData $metadata Metadata for source
      * @return string See RESULT_XXX constants in the interface
      */
     public function transform(StreamMetaData $metadata): string
@@ -69,10 +68,6 @@ class MagicConstantTransformer extends BaseSourceTransformer
 
     /**
      * Resolves file name from the cache directory to the real application root dir
-     *
-     * @param string $fileName Absolute file name
-     *
-     * @return string Resolved file name
      */
     public static function resolveFileName(string $fileName): string
     {
@@ -85,10 +80,8 @@ class MagicConstantTransformer extends BaseSourceTransformer
 
     /**
      * Wraps all possible getFileName() methods from ReflectionFile
-     *
-     * @param StreamMetaData $metadata
      */
-    private function wrapReflectionGetFileName(StreamMetaData $metadata)
+    private function wrapReflectionGetFileName(StreamMetaData $metadata): void
     {
         $methodCallFinder = new NodeFinderVisitor([MethodCall::class]);
         $traverser        = new NodeTraverser();
@@ -112,10 +105,8 @@ class MagicConstantTransformer extends BaseSourceTransformer
 
     /**
      * Replaces all magic __DIR__ and __FILE__ constants in the file with calculated value
-     *
-     * @param StreamMetaData $metadata
      */
-    private function replaceMagicDirFileConstants(StreamMetaData $metadata)
+    private function replaceMagicDirFileConstants(StreamMetaData $metadata): void
     {
         $magicConstFinder = new NodeFinderVisitor([Dir::class, File::class]);
         $traverser        = new NodeTraverser();

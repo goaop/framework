@@ -21,22 +21,16 @@ class OrPointFilter implements PointFilter
 
     /**
      * Kind of filter
-     *
-     * @var int
      */
     private $kind = 0;
 
     /**
-     * List of filters to combine
-     *
-     * @var PointFilter[]
+     * List of PointFilter to combine
      */
     private $filters;
 
     /**
      * Or constructor
-     *
-     * @param PointFilter[] $filters List of filters to combine
      */
     public function __construct(PointFilter ...$filters)
     {
@@ -53,8 +47,6 @@ class OrPointFilter implements PointFilter
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {

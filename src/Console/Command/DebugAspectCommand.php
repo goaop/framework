@@ -71,10 +71,9 @@ EOT
     /**
      * Shows an information about registered aspects
      *
-     * @param SymfonyStyle $io Input-output style
-     * @param array|Aspect[] $aspects List of aspects
+     * @param Aspect[] $aspects List of aspects
      */
-    private function showRegisteredAspectsInfo(SymfonyStyle $io, array $aspects)
+    private function showRegisteredAspectsInfo(SymfonyStyle $io, array $aspects): void
     {
         foreach ($aspects as $aspect) {
             $this->showAspectInfo($io, $aspect);
@@ -83,11 +82,8 @@ EOT
 
     /**
      * Displays an information about single aspect
-     *
-     * @param SymfonyStyle $io Input-output style
-     * @param Aspect $aspect Instance of aspect
      */
-    private function showAspectInfo(SymfonyStyle $io, Aspect $aspect)
+    private function showAspectInfo(SymfonyStyle $io, Aspect $aspect): void
     {
         $refAspect  = new \ReflectionObject($aspect);
         $aspectName = $refAspect->getName();
@@ -102,11 +98,8 @@ EOT
 
     /**
      * Shows an information about aspect pointcuts and advisors
-     *
-     * @param SymfonyStyle $io Input-output style
-     * @param Aspect $aspect Instance of aspect to query information
      */
-    private function showAspectPointcutsAndAdvisors(SymfonyStyle $io, Aspect $aspect)
+    private function showAspectPointcutsAndAdvisors(SymfonyStyle $io, Aspect $aspect): void
     {
         /** @var AspectLoader $aspectLoader */
         $container    = $this->aspectKernel->getContainer();
@@ -130,12 +123,8 @@ EOT
 
     /**
      * Gets the reformatted comment text.
-     *
-     * @param string $comment
-     *
-     * @return string
      */
-    private function getPrettyText($comment)
+    private function getPrettyText(string $comment): string
     {
         $text = preg_replace('|^\s*/?\*+/?|m', '', $comment);
 

@@ -24,10 +24,7 @@ class DeclareParentsAdvisor extends AbstractGenericAdvisor implements Introducti
     use PointcutClassFilterTrait;
 
     /**
-     * Creates an advisor for declaring mixins via traits and interfaces.
-     *
-     * @param PointFilter $classFilter Class filter
-     * @param IntroductionInfo $info Introduction information
+     * Creates an advisor for declaring mixins via trait and interface.
      */
     public function __construct(PointFilter $classFilter, IntroductionInfo $info)
     {

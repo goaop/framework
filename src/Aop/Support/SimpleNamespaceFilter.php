@@ -24,22 +24,16 @@ class SimpleNamespaceFilter implements PointFilter
 
     /**
      * Namespace name to match, can contain wildcards *,?
-     *
-     * @var string
      */
     protected $nsName;
 
     /**
      * Pattern for regular expression matching
-     *
-     * @var string
      */
     protected $regexp;
 
     /**
-     * Namespace name matcher constructor
-     *
-     * @param string $namespaceName Name of the namespace to match or glob pattern
+     * Namespace name matcher constructor that accepts name or glob pattern to match
      */
     public function __construct(string $namespaceName)
     {
@@ -55,7 +49,6 @@ class SimpleNamespaceFilter implements PointFilter
 
     /**
      * {@inheritdoc}
-     * @param ReflectionFileNamespace|string $ns
      */
     public function matches($ns, $context = null, $instance = null, array $arguments = null): bool
     {

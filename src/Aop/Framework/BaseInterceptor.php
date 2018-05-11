@@ -36,10 +36,6 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
 
     /**
      * Default constructor for interceptor
-     *
-     * @param Closure $adviceMethod Interceptor advice to call
-     * @param integer $order Order of interceptor
-     * @param string $pointcutExpression Pointcut expression or advice name
      */
     public function __construct(Closure $adviceMethod, int $order = 0, string $pointcutExpression = '')
     {

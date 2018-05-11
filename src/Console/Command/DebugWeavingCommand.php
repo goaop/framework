@@ -88,13 +88,9 @@ EOT
     }
 
     /**
-     * Get Go! AOP generated proxy classes (paths and their contents) from cache.
-     *
-     * @param CachePathManager $cachePathManager
-     *
-     * @return array
+     * Gets Go! AOP generated proxy classes (paths and their contents) from the cache.
      */
-    private function getProxies(CachePathManager $cachePathManager)
+    private function getProxies(CachePathManager $cachePathManager): array
     {
         $path     = $cachePathManager->getCacheDir() . '/_proxies';
         $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS), \RecursiveIteratorIterator::CHILD_FIRST);

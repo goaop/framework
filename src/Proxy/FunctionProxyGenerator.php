@@ -29,13 +29,11 @@ class FunctionProxyGenerator
 {
     /**
      * List of advices that are used for generation of child
-     *
-     * @var array
      */
     protected $advices = [];
 
     /**
-     * @var FileGenerator
+     * Instance of file generator
      */
     protected $fileGenerator;
 
@@ -72,12 +70,9 @@ class FunctionProxyGenerator
     /**
      * Returns a joinpoint for specific function in the namespace
      *
-     * @param string $joinPointName Special joinpoint name
-     * @param array  $advices       List of advices
-     *
-     * @return FunctionInvocation
+     * @param array $advices List of advices
      */
-    public static function getJoinPoint(string $joinPointName, array $advices): FunctionInvocation
+    public static function getJoinPoint(string $functionName, array $advices): FunctionInvocation
     {
         static $accessor;
 
@@ -90,7 +85,7 @@ class FunctionProxyGenerator
             $filledAdvices[] = $accessor->$advisorName;
         }
 
-        return new ReflectionFunctionInvocation($joinPointName, $filledAdvices);
+        return new ReflectionFunctionInvocation($functionName, $filledAdvices);
     }
 
     /**
@@ -102,11 +97,7 @@ class FunctionProxyGenerator
     }
 
     /**
-     * Creates definition for trait method body
-     *
-     * @param ReflectionFunction $function Method reflection
-     *
-     * @return string new method body
+     * Creates string definition for function method body by function reflection
      */
     protected function getJoinpointInvocationBody(ReflectionFunction $function): string
     {
@@ -116,7 +107,7 @@ class FunctionProxyGenerator
         $argumentCode = $argumentList->generate();
 
         $return = 'return ';
-        if (PHP_VERSION_ID >= 70100 && $function->hasReturnType()) {
+        if ($function->hasReturnType()) {
             $returnType = (string) $function->getReturnType();
             if ($returnType === 'void') {
                 // void return types should not return anything

@@ -18,18 +18,13 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
 
+use function count;
+
 /**
  * Advice matcher returns the list of advices for the specific point of code
  */
 class AdviceMatcher
 {
-    /**
-     * Loader of aspects
-     *
-     * @var AspectLoader
-     */
-    protected $loader;
-
     /**
      * Flag to enable/disable support of global function interception
      *
@@ -40,23 +35,19 @@ class AdviceMatcher
     /**
      * Constructor
      *
-     * @param AspectLoader $loader Instance of aspect loader
      * @param bool $isInterceptFunctions Optional flag to enable function interception
      */
-    public function __construct(AspectLoader $loader, bool $isInterceptFunctions = false)
+    public function __construct(bool $isInterceptFunctions = false)
     {
-        $this->loader = $loader;
-
         $this->isInterceptFunctions = $isInterceptFunctions;
     }
 
     /**
      * Returns list of function advices for namespace
      *
-     * @param ReflectionFileNamespace $namespace
-     * @param array|Aop\Advisor[] $advisors List of advisor to match
+     * @param Aop\Advisor[] $advisors List of advisor to match
      *
-     * @return array
+     * @return Aop\Advice[] List of advices for class
      */
     public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors): array
     {
@@ -86,10 +77,9 @@ class AdviceMatcher
     /**
      * Return list of advices for class
      *
-     * @param ReflectionClass $class Class to advise
      * @param array|Aop\Advisor[] $advisors List of advisor to match
      *
-     * @return array|Aop\Advice[] List of advices for class
+     * @return Aop\Advice[] List of advices for class
      */
     public function getAdvicesForClass(ReflectionClass $class, array $advisors): array
     {
@@ -124,13 +114,6 @@ class AdviceMatcher
 
     /**
      * Returns list of advices from advisor and point filter
-     *
-     * @param ReflectionClass $class Class to inject advices
-     * @param Aop\PointcutAdvisor $advisor Advisor for class
-     * @param string $advisorId Identifier of advisor
-     * @param Aop\PointFilter $filter Filter for points
-     *
-     * @return array
      */
     private function getAdvicesFromAdvisor(
         ReflectionClass $class,
@@ -187,12 +170,6 @@ class AdviceMatcher
 
     /**
      * Returns list of introduction advices from advisor
-     *
-     * @param ReflectionClass $class Class to inject advices
-     * @param Aop\IntroductionAdvisor $advisor Advisor for class
-     * @param string $advisorId Identifier of advisor
-     *
-     * @return array
      */
     private function getIntroductionFromAdvisor(
         ReflectionClass $class,
@@ -225,13 +202,6 @@ class AdviceMatcher
 
     /**
      * Returns list of function advices for specific namespace
-     *
-     * @param ReflectionFileNamespace $namespace
-     * @param Aop\PointcutAdvisor $advisor Advisor for class
-     * @param string $advisorId Identifier of advisor
-     * @param Aop\PointFilter $pointcut Filter for points
-     *
-     * @return array
      */
     private function getFunctionAdvicesFromAdvisor(
         ReflectionFileNamespace $namespace,

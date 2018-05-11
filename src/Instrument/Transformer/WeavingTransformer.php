@@ -35,36 +35,27 @@ class WeavingTransformer extends BaseSourceTransformer
 {
 
     /**
-     * @var AdviceMatcher
+     * Advice matcher for class
      */
     protected $adviceMatcher;
 
     /**
      * Should we use parameter widening for our decorators
-     *
-     * @var bool
      */
     protected $useParameterWidening = false;
 
     /**
-     * @var CachePathManager
+     * Cache manager
      */
     private $cachePathManager;
 
     /**
-     * Instance of aspect loader
-     *
-     * @var AspectLoader
+     * Loader for aspects
      */
     protected $aspectLoader;
 
     /**
      * Constructs a weaving transformer
-     *
-     * @param AspectKernel $kernel Instance of aspect kernel
-     * @param AdviceMatcher $adviceMatcher Advice matcher for class
-     * @param CachePathManager $cachePathManager Cache manager
-     * @param AspectLoader $loader Loader for aspects
      */
     public function __construct(
         AspectKernel $kernel,
@@ -76,15 +67,13 @@ class WeavingTransformer extends BaseSourceTransformer
         $this->adviceMatcher    = $adviceMatcher;
         $this->cachePathManager = $cachePathManager;
         $this->aspectLoader     = $loader;
-        if (PHP_VERSION_ID >= 70200) {
-            $this->useParameterWidening = $kernel->hasFeature(Features::PARAMETER_WIDENING);
-        }
+
+        $this->useParameterWidening = $kernel->hasFeature(Features::PARAMETER_WIDENING);
     }
 
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
-     * @param StreamMetaData $metadata Metadata for source
      * @return string See RESULT_XXX constants in the interface
      */
     public function transform(StreamMetaData $metadata): string
@@ -121,13 +110,9 @@ class WeavingTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Performs weaving of single class if needed
+     * Performs weaving of single class if needed, returns true if the class was processed
      *
-     * @param array|Advisor[] $advisors
-     * @param StreamMetaData $metadata Source stream information
-     * @param ReflectionClass $class Instance of class to analyze
-     *
-     * @return bool True if was class processed, false otherwise
+     * @param Advisor[] $advisors List of advisors
      */
     private function processSingleClass(array $advisors, StreamMetaData $metadata, ReflectionClass $class): bool
     {
@@ -171,17 +156,14 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Adjust definition of original class source to enable extending
      *
-     * @param ReflectionClass $class Instance of class reflection
      * @param array $advices List of class advices (used to check for final methods and make them non-final)
-     * @param StreamMetaData $streamMetaData Source code metadata
-     * @param string $newClassName New name for the class
      */
     private function adjustOriginalClass(
         ReflectionClass $class,
         array $advices,
         StreamMetaData $streamMetaData,
         string $newClassName
-    ) {
+    ): void {
         $classNode = $class->getNode();
         $position  = $classNode->getAttribute('startTokenPos');
         do {
@@ -227,13 +209,9 @@ class WeavingTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Performs weaving of functions in the current namespace
+     * Performs weaving of functions in the current namespace, returns true if functions were processed, false otherwise
      *
-     * @param array|Advisor[] $advisors List of advisors
-     * @param StreamMetaData $metadata Source stream information
-     * @param ReflectionFileNamespace $namespace Current namespace for file
-     *
-     * @return boolean True if functions were processed, false otherwise
+     * @param Advisor[] $advisors List of advisors
      */
     private function processFunctions(
         array $advisors,
@@ -273,11 +251,6 @@ class WeavingTransformer extends BaseSourceTransformer
 
     /**
      * Save AOP proxy to the separate file anr returns the php source code for inclusion
-     *
-     * @param ReflectionClass $class Original class reflection
-     * @param string          $childCode Content of generated child proxy
-     *
-     * @return string
      */
     private function saveProxyToCache(ReflectionClass $class, string $childCode): string
     {
@@ -307,7 +280,7 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @param array $unloadedAspects List of unloaded aspects
      */
-    private function loadAndRegisterAspects(array $unloadedAspects)
+    private function loadAndRegisterAspects(array $unloadedAspects): void
     {
         foreach ($unloadedAspects as $unloadedAspect) {
             $this->aspectLoader->loadAndRegister($unloadedAspect);

@@ -144,9 +144,6 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     public function testWeaverForPhp7Class()
     {
-        if (PHP_VERSION_ID < 50700) {
-            $this->markTestSkipped("PHP7 version is required to run this test");
-    }
         $metadata = $this->loadTest('php7-class');
         $this->transformer->transform($metadata);
 

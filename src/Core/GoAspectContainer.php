@@ -87,7 +87,6 @@ class GoAspectContainer extends Container
 
         $this->share('aspect.advice_matcher', function (Container $container) {
             return new AdviceMatcher(
-                $container->get('aspect.loader'),
                 $container->get('kernel.interceptFunctions')
             );
         });
@@ -140,10 +139,6 @@ class GoAspectContainer extends Container
 
     /**
      * Returns a pointcut by identifier
-     *
-     * @param string $id Pointcut identifier
-     *
-     * @return Pointcut
      */
     public function getPointcut(string $id): Pointcut
     {
@@ -152,21 +147,14 @@ class GoAspectContainer extends Container
 
     /**
      * Store the pointcut in the container
-     *
-     * @param Pointcut $pointcut Instance
-     * @param string $id Key for pointcut
      */
-    public function registerPointcut(Pointcut $pointcut, string $id)
+    public function registerPointcut(Pointcut $pointcut, string $id): void
     {
         $this->set("pointcut.{$id}", $pointcut, ['pointcut']);
     }
 
     /**
      * Returns an advisor by identifier
-     *
-     * @param string $id Advisor identifier
-     *
-     * @return Advisor
      */
     public function getAdvisor(string $id): Advisor
     {
@@ -175,21 +163,14 @@ class GoAspectContainer extends Container
 
     /**
      * Store the advisor in the container
-     *
-     * @param Advisor $advisor Instance
-     * @param string $id Key for advisor
      */
-    public function registerAdvisor(Advisor $advisor, string $id)
+    public function registerAdvisor(Advisor $advisor, string $id): void
     {
         $this->set("advisor.{$id}", $advisor, ['advisor']);
     }
 
     /**
      * Returns an aspect by id or class name
-     *
-     * @param string $aspectName Aspect name
-     *
-     * @return Aspect
      */
     public function getAspect(string $aspectName): Aspect
     {
@@ -198,10 +179,8 @@ class GoAspectContainer extends Container
 
     /**
      * Register an aspect in the container
-     *
-     * @param Aspect $aspect Instance of concrete aspect
      */
-    public function registerAspect(Aspect $aspect)
+    public function registerAspect(Aspect $aspect): void
     {
         $refAspect = new ReflectionClass($aspect);
         $this->set("aspect.{$refAspect->name}", $aspect, ['aspect']);
@@ -230,8 +209,6 @@ class GoAspectContainer extends Container
 
     /**
      * Checks the freshness of AOP cache
-     *
-     * @param integer $timestamp
      *
      * @return bool Whether or not concrete file is fresh
      */

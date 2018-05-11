@@ -31,9 +31,6 @@ class PointcutGrammar extends Grammar
 {
     /**
      * Constructs a pointcut grammar with AST
-     *
-     * @param AspectContainer $container Instance of the container
-     * @param Reader $annotationReader
      */
     public function __construct(AspectContainer $container, Reader $annotationReader)
     {

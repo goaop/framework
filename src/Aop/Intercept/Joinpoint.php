@@ -55,8 +55,6 @@ interface Joinpoint
 
     /**
      * Returns a friendly description of current joinpoint
-     *
-     * @return string
      */
-    public function __toString();
+    public function __toString(): string;
 }

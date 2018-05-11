@@ -71,12 +71,12 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      *
      * @throws \UnexpectedValueException
      *
-     * @return array|Pointcut[]|Advisor[]
+     * @return Pointcut[]|Advisor[]
      */
     public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null): array
     {
         $loadedItems = [];
-        $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation);
+        $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation->value);
         $propertyId  = $reflection->class . '->' . $reflection->name;
 
         switch (true) {

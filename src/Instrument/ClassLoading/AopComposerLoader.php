@@ -26,8 +26,6 @@ class AopComposerLoader
 
     /**
      * Instance of original autoloader
-     *
-     * @var ClassLoader
      */
     protected $original;
 
@@ -40,8 +38,6 @@ class AopComposerLoader
 
     /**
      * File enumerator
-     *
-     * @var Enumerator
      */
     protected $fileEnumerator;
 
@@ -54,16 +50,12 @@ class AopComposerLoader
 
     /**
      * Was initialization successful or not
-     *
-     * @var bool
      */
     private static $wasInitialized = false;
 
     /**
      * Constructs an wrapper for the composer loader
      *
-     * @param ClassLoader $original Instance of current loader
-     * @param AspectContainer $container Instance of the container
      * @param array $options Configuration options
      */
     public function __construct(ClassLoader $original, AspectContainer $container, array $options = [])
@@ -90,14 +82,11 @@ class AopComposerLoader
     }
 
     /**
-     * Initialize aspect autoloader
+     * Initialize aspect autoloader and returns status whether initialization was successful or not
      *
      * Replaces original composer autoloader with wrapper
      *
      * @param array $options Aspect kernel options
-     * @param AspectContainer $container
-     *
-     * @return bool was initialization successful or not
      */
     public static function init(array $options, AspectContainer $container): bool
     {
@@ -129,10 +118,8 @@ class AopComposerLoader
 
     /**
      * Autoload a class by it's name
-     *
-     * @param string $class Name of the class to load
      */
-    public function loadClass(string $class)
+    public function loadClass(string $class): void
     {
         $file = $this->findFile($class);
 
@@ -145,7 +132,6 @@ class AopComposerLoader
      * Finds either the path to the file where the class is defined,
      * or gets the appropriate php://filter stream for the given class.
      *
-     * @param string $class
      * @return string|false The path/resource if found, false otherwise.
      */
     public function findFile(string $class)

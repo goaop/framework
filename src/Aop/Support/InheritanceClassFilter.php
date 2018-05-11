@@ -21,16 +21,12 @@ class InheritanceClassFilter implements PointFilter
 {
 
     /**
-     * Instance class name to match
-     *
-     * @var string
+     * Parent class or interface name to match in hierarchy
      */
     protected $parentClass;
 
     /**
      * Inheritance class matcher constructor
-     *
-     * @param string $parentClassName Name of the parent class or interface to match
      */
     public function __construct(string $parentClassName)
     {
@@ -44,8 +40,6 @@ class InheritanceClassFilter implements PointFilter
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
     public function matches($class, $context = null, $instance = null, array $arguments = null): bool
     {
@@ -53,7 +47,7 @@ class InheritanceClassFilter implements PointFilter
             return false;
         }
 
-        return $class->isSubclassOf($this->parentClass) || in_array($this->parentClass, $class->getInterfaceNames());
+        return $class->isSubclassOf($this->parentClass) || \in_array($this->parentClass, $class->getInterfaceNames());
     }
 
     /**

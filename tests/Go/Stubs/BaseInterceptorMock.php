@@ -41,12 +41,7 @@ class BaseInterceptorMock extends BaseInterceptor
     }
 
     /**
-     * Implement this method to perform extra treatments before and
-     * after the invocation of joinpoint.
-     *
-     * @param Joinpoint $joinpoint current joinpoint
-     *
-     * @return mixed the result of the call
+     * {@inheritdoc}
      */
     public function invoke(Joinpoint $joinpoint)
     {

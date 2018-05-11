@@ -21,22 +21,16 @@ class ModifierMatcherFilter implements PointFilter
 
     /**
      * Bit mask, that should be always match
-     *
-     * @var int
      */
     protected $andMask = 0;
 
     /**
      * Bit mask, that can be used for additional check
-     *
-     * @var int
      */
     protected $orMask = 0;
 
     /**
      * Bit mask to exclude specific value from matching, for example, !public
-     *
-     * @var int
      */
     protected $notMask = 0;
 
@@ -57,8 +51,6 @@ class ModifierMatcherFilter implements PointFilter
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
@@ -69,12 +61,9 @@ class ModifierMatcherFilter implements PointFilter
     }
 
     /**
-     * Add "and" or mask
-     *
-     * @param integer $bitMask
-     * @return $this
+     * Add "and" mask
      */
-    public function andMatch(int $bitMask)
+    public function andMatch(int $bitMask): self
     {
         $this->andMask |= $bitMask;
 
@@ -83,11 +72,8 @@ class ModifierMatcherFilter implements PointFilter
 
     /**
      * Add "or" mask
-     *
-     * @param integer $bitMask
-     * @return $this
      */
-    public function orMatch(int $bitMask)
+    public function orMatch(int $bitMask): self
     {
         $this->orMask |= $bitMask;
 
@@ -96,11 +82,8 @@ class ModifierMatcherFilter implements PointFilter
 
     /**
      * Add "not" mask
-     *
-     * @param integer $bitMask
-     * @return $this
      */
-    public function notMatch(int $bitMask)
+    public function notMatch(int $bitMask): self
     {
         $this->notMask |= $bitMask;
 

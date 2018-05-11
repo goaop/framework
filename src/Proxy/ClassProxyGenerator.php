@@ -41,8 +41,6 @@ class ClassProxyGenerator
 
     /**
      * Static mappings for class name for excluding if..else check
-     *
-     * @var null|array
      */
     protected static $invocationClassMap = [
         AspectContainer::METHOD_PREFIX        => DynamicClosureMethodInvocation::class,
@@ -54,13 +52,11 @@ class ClassProxyGenerator
 
     /**
      * List of advices that are used for generation of child
-     *
-     * @var array
      */
     protected $advices = [];
 
     /**
-     * @var ClassGenerator
+     * Instance of class generator
      */
     protected $generator;
 
@@ -121,11 +117,8 @@ class ClassProxyGenerator
 
     /**
      * Adds use alias for this class
-     *
-     * @param string      $use Name to use
-     * @param string|null $useAlias Alias for this class name or null if not set
      */
-    public function addUse(string $use, string $useAlias = null)
+    public function addUse(string $use, string $useAlias = null): void
     {
         $this->generator->addUse($use, $useAlias);
     }
@@ -134,12 +127,10 @@ class ClassProxyGenerator
      * Inject advices into given class
      *
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
-     *
-     * @param string $className Aop child proxy class
      */
-    public static function injectJoinPoints(string $className)
+    public static function injectJoinPoints(string $targetClassName): void
     {
-        $reflectionClass    = new ReflectionClass($className);
+        $reflectionClass    = new ReflectionClass($targetClassName);
         $joinPointsProperty = $reflectionClass->getProperty(JoinPointPropertyGenerator::NAME);
 
         $joinPointsProperty->setAccessible(true);
@@ -169,13 +160,12 @@ class ClassProxyGenerator
      * Wrap advices with joinpoint object
      *
      * @param array|Advice[][][] $classAdvices Advices for specific class
-     * @param string $className Name of the original class to use
      *
      * @throws \UnexpectedValueException If joinPoint type is unknown
      *
      * NB: Extension should be responsible for wrapping advice with join point.
      *
-     * @return array|Joinpoint[] returns list of joinpoint ready to use
+     * @return Joinpoint[] returns list of joinpoint ready to use
      */
     protected static function wrapWithJoinPoints(array $classAdvices, string $className): array
     {
@@ -209,10 +199,9 @@ class ClassProxyGenerator
     }
 
     /**
-     * Returns list of intercepted methods
+     * Returns list of intercepted method generators for class by method names
      *
-     * @param ReflectionClass $originalClass Instance of original reflection
-     * @param array           $methodNames List of methods to intercept
+     * @param string[] $methodNames List of methods to intercept
      *
      * @return InterceptedMethodGenerator[]
      */
@@ -230,11 +219,7 @@ class ClassProxyGenerator
     }
 
     /**
-     * Creates definition for method body
-     *
-     * @param ReflectionMethod $method Method reflection
-     *
-     * @return string new method body
+     * Creates string definition for method body by method reflection
      */
     protected function getJoinpointInvocationBody(ReflectionMethod $method): string
     {
@@ -245,7 +230,7 @@ class ClassProxyGenerator
         $argumentList = new FunctionCallArgumentListGenerator($method);
         $argumentCode = $argumentList->generate();
         $return = 'return ';
-        if (PHP_VERSION_ID >= 70100 && $method->hasReturnType()) {
+        if ($method->hasReturnType()) {
             $returnType = (string) $method->getReturnType();
             if ($returnType === 'void') {
                 // void return types should not return anything

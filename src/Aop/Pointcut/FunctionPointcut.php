@@ -48,9 +48,6 @@ class FunctionPointcut implements Pointcut
 
     /**
      * Function matcher constructor
-     *
-     * @param string $functionName Name of the function to match or glob pattern
-     * @param PointFilter|null $returnTypeFilter Additional return type filter
      */
     public function __construct(string $functionName, PointFilter $returnTypeFilter = null)
     {
@@ -69,8 +66,6 @@ class FunctionPointcut implements Pointcut
      * @param mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
     public function matches($function, $context = null, $instance = null, array $arguments = null): bool
     {
@@ -101,7 +96,7 @@ class FunctionPointcut implements Pointcut
         return $this->nsFilter;
     }
 
-    public function setNamespaceFilter($nsFilter)
+    public function setNamespaceFilter(PointFilter $nsFilter): void
     {
         $this->nsFilter = $nsFilter;
     }

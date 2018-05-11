@@ -46,9 +46,6 @@ class MagicMethodPointcut implements PointFilter, Pointcut
      * Magic method matcher constructor
      *
      * NB: only public methods can be matched as __call and __callStatic are public
-     *
-     * @param string $methodName Name of the dynamic method to match or glob pattern
-     * @param PointFilter $modifierFilter Method modifier filter (static or not)
      */
     public function __construct(string $methodName, PointFilter $modifierFilter)
     {
@@ -68,8 +65,6 @@ class MagicMethodPointcut implements PointFilter, Pointcut
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
@@ -83,7 +78,7 @@ class MagicMethodPointcut implements PointFilter, Pointcut
         }
 
         // for __call and __callStatic method name is the first argument on invocation
-        list($methodName) = $arguments;
+        [$methodName] = $arguments;
 
         return ($methodName === $this->methodName) || (bool) preg_match("/^(?:{$this->regexp})$/", $methodName);
     }

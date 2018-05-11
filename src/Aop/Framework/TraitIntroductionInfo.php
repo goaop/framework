@@ -20,23 +20,16 @@ class TraitIntroductionInfo implements IntroductionInfo
 {
     /**
      * Introduced interface
-     *
-     * @var string
      */
     private $introducedInterface;
 
     /**
-     * Trait to use
-     *
-     * @var string
+     * Introduced trait
      */
     private $introducedTrait;
 
     /**
-     * Create a DefaultIntroductionAdvisor for the given advice.
-     *
-     * @param string $introducedTrait Introduced trait
-     * @param string $introducedInterface Introduced interface
+     * Creates a TraitIntroductionInfo with given trait name and interface name.
      */
     public function __construct(string $introducedTrait, string $introducedInterface)
     {

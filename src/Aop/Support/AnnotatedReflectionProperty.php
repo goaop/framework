@@ -28,18 +28,15 @@ class AnnotatedReflectionProperty extends ReflectionProperty implements Annotati
     private static $annotationReader;
 
     /**
-     * Gets property annotation.
-     *
-     * @param string $annotationName The name of the annotation.
-     * @return mixed The Annotation or NULL, if the requested annotation does not exist.
+     * Gets concrete annotation by name or null if the requested annotation does not exist.
      */
-    public function getAnnotation(string $annotationName)
+    public function getAnnotation(string $annotationName): ?object
     {
         return self::getReader()->getPropertyAnnotation($this, $annotationName);
     }
 
     /**
-     * Gets the annotations applied to a property.
+     * Gets all annotations applied to the current item.
      */
     public function getAnnotations(): array
     {
@@ -51,7 +48,7 @@ class AnnotatedReflectionProperty extends ReflectionProperty implements Annotati
      */
     private static function getReader(): Reader
     {
-        if (!self::$annotationReader) {
+        if (self::$annotationReader === null) {
             self::$annotationReader = AspectKernel::getInstance()->getContainer()->get('aspect.annotation.reader');
         }
 

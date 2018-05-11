@@ -23,7 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class CacheWarmer
 {
     /**
-     * @var AspectKernel
+     * Instance of aspect kernel
      */
     protected $aspectKernel;
 
@@ -34,9 +34,6 @@ class CacheWarmer
 
     /**
      * CacheWarmer constructor.
-     *
-     * @param AspectKernel $aspectKernel A kernel
-     * @param OutputInterface $output Optional output to log current status.
      */
     public function __construct(AspectKernel $aspectKernel, OutputInterface $output = null)
     {
@@ -47,7 +44,7 @@ class CacheWarmer
     /**
      * Warms up cache
      */
-    public function warmUp()
+    public function warmUp(): void
     {
         $options = $this->aspectKernel->getOptions();
 

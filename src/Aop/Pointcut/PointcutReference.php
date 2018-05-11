@@ -19,37 +19,30 @@ use Go\Core\AspectKernel;
 /**
  * Reference to the pointcut holds an id of pointcut to fetch when needed
  */
-class PointcutReference implements Pointcut
+final class PointcutReference implements Pointcut
 {
     /**
      * @var Pointcut
      */
-    protected $pointcut;
+    private $pointcut;
 
     /**
      * Name of the pointcut to fetch from the container
-     *
-     * @var string
      */
-    private $pointcutName;
+    private $pointcutId;
 
     /**
      * Instance of aspect container
-     *
-     * @var AspectContainer
      */
     private $container;
 
     /**
      * Pointcut reference constructor
-     *
-     * @param AspectContainer $container Instance of container
-     * @param string $pointcutName Referenced pointcut
      */
-    public function __construct(AspectContainer $container, string $pointcutName)
+    public function __construct(AspectContainer $container, string $pointcutId)
     {
-        $this->container    = $container;
-        $this->pointcutName = $pointcutName;
+        $this->container  = $container;
+        $this->pointcutId = $pointcutId;
     }
 
     /**
@@ -59,8 +52,6 @@ class PointcutReference implements Pointcut
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
@@ -84,7 +75,7 @@ class PointcutReference implements Pointcut
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function __sleep()
     {
@@ -92,7 +83,7 @@ class PointcutReference implements Pointcut
     }
 
     /**
-     * {@inheritdoc}
+     * @inheritdoc
      */
     public function __wakeup()
     {
@@ -105,7 +96,7 @@ class PointcutReference implements Pointcut
     private function getPointcut(): Pointcut
     {
         if (!$this->pointcut) {
-            $this->pointcut = $this->container->getPointcut($this->pointcutName);
+            $this->pointcut = $this->container->getPointcut($this->pointcutId);
         }
 
         return $this->pointcut;

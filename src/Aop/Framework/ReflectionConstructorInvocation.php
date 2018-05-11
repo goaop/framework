@@ -44,11 +44,9 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Constructor for constructor invocation :)
      *
-     * @param string $className Class name
-     * @param string $type
      * @param $advices array List of advices for this invocation
      */
-    public function __construct(string $className, string $type, array $advices)
+    public function __construct(string $className, string $unusedType, array $advices)
     {
         $this->class       = new ReflectionClass($className);
         $this->constructor = $constructor = $this->class->getConstructor();
@@ -84,11 +82,9 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     }
 
     /**
-     * Gets the constructor being called.
-     *
-     * @return ReflectionMethod|null the constructor being called or null if it is absent.
+     * Gets the constructor being called or null if it is absent.
      */
-    public function getConstructor()
+    public function getConstructor(): ?ReflectionMethod
     {
         return $this->constructor;
     }
@@ -130,10 +126,8 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
 
     /**
      * Returns a friendly description of current joinpoint
-     *
-     * @return string
      */
-    final public function __toString()
+    final public function __toString(): string
     {
         return sprintf(
             'initialization(%s)',

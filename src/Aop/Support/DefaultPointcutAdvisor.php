@@ -28,17 +28,12 @@ class DefaultPointcutAdvisor extends AbstractGenericAdvisor implements PointcutA
 {
 
     /**
-     * Pointcut instance
-     *
-     * @var Pointcut
+     * The Pointcut targeting the Advice
      */
     private $pointcut;
 
     /**
-     * Create a DefaultPointcutAdvisor, specifying Pointcut and Advice.
-     *
-     * @param Pointcut $pointcut The Pointcut targeting the Advice
-     * @param Advice $advice The Advice to run when Pointcut matches
+     * Creates a DefaultPointcutAdvisor, specifying the Advice to run when Pointcut matches
      */
     public function __construct(Pointcut $pointcut, Advice $advice)
     {

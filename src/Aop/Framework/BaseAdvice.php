@@ -66,10 +66,6 @@ abstract class BaseAdvice implements OrderedAdvice
 
     /**
      * Serialize advice method into array
-     *
-     * @param Closure $adviceMethod An advice for aspect
-     *
-     * @return array
      */
     public static function serializeAdvice(Closure $adviceMethod): array
     {
@@ -85,8 +81,6 @@ abstract class BaseAdvice implements OrderedAdvice
      * Unserialize an advice
      *
      * @param array $adviceData Information about advice
-     *
-     * @return Closure
      */
     public static function unserializeAdvice(array $adviceData): Closure
     {

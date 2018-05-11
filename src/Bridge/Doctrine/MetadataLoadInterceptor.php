@@ -48,7 +48,7 @@ final class MetadataLoadInterceptor implements EventSubscriber
      *
      * @param LoadClassMetadataEventArgs $args
      */
-    public function loadClassMetadata(LoadClassMetadataEventArgs $args)
+    public function loadClassMetadata(LoadClassMetadataEventArgs $args): void
     {
         /**
          * @var ClassMetadata $metadata
@@ -71,7 +71,7 @@ final class MetadataLoadInterceptor implements EventSubscriber
      *
      * @param ClassMetadata $metadata
      */
-    private function removeMappingsFromTraits(ClassMetadata $metadata)
+    private function removeMappingsFromTraits(ClassMetadata $metadata): void
     {
         $traits = $this->getTraits($metadata->name);
 
@@ -107,10 +107,8 @@ final class MetadataLoadInterceptor implements EventSubscriber
      *
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
-     *
-     * @return array Used traits.
      */
-    private function getTraits($objectOrClass, $autoload = true)
+    private function getTraits($objectOrClass, $autoload = true): array
     {
         if (is_object($objectOrClass)) {
             $objectOrClass = get_class($objectOrClass);

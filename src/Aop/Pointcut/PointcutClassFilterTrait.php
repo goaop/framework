@@ -15,7 +15,7 @@ use Go\Aop\PointFilter;
 use Go\Aop\Support\TruePointFilter;
 
 /**
- * Convenient trait for pointcuts.
+ * Convenient trait for pointcuts with class filter.
  *
  * The "classFilter" property can be set to customize ClassFilter behavior.
  */
@@ -31,10 +31,8 @@ trait PointcutClassFilterTrait
 
     /**
      * Set the ClassFilter to use for this pointcut.
-     *
-     * @param PointFilter $classFilter
      */
-    public function setClassFilter(PointFilter $classFilter)
+    public function setClassFilter(PointFilter $classFilter): void
     {
         $this->classFilter = $classFilter;
     }
@@ -44,7 +42,7 @@ trait PointcutClassFilterTrait
      */
     public function getClassFilter(): PointFilter
     {
-        if (!$this->classFilter) {
+        if ($this->classFilter === null) {
             $this->classFilter = TruePointFilter::getInstance();
         }
 

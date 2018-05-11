@@ -27,7 +27,7 @@ interface MethodInvocation extends Invocation
     /**
      * Gets the method being called.
      *
-     * @return ReflectionMethod|AnnotatedReflectionMethod the method being called.
+     * @return AnnotatedReflectionMethod the method being called.
      */
     public function getMethod(): ReflectionMethod;
 

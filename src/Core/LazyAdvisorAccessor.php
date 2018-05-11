@@ -20,22 +20,17 @@ use Go\Aop\Advisor;
 class LazyAdvisorAccessor
 {
     /**
-     * @var AspectContainer
+     * Instance of aspect container
      */
     protected $container;
 
     /**
      * Aspect loader instance
-     *
-     * @var AspectLoader
      */
     protected $loader;
 
     /**
      * Accessor constructor
-     *
-     * @param AspectContainer $container
-     * @param AspectLoader $loader
      */
     public function __construct(AspectContainer $container, AspectLoader $loader)
     {
@@ -44,14 +39,11 @@ class LazyAdvisorAccessor
     }
 
     /**
-     * Magic accessor
-     *
-     * @param string $name Key name
+     * Magic advice accessor
      *
      * @throws \InvalidArgumentException if referenced value is not an advisor
-     * @return Advice
      */
-    public function __get($name)
+    public function __get(string $name): Advice
     {
         if ($this->container->has($name)) {
             $advisor = $this->container->get($name);

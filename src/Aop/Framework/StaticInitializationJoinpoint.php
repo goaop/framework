@@ -26,15 +26,11 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
     protected $reflectionClass;
 
     /**
-     * Constructor for static initialization joinpoint
+     * Constructor for the class static initialization joinpoint
      *
-     * @param string $className Name of the class
-     * @param string $type Type of joinpoint
      * @param $advices array List of advices for this invocation
-     *
-     * @internal param ReflectionClass $reflectionClass Reflection of class
      */
-    public function __construct(string $className, string $type, array $advices)
+    public function __construct(string $className, string $unusedType, array $advices)
     {
         $originalClass = $className;
         if (strpos($originalClass, AspectContainer::AOP_PROXIED_SUFFIX)) {
@@ -47,7 +43,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
     /**
      * Proceeds to the next interceptor in the chain.
      *
-     * @return mixed see the children interfaces' proceed definition.
+     * @return void Static initializtion could not return anything
      */
     public function proceed()
     {
@@ -59,14 +55,11 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
 
     /**
      * Invokes current joinpoint with all interceptors
-     *
-     * @return mixed
      */
-    final public function __invoke()
+    final public function __invoke(): void
     {
         $this->current = 0;
-
-        return $this->proceed();
+        $this->proceed();
     }
 
     /**
@@ -93,10 +86,8 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
 
     /**
      * Returns a friendly description of current joinpoint
-     *
-     * @return string
      */
-    final public function __toString()
+    final public function __toString(): string
     {
         return sprintf(
             'staticinitialization(%s)',

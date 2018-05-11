@@ -22,15 +22,11 @@ class TruePointcut implements Pointcut
 
     /**
      * Filter kind
-     *
-     * @var int
      */
     protected $filterKind;
 
     /**
      * Default constructor can be used to specify concrete filter kind
-     *
-     * @param int $filterKind Kind of filter, e.g. KIND_METHOD
      */
     public function __construct(int $filterKind = self::KIND_ALL)
     {
@@ -44,8 +40,6 @@ class TruePointcut implements Pointcut
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {

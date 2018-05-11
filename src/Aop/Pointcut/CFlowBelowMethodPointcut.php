@@ -40,7 +40,6 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
     /**
      * Control flow below constructor
      *
-     * @param Pointcut $pointcut Instance of pointcut, that will be used for matching
      * @throws \InvalidArgumentException if filter doesn't support methods
      */
     public function __construct(Pointcut $pointcut)
@@ -59,8 +58,6 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {

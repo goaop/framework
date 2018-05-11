@@ -19,7 +19,6 @@ use Dissect\Parser\Parser;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
-use Go\Lang\Annotation;
 use ReflectionMethod;
 use ReflectionProperty;
 
@@ -31,23 +30,16 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
 
     /**
      * Instance of pointcut lexer
-     *
-     * @var Lexer
      */
     protected $pointcutLexer;
 
     /**
      * Instance of pointcut parser
-     *
-     * @var Parser
      */
     protected $pointcutParser;
 
     /**
-     * Default initialization of dependencies
-     *
-     * @param Lexer $pointcutLexer Instance of pointcut lexer
-     * @param Parser $pointcutParser Instance of pointcut parser
+     * Default loader constructor that accepts pointcut lexer and parser
      */
     public function __construct(Lexer $pointcutLexer, Parser $pointcutParser)
     {
@@ -58,40 +50,35 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     /**
      * General method for parsing pointcuts
      *
-     * @param Aspect $aspect Instance of current aspect
-     * @param Annotation\BaseAnnotation|Annotation\BaseInterceptor $metaInformation
      * @param mixed|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      *
      * @throws \UnexpectedValueException if there was an error during parsing
      * @return Pointcut|PointFilter
      */
-    protected function parsePointcut(Aspect $aspect, $reflection, $metaInformation): PointFilter
+    final protected function parsePointcut(Aspect $aspect, $reflection, string $pointcutExpression): PointFilter
     {
-        $stream = $this->makeLexicalAnalyze($aspect, $reflection, $metaInformation);
+        $stream = $this->makeLexicalAnalyze($aspect, $reflection, $pointcutExpression);
 
-        return $this->parseTokenStream($reflection, $metaInformation, $stream);
+        return $this->parseTokenStream($reflection, $pointcutExpression, $stream);
     }
 
     /**
      * Performs lexical analyze of pointcut
      *
-     * @param Aspect $aspect Instance of aspect
      * @param ReflectionMethod|ReflectionProperty $reflection
-     * @param Annotation\BaseAnnotation $metaInformation
      *
-     * @return TokenStream
      * @throws \UnexpectedValueException
      */
-    protected function makeLexicalAnalyze(Aspect $aspect, $reflection, $metaInformation): TokenStream
+    private function makeLexicalAnalyze(Aspect $aspect, $reflection, string $pointcutExpression): TokenStream
     {
         try {
-            $resolvedThisPointcut = str_replace('$this', get_class($aspect), $metaInformation->value);
+            $resolvedThisPointcut = str_replace('$this', \get_class($aspect), $pointcutExpression);
             $stream = $this->pointcutLexer->lex($resolvedThisPointcut);
         } catch (RecognitionException $e) {
             $message = 'Can not recognize the lexical structure `%s` before %s, defined in %s:%d';
             $message = sprintf(
                 $message,
-                $metaInformation->value,
+                $pointcutExpression,
                 (isset($reflection->class) ? $reflection->class . '->' : '') . $reflection->name,
                 method_exists($reflection, 'getFileName')
                     ? $reflection->getFileName()
@@ -110,13 +97,10 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * Performs parsing of pointcut
      *
      * @param ReflectionMethod|ReflectionProperty $reflection
-     * @param Annotation\BaseAnnotation $metaInformation
-     * @param TokenStream $stream
-     * @return Pointcut|PointFilter
      *
      * @throws \UnexpectedValueException
      */
-    protected function parseTokenStream($reflection, $metaInformation, TokenStream $stream): PointFilter
+    private function parseTokenStream($reflection, string $pointcutExpression, TokenStream $stream): PointFilter
     {
         try {
             $pointcut = $this->pointcutParser->parse($stream);
@@ -127,7 +111,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             $message = sprintf(
                 $message,
                 $token->getValue(),
-                $metaInformation->value,
+                $pointcutExpression,
                 (isset($reflection->class) ? $reflection->class . '->' : '') . $reflection->name,
                 method_exists($reflection, 'getFileName')
                     ? $reflection->getFileName()

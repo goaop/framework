@@ -23,17 +23,18 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     /**
      * Instance of reflection function
      *
-     * @var null|ReflectionFunction
+     * @var ReflectionFunction
      */
     protected $reflectionFunction;
 
     /**
      * Constructor for function invocation
      *
-     * @param string $functionName Function to invoke
      * @param $advices array List of advices for this invocation
+     *
+     * @throws \ReflectionException
      */
-    public function __construct($functionName, array $advices)
+    public function __construct(string $functionName, array $advices)
     {
         parent::__construct($advices);
         $this->reflectionFunction = new ReflectionFunction($functionName);
@@ -100,7 +101,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
         }
 
         if (!empty($variadicArguments)) {
-            $arguments = array_merge($arguments, $variadicArguments);
+            $arguments = \array_merge($arguments, $variadicArguments);
         }
 
         ++$this->level;
@@ -121,10 +122,8 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
 
     /**
      * Returns a friendly description of current joinpoint
-     *
-     * @return string
      */
-    final public function __toString()
+    final public function __toString(): string
     {
         return sprintf(
             'execution(%s())',

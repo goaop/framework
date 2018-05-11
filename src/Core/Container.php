@@ -20,15 +20,11 @@ abstract class Container implements AspectContainer
 {
     /**
      * List of services in the container
-     *
-     * @var array
      */
     protected $values = [];
 
     /**
      * Store identifiers os services by tags
-     *
-     * @var array
      */
     protected $tags = [];
 
