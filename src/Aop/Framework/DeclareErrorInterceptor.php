@@ -11,7 +11,10 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Go\Aop\Intercept\Joinpoint;
+use function get_class;
+use function is_string;
 
 /**
  * Interceptor to dynamically trigger an user notice/warning/error on method call
@@ -38,16 +41,12 @@ class DeclareErrorInterceptor extends BaseInterceptor
 
     /**
      * Default constructor for interceptor
-     *
-     * @param string $message Text message for error
-     * @param int $level Level of error
-     * @param string $pointcutExpression Pointcut expression
      */
-    public function __construct(string $message, int $level, string $pointcutExpression)
+    public function __construct(string $message, int $errorLevel, string $pointcutExpression)
     {
         $adviceMethod  = self::getDeclareErrorAdvice();
         $this->message = $message;
-        $this->level   = $level;
+        $this->level   = $errorLevel;
         parent::__construct($adviceMethod, -256, $pointcutExpression);
     }
 
@@ -80,13 +79,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
     }
 
     /**
-     * Implement this method to perform extra treatments before and
-     * after the invocation. Polite implementations would certainly
-     * like to invoke {@link Joinpoint::proceed()}.
-     *
-     * @param Joinpoint $joinpoint the method invocation joinpoint
-     *
-     * @return mixed the result of the call to {@link Joinpoint::proceed()}
+     * @inheritdoc
      */
     public function invoke(Joinpoint $joinpoint)
     {
@@ -103,7 +96,7 @@ class DeclareErrorInterceptor extends BaseInterceptor
     /**
      * Returns an advice
      */
-    private static function getDeclareErrorAdvice(): \Closure
+    private static function getDeclareErrorAdvice(): Closure
     {
         static $adviceMethod;
         if (!$adviceMethod) {

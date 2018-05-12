@@ -15,7 +15,7 @@ use Go\Aop\Pointcut;
 use Go\Aop\Support\AndPointFilter;
 
 /**
- * Signature method pointcut checks method signature (modifiers and name) to match it
+ * Logical "AND" pointcut that combines two simple pointcuts
  */
 class AndPointcut implements Pointcut
 {
@@ -40,10 +40,7 @@ class AndPointcut implements Pointcut
     protected $kind = 0;
 
     /**
-     * Signature method matcher constructor
-     *
-     * @param Pointcut $first First filter
-     * @param Pointcut $second Second filter
+     * "And" pointcut constructor
      */
     public function __construct(Pointcut $first, Pointcut $second)
     {
@@ -61,8 +58,6 @@ class AndPointcut implements Pointcut
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
@@ -81,7 +76,6 @@ class AndPointcut implements Pointcut
     /**
      * Checks if point filter matches the point
      *
-     * @param Pointcut $pointcut Pointcut part
      * @param \ReflectionMethod|\ReflectionProperty $point
      * @param mixed $context Related context, can be class or namespace
      * @param object|string|null $instance [Optional] Instance for dynamic matching

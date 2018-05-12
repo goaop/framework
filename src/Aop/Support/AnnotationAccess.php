@@ -17,15 +17,12 @@ namespace Go\Aop\Support;
 interface AnnotationAccess
 {
     /**
-     * Gets annotation.
-     *
-     * @param string $annotationName The name of the annotation.
-     * @return mixed The Annotation or NULL, if the requested annotation does not exist.
+     * Gets concrete annotation by name or null if the requested annotation does not exist.
      */
-    public function getAnnotation(string $annotationName);
+    public function getAnnotation(string $annotationName): ?object;
 
     /**
-     * Gets the annotations.
+     * Gets all annotations applied to the current item.
      */
     public function getAnnotations(): array;
 }

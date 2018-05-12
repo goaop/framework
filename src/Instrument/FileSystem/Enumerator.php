@@ -22,22 +22,16 @@ class Enumerator
 
     /**
      * Path to the root directory, where enumeration should start
-     *
-     * @var string
      */
     private $rootDirectory;
 
     /**
      * List of additional include paths, should be below rootDirectory
-     *
-     * @var array
      */
     private $includePaths;
 
     /**
      * List of additional exclude paths, should be below rootDirectory
-     *
-     * @var array
      */
     private $excludePaths;
 
@@ -125,10 +119,6 @@ class Enumerator
      * This is used for testing purpose with virtual file system.
      * In a vfs the 'realPath' methode will always return false.
      * So we have a chance to mock this single function to return different path.
-     *
-     * @param SplFileInfo $file
-     *
-     * @return string
      */
     protected function getFileFullPath(SplFileInfo $file): string
     {

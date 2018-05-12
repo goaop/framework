@@ -17,29 +17,23 @@ use ReflectionFunctionAbstract;
 /**
  * Return type filter matcher methods and function with specific return type
  *
- * Namespace name can contain wildcards '*', '**' and '?'
+ * Type name can contain wildcards '*', '**' and '?'
  */
 class ReturnTypeFilter implements PointFilter
 {
 
     /**
-     * Namespace name to match, can contain wildcards *,?
-     *
-     * @var string
+     * Return type name to match, can contain wildcards *,?
      */
     protected $typeName;
 
     /**
      * Pattern for regular expression matching
-     *
-     * @var string
      */
     protected $regexp;
 
     /**
-     * Namespace name matcher constructor
-     *
-     * @param string $returnTypeName Name of the return type to match or glob pattern
+     * Return type name matcher constructor accepts name or glob pattern of the type to match
      */
     public function __construct(string $returnTypeName)
     {
@@ -55,7 +49,6 @@ class ReturnTypeFilter implements PointFilter
 
     /**
      * {@inheritdoc}
-     * @param ReflectionFunctionAbstract
      */
     public function matches($functionLike, $context = null, $instance = null, array $arguments = null): bool
     {

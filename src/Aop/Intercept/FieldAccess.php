@@ -26,12 +26,12 @@ interface FieldAccess extends Joinpoint
     /**
      * The read access type
      */
-    const READ = 0;
+    public const READ = 0;
 
     /**
      * The write access type
      */
-    const WRITE = 1;
+    public const WRITE = 1;
 
     /**
      * Gets the field being accessed.
@@ -44,8 +44,6 @@ interface FieldAccess extends Joinpoint
      * Gets the current value of property by reference
      *
      * @api
-     *
-     * @return mixed
      */
     public function &getValue();
 
@@ -53,8 +51,6 @@ interface FieldAccess extends Joinpoint
      * Gets the value that must be set to the field, applicable only for WRITE access type
      *
      * @api
-     *
-     * @return mixed
      */
     public function &getValueToSet();
 

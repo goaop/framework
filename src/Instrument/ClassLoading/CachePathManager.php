@@ -22,7 +22,7 @@ class CachePathManager
     /**
      * Name of the file with cache paths
      */
-    const CACHE_FILE_NAME = '/_transformation.cache';
+    private const CACHE_FILE_NAME = '/_transformation.cache';
 
     /**
      * @var array
@@ -30,7 +30,7 @@ class CachePathManager
     protected $options = [];
 
     /**
-     * @var \Go\Core\AspectKernel
+     * Aspect kernel instance
      */
     protected $kernel;
 
@@ -95,26 +95,23 @@ class CachePathManager
 
     /**
      * Returns current cache directory for aspects, can be bull
-     *
-     * @return null|string
      */
-    public function getCacheDir()
+    public function getCacheDir(): ?string
     {
         return $this->cacheDir;
     }
 
     /**
      * Configures a new cache directory for aspects
-     *
-     * @param string $cacheDir New cache directory
      */
-    public function setCacheDir(string $cacheDir)
+    public function setCacheDir(string $cacheDir): void
     {
         $this->cacheDir = $cacheDir;
     }
 
     /**
-     * @param string $resource
+     * Returns cache path for requested file name
+     *
      * @return bool|string
      */
     public function getCachePathForResource(string $resource)
@@ -133,7 +130,7 @@ class CachePathManager
      *
      * @return array|null Information or null if no record in the cache
      */
-    public function queryCacheState(string $resource = null)
+    public function queryCacheState(string $resource = null): ?array
     {
         if ($resource === null) {
             return $this->cacheState;
@@ -155,10 +152,9 @@ class CachePathManager
      *
      * This data will be persisted during object destruction
      *
-     * @param string $resource Name of the file
      * @param array $metadata Miscellaneous information about resource
      */
-    public function setCacheState(string $resource, array $metadata)
+    public function setCacheState(string $resource, array $metadata): void
     {
         $this->newCacheState[$resource] = $metadata;
     }
@@ -175,10 +171,8 @@ class CachePathManager
 
     /**
      * Flushes the cache state into the file
-     *
-     * @var bool $force Should be flushed regardless of its state.
      */
-    public function flushCacheState($force = false)
+    public function flushCacheState(bool $force = false): void
     {
         if ((!empty($this->newCacheState) && is_writable($this->cacheDir)) || $force) {
             $fullCacheMap = $this->newCacheState + $this->cacheState;
@@ -205,7 +199,7 @@ class CachePathManager
     /**
      * Clear the cache state.
      */
-    public function clearCacheState()
+    public function clearCacheState(): void
     {
         $this->cacheState       = [];
         $this->newCacheState    = [];

@@ -34,7 +34,9 @@ class NodeFinderVisitor extends NodeVisitorAbstract
     protected $foundNodes;
 
     /**
-     * @param array $searchNodes List of node names to search in AST
+     * Visitor constuctor
+     *
+     * @param string[] $searchNodes List of node names to search in AST
      */
     public function __construct(array $searchNodes)
     {

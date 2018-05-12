@@ -35,14 +35,7 @@ class AdviceMatcherTest extends TestCase
 
     protected function setUp()
     {
-        $container = $this->createMock(AspectContainer::class);
-        $reader    = $this->createMock(Reader::class);
-        $loader    = $this
-            ->getMockBuilder(AspectLoader::class)
-            ->setConstructorArgs([$container, $reader])
-            ->getMock();
-
-        $this->adviceMatcher = new AdviceMatcher($loader);
+        $this->adviceMatcher = new AdviceMatcher();
 
         $reflectionFile        = new ReflectionFile(__FILE__);
         $this->reflectionClass = $reflectionFile->getFileNamespace(__NAMESPACE__)->getClass(__CLASS__);

@@ -139,9 +139,7 @@ abstract class AspectKernel
     /**
      * Checks if kernel configuration has enabled specific feature
      *
-     * @param integer $featureToCheck See Go\Aop\Features enumeration class for features
-     *
-     * @return bool Whether specific feature enabled or not
+     * @see \Go\Aop\Features enumeration class for features
      */
     public function hasFeature(int $featureToCheck): bool
     {
@@ -188,8 +186,6 @@ abstract class AspectKernel
      * Normalizes options for the kernel
      *
      * @param array $options List of options
-     *
-     * @return array
      */
     protected function normalizeOptions(array $options): array
     {
@@ -212,20 +208,17 @@ abstract class AspectKernel
     }
 
     /**
-     * Configure an AspectContainer with advisors, aspects and pointcuts
-     *
-     * @param AspectContainer $container
-     *
-     * @return void
+     * Configures an AspectContainer with advisors, aspects and pointcuts
      */
     abstract protected function configureAop(AspectContainer $container);
 
     /**
      * Returns list of source transformers, that will be applied to the PHP source
      *
-     * @return array|SourceTransformer[]
+     * @return SourceTransformer[]
+     * @internal This method is internal and should not be used outside this project
      */
-    protected function registerTransformers()
+    protected function registerTransformers(): array
     {
         $cacheManager     = $this->getContainer()->get('aspect.cache.path.manager');
         $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
@@ -257,11 +250,9 @@ abstract class AspectKernel
     }
 
     /**
-     * Add resources for kernel
-     *
-     * @param AspectContainer $container
+     * Add resources of kernel to the container
      */
-    protected function addKernelResourcesToContainer(AspectContainer $container)
+    protected function addKernelResourcesToContainer(AspectContainer $container): void
     {
         $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
         $refClass = new \ReflectionObject($this);

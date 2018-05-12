@@ -1,9 +1,12 @@
 language: php
 
 php:
-  - 7.0
-  - 7.1
   - 7.2
+  - nightly
+
+matrix:
+  allow_failures:
+    - php: nightly
 
 before_script:
   - composer install
@@ -13,4 +16,3 @@ script:
 
 after_script:
   - sh .travis.coverage.sh
-

@@ -28,14 +28,12 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
     /**
      * Previous scope of invocation
      *
-     * @var null|object|string
+     * @var null|string
      */
     protected $previousScope;
 
     /**
-     * Invokes original method and return result from it
-     *
-     * @return mixed
+     * Proceeds all registered advices for the static method and returns an invocation result
      */
     public function proceed()
     {
@@ -59,17 +57,12 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
     }
 
     /**
-     * Returns static method invoker
-     *
-     * @param string $className Class name to forward request
-     * @param string $method Method name to call
-     *
-     * @return Closure
+     * Returns static method invoker for the concrete method in the class
      */
-    protected static function getStaticInvoker($className, $method): Closure
+    protected static function getStaticInvoker(string $className, string $methodName): Closure
     {
-        return function (array $args) use ($className, $method) {
-            return forward_static_call_array([$className, $method], $args);
+        return function (array $args) use ($className, $methodName) {
+            return forward_static_call_array([$className, $methodName], $args);
         };
     }
 }

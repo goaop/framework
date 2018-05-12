@@ -40,7 +40,7 @@ abstract class AbstractInvocation extends AbstractJoinpoint implements Invocatio
      *
      * @param array $arguments New list of arguments
      */
-    public function setArguments(array $arguments)
+    public function setArguments(array $arguments): void
     {
         $this->arguments = $arguments;
     }

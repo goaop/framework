@@ -45,11 +45,8 @@ class BaseAspectCommand extends Command
      * Aspect kernel is loaded by executing loader and fetching singleton instance.
      * If your application environment initializes aspect kernel differently, you may
      * modify this method to get aspect kernel suitable to your needs.
-     *
-     * @param InputInterface $input
-     * @param OutputInterface $output
      */
-    protected function loadAspectKernel(InputInterface $input, OutputInterface $output)
+    protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
     {
         $loader = $input->getArgument('loader');
         $path   = stream_resolve_include_path($loader);

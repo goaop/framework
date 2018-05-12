@@ -25,12 +25,12 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Php filter definition
      */
-    const PHP_FILTER_READ = 'php://filter/read=';
+    public const PHP_FILTER_READ = 'php://filter/read=';
 
     /**
      * Default PHP filter name for registration
      */
-    const FILTER_IDENTIFIER = 'go.source.transforming.loader';
+    public const FILTER_IDENTIFIER = 'go.source.transforming.loader';
 
     /**
      * String buffer
@@ -56,10 +56,9 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Register current loader as stream filter in PHP
      *
-     * @param string $filterId Identifier for the filter
      * @throws \RuntimeException If registration was failed
      */
-    public static function register(string $filterId = self::FILTER_IDENTIFIER)
+    public static function register(string $filterId = self::FILTER_IDENTIFIER): void
     {
         if (!empty(self::$filterId)) {
             throw new \RuntimeException('Stream filter already registered');
@@ -113,22 +112,16 @@ class SourceTransformingLoader extends PhpStreamFilter
 
     /**
      * Adds a SourceTransformer to be applied by this LoadTimeWeaver.
-     *
-     * @param $transformer SourceTransformer Transformer for source code
      */
-    public static function addTransformer(SourceTransformer $transformer)
+    public static function addTransformer(SourceTransformer $transformer): void
     {
         self::$transformers[] = $transformer;
     }
 
     /**
      * Transforms source code by passing it through all transformers
-     *
-     * @param StreamMetaData|null $metadata Metadata from stream
-     *
-     * @return void
      */
-    public static function transformCode(StreamMetaData $metadata)
+    public static function transformCode(StreamMetaData $metadata): void
     {
         foreach (self::$transformers as $transformer) {
             $result = $transformer->transform($metadata);

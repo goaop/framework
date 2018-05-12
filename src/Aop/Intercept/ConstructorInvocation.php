@@ -24,9 +24,7 @@ interface ConstructorInvocation extends Invocation
 {
 
     /**
-     * Gets the constructor being called.
-     *
-     * @return ReflectionMethod|null the constructor being called or null if it is absent.
+     * Gets the constructor being called or null if it is absent.
      */
-    public function getConstructor();
+    public function getConstructor(): ?ReflectionMethod;
 }

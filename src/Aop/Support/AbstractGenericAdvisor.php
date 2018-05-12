@@ -15,21 +15,17 @@ use Go\Aop\Advice;
 use Go\Aop\Advisor;
 
 /**
- * Abstract generic PointcutAdvisor that allows for any Advice to be configured.
+ * Abstract generic Advisor that allows for any Advice to be configured.
  */
 abstract class AbstractGenericAdvisor implements Advisor
 {
     /**
      * Instance of advice
-     *
-     * @var Advice
      */
     protected $advice;
 
     /**
      * Initializes an advisor with advice
-     *
-     * @param Advice $advice Advice to apply
      */
     public function __construct(Advice $advice)
     {

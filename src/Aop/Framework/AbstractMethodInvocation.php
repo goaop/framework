@@ -45,8 +45,6 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Constructor for method invocation
      *
-     * @param string $className Class name
-     * @param string $methodName Method to invoke
      * @param $advices array List of advices for this invocation
      */
     public function __construct(string $className, string $methodName, array $advices)
@@ -92,7 +90,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
             --$this->level;
 
             if ($this->level > 0) {
-                list($this->arguments, $this->instance, $this->current) = \array_pop($this->stackFrames);
+                [$this->arguments, $this->instance, $this->current] = \array_pop($this->stackFrames);
             }
         }
     }
@@ -130,10 +128,8 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
 
     /**
      * Returns friendly description of this joinpoint
-     *
-     * @return string
      */
-    final public function __toString()
+    final public function __toString(): string
     {
         return sprintf(
             'execution(%s%s%s())',

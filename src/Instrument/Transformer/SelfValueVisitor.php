@@ -102,7 +102,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
      *
      * @return Name|FullyQualified
      */
-    protected function resolveClassName(Name $name)
+    protected function resolveClassName(Name $name): Name
     {
         // Skip all names except special `self`
         if (strtolower($name->toString()) !== 'self') {

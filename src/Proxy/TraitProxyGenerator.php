@@ -71,14 +71,9 @@ class TraitProxyGenerator extends ClassProxyGenerator
     }
 
     /**
-     * Returns a joinpoint for the specific trait
+     * Returns a method invocation for the specific trait method
      *
-     * @param string $className     Name of the class
-     * @param string $joinPointType Type of joinpoint (static or dynamic method)
-     * @param string $methodName    Name of the method
-     * @param array  $advices       List of advices for this trait method
-     *
-     * @return MethodInvocation
+     * @param array $advices List of advices for this trait method
      */
     public static function getJoinPoint(
         string $className,
@@ -104,11 +99,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
     }
 
     /**
-     * Creates definition for trait method body
-     *
-     * @param ReflectionMethod $method Method reflection
-     *
-     * @return string new method body
+     * Creates string definition for trait method body by method reflection
      */
     protected function getJoinpointInvocationBody(ReflectionMethod $method): string
     {
@@ -122,7 +113,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
         $argumentCode = $scope . ($argumentCode ? ", $argumentCode" : '');
 
         $return = 'return ';
-        if (PHP_VERSION_ID >= 70100 && $method->hasReturnType()) {
+        if ($method->hasReturnType()) {
             $returnType = (string) $method->getReturnType();
             if ($returnType === 'void') {
                 // void return types should not return anything

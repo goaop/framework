@@ -32,7 +32,7 @@ class DynamicInvocationMatcherInterceptor implements Interceptor
     protected $pointFilter;
 
     /**
-     * Overloaded property for storing instance of Interceptor
+     * Instance of interceptor to invoke
      *
      * @var Interceptor
      */
@@ -40,9 +40,6 @@ class DynamicInvocationMatcherInterceptor implements Interceptor
 
     /**
      * Dynamic matcher constructor
-     *
-     * @param PointFilter $pointFilter Instance of dynamic matcher
-     * @param Interceptor $interceptor Instance of interceptor to invoke
      */
     public function __construct(PointFilter $pointFilter, Interceptor $interceptor)
     {
@@ -51,11 +48,7 @@ class DynamicInvocationMatcherInterceptor implements Interceptor
     }
 
     /**
-     * Method invoker
-     *
-     * @param Joinpoint $joinpoint the method invocation joinpoint
-     *
-     * @return mixed the result of the call to {@see Joinpoint->proceed()}
+     * @inheritdoc
      */
     final public function invoke(Joinpoint $joinpoint)
     {

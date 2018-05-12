@@ -23,8 +23,6 @@ class SignaturePointcut implements Pointcut
 
     /**
      * Element name to match, can contain wildcards **,*,?,|
-     *
-     * @var string
      */
     protected $name = '';
 
@@ -37,24 +35,16 @@ class SignaturePointcut implements Pointcut
 
     /**
      * Modifier filter for element
-     *
-     * @var PointFilter
      */
     protected $modifierFilter;
 
     /**
-     * Filter kind
-     *
-     * @var int
+     * Filter kind, e.g. self::KIND_CLASS
      */
     protected $filterKind = 0;
 
     /**
      * Signature matcher constructor
-     *
-     * @param integer $filterKind Kind of filter, e.g. KIND_CLASS
-     * @param string $name Name of the entity to match or glob pattern
-     * @param PointFilter $modifierFilter Method modifier filter
      */
     public function __construct(int $filterKind, string $name, PointFilter $modifierFilter)
     {
@@ -76,8 +66,6 @@ class SignaturePointcut implements Pointcut
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {

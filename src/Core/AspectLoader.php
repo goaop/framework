@@ -25,8 +25,6 @@ class AspectLoader
 
     /**
      * Aspect container instance
-     *
-     * @var AspectContainer
      */
     protected $container;
 
@@ -39,8 +37,6 @@ class AspectLoader
 
     /**
      * Annotation reader for aspects
-     *
-     * @var Reader
      */
     protected $annotationReader;
 
@@ -53,9 +49,6 @@ class AspectLoader
 
     /**
      * Loader constructor
-     *
-     * @param AspectContainer $container Instance of container to store pointcuts and advisors
-     * @param Reader $reader Reader for annotations that is used for aspects
      */
     public function __construct(AspectContainer $container, Reader $reader)
     {
@@ -67,10 +60,8 @@ class AspectLoader
      * Register an aspect loader extension
      *
      * This method allows to extend the logic of aspect loading by registering an extension for loader.
-     *
-     * @param AspectLoaderExtension $loader Loader to register
      */
-    public function registerLoaderExtension(AspectLoaderExtension $loader)
+    public function registerLoaderExtension(AspectLoaderExtension $loader): void
     {
         $targets = $loader->getTargets();
         foreach ($targets as $target) {
@@ -83,9 +74,7 @@ class AspectLoader
      *
      * @see loadAndRegister() method for registration
      *
-     * @param \Go\Aop\Aspect $aspect Aspect to load
-     *
-     * @return array|Pointcut[]|Advisor[]
+     * @return Pointcut[]|Advisor[]
      */
     public function load(Aspect $aspect): array
     {
@@ -115,10 +104,8 @@ class AspectLoader
 
     /**
      * Loads and register all items of aspect in the container
-     *
-     * @param Aspect $aspect
      */
-    public function loadAndRegister(Aspect $aspect)
+    public function loadAndRegister(Aspect $aspect): void
     {
         $loadedItems = $this->load($aspect);
         foreach ($loadedItems as $itemId => $item) {
@@ -137,7 +124,7 @@ class AspectLoader
     /**
      * Returns list of unloaded aspects in the container
      *
-     * @return array|Aspect[]
+     * @return Aspect[]
      */
     public function getUnloadedAspects(): array
     {
@@ -196,10 +183,8 @@ class AspectLoader
     /**
      * Return list of annotations for reflection point
      *
-     * @param Reflector $reflector Reflection instance
-     *
      * @return array list of annotations
-     * @throws \InvalidArgumentException if $refPoint is unsupported
+     * @throws \InvalidArgumentException if $reflector is unsupported
      */
     protected function getAnnotations(Reflector $reflector): array
     {

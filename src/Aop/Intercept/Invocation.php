@@ -34,5 +34,5 @@ interface Invocation extends Joinpoint
      *
      * @param array $arguments New list of arguments
      */
-    public function setArguments(array $arguments);
+    public function setArguments(array $arguments): void;
 }

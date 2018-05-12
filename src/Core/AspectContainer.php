@@ -68,8 +68,6 @@ interface AspectContainer
     /**
      * Return a service or value from the container
      *
-     * @param string $id Identifier
-     *
      * @return mixed
      * @throws \OutOfBoundsException if service was not found
      */
@@ -77,68 +75,41 @@ interface AspectContainer
 
     /**
      * Return list of service tagged with marker
-     *
-     * @param string $tag Tag to select
-     * @return array
      */
     public function getByTag(string $tag): array;
 
     /**
      * Returns a pointcut by identifier
-     *
-     * @param string $id Pointcut identifier
-     *
-     * @return Pointcut
      */
     public function getPointcut(string $id): Pointcut;
 
     /**
      * Checks if item with specified id is present in the container
-     *
-     * @param string $id Identifier
-     *
-     * @return bool
      */
     public function has(string $id): bool;
 
     /**
      * Store the pointcut in the container
-     *
-     * @param Pointcut $pointcut Instance
-     * @param string $id Key for pointcut
      */
-    public function registerPointcut(Pointcut $pointcut, string $id);
+    public function registerPointcut(Pointcut $pointcut, string $id): void;
 
     /**
      * Returns an advisor by identifier
-     *
-     * @param string $id Advisor identifier
-     *
-     * @return Advisor
      */
     public function getAdvisor(string $id): Advisor;
 
     /**
      * Store the advisor in the container
-     *
-     * @param Advisor $advisor Instance
-     * @param string $id Key for advisor
      */
-    public function registerAdvisor(Advisor $advisor, string $id);
+    public function registerAdvisor(Advisor $advisor, string $id): void;
 
     /**
      * Register an aspect in the container
-     *
-     * @param Aspect $aspect Instance of concrete aspect
      */
-    public function registerAspect(Aspect $aspect);
+    public function registerAspect(Aspect $aspect): void;
 
     /**
      * Returns an aspect by id or class name
-     *
-     * @param string $aspectName Aspect name
-     *
-     * @return Aspect
      */
     public function getAspect(string $aspectName): Aspect;
 
@@ -158,8 +129,6 @@ interface AspectContainer
     /**
      * Checks the freshness of AOP cache
      *
-     * @param integer $timestamp
-     *
      * @return bool Whether or not concrete file is fresh
      */
     public function isFresh(int $timestamp): bool;
@@ -167,9 +136,7 @@ interface AspectContainer
     /**
      * Set a service into the container
      *
-     * @param string $id Identifier
      * @param mixed $value Value to store
-     * @param array $tags Additional tags
      */
     public function set(string $id, $value, array $tags = []);
 }

@@ -23,6 +23,8 @@ use Go\Lang\Annotation\BaseInterceptor;
 use ReflectionMethod;
 use Reflector;
 
+use function get_class;
+
 /**
  * General aspect loader add common support for general advices, declared as annotations
  */
@@ -74,7 +76,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null): array
     {
         $loadedItems    = [];
-        $pointcut       = $this->parsePointcut($aspect, $reflection, $metaInformation);
+        $pointcut       = $this->parsePointcut($aspect, $reflection, $metaInformation->value);
         $methodId       = get_class($aspect) . '->' . $reflection->name;
         $adviceCallback = $reflection->getClosure($aspect);
 
@@ -98,11 +100,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     }
 
     /**
-     * Returns an interceptor instance by meta-type annotation
-     *
-     * @param BaseInterceptor $metaInformation Meta-information from the annotation
-     * @param Closure $adviceCallback Advice closure
-     * @return Interceptor Instance of interceptor by meta-information
+     * Returns an interceptor instance by meta-type annotation and closure
      *
      * @throws \UnexpectedValueException For unsupported annotations
      */

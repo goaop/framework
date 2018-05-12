@@ -23,6 +23,7 @@ use ReflectionProperty;
 class AnnotationPointcut implements Pointcut
 {
     use PointcutClassFilterTrait;
+
     /**
      * Annotation class to match
      *
@@ -74,19 +75,17 @@ class AnnotationPointcut implements Pointcut
      * Annotation matcher constructor
      *
      * @param integer $filterKind Kind of filter, e.g. KIND_CLASS
-     * @param Reader $reader Reader of annotations
-     * @param string $annotationName Annotation class name to match
      */
-    public function __construct(int $filterKind, Reader $reader, string $annotationName)
+    public function __construct(int $filterKind, Reader $annotationReader, string $annotationName)
     {
         if (!isset(self::$mappings[$filterKind])) {
             throw new \InvalidArgumentException("Unsupported filter kind {$filterKind}");
         }
         $this->filterKind       = $filterKind;
         $this->annotationName   = $annotationName;
-        $this->annotationReader = $reader;
+        $this->annotationReader = $annotationReader;
 
-        list($this->expectedClass, $this->annotationMethod) = self::$mappings[$filterKind];
+        [$this->expectedClass, $this->annotationMethod] = self::$mappings[$filterKind];
     }
 
     /**

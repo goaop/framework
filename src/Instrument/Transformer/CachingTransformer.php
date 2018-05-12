@@ -33,16 +33,14 @@ class CachingTransformer extends BaseSourceTransformer
     protected $transformers = [];
 
     /**
-     * @var CachePathManager|null
+     * Cache manager
      */
     protected $cacheManager;
 
     /**
      * Class constructor
      *
-     * @param AspectKernel $kernel Instance of aspect kernel
      * @param array|callable $transformers Source transformers or callable that should return transformers
-     * @param CachePathManager $cacheManager Cache manager
      */
     public function __construct(AspectKernel $kernel, $transformers, CachePathManager $cacheManager)
     {
@@ -55,7 +53,6 @@ class CachingTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
-     * @param StreamMetaData $metadata Metadata for source
      * @return string See RESULT_XXX constants in the interface
      */
     public function transform(StreamMetaData $metadata): string
@@ -108,7 +105,6 @@ class CachingTransformer extends BaseSourceTransformer
     /**
      * Iterates over transformers
      *
-     * @param StreamMetaData $metadata Metadata for source code
      * @return string See RESULT_XXX constants in the interface
      */
     private function processTransformers(StreamMetaData $metadata): string

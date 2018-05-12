@@ -155,7 +155,7 @@ class StreamMetaData
      *
      * @param string $newSource
      */
-    private function setSource(string $newSource)
+    private function setSource(string $newSource): void
     {
         $rawTokens = token_get_all($newSource);
         foreach ($rawTokens as $index => $rawToken) {

@@ -65,8 +65,6 @@ interface AspectLoaderExtension
      * @param Aspect $aspect Instance of aspect
      * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
-     *
-     * @return boolean true if extension is able to create an advisor from reflection and metaInformation
      */
     public function supports(Aspect $aspect, $reflection, $metaInformation = null): bool;
 
