@@ -12,14 +12,23 @@ declare(strict_types = 1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Core\AspectKernel;
+use ReflectionFunction;
+use ReflectionMethod;
 use Serializable;
 use Go\Aop\Intercept\Interceptor;
 
 /**
  * Base interceptor realization
  */
-abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serializable
+abstract class BaseInterceptor implements Interceptor, OrderedAdvice, Serializable
 {
+    /**
+     * Local cache of advices for faster unserialization on big projects
+     *
+     * @var Closure[]
+     */
+    protected static $localAdvicesCache = [];
     /**
      * Pointcut expression
      *
@@ -33,6 +42,12 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
      * @var Closure
      */
     protected $adviceMethod;
+    /**
+     * Advice order
+     *
+     * @var int
+     */
+    protected $order = 0;
 
     /**
      * Default constructor for interceptor
@@ -42,6 +57,40 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
         $this->adviceMethod       = $adviceMethod;
         $this->order              = $order;
         $this->pointcutExpression = $pointcutExpression;
+    }
+
+    /**
+     * Serialize advice method into array
+     */
+    public static function serializeAdvice(Closure $adviceMethod): array
+    {
+        $refAdvice = new ReflectionFunction($adviceMethod);
+
+        return [
+            'method' => $refAdvice->name,
+            'aspect' => get_class($refAdvice->getClosureThis())
+        ];
+    }
+
+    /**
+     * Unserialize an advice
+     *
+     * @param array $adviceData Information about advice
+     */
+    public static function unserializeAdvice(array $adviceData): Closure
+    {
+        $aspectName = $adviceData['aspect'];
+        $methodName = $adviceData['method'];
+
+        if (!isset(static::$localAdvicesCache["$aspectName->$methodName"])) {
+            $refMethod                                             = new ReflectionMethod($aspectName, $methodName);
+            $aspect                                                = AspectKernel::getInstance()->getContainer()
+                ->getAspect($aspectName);
+            $advice                                                = $refMethod->getClosure($aspect);
+            static::$localAdvicesCache["$aspectName->$methodName"] = $advice;
+        }
+
+        return static::$localAdvicesCache["$aspectName->$methodName"];
     }
 
     /**
@@ -78,5 +127,13 @@ abstract class BaseInterceptor extends BaseAdvice implements Interceptor, Serial
         foreach ($vars as $key => $value) {
             $this->$key = $value;
         }
+    }
+
+    /**
+     * Returns the advice order
+     */
+    public function getAdviceOrder(): int
+    {
+        return $this->order;
     }
 }
