@@ -79,7 +79,7 @@ final class PointcutReference implements Pointcut
      */
     public function __sleep()
     {
-        return ['pointcutName'];
+        return ['pointcutId'];
     }
 
     /**
