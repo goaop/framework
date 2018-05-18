@@ -19,9 +19,30 @@ use Serializable;
 use Go\Aop\Intercept\Interceptor;
 
 /**
- * Base interceptor realization
+ * Base class for all framework interceptor implementations
+ *
+ * This class describe an action taken by the interceptor at a particular joinpoint.
+ * Different types of interceptors include "around", "before" and "after" advices.
+ *
+ * Around interceptor is an advice that surrounds a joinpoint such as a method invocation. This is the most powerful
+ * kind of advice. Around advices will perform custom behavior before and after the method invocation. They are
+ * responsible for choosing whether to proceed to the joinpoint or to shortcut executing by returning their own return
+ * value or throwing an exception.
+ *
+ * After and before interceptors are simple closures that will be invoked after and before main invocation.
+ *
+ * Framework models an interceptor as an PHP-closure, maintaining a chain of interceptors "around" the joinpoint:
+ *   public function (Joinpoint $joinPoint)
+ *   {
+ *      echo 'Before action';
+ *      // call chain here with Joinpoint->proceed() method
+ *      $result = $joinPoint->proceed();
+ *      echo 'After action';
+ *
+ *      return $result;
+ *   }
  */
-abstract class BaseInterceptor implements Interceptor, OrderedAdvice, Serializable
+abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serializable
 {
     /**
      * Local cache of advices for faster unserialization on big projects
@@ -29,33 +50,29 @@ abstract class BaseInterceptor implements Interceptor, OrderedAdvice, Serializab
      * @var Closure[]
      */
     protected static $localAdvicesCache = [];
-    /**
-     * Pointcut expression
-     *
-     * @var string
-     */
-    protected $pointcutExpression = '';
 
     /**
-     * Advice to call
-     *
-     * @var Closure
+     * Pointcut expression string which was used for this interceptor
+     */
+    protected $pointcutExpression;
+
+    /**
+     * Closure to call
      */
     protected $adviceMethod;
+
     /**
      * Advice order
-     *
-     * @var int
      */
-    protected $order = 0;
+    private $adviceOrder;
 
     /**
      * Default constructor for interceptor
      */
-    public function __construct(Closure $adviceMethod, int $order = 0, string $pointcutExpression = '')
+    public function __construct(Closure $adviceMethod, int $adviceOrder = 0, string $pointcutExpression = '')
     {
         $this->adviceMethod       = $adviceMethod;
-        $this->order              = $order;
+        $this->adviceOrder        = $adviceOrder;
         $this->pointcutExpression = $pointcutExpression;
     }
 
@@ -83,14 +100,22 @@ abstract class BaseInterceptor implements Interceptor, OrderedAdvice, Serializab
         $methodName = $adviceData['method'];
 
         if (!isset(static::$localAdvicesCache["$aspectName->$methodName"])) {
-            $refMethod                                             = new ReflectionMethod($aspectName, $methodName);
-            $aspect                                                = AspectKernel::getInstance()->getContainer()
-                ->getAspect($aspectName);
-            $advice                                                = $refMethod->getClosure($aspect);
+            $aspect    = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
+            $refMethod = new ReflectionMethod($aspectName, $methodName);
+            $advice    = $refMethod->getClosure($aspect);
+
             static::$localAdvicesCache["$aspectName->$methodName"] = $advice;
         }
 
         return static::$localAdvicesCache["$aspectName->$methodName"];
+    }
+
+    /**
+     * Returns the advice order
+     */
+    public function getAdviceOrder(): int
+    {
+        return $this->adviceOrder;
     }
 
     /**
@@ -127,13 +152,5 @@ abstract class BaseInterceptor implements Interceptor, OrderedAdvice, Serializab
         foreach ($vars as $key => $value) {
             $this->$key = $value;
         }
-    }
-
-    /**
-     * Returns the advice order
-     */
-    public function getAdviceOrder(): int
-    {
-        return $this->order;
     }
 }

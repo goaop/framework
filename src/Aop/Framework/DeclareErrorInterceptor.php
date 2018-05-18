@@ -22,7 +22,7 @@ use function is_string;
  * This interceptor can be used as active replacement for the "deprecated" tag or to notify about
  * probable issues with specific method.
  */
-class DeclareErrorInterceptor extends BaseInterceptor
+class DeclareErrorInterceptor extends AbstractInterceptor
 {
 
     /**

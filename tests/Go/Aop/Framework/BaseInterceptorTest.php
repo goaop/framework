@@ -12,7 +12,7 @@ declare(strict_types = 1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Invocation;
-use Go\Stubs\BaseInterceptorMock;
+use Go\Stubs\AbstractInterceptorMock;
 
 class BaseInterceptorTest extends AbstractInterceptorTest
 {
@@ -27,7 +27,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
         $advice   = $this->getAdvice($sequence);
 
         $interceptor = $this->getMockForAbstractClass(
-            BaseInterceptor::class,
+            AbstractInterceptor::class,
             [$advice]
         );
         $this->assertEquals($advice, $interceptor->getRawAdvice());
@@ -37,7 +37,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
     {
         $sequence = [];
         $advice   = $this->getAdvice($sequence);
-        $mock     = new BaseInterceptorMock($advice);
+        $mock     = new AbstractInterceptorMock($advice);
 
         $mockClass      = get_class($mock);
         $mockNameLength = strlen($mockClass);
@@ -50,7 +50,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
     public function testCanUnserializeInterceptor()
     {
         $advice = $this->getAdvice($sequence);
-        $mock   = new BaseInterceptorMock($advice);
+        $mock   = new AbstractInterceptorMock($advice);
 
         $mockClass      = get_class($mock);
         $mockNameLength = strlen($mockClass);

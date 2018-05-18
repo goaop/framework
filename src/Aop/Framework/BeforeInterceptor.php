@@ -19,7 +19,7 @@ use Go\Aop\Intercept\Joinpoint;
  *
  * @api
  */
-final class BeforeInterceptor extends BaseInterceptor implements AdviceBefore
+final class BeforeInterceptor extends AbstractInterceptor implements AdviceBefore
 {
     /**
      * @inheritdoc

@@ -4,20 +4,20 @@ declare(strict_types = 1);
 namespace Go\Stubs;
 
 use Closure;
-use Go\Aop\Framework\BaseInterceptor;
+use Go\Aop\Framework\AbstractInterceptor;
 use Go\Aop\Intercept\Joinpoint;
 
-class BaseInterceptorMock extends BaseInterceptor
+class AbstractInterceptorMock extends AbstractInterceptor
 {
     private static $advice;
 
     /**
      * {@inheritdoc}
      */
-    public function __construct($adviceMethod, $order = 0, $pointcutExpression = '')
+    public function __construct($adviceMethod, $adviceOrder = 0, $pointcutExpression = '')
     {
         self::$advice = $adviceMethod;
-        parent::__construct($adviceMethod, $order, $pointcutExpression);
+        parent::__construct($adviceMethod, $adviceOrder, $pointcutExpression);
     }
 
     /**
