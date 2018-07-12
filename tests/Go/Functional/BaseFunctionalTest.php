@@ -68,12 +68,10 @@ abstract class BaseFunctionalTest extends TestCase
 
     /**
      * Warms up Go! AOP cache.
-     *
-     * @return string Command output.
      */
-    protected function warmUp(): string
+    protected function warmUp(): void
     {
-        return $this->execute('cache:warmup:aop');
+        $this->execute('cache:warmup:aop');
     }
 
     /**

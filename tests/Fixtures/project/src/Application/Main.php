@@ -25,4 +25,10 @@ class Main extends AbstractBar
     {
         echo 'I did something else';
     }
+
+    public function getFilename()
+    {
+        $reflectedClass = new \ReflectionClass($this);
+        return $reflectedClass->getFileName();
+    }
 }

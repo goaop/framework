@@ -25,6 +25,6 @@ class InitializationAspect implements Aspect
      */
     public function afterClassStaticInitialization()
     {
-        echo 'It invokes after class is loaded into memory.';
+        // echo 'It invokes after class is loaded into memory.';
     }
 }
