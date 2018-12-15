@@ -62,7 +62,7 @@ class Enumerator
     /**
      * Returns an enumerator for files
      *
-     * @return CallbackFilterIterator|RecursiveIteratorIterator|SplFileInfo[]
+     * @return CallbackFilterIterator|RecursiveIteratorIterator|\IteratorIterator|SplFileInfo[]
      * @throws UnexpectedValueException
      * @throws InvalidArgumentException
      * @throws LogicException
@@ -78,7 +78,13 @@ class Enumerator
             $finder->notPath($path);
         }
 
-        return $finder->getIterator();
+        $iterator = $finder->getIterator();
+
+        if (strpos(PHP_OS, 'WIN') === 0) {
+            $iterator = new NormalizeIterator($iterator);
+        }
+
+        return $iterator;
     }
 
     /**
