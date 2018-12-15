@@ -10,6 +10,14 @@
 
 namespace Go\Instrument\FileSystem;
 
+use CallbackFilterIterator;
+use InvalidArgumentException;
+use LogicException;
+use RecursiveIteratorIterator;
+use SplFileInfo;
+use Symfony\Component\Finder\Finder;
+use UnexpectedValueException;
+
 /**
  * Enumerates files in the concrete directory, applying filtration logic
  */
@@ -54,21 +62,59 @@ class Enumerator
     /**
      * Returns an enumerator for files
      *
-     * @return \CallbackFilterIterator|\RecursiveIteratorIterator|\SplFileInfo[]
+     * @return CallbackFilterIterator|RecursiveIteratorIterator|SplFileInfo[]
+     * @throws UnexpectedValueException
+     * @throws InvalidArgumentException
+     * @throws LogicException
      */
     public function enumerate()
     {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator(
-                $this->rootDirectory,
-                \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS
-            )
-        );
+        $finder = new Finder();
+        $finder->files()
+            ->name('*.php')
+            ->in($this->getInPaths())
+            ->notPath($this->getExcludePaths());
 
-        $callback = $this->getFilter();
-        $iterator = new \CallbackFilterIterator($iterator, $callback);
+        return $finder->getIterator();
+    }
 
-        return $iterator;
+    /**
+     * @return array
+     * @throws UnexpectedValueException
+     */
+    private function getInPaths()
+    {
+        $inPaths = [];
+
+        foreach ($this->includePaths as $path) {
+            if (strpos($path, $this->rootDirectory, 0) === false) {
+                throw new UnexpectedValueException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
+            }
+
+            $path = str_replace('*', '', $path);
+            $inPaths[] = $path;
+        }
+
+        if (empty($inPaths)) {
+            $inPaths[] = $this->rootDirectory;
+        }
+
+        return $inPaths;
+    }
+
+    /**
+     * @return array
+     */
+    private function getExcludePaths()
+    {
+        $excludePaths = [];
+
+        foreach ($this->excludePaths as $path) {
+            $path = str_replace('*', '.*', $path);
+            $excludePaths[] = '#' . str_replace($this->rootDirectory . '/', '', $path) . '#';
+        }
+
+        return $excludePaths;
     }
 
     /**
@@ -82,7 +128,7 @@ class Enumerator
         $includePaths = $this->includePaths;
         $excludePaths = $this->excludePaths;
 
-        return function (\SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
+        return function (SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
 
             if ($file->getExtension() !== 'php') {
                 return false;
@@ -124,11 +170,11 @@ class Enumerator
      * In a vfs the 'realPath' methode will always return false.
      * So we have a chance to mock this single function to return different path.
      *
-     * @param \SplFileInfo $file
+     * @param SplFileInfo $file
      *
      * @return string
      */
-    protected function getFileFullPath(\SplFileInfo $file)
+    protected function getFileFullPath(SplFileInfo $file)
     {
         return $file->getRealPath();
     }
