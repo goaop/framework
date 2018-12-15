@@ -78,13 +78,7 @@ class Enumerator
             $finder->notPath($path);
         }
 
-        $iterator = $finder->getIterator();
-
-        if (strpos(PHP_OS, 'WIN') === 0) {
-            $iterator = new NormalizeIterator($iterator);
-        }
-
-        return $iterator;
+        return $finder->getIterator();
     }
 
     /**
