@@ -60,13 +60,12 @@ class CacheWarmer
 
         $this->output->writeln(sprintf('Total <info>%s</info> files to process.', $total));
         $this->output->writeln('');
-        echo 'xxxx';
         $iterator->rewind();
-        echo 'yyyy';
+
         set_error_handler(function ($errno, $errstr, $errfile, $errline) {
             throw new \ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
-        echo 'zzzz';
+
         $errors = [];
 
         $displayException = function (\Exception $exception, $path) use (&$errors) {
@@ -76,7 +75,7 @@ class CacheWarmer
 
         foreach ($iterator as $file) {
             $path = $file->getRealPath();
-echo $path . PHP_EOL;
+
             try {
                 // This will trigger creation of cache
                 file_get_contents(FilterInjectorTransformer::PHP_FILTER_READ .

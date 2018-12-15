@@ -10,6 +10,7 @@
 
 namespace Go\Instrument\FileSystem;
 
+use ArrayIterator;
 use CallbackFilterIterator;
 use InvalidArgumentException;
 use LogicException;
@@ -62,7 +63,7 @@ class Enumerator
     /**
      * Returns an enumerator for files
      *
-     * @return CallbackFilterIterator|RecursiveIteratorIterator|\IteratorIterator|SplFileInfo[]
+     * @return \Iterator|SplFileInfo[]
      * @throws UnexpectedValueException
      * @throws InvalidArgumentException
      * @throws LogicException
@@ -78,36 +79,14 @@ class Enumerator
             $finder->notPath($path);
         }
 
-        $arr = [];
-        foreach ($finder->getIterator() as $x) {
-            $arr[] = $x;
+        $iterator = $finder->getIterator();
+
+        // on Windows platrofrm the default iterator is unable to rewind, not sure why
+        if (strpos(PHP_OS, 'WIN') === 0) {
+            $iterator = new ArrayIterator(iterator_to_array($iterator));
         }
 
-        return new \ArrayIterator($arr);
-
-        $this->dumpForAppVeyor($finder->getIterator());
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator(
-                $this->rootDirectory,
-                \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS
-            )
-        );
-
-        $callback = $this->getFilter();
-        $iterator = new \CallbackFilterIterator($iterator, $callback);
-
-        $this->dumpForAppVeyor($iterator);
-
-        return $finder->getIterator();
-    }
-
-    private function dumpForAppVeyor($iterator)
-    {
-        echo 'start' . PHP_EOL . PHP_EOL;
-
-        foreach ($iterator as $thing) {
-            var_dump($thing->getRealPath());
-        }
+        return $iterator;
     }
 
     /**
