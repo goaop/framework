@@ -78,7 +78,29 @@ class Enumerator
             $finder->notPath($path);
         }
 
+        $this->dumpForAppVeyor($finder->getIterator());
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(
+                $this->rootDirectory,
+                \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS
+            )
+        );
+
+        $callback = $this->getFilter();
+        $iterator = new \CallbackFilterIterator($iterator, $callback);
+
+        $this->dumpForAppVeyor($iterator);
+
         return $finder->getIterator();
+    }
+
+    private function dumpForAppVeyor($iterator)
+    {
+        echo 'start' . PHP_EOL . PHP_EOL;
+
+        foreach ($iterator as $thing) {
+            var_dump($thing);
+        }
     }
 
     /**
