@@ -1,8 +1,12 @@
 <?php
-declare(strict_types=1);
 
 /*
- * @author Martin Fris <rasta@lj.sk>
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2015, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Instrument\FileSystem;
