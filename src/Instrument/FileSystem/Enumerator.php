@@ -72,8 +72,11 @@ class Enumerator
         $finder = new Finder();
         $finder->files()
             ->name('*.php')
-            ->in($this->getInPaths())
-            ->notPath($this->getExcludePaths());
+            ->in($this->getInPaths());
+
+        foreach ($this->getExcludePaths() as $path) {
+            $finder->notPath($path);
+        }
 
         return $finder->getIterator();
     }
