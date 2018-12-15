@@ -77,8 +77,7 @@ class Enumerator
         foreach ($this->getExcludePaths() as $path) {
             $finder->notPath($path);
         }
-
-        $this->dumpForAppVeyor($finder->getIterator());
+        
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator(
                 $this->rootDirectory,
@@ -89,18 +88,9 @@ class Enumerator
         $callback = $this->getFilter();
         $iterator = new \CallbackFilterIterator($iterator, $callback);
 
-        $this->dumpForAppVeyor($iterator);
+        return $iterator;
 
         return $finder->getIterator();
-    }
-
-    private function dumpForAppVeyor($iterator)
-    {
-        echo 'start' . PHP_EOL . PHP_EOL;
-
-        foreach ($iterator as $thing) {
-            var_dump($thing);
-        }
     }
 
     /**
