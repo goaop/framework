@@ -78,6 +78,13 @@ class Enumerator
             $finder->notPath($path);
         }
 
+        $arr = [];
+        foreach ($finder->getIterator() as $x) {
+            $arr[] = $x;
+        }
+
+        return new \ArrayIterator($arr);
+
         $this->dumpForAppVeyor($finder->getIterator());
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator(
