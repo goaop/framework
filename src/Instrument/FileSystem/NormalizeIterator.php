@@ -18,7 +18,8 @@ final class NormalizeIterator extends IteratorIterator
     /**
      * @return SplFileInfo
      */
-    public function current() {
+    public function current()
+    {
         /* @var $symfonyFileInfo \Symfony\Component\Finder\SplFileInfo */
         $symfonyFileInfo = parent::current();
         $originalPath = $symfonyFileInfo->getPathname();
