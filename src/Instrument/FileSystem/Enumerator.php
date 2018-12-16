@@ -81,7 +81,7 @@ class Enumerator
 
         $iterator = $finder->getIterator();
 
-        // on Windows platrofrm the default iterator is unable to rewind, not sure why
+        // on Windows platform the default iterator is unable to rewind, not sure why
         if (strpos(PHP_OS, 'WIN') === 0) {
             $iterator = new ArrayIterator(iterator_to_array($iterator));
         }
