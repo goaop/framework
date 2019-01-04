@@ -11,15 +11,20 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\FileSystem;
 
+use ArrayIterator;
 use Closure;
+use InvalidArgumentException;
+use Iterator;
+use LogicException;
 use SplFileInfo;
+use Symfony\Component\Finder\Finder;
+use UnexpectedValueException;
 
 /**
  * Enumerates files in the concrete directory, applying filtration logic
  */
 class Enumerator
 {
-
     /**
      * Path to the root directory, where enumeration should start
      */
@@ -52,19 +57,28 @@ class Enumerator
     /**
      * Returns an enumerator for files
      *
-     * @return \CallbackFilterIterator|\RecursiveIteratorIterator|SplFileInfo[]
+     * @return Iterator|SplFileInfo[]
+     * @throws UnexpectedValueException
+     * @throws InvalidArgumentException
+     * @throws LogicException
      */
-    public function enumerate()
+    public function enumerate(): Iterator
     {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator(
-                $this->rootDirectory,
-                \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS
-            )
-        );
+        $finder = new Finder();
+        $finder->files()
+            ->name('*.php')
+            ->in($this->getInPaths());
 
-        $callback = $this->getFilter();
-        $iterator = new \CallbackFilterIterator($iterator, $callback);
+        foreach ($this->getExcludePaths() as $path) {
+            $finder->notPath($path);
+        }
+
+        $iterator = $finder->getIterator();
+
+        // on Windows platform the default iterator is unable to rewind, not sure why
+        if (strpos(PHP_OS, 'WIN') === 0) {
+            $iterator = new ArrayIterator(iterator_to_array($iterator));
+        }
 
         return $iterator;
     }
@@ -78,7 +92,7 @@ class Enumerator
         $includePaths = $this->includePaths;
         $excludePaths = $this->excludePaths;
 
-        return function (\SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
+        return function (SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
 
             if ($file->getExtension() !== 'php') {
                 return false;
@@ -125,4 +139,43 @@ class Enumerator
         return $file->getRealPath();
     }
 
+    /**
+     * Returns collection of directories to look at
+     *
+     * @throws UnexpectedValueException if directory not under the root
+     */
+    private function getInPaths(): array
+    {
+        $inPaths = [];
+
+        foreach ($this->includePaths as $path) {
+            if (strpos($path, $this->rootDirectory, 0) === false) {
+                throw new UnexpectedValueException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
+            }
+
+            $path = str_replace('*', '', $path);
+            $inPaths[] = $path;
+        }
+
+        if (empty($inPaths)) {
+            $inPaths[] = $this->rootDirectory;
+        }
+
+        return $inPaths;
+    }
+
+    /**
+     * Returns the list of excluded paths
+     */
+    private function getExcludePaths(): array
+    {
+        $excludePaths = [];
+
+        foreach ($this->excludePaths as $path) {
+            $path = str_replace('*', '.*', $path);
+            $excludePaths[] = '#' . str_replace($this->rootDirectory . '/', '', $path) . '#';
+        }
+
+        return $excludePaths;
+    }
 }

@@ -13,7 +13,8 @@
         "doctrine/annotations": "^1.2.3",
         "goaop/parser-reflection": "~1.4",
         "doctrine/cache": "^1.5",
-        "zendframework/zend-code": "^3.1"
+        "zendframework/zend-code": "^3.1",
+        "symfony/finder": "^3.4|^4.2"
     },
 
     "require-dev": {

@@ -92,6 +92,9 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
      * @param array $expectedPaths
      * @param array $includePaths
      * @param array $excludePaths
+     * @throws \InvalidArgumentException
+     * @throws \LogicException
+     * @throws \UnexpectedValueException
      */
     public function testExclude($expectedPaths, $includePaths, $excludePaths)
     {
@@ -114,7 +117,7 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
         $iterator = $mock->enumerate();
 
         foreach ($iterator as $file) {
-            $testPaths[] = $file->getPath();
+            $testPaths[] = str_replace(DIRECTORY_SEPARATOR, '/', $file->getPath());
         }
 
         sort($testPaths);
