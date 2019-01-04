@@ -21,7 +21,7 @@ class NotPointcut implements Pointcut
     use PointcutClassFilterTrait;
 
     /**
-     * @var Pointcut
+     * Pointcut to invert
      */
     protected $pointcut;
 

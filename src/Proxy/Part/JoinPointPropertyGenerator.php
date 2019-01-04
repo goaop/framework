@@ -22,7 +22,7 @@ final class JoinPointPropertyGenerator extends PropertyGenerator
     /**
      * Default property name for storing join points in the class
      */
-    const NAME = '__joinPoints';
+    public const NAME = '__joinPoints';
 
     /**
      * JoinPointProperty constructor.

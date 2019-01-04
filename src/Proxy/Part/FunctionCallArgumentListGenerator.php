@@ -28,8 +28,6 @@ final class FunctionCallArgumentListGenerator extends AbstractGenerator
 
     /**
      * If function contains optional arguments
-     *
-     * @var bool
      */
     private $hasOptionals = false;
 

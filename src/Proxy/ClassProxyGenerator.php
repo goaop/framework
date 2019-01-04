@@ -38,7 +38,6 @@ use Zend\Code\Reflection\DocBlockReflection;
  */
 class ClassProxyGenerator
 {
-
     /**
      * Static mappings for class name for excluding if..else check
      */

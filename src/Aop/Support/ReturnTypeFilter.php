@@ -21,7 +21,6 @@ use ReflectionFunctionAbstract;
  */
 class ReturnTypeFilter implements PointFilter
 {
-
     /**
      * Return type name to match, can contain wildcards *,?
      */

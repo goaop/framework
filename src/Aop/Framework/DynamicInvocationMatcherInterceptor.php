@@ -15,6 +15,7 @@ use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Invocation;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\PointFilter;
+use ReflectionClass;
 
 /**
  * Dynamic invocation matcher combines a pointcut and interceptor.
@@ -55,7 +56,7 @@ class DynamicInvocationMatcherInterceptor implements Interceptor
         if ($joinpoint instanceof Invocation) {
             $point    = $joinpoint->getStaticPart();
             $instance = $joinpoint->getThis();
-            $context  = new \ReflectionClass($instance);
+            $context  = new ReflectionClass($instance);
             if ($this->pointFilter->matches($point, $context, $instance, $joinpoint->getArguments())) {
                 return $this->interceptor->invoke($joinpoint);
             }

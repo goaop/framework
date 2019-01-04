@@ -21,13 +21,13 @@ use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use ReflectionMethod;
 use ReflectionProperty;
+use UnexpectedValueException;
 
 /**
  * Abstract aspect loader
  */
 abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
 {
-
     /**
      * Instance of pointcut lexer
      */
@@ -67,7 +67,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      *
      * @param ReflectionMethod|ReflectionProperty $reflection
      *
-     * @throws \UnexpectedValueException
+     * @throws UnexpectedValueException
      */
     private function makeLexicalAnalyze(Aspect $aspect, $reflection, string $pointcutExpression): TokenStream
     {
@@ -87,7 +87,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                     ? $reflection->getStartLine()
                     : 0
             );
-            throw new \UnexpectedValueException($message, 0, $e);
+            throw new UnexpectedValueException($message, 0, $e);
         }
 
         return $stream;
@@ -98,7 +98,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      *
      * @param ReflectionMethod|ReflectionProperty $reflection
      *
-     * @throws \UnexpectedValueException
+     * @throws UnexpectedValueException
      */
     private function parseTokenStream($reflection, string $pointcutExpression, TokenStream $stream): PointFilter
     {
@@ -121,7 +121,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                     : 0,
                 implode(', ', $e->getExpected())
             );
-            throw new \UnexpectedValueException($message, 0, $e);
+            throw new UnexpectedValueException($message, 0, $e);
         }
 
         return $pointcut;

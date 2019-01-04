@@ -15,6 +15,7 @@ use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use Go\Core\AspectLoader;
+use ReflectionObject;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -27,7 +28,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class DebugAspectCommand extends BaseAspectCommand
 {
-
     /**
      * {@inheritDoc}
      */
@@ -85,7 +85,7 @@ EOT
      */
     private function showAspectInfo(SymfonyStyle $io, Aspect $aspect): void
     {
-        $refAspect  = new \ReflectionObject($aspect);
+        $refAspect  = new ReflectionObject($aspect);
         $aspectName = $refAspect->getName();
         $io->section($aspectName);
         $io->writeln('Defined in: <info>' . $refAspect->getFileName() . '</info>');

@@ -23,22 +23,16 @@ class MagicMethodPointcut implements PointFilter, Pointcut
 
     /**
      * Method name to match, can contain wildcards *,?
-     *
-     * @var string
      */
     protected $methodName = '';
 
     /**
      * Regular expression for matching
-     *
-     * @var string
      */
     protected $regexp;
 
     /**
      * Modifier filter for method
-     *
-     * @var PointFilter
      */
     protected $modifierFilter;
 
@@ -69,7 +63,7 @@ class MagicMethodPointcut implements PointFilter, Pointcut
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         // With single parameter (statically) always matches for __call, __callStatic
-        if (!$instance) {
+        if ($instance === null) {
             return ($point->name === '__call' || $point->name === '__callStatic');
         }
 

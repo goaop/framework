@@ -23,7 +23,6 @@ use Doctrine\Common\Annotations\AnnotationRegistry;
  */
 class AopComposerLoader
 {
-
     /**
      * Instance of original autoloader
      */
@@ -31,8 +30,6 @@ class AopComposerLoader
 
     /**
      * AOP kernel options
-     *
-     * @var array
      */
     protected $options = [];
 

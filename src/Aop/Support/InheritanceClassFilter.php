@@ -19,7 +19,6 @@ use Go\Aop\PointFilter;
  */
 class InheritanceClassFilter implements PointFilter
 {
-
     /**
      * Parent class or interface name to match in hierarchy
      */

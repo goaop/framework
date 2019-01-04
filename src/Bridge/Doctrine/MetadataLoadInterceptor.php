@@ -45,8 +45,6 @@ final class MetadataLoadInterceptor implements EventSubscriber
      *
      * @see http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/inheritance-mapping.html#mapped-superclasses
      * @see https://github.com/Atlantic18/DoctrineExtensions
-     *
-     * @param LoadClassMetadataEventArgs $args
      */
     public function loadClassMetadata(LoadClassMetadataEventArgs $args): void
     {
@@ -68,8 +66,6 @@ final class MetadataLoadInterceptor implements EventSubscriber
     /**
      * Remove fields in Go! AOP proxied class metadata that are inherited
      * from traits.
-     *
-     * @param ClassMetadata $metadata
      */
     private function removeMappingsFromTraits(ClassMetadata $metadata): void
     {

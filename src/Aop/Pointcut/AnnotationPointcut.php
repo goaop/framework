@@ -13,6 +13,7 @@ namespace Go\Aop\Pointcut;
 
 use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Pointcut;
+use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
@@ -26,10 +27,8 @@ class AnnotationPointcut implements Pointcut
 
     /**
      * Annotation class to match
-     *
-     * @var string
      */
-    protected $annotationName = '';
+    protected $annotationName;
 
     /**
      * Annotation reader
@@ -40,8 +39,6 @@ class AnnotationPointcut implements Pointcut
 
     /**
      * Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY, KIND_TRAIT
-     *
-     * @var int
      */
     protected $filterKind = 0;
 
@@ -79,7 +76,7 @@ class AnnotationPointcut implements Pointcut
     public function __construct(int $filterKind, Reader $annotationReader, string $annotationName)
     {
         if (!isset(self::$mappings[$filterKind])) {
-            throw new \InvalidArgumentException("Unsupported filter kind {$filterKind}");
+            throw new InvalidArgumentException("Unsupported filter kind {$filterKind}");
         }
         $this->filterKind       = $filterKind;
         $this->annotationName   = $annotationName;

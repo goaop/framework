@@ -23,7 +23,6 @@ class TruePointFilter implements PointFilter
      */
     private function __construct()
     {
-
     }
 
     /**

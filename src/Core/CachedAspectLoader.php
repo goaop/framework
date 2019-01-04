@@ -23,7 +23,6 @@ use ReflectionClass;
  */
 class CachedAspectLoader extends AspectLoader
 {
-
     /**
      * Path to the cache directory
      *

@@ -14,6 +14,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Support\AnnotatedReflectionMethod;
 use ReflectionMethod;
+use function is_object, get_class, array_pop, array_merge;
 
 /**
  * Abstract method invocation implementation
@@ -75,7 +76,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
         }
 
         if (!empty($variadicArguments)) {
-            $arguments = \array_merge($arguments, $variadicArguments);
+            $arguments = array_merge($arguments, $variadicArguments);
         }
 
         try {
@@ -90,7 +91,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
             --$this->level;
 
             if ($this->level > 0) {
-                [$this->arguments, $this->instance, $this->current] = \array_pop($this->stackFrames);
+                [$this->arguments, $this->instance, $this->current] = array_pop($this->stackFrames);
             }
         }
     }

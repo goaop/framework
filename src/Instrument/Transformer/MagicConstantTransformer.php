@@ -25,7 +25,6 @@ use PhpParser\NodeTraverser;
  */
 class MagicConstantTransformer extends BaseSourceTransformer
 {
-
     /**
      * Root path of application
      *
@@ -42,8 +41,6 @@ class MagicConstantTransformer extends BaseSourceTransformer
 
     /**
      * Class constructor
-     *
-     * @param AspectKernel $kernel Instance of kernel
      */
     public function __construct(AspectKernel $kernel)
     {

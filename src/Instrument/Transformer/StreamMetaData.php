@@ -15,6 +15,7 @@ use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
 use PhpParser\Node;
+use function is_array, is_resource;
 
 /**
  * Stream metadata object
@@ -159,7 +160,7 @@ class StreamMetaData
     {
         $rawTokens = token_get_all($newSource);
         foreach ($rawTokens as $index => $rawToken) {
-            $this->tokenStream[$index] = \is_array($rawToken) ? $rawToken : [T_STRING, $rawToken];
+            $this->tokenStream[$index] = is_array($rawToken) ? $rawToken : [T_STRING, $rawToken];
         }
     }
 }

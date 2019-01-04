@@ -12,6 +12,8 @@ declare(strict_types = 1);
 namespace Go\Instrument\ClassLoading;
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
+use InvalidArgumentException;
+use function function_exists;
 
 /**
  * Class that manages real-code to cached-code paths mapping.
@@ -77,14 +79,14 @@ class CachePathManager
             if (!is_dir($this->cacheDir)) {
                 $cacheRootDir = dirname($this->cacheDir);
                 if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
-                    throw new \InvalidArgumentException(
+                    throw new InvalidArgumentException(
                         "Can not create a directory {$this->cacheDir} for the cache.
                         Parent directory {$cacheRootDir} is not writable or not exist.");
                 }
                 mkdir($this->cacheDir, $this->fileMode, true);
             }
             if (!$this->kernel->hasFeature(Features::PREBUILT_CACHE) && !is_writable($this->cacheDir)) {
-                throw new \InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
+                throw new InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
             }
 
             if (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {

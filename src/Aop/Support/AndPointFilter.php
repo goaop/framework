@@ -18,7 +18,6 @@ use Go\Aop\PointFilter;
  */
 class AndPointFilter implements PointFilter
 {
-
     /**
      * Kind of filter
      */

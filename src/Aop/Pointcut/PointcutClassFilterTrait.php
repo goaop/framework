@@ -21,7 +21,6 @@ use Go\Aop\Support\TruePointFilter;
  */
 trait PointcutClassFilterTrait
 {
-
     /**
      * Filter for class
      *

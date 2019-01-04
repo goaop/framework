@@ -12,6 +12,7 @@ declare(strict_types = 1);
 namespace Go\Core;
 
 use Closure;
+use OutOfBoundsException;
 
 /**
  * DI-container
@@ -31,11 +32,9 @@ abstract class Container implements AspectContainer
     /**
      * Set a service into the container
      *
-     * @param string $id Identifier
      * @param mixed $value Value to store
-     * @param array $tags Additional tags
      */
-    public function set(string $id, $value, array $tags = [])
+    public function set(string $id, $value, array $tags = []): void
     {
         $this->values[$id] = $value;
         foreach ($tags as $tag) {
@@ -45,17 +44,13 @@ abstract class Container implements AspectContainer
 
     /**
      * Set a shared value in the container
-     *
-     * @param string $id Identifier
-     * @param Closure $value Value to store
-     * @param array $tags Additional tags
      */
-    public function share(string $id, Closure $value, array $tags = [])
+    public function share(string $id, Closure $value, array $tags = []): void
     {
         $value = function ($container) use ($value) {
             static $sharedValue;
 
-            if (null === $sharedValue) {
+            if ($sharedValue === null) {
                 $sharedValue = $value($container);
             }
 
@@ -67,17 +62,15 @@ abstract class Container implements AspectContainer
     /**
      * Return a service or value from the container
      *
-     * @param string $id Identifier
-     *
      * @return mixed
-     * @throws \OutOfBoundsException if service was not found
+     * @throws OutOfBoundsException if service was not found
      */
     public function get(string $id)
     {
         if (!isset($this->values[$id])) {
-            throw new \OutOfBoundsException("Value {$id} is not defined in the container");
+            throw new OutOfBoundsException("Value {$id} is not defined in the container");
         }
-        if (is_callable($this->values[$id])) {
+        if ($this->values[$id] instanceof Closure) {
             return $this->values[$id]($this);
         }
 
@@ -86,10 +79,6 @@ abstract class Container implements AspectContainer
 
     /**
      * Checks if item with specified id is present in the container
-     *
-     * @param string $id Identifier
-     *
-     * @return bool
      */
     public function has(string $id): bool
     {
@@ -98,9 +87,6 @@ abstract class Container implements AspectContainer
 
     /**
      * Return list of service tagged with marker
-     *
-     * @param string $tag Tag to select
-     * @return array
      */
     public function getByTag(string $tag): array
     {

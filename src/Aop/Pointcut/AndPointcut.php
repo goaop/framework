@@ -19,23 +19,20 @@ use Go\Aop\Support\AndPointFilter;
  */
 class AndPointcut implements Pointcut
 {
-
     use PointcutClassFilterTrait;
 
     /**
-     * @var Pointcut
+     * First pointcut
      */
     protected $first;
 
     /**
-     * @var Pointcut
+     * Second pointcut
      */
     protected $second;
 
     /**
      * Returns pointcut kind
-     *
-     * @var int
      */
     protected $kind = 0;
 
@@ -76,6 +73,7 @@ class AndPointcut implements Pointcut
     /**
      * Checks if point filter matches the point
      *
+     * @param Pointcut $pointcut
      * @param \ReflectionMethod|\ReflectionProperty $point
      * @param mixed $context Related context, can be class or namespace
      * @param object|string|null $instance [Optional] Instance for dynamic matching
@@ -83,8 +81,13 @@ class AndPointcut implements Pointcut
      *
      * @return bool
      */
-    protected function matchPart(Pointcut $pointcut, $point, $context = null, $instance = null, array $arguments = null)
-    {
+    protected function matchPart(
+        Pointcut $pointcut,
+        $point,
+        $context = null,
+        $instance = null,
+        array $arguments = null
+    ): bool {
         return $pointcut->matches($point, $context, $instance, $arguments)
             && $pointcut->getClassFilter()->matches($context);
     }

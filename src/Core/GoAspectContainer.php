@@ -31,7 +31,7 @@ class GoAspectContainer extends Container
     /**
      * List of resources for application
      *
-     * @var array
+     * @var string[]
      */
     protected $resources = [];
 

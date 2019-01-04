@@ -78,7 +78,7 @@ final class InterceptedFunctionGenerator extends AbstractGenerator
 
         $parameterList    = new FunctionParameterList($reflectionFunction, $useTypeWidening);
         $this->parameters = $parameterList->getGeneratedParameters();
-        $this->body = $body;
+        $this->body       = $body;
     }
 
     /**
@@ -87,7 +87,6 @@ final class InterceptedFunctionGenerator extends AbstractGenerator
     public function generate()
     {
         $output = '';
-
         $indent = $this->getIndentation();
 
         if ($this->docBlock !== null) {

@@ -28,8 +28,6 @@ class SignaturePointcut implements Pointcut
 
     /**
      * Regular expression for pattern matching
-     *
-     * @var string
      */
     protected $regexp;
 

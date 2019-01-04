@@ -23,6 +23,7 @@ use Go\Aop\Support\ReturnTypeFilter;
 use Go\Aop\Support\SimpleNamespaceFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Core\AspectContainer;
+use function constant;
 
 /**
  * Pointcut grammar defines general structure of pointcuts and rules of parsing

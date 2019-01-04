@@ -13,6 +13,7 @@ namespace Go\Aop\Framework;
 
 use Go\Core\AspectContainer;
 use ReflectionClass;
+use function strlen;
 
 /**
  * Static initialization joinpoint is invoked after class is loaded into memory

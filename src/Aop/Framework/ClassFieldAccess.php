@@ -15,6 +15,7 @@ use Go\Aop\AspectException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Support\AnnotatedReflectionProperty;
 use ReflectionProperty;
+use function get_class;
 
 /**
  * Represents a field access joinpoint
@@ -216,10 +217,9 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     final public function __toString(): string
     {
         return sprintf(
-            '%s(%s%s%s)',
+            '%s(%s->%s)',
             $this->accessType === self::READ ? 'get' : 'set',
-            is_object($this->instance) ? get_class($this->instance) : $this->instance,
-            $this->reflectionProperty->isStatic() ? '::' : '->',
+            get_class($this->instance),
             $this->reflectionProperty->name
         );
     }

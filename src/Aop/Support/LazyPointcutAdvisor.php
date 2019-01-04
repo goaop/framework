@@ -21,7 +21,6 @@ use Go\Core\AspectContainer;
  */
 class LazyPointcutAdvisor extends AbstractGenericAdvisor implements PointcutAdvisor
 {
-
     /**
      * Pointcut expression represented with string
      */

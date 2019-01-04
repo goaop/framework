@@ -21,31 +21,30 @@ use Reflector;
  */
 interface AspectLoaderExtension
 {
-
     /**
      * Loader works with class-level definition of aspect
      */
-    const TARGET_CLASS = 'class';
+    public const TARGET_CLASS = 'class';
 
     /**
      * Loader works with method definitions of aspect
      */
-    const TARGET_METHOD = 'method';
+    public const TARGET_METHOD = 'method';
 
     /**
      * Loader works with property definitions of aspect
      */
-    const TARGET_PROPERTY = 'property';
+    public const TARGET_PROPERTY = 'property';
 
     /**
      * Loader works only with reflections of aspect class, method or property
      */
-    const KIND_REFLECTION = 'reflection';
+    public const KIND_REFLECTION = 'reflection';
 
     /**
      * Loader works with each annotation defined for aspect class, method or property.
      */
-    const KIND_ANNOTATION = 'annotation';
+    public const KIND_ANNOTATION = 'annotation';
 
     /**
      * Return kind of loader, can be one of KIND_REFLECTION or KIND_ANNOTATION

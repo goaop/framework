@@ -17,6 +17,7 @@ use ReflectionFunction;
 use ReflectionMethod;
 use Serializable;
 use Go\Aop\Intercept\Interceptor;
+use function get_class;
 
 /**
  * Base class for all framework interceptor implementations
@@ -85,7 +86,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serial
 
         return [
             'method' => $refAdvice->name,
-            'aspect' => get_class($refAdvice->getClosureThis())
+            'class'  => $refAdvice->getClosureScopeClass()->name
         ];
     }
 
@@ -96,7 +97,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serial
      */
     public static function unserializeAdvice(array $adviceData): Closure
     {
-        $aspectName = $adviceData['aspect'];
+        $aspectName = $adviceData['class'];
         $methodName = $adviceData['method'];
 
         if (!isset(static::$localAdvicesCache["$aspectName->$methodName"])) {
@@ -128,10 +129,8 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serial
 
     /**
      * Serializes an interceptor into string representation
-     *
-     * @return string the string representation of the object or null
      */
-    public function serialize()
+    final public function serialize(): string
     {
         $vars = array_filter(get_object_vars($this));
         $vars['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
@@ -143,11 +142,10 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serial
      * Unserialize an interceptor from the string
      *
      * @param string $serialized The string representation of the object.
-     * @return void
      */
-    public function unserialize($serialized)
+    final public function unserialize($serialized): void
     {
-        $vars = unserialize($serialized);
+        $vars = unserialize($serialized, ['allowed_classes' => false]);
         $vars['adviceMethod'] = static::unserializeAdvice($vars['adviceMethod']);
         foreach ($vars as $key => $value) {
             $this->$key = $value;

@@ -17,7 +17,6 @@ use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
-
 use function count;
 
 /**

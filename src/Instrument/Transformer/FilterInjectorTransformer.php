@@ -16,13 +16,13 @@ use Go\Instrument\PathResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
 use PhpParser\Node\Expr\Include_;
 use PhpParser\NodeTraverser;
+use RuntimeException;
 
 /**
  * Transformer that injects source filter for "require" and "include" operations
  */
 class FilterInjectorTransformer implements SourceTransformer
 {
-
     /**
      * Php filter definition
      */
@@ -65,8 +65,8 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     protected static function configure(AspectKernel $kernel, string $filterName, CachePathManager $cacheManager): void
     {
-        if (self::$kernel) {
-            throw new \RuntimeException('Filter injector can be configured only once.');
+        if (self::$kernel !== null) {
+            throw new RuntimeException('Filter injector can be configured only once.');
         }
         self::$kernel           = $kernel;
         self::$options          = $kernel->getOptions();
@@ -85,7 +85,7 @@ class FilterInjectorTransformer implements SourceTransformer
     public static function rewrite($originalResource, string $originalDir = ''): string
     {
         static $appDir, $cacheDir, $debug;
-        if (!$appDir) {
+        if ($appDir === null) {
             extract(self::$options, EXTR_IF_EXISTS);
         }
 

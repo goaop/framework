@@ -13,6 +13,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\FunctionInvocation;
 use ReflectionFunction;
+use function array_merge, array_pop;
 
 /**
  * Function invocation implementation
@@ -101,7 +102,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
         }
 
         if (!empty($variadicArguments)) {
-            $arguments = \array_merge($arguments, $variadicArguments);
+            $arguments = array_merge($arguments, $variadicArguments);
         }
 
         try {
@@ -115,7 +116,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
             --$this->level;
 
             if ($this->level > 0) {
-                [$this->arguments, $this->current] = \array_pop($this->stackFrames);
+                [$this->arguments, $this->current] = array_pop($this->stackFrames);
             }
         }
 

@@ -18,7 +18,6 @@ use Go\Aop\PointFilter;
  */
 class ModifierMatcherFilter implements PointFilter
 {
-
     /**
      * Bit mask, that should be always match
      */

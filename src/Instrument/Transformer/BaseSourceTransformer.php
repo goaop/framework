@@ -18,7 +18,6 @@ use Go\Core\AspectKernel;
  */
 abstract class BaseSourceTransformer implements SourceTransformer
 {
-
     /**
      * Transformer options
      */

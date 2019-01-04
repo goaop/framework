@@ -23,47 +23,47 @@ interface AspectContainer
     /**
      * Prefix for function interceptor
      */
-    const FUNCTION_PREFIX = 'func';
+    public const FUNCTION_PREFIX = 'func';
 
     /**
      * Prefix for properties interceptor
      */
-    const PROPERTY_PREFIX = 'prop';
+    public const PROPERTY_PREFIX = 'prop';
 
     /**
      * Prefix for method interceptor
      */
-    const METHOD_PREFIX = 'method';
+    public const METHOD_PREFIX = 'method';
 
     /**
      * Prefix for static method interceptor
      */
-    const STATIC_METHOD_PREFIX = 'static';
+    public const STATIC_METHOD_PREFIX = 'static';
 
     /**
      * Trait introduction prefix
      */
-    const INTRODUCTION_TRAIT_PREFIX = 'trait';
+    public const INTRODUCTION_TRAIT_PREFIX = 'trait';
 
     /**
      * Interface introduction prefix
      */
-    const INTRODUCTION_INTERFACE_PREFIX = 'interface';
+    public const INTRODUCTION_INTERFACE_PREFIX = 'interface';
 
     /**
      * Initialization prefix, is used for initialization pointcuts
      */
-    const INIT_PREFIX = 'init';
+    public const INIT_PREFIX = 'init';
 
     /**
      * Initialization prefix, is used for initialization pointcuts
      */
-    const STATIC_INIT_PREFIX = 'staticinit';
+    public const STATIC_INIT_PREFIX = 'staticinit';
 
     /**
      * Suffix, that will be added to all proxied class names
      */
-    const AOP_PROXIED_SUFFIX = '__AopProxied';
+    public const AOP_PROXIED_SUFFIX = '__AopProxied';
 
     /**
      * Return a service or value from the container
@@ -138,5 +138,5 @@ interface AspectContainer
      *
      * @param mixed $value Value to store
      */
-    public function set(string $id, $value, array $tags = []);
+    public function set(string $id, $value, array $tags = []): void;
 }

@@ -11,8 +11,11 @@ declare(strict_types=1);
 
 namespace Go\Console\Command;
 
+use FilesystemIterator;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\CacheWarmer;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -93,15 +96,22 @@ EOT
     private function getProxies(CachePathManager $cachePathManager): array
     {
         $path     = $cachePathManager->getCacheDir() . '/_proxies';
-        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS), \RecursiveIteratorIterator::CHILD_FIRST);
-        $proxies  = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator(
+                $path,
+                FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS
+            ),
+            RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        $proxies = [];
 
         /**
-         * @var \SplFileInfo $value
+         * @var \SplFileInfo $splFileInfo
          */
-        foreach ($iterator as $value) {
-            if ($value->isFile()) {
-                $proxies[$value->getPathname()] = file_get_contents($value->getPathname());
+        foreach ($iterator as $splFileInfo) {
+            if ($splFileInfo->isFile()) {
+                $proxies[$splFileInfo->getPathname()] = file_get_contents($splFileInfo->getPathname());
             }
         }
 

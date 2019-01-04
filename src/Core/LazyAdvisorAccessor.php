@@ -13,6 +13,7 @@ namespace Go\Core;
 
 use Go\Aop\Advice;
 use Go\Aop\Advisor;
+use InvalidArgumentException;
 
 /**
  * Provides an interface for loading of advisors from the container
@@ -41,7 +42,7 @@ class LazyAdvisorAccessor
     /**
      * Magic advice accessor
      *
-     * @throws \InvalidArgumentException if referenced value is not an advisor
+     * @throws InvalidArgumentException if referenced value is not an advisor
      */
     public function __get(string $name): Advice
     {
@@ -57,7 +58,7 @@ class LazyAdvisorAccessor
         }
 
         if (!$advisor instanceof Advisor) {
-            throw new \InvalidArgumentException("Reference {$name} is not an advisor");
+            throw new InvalidArgumentException("Reference {$name} is not an advisor");
         }
         $this->$name = $advisor->getAdvice();
 

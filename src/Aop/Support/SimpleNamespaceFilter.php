@@ -21,7 +21,6 @@ use Go\ParserReflection\ReflectionFileNamespace;
  */
 class SimpleNamespaceFilter implements PointFilter
 {
-
     /**
      * Namespace name to match, can contain wildcards *,?
      */

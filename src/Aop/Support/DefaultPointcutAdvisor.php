@@ -26,7 +26,6 @@ use Go\Aop\PointFilter;
  */
 class DefaultPointcutAdvisor extends AbstractGenericAdvisor implements PointcutAdvisor
 {
-
     /**
      * The Pointcut targeting the Advice
      */

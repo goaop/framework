@@ -22,7 +22,7 @@ use Go\Lang\Annotation;
 use Go\Lang\Annotation\BaseInterceptor;
 use ReflectionMethod;
 use Reflector;
-
+use UnexpectedValueException;
 use function get_class;
 
 /**
@@ -30,7 +30,6 @@ use function get_class;
  */
 class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
 {
-
     /**
      * General aspect loader works with annotations from aspect
      */
@@ -71,7 +70,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      *
      * @return array|Pointcut[]|Advisor[]
      *
-     * @throws \UnexpectedValueException
+     * @throws UnexpectedValueException
      */
     public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null): array
     {
@@ -93,7 +92,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
                 break;
 
             default:
-                throw new \UnexpectedValueException('Unsupported pointcut class: ' . get_class($pointcut));
+                throw new UnexpectedValueException('Unsupported pointcut class: ' . get_class($pointcut));
         }
 
         return $loadedItems;
@@ -102,7 +101,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     /**
      * Returns an interceptor instance by meta-type annotation and closure
      *
-     * @throws \UnexpectedValueException For unsupported annotations
+     * @throws UnexpectedValueException For unsupported annotations
      */
     protected function getInterceptor(BaseInterceptor $metaInformation, Closure $adviceCallback): Interceptor
     {
@@ -122,7 +121,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
                 return new Framework\AfterThrowingInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
             default:
-                throw new \UnexpectedValueException('Unsupported method meta class: ' . get_class($metaInformation));
+                throw new UnexpectedValueException('Unsupported method meta class: ' . get_class($metaInformation));
         }
     }
 }

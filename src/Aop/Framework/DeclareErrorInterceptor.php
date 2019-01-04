@@ -13,8 +13,7 @@ namespace Go\Aop\Framework;
 
 use Closure;
 use Go\Aop\Intercept\Joinpoint;
-use function get_class;
-use function is_string;
+use function get_class, is_string;
 
 /**
  * Interceptor to dynamically trigger an user notice/warning/error on method call
@@ -22,7 +21,7 @@ use function is_string;
  * This interceptor can be used as active replacement for the "deprecated" tag or to notify about
  * probable issues with specific method.
  */
-class DeclareErrorInterceptor extends AbstractInterceptor
+final class DeclareErrorInterceptor extends AbstractInterceptor
 {
 
     /**
@@ -30,14 +29,14 @@ class DeclareErrorInterceptor extends AbstractInterceptor
      *
      * @var string
      */
-    private $message;
+    protected $message;
 
     /**
      * Default level of error
      *
      * @var int
      */
-    private $level;
+    protected $level;
 
     /**
      * Default constructor for interceptor
@@ -51,31 +50,11 @@ class DeclareErrorInterceptor extends AbstractInterceptor
     }
 
     /**
-     * Serializes an interceptor into string representation
-     *
-     * @return string the string representation of the object or null
+     * @inheritdoc
      */
-    public function serialize()
+    public static function unserializeAdvice(array $adviceData): Closure
     {
-        $vars = array_filter(get_object_vars($this));
-        unset($vars['adviceMethod']);
-
-        return serialize($vars);
-    }
-
-    /**
-     * Unserialize an interceptor from the string
-     *
-     * @param string $serialized The string representation of the object.
-     * @return void
-     */
-    public function unserialize($serialized)
-    {
-        $vars = unserialize($serialized);
-        $vars['adviceMethod'] = self::getDeclareErrorAdvice();
-        foreach ($vars as $key => $value) {
-            $this->$key = $value;
-        }
+        return self::getDeclareErrorAdvice();
     }
 
     /**

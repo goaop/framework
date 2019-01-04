@@ -83,7 +83,6 @@ class PointcutBuilder
         $this->registerAdviceInContainer($pointcutExpression, $interceptor);
     }
 
-
     /**
      * General method to register advices
      */

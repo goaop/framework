@@ -21,29 +21,21 @@ class ClassMemberReference
 {
     /**
      * Filter for class names
-     *
-     * @var PointFilter
      */
     private $classFilter;
 
     /**
      * Member visibility filter (public/protected/etc)
-     *
-     * @var ModifierMatcherFilter
      */
     private $visibilityFilter;
 
     /**
      * Filter for access type (statically "::" or dynamically "->")
-     *
-     * @var ModifierMatcherFilter
      */
     private $accessTypeFilter;
 
     /**
      * Member name pattern
-     *
-     * @var string
      */
     private $memberNamePattern;
 
@@ -67,21 +59,33 @@ class ClassMemberReference
         $this->memberNamePattern = $memberNamePattern;
     }
 
+    /**
+     * Returns the filter for class
+     */
     public function getClassFilter(): PointFilter
     {
         return $this->classFilter;
     }
 
+    /**
+     * Returns the filter for visibility: public/protected/private
+     */
     public function getVisibilityFilter(): ModifierMatcherFilter
     {
         return $this->visibilityFilter;
     }
 
+    /**
+     * Returns the filter for access type: static/dynamic
+     */
     public function getAccessTypeFilter(): ModifierMatcherFilter
     {
         return $this->accessTypeFilter;
     }
 
+    /**
+     * Returns the pattern for member name
+     */
     public function getMemberNamePattern(): string
     {
         return $this->memberNamePattern;

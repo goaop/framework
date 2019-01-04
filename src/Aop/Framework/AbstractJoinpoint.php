@@ -13,10 +13,11 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
 use Go\Aop\AdviceAfter;
-use Go\Aop\AdviceBefore;
 use Go\Aop\AdviceAround;
+use Go\Aop\AdviceBefore;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
+use function is_array;
 
 /**
  *  Abstract joinpoint for framework

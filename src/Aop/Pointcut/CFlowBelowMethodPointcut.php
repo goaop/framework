@@ -25,15 +25,11 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
 
     /**
      * Filter for the class
-     *
-     * @var null|PointFilter
      */
     protected $internalClassFilter;
 
     /**
      * Filter for the points
-     *
-     * @var null|PointFilter
      */
     protected $internalPointFilter;
 
@@ -62,7 +58,7 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         // With single parameter (statically) always matches
-        if (!$instance) {
+        if ($instance === null) {
             return true;
         }
 
@@ -75,7 +71,7 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
             if (!$this->internalClassFilter->matches($refClass)) {
                 continue;
             }
-            $refMethod = new ReflectionMethod($stackFrame['class'], $stackFrame['function']);
+            $refMethod = $refClass->getMethod($stackFrame['function']);
             if ($this->internalPointFilter->matches($refMethod)) {
                 return true;
             }

@@ -16,7 +16,7 @@ use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 
 /**
- * Signature method pointcut checks method signature (modifiers and name) to match it
+ * Function pointcut checks function signature (namespace and name) to match it
  */
 class FunctionPointcut implements Pointcut
 {
@@ -27,22 +27,16 @@ class FunctionPointcut implements Pointcut
 
     /**
      * Function name to match, can contain wildcards *,?
-     *
-     * @var string
      */
     protected $functionName = '';
 
     /**
      * Regular expression for matching
-     *
-     * @var string
      */
     protected $regexp;
 
     /**
      * Additional return type filter (if present)
-     *
-     * @var PointFilter|null
      */
     protected $returnTypeFilter;
 
@@ -96,6 +90,9 @@ class FunctionPointcut implements Pointcut
         return $this->nsFilter;
     }
 
+    /**
+     * Configures the namespace filter, used as pre-filter for functions
+     */
     public function setNamespaceFilter(PointFilter $nsFilter): void
     {
         $this->nsFilter = $nsFilter;

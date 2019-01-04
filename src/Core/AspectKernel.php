@@ -15,13 +15,15 @@ use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\PathResolver;
+use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
+use Go\Instrument\Transformer\FilterInjectorTransformer;
+use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\SelfValueTransformer;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
-use Go\Instrument\Transformer\CachingTransformer;
-use Go\Instrument\Transformer\FilterInjectorTransformer;
-use Go\Instrument\Transformer\MagicConstantTransformer;
+use ReflectionObject;
+use function define;
 
 /**
  * Abstract aspect kernel is used to prepare an application to work with aspects.
@@ -32,12 +34,10 @@ abstract class AspectKernel
     /**
      * Version of kernel
      */
-    const VERSION = '2.1.0';
+    public const VERSION = '2.1.0';
 
     /**
      * Kernel options
-     *
-     * @var array
      */
     protected $options = [
         'features' => 0
@@ -52,15 +52,11 @@ abstract class AspectKernel
 
     /**
      * Default class name for container, can be redefined in children
-     *
-     * @var string
      */
     protected static $containerClass = GoAspectContainer::class;
 
     /**
      * Flag to determine if kernel was already initialized or not
-     *
-     * @var bool
      */
     protected $wasInitialized = false;
 
@@ -255,7 +251,7 @@ abstract class AspectKernel
     protected function addKernelResourcesToContainer(AspectContainer $container): void
     {
         $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-        $refClass = new \ReflectionObject($this);
+        $refClass = new ReflectionObject($this);
 
         $container->addResource($trace[1]['file']);
         $container->addResource($refClass->getFileName());

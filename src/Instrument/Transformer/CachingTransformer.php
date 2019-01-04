@@ -11,8 +11,10 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
+use Closure;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
+use function dirname;
 
 /**
  * Caching transformer that is able to take the transformed source from a cache
@@ -28,7 +30,7 @@ class CachingTransformer extends BaseSourceTransformer
     protected $cacheFileMode;
 
     /**
-     * @var array|callable|SourceTransformer[]
+     * @var array|Closure|SourceTransformer[]
      */
     protected $transformers = [];
 
@@ -110,7 +112,7 @@ class CachingTransformer extends BaseSourceTransformer
     private function processTransformers(StreamMetaData $metadata): string
     {
         $overallResult = self::RESULT_ABSTAIN;
-        if (is_callable($this->transformers)) {
+        if ($this->transformers instanceof Closure) {
             $delayedTransformers = $this->transformers;
             $this->transformers  = $delayedTransformers();
         }

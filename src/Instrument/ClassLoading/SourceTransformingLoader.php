@@ -14,6 +14,8 @@ namespace Go\Instrument\ClassLoading;
 use php_user_filter as PhpStreamFilter;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\SourceTransformer;
+use RuntimeException;
+use function strlen;
 
 /**
  * Php class loader filter for processing php code
@@ -34,15 +36,13 @@ class SourceTransformingLoader extends PhpStreamFilter
 
     /**
      * String buffer
-     *
-     * @var string
      */
     protected $data = '';
 
     /**
      * List of transformers
      *
-     * @var array|SourceTransformer[]
+     * @var SourceTransformer[]
      */
     protected static $transformers = [];
 
@@ -56,17 +56,17 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Register current loader as stream filter in PHP
      *
-     * @throws \RuntimeException If registration was failed
+     * @throws RuntimeException If registration was failed
      */
     public static function register(string $filterId = self::FILTER_IDENTIFIER): void
     {
         if (!empty(self::$filterId)) {
-            throw new \RuntimeException('Stream filter already registered');
+            throw new RuntimeException('Stream filter already registered');
         }
 
         $result = stream_filter_register($filterId, __CLASS__);
-        if (!$result) {
-            throw new \RuntimeException('Stream filter was not registered');
+        if ($result === false) {
+            throw new RuntimeException('Stream filter was not registered');
         }
         self::$filterId = $filterId;
     }
@@ -74,12 +74,12 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Returns the name of registered filter
      *
-     * @throws \RuntimeException if filter was not registered
+     * @throws RuntimeException if filter was not registered
      */
     public static function getId(): string
     {
         if (empty(self::$filterId)) {
-            throw new \RuntimeException('Stream filter was not registered');
+            throw new RuntimeException('Stream filter was not registered');
         }
 
         return self::$filterId;

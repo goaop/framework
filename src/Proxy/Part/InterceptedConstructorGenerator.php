@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use LogicException;
 use ReflectionMethod;
 use Zend\Code\Generator\MethodGenerator;
 use function count;
@@ -36,7 +37,7 @@ final class InterceptedConstructorGenerator extends MethodGenerator
      * @param MethodGenerator  $generatedConstructor  Constructor body generator (if present)
      * @param bool             $useTypeWidening       Should generator use parameter widening for PHP>=7.2
      *
-     * @throws \LogicException if constructor is private
+     * @throws LogicException if constructor is private
      */
     public function __construct(
         array $interceptedProperties,
@@ -46,9 +47,9 @@ final class InterceptedConstructorGenerator extends MethodGenerator
     ) {
         $constructorBody = count($interceptedProperties) > 0 ? $this->getConstructorBody($interceptedProperties) : '';
         if ($constructor !== null && $constructor->isPrivate()) {
-            throw new \LogicException(
+            throw new LogicException(
                 "Constructor in the class {$constructor->class} is declared as private. " .
-                "Properties could not be intercepted."
+                'Properties could not be intercepted.'
             );
         }
         if ($constructor !== null) {
@@ -78,8 +79,6 @@ final class InterceptedConstructorGenerator extends MethodGenerator
      * Returns constructor code
      *
      * @param array $interceptedProperties List of properties to intercept
-     *
-     * @return string
      */
     private function getConstructorBody(array $interceptedProperties): string
     {

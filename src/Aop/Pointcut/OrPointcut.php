@@ -50,8 +50,13 @@ class OrPointcut extends AndPointcut
     /**
      * @inheritDoc
      */
-    protected function matchPart(Pointcut $pointcut, $point, $context = null, $instance = null, array $arguments = null)
-    {
+    protected function matchPart(
+        Pointcut $pointcut,
+        $point,
+        $context = null,
+        $instance = null,
+        array $arguments = null
+    ): bool {
         $pointcutKind = $pointcut->getKind();
         // We need to recheck filter kind one more time, because of OR syntax
         switch (true) {

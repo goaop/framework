@@ -18,6 +18,7 @@ use Go\Core\AspectLoader;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\ParserReflection\ReflectionFile;
 use ReflectionClass;
+use ReflectionProperty;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -74,11 +75,11 @@ EOT
 
         $tableRows = [];
         foreach ($advisors as $id => $advisor) {
-            list(,$id) = explode('.', $id, 2);
+            [,$id] = explode('.', $id, 2);
             $advice     = $advisor->getAdvice();
             $expression = '';
             try {
-                $pointcutExpression = new \ReflectionProperty($advice, 'pointcutExpression');
+                $pointcutExpression = new ReflectionProperty($advice, 'pointcutExpression');
                 $pointcutExpression->setAccessible(true);
                 $expression = $pointcutExpression->getValue($advice);
             } catch (\ReflectionException $e) {

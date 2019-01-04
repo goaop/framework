@@ -15,14 +15,18 @@ use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
+use InvalidArgumentException;
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionProperty;
 use Reflector;
+use function get_class;
 
 /**
  * Loader of aspects into the container
  */
 class AspectLoader
 {
-
     /**
      * Aspect container instance
      */
@@ -31,7 +35,7 @@ class AspectLoader
     /**
      * List of aspect loaders
      *
-     * @var array
+     * @var AspectLoaderExtension[][]
      */
     protected $loaders = [];
 
@@ -41,9 +45,9 @@ class AspectLoader
     protected $annotationReader;
 
     /**
-     * List of aspects that was loaded
+     * List of aspect class names that were loaded
      *
-     * @var array
+     * @var string[]
      */
     protected $loadedAspects = [];
 
@@ -173,7 +177,7 @@ class AspectLoader
                     break;
 
                 default:
-                    throw new \InvalidArgumentException("Unsupported loader kind {$loaderKind}");
+                    throw new InvalidArgumentException("Unsupported loader kind {$loaderKind}");
             }
         }
 
@@ -189,17 +193,17 @@ class AspectLoader
     protected function getAnnotations(Reflector $reflector): array
     {
         switch (true) {
-            case ($reflector instanceof \ReflectionClass):
+            case ($reflector instanceof ReflectionClass):
                 return $this->annotationReader->getClassAnnotations($reflector);
 
-            case ($reflector instanceof \ReflectionMethod):
+            case ($reflector instanceof ReflectionMethod):
                 return $this->annotationReader->getMethodAnnotations($reflector);
 
-            case ($reflector instanceof \ReflectionProperty):
+            case ($reflector instanceof ReflectionProperty):
                 return $this->annotationReader->getPropertyAnnotations($reflector);
 
             default:
-                throw new \InvalidArgumentException('Unsupported reflection point ' . get_class($reflector));
+                throw new InvalidArgumentException('Unsupported reflection point ' . get_class($reflector));
         }
     }
 }

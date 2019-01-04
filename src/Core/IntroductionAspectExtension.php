@@ -19,19 +19,15 @@ use Go\Aop\Support;
 use Go\Lang\Annotation;
 use ReflectionProperty;
 use Reflector;
+use UnexpectedValueException;
 
 /**
  * Introduction aspect extension
  */
 class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 {
-
     /**
      * Introduction aspect loader works with annotations from aspect
-     *
-     * For extension that works with annotations additional metaInformation will be passed
-     *
-     * @return string
      */
     public function getKind(): string
     {
@@ -69,7 +65,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      * @param Reflector|ReflectionProperty $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information
      *
-     * @throws \UnexpectedValueException
+     * @throws UnexpectedValueException
      *
      * @return Pointcut[]|Advisor[]
      */
@@ -97,7 +93,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                 break;
 
             default:
-                throw new \UnexpectedValueException('Unsupported pointcut class: ' . get_class($pointcut));
+                throw new UnexpectedValueException('Unsupported pointcut class: ' . get_class($pointcut));
         }
 
         return $loadedItems;
