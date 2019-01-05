@@ -97,7 +97,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
         /** @var MethodCall[] $methodCalls */
         $methodCalls = $methodCallFinder->getFoundNodes();
         foreach ($methodCalls as $methodCallNode) {
-            if ($methodCallNode->name !== 'getFileName') {
+            if ($methodCallNode->name->toString() !== 'getFileName') {
                 continue;
             }
             $startPosition    = $methodCallNode->getAttribute('startTokenPos');

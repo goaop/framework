@@ -11,7 +11,7 @@
         "php": ">=5.6.0",
         "jakubledl/dissect": "~1.0",
         "doctrine/annotations": "^1.2.3",
-        "goaop/parser-reflection": "~1.4",
+        "goaop/parser-reflection": "~2.0",
         "doctrine/cache": "^1.5",
         "symfony/finder": "^3.4|^4.2"
     },

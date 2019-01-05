@@ -286,7 +286,8 @@ class WeavingTransformer extends BaseSourceTransformer
 
         $refNamespace = new ReflectionFileNamespace($class->getFileName(), $namespace);
         foreach ($refNamespace->getNamespaceAliases() as $fqdn => $alias) {
-            $body .= "use {$fqdn} as {$alias};" . PHP_EOL;
+            $aliasSuffix = ($alias !== null) ? " as {$alias}" : '';
+            $body .= "use {$fqdn}{$aliasSuffix};" . PHP_EOL;
         }
 
         $body .= $child;
