@@ -16,10 +16,12 @@ class StaticClosureMethodInvocationTest extends \PHPUnit\Framework\TestCase
      * Tests static method invocations with self
      *
      * @dataProvider staticSelfMethodsBatch
+     * @param string $methodName Method to invoke
+     * @param int $expectedResult Expected result
      */
-    public function testStaticSelfMethodInvocation($methodName, $expectedResult)
+    public function testStaticSelfMethodInvocation(string $methodName, int $expectedResult): void
     {
-        $childClass = $this->createMock(First::class);
+        $childClass = new First();
         $invocation = new StaticClosureMethodInvocation(get_class($childClass), $methodName, []);
 
         $result = $invocation($childClass);
@@ -30,10 +32,12 @@ class StaticClosureMethodInvocationTest extends \PHPUnit\Framework\TestCase
      * Tests static method invocations with self not overridden with parent
      *
      * @dataProvider staticSelfMethodsBatch
+     * @param string $methodName Method to invoke
+     * @param int $expectedResult Expected result
      */
-    public function testStaticSelfNotOverridden($methodName, $expectedResult)
+    public function testStaticSelfNotOverridden($methodName, $expectedResult): void
     {
-        $childClass = $this->createMock(First::class);
+        $childClass = new First();
         $invocation = new StaticClosureMethodInvocation(First::class, $methodName, []);
 
         $result = $invocation($childClass);
@@ -44,19 +48,20 @@ class StaticClosureMethodInvocationTest extends \PHPUnit\Framework\TestCase
      * Tests static method invocations with Late Static Binding
      *
      * @dataProvider staticLsbMethodsBatch
+     * @param string $methodName Method to invoke
      */
-    public function testStaticLsbIsWorking($methodName)
+    public function testStaticLsbIsWorking($methodName): void
     {
-        $childClass = $this->createMock(First::class);
+        $childClass = new First();
         $invocation = new StaticClosureMethodInvocation(First::class, $methodName, []);
 
         $result = $invocation(get_class($childClass));
         $this->assertEquals(get_class($childClass), $result);
     }
 
-    public function testValueChangedByReference()
+    public function testValueChangedByReference(): void
     {
-        $child      = $this->createMock(First::class);
+        $child      = new First();
         $invocation = new StaticClosureMethodInvocation(First::class, 'staticPassByReference', []);
 
         $value  = 'test';
@@ -65,17 +70,18 @@ class StaticClosureMethodInvocationTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(null, $value);
     }
 
-    public function testRecursionWorks()
+    public function testRecursionWorks(): void
     {
         $invocation = new StaticClosureMethodInvocation(First::class, 'staticLsbRecursion', []);
         $child      = new FirstStatic($invocation);
 
+        /** @var First $childClass */
         $childClass = get_class($child);
         $this->assertEquals(5, $childClass::staticLsbRecursion(5,0));
         $this->assertEquals(20, $childClass::staticLsbRecursion(5,3));
     }
 
-    public function testAdviceIsCalledForInvocation()
+    public function testAdviceIsCalledForInvocation(): void
     {
         $child  = $this->createMock(First::class);
         $value  = 'test';
@@ -90,7 +96,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(T_PUBLIC, $result);
     }
 
-    public function testInvocationWithDynamicArguments()
+    public function testInvocationWithDynamicArguments(): void
     {
         $child      = $this->createMock(First::class);
         $invocation = new StaticClosureMethodInvocation(First::class, 'staticVariableArgsTest', []);
@@ -105,7 +111,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    public function testInvocationWithVariadicArguments()
+    public function testInvocationWithVariadicArguments(): void
     {
         $child      = $this->createMock(First::class);
         $invocation = new StaticClosureMethodInvocation(First::class, 'staticVariadicArgsTest', []);
@@ -120,7 +126,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    public function staticSelfMethodsBatch()
+    public function staticSelfMethodsBatch(): array
     {
         return [
             ['staticSelfPublic', T_PUBLIC],
@@ -129,7 +135,7 @@ class StaticClosureMethodInvocationTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    public function staticLsbMethodsBatch()
+    public function staticLsbMethodsBatch(): array
     {
         return [
             ['staticLsbPublic'],
