@@ -12,12 +12,13 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use Go\Stubs\First;
+use PHPUnit\Framework\TestCase;
 use function preg_replace;
 
 /**
  * Test case for generated method definition
  */
-class InterceptedMethodGeneratorTest extends \PHPUnit\Framework\TestCase
+class InterceptedMethodGeneratorTest extends TestCase
 {
     /**
      * Tests that generator can generate valid method definition
@@ -29,7 +30,7 @@ class InterceptedMethodGeneratorTest extends \PHPUnit\Framework\TestCase
      * @throws \ReflectionException
      * @dataProvider dataGenerator
      */
-    public function testGenerate(string $className, string $methodName, string $expectedSignature)
+    public function testGenerate(string $className, string $methodName, string $expectedSignature): void
     {
         $reflectionMethod = new \ReflectionMethod($className, $methodName);
         $generator        = new InterceptedMethodGenerator($reflectionMethod, '');

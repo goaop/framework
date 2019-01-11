@@ -11,15 +11,17 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use PHPUnit\Framework\TestCase;
+
 /**
  * Test case for joinPoint property generator
  */
-class JoinPointPropertyGeneratorTest extends \PHPUnit\Framework\TestCase
+class JoinPointPropertyGeneratorTest extends TestCase
 {
     /**
      * Tests that generator can generate valid joinpoint property
      */
-    public function testGenerate()
+    public function testGenerate(): void
     {
         $generator = new JoinPointPropertyGenerator([
             'method' => [

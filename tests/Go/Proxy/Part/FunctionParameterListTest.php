@@ -12,9 +12,10 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use function class_exists;
+use PHPUnit\Framework\TestCase;
 use Zend\Code\Generator\ValueGenerator;
 
-class FunctionParameterListTest extends \PHPUnit\Framework\TestCase
+class FunctionParameterListTest extends TestCase
 {
     /**
      * Tests that generated from reflection parameter list is correct
@@ -26,7 +27,7 @@ class FunctionParameterListTest extends \PHPUnit\Framework\TestCase
      * @throws \ReflectionException if function is not present
      * @dataProvider dataGenerator
      */
-    public function testgetGeneratedParameters(string $functionName, int $expectedArgsNumber, array $checks)
+    public function testgetGeneratedParameters(string $functionName, int $expectedArgsNumber, array $checks): void
     {
         $reflection    = new \ReflectionFunction($functionName);
         $parameterList = new FunctionParameterList($reflection);

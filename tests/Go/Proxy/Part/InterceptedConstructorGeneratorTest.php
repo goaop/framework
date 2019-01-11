@@ -16,13 +16,14 @@ use Go\Stubs\Constructor\ClassWithOptionalArgsConstructor;
 use Go\Stubs\Constructor\ClassWithoutConstructor;
 use Go\Stubs\Constructor\ClassWithPrivateConstructor;
 use Go\Stubs\Constructor\ClassWithProtectedConstructor;
+use PHPUnit\Framework\TestCase;
 use function preg_replace;
 use ReflectionClass;
 
 /**
  * Test case for generated method definition
  */
-class InterceptedConstructorGeneratorTest extends \PHPUnit\Framework\TestCase
+class InterceptedConstructorGeneratorTest extends TestCase
 {
     /**
      * Tests that generator can generate valid method definition
@@ -33,7 +34,7 @@ class InterceptedConstructorGeneratorTest extends \PHPUnit\Framework\TestCase
      * @throws \ReflectionException
      * @dataProvider dataGenerator
      */
-    public function testGenerate(string $className, string $expectedSignature)
+    public function testGenerate(string $className, string $expectedSignature): void
     {
         $reflectionConstructor = (new ReflectionClass($className))->getConstructor();
         $generator             = new InterceptedConstructorGenerator([], $reflectionConstructor);
@@ -82,7 +83,7 @@ class InterceptedConstructorGeneratorTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    public function testGenerateWithProperties()
+    public function testGenerateWithProperties(): void
     {
         $reflectionConstructor = (new ReflectionClass(ClassWithoutConstructor::class))->getConstructor();
         $generator             = new InterceptedConstructorGenerator(['foo', 'bar'], $reflectionConstructor);
@@ -105,7 +106,7 @@ class InterceptedConstructorGeneratorTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($expectedCode, $generatedCode);
     }
 
-    public function testThrowsExceptionForPrivateConstructor()
+    public function testThrowsExceptionForPrivateConstructor(): void
     {
         $this->expectException(\LogicException::class);
 

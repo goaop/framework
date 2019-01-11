@@ -15,13 +15,14 @@ use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
 use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\First;
+use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use function substr;
 
 /**
  * Test case for generated function definition
  */
-class ClassProxyGeneratorTest extends \PHPUnit\Framework\TestCase
+class ClassProxyGeneratorTest extends TestCase
 {
 
     /**
@@ -35,7 +36,7 @@ class ClassProxyGeneratorTest extends \PHPUnit\Framework\TestCase
      *
      * @dataProvider dataGenerator
      */
-    public function testGenerateProxyMethod(string $className, string $methodName)
+    public function testGenerateProxyMethod(string $className, string $methodName): void
     {
         $reflectionClass = new ReflectionClass($className);
         $classAdvices    = [

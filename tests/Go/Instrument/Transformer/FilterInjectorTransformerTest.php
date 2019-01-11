@@ -7,8 +7,9 @@ use Go\Core\AspectKernel;
 use Go\Core\GoAspectContainer;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
+use PHPUnit\Framework\TestCase;
 
-class FilterInjectorTransformerTest extends \PHPUnit\Framework\TestCase
+class FilterInjectorTransformerTest extends TestCase
 {
     /**
      * @var FilterInjectorTransformer
@@ -55,21 +56,17 @@ class FilterInjectorTransformerTest extends \PHPUnit\Framework\TestCase
             true,
             ['getOptions', 'getContainer']
         );
-        $mock->expects($this->any())
+        $mock
             ->method('getOptions')
-            ->will(
-                $this->returnValue($options)
-            );
+            ->willReturn($options);
 
-        $mock->expects($this->any())
+        $mock
             ->method('getContainer')
-            ->will(
-                $this->returnValue($container)
-            );
+            ->willReturn($container);
         return $mock;
     }
 
-    public function testCanTransformWithoutInclusion()
+    public function testCanTransformWithoutInclusion(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, include" . $include; ?>');
         $output   = $metadata->source;
@@ -77,7 +74,7 @@ class FilterInjectorTransformerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($output, $metadata->source);
     }
 
-    public function testSkipTransformationQuickly()
+    public function testSkipTransformationQuickly(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, no key words" ?>');
         $output = $metadata->source;
@@ -85,7 +82,7 @@ class FilterInjectorTransformerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($output, $metadata->source);
     }
 
-    public function testCanTransformInclude()
+    public function testCanTransformInclude(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php include $class; ?>');
         self::$transformer->transform($metadata);
@@ -93,7 +90,7 @@ class FilterInjectorTransformerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($output, $metadata->source);
     }
 
-    public function testCanTransformIncludeOnce()
+    public function testCanTransformIncludeOnce(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php include_once $class; ?>');
         self::$transformer->transform($metadata);
@@ -101,7 +98,7 @@ class FilterInjectorTransformerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($output, $metadata->source);
     }
 
-    public function testCanTransformRequire()
+    public function testCanTransformRequire(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php require $class; ?>');
         self::$transformer->transform($metadata);
@@ -109,7 +106,7 @@ class FilterInjectorTransformerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($output, $metadata->source);
     }
 
-    public function testCanTransformRequireOnce()
+    public function testCanTransformRequireOnce(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php require_once $class; ?>');
         self::$transformer->transform($metadata);
@@ -117,14 +114,14 @@ class FilterInjectorTransformerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($output, $metadata->source);
     }
 
-    public function testCanRewriteWithFilter()
+    public function testCanRewriteWithFilter(): void
     {
         $actualPath   = FilterInjectorTransformer::rewrite('/path/to/my/class.php');
         $expectedPath = FilterInjectorTransformer::PHP_FILTER_READ . 'unit.test/resource=/path/to/my/class.php';
         $this->assertEquals($expectedPath, $actualPath);
     }
 
-    public function testCanRewriteRelativePathsWithFilter()
+    public function testCanRewriteRelativePathsWithFilter(): void
     {
         $actualPath   = FilterInjectorTransformer::rewrite('_files/class.php', __DIR__);
         $expectedPath = FilterInjectorTransformer::PHP_FILTER_READ
@@ -133,14 +130,14 @@ class FilterInjectorTransformerTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($expectedPath, $actualPath);
     }
 
-    public function testCanRewriteClassesWithToString()
+    public function testCanRewriteClassesWithToString(): void
     {
         $file   = new \SplFileInfo(__FILE__);
         $actual = FilterInjectorTransformer::rewrite($file);
         $this->assertStringEndsWith(__FILE__, $actual);
     }
 
-    public function testCanTransformWithBraces()
+    public function testCanTransformWithBraces(): void
     {
         $fileContent = file_get_contents(__DIR__ . '/_files/yii_style.php');
         $metadata    = new StreamMetaData(fopen(__DIR__ . '/_files/yii_style.php', 'r'), $fileContent);

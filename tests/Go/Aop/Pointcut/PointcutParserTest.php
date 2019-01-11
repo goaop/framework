@@ -18,8 +18,9 @@ namespace Go\Aop\Pointcut;
 use Dissect\Lexer\Lexer;
 use Doctrine\Common\Annotations\Reader;
 use Go\Core\AspectContainer;
+use PHPUnit\Framework\TestCase;
 
-class PointcutParserTest extends \PHPUnit\Framework\TestCase
+class PointcutParserTest extends TestCase
 {
     /**
      * @var null|Lexer
@@ -48,14 +49,14 @@ class PointcutParserTest extends \PHPUnit\Framework\TestCase
      *
      * @dataProvider validPointcutDefinitions
      */
-    public function testParsingExpression($pointcutExpression)
+    public function testParsingExpression($pointcutExpression): void
     {
         $stream = $this->lexer->lex($pointcutExpression);
         $result = $this->parser->parse($stream);
         $this->assertNotNull($result);
     }
 
-    public function validPointcutDefinitions()
+    public function validPointcutDefinitions(): array
     {
         return [
             // Execution pointcuts
