@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Test\ns1;
 class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
 {
