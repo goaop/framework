@@ -6,7 +6,7 @@ namespace Go\Core;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
-use \PHPUnit_Framework_TestCase as TestCase;
+use \PHPUnit\Framework\TestCase as TestCase;
 
 class GoAspectContainerTest extends TestCase
 {

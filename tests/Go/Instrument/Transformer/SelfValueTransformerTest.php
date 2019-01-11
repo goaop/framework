@@ -6,7 +6,7 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 
-class SelfValueTransformerTest extends \PHPUnit_Framework_TestCase
+class SelfValueTransformerTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var SelfValueTransformer

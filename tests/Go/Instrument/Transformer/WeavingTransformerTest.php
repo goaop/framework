@@ -11,7 +11,7 @@ use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Vfs\FileSystem;
 
-class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
+class WeavingTransformerTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var FileSystem

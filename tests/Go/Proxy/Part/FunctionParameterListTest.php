@@ -14,7 +14,7 @@ namespace Go\Proxy\Part;
 use function class_exists;
 use Zend\Code\Generator\ValueGenerator;
 
-class FunctionParameterListTest extends \PHPUnit_Framework_TestCase
+class FunctionParameterListTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Tests that generated from reflection parameter list is correct

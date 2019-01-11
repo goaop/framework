@@ -22,7 +22,7 @@ use ReflectionClass;
 /**
  * Test case for generated method definition
  */
-class InterceptedConstructorGeneratorTest extends \PHPUnit_Framework_TestCase
+class InterceptedConstructorGeneratorTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Tests that generator can generate valid method definition

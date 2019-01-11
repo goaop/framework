@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace Go\Instrument;
 
-class PathResolverTest extends \PHPUnit_Framework_TestCase
+class PathResolverTest extends \PHPUnit\Framework\TestCase
 {
 
     /**

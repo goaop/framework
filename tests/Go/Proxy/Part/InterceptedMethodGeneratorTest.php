@@ -17,7 +17,7 @@ use function preg_replace;
 /**
  * Test case for generated method definition
  */
-class InterceptedMethodGeneratorTest extends \PHPUnit_Framework_TestCase
+class InterceptedMethodGeneratorTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Tests that generator can generate valid method definition

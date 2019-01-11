@@ -12,7 +12,7 @@ use Go\Aop\Support\TruePointFilter;
 use Go\ParserReflection\Locator\ComposerLocator;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
-use PHPUnit_Framework_TestCase as TestCase;
+use PHPUnit\Framework\TestCase as TestCase;
 
 class AdviceMatcherTest extends TestCase
 {

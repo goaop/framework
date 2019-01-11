@@ -19,7 +19,7 @@ use Dissect\Lexer\Lexer;
 use Doctrine\Common\Annotations\Reader;
 use Go\Core\AspectContainer;
 
-class PointcutParserTest extends \PHPUnit_Framework_TestCase
+class PointcutParserTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var null|Lexer

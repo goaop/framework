@@ -13,7 +13,7 @@ namespace Go\Aop\Support;
 
 use Go\Aop\PointFilter;
 
-class NotPointFilterTest extends \PHPUnit_Framework_TestCase
+class NotPointFilterTest extends \PHPUnit\Framework\TestCase
 {
 
     /**

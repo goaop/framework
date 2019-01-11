@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 
-class FunctionCallArgumentListGeneratorTest extends \PHPUnit_Framework_TestCase
+class FunctionCallArgumentListGeneratorTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Tests that generator can generate function call argument list

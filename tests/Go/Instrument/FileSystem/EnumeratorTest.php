@@ -5,7 +5,7 @@ namespace Go\Instrument\FileSystem;
 
 use Vfs\FileSystem;
 
-class EnumeratorTest extends \PHPUnit_Framework_TestCase
+class EnumeratorTest extends \PHPUnit\Framework\TestCase
 {
 
     /** @var FileSystem */

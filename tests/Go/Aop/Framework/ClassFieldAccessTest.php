@@ -5,7 +5,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Support\AnnotationAccess;
 
-class ClassFieldAccessTest extends \PHPUnit_Framework_TestCase
+class ClassFieldAccessTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var ClassFieldAccess

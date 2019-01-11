@@ -14,7 +14,7 @@ namespace Go\Proxy\Part;
 /**
  * Test case for joinPoint property generator
  */
-class JoinPointPropertyGeneratorTest extends \PHPUnit_Framework_TestCase
+class JoinPointPropertyGeneratorTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Tests that generator can generate valid joinpoint property

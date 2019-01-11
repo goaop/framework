@@ -8,7 +8,7 @@ use Go\Core\GoAspectContainer;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
 
-class FilterInjectorTransformerTest extends \PHPUnit_Framework_TestCase
+class FilterInjectorTransformerTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var FilterInjectorTransformer

@@ -7,7 +7,7 @@ use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceAround;
 use Go\Aop\AdviceBefore;
 
-class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
+class AbstractJoinpointTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var AbstractJoinpoint

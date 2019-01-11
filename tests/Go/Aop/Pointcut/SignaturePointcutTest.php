@@ -17,7 +17,7 @@ use Go\Aop\Support\NotPointFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Stubs\First;
 
-class SignaturePointcutTest extends \PHPUnit_Framework_TestCase
+class SignaturePointcutTest extends \PHPUnit\Framework\TestCase
 {
     const STUB_CLASS = First::class;
 

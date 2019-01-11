@@ -16,7 +16,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Go\Bridge\Doctrine\MetadataLoadInterceptor;
 use Go\Core\AspectContainer;
 
-class MetadataLoadInterceptorTest extends \PHPUnit_Framework_TestCase
+class MetadataLoadInterceptorTest extends \PHPUnit\Framework\TestCase
 {
     public function testItWillNotModifyClassMetadataForNonProxiedClasses()
     {

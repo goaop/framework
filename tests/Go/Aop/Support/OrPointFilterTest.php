@@ -13,7 +13,7 @@ namespace Go\Aop\Support;
 
 use Go\Aop\PointFilter;
 
-class OrPointFilterTest extends \PHPUnit_Framework_TestCase
+class OrPointFilterTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Tests that filter combined different kinds of filters

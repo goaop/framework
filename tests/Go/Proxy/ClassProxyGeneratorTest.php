@@ -21,7 +21,7 @@ use function substr;
 /**
  * Test case for generated function definition
  */
-class ClassProxyGeneratorTest extends \PHPUnit_Framework_TestCase
+class ClassProxyGeneratorTest extends \PHPUnit\Framework\TestCase
 {
 
     /**

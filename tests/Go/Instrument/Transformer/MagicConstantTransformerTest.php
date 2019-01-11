@@ -8,7 +8,7 @@ use Go\Core\AspectKernel;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 
-class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
+class MagicConstantTransformerTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var MagicConstantTransformer

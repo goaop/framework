@@ -5,7 +5,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Support\AnnotationAccess;
 
-class AbstractMethodInvocationTest extends \PHPUnit_Framework_TestCase
+class AbstractMethodInvocationTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var AbstractMethodInvocation

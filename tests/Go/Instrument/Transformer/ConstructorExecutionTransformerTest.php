@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
-class ConstructorExecutionTransformerTest extends \PHPUnit_Framework_TestCase
+class ConstructorExecutionTransformerTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var ConstructorExecutionTransformer

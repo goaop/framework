@@ -26,7 +26,7 @@ function funcWithReturnTypeAndDocBlock(): \Exception
 /**
  * Test case for generated function definition
  */
-class InterceptedFunctionGeneratorTest extends \PHPUnit_Framework_TestCase
+class InterceptedFunctionGeneratorTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Tests that generator can generate valid function definition
