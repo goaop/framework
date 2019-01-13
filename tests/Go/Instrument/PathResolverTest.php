@@ -3,13 +3,15 @@ declare(strict_types = 1);
 
 namespace Go\Instrument;
 
-class PathResolverTest extends \PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+
+class PathResolverTest extends TestCase
 {
 
     /**
      * Test existence checking
      */
-    public function testCanResolveAndCheckExistence()
+    public function testCanResolveAndCheckExistence(): void
     {
         $this->assertEquals(__DIR__, PathResolver::realpath(__DIR__, true));
         $this->assertEquals(false, PathResolver::realpath(__DIR__ . '/bad/dir', true));
@@ -18,7 +20,7 @@ class PathResolverTest extends \PHPUnit_Framework_TestCase
     /**
      * Test multiple resolve
      */
-    public function testCanResolveArray()
+    public function testCanResolveArray(): void
     {
         $this->assertEquals([__DIR__ , __FILE__], PathResolver::realpath([__DIR__ , __FILE__]));
     }
@@ -31,7 +33,7 @@ class PathResolverTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider realpathExamples
      */
-    public function testRealpathWorkingCorrectly($path, $expected)
+    public function testRealpathWorkingCorrectly($path, $expected): void
     {
         // Trick to get scheme name and path in one action. If no scheme, then there will be only one part
         $components = explode('://', $expected, 2);
@@ -52,7 +54,7 @@ class PathResolverTest extends \PHPUnit_Framework_TestCase
      *
      * @return array
      */
-    public function realpathExamples()
+    public function realpathExamples(): array
     {
         $curDir = getcwd();
         $parent = dirname($curDir);

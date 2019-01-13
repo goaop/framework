@@ -9,9 +9,10 @@ use Go\Core\AdviceMatcher;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
+use PHPUnit\Framework\TestCase;
 use Vfs\FileSystem;
 
-class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
+class WeavingTransformerTest extends TestCase
 {
     /**
      * @var FileSystem
@@ -87,7 +88,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * It's a caution check that multiple namespaces are not yet supported
      */
-    public function testMultipleNamespacesInOneFile()
+    public function testMultipleNamespacesInOneFile(): void
     {
         $metadata = $this->loadTest('multiple-ns');
         $this->transformer->transform($metadata);
@@ -100,7 +101,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Do not make anything for code without classes
      */
-    public function testEmptyNamespaceInFile()
+    public function testEmptyNamespaceInFile(): void
     {
         $metadata = $this->loadTest('empty-classes');
         $this->transformer->transform($metadata);
@@ -113,7 +114,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Do not make anything for aspect class
      */
-    public function testAspectIsSkipped()
+    public function testAspectIsSkipped(): void
     {
         $metadata = $this->loadTest('aspect');
         $this->transformer->transform($metadata);
@@ -126,7 +127,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Main test case for method with typehint
      */
-    public function testWeaverForTypeHint()
+    public function testWeaverForTypeHint(): void
     {
         $metadata = $this->loadTest('class-typehint');
         $this->transformer->transform($metadata);
@@ -142,7 +143,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Check that weaver can work with PHP7 classes
      */
-    public function testWeaverForPhp7Class()
+    public function testWeaverForPhp7Class(): void
     {
         $metadata = $this->loadTest('php7-class');
         $this->transformer->transform($metadata);
@@ -160,7 +161,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Transformer verifies include paths
      */
-    public function testTransformerWithIncludePaths()
+    public function testTransformerWithIncludePaths(): void
     {
         $container = $this->getContainerMock();
         $reader    = $this->createMock(Reader::class);
@@ -205,7 +206,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
      */
-    public function testMultipleClasses()
+    public function testMultipleClasses(): void
     {
         $metadata = $this->loadTest('multiple-classes');
         $this->transformer->transform($metadata);
@@ -221,7 +222,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      * @param string $value
      * @return string
      */
-    protected function normalizeWhitespaces($value)
+    protected function normalizeWhitespaces($value): string
     {
         return strtr(
             preg_replace('/\s+$/m', '', $value),
@@ -294,7 +295,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      *
      * @return StreamMetaData
      */
-    private function loadTest($name)
+    private function loadTest($name): StreamMetaData
     {
         $fileName = __DIR__ . '/_files/' . $name . '.php';
         $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');

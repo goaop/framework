@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use PHPUnit\Framework\TestCase;
 use function preg_replace;
 
 /**
@@ -26,7 +27,7 @@ function funcWithReturnTypeAndDocBlock(): \Exception
 /**
  * Test case for generated function definition
  */
-class InterceptedFunctionGeneratorTest extends \PHPUnit_Framework_TestCase
+class InterceptedFunctionGeneratorTest extends TestCase
 {
     /**
      * Tests that generator can generate valid function definition
@@ -37,7 +38,7 @@ class InterceptedFunctionGeneratorTest extends \PHPUnit_Framework_TestCase
      * @throws \ReflectionException
      * @dataProvider dataGenerator
      */
-    public function testGenerate(string $functionName, string $expectedSignature)
+    public function testGenerate(string $functionName, string $expectedSignature): void
     {
         $reflectionFunction = new \ReflectionFunction($functionName);
         $generator          = new InterceptedFunctionGenerator($reflectionFunction, "\n");

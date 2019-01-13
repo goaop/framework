@@ -12,7 +12,9 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 
-class FunctionCallArgumentListGeneratorTest extends \PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+
+class FunctionCallArgumentListGeneratorTest extends TestCase
 {
     /**
      * Tests that generator can generate function call argument list
@@ -22,7 +24,7 @@ class FunctionCallArgumentListGeneratorTest extends \PHPUnit_Framework_TestCase
 
      * @throws \ReflectionException if function is not present
      */
-    public function testGenerate(string $functionName, string $expectedLine)
+    public function testGenerate(string $functionName, string $expectedLine): void
     {
         $reflection = new \ReflectionFunction($functionName);
         $generator  = new FunctionCallArgumentListGenerator($reflection);

@@ -6,8 +6,9 @@ namespace Go\Aop\Framework;
 use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceAround;
 use Go\Aop\AdviceBefore;
+use PHPUnit\Framework\TestCase;
 
-class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
+class AbstractJoinpointTest extends TestCase
 {
     /**
      * @var AbstractJoinpoint
@@ -16,8 +17,10 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @dataProvider sortingTestSource
+     * @param array $advices
+     * @param array $order
      */
-    public function testSortingLogic($advices, array $order = [])
+    public function testSortingLogic(array $advices, array $order = []): void
     {
         $advices = AbstractJoinpoint::sortAdvices($advices);
         foreach ($advices as $advice) {
@@ -26,7 +29,7 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    public function sortingTestSource()
+    public function sortingTestSource(): array
     {
         return [
             // #0
@@ -135,11 +138,8 @@ class AbstractJoinpointTest extends \PHPUnit_Framework_TestCase
     {
         $mock = $this->createMock(OrderedAdvice::class, [], [], $name);
         $mock
-            ->expects($this->any())
             ->method('getAdviceOrder')
-            ->will(
-                $this->returnValue($order)
-            );
+            ->willReturn($order);
 
         return $mock;
     }

@@ -7,8 +7,9 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
+use PHPUnit\Framework\TestCase;
 
-class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
+class MagicConstantTransformerTest extends TestCase
 {
     /**
      * @var MagicConstantTransformer
@@ -63,7 +64,7 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
         return $mock;
     }
 
-    public function testTransformerReturnsWithoutMagicConsts()
+    public function testTransformerReturnsWithoutMagicConsts(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, no magic constants" ?>');
         $expected = $metadata->source;
@@ -71,7 +72,7 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($expected, $metadata->source);
     }
 
-    public function testTransformerCanResolveDirMagicConst()
+    public function testTransformerCanResolveDirMagicConst(): void
     {
         $metadata = new StreamMetaData(fopen(__FILE__, 'rb'), '<?php echo __DIR__; ?>');
         $expected = '<?php echo \''.__DIR__.'\'; ?>';
@@ -79,7 +80,7 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($expected, $metadata->source);
     }
 
-    public function testTransformerCanResolveFileMagicConst()
+    public function testTransformerCanResolveFileMagicConst(): void
     {
         $metadata = new StreamMetaData(fopen(__FILE__, 'rb'), '<?php echo __FILE__; ?>');
         $expected = '<?php echo \''.__FILE__.'\'; ?>';
@@ -87,7 +88,7 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($expected, $metadata->source);
     }
 
-    public function testTransformerDoesNotReplaceStringWithConst()
+    public function testTransformerDoesNotReplaceStringWithConst(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "__FILE__"; ?>');
         $expected = '<?php echo "__FILE__"; ?>';
@@ -95,7 +96,7 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($expected, $metadata->source);
     }
 
-    public function testTransformerWrapsReflectionFileName()
+    public function testTransformerWrapsReflectionFileName(): void
     {
         $source   = '<?php $class = new ReflectionClass("stdClass"); echo $class->getFileName(); ?>';
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), $source);
@@ -103,7 +104,7 @@ class MagicConstantTransformerTest extends \PHPUnit_Framework_TestCase
         $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $metadata->source);
     }
 
-    public function testTransformerResolvesFileName()
+    public function testTransformerResolvesFileName(): void
     {
         /** @var $class MagicConstantTransformer */
         $class = get_class($this->transformer);

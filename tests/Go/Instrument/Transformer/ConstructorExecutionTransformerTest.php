@@ -3,7 +3,9 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
-class ConstructorExecutionTransformerTest extends \PHPUnit_Framework_TestCase
+use PHPUnit\Framework\TestCase;
+
+class ConstructorExecutionTransformerTest extends TestCase
 {
     /**
      * @var ConstructorExecutionTransformer
@@ -23,7 +25,7 @@ class ConstructorExecutionTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider listOfExpressions
      */
-    public function testCanTransformNewExpressions($source, $expected)
+    public function testCanTransformNewExpressions($source, $expected): void
     {
         $stream   = fopen('php://input', 'r');
         $metadata = new StreamMetaData($stream, "<?php $source; ?>");
@@ -34,7 +36,7 @@ class ConstructorExecutionTransformerTest extends \PHPUnit_Framework_TestCase
         fclose($stream);
     }
 
-    public function listOfExpressions()
+    public function listOfExpressions(): array
     {
         return [
             [

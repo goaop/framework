@@ -8,7 +8,6 @@
          convertWarningsToExceptions="true"
          processIsolation="false"
          stopOnFailure="false"
-         syntaxCheck="false"
          bootstrap="./tests/bootstrap.php"
 >
     <testsuites>
@@ -35,6 +34,6 @@
         <log type="coverage-xml" target="./build/coverage/xml"/>
         <log type="coverage-clover" target="./build/logs/clover.xml"/>
         <log type="coverage-crap4j" target="./build/logs/crap4j.xml"/>
-        <log type="junit" target="./build/logs/junit.xml" logIncompleteSkipped="false"/>
+        <log type="junit" target="./build/logs/junit.xml"/>
     </logging>
 </phpunit>

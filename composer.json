@@ -20,10 +20,10 @@
     "require-dev": {
         "symfony/console": "^2.7|^3.0",
         "adlawson/vfs": "^0.12",
-        "phpunit/phpunit": "^5.7",
         "doctrine/orm": "^2.5",
         "symfony/filesystem": "^3.3",
-        "symfony/process": "^3.3"
+        "symfony/process": "^3.3",
+        "phpunit/phpunit": "^7.5"
     },
 
     "suggest": {

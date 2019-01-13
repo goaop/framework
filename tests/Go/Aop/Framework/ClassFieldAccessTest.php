@@ -4,8 +4,9 @@ declare(strict_types = 1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Support\AnnotationAccess;
+use PHPUnit\Framework\TestCase;
 
-class ClassFieldAccessTest extends \PHPUnit_Framework_TestCase
+class ClassFieldAccessTest extends TestCase
 {
     /**
      * @var ClassFieldAccess
@@ -17,18 +18,18 @@ class ClassFieldAccessTest extends \PHPUnit_Framework_TestCase
         $this->classField = new ClassFieldAccess(__CLASS__, 'classField', []);
     }
 
-    public function testClassFiledReturnsProperty()
+    public function testClassFiledReturnsProperty(): void
     {
         $this->assertEquals(__CLASS__, $this->classField->getField()->class);
         $this->assertEquals('classField', $this->classField->getField()->name);
     }
 
-    public function testStaticPartEqualsToReflectionMethod()
+    public function testStaticPartEqualsToReflectionMethod(): void
     {
         $this->assertInstanceOf('ReflectionProperty', $this->classField->getStaticPart());
     }
 
-    public function testProvidesAccessToAnnotations()
+    public function testProvidesAccessToAnnotations(): void
     {
         $this->assertInstanceOf(AnnotationAccess::class, $this->classField->getField());
     }

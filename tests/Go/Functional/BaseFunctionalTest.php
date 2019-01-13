@@ -18,7 +18,7 @@ use Go\PhpUnit\ClassWovenConstraint;
 use Go\PhpUnit\ClassAdvisorIdentifier;
 use Go\PhpUnit\ClassMemberWovenConstraint;
 use Go\PhpUnit\ClassMemberNotWovenConstraint;
-use PHPUnit_Framework_TestCase as TestCase;
+use PHPUnit\Framework\Testcase;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;

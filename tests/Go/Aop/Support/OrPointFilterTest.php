@@ -12,25 +12,24 @@ declare(strict_types = 1);
 namespace Go\Aop\Support;
 
 use Go\Aop\PointFilter;
+use PHPUnit\Framework\TestCase;
 
-class OrPointFilterTest extends \PHPUnit_Framework_TestCase
+class OrPointFilterTest extends TestCase
 {
     /**
      * Tests that filter combined different kinds of filters
      */
-    public function testKindIsCombined()
+    public function testKindIsCombined(): void
     {
         $first = $this->createMock(PointFilter::class);
         $first
-            ->expects($this->any())
             ->method('getKind')
-            ->will($this->returnValue(PointFilter::KIND_METHOD | PointFilter::KIND_PROPERTY));
+            ->willReturn(PointFilter::KIND_METHOD | PointFilter::KIND_PROPERTY);
 
         $second = $this->createMock(PointFilter::class);
         $second
-            ->expects($this->any())
             ->method('getKind')
-            ->will($this->returnValue(PointFilter::KIND_METHOD | PointFilter::KIND_FUNCTION));
+            ->willReturn(PointFilter::KIND_METHOD | PointFilter::KIND_FUNCTION);
 
         $filter   = new OrPointFilter($first, $second);
         $expected = PointFilter::KIND_METHOD | PointFilter::KIND_FUNCTION | PointFilter::KIND_PROPERTY;
@@ -40,14 +39,14 @@ class OrPointFilterTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider logicCases
      */
-    public function testMatches(PointFilter $first, PointFilter $second, $expected)
+    public function testMatches(PointFilter $first, PointFilter $second, $expected): void
     {
         $filter = new OrPointFilter($first, $second);
         $result = $filter->matches(new \ReflectionClass(__CLASS__) /* anything */);
         $this->assertSame($expected, $result);
     }
 
-    public function logicCases()
+    public function logicCases(): array
     {
         $true  = TruePointFilter::getInstance();
         $false = new NotPointFilter($true);
