@@ -251,17 +251,13 @@ class WeavingTransformerTest extends TestCase
             true,
             ['getOptions', 'getContainer', 'hasFeature']
         );
-        $mock->expects($this->any())
-            ->method('getOptions')
-            ->will(
-                $this->returnValue($options)
-            );
 
-        $mock->expects($this->any())
-            ->method('getContainer')
-            ->will(
-                $this->returnValue($container)
-            );
+        $mock->method('getOptions')
+            ->willReturn($options);
+
+        $mock->method('getContainer')
+            ->willReturn($container);
+
         return $mock;
     }
 
@@ -273,7 +269,7 @@ class WeavingTransformerTest extends TestCase
     protected function getAdviceMatcherMock()
     {
         $mock = $this->createPartialMock(AdviceMatcher::class, ['getAdvicesForClass']);
-        $mock->expects($this->any())
+        $mock
             ->method('getAdvicesForClass')
             ->will(
                 $this->returnCallback(function (\ReflectionClass $refClass) {
@@ -316,7 +312,6 @@ class WeavingTransformerTest extends TestCase
         $container = $this->createMock(AspectContainer::class);
 
         $container
-            ->expects($this->any())
             ->method('getByTag')
             ->will($this->returnValueMap([
                 ['advisor', []]

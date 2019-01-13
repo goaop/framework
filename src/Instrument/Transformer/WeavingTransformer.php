@@ -74,6 +74,7 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
+     * @param StreamMetaData $metadata
      * @return string See RESULT_XXX constants in the interface
      */
     public function transform(StreamMetaData $metadata): string
@@ -94,10 +95,15 @@ class WeavingTransformer extends BaseSourceTransformer
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
                 // Skip interfaces and aspects
-                if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames())) {
+                if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames(), true)) {
                     continue;
                 }
-                $wasClassProcessed = $this->processSingleClass($advisors, $metadata, $class);
+                $wasClassProcessed = $this->processSingleClass(
+                    $advisors,
+                    $metadata,
+                    $class,
+                    $parsedSource->isStrictMode()
+                );
                 $totalTransformations += (integer) $wasClassProcessed;
             }
             $wasFunctionsProcessed = $this->processFunctions($advisors, $metadata, $namespace);
@@ -112,10 +118,18 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Performs weaving of single class if needed, returns true if the class was processed
      *
-     * @param Advisor[] $advisors List of advisors
+     * @param Advisor[]       $advisors List of advisors
+     * @param StreamMetaData  $metadata
+     * @param ReflectionClass $class
+     * @param bool            $useStrictMode If the source file used strict mode, the proxy should too
+     * @return bool
      */
-    private function processSingleClass(array $advisors, StreamMetaData $metadata, ReflectionClass $class): bool
-    {
+    private function processSingleClass(
+        array $advisors,
+        StreamMetaData $metadata,
+        ReflectionClass $class,
+        bool $useStrictMode
+    ): bool {
         $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
 
         if (empty($advices)) {
@@ -143,7 +157,13 @@ class WeavingTransformer extends BaseSourceTransformer
             $childProxyGenerator->addUse($fqdn, $alias);
         }
 
-        $contentToInclude = $this->saveProxyToCache($class, $childProxyGenerator->generate());
+        $childCode = $childProxyGenerator->generate();
+
+        if ($useStrictMode) {
+            $childCode = 'declare(strict_types=1);' . PHP_EOL . $childCode;
+        }
+
+        $contentToInclude = $this->saveProxyToCache($class, $childCode);
 
         // Get last token for this class
         $lastClassToken = $class->getNode()->getAttribute('endTokenPos');
