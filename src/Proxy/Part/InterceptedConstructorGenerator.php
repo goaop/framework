@@ -85,16 +85,19 @@ final class InterceptedConstructorGenerator extends MethodGenerator
         $assocProperties = [];
         $listProperties  = [];
         foreach ($interceptedProperties as $propertyName) {
-            $assocProperties[] = "    '{$propertyName}' => &\$this->{$propertyName}";
-            $listProperties[]  = "    \$this->{$propertyName}";
+            $assocProperties[] = "        '{$propertyName}' => &\$target->{$propertyName}";
+            $listProperties[]  = "        \$target->{$propertyName}";
         }
         $lines = [
-            '$this->__properties = [',
+            '$accessor = function(array &$propertyStorage, object $target) {',
+            '    $propertyStorage = [',
             implode(',' . PHP_EOL, $assocProperties),
-            '];',
-            'unset(',
+            '    ];',
+            '    unset(',
             implode(',' . PHP_EOL, $listProperties),
-            ');'
+            '    );',
+            '};',
+            '($accessor->bindTo($this, parent::class))($this->__properties, $this);'
         ];
 
         return implode(PHP_EOL, $lines);
