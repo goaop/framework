@@ -20,6 +20,8 @@ class PropertyDemo
 
     protected $protectedProperty = 456;
 
+    private $privateProperty = 'test';
+
     protected $indirectModificationCheck = [4, 5, 6];
 
     public function showProtected()
@@ -38,5 +40,6 @@ class PropertyDemo
         if (count($this->indirectModificationCheck) !== 6) {
             throw new \RuntimeException("Indirect modification doesn't work!");
         }
+        $this->privateProperty = $this->privateProperty . 'bar';
     }
 }
