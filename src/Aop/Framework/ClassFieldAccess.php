@@ -134,7 +134,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
                     return;
                 }
             }
-            throw new AspectException("Cannot access protected property {$propertyClass}::{$property->name}");
+            throw new AspectException("Cannot access property {$propertyClass}::{$property->name}");
         }
     }
 
