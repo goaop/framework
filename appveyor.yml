@@ -19,8 +19,6 @@ environment:
   matrix:
   - dependencies: current
     php_ver_target: 7.2
-  #- dependencies: highest
-  #  php_ver_target: 7.0
 
 ## Set up environment variables
 init:

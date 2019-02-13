@@ -70,10 +70,10 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     public function enterNode(Node $node)
     {
         if ($node instanceof Stmt\Namespace_) {
-            $this->namespace = $node->name;
+            $this->namespace = $node->name->toString();
         } elseif ($node instanceof Stmt\Class_) {
             if ($node->name !== null) {
-                $this->className = new Name($node->name);
+                $this->className = new Name($node->name->toString());
             }
         } elseif ($node instanceof Stmt\ClassMethod || $node instanceof Expr\Closure) {
             $node->returnType = $this->resolveType($node->returnType);

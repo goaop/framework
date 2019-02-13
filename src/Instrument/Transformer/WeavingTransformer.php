@@ -154,7 +154,12 @@ class WeavingTransformer extends BaseSourceTransformer
 
         $refNamespace = new ReflectionFileNamespace($class->getFileName(), $class->getNamespaceName());
         foreach ($refNamespace->getNamespaceAliases() as $fqdn => $alias) {
-            $childProxyGenerator->addUse($fqdn, $alias);
+            // Either we have a string or Identifier node
+            if ($alias !== null) {
+                $childProxyGenerator->addUse($fqdn, (string) $alias);
+            } else {
+                $childProxyGenerator->addUse($fqdn);
+            }
         }
 
         $childCode = $childProxyGenerator->generate();

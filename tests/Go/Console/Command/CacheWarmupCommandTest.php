@@ -16,7 +16,7 @@ class CacheWarmupCommandTest extends BaseFunctionalTest
 
     public function testItWarmsUpCache()
     {
-        $this->assertFalse(file_exists($this->configuration['cacheDir']));
+        $this->assertFileNotExists($this->configuration['cacheDir']);
 
         $this->warmUp();
 
