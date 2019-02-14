@@ -117,18 +117,24 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     public function ensureScopeRule(int $stackLevel = 2): void
     {
-        $property = $this->reflectionProperty;
-
-        if ($property->isProtected()) {
+        $property    = $this->reflectionProperty;
+        $isProtected = $property->isProtected();
+        $isPrivate   = $property->isPrivate();
+        if ($isProtected || $isPrivate) {
             $backTrace     = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $stackLevel+1);
             $accessor      = $backTrace[$stackLevel] ?? [];
             $propertyClass = $property->class;
             if (isset($accessor['class'])) {
-                if ($accessor['class'] === $propertyClass || is_subclass_of($accessor['class'], $propertyClass)) {
+                // For private and protected properties its ok to access from the same class
+                if ($accessor['class'] === $propertyClass) {
+                    return;
+                }
+                // For protected properties its ok to access from any subclass
+                if ($isProtected && is_subclass_of($accessor['class'], $propertyClass)) {
                     return;
                 }
             }
-            throw new AspectException("Cannot access protected property {$propertyClass}::{$property->name}");
+            throw new AspectException("Cannot access property {$propertyClass}::{$property->name}");
         }
     }
 

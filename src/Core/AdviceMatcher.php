@@ -156,7 +156,7 @@ class AdviceMatcher
 
         // Check properties in class only for property filters
         if ($filterKind & Aop\PointFilter::KIND_PROPERTY) {
-            $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED;
+            $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
             foreach ($class->getProperties($mask) as $property) {
                 if ($filter->matches($property, $class) && !$property->isStatic()) {
                     $classAdvices[AspectContainer::PROPERTY_PREFIX][$property->name][$advisorId] = $advisor->getAdvice();
