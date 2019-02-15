@@ -34,6 +34,11 @@ class PropertyDemo
         $this->protectedProperty = $newValue;
     }
 
+    public function showPrivate()
+    {
+        echo $this->privateProperty;
+    }
+
     public function __construct()
     {
         array_push($this->indirectModificationCheck, 7, 8, 9);
