@@ -5,10 +5,19 @@ matrix:
       os: linux
       before_script:
         - composer install
+    - language: php
+      php: 7.3
+      os: linux
+      before_script:
+        - composer install
       after_script:
         - sh .travis.coverage.sh
       env:
         - COVERAGE_FLAGS="--coverage-text --coverage-clover=clover.xml"
+    - language: php
+      php: 7.4snapshot
+      before_script:
+        - composer install
     - language: php
       php: nightly
       before_script:
@@ -28,6 +37,7 @@ matrix:
 
   allow_failures:
     - php: nightly
+    - php: 7.4snapshot
 
 script:
   - vendor/bin/phpunit --verbose ${COVERAGE_FLAGS} --colors
