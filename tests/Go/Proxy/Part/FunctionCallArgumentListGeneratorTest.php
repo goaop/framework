@@ -42,7 +42,7 @@ class FunctionCallArgumentListGeneratorTest extends TestCase
         return [
             ['var_dump', '$vars'],                  // var_dump(...$vars)
             ['array_pop', '[&$stack]'],             // array_pop(&$stack)
-            ['array_push', '[&$stack], $vars'],     // array_push(&$stack, ...$vars)
+            ['pack', '[$format], $args'],           // pack($format, ...$args)
             ['strcoll', '[$str1, $str2]'],          // strcoll($str1, $str2)
             ['basename', '\array_slice([$path, $suffix], 0, \func_num_args())'],  // basename($path, $suffix = null)
         ];
