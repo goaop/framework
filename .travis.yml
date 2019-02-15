@@ -1,18 +1,33 @@
-language: php
-
-php:
-  - 7.2
-  - nightly
-
 matrix:
+  include:
+    - language: php
+      php: 7.2
+      os: linux
+      before_script:
+        - composer install
+      after_script:
+        - sh .travis.coverage.sh
+      env:
+        - COVERAGE_FLAGS="--coverage-text --coverage-clover=clover.xml"
+    - language: php
+      php: nightly
+      before_script:
+        - composer install
+    - name: "PHP: 7.2"
+      language: sh
+      os: windows
+      before_script:
+        - choco install php --version 7.2.15 --package-parameters='"/InstallDir:C:\php"'
+        # Export windows path into unix path
+        - export PATH=/c/php:$PATH
+        # Enable openssl, mbstring php extensions
+        - sed -i 's/;extension=openssl/extension=openssl/g' /c/php/php.ini
+        - sed -i 's/;extension=mbstring/extension=mbstring/g' /c/php/php.ini
+        - wget http://getcomposer.org/composer.phar
+        - php composer.phar install
+
   allow_failures:
     - php: nightly
 
-before_script:
-  - composer install
-
 script:
-  - vendor/bin/phpunit --verbose --coverage-text --coverage-clover=clover.xml --colors
-
-after_script:
-  - sh .travis.coverage.sh
+  - vendor/bin/phpunit --verbose ${COVERAGE_FLAGS} --colors
