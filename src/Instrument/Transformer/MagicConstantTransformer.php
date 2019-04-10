@@ -1,5 +1,5 @@
 <?php
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -13,6 +13,7 @@ namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectKernel;
 use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Identifier;
 use PhpParser\Node\Scalar\MagicConst;
 use PhpParser\Node\Scalar\MagicConst\Dir;
 use PhpParser\Node\Scalar\MagicConst\File;
@@ -68,12 +69,13 @@ class MagicConstantTransformer extends BaseSourceTransformer
      */
     public static function resolveFileName(string $fileName): string
     {
-        $suffix = '.php';
+        $suffix    = '.php';
         $pathParts = explode($suffix, str_replace(
             [self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'],
             [self::$rootPath, ''],
             $fileName
         ));
+
         // throw away namespaced path from actual filename
         return $pathParts[0] . $suffix;
     }
@@ -91,15 +93,14 @@ class MagicConstantTransformer extends BaseSourceTransformer
         /** @var MethodCall[] $methodCalls */
         $methodCalls = $methodCallFinder->getFoundNodes();
         foreach ($methodCalls as $methodCallNode) {
-            if ($methodCallNode->name instanceof \PhpParser\Node\Identifier && $methodCallNode->name->toString() !== 'getFileName') {
-                continue;
-            }
-            $startPosition    = $methodCallNode->getAttribute('startTokenPos');
-            $endPosition      = $methodCallNode->getAttribute('endTokenPos');
-            $expressionPrefix = '\\' . __CLASS__ . '::resolveFileName(';
+            if ($methodCallNode->name instanceof Identifier && $methodCallNode->name->toString() === 'getFileName') {
+                $startPosition    = $methodCallNode->getAttribute('startTokenPos');
+                $endPosition      = $methodCallNode->getAttribute('endTokenPos');
+                $expressionPrefix = '\\' . __CLASS__ . '::resolveFileName(';
 
-            $metadata->tokenStream[$startPosition][1] = $expressionPrefix . $metadata->tokenStream[$startPosition][1];
-            $metadata->tokenStream[$endPosition][1] .= ')';
+                $metadata->tokenStream[$startPosition][1] = $expressionPrefix . $metadata->tokenStream[$startPosition][1];
+                $metadata->tokenStream[$endPosition][1]   .= ')';
+            }
         }
     }
 
