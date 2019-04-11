@@ -17,6 +17,7 @@ use PhpParser\Node\Scalar\MagicConst;
 use PhpParser\Node\Scalar\MagicConst\Dir;
 use PhpParser\Node\Scalar\MagicConst\File;
 use PhpParser\NodeTraverser;
+use PhpParser\Node\Identifier;
 
 /**
  * Transformer that replaces magic __DIR__ and __FILE__ constants in the source code
@@ -91,15 +92,15 @@ class MagicConstantTransformer extends BaseSourceTransformer
         /** @var MethodCall[] $methodCalls */
         $methodCalls = $methodCallFinder->getFoundNodes();
         foreach ($methodCalls as $methodCallNode) {
-            if ($methodCallNode->name->toString() !== 'getFileName') {
-                continue;
-            }
-            $startPosition    = $methodCallNode->getAttribute('startTokenPos');
-            $endPosition      = $methodCallNode->getAttribute('endTokenPos');
-            $expressionPrefix = '\\' . __CLASS__ . '::resolveFileName(';
+            if (($methodCallNode->name instanceof Identifier) && ($methodCallNode->name->toString() === 'getFileName')) {
+                $startPosition    = $methodCallNode->getAttribute('startTokenPos');
+                $endPosition      = $methodCallNode->getAttribute('endTokenPos');
+                $expressionPrefix = '\\' . __CLASS__ . '::resolveFileName(';
 
-            $metadata->tokenStream[$startPosition][1] = $expressionPrefix . $metadata->tokenStream[$startPosition][1];
-            $metadata->tokenStream[$endPosition][1] .= ')';
+                $metadata->tokenStream[$startPosition][1] = $expressionPrefix . $metadata->tokenStream[$startPosition][1];
+                $metadata->tokenStream[$endPosition][1] .= ')';
+            }
+
         }
     }
 
