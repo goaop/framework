@@ -201,8 +201,6 @@ use Aspect\MonitorAspect;
 //...
 ```
 
-Now you are ready to use the power of aspects! Feel free to change anything everywhere. If you like this project, you could support it <a href="https://flattr.com/submit/auto?fid=83r77w&url=https%3A%2F%2Fgithub.com%2Fgoaop%2Fframework" target="_blank"><img src="https://button.flattr.com/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0"></a> [![Gratipay](https://img.shields.io/gratipay/lisachenko.svg)](https://gratipay.com/lisachenko/)
-
 ### 6. Optional configurations
 
 #### 6.1 Custom annotation cache
@@ -243,5 +241,6 @@ Documentation
 -------------
 
 Documentation about Go! library can be found at [official site][1].
+If you like this project, you could support it via <a href="https://flattr.com/submit/auto?fid=83r77w&url=https%3A%2F%2Fgithub.com%2Fgoaop%2Fframework" target="_blank"><img src="https://button.flattr.com/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0"></a>
 
 [1]: http://go.aopphp.com
