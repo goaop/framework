@@ -13,7 +13,8 @@
         "doctrine/annotations": "^1.2.3",
         "goaop/parser-reflection": "~2.0",
         "doctrine/cache": "^1.5",
-        "symfony/finder": "^3.4|^4.2"
+        "symfony/finder": "^3.4|^4.2",
+        "webmozart/glob": "^4.1"
     },
 
     "require-dev": {
@@ -49,7 +50,10 @@
         "psr-4": {
             "Go\\": "tests/Go/",
             "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
-        }
+        },
+        "files": [
+            "tests/functions.php"
+        ]
     },
 
     "minimum-stability": "stable",
