@@ -50,8 +50,8 @@ class Enumerator
     public function __construct(string $rootDirectory, array $includePaths = [], array $excludePaths = [])
     {
         $this->rootDirectory = $rootDirectory;
-        $this->includePaths = $includePaths;
-        $this->excludePaths = $excludePaths;
+        $this->includePaths  = $includePaths;
+        $this->excludePaths  = $excludePaths;
     }
 
     /**
@@ -131,7 +131,7 @@ class Enumerator
      * Return the real path of the given file
      *
      * This is used for testing purpose with virtual file system.
-     * In a vfs the 'realPath' methode will always return false.
+     * In a vfs the 'realPath' method will always return false.
      * So we have a chance to mock this single function to return different path.
      */
     protected function getFileFullPath(SplFileInfo $file): string
@@ -153,7 +153,6 @@ class Enumerator
                 throw new UnexpectedValueException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
             }
 
-            $path = str_replace('*', '', $path);
             $inPaths[] = $path;
         }
 
