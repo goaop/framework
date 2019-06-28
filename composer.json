@@ -22,7 +22,8 @@
         "phpunit/phpunit": "^5.7",
         "doctrine/orm": "^2.5",
         "symfony/filesystem": "^3.3",
-        "symfony/process": "^3.3"
+        "symfony/process": "^3.3",
+        "webmozart/glob": "^4.1"
     },
 
     "suggest": {
@@ -49,7 +50,10 @@
         "psr-4": {
             "Go\\": "tests/Go/",
             "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
-        }
+        },
+        "files": [
+            "tests/functions.php"
+        ]
     },
 
     "minimum-stability": "stable",

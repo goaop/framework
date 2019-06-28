@@ -11,10 +11,8 @@
 namespace Go\Instrument\FileSystem;
 
 use ArrayIterator;
-use CallbackFilterIterator;
 use InvalidArgumentException;
 use LogicException;
-use RecursiveIteratorIterator;
 use SplFileInfo;
 use Symfony\Component\Finder\Finder;
 use UnexpectedValueException;
@@ -102,7 +100,6 @@ class Enumerator
                 throw new UnexpectedValueException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
             }
 
-            $path = str_replace('*', '', $path);
             $inPaths[] = $path;
         }
 
