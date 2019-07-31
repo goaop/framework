@@ -92,6 +92,9 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
 
             if ($this->level > 0) {
                 [$this->arguments, $this->instance, $this->current] = array_pop($this->stackFrames);
+            } else {
+                $this->arguments = [];
+                $this->instance  = null;
             }
         }
     }
