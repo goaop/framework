@@ -19,7 +19,7 @@ use ReflectionClass;
 /**
  * Cached loader is responsible for faster initialization of pointcuts/advisors for concrete aspect
  *
- * @property AspectLoader loader
+ * @property AspectLoader $loader
  */
 class CachedAspectLoader extends AspectLoader
 {

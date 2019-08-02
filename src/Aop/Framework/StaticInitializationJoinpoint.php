@@ -29,7 +29,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
     /**
      * Constructor for the class static initialization joinpoint
      *
-     * @param $advices array List of advices for this invocation
+     * @param array $advices List of advices for this invocation
      */
     public function __construct(string $className, string $unusedType, array $advices)
     {

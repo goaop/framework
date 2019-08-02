@@ -99,7 +99,7 @@ abstract class AspectKernel
         define('AOP_ROOT_DIR', $this->options['appDir']);
         define('AOP_CACHE_DIR', $this->options['cacheDir']);
 
-        /** @var $container AspectContainer */
+        /** @var AspectContainer $container */
         $container = $this->container = new $this->options['containerClass'];
         $container->set('kernel', $this);
         $container->set('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));

@@ -46,7 +46,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Constructor for method invocation
      *
-     * @param $advices array List of advices for this invocation
+     * @param array $advices List of advices for this invocation
      */
     public function __construct(string $className, string $methodName, array $advices)
     {
