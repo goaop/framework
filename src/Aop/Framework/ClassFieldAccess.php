@@ -61,7 +61,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Constructor for field access
      *
-     * @param $advices array List of advices for this invocation
+     * @param array $advices List of advices for this invocation
      */
     public function __construct(string $className, string $fieldName, array $advices)
     {

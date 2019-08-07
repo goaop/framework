@@ -69,7 +69,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      *
      * @return Pointcut[]|Advisor[]
      */
-    public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null): array
+    public function load(Aspect $aspect, $reflection, $metaInformation = null): array
     {
         $loadedItems = [];
         $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation->value);

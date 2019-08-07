@@ -31,7 +31,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     /**
      * Constructor for function invocation
      *
-     * @param $advices array List of advices for this invocation
+     * @param array $advices List of advices for this invocation
      *
      * @throws \ReflectionException
      */

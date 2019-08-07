@@ -44,7 +44,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Constructor for constructor invocation :)
      *
-     * @param $advices array List of advices for this invocation
+     * @param array $advices List of advices for this invocation
      */
     public function __construct(string $className, string $unusedType, array $advices)
     {
