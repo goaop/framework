@@ -134,7 +134,7 @@ class ClassProxyGenerator
 
         $joinPointsProperty->setAccessible(true);
         $advices    = $joinPointsProperty->getValue();
-        $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
+        $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name, $targetClassName);
         $joinPointsProperty->setValue($joinPoints);
 
         $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';
@@ -166,7 +166,7 @@ class ClassProxyGenerator
      *
      * @return Joinpoint[] returns list of joinpoint ready to use
      */
-    protected static function wrapWithJoinPoints(array $classAdvices, string $className): array
+    protected static function wrapWithJoinPoints(array $classAdvices, string $className, string $constructorClassName): array
     {
         /** @var LazyAdvisorAccessor $accessor */
         static $accessor;
@@ -177,6 +177,23 @@ class ClassProxyGenerator
         }
 
         $joinPoints = [];
+        
+        // special treatment for init advices
+        if (isset($classAdvices['init']) && isset(self::$invocationClassMap['init'])) {
+            $typedAdvices = $classAdvices['init'];
+            
+            foreach ($typedAdvices as $joinPointName => $advices) {
+                $filledAdvices = [];
+                foreach ($advices as $advisorName) {
+                    $filledAdvices[] = $accessor->$advisorName;
+                }
+
+                $joinpoint = new self::$invocationClassMap['init']($constructorClassName, $joinPointName, $filledAdvices);
+                $joinPoints["init:$joinPointName"] = $joinpoint;
+            }
+            
+            unset($classAdvices['init']);
+        }
 
         foreach ($classAdvices as $joinPointType => $typedAdvices) {
             // if not isset then we don't want to create such invocation for class
