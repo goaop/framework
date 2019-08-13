@@ -12,6 +12,7 @@ declare(strict_types = 1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\ConstructorInvocation;
+use Go\Core\AspectContainer;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -48,11 +49,16 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      */
     public function __construct(string $className, string $unusedType, array $advices)
     {
-        $this->class       = new ReflectionClass($className);
+        $originalClass = $className;
+        if (strpos($originalClass, AspectContainer::AOP_PROXIED_SUFFIX) !== false) {
+            $originalClass = substr($originalClass, 0, -strlen(AspectContainer::AOP_PROXIED_SUFFIX));
+        }
+
+        $this->class       = new ReflectionClass($originalClass);
         $this->constructor = $constructor = $this->class->getConstructor();
 
-        // Give an access to call protected constructor
-        if ($constructor && $constructor->isProtected()) {
+        // Give an access to call protected/private constructors
+        if ($constructor && !$constructor->isPublic()) {
             $constructor->setAccessible(true);
         }
 
@@ -76,7 +82,11 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
             return $currentInterceptor->invoke($this);
         }
 
-        $this->instance = $this->class->newInstance(...$this->arguments);
+        $this->instance = $this->class->newInstanceWithoutConstructor();
+        $constructor    = $this->getConstructor();
+        if ($constructor !== null) {
+            $constructor->invoke($this->instance, ...$this->arguments);
+        }
 
         return $this->instance;
     }
