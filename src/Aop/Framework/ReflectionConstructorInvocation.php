@@ -100,25 +100,13 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     }
 
     /**
-     * Returns the object that holds the current joinpoint's static
-     * part.
+     * Returns the object for which current joinpoint is invoked
      *
-     * @return object|null the object (can be null if the accessible object is
-     * static).
+     * @return object|null Instance of object or null for static call/unavailable context
      */
-    public function getThis()
+    public function getThis(): ?object
     {
         return $this->instance;
-    }
-
-    /**
-     * Returns the static part of this joinpoint.
-     *
-     * @return null|ReflectionMethod
-     */
-    public function getStaticPart()
-    {
-        return $this->getConstructor();
     }
 
     /**
@@ -135,13 +123,33 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     }
 
     /**
+     * Checks if the current joinpoint is dynamic or static
+     *
+     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
+     *
+     * @see ClassJoinpoint::getThis()
+     */
+    public function isDynamic(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Returns the static scope name (class name) of this joinpoint.
+     */
+    public function getScope(): string
+    {
+        return $this->class->getName();
+    }
+
+    /**
      * Returns a friendly description of current joinpoint
      */
     final public function __toString(): string
     {
         return sprintf(
             'initialization(%s)',
-            $this->class->name
+            $this->getScope()
         );
     }
 }

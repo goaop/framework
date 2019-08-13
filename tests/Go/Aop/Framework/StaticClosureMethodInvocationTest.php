@@ -22,26 +22,8 @@ class StaticClosureMethodInvocationTest extends TestCase
      */
     public function testStaticSelfMethodInvocation(string $methodName, int $expectedResult): void
     {
-        $childClass = new First();
-        $invocation = new StaticClosureMethodInvocation(get_class($childClass), $methodName, []);
-
-        $result = $invocation($childClass);
-        $this->assertEquals($expectedResult, $result);
-    }
-
-    /**
-     * Tests static method invocations with self not overridden with parent
-     *
-     * @dataProvider staticSelfMethodsBatch
-     * @param string $methodName Method to invoke
-     * @param int $expectedResult Expected result
-     */
-    public function testStaticSelfNotOverridden($methodName, $expectedResult): void
-    {
-        $childClass = new First();
         $invocation = new StaticClosureMethodInvocation(First::class, $methodName, []);
-
-        $result = $invocation($childClass);
+        $result     = $invocation(First::class);
         $this->assertEquals($expectedResult, $result);
     }
 
@@ -53,20 +35,17 @@ class StaticClosureMethodInvocationTest extends TestCase
      */
     public function testStaticLsbIsWorking($methodName): void
     {
-        $childClass = new First();
         $invocation = new StaticClosureMethodInvocation(First::class, $methodName, []);
-
-        $result = $invocation(get_class($childClass));
-        $this->assertEquals(get_class($childClass), $result);
+        $result     = $invocation(First::class);
+        $this->assertEquals(First::class, $result);
     }
 
     public function testValueChangedByReference(): void
     {
-        $child      = new First();
         $invocation = new StaticClosureMethodInvocation(First::class, 'staticPassByReference', []);
 
         $value  = 'test';
-        $result = $invocation($child, [&$value]);
+        $result = $invocation(First::class, [&$value]);
         $this->assertEquals(null, $result);
         $this->assertEquals(null, $value);
     }
@@ -74,17 +53,14 @@ class StaticClosureMethodInvocationTest extends TestCase
     public function testRecursionWorks(): void
     {
         $invocation = new StaticClosureMethodInvocation(First::class, 'staticLsbRecursion', []);
-        $child      = new FirstStatic($invocation);
+        FirstStatic::init($invocation);
 
-        /** @var First $childClass */
-        $childClass = get_class($child);
-        $this->assertEquals(5, $childClass::staticLsbRecursion(5,0));
-        $this->assertEquals(20, $childClass::staticLsbRecursion(5,3));
+        $this->assertEquals(5, FirstStatic::staticLsbRecursion(5,0));
+        $this->assertEquals(20, FirstStatic::staticLsbRecursion(5,3));
     }
 
     public function testAdviceIsCalledForInvocation(): void
     {
-        $child  = $this->createMock(First::class);
         $value  = 'test';
         $advice = new BeforeInterceptor(function () use (&$value) {
             $value = 'ok';
@@ -92,14 +68,13 @@ class StaticClosureMethodInvocationTest extends TestCase
 
         $invocation = new StaticClosureMethodInvocation(First::class, 'staticSelfPublic', [$advice]);
 
-        $result = $invocation($child, []);
+        $result = $invocation(First::class, []);
         $this->assertEquals('ok', $value);
         $this->assertEquals(T_PUBLIC, $result);
     }
 
     public function testInvocationWithDynamicArguments(): void
     {
-        $child      = $this->createMock(First::class);
         $invocation = new StaticClosureMethodInvocation(First::class, 'staticVariableArgsTest', []);
 
         $args     = [];
@@ -107,14 +82,13 @@ class StaticClosureMethodInvocationTest extends TestCase
         for ($i=0; $i<10; $i++) {
             $args[]   = $i;
             $expected .= $i;
-            $result   = $invocation($child, $args);
+            $result   = $invocation(First::class, $args);
             $this->assertEquals($expected, $result);
         }
     }
 
     public function testInvocationWithVariadicArguments(): void
     {
-        $child      = $this->createMock(First::class);
         $invocation = new StaticClosureMethodInvocation(First::class, 'staticVariadicArgsTest', []);
 
         $args     = [];
@@ -122,7 +96,7 @@ class StaticClosureMethodInvocationTest extends TestCase
         for ($i=0; $i<10; $i++) {
             $args[]   = $i;
             $expected .= $i;
-            $result   = $invocation($child, $args);
+            $result   = $invocation(First::class, $args);
             $this->assertEquals($expected, $result);
         }
     }

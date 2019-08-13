@@ -66,28 +66,6 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     }
 
     /**
-     * Returns the object that holds the current joinpoint's static
-     * part.
-     *
-     * @return object|null the object (can be null if the accessible object is
-     * static).
-     */
-    public function getThis()
-    {
-        return null;
-    }
-
-    /**
-     * Returns the static part of this joinpoint.
-     *
-     * @return object
-     */
-    public function getStaticPart()
-    {
-        return $this->reflectionFunction;
-    }
-
-    /**
      * Invokes current function invocation with all interceptors
      *
      * @param array $arguments List of arguments for function invocation

@@ -33,13 +33,11 @@ class DynamicMethodsAspect implements Aspect
      */
     public function beforeMagicMethodExecution(MethodInvocation $invocation)
     {
-        $obj = $invocation->getThis();
-
         // we need to unpack args from invocation args
         list($methodName, $args) = $invocation->getArguments();
         echo 'Calling Magic Interceptor for method: ',
-            is_object($obj) ? get_class($obj) : $obj,
-            $invocation->getMethod()->isStatic() ? '::' : '->',
+            $invocation->getScope(),
+            '->',
             $methodName,
             '()',
             ' with arguments: ',
@@ -56,8 +54,14 @@ class DynamicMethodsAspect implements Aspect
     public function beforeMagicStaticMethodExecution(MethodInvocation $invocation)
     {
         // we need to unpack args from invocation args
-        list($methodName) = $invocation->getArguments();
-
-        echo "Calling Magic Static Interceptor for method: ", $methodName, PHP_EOL;
+        list($methodName, $args) = $invocation->getArguments();
+        echo 'Calling Static Magic Interceptor for method: ',
+            $invocation->getScope(),
+            '::',
+            $methodName,
+            '()',
+            ' with arguments: ',
+            json_encode($args),
+            PHP_EOL;
     }
 }

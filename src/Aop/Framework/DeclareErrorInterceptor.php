@@ -12,8 +12,8 @@ declare(strict_types = 1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\Joinpoint;
-use function get_class, is_string;
 
 /**
  * Interceptor to dynamically trigger an user notice/warning/error on method call
@@ -62,12 +62,11 @@ final class DeclareErrorInterceptor extends AbstractInterceptor
      */
     public function invoke(Joinpoint $joinpoint)
     {
-        $reflection    = $joinpoint->getStaticPart();
-        $reflectorName = 'unknown';
-        if ($reflection && method_exists($reflection, 'getName')) {
-            $reflectorName = $reflection->getName();
+        if ($joinpoint instanceof FieldAccess) {
+            $scope = $joinpoint->getScope();
+            $name  = $joinpoint->getField()->getName();
+            ($this->adviceMethod)($scope, $name, $this->message, $this->level);
         }
-        ($this->adviceMethod)($joinpoint->getThis(), $reflectorName, $this->message, $this->level);
 
         return $joinpoint->proceed();
     }
@@ -79,10 +78,9 @@ final class DeclareErrorInterceptor extends AbstractInterceptor
     {
         static $adviceMethod;
         if (!$adviceMethod) {
-            $adviceMethod = function ($object, $reflectorName, $message, $level = E_USER_NOTICE) {
-                $class   = is_string($object) ? $object : get_class($object);
+            $adviceMethod = function (string $scope, string $property, string $message, int $level = E_USER_NOTICE) {
                 $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', [
-                    $class . '->' . $reflectorName,
+                    $scope . '->' . $property,
                     $message
                 ]);
                 trigger_error($message, $level);
