@@ -196,25 +196,34 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     }
 
     /**
-     * Returns the object that holds the current joinpoint's static
-     * part.
+     * Returns the object for which current joinpoint is invoked
      *
-     * @return object|null the object (can be null if the accessible object is
-     * static).
+     * @return object|null Instance of object or null for static call/unavailable context
      */
-    final public function getThis()
+    final public function getThis(): ?object
     {
         return $this->instance;
     }
 
     /**
-     * Returns the static part of this joinpoint.
+     * Checks if the current joinpoint is dynamic or static
      *
-     * @return object
+     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
+     *
+     * @see ClassJoinpoint::getThis()
      */
-    final public function getStaticPart()
+    final public function isDynamic(): bool
     {
-        return $this->getField();
+        return true;
+    }
+
+    /**
+     * Returns the static scope name (class name) of this joinpoint.
+     */
+    final public function getScope(): string
+    {
+        // $this->instance always contains an object, so we can take it's name as a scope name
+        return get_class($this->instance);
     }
 
     /**
@@ -225,7 +234,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         return sprintf(
             '%s(%s->%s)',
             $this->accessType === self::READ ? 'get' : 'set',
-            get_class($this->instance),
+            $this->getScope(),
             $this->reflectionProperty->name
         );
     }

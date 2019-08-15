@@ -11,6 +11,7 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Intercept\ClassJoinpoint;
 use Go\Core\AspectContainer;
 use ReflectionClass;
 use function strlen;
@@ -18,7 +19,7 @@ use function strlen;
 /**
  * Static initialization joinpoint is invoked after class is loaded into memory
  */
-class StaticInitializationJoinpoint extends AbstractJoinpoint
+class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJoinpoint
 {
 
     /**
@@ -64,25 +65,33 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
     }
 
     /**
-     * Returns the object that holds the current joinpoint's static
-     * part.
+     * Returns the object for which current joinpoint is invoked
      *
-     * @return object|null the object (can be null if the accessible object is
-     * static).
+     * @return object|null Instance of object or null for static call/unavailable context
      */
-    public function getThis()
+    public function getThis(): ?object
     {
         return null;
     }
 
     /**
-     * Returns the static part of this joinpoint.
+     * Checks if the current joinpoint is dynamic or static
      *
-     * @return ReflectionClass
+     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
+     *
+     * @see ClassJoinpoint::getThis()
      */
-    public function getStaticPart()
+    public function isDynamic(): bool
     {
-        return $this->reflectionClass;
+        return false;
+    }
+
+    /**
+     * Returns the static scope name (class name) of this joinpoint.
+     */
+    public function getScope(): string
+    {
+        return $this->reflectionClass->getName();
     }
 
     /**
@@ -92,7 +101,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
     {
         return sprintf(
             'staticinitialization(%s)',
-            $this->reflectionClass->getName()
+            $this->getScope()
         );
     }
 }

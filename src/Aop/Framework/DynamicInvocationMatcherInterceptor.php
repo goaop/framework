@@ -12,8 +12,8 @@ declare(strict_types = 1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Interceptor;
-use Go\Aop\Intercept\Invocation;
 use Go\Aop\Intercept\Joinpoint;
+use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\PointFilter;
 use ReflectionClass;
 
@@ -53,11 +53,11 @@ class DynamicInvocationMatcherInterceptor implements Interceptor
      */
     final public function invoke(Joinpoint $joinpoint)
     {
-        if ($joinpoint instanceof Invocation) {
-            $point    = $joinpoint->getStaticPart();
-            $instance = $joinpoint->getThis();
-            $context  = new ReflectionClass($instance);
-            if ($this->pointFilter->matches($point, $context, $instance, $joinpoint->getArguments())) {
+        if ($joinpoint instanceof MethodInvocation) {
+            $method       = $joinpoint->getMethod();
+            $context      = $joinpoint->getThis() ?? $joinpoint->getScope();
+            $contextClass = new ReflectionClass($context);
+            if ($this->pointFilter->matches($method, $contextClass, $context, $joinpoint->getArguments())) {
                 return $this->interceptor->invoke($joinpoint);
             }
         }

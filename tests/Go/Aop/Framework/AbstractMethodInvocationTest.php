@@ -27,11 +27,6 @@ class AbstractMethodInvocationTest extends TestCase
         $this->assertEquals('setUp', $this->invocation->getMethod()->name);
     }
 
-    public function testStaticPartEqualsToReflectionMethod(): void
-    {
-        $this->assertInstanceOf('ReflectionMethod', $this->invocation->getStaticPart());
-    }
-
     public function testProvidesAccessToAnnotations(): void
     {
         $this->assertInstanceOf(AnnotationAccess::class, $this->invocation->getMethod());

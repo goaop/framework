@@ -20,7 +20,7 @@ use ReflectionProperty;
  *
  * @api
  */
-interface FieldAccess extends Joinpoint
+interface FieldAccess extends ClassJoinpoint
 {
 
     /**

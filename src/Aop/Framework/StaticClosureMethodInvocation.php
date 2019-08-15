@@ -33,6 +33,11 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
     protected $previousScope;
 
     /**
+     * For static calls we store given argument as 'scope' property
+     */
+    protected static $propertyName = 'scope';
+
+    /**
      * Proceeds all registered advices for the static method and returns an invocation result
      */
     public function proceed()
@@ -44,12 +49,12 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
         }
 
         // Rebind the closure if scope (class name) was changed since last time
-        if ($this->previousScope !== $this->instance) {
+        if ($this->previousScope !== $this->scope) {
             if ($this->closureToCall === null) {
-                $this->closureToCall = static::getStaticInvoker($this->className, $this->reflectionMethod->name);
+                $this->closureToCall = static::getStaticInvoker($this->reflectionMethod->class, $this->reflectionMethod->name);
             }
-            $this->closureToCall = $this->closureToCall->bindTo(null, $this->instance);
-            $this->previousScope = $this->instance;
+            $this->closureToCall = $this->closureToCall->bindTo(null, $this->scope);
+            $this->previousScope = $this->scope;
         }
 
         return ($this->closureToCall)($this->arguments);
@@ -64,5 +69,36 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
         return function (array $args) use ($className, $methodName) {
             return forward_static_call_array([$className, $methodName], $args);
         };
+    }
+
+    /**
+     * Checks if the current joinpoint is dynamic or static
+     *
+     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
+     *
+     * @see ClassJoinpoint::getThis()
+     */
+    final public function isDynamic(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Returns the object for which current joinpoint is invoked
+     *
+     * @return object Instance of object or null for static call/unavailable context
+     */
+    final public function getThis(): ?object
+    {
+        return null;
+    }
+
+    /**
+     * Returns the static scope name (class name) of this joinpoint.
+     */
+    final public function getScope(): string
+    {
+        // $this->scope contains the current class scope that was received via static::class
+        return $this->scope;
     }
 }

@@ -24,11 +24,6 @@ class ClassFieldAccessTest extends TestCase
         $this->assertEquals('classField', $this->classField->getField()->name);
     }
 
-    public function testStaticPartEqualsToReflectionMethod(): void
-    {
-        $this->assertInstanceOf('ReflectionProperty', $this->classField->getStaticPart());
-    }
-
     public function testProvidesAccessToAnnotations(): void
     {
         $this->assertInstanceOf(AnnotationAccess::class, $this->classField->getField());
