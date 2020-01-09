@@ -230,7 +230,7 @@ class ClassProxyGenerator
         $argumentCode = $argumentList->generate();
         $return = 'return ';
         if ($method->hasReturnType()) {
-            $returnType = (string) $method->getReturnType();
+            $returnType = $method->getReturnType()->getName();
             if ($returnType === 'void') {
                 // void return types should not return anything
                 $return = '';
