@@ -1,10 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace Go\Instrument\Transformer;
 
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use PHPUnit\Framework\TestCase;
 
-class SelfValueTransformerTest extends \PHPUnit_Framework_TestCase
+class SelfValueTransformerTest extends TestCase
 {
     /**
      * @var SelfValueTransformer
@@ -43,17 +46,20 @@ class SelfValueTransformerTest extends \PHPUnit_Framework_TestCase
             false,
             true,
             true,
-            ['getOptions']
+            ['getOptions', 'getContainer']
         );
-        $mock->expects($this->any())
+        $mock
             ->method('getOptions')
-            ->will(
-                $this->returnValue($options)
-            );
+            ->willReturn($options);
+
+        $mock
+            ->method('getContainer')
+            ->willReturn($this->createMock(AspectContainer::class));
+
         return $mock;
     }
 
-    public function testTransformerReplacesAllSelfPlaces()
+    public function testTransformerReplacesAllSelfPlaces(): void
     {
         $testFile = fopen(__DIR__ . '/_files/file-with-self.php', 'rb');
         $content  = stream_get_contents($testFile);

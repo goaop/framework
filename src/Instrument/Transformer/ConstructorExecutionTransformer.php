@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -32,14 +33,12 @@ class ConstructorExecutionTransformer implements SourceTransformer
 
     /**
      * Singletone
-     *
-     * @return static
      */
-    public static function getInstance()
+    public static function getInstance(): self
     {
         static $instance;
-        if (!$instance) {
-            $instance = new static;
+        if ($instance === null) {
+            $instance = new static();
         }
 
         return $instance;
@@ -48,11 +47,9 @@ class ConstructorExecutionTransformer implements SourceTransformer
     /**
      * Rewrites all "new" expressions with our implementation
      *
-     * @param StreamMetaData $metadata Metadata for source
-     *
      * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata): string
     {
         $newExpressionFinder = new NodeFinderVisitor([Node\Expr\New_::class]);
 
@@ -88,10 +85,8 @@ class ConstructorExecutionTransformer implements SourceTransformer
      * Magic interceptor for instance creation
      *
      * @param string $className Name of the class to construct
-     *
-     * @return object Instance of required object
      */
-    public function __get($className)
+    public function __get(string $className): object
     {
         return static::construct($className);
     }
@@ -101,23 +96,16 @@ class ConstructorExecutionTransformer implements SourceTransformer
      *
      * @param string $className Name of the class to construct
      * @param array $args Arguments for the constructor
-     *
-     * @return object Instance of required object
      */
-    public function __call($className, array $args)
+    public function __call(string $className, array $args): object
     {
         return static::construct($className, $args);
     }
 
     /**
      * Default implementation for accessing joinpoint or creating a new one on-fly
-     *
-     * @param string $fullClassName Name of the class to create
-     * @param array $arguments Arguments for constructor
-     *
-     * @return object
      */
-    protected static function construct($fullClassName, array $arguments = [])
+    protected static function construct(string $fullClassName, array $arguments = []): object
     {
         $fullClassName = ltrim($fullClassName, '\\');
         if (!isset(self::$constructorInvocationsCache[$fullClassName])) {

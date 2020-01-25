@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,6 +11,7 @@
 
 namespace Go\Aop\Pointcut;
 
+use Closure;
 use Dissect\Lexer\Token;
 use Dissect\Parser\Grammar;
 use Doctrine\Common\Annotations\Reader;
@@ -21,6 +23,7 @@ use Go\Aop\Support\ReturnTypeFilter;
 use Go\Aop\Support\SimpleNamespaceFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Core\AspectContainer;
+use function constant;
 
 /**
  * Pointcut grammar defines general structure of pointcuts and rules of parsing
@@ -29,9 +32,6 @@ class PointcutGrammar extends Grammar
 {
     /**
      * Constructs a pointcut grammar with AST
-     *
-     * @param AspectContainer $container Instance of the container
-     * @param Reader $annotationReader
      */
     public function __construct(AspectContainer $container, Reader $annotationReader)
     {
@@ -350,10 +350,8 @@ class PointcutGrammar extends Grammar
 
     /**
      * Returns callable for converting node(s) to the string
-     *
-     * @return \Closure
      */
-    private function getNodeToStringConverter()
+    private function getNodeToStringConverter(): Closure
     {
         return function (...$nodes) {
             $value = '';
@@ -371,10 +369,8 @@ class PointcutGrammar extends Grammar
 
     /**
      * Returns callable for converting node value for modifiers to the constant value
-     *
-     * @return \Closure
      */
-    private function getModifierConverter()
+    private function getModifierConverter(): Closure
     {
         return function (Token $token) {
             $name = strtoupper($token->getValue());

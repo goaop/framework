@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -33,7 +34,9 @@ class NodeFinderVisitor extends NodeVisitorAbstract
     protected $foundNodes;
 
     /**
-     * @param array $searchNodes List of node names to search in AST
+     * Visitor constuctor
+     *
+     * @param string[] $searchNodes List of node names to search in AST
      */
     public function __construct(array $searchNodes)
     {
@@ -47,7 +50,7 @@ class NodeFinderVisitor extends NodeVisitorAbstract
      *
      * @return Node[] Found nodes
      */
-    public function getFoundNodes()
+    public function getFoundNodes(): array
     {
         return $this->foundNodes;
     }

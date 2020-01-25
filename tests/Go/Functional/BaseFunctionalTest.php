@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -17,7 +18,7 @@ use Go\PhpUnit\ClassWovenConstraint;
 use Go\PhpUnit\ClassAdvisorIdentifier;
 use Go\PhpUnit\ClassMemberWovenConstraint;
 use Go\PhpUnit\ClassMemberNotWovenConstraint;
-use PHPUnit_Framework_TestCase as TestCase;
+use PHPUnit\Framework\Testcase;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
@@ -67,12 +68,10 @@ abstract class BaseFunctionalTest extends TestCase
 
     /**
      * Warms up Go! AOP cache.
-     *
-     * @return string Command output.
      */
-    protected function warmUp()
+    protected function warmUp(): void
     {
-        return $this->execute('cache:warmup:aop');
+        $this->execute('cache:warmup:aop');
     }
 
     /**
@@ -83,10 +82,8 @@ abstract class BaseFunctionalTest extends TestCase
      * functional test suite.
      *
      * Override this method to use desired configuration settings.
-     *
-     * @return string
      */
-    protected function getConfigurationName()
+    protected function getConfigurationName(): string
     {
         return 'default';
     }
@@ -115,7 +112,7 @@ abstract class BaseFunctionalTest extends TestCase
      *
      * @return string Console output.
      */
-    protected function execute($command, $args = null, $expectSuccess = true, $expectedExitCode = null)
+    protected function execute($command, $args = null, $expectSuccess = true, $expectedExitCode = null): string
     {
         $phpExecutable    = (new PhpExecutableFinder())->find();
         $commandStatement = sprintf('%s %s --no-ansi %s %s %s',
@@ -123,7 +120,7 @@ abstract class BaseFunctionalTest extends TestCase
             $this->configuration['console'],
             $command,
             $this->configuration['frontController'],
-            (null !== $args) ? $args : ''
+            $args ?? ''
         );
 
         $process = new Process($commandStatement, null, ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()]);

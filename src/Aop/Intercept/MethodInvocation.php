@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -20,15 +21,15 @@ use ReflectionMethod;
  * A method invocation is a joinpoint and can be intercepted by a method
  * interceptor.
  */
-interface MethodInvocation extends Invocation
+interface MethodInvocation extends Invocation, ClassJoinpoint
 {
 
     /**
      * Gets the method being called.
      *
-     * @return ReflectionMethod|AnnotatedReflectionMethod the method being called.
+     * @return AnnotatedReflectionMethod the method being called.
      */
-    public function getMethod();
+    public function getMethod(): ReflectionMethod;
 
     /**
      * Invokes current method invocation with all interceptors

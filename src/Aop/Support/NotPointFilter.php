@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -19,27 +20,21 @@ class NotPointFilter implements PointFilter
 {
     /**
      * Kind of filter
-     *
-     * @var int
      */
     private $kind;
 
     /**
-     * First part of filter
-     *
-     * @var PointFilter|null
+     * Instance of filter to negate
      */
-    private $first;
+    private $filter;
 
     /**
      * Not constructor
-     *
-     * @param PointFilter $first First part of filter
      */
-    public function __construct(PointFilter $first)
+    public function __construct(PointFilter $filter)
     {
-        $this->kind   = $first->getKind();
-        $this->first  = $first;
+        $this->kind   = $filter->getKind();
+        $this->filter = $filter;
     }
 
     /**
@@ -49,20 +44,16 @@ class NotPointFilter implements PointFilter
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
-        return !$this->first->matches($point, $context);
+        return !$this->filter->matches($point, $context);
     }
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind(): int
     {
         return $this->kind;
     }

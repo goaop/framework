@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -20,27 +21,20 @@ use Go\ParserReflection\ReflectionFileNamespace;
  */
 class SimpleNamespaceFilter implements PointFilter
 {
-
     /**
      * Namespace name to match, can contain wildcards *,?
-     *
-     * @var string
      */
-    protected $nsName = '';
+    protected $nsName;
 
     /**
      * Pattern for regular expression matching
-     *
-     * @var string
      */
     protected $regexp;
 
     /**
-     * Namespace name matcher constructor
-     *
-     * @param string $namespaceName Name of the namespace to match or glob pattern
+     * Namespace name matcher constructor that accepts name or glob pattern to match
      */
-    public function __construct($namespaceName)
+    public function __construct(string $namespaceName)
     {
         $namespaceName = trim($namespaceName, '\\');
         $this->nsName  = $namespaceName;
@@ -54,9 +48,8 @@ class SimpleNamespaceFilter implements PointFilter
 
     /**
      * {@inheritdoc}
-     * @param ReflectionFileNamespace|string $ns
      */
-    public function matches($ns, $context = null, $instance = null, array $arguments = null)
+    public function matches($ns, $context = null, $instance = null, array $arguments = null): bool
     {
         $isNamespaceIsObject = ($ns === (object) $ns);
 
@@ -71,10 +64,8 @@ class SimpleNamespaceFilter implements PointFilter
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind(): int
     {
         return 0;
     }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -12,6 +13,9 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Pointcut that matches all inherited items, this is useful to filter inherited memebers via !matchInherited()
@@ -27,16 +31,16 @@ class MatchInheritedPointcut implements Pointcut
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
-        if (!$context instanceof \ReflectionClass) {
+        if (!$context instanceof ReflectionClass) {
             return false;
         }
 
-        if (!($point instanceof \ReflectionMethod) && !($point instanceof \ReflectionProperty)) {
+        $isPointMethod   = $point instanceof ReflectionMethod;
+        $isPointProperty = $point instanceof ReflectionProperty;
+        if (!$isPointMethod && !$isPointProperty) {
             return false;
         }
 
@@ -47,10 +51,8 @@ class MatchInheritedPointcut implements Pointcut
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind(): int
     {
         return PointFilter::KIND_METHOD | PointFilter::KIND_PROPERTY;
     }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -11,7 +12,7 @@
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Invocation;
-use PHPUnit_Framework_TestCase as TestCase;
+use PHPUnit\Framework\Testcase;
 
 abstract class AbstractInterceptorTest extends TestCase
 {

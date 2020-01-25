@@ -8,21 +8,22 @@
     "license": "MIT",
 
     "require": {
-        "php": "~7.0",
+        "php": ">=7.2.0",
         "jakubledl/dissect": "~1.0",
         "doctrine/annotations": "^1.2.3",
         "goaop/parser-reflection": "~2.0",
         "doctrine/cache": "^1.5",
+        "zendframework/zend-code": "^3.1",
         "symfony/finder": "^3.4|^4.2|^5.0"
     },
 
     "require-dev": {
         "symfony/console": "^2.7|^3.0",
         "adlawson/vfs": "^0.12",
-        "phpunit/phpunit": "^5.7",
         "doctrine/orm": "^2.5",
         "symfony/filesystem": "^3.3",
         "symfony/process": "^3.3",
+        "phpunit/phpunit": "^7.5",
         "webmozart/glob": "^4.1"
     },
 
@@ -59,7 +60,7 @@
     "minimum-stability": "stable",
     "extra": {
         "branch-alias": {
-            "dev-master": "2.0-dev"
+            "dev-master": "3.0-dev"
         }
     }
 }

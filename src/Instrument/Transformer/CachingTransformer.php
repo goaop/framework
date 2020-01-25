@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,8 +11,10 @@
 
 namespace Go\Instrument\Transformer;
 
+use Closure;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
+use function dirname;
 
 /**
  * Caching transformer that is able to take the transformed source from a cache
@@ -27,21 +30,19 @@ class CachingTransformer extends BaseSourceTransformer
     protected $cacheFileMode;
 
     /**
-     * @var array|callable|SourceTransformer[]
+     * @var array|Closure|SourceTransformer[]
      */
     protected $transformers = [];
 
     /**
-     * @var CachePathManager|null
+     * Cache manager
      */
     protected $cacheManager;
 
     /**
      * Class constructor
      *
-     * @param AspectKernel $kernel Instance of aspect kernel
      * @param array|callable $transformers Source transformers or callable that should return transformers
-     * @param CachePathManager $cacheManager Cache manager
      */
     public function __construct(AspectKernel $kernel, $transformers, CachePathManager $cacheManager)
     {
@@ -54,10 +55,9 @@ class CachingTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
-     * @param StreamMetaData $metadata Metadata for source
      * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata): string
     {
         $originalUri      = $metadata->uri;
         $processingResult = self::RESULT_ABSTAIN;
@@ -86,7 +86,7 @@ class CachingTransformer extends BaseSourceTransformer
                 chmod($cacheUri, $this->cacheFileMode & (~0111));
             }
             $this->cacheManager->setCacheState($originalUri, [
-                'filemtime' => isset($_SERVER['REQUEST_TIME']) ? $_SERVER['REQUEST_TIME'] : time(),
+                'filemtime' => $_SERVER['REQUEST_TIME'] ?? time(),
                 'cacheUri'  => ($processingResult === self::RESULT_TRANSFORMED) ? $cacheUri : null
             ]);
 
@@ -107,13 +107,12 @@ class CachingTransformer extends BaseSourceTransformer
     /**
      * Iterates over transformers
      *
-     * @param StreamMetaData $metadata Metadata for source code
      * @return string See RESULT_XXX constants in the interface
      */
-    private function processTransformers(StreamMetaData $metadata)
+    private function processTransformers(StreamMetaData $metadata): string
     {
         $overallResult = self::RESULT_ABSTAIN;
-        if (is_callable($this->transformers)) {
+        if ($this->transformers instanceof Closure) {
             $delayedTransformers = $this->transformers;
             $this->transformers  = $delayedTransformers();
         }

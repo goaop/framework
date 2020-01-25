@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -19,6 +20,8 @@ class PropertyDemo
 
     protected $protectedProperty = 456;
 
+    private $privateProperty = 'test';
+
     protected $indirectModificationCheck = [4, 5, 6];
 
     public function showProtected()
@@ -31,11 +34,17 @@ class PropertyDemo
         $this->protectedProperty = $newValue;
     }
 
+    public function showPrivate()
+    {
+        echo $this->privateProperty;
+    }
+
     public function __construct()
     {
         array_push($this->indirectModificationCheck, 7, 8, 9);
         if (count($this->indirectModificationCheck) !== 6) {
             throw new \RuntimeException("Indirect modification doesn't work!");
         }
+        $this->privateProperty = $this->privateProperty . 'bar';
     }
 }

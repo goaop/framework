@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Core;
 
@@ -11,7 +12,7 @@ use Go\Aop\Support\TruePointFilter;
 use Go\ParserReflection\Locator\ComposerLocator;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
-use PHPUnit_Framework_TestCase as TestCase;
+use PHPUnit\Framework\Testcase;
 
 class AdviceMatcherTest extends TestCase
 {
@@ -34,11 +35,7 @@ class AdviceMatcherTest extends TestCase
 
     protected function setUp()
     {
-        $container = $this->createMock(AspectContainer::class);
-        $reader    = $this->createMock(Reader::class);
-        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs([$container, $reader])->getMock();
-
-        $this->adviceMatcher = new AdviceMatcher($loader, $container);
+        $this->adviceMatcher = new AdviceMatcher();
 
         $reflectionFile        = new ReflectionFile(__FILE__);
         $this->reflectionClass = $reflectionFile->getFileNamespace(__NAMESPACE__)->getClass(__CLASS__);
@@ -80,7 +77,7 @@ class AdviceMatcherTest extends TestCase
         $advice = $this->createMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
-        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, [$advisor]);
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]);
         $this->assertArrayHasKey(AspectContainer::METHOD_PREFIX, $advices);
         $this->assertArrayHasKey($funcName, $advices[AspectContainer::METHOD_PREFIX]);
         $this->assertCount(1, $advices[AspectContainer::METHOD_PREFIX]);
@@ -112,7 +109,7 @@ class AdviceMatcherTest extends TestCase
         $advice = $this->createMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
-        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, [$advisor]);
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]);
         $this->assertArrayHasKey(AspectContainer::PROPERTY_PREFIX, $advices);
         $this->assertArrayHasKey($propName, $advices[AspectContainer::PROPERTY_PREFIX]);
         $this->assertCount(1, $advices[AspectContainer::PROPERTY_PREFIX]);

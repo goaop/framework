@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -48,7 +49,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
      *
      * @return Node[]
      */
-    public function getReplacedNodes()
+    public function getReplacedNodes(): array
     {
         return $this->replacedNodes;
     }
@@ -101,7 +102,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
      *
      * @return Name|FullyQualified
      */
-    protected function resolveClassName(Name $name)
+    protected function resolveClassName(Name $name): Name
     {
         // Skip all names except special `self`
         if (strtolower($name->toString()) !== 'self') {

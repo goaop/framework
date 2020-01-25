@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -12,10 +13,11 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
 use Go\Aop\AdviceAfter;
-use Go\Aop\AdviceBefore;
 use Go\Aop\AdviceAround;
+use Go\Aop\AdviceBefore;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
+use function is_array;
 
 /**
  *  Abstract joinpoint for framework
@@ -73,7 +75,7 @@ abstract class AbstractJoinpoint implements Joinpoint
      * @param array|Advice[] $advices
      * @return array|Advice[] Sorted list of advices
      */
-    public static function sortAdvices(array $advices)
+    public static function sortAdvices(array $advices): array
     {
         $sortedAdvices = $advices;
         uasort($sortedAdvices, function (Advice $first, Advice $second) {
@@ -96,5 +98,26 @@ abstract class AbstractJoinpoint implements Joinpoint
         });
 
         return $sortedAdvices;
+    }
+
+    /**
+     * Replace concrete advices with list of ids
+     *
+     * @param Advice[][][] $advices List of advices
+     */
+    public static function flatAndSortAdvices(array $advices): array
+    {
+        $flattenAdvices = [];
+        foreach ($advices as $type => $typedAdvices) {
+            foreach ($typedAdvices as $name => $concreteAdvices) {
+                if (is_array($concreteAdvices)) {
+                    $flattenAdvices[$type][$name] = array_keys(self::sortAdvices($concreteAdvices));
+                } else {
+                    $flattenAdvices[$type][$name] = $concreteAdvices;
+                }
+            }
+        }
+
+        return $flattenAdvices;
     }
 }

@@ -1,11 +1,12 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Core;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
-use \PHPUnit_Framework_TestCase as TestCase;
+use \PHPUnit\Framework\Testcase;
 
 class GoAspectContainerTest extends TestCase
 {

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -17,6 +18,7 @@ use Go\Core\AspectLoader;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\ParserReflection\ReflectionFile;
 use ReflectionClass;
+use ReflectionProperty;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -64,7 +66,7 @@ EOT
         }
     }
 
-    private function showAdvisorsList(SymfonyStyle $io)
+    private function showAdvisorsList(SymfonyStyle $io): void
     {
         $io->writeln('List of registered advisors in the container');
 
@@ -73,12 +75,12 @@ EOT
 
         $tableRows = [];
         foreach ($advisors as $id => $advisor) {
-            list(,$id) = explode('.', $id, 2);
+            [,$id] = explode('.', $id, 2);
             $advice     = $advisor->getAdvice();
             $expression = '';
             try {
-                $pointcutExpression = new \ReflectionProperty($advice, 'pointcutExpression');
-                $pointcutExpression->setAccessible('true');
+                $pointcutExpression = new ReflectionProperty($advice, 'pointcutExpression');
+                $pointcutExpression->setAccessible(true);
                 $expression = $pointcutExpression->getValue($advice);
             } catch (\ReflectionException $e) {
                 // nothing here, just ignore
@@ -93,7 +95,7 @@ EOT
         ]);
     }
 
-    private function showAdvisorInformation(SymfonyStyle $io, $advisorId)
+    private function showAdvisorInformation(SymfonyStyle $io, string $advisorId): void
     {
         $aspectContainer = $this->aspectKernel->getContainer();
 
@@ -116,7 +118,7 @@ EOT
             $reflectionNamespaces = $reflectionFile->getFileNamespaces();
             foreach ($reflectionNamespaces as $reflectionNamespace) {
                 foreach ($reflectionNamespace->getClasses() as $reflectionClass) {
-                    $advices = $adviceMatcher->getAdvicesForClass($reflectionClass, [$advisor]);
+                    $advices = $adviceMatcher->getAdvicesForClass($reflectionClass, [$advisorId => $advisor]);
                     if (!empty($advices)) {
                         $this->writeInfoAboutAdvices($io, $reflectionClass, $advices);
                     }
@@ -125,7 +127,7 @@ EOT
         }
     }
 
-    private function writeInfoAboutAdvices(SymfonyStyle $io, ReflectionClass $reflectionClass, array $advices)
+    private function writeInfoAboutAdvices(SymfonyStyle $io, ReflectionClass $reflectionClass, array $advices): void
     {
         $className = $reflectionClass->getName();
         foreach ($advices as $type => $typedAdvices) {
@@ -136,13 +138,11 @@ EOT
     }
 
     /**
-     * Collects list of advisors from the container
-     *
-     * @param AspectContainer $aspectContainer Container instance
+     * Collects list of advisors from the given aspect container
      *
      * @return Advisor[] List of advisors in the container
      */
-    private function loadAdvisorsList(AspectContainer $aspectContainer)
+    private function loadAdvisorsList(AspectContainer $aspectContainer): array
     {
         /** @var AspectLoader $aspectLoader */
         $aspectLoader   = $aspectContainer->get('aspect.cached.loader');

@@ -1,5 +1,15 @@
 Changelog
 ======
+3.0.0 (December 4, 2019)
+* [BC BREAK] Switched to the PHP7.2 and upper, strict types, return type hints and new syntax
+* [BC BREAK] Removed the Joinpoint->getThis() method, as not all joinpoints belongs to classes (eg. FunctionInvocation)
+* [BC BREAK] Removed the Joinpoint->getStaticPart() method as it can return anything, better to use explicit methods 
+* [Feature] Introduced the new ClassJoinpoint interface with getScope(), getThis() and isDynamic() methods
+* [Feature] Implemented parameter widening feature for generated code #380
+* [Feature] AnnotatedReflectionProperty provides simple access to property annotations #388 by @TheCelavi
+* [Feature] Switched to the `zendframework/zend-code` package to generate code for proxies
+* [Feature] Add private properties interception #412
+
 2.0.0 (May 14, 2016)
 * Dropped support for PHP<5.6, clean all old code
 * [BC BREAK] Removed ability to rebind closures, because of PHP restrictions, see #247

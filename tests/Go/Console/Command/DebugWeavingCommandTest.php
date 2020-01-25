@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Go\Console\Command;
 
@@ -15,7 +16,7 @@ class DebugWeavingCommandTest extends BaseFunctionalTest
         $this->assertContains('[ERROR] Weaving is unstable, there are 1 reported error(s).', $output);
     }
 
-    protected function getConfigurationName()
+    protected function getConfigurationName(): string
     {
         return 'inconsistent_weaving';
     }

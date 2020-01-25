@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 namespace Test\ns1 {
     class TestClass1 {
         public static function test() {}

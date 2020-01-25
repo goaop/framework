@@ -8,7 +8,7 @@ Go! AOP is a modern aspect-oriented framework in plain PHP with rich features fo
 [![Total Downloads](https://img.shields.io/packagist/dt/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![Daily Downloads](https://img.shields.io/packagist/dd/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![SensioLabs Insight](https://img.shields.io/sensiolabs/i/9f3e6de1-ea14-4910-b2de-99ff431c9252.svg)](https://insight.sensiolabs.com/projects/9f3e6de1-ea14-4910-b2de-99ff431c9252)
-[![Minimum PHP Version](https://img.shields.io/badge/php-~7.0-lightgrey.svg)](https://php.net/)
+[![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%207.2-8892BF.svg)](https://php.net/)
 [![License](https://img.shields.io/packagist/l/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 
 Features
@@ -53,12 +53,21 @@ Go! AOP framework can be installed with composer. Installation is quite easy:
 4. Create an aspect
 5. Register the aspect in the aspect kernel
 
+### Step 0 (optional): Try demo examples in the framework
+
+Ask composer to create new project in empty directory:
+
+```bash
+composer create-project goaop/framework
+```
+After that just configure your web server to `demos/` folder and open it in your browser. Then you can look at some demo examples before going deeper into installing it in your project.
+
 ### Step 1: Download the library using composer
 
-Ask composer to download the Go! AOP framework with its dependencies by running the command:
+Ask composer to download the latest version of Go! AOP framework with its dependencies by running the command:
 
 ``` bash
-$ composer require goaop/framework
+composer require goaop/framework
 ```
 
 Composer will install the framework to your project's `vendor/goaop/framework` directory.
@@ -111,15 +120,15 @@ include __DIR__ . '/vendor/autoload.php'; // use composer
 
 // Initialize an application aspect container
 $applicationAspectKernel = ApplicationAspectKernel::getInstance();
-$applicationAspectKernel->init(array(
-        'debug' => true, // use 'false' for production mode
-        // Cache directory
-        'cacheDir'  => __DIR__ . '/path/to/cache/for/aop',
+$applicationAspectKernel->init([
+        'debug'        => true, // use 'false' for production mode
+        'appDir'       => __DIR__ . '/..', // Application root directory
+        'cacheDir'     => __DIR__ . '/path/to/cache/for/aop', // Cache directory
         // Include paths restricts the directories where aspects should be applied, or empty for all source files
-        'includePaths' => array(
+        'includePaths' => [
             __DIR__ . '/../src/'
-        )
-));
+        ]
+]);
 ```
 
 ### 4. Create an aspect
@@ -154,15 +163,11 @@ class MonitorAspect implements Aspect
      */
     public function beforeMethodExecution(MethodInvocation $invocation)
     {
-        $obj = $invocation->getThis();
-        echo 'Calling Before Interceptor for method: ',
-             is_object($obj) ? get_class($obj) : $obj,
-             $invocation->getMethod()->isStatic() ? '::' : '->',
-             $invocation->getMethod()->getName(),
-             '()',
-             ' with arguments: ',
-             json_encode($invocation->getArguments()),
-             "<br>\n";
+        echo 'Calling Before Interceptor for: ',
+            $invocation,
+            ' with arguments: ',
+            json_encode($invocation->getArguments()),
+            "<br>\n";
     }
 }
 ```
@@ -191,8 +196,6 @@ use Aspect\MonitorAspect;
 
 //...
 ```
-
-Now you are ready to use the power of aspects! Feel free to change anything everywhere. If you like this project, you could support it <a href="https://flattr.com/submit/auto?fid=83r77w&url=https%3A%2F%2Fgithub.com%2Fgoaop%2Fframework" target="_blank"><img src="https://button.flattr.com/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0"></a> [![Gratipay](https://img.shields.io/gratipay/lisachenko.svg)](https://gratipay.com/lisachenko/)
 
 ### 6. Optional configurations
 
@@ -234,5 +237,6 @@ Documentation
 -------------
 
 Documentation about Go! library can be found at [official site][1].
+If you like this project, you could support it via <a href="https://flattr.com/submit/auto?fid=83r77w&url=https%3A%2F%2Fgithub.com%2Fgoaop%2Fframework" target="_blank"><img src="https://button.flattr.com/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0"></a>
 
 [1]: http://go.aopphp.com

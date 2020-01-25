@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -36,26 +37,7 @@ interface Joinpoint
     public function proceed();
 
     /**
-     * Returns the object that holds the current joinpoint's static
-     * part.
-     *
-     * @api
-     *
-     * @return object|string the object for dynamic call or string with name of scope
-     */
-    public function getThis();
-
-    /**
-     * Returns the static part of this joinpoint.
-     *
-     * @return object
-     */
-    public function getStaticPart();
-
-    /**
      * Returns a friendly description of current joinpoint
-     *
-     * @return string
      */
-    public function __toString();
+    public function __toString(): string;
 }

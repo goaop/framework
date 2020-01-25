@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Stubs;
 
@@ -11,7 +12,7 @@ class FirstStatic extends First
      */
     protected static $invocation;
 
-    public function __construct(Invocation $invocation)
+    public static function init(Invocation $invocation)
     {
         static::$invocation = $invocation;
     }

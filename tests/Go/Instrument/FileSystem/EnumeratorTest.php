@@ -1,11 +1,12 @@
 <?php
+declare(strict_types = 1);
 
-namespace Go\Instrument;
+namespace Go\Instrument\FileSystem;
 
-use Go\Instrument\FileSystem\Enumerator;
+use PHPUnit\Framework\TestCase;
 use Vfs\FileSystem;
 
-class EnumeratorTest extends \PHPUnit_Framework_TestCase
+class EnumeratorTest extends TestCase
 {
 
     /** @var FileSystem */
@@ -42,7 +43,7 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
     /**
      * @return array
      */
-    public function pathsProvider()
+    public function pathsProvider(): array
     {
         return [
             [
@@ -96,7 +97,7 @@ class EnumeratorTest extends \PHPUnit_Framework_TestCase
      * @throws \LogicException
      * @throws \UnexpectedValueException
      */
-    public function testExclude($expectedPaths, $includePaths, $excludePaths)
+    public function testExclude($expectedPaths, $includePaths, $excludePaths): void
     {
         $testPaths = [];
 

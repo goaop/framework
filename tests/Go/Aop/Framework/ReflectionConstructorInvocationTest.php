@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -14,14 +15,14 @@ use Go\Core\AspectContainer;
 
 class ReflectionConstructorInvocationTest extends AbstractInterceptorTest
 {
-    public function testCanCreateObjectDuringInvocation()
+    public function testCanCreateObjectDuringInvocation(): void
     {
         $invocation = new ReflectionConstructorInvocation(\Exception::class, 'unused', []);
         $result     = $invocation->__invoke();
         $this->assertInstanceOf(\Exception::class, $result);
     }
 
-    public function testKnowsAboutSpecialClassSuffix()
+    public function testKnowsAboutSpecialClassSuffix(): void
     {
         $specialName = \Exception::class . AspectContainer::AOP_PROXIED_SUFFIX;
         $invocation  = new ReflectionConstructorInvocation($specialName, 'unused', []);
@@ -29,7 +30,7 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTest
         $this->assertInstanceOf(\Exception::class, $result);
     }
 
-    public function testCanExecuteAdvicesDuringConstruct()
+    public function testCanExecuteAdvicesDuringConstruct(): void
     {
         $sequence   = [];
         $advice     = $this->getAdvice($sequence);
@@ -40,7 +41,7 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTest
         $this->assertContains('advice', $sequence);
     }
 
-    public function testStringRepresentation()
+    public function testStringRepresentation(): void
     {
         $invocation = new ReflectionConstructorInvocation(\Exception::class, 'unused', []);
         $name       = (string)$invocation;
@@ -48,7 +49,7 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTest
         $this->assertEquals('initialization(Exception)', $name);
     }
 
-    public function testReturnsConstructor()
+    public function testReturnsConstructor(): void
     {
         $invocation = new ReflectionConstructorInvocation(\Exception::class, 'unused', []);
         $ctor       = $invocation->getConstructor();
@@ -56,7 +57,7 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTest
         $this->assertEquals('__construct', $ctor->name);
     }
 
-    public function testReturnsThis()
+    public function testReturnsThis(): void
     {
         $invocation = new ReflectionConstructorInvocation(\Exception::class, 'unused', []);
         $instance   = $invocation->getThis();
@@ -65,7 +66,7 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTest
         $this->assertEquals($object, $invocation->getThis());
     }
 
-    public function testCanCreateAnInstanceEvenWithNonPublicConstructor()
+    public function testCanCreateAnInstanceEvenWithNonPublicConstructor(): void
     {
         try {
             $testClassInstance = new class('Test') {

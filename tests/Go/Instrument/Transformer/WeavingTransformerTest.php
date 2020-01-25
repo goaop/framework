@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
@@ -8,9 +9,10 @@ use Go\Core\AdviceMatcher;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
+use PHPUnit\Framework\TestCase;
 use Vfs\FileSystem;
 
-class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
+class WeavingTransformerTest extends TestCase
 {
     /**
      * @var FileSystem
@@ -53,7 +55,10 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     {
         $container = $this->getContainerMock();
         $reader    = $this->createMock(Reader::class);
-        $loader    = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs([$container, $reader])->getMock();
+        $loader    = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$container, $reader])
+            ->getMock();
 
         $this->adviceMatcher = $this->getAdviceMatcherMock();
         $this->kernel        = $this->getKernelMock(
@@ -83,7 +88,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * It's a caution check that multiple namespaces are not yet supported
      */
-    public function testMultipleNamespacesInOneFile()
+    public function testMultipleNamespacesInOneFile(): void
     {
         $metadata = $this->loadTest('multiple-ns');
         $this->transformer->transform($metadata);
@@ -96,7 +101,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Do not make anything for code without classes
      */
-    public function testEmptyNamespaceInFile()
+    public function testEmptyNamespaceInFile(): void
     {
         $metadata = $this->loadTest('empty-classes');
         $this->transformer->transform($metadata);
@@ -109,7 +114,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Do not make anything for aspect class
      */
-    public function testAspectIsSkipped()
+    public function testAspectIsSkipped(): void
     {
         $metadata = $this->loadTest('aspect');
         $this->transformer->transform($metadata);
@@ -120,13 +125,26 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Main test case for method with typehint
+     */
+    public function testWeaverForTypeHint(): void
+    {
+        $metadata = $this->loadTest('class-typehint');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTest('class-typehint-woven')->source);
+        $this->assertEquals($expected, $actual);
+
+        $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '_proxies/Transformer/_files/class-typehint.php/TestClassTypehint.php');
+        $this->assertFalse(strpos($proxyContent, '\\\\Exception'));
+    }
+
+    /**
      * Check that weaver can work with PHP7 classes
      */
-    public function testWeaverForPhp7Class()
+    public function testWeaverForPhp7Class(): void
     {
-        if (PHP_VERSION_ID < 50700) {
-            $this->markTestSkipped("PHP7 version is required to run this test");
-        }
         $metadata = $this->loadTest('php7-class');
         $this->transformer->transform($metadata);
 
@@ -143,11 +161,12 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Transformer verifies include paths
      */
-    public function testTransformerWithIncludePaths()
+    public function testTransformerWithIncludePaths(): void
     {
         $container = $this->getContainerMock();
         $reader    = $this->createMock(Reader::class);
-        $loader    = $this->getMockBuilder(AspectLoader::class)
+        $loader    = $this
+            ->getMockBuilder(AspectLoader::class)
             ->setConstructorArgs([$container, $reader])
             ->getMock();
 
@@ -187,7 +206,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
      */
-    public function testMultipleClasses()
+    public function testMultipleClasses(): void
     {
         $metadata = $this->loadTest('multiple-classes');
         $this->transformer->transform($metadata);
@@ -203,7 +222,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      * @param string $value
      * @return string
      */
-    protected function normalizeWhitespaces($value)
+    protected function normalizeWhitespaces($value): string
     {
         return strtr(
             preg_replace('/\s+$/m', '', $value),
@@ -232,17 +251,13 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
             true,
             ['getOptions', 'getContainer', 'hasFeature']
         );
-        $mock->expects($this->any())
-            ->method('getOptions')
-            ->will(
-                $this->returnValue($options)
-            );
 
-        $mock->expects($this->any())
-            ->method('getContainer')
-            ->will(
-                $this->returnValue($container)
-            );
+        $mock->method('getOptions')
+            ->willReturn($options);
+
+        $mock->method('getContainer')
+            ->willReturn($container);
+
         return $mock;
     }
 
@@ -253,8 +268,8 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      */
     protected function getAdviceMatcherMock()
     {
-        $mock = $this->createMock(AdviceMatcher::class);
-        $mock->expects($this->any())
+        $mock = $this->createPartialMock(AdviceMatcher::class, ['getAdvicesForClass']);
+        $mock
             ->method('getAdvicesForClass')
             ->will(
                 $this->returnCallback(function (\ReflectionClass $refClass) {
@@ -276,7 +291,7 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
      *
      * @return StreamMetaData
      */
-    private function loadTest($name)
+    private function loadTest($name): StreamMetaData
     {
         $fileName = __DIR__ . '/_files/' . $name . '.php';
         $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
@@ -290,14 +305,13 @@ class WeavingTransformerTest extends \PHPUnit_Framework_TestCase
     /**
      * Returns a mock for the container
      *
-     * @return AspectContainer
+     * @return AspectContainer|\PHPUnit_Framework_MockObject_MockObject
      */
     private function getContainerMock()
     {
         $container = $this->createMock(AspectContainer::class);
 
         $container
-            ->expects($this->any())
             ->method('getByTag')
             ->will($this->returnValueMap([
                 ['advisor', []]

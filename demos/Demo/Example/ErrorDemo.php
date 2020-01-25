@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -31,7 +32,7 @@ class ErrorDemo
     /**
      * Method that is very tricky and should generate a notice
      */
-    public function notSoGoodMethod()
+    public function notSoGoodMethod() : float
     {
         $value = round(microtime(true)) % 3; // Sometimes this equal to 0
 

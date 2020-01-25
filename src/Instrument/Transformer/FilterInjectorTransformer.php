@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -15,17 +16,17 @@ use Go\Instrument\PathResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
 use PhpParser\Node\Expr\Include_;
 use PhpParser\NodeTraverser;
+use RuntimeException;
 
 /**
  * Transformer that injects source filter for "require" and "include" operations
  */
 class FilterInjectorTransformer implements SourceTransformer
 {
-
     /**
      * Php filter definition
      */
-    const PHP_FILTER_READ = 'php://filter/read=';
+    public const PHP_FILTER_READ = 'php://filter/read=';
 
     /**
      * Name of the filter to inject
@@ -53,27 +54,19 @@ class FilterInjectorTransformer implements SourceTransformer
 
     /**
      * Class constructor
-     *
-     * @param AspectKernel $kernel Kernel to take configuration from
-     * @param string $filterName Name of the filter to inject
-     * @param CachePathManager $cacheManager Manager for cache files
      */
-    public function __construct(AspectKernel $kernel, $filterName, CachePathManager $cacheManager)
+    public function __construct(AspectKernel $kernel, string $filterName, CachePathManager $cacheManager)
     {
         self::configure($kernel, $filterName, $cacheManager);
     }
 
     /**
      * Static configurator for filter
-     *
-     * @param AspectKernel $kernel Kernel to use for configuration
-     * @param string $filterName Name of the filter to inject
-     * @param CachePathManager $cacheManager Cache manager
      */
-    protected static function configure(AspectKernel $kernel, $filterName, CachePathManager $cacheManager)
+    protected static function configure(AspectKernel $kernel, string $filterName, CachePathManager $cacheManager): void
     {
-        if (self::$kernel) {
-            throw new \RuntimeException('Filter injector can be configured only once.');
+        if (self::$kernel !== null) {
+            throw new RuntimeException('Filter injector can be configured only once.');
         }
         self::$kernel           = $kernel;
         self::$options          = $kernel->getOptions();
@@ -88,13 +81,11 @@ class FilterInjectorTransformer implements SourceTransformer
      *
      * @param string $originalResource Initial resource to include
      * @param string $originalDir Path to the directory from where include was called for resolving relative resources
-     *
-     * @return string Transformed path to the resource
      */
-    public static function rewrite($originalResource, $originalDir = '')
+    public static function rewrite($originalResource, string $originalDir = ''): string
     {
         static $appDir, $cacheDir, $debug;
-        if (!$appDir) {
+        if ($appDir === null) {
             extract(self::$options, EXTR_IF_EXISTS);
         }
 
@@ -119,10 +110,9 @@ class FilterInjectorTransformer implements SourceTransformer
     /**
      * Wrap all includes into rewrite filter
      *
-     * @param StreamMetaData $metadata Metadata for source
      * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata): string
     {
         $includeExpressionFinder = new NodeFinderVisitor([Include_::class]);
 

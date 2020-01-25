@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -14,13 +15,15 @@ use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\PathResolver;
+use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
+use Go\Instrument\Transformer\FilterInjectorTransformer;
+use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\SelfValueTransformer;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
-use Go\Instrument\Transformer\CachingTransformer;
-use Go\Instrument\Transformer\FilterInjectorTransformer;
-use Go\Instrument\Transformer\MagicConstantTransformer;
+use ReflectionObject;
+use function define;
 
 /**
  * Abstract aspect kernel is used to prepare an application to work with aspects.
@@ -31,12 +34,10 @@ abstract class AspectKernel
     /**
      * Version of kernel
      */
-    const VERSION = '2.1.0';
+    public const VERSION = '3.0.0';
 
     /**
      * Kernel options
-     *
-     * @var array
      */
     protected $options = [
         'features' => 0
@@ -45,28 +46,24 @@ abstract class AspectKernel
     /**
      * Single instance of kernel
      *
-     * @var null|static
+     * @var static
      */
     protected static $instance;
 
     /**
      * Default class name for container, can be redefined in children
-     *
-     * @var string
      */
     protected static $containerClass = GoAspectContainer::class;
 
     /**
      * Flag to determine if kernel was already initialized or not
-     *
-     * @var bool
      */
     protected $wasInitialized = false;
 
     /**
      * Aspect container instance
      *
-     * @var null|AspectContainer
+     * @var AspectContainer
      */
     protected $container;
 
@@ -77,10 +74,8 @@ abstract class AspectKernel
 
     /**
      * Returns the single instance of kernel
-     *
-     * @return static
      */
-    public static function getInstance()
+    public static function getInstance(): self
     {
         if (!self::$instance) {
             self::$instance = new static();
@@ -104,7 +99,7 @@ abstract class AspectKernel
         define('AOP_ROOT_DIR', $this->options['appDir']);
         define('AOP_CACHE_DIR', $this->options['cacheDir']);
 
-        /** @var $container AspectContainer */
+        /** @var AspectContainer $container */
         $container = $this->container = new $this->options['containerClass'];
         $container->set('kernel', $this);
         $container->set('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
@@ -131,10 +126,8 @@ abstract class AspectKernel
 
     /**
      * Returns an aspect container
-     *
-     * @return null|AspectContainer
      */
-    public function getContainer()
+    public function getContainer(): AspectContainer
     {
         return $this->container;
     }
@@ -142,21 +135,17 @@ abstract class AspectKernel
     /**
      * Checks if kernel configuration has enabled specific feature
      *
-     * @param integer $featureToCheck See Go\Aop\Features enumeration class for features
-     *
-     * @return bool Whether specific feature enabled or not
+     * @see \Go\Aop\Features enumeration class for features
      */
-    public function hasFeature($featureToCheck)
+    public function hasFeature(int $featureToCheck): bool
     {
         return ($this->options['features'] & $featureToCheck) !== 0;
     }
 
     /**
      * Returns list of kernel options
-     *
-     * @return array
      */
-    public function getOptions()
+    public function getOptions(): array
     {
         return $this->options;
     }
@@ -172,21 +161,19 @@ abstract class AspectKernel
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
-     *
-     * @return array
      */
-    protected function getDefaultOptions()
+    protected function getDefaultOptions(): array
     {
         return [
-            'debug'                  => false,
-            'appDir'                 => __DIR__ . '/../../../../../',
-            'cacheDir'               => null,
-            'cacheFileMode'          => 0770 & ~umask(), // Respect user umask() policy
-            'features'               => 0,
-            'annotationCache'        => null,
-            'includePaths'           => [],
-            'excludePaths'           => [],
-            'containerClass'         => static::$containerClass,
+            'debug'           => false,
+            'appDir'          => __DIR__ . '/../../../../../',
+            'cacheDir'        => null,
+            'cacheFileMode'   => 0770 & ~umask(), // Respect user umask() policy
+            'features'        => 0,
+            'annotationCache' => null,
+            'includePaths'    => [],
+            'excludePaths'    => [],
+            'containerClass'  => static::$containerClass,
         ];
     }
 
@@ -195,10 +182,8 @@ abstract class AspectKernel
      * Normalizes options for the kernel
      *
      * @param array $options List of options
-     *
-     * @return array
      */
-    protected function normalizeOptions(array $options)
+    protected function normalizeOptions(array $options): array
     {
         $options = array_replace($this->getDefaultOptions(), $options);
 
@@ -219,41 +204,36 @@ abstract class AspectKernel
     }
 
     /**
-     * Configure an AspectContainer with advisors, aspects and pointcuts
-     *
-     * @param AspectContainer $container
-     *
-     * @return void
+     * Configures an AspectContainer with advisors, aspects and pointcuts
      */
     abstract protected function configureAop(AspectContainer $container);
 
     /**
      * Returns list of source transformers, that will be applied to the PHP source
      *
-     * @return array|SourceTransformer[]
+     * @return SourceTransformer[]
+     * @internal This method is internal and should not be used outside this project
      */
-    protected function registerTransformers()
+    protected function registerTransformers(): array
     {
         $cacheManager     = $this->getContainer()->get('aspect.cache.path.manager');
         $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
         $magicTransformer = new MagicConstantTransformer($this);
-        $aspectKernel     = $this;
 
-        $sourceTransformers = function () use ($filterInjector, $magicTransformer, $aspectKernel, $cacheManager) {
+        $sourceTransformers = function () use ($filterInjector, $magicTransformer, $cacheManager) {
             $transformers = [];
-            if ($aspectKernel->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
+            if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
                 $transformers[] = new ConstructorExecutionTransformer();
             }
-            if ($aspectKernel->hasFeature(Features::INTERCEPT_INCLUDES)) {
+            if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
                 $transformers[] = $filterInjector;
             }
-            $aspectContainer = $aspectKernel->getContainer();
-            $transformers[]  = new SelfValueTransformer($aspectKernel);
+            $transformers[]  = new SelfValueTransformer($this);
             $transformers[]  = new WeavingTransformer(
-                $aspectKernel,
-                $aspectContainer->get('aspect.advice_matcher'),
+                $this,
+                $this->container->get('aspect.advice_matcher'),
                 $cacheManager,
-                $aspectContainer->get('aspect.cached.loader')
+                $this->container->get('aspect.cached.loader')
             );
             $transformers[] = $magicTransformer;
 
@@ -266,14 +246,12 @@ abstract class AspectKernel
     }
 
     /**
-     * Add resources for kernel
-     *
-     * @param AspectContainer $container
+     * Add resources of kernel to the container
      */
-    protected function addKernelResourcesToContainer(AspectContainer $container)
+    protected function addKernelResourcesToContainer(AspectContainer $container): void
     {
         $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-        $refClass = new \ReflectionObject($this);
+        $refClass = new ReflectionObject($this);
 
         $container->addResource($trace[1]['file']);
         $container->addResource($refClass->getFileName());

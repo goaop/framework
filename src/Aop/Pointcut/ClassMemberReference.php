@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -20,29 +21,21 @@ class ClassMemberReference
 {
     /**
      * Filter for class names
-     *
-     * @var PointFilter
      */
     private $classFilter;
 
     /**
      * Member visibility filter (public/protected/etc)
-     *
-     * @var ModifierMatcherFilter
      */
     private $visibilityFilter;
 
     /**
      * Filter for access type (statically "::" or dynamically "->")
-     *
-     * @var ModifierMatcherFilter
      */
     private $accessTypeFilter;
 
     /**
      * Member name pattern
-     *
-     * @var string
      */
     private $memberNamePattern;
 
@@ -58,7 +51,7 @@ class ClassMemberReference
         PointFilter $classFilter,
         ModifierMatcherFilter $visibilityFilter,
         ModifierMatcherFilter $accessTypeFilter,
-        $memberNamePattern
+        string $memberNamePattern
     ) {
         $this->classFilter       = $classFilter;
         $this->visibilityFilter  = $visibilityFilter;
@@ -67,33 +60,33 @@ class ClassMemberReference
     }
 
     /**
-     * @return PointFilter
+     * Returns the filter for class
      */
-    public function getClassFilter()
+    public function getClassFilter(): PointFilter
     {
         return $this->classFilter;
     }
 
     /**
-     * @return ModifierMatcherFilter
+     * Returns the filter for visibility: public/protected/private
      */
-    public function getVisibilityFilter()
+    public function getVisibilityFilter(): ModifierMatcherFilter
     {
         return $this->visibilityFilter;
     }
 
     /**
-     * @return ModifierMatcherFilter
+     * Returns the filter for access type: static/dynamic
      */
-    public function getAccessTypeFilter()
+    public function getAccessTypeFilter(): ModifierMatcherFilter
     {
         return $this->accessTypeFilter;
     }
 
     /**
-     * @return string
+     * Returns the pattern for member name
      */
-    public function getMemberNamePattern()
+    public function getMemberNamePattern(): string
     {
         return $this->memberNamePattern;
     }

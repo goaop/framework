@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Test\ns1
 {
     class ClassWithSelf extends \Exception

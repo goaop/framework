@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -11,7 +12,9 @@
 namespace Go\Instrument\FileSystem;
 
 use ArrayIterator;
+use Closure;
 use InvalidArgumentException;
+use Iterator;
 use LogicException;
 use SplFileInfo;
 use Symfony\Component\Finder\Finder;
@@ -22,25 +25,18 @@ use UnexpectedValueException;
  */
 class Enumerator
 {
-
     /**
      * Path to the root directory, where enumeration should start
-     *
-     * @var string
      */
     private $rootDirectory;
 
     /**
      * List of additional include paths, should be below rootDirectory
-     *
-     * @var array
      */
     private $includePaths;
 
     /**
      * List of additional exclude paths, should be below rootDirectory
-     *
-     * @var array
      */
     private $excludePaths;
 
@@ -51,22 +47,22 @@ class Enumerator
      * @param array  $includePaths  List of additional include paths
      * @param array  $excludePaths  List of additional exclude paths
      */
-    public function __construct($rootDirectory, array $includePaths = [], array $excludePaths = [])
+    public function __construct(string $rootDirectory, array $includePaths = [], array $excludePaths = [])
     {
         $this->rootDirectory = $rootDirectory;
-        $this->includePaths = $includePaths;
-        $this->excludePaths = $excludePaths;
+        $this->includePaths  = $includePaths;
+        $this->excludePaths  = $excludePaths;
     }
 
     /**
      * Returns an enumerator for files
      *
-     * @return \Iterator|SplFileInfo[]
+     * @return Iterator|SplFileInfo[]
      * @throws UnexpectedValueException
      * @throws InvalidArgumentException
      * @throws LogicException
      */
-    public function enumerate()
+    public function enumerate(): Iterator
     {
         $finder = new Finder();
         $finder->files()
@@ -88,49 +84,9 @@ class Enumerator
     }
 
     /**
-     * @return array
-     * @throws UnexpectedValueException
-     */
-    private function getInPaths()
-    {
-        $inPaths = [];
-
-        foreach ($this->includePaths as $path) {
-            if (strpos($path, $this->rootDirectory, 0) === false) {
-                throw new UnexpectedValueException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
-            }
-
-            $inPaths[] = $path;
-        }
-
-        if (empty($inPaths)) {
-            $inPaths[] = $this->rootDirectory;
-        }
-
-        return $inPaths;
-    }
-
-    /**
-     * @return array
-     */
-    private function getExcludePaths()
-    {
-        $excludePaths = [];
-
-        foreach ($this->excludePaths as $path) {
-            $path = str_replace('*', '.*', $path);
-            $excludePaths[] = '#' . str_replace($this->rootDirectory . '/', '', $path) . '#';
-        }
-
-        return $excludePaths;
-    }
-
-    /**
      * Returns a filter callback for enumerating files
-     *
-     * @return \Closure
      */
-    public function getFilter()
+    public function getFilter(): Closure
     {
         $rootDirectory = $this->rootDirectory;
         $includePaths = $this->includePaths;
@@ -175,16 +131,50 @@ class Enumerator
      * Return the real path of the given file
      *
      * This is used for testing purpose with virtual file system.
-     * In a vfs the 'realPath' methode will always return false.
+     * In a vfs the 'realPath' method will always return false.
      * So we have a chance to mock this single function to return different path.
-     *
-     * @param SplFileInfo $file
-     *
-     * @return string
      */
-    protected function getFileFullPath(SplFileInfo $file)
+    protected function getFileFullPath(SplFileInfo $file): string
     {
         return $file->getRealPath();
     }
 
+    /**
+     * Returns collection of directories to look at
+     *
+     * @throws UnexpectedValueException if directory not under the root
+     */
+    private function getInPaths(): array
+    {
+        $inPaths = [];
+
+        foreach ($this->includePaths as $path) {
+            if (strpos($path, $this->rootDirectory, 0) === false) {
+                throw new UnexpectedValueException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
+            }
+
+            $inPaths[] = $path;
+        }
+
+        if (empty($inPaths)) {
+            $inPaths[] = $this->rootDirectory;
+        }
+
+        return $inPaths;
+    }
+
+    /**
+     * Returns the list of excluded paths
+     */
+    private function getExcludePaths(): array
+    {
+        $excludePaths = [];
+
+        foreach ($this->excludePaths as $path) {
+            $path = str_replace('*', '.*', $path);
+            $excludePaths[] = '#' . str_replace($this->rootDirectory . '/', '', $path) . '#';
+        }
+
+        return $excludePaths;
+    }
 }

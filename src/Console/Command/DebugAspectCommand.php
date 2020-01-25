@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -14,6 +15,7 @@ use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use Go\Core\AspectLoader;
+use ReflectionObject;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -26,7 +28,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class DebugAspectCommand extends BaseAspectCommand
 {
-
     /**
      * {@inheritDoc}
      */
@@ -70,10 +71,9 @@ EOT
     /**
      * Shows an information about registered aspects
      *
-     * @param SymfonyStyle $io Input-output style
-     * @param array|Aspect[] $aspects List of aspects
+     * @param Aspect[] $aspects List of aspects
      */
-    private function showRegisteredAspectsInfo(SymfonyStyle $io, array $aspects)
+    private function showRegisteredAspectsInfo(SymfonyStyle $io, array $aspects): void
     {
         foreach ($aspects as $aspect) {
             $this->showAspectInfo($io, $aspect);
@@ -82,13 +82,10 @@ EOT
 
     /**
      * Displays an information about single aspect
-     *
-     * @param SymfonyStyle $io Input-output style
-     * @param Aspect $aspect Instance of aspect
      */
-    private function showAspectInfo(SymfonyStyle $io, Aspect $aspect)
+    private function showAspectInfo(SymfonyStyle $io, Aspect $aspect): void
     {
-        $refAspect  = new \ReflectionObject($aspect);
+        $refAspect  = new ReflectionObject($aspect);
         $aspectName = $refAspect->getName();
         $io->section($aspectName);
         $io->writeln('Defined in: <info>' . $refAspect->getFileName() . '</info>');
@@ -101,11 +98,8 @@ EOT
 
     /**
      * Shows an information about aspect pointcuts and advisors
-     *
-     * @param SymfonyStyle $io Input-output style
-     * @param Aspect $aspect Instance of aspect to query information
      */
-    private function showAspectPointcutsAndAdvisors(SymfonyStyle $io, Aspect $aspect)
+    private function showAspectPointcutsAndAdvisors(SymfonyStyle $io, Aspect $aspect): void
     {
         /** @var AspectLoader $aspectLoader */
         $container    = $this->aspectKernel->getContainer();
@@ -129,12 +123,8 @@ EOT
 
     /**
      * Gets the reformatted comment text.
-     *
-     * @param string $comment
-     *
-     * @return string
      */
-    private function getPrettyText($comment)
+    private function getPrettyText(string $comment): string
     {
         $text = preg_replace('|^\s*/?\*+/?|m', '', $comment);
 

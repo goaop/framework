@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -19,13 +20,11 @@ use ReflectionMethod;
  * A constructor invocation is a joinpoint and can be intercepted
  * by a constructor interceptor.
  */
-interface ConstructorInvocation extends Invocation
+interface ConstructorInvocation extends Invocation, ClassJoinpoint
 {
 
     /**
-     * Gets the constructor being called.
-     *
-     * @return ReflectionMethod|null the constructor being called or null if it is absent.
+     * Gets the constructor being called or null if it is absent.
      */
-    public function getConstructor();
+    public function getConstructor(): ?ReflectionMethod;
 }

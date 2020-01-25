@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -27,7 +28,7 @@ class PropertyInterceptorAspect implements Aspect
      *
      * @param FieldAccess $fieldAccess Joinpoint
      *
-     * @Around("access(public|protected Demo\Example\PropertyDemo->*)")
+     * @Around("access(public|protected|private Demo\Example\PropertyDemo->*)")
      * @return mixed
      */
     public function aroundFieldAccess(FieldAccess $fieldAccess)

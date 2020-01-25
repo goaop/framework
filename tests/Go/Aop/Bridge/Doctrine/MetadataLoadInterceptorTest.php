@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -14,10 +15,11 @@ use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Go\Bridge\Doctrine\MetadataLoadInterceptor;
 use Go\Core\AspectContainer;
+use PHPUnit\Framework\TestCase;
 
-class MetadataLoadInterceptorTest extends \PHPUnit_Framework_TestCase
+class MetadataLoadInterceptorTest extends TestCase
 {
-    public function testItWillNotModifyClassMetadataForNonProxiedClasses()
+    public function testItWillNotModifyClassMetadataForNonProxiedClasses(): void
     {
         $metadatas = [
             new ClassMetadata('\\Some\\Class\\Name'),
@@ -39,7 +41,7 @@ class MetadataLoadInterceptorTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    public function testItWillModifyClassMetadataForNonProxiedClasses()
+    public function testItWillModifyClassMetadataForNonProxiedClasses(): void
     {
         $metadata = new ClassMetadata(Entity__AopProxied::class);
         $metadataInterceptor = new MetadataLoadInterceptor();

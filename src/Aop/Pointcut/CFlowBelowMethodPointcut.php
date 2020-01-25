@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -24,22 +25,17 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
 
     /**
      * Filter for the class
-     *
-     * @var null|PointFilter
      */
     protected $internalClassFilter;
 
     /**
      * Filter for the points
-     *
-     * @var null|PointFilter
      */
     protected $internalPointFilter;
 
     /**
      * Control flow below constructor
      *
-     * @param Pointcut $pointcut Instance of pointcut, that will be used for matching
      * @throws \InvalidArgumentException if filter doesn't support methods
      */
     public function __construct(Pointcut $pointcut)
@@ -58,13 +54,11 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         // With single parameter (statically) always matches
-        if (!$instance) {
+        if ($instance === null) {
             return true;
         }
 
@@ -77,7 +71,7 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
             if (!$this->internalClassFilter->matches($refClass)) {
                 continue;
             }
-            $refMethod = new ReflectionMethod($stackFrame['class'], $stackFrame['function']);
+            $refMethod = $refClass->getMethod($stackFrame['function']);
             if ($this->internalPointFilter->matches($refMethod)) {
                 return true;
             }
@@ -88,10 +82,8 @@ class CFlowBelowMethodPointcut implements PointFilter, Pointcut
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind(): int
     {
         return PointFilter::KIND_METHOD | PointFilter::KIND_DYNAMIC;
     }

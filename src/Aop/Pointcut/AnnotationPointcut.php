@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -12,6 +13,7 @@ namespace Go\Aop\Pointcut;
 
 use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Pointcut;
+use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
@@ -22,12 +24,11 @@ use ReflectionProperty;
 class AnnotationPointcut implements Pointcut
 {
     use PointcutClassFilterTrait;
+
     /**
      * Annotation class to match
-     *
-     * @var string
      */
-    protected $annotationName = '';
+    protected $annotationName;
 
     /**
      * Annotation reader
@@ -38,8 +39,6 @@ class AnnotationPointcut implements Pointcut
 
     /**
      * Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY, KIND_TRAIT
-     *
-     * @var int
      */
     protected $filterKind = 0;
 
@@ -73,26 +72,23 @@ class AnnotationPointcut implements Pointcut
      * Annotation matcher constructor
      *
      * @param integer $filterKind Kind of filter, e.g. KIND_CLASS
-     * @param Reader $reader Reader of annotations
-     * @param string $annotationName Annotation class name to match
      */
-    public function __construct($filterKind, Reader $reader, $annotationName)
+    public function __construct(int $filterKind, Reader $annotationReader, string $annotationName)
     {
         if (!isset(self::$mappings[$filterKind])) {
-            throw new \InvalidArgumentException("Unsupported filter kind {$filterKind}");
+            throw new InvalidArgumentException("Unsupported filter kind {$filterKind}");
         }
         $this->filterKind       = $filterKind;
         $this->annotationName   = $annotationName;
-        $this->annotationReader = $reader;
+        $this->annotationReader = $annotationReader;
 
-        list($this->expectedClass, $this->annotationMethod) = self::$mappings[$filterKind];
+        [$this->expectedClass, $this->annotationMethod] = self::$mappings[$filterKind];
     }
 
     /**
-     * @param ReflectionClass|ReflectionMethod|ReflectionProperty $point
      * {@inheritdoc}
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         $expectedClass = $this->expectedClass;
         if (!$point instanceof $expectedClass) {
@@ -106,10 +102,8 @@ class AnnotationPointcut implements Pointcut
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind(): int
     {
         return $this->filterKind;
     }

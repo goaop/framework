@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -40,21 +41,17 @@ interface PointFilter
     const KIND_DYNAMIC     = 256;
 
     /**
-     * Performs matching of point of code
+     * Performs matching of point of code, returns true if point matches
      *
      * @param mixed $point Specific part of code, can be any Reflection class
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null);
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool;
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind();
+    public function getKind(): int;
 }

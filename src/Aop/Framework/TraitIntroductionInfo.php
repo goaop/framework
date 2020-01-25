@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -17,49 +18,37 @@ use Go\Aop\IntroductionInfo;
  */
 class TraitIntroductionInfo implements IntroductionInfo
 {
-
     /**
      * Introduced interface
-     *
-     * @var string
      */
     private $introducedInterface;
 
     /**
-     * Trait to use
-     *
-     * @var string
+     * Introduced trait
      */
     private $introducedTrait;
 
     /**
-     * Create a DefaultIntroductionAdvisor for the given advice.
-     *
-     * @param string $introducedTrait Introduced trait
-     * @param string $introducedInterface Introduced interface
+     * Creates a TraitIntroductionInfo with given trait name and interface name.
      */
-    public function __construct($introducedTrait, $introducedInterface)
+    public function __construct(string $introducedTrait, string $introducedInterface)
     {
         $this->introducedTrait     = $introducedTrait;
         $this->introducedInterface = $introducedInterface;
     }
 
     /**
-     * Return the additional interface introduced by this Advisor or Advice.
-     *
-     * @return string The introduced interface or empty
+     * Returns the additional interface introduced by this Advisor or Advice.
      */
-    public function getInterface()
+    public function getInterface(): string
     {
         return $this->introducedInterface;
     }
 
     /**
-     * Return the additional trait with realization of introduced interface
-     *
-     * @return string The trait name to use or empty
+     * Returns the additional trait with realization of introduced interface
      */
-    public function getTrait()
+    public function getTrait(): string
     {
         return $this->introducedTrait;
     }

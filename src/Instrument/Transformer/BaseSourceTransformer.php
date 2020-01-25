@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -11,36 +12,29 @@
 namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectKernel;
-use Go\Core\AspectContainer;
 
 /**
  * Base source transformer class definition
  */
 abstract class BaseSourceTransformer implements SourceTransformer
 {
-
     /**
      * Transformer options
-     *
-     * @var array
      */
     protected $options = [];
 
     /**
-     * @var AspectKernel|null
+     * Aspect kernel instance
      */
     protected $kernel;
 
     /**
-     * @var AspectContainer|null
+     * Aspect container instance
      */
     protected $container;
 
     /**
      * Default constructor for transformer
-     *
-     * @param AspectKernel $kernel Instance of aspect kernel
-     * @param array $options Custom options or kernel options
      */
     public function __construct(AspectKernel $kernel, array $options = [])
     {

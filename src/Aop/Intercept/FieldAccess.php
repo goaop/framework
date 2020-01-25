@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -19,34 +20,30 @@ use ReflectionProperty;
  *
  * @api
  */
-interface FieldAccess extends Joinpoint
+interface FieldAccess extends ClassJoinpoint
 {
 
     /**
      * The read access type
      */
-    const READ = 0;
+    public const READ = 0;
 
     /**
      * The write access type
      */
-    const WRITE = 1;
+    public const WRITE = 1;
 
     /**
      * Gets the field being accessed.
      *
      * @api
-     *
-     * @return ReflectionProperty the field being accessed.
      */
-    public function getField();
+    public function getField(): ReflectionProperty;
 
     /**
      * Gets the current value of property by reference
      *
      * @api
-     *
-     * @return mixed
      */
     public function &getValue();
 
@@ -54,8 +51,6 @@ interface FieldAccess extends Joinpoint
      * Gets the value that must be set to the field, applicable only for WRITE access type
      *
      * @api
-     *
-     * @return mixed
      */
     public function &getValueToSet();
 
@@ -63,8 +58,6 @@ interface FieldAccess extends Joinpoint
      * Returns the access type.
      *
      * @api
-     *
-     * @return integer
      */
-    public function getAccessType();
+    public function getAccessType(): int;
 }

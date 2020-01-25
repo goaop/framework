@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -37,6 +38,6 @@ class FluentInterfaceAspect implements Aspect
     {
         $result = $invocation->proceed();
 
-        return $result !== null ? $result : $invocation->getThis();
+        return $result ?? $invocation->getThis();
     }
 }

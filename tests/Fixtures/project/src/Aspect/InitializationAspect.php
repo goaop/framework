@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Go\Tests\TestProject\Aspect;
 
@@ -24,6 +25,6 @@ class InitializationAspect implements Aspect
      */
     public function afterClassStaticInitialization()
     {
-        echo 'It invokes after class is loaded into memory.';
+        // echo 'It invokes after class is loaded into memory.';
     }
 }

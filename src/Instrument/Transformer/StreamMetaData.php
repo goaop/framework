@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -14,6 +15,7 @@ use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
 use PhpParser\Node;
+use function is_array, is_resource;
 
 /**
  * Stream metadata object
@@ -91,7 +93,7 @@ class StreamMetaData
      * @param string $source Source code or null
      * @throws \InvalidArgumentException for invalid stream
      */
-    public function __construct($stream, $source = null)
+    public function __construct($stream, string $source = null)
     {
         if (!is_resource($stream)) {
             throw new InvalidArgumentException('Stream should be valid resource');
@@ -136,14 +138,12 @@ class StreamMetaData
 
     /**
      * Returns source code directly from tokens
-     *
-     * @return string
      */
-    private function getSource()
+    private function getSource(): string
     {
         $transformedSource = '';
         foreach ($this->tokenStream as $token) {
-            $transformedSource .= isset($token[1]) ? $token[1] : $token;
+            $transformedSource .= $token[1] ?? $token;
         }
 
         return $transformedSource;
@@ -156,11 +156,11 @@ class StreamMetaData
      *
      * @param string $newSource
      */
-    private function setSource($newSource)
+    private function setSource(string $newSource): void
     {
         $rawTokens = token_get_all($newSource);
         foreach ($rawTokens as $index => $rawToken) {
-            $this->tokenStream[$index] = \is_array($rawToken) ? $rawToken : [T_STRING, $rawToken];
+            $this->tokenStream[$index] = is_array($rawToken) ? $rawToken : [T_STRING, $rawToken];
         }
     }
 }

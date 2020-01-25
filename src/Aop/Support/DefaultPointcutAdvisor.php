@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -14,6 +15,7 @@ use Go\Aop\Advice;
 use Go\Aop\Framework\DynamicInvocationMatcherInterceptor;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Pointcut;
+use Go\Aop\PointcutAdvisor;
 use Go\Aop\PointFilter;
 
 /**
@@ -22,21 +24,15 @@ use Go\Aop\PointFilter;
  * This is the most commonly used Advisor implementation. It can be used with any pointcut and advice type,
  * except for introductions. There is normally no need to subclass this class, or to implement custom Advisors.
  */
-class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
+class DefaultPointcutAdvisor extends AbstractGenericAdvisor implements PointcutAdvisor
 {
-
     /**
-     * Pointcut instance
-     *
-     * @var Pointcut
+     * The Pointcut targeting the Advice
      */
     private $pointcut;
 
     /**
-     * Create a DefaultPointcutAdvisor, specifying Pointcut and Advice.
-     *
-     * @param Pointcut $pointcut The Pointcut targeting the Advice
-     * @param Advice $advice The Advice to run when Pointcut matches
+     * Creates a DefaultPointcutAdvisor, specifying the Advice to run when Pointcut matches
      */
     public function __construct(Pointcut $pointcut, Advice $advice)
     {
@@ -47,7 +43,7 @@ class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
     /**
      * {@inheritdoc}
      */
-    public function getAdvice()
+    public function getAdvice(): Advice
     {
         $advice = parent::getAdvice();
         if (($advice instanceof Interceptor) && ($this->pointcut->getKind() & PointFilter::KIND_DYNAMIC)) {
@@ -60,37 +56,11 @@ class DefaultPointcutAdvisor extends AbstractGenericPointcutAdvisor
         return $advice;
     }
 
-
     /**
      * Get the Pointcut that drives this advisor.
-     *
-     * @return Pointcut The pointcut
      */
-    public function getPointcut()
+    public function getPointcut(): Pointcut
     {
         return $this->pointcut;
-    }
-
-    /**
-     * Specify the pointcut targeting the advice.
-     *
-     * @param Pointcut $pointcut The Pointcut targeting the Advice
-     */
-    public function setPointcut(Pointcut $pointcut)
-    {
-        $this->pointcut = $pointcut;
-    }
-
-    /**
-     * Return string representation of object
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        $pointcutClass = get_class($this->getPointcut());
-        $adviceClass   = get_class($this->getAdvice());
-
-        return static::class . ": pointcut [{$pointcutClass}]; advice [{$adviceClass}]";
     }
 }

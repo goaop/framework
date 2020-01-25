@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -44,10 +45,8 @@ final class MetadataLoadInterceptor implements EventSubscriber
      *
      * @see http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/inheritance-mapping.html#mapped-superclasses
      * @see https://github.com/Atlantic18/DoctrineExtensions
-     *
-     * @param LoadClassMetadataEventArgs $args
      */
-    public function loadClassMetadata(LoadClassMetadataEventArgs $args)
+    public function loadClassMetadata(LoadClassMetadataEventArgs $args): void
     {
         /**
          * @var ClassMetadata $metadata
@@ -67,10 +66,8 @@ final class MetadataLoadInterceptor implements EventSubscriber
     /**
      * Remove fields in Go! AOP proxied class metadata that are inherited
      * from traits.
-     *
-     * @param ClassMetadata $metadata
      */
-    private function removeMappingsFromTraits(ClassMetadata $metadata)
+    private function removeMappingsFromTraits(ClassMetadata $metadata): void
     {
         $traits = $this->getTraits($metadata->name);
 
@@ -106,10 +103,8 @@ final class MetadataLoadInterceptor implements EventSubscriber
      *
      * @throws \InvalidArgumentException
      * @throws \RuntimeException
-     *
-     * @return array Used traits.
      */
-    private function getTraits($objectOrClass, $autoload = true)
+    private function getTraits($objectOrClass, $autoload = true): array
     {
         if (is_object($objectOrClass)) {
             $objectOrClass = get_class($objectOrClass);

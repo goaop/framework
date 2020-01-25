@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -40,8 +41,13 @@ final class ClassAdvisorIdentifier
      */
     private $index;
 
-    public function __construct($class, $subject, $target, $advisorIdentifier = null, $index = null)
-    {
+    public function __construct(
+        $class,
+        string $subject,
+        string $target,
+        string $advisorIdentifier = null,
+        int $index = null
+    ) {
         $this->class             = is_object($class) ? get_class($class) : $class;
         $this->subject           = $subject;
         $this->advisorIdentifier = $advisorIdentifier;
@@ -51,20 +57,16 @@ final class ClassAdvisorIdentifier
 
     /**
      * Get full qualified class name.
-     *
-     * @return string
      */
-    public function getClass()
+    public function getClass(): string
     {
         return $this->class;
     }
 
     /**
      * Get name of subject (method, property...) of interception.
-     *
-     * @return string
      */
-    public function getSubject()
+    public function getSubject(): string
     {
         return $this->subject;
     }
@@ -80,7 +82,7 @@ final class ClassAdvisorIdentifier
      *
      * @return string
      */
-    public function getTarget()
+    public function getTarget(): string
     {
         return $this->target;
     }
@@ -88,7 +90,7 @@ final class ClassAdvisorIdentifier
     /**
      * Get get advisor identifier.
      *
-     * @return string
+     * @return string|null
      */
     public function getAdvisorIdentifier()
     {

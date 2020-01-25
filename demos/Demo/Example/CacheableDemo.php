@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -28,10 +29,10 @@ class CacheableDemo
      *
      * @return string
      */
-    public function getReport($from)
+    public function getReport(string $from) : string
     {
         // long calculation for 100ms
-        usleep(0.1 * 1e6);
+        usleep(100 * 1000);
 
         return $from;
     }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -16,31 +17,24 @@ use ReflectionFunctionAbstract;
 /**
  * Return type filter matcher methods and function with specific return type
  *
- * Namespace name can contain wildcards '*', '**' and '?'
+ * Type name can contain wildcards '*', '**' and '?'
  */
 class ReturnTypeFilter implements PointFilter
 {
-
     /**
-     * Namespace name to match, can contain wildcards *,?
-     *
-     * @var string
+     * Return type name to match, can contain wildcards *,?
      */
     protected $typeName;
 
     /**
      * Pattern for regular expression matching
-     *
-     * @var string
      */
     protected $regexp;
 
     /**
-     * Namespace name matcher constructor
-     *
-     * @param string $returnTypeName Name of the return type to match or glob pattern
+     * Return type name matcher constructor accepts name or glob pattern of the type to match
      */
-    public function __construct($returnTypeName)
+    public function __construct(string $returnTypeName)
     {
         $returnTypeName = trim($returnTypeName, '\\');
         $this->typeName = $returnTypeName;
@@ -54,15 +48,14 @@ class ReturnTypeFilter implements PointFilter
 
     /**
      * {@inheritdoc}
-     * @param ReflectionFunctionAbstract
      */
-    public function matches($functionLike, $context = null, $instance = null, array $arguments = null)
+    public function matches($functionLike, $context = null, $instance = null, array $arguments = null): bool
     {
         if (!$functionLike instanceof ReflectionFunctionAbstract) {
             return false;
         }
 
-        if (PHP_VERSION_ID < 70000 || !$functionLike->hasReturnType()) {
+        if (!$functionLike->hasReturnType()) {
             return false;
         }
 
@@ -74,7 +67,7 @@ class ReturnTypeFilter implements PointFilter
     /**
      * Returns the kind of point filter
      */
-    public function getKind()
+    public function getKind(): int
     {
         return self::KIND_METHOD | self::KIND_FUNCTION;
     }

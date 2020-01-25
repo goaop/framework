@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,11 +11,15 @@
 
 namespace Go\Instrument\ClassLoading;
 
+use ErrorException;
 use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
+use InvalidArgumentException;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
+use function count;
 
 /**
  * Warms up the cache
@@ -22,36 +27,33 @@ use Symfony\Component\Console\Output\OutputInterface;
 class CacheWarmer
 {
     /**
-     * @var AspectKernel
+     * Instance of aspect kernel
      */
     protected $aspectKernel;
 
     /**
-     * @var OutputInterface
+     * Output instance
      */
     protected $output;
 
     /**
      * CacheWarmer constructor.
-     *
-     * @param AspectKernel $aspectKernel A kernel
-     * @param OutputInterface $output Optional output to log current status.
      */
     public function __construct(AspectKernel $aspectKernel, OutputInterface $output = null)
     {
         $this->aspectKernel = $aspectKernel;
-        $this->output       = $output !== null ? $output : new NullOutput();
+        $this->output       = $output ?? new NullOutput();
     }
 
     /**
      * Warms up cache
      */
-    public function warmUp()
+    public function warmUp(): void
     {
         $options = $this->aspectKernel->getOptions();
 
         if (empty($options['cacheDir'])) {
-            throw new \InvalidArgumentException('Cache warmer require the `cacheDir` options to be configured');
+            throw new InvalidArgumentException('Cache warmer require the `cacheDir` options to be configured');
         }
 
         $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
@@ -63,12 +65,12 @@ class CacheWarmer
         $iterator->rewind();
 
         set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-            throw new \ErrorException($errstr, $errno, 0, $errfile, $errline);
+            throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
 
         $errors = [];
 
-        $displayException = function (\Exception $exception, $path) use (&$errors) {
+        $displayException = function (Throwable $exception, string $path) use (&$errors) {
             $this->output->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: %s', $path));
             $errors[$path] = $exception->getMessage();
         };
@@ -84,9 +86,7 @@ class CacheWarmer
                 );
 
                 $this->output->writeln(sprintf('<fg=green;options=bold>[OK]</>: <comment>%s</comment>', $path));
-            } catch (\Throwable $e) {
-                $displayException($e, $path);
-            } catch (\Exception $e) {
+            } catch (Throwable $e) {
                 $displayException($e, $path);
             }
         }

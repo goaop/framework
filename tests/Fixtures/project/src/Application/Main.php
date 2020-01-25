@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace Go\Tests\TestProject\Application;
 
@@ -23,5 +24,11 @@ class Main extends AbstractBar
     public function doSomethingElse()
     {
         echo 'I did something else';
+    }
+
+    public function getFilename()
+    {
+        $reflectedClass = new \ReflectionClass($this);
+        return $reflectedClass->getFileName();
     }
 }

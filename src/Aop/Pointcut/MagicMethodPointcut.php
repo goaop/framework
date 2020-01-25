@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -22,22 +23,16 @@ class MagicMethodPointcut implements PointFilter, Pointcut
 
     /**
      * Method name to match, can contain wildcards *,?
-     *
-     * @var string
      */
     protected $methodName = '';
 
     /**
      * Regular expression for matching
-     *
-     * @var string
      */
     protected $regexp;
 
     /**
      * Modifier filter for method
-     *
-     * @var PointFilter
      */
     protected $modifierFilter;
 
@@ -45,11 +40,8 @@ class MagicMethodPointcut implements PointFilter, Pointcut
      * Magic method matcher constructor
      *
      * NB: only public methods can be matched as __call and __callStatic are public
-     *
-     * @param string $methodName Name of the dynamic method to match or glob pattern
-     * @param PointFilter $modifierFilter Method modifier filter (static or not)
      */
-    public function __construct($methodName, PointFilter $modifierFilter = null)
+    public function __construct(string $methodName, PointFilter $modifierFilter)
     {
         $this->methodName     = $methodName;
         $this->regexp         = strtr(preg_quote($this->methodName, '/'), [
@@ -67,13 +59,11 @@ class MagicMethodPointcut implements PointFilter, Pointcut
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null)
+    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
         // With single parameter (statically) always matches for __call, __callStatic
-        if (!$instance) {
+        if ($instance === null) {
             return ($point->name === '__call' || $point->name === '__callStatic');
         }
 
@@ -82,17 +72,15 @@ class MagicMethodPointcut implements PointFilter, Pointcut
         }
 
         // for __call and __callStatic method name is the first argument on invocation
-        list($methodName) = $arguments;
+        [$methodName] = $arguments;
 
         return ($methodName === $this->methodName) || (bool) preg_match("/^(?:{$this->regexp})$/", $methodName);
     }
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind(): int
     {
         return PointFilter::KIND_METHOD | PointFilter::KIND_DYNAMIC;
     }

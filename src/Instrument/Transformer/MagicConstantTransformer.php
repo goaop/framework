@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -25,7 +26,6 @@ use PhpParser\Node\Identifier;
  */
 class MagicConstantTransformer extends BaseSourceTransformer
 {
-
     /**
      * Root path of application
      *
@@ -42,8 +42,6 @@ class MagicConstantTransformer extends BaseSourceTransformer
 
     /**
      * Class constructor
-     *
-     * @param AspectKernel $kernel Instance of kernel
      */
     public function __construct(AspectKernel $kernel)
     {
@@ -55,10 +53,9 @@ class MagicConstantTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      *
-     * @param StreamMetaData $metadata Metadata for source
      * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata)
+    public function transform(StreamMetaData $metadata): string
     {
         $this->replaceMagicDirFileConstants($metadata);
         $this->wrapReflectionGetFileName($metadata);
@@ -69,26 +66,23 @@ class MagicConstantTransformer extends BaseSourceTransformer
 
     /**
      * Resolves file name from the cache directory to the real application root dir
-     *
-     * @param string $fileName Absolute file name
-     *
-     * @return string Resolved file name
      */
-    public static function resolveFileName($fileName)
+    public static function resolveFileName(string $fileName): string
     {
-        return str_replace(
+        $suffix = '.php';
+        $pathParts = explode($suffix, str_replace(
             [self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'],
             [self::$rootPath, ''],
             $fileName
-        );
+        ));
+        // throw away namespaced path from actual filename
+        return $pathParts[0] . $suffix;
     }
 
     /**
      * Wraps all possible getFileName() methods from ReflectionFile
-     *
-     * @param StreamMetaData $metadata
      */
-    private function wrapReflectionGetFileName(StreamMetaData $metadata)
+    private function wrapReflectionGetFileName(StreamMetaData $metadata): void
     {
         $methodCallFinder = new NodeFinderVisitor([MethodCall::class]);
         $traverser        = new NodeTraverser();
@@ -102,18 +96,18 @@ class MagicConstantTransformer extends BaseSourceTransformer
                 $startPosition    = $methodCallNode->getAttribute('startTokenPos');
                 $endPosition      = $methodCallNode->getAttribute('endTokenPos');
                 $expressionPrefix = '\\' . __CLASS__ . '::resolveFileName(';
+
                 $metadata->tokenStream[$startPosition][1] = $expressionPrefix . $metadata->tokenStream[$startPosition][1];
                 $metadata->tokenStream[$endPosition][1] .= ')';
             }
+
         }
     }
 
     /**
      * Replaces all magic __DIR__ and __FILE__ constants in the file with calculated value
-     *
-     * @param StreamMetaData $metadata
      */
-    private function replaceMagicDirFileConstants(StreamMetaData $metadata)
+    private function replaceMagicDirFileConstants(StreamMetaData $metadata): void
     {
         $magicConstFinder = new NodeFinderVisitor([Dir::class, File::class]);
         $traverser        = new NodeTraverser();

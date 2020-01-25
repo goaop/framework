@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -18,20 +19,15 @@ use Go\Aop\PointFilter;
  */
 class InheritanceClassFilter implements PointFilter
 {
-
     /**
-     * Instance class name to match
-     *
-     * @var string
+     * Parent class or interface name to match in hierarchy
      */
-    protected $parentClass = '';
+    protected $parentClass;
 
     /**
      * Inheritance class matcher constructor
-     *
-     * @param string $parentClassName Name of the parent class or interface to match
      */
-    public function __construct($parentClassName)
+    public function __construct(string $parentClassName)
     {
         $this->parentClass = $parentClassName;
     }
@@ -43,24 +39,20 @@ class InheritanceClassFilter implements PointFilter
      * @param null|mixed $context Related context, can be class or namespace
      * @param null|string|object $instance Invocation instance or string for static calls
      * @param null|array $arguments Dynamic arguments for method
-     *
-     * @return bool
      */
-    public function matches($class, $context = null, $instance = null, array $arguments = null)
+    public function matches($class, $context = null, $instance = null, array $arguments = null): bool
     {
         if (!$class instanceof ReflectionClass) {
             return false;
         }
 
-        return $class->isSubclassOf($this->parentClass) || in_array($this->parentClass, $class->getInterfaceNames());
+        return $class->isSubclassOf($this->parentClass) || \in_array($this->parentClass, $class->getInterfaceNames());
     }
 
     /**
      * Returns the kind of point filter
-     *
-     * @return integer
      */
-    public function getKind()
+    public function getKind(): int
     {
         return self::KIND_CLASS;
     }

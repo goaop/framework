@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -10,13 +11,15 @@
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Intercept\ClassJoinpoint;
 use Go\Core\AspectContainer;
 use ReflectionClass;
+use function strlen;
 
 /**
  * Static initialization joinpoint is invoked after class is loaded into memory
  */
-class StaticInitializationJoinpoint extends AbstractJoinpoint
+class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJoinpoint
 {
 
     /**
@@ -25,15 +28,11 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
     protected $reflectionClass;
 
     /**
-     * Constructor for static initialization joinpoint
+     * Constructor for the class static initialization joinpoint
      *
-     * @param string $className Name of the class
-     * @param string $type Type of joinpoint
-     * @param $advices array List of advices for this invocation
-     *
-     * @internal param ReflectionClass $reflectionClass Reflection of class
+     * @param array $advices List of advices for this invocation
      */
-    public function __construct($className, $type, array $advices)
+    public function __construct(string $className, string $unusedType, array $advices)
     {
         $originalClass = $className;
         if (strpos($originalClass, AspectContainer::AOP_PROXIED_SUFFIX)) {
@@ -46,7 +45,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
     /**
      * Proceeds to the next interceptor in the chain.
      *
-     * @return mixed see the children interfaces' proceed definition.
+     * @return void Static initializtion could not return anything
      */
     public function proceed()
     {
@@ -58,48 +57,51 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint
 
     /**
      * Invokes current joinpoint with all interceptors
-     *
-     * @return mixed
      */
-    final public function __invoke()
+    final public function __invoke(): void
     {
         $this->current = 0;
-
-        return $this->proceed();
+        $this->proceed();
     }
 
     /**
-     * Returns the object that holds the current joinpoint's static
-     * part.
+     * Returns the object for which current joinpoint is invoked
      *
-     * @return object|null the object (can be null if the accessible object is
-     * static).
+     * @return object|null Instance of object or null for static call/unavailable context
      */
-    public function getThis()
+    public function getThis(): ?object
     {
         return null;
     }
 
     /**
-     * Returns the static part of this joinpoint.
+     * Checks if the current joinpoint is dynamic or static
      *
-     * @return ReflectionClass
+     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
+     *
+     * @see ClassJoinpoint::getThis()
      */
-    public function getStaticPart()
+    public function isDynamic(): bool
     {
-        return $this->reflectionClass;
+        return false;
+    }
+
+    /**
+     * Returns the static scope name (class name) of this joinpoint.
+     */
+    public function getScope(): string
+    {
+        return $this->reflectionClass->getName();
     }
 
     /**
      * Returns a friendly description of current joinpoint
-     *
-     * @return string
      */
-    final public function __toString()
+    final public function __toString(): string
     {
         return sprintf(
             'staticinitialization(%s)',
-            $this->reflectionClass->getName()
+            $this->getScope()
         );
     }
 }

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -10,7 +11,7 @@
 
 namespace Go\PhpUnit;
 
-use PHPUnit_Framework_Constraint as Constraint;
+use PHPUnit\Framework\Constraint\Constraint;
 
 /**
  * Asserts that class member is woven for given class.
@@ -31,7 +32,7 @@ final class ClassMemberWovenConstraint extends Constraint
     /**
      * {@inheritdoc}
      */
-    public function matches($other)
+    public function matches($other): bool
     {
         if (!$other instanceof ClassAdvisorIdentifier) {
             throw new \InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));
@@ -67,7 +68,7 @@ final class ClassMemberWovenConstraint extends Constraint
     /**
      * {@inheritdoc}
      */
-    public function toString()
+    public function toString(): string
     {
         return 'class member woven.';
     }

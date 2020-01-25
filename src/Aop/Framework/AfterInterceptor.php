@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -18,22 +19,17 @@ use Go\Aop\Intercept\Joinpoint;
  *
  * @api
  */
-final class AfterInterceptor extends BaseInterceptor implements AdviceAfter
+final class AfterInterceptor extends AbstractInterceptor implements AdviceAfter
 {
     /**
-     * After invoker
-     *
-     * @param Joinpoint $joinpoint the concrete joinpoint
-     *
-     * @return mixed the result of the call to {@link Joinpoint::proceed()}
+     * @inheritdoc
      */
     public function invoke(Joinpoint $joinpoint)
     {
         try {
             return $joinpoint->proceed();
         } finally {
-            $adviceMethod = $this->adviceMethod;
-            $adviceMethod($joinpoint);
+            ($this->adviceMethod)($joinpoint);
         }
     }
 }

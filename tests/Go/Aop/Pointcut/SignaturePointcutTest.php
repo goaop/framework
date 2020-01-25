@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -15,15 +16,16 @@ use Go\Aop\PointFilter;
 use Go\Aop\Support\NotPointFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Stubs\First;
+use PHPUnit\Framework\TestCase;
 
-class SignaturePointcutTest extends \PHPUnit_Framework_TestCase
+class SignaturePointcutTest extends TestCase
 {
-    const STUB_CLASS = First::class;
+    private const STUB_CLASS = First::class;
 
     /**
      * Tests that method matched by name directly
      */
-    public function testDirectMethodMatchByName()
+    public function testDirectMethodMatchByName(): void
     {
         $filterKind = PointFilter::KIND_METHOD;
         $pointcut   = new SignaturePointcut($filterKind, 'publicMethod', TruePointFilter::getInstance());
@@ -34,7 +36,7 @@ class SignaturePointcutTest extends \PHPUnit_Framework_TestCase
     /**
      * Tests that pointcut can match property
      */
-    public function testCanMatchProperty()
+    public function testCanMatchProperty(): void
     {
         $filterKind = PointFilter::KIND_METHOD;
         $pointcut   = new SignaturePointcut($filterKind, 'public', TruePointFilter::getInstance());
@@ -45,7 +47,7 @@ class SignaturePointcutTest extends \PHPUnit_Framework_TestCase
     /**
      * Tests that pointcut won't match if modifier filter is not match
      */
-    public function testWontMatchModifier()
+    public function testWontMatchModifier(): void
     {
         $trueInstance = TruePointFilter::getInstance();
         $notInstance  = new NotPointFilter($trueInstance);
@@ -59,7 +61,7 @@ class SignaturePointcutTest extends \PHPUnit_Framework_TestCase
     /**
      * Tests that pattern is working correctly
      */
-    public function testRegularPattern()
+    public function testRegularPattern(): void
     {
         $filterKind = PointFilter::KIND_METHOD;
         $pointcut   = new SignaturePointcut($filterKind, '*Method', TruePointFilter::getInstance());
@@ -73,7 +75,7 @@ class SignaturePointcutTest extends \PHPUnit_Framework_TestCase
     /**
      * Tests that multiple pattern is matching
      */
-    public function testMultipleRegularPattern()
+    public function testMultipleRegularPattern(): void
     {
         $filterKind = PointFilter::KIND_METHOD;
         $pointcut   = new SignaturePointcut($filterKind, 'publicMethod|protectedMethod', TruePointFilter::getInstance());
@@ -89,7 +91,7 @@ class SignaturePointcutTest extends \PHPUnit_Framework_TestCase
      *
      * @link https://github.com/lisachenko/go-aop-php/issues/115
      */
-    public function testIssue115()
+    public function testIssue115(): void
     {
         $filterKind = PointFilter::KIND_METHOD;
         $pointcut   = new SignaturePointcut($filterKind, 'public|Public', TruePointFilter::getInstance());

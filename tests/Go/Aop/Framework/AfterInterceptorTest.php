@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -33,7 +34,7 @@ class AfterInterceptorTest extends AbstractInterceptorTest
         $invocation = $this->getInvocation($sequence, true);
 
         $interceptor = new AfterInterceptor($advice);
-        $this->setExpectedException('RuntimeException');
+        $this->expectException('RuntimeException');
         try {
             $interceptor->invoke($invocation);
         } catch (\Exception $e) {

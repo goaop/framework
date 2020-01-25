@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -130,7 +131,7 @@ use Go\Instrument\Transformer\MagicConstantTransformer;
 $isAOPDisabled = isset($_COOKIE['aop_on']) && $_COOKIE['aop_on'] == 'false';
 include __DIR__ . ($isAOPDisabled ? '/../vendor/autoload.php' : '/autoload_aspect.php');
 
-$showCase   = isset($_GET['showcase']) ? $_GET['showcase'] : 'default';
+$showCase   = $_GET['showcase'] ?? 'default';
 $example    = null;
 $aspectName = '';
 
@@ -139,10 +140,10 @@ switch ($showCase) {
         $aspectName = 'Demo\Aspect\CachingAspect';
 
         $example = new CacheableDemo();
-        $result  = $example->getReport(12345); // First call will take 0.1 second
+        $result  = $example->getReport('Test'); // First call will take 0.1 second
         echo "Result is: ", $result, PHP_EOL;
 
-        $result = $example->getReport(12346); // This call is cached and result should be '12345'
+        $result = $example->getReport('Test1'); // This call is cached and result should be 'Test'
         echo "Result is: ", $result, PHP_EOL;
         break;
 
@@ -259,7 +260,16 @@ if ($example):
       <div class="panel-body well panel-collapse collapse out" id="collapseTwo">
 <?php
 $refObject = new ReflectionObject($example);
-Highlighter::highlight(MagicConstantTransformer::resolveFileName($refObject->getFileName()));
+
+/**
+ * Get filename without proxy additions
+ */
+$path = $refObject->getFileName();
+$basename = basename($path);
+$explodedPath = explode($basename, $path);
+$path = array_shift($explodedPath) . $basename;
+
+Highlighter::highlight(MagicConstantTransformer::resolveFileName($path));
 ?>
       </div>
     </div>

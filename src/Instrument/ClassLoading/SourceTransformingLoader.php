@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -13,6 +14,8 @@ namespace Go\Instrument\ClassLoading;
 use php_user_filter as PhpStreamFilter;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\SourceTransformer;
+use RuntimeException;
+use function strlen;
 
 /**
  * Php class loader filter for processing php code
@@ -24,24 +27,22 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Php filter definition
      */
-    const PHP_FILTER_READ = 'php://filter/read=';
+    public const PHP_FILTER_READ = 'php://filter/read=';
 
     /**
      * Default PHP filter name for registration
      */
-    const FILTER_IDENTIFIER = 'go.source.transforming.loader';
+    public const FILTER_IDENTIFIER = 'go.source.transforming.loader';
 
     /**
      * String buffer
-     *
-     * @var string
      */
     protected $data = '';
 
     /**
      * List of transformers
      *
-     * @var array|SourceTransformer[]
+     * @var SourceTransformer[]
      */
     protected static $transformers = [];
 
@@ -55,18 +56,17 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Register current loader as stream filter in PHP
      *
-     * @param string $filterId Identifier for the filter
-     * @throws \RuntimeException If registration was failed
+     * @throws RuntimeException If registration was failed
      */
-    public static function register($filterId = self::FILTER_IDENTIFIER)
+    public static function register(string $filterId = self::FILTER_IDENTIFIER): void
     {
         if (!empty(self::$filterId)) {
-            throw new \RuntimeException('Stream filter already registered');
+            throw new RuntimeException('Stream filter already registered');
         }
 
         $result = stream_filter_register($filterId, __CLASS__);
-        if (!$result) {
-            throw new \RuntimeException('Stream filter was not registered');
+        if ($result === false) {
+            throw new RuntimeException('Stream filter was not registered');
         }
         self::$filterId = $filterId;
     }
@@ -74,13 +74,12 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Returns the name of registered filter
      *
-     * @throws \RuntimeException if filter was not registered
-     * @return string
+     * @throws RuntimeException if filter was not registered
      */
-    public static function getId()
+    public static function getId(): string
     {
         if (empty(self::$filterId)) {
-            throw new \RuntimeException('Stream filter was not registered');
+            throw new RuntimeException('Stream filter was not registered');
         }
 
         return self::$filterId;
@@ -113,24 +112,16 @@ class SourceTransformingLoader extends PhpStreamFilter
 
     /**
      * Adds a SourceTransformer to be applied by this LoadTimeWeaver.
-     *
-     * @param $transformer SourceTransformer Transformer for source code
-     *
-     * @return void
      */
-    public static function addTransformer(SourceTransformer $transformer)
+    public static function addTransformer(SourceTransformer $transformer): void
     {
         self::$transformers[] = $transformer;
     }
 
     /**
      * Transforms source code by passing it through all transformers
-     *
-     * @param StreamMetaData|null $metadata Metadata from stream
-     *
-     * @return void
      */
-    public static function transformCode(StreamMetaData $metadata)
+    public static function transformCode(StreamMetaData $metadata): void
     {
         foreach (self::$transformers as $transformer) {
             $result = $transformer->transform($metadata);
