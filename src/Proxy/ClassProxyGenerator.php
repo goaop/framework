@@ -29,9 +29,9 @@ use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Proxy\Part\PropertyInterceptionTrait;
 use ReflectionClass;
 use ReflectionMethod;
-use Zend\Code\Generator\ClassGenerator;
-use Zend\Code\Generator\DocBlockGenerator;
-use Zend\Code\Reflection\DocBlockReflection;
+use Laminas\Code\Generator\ClassGenerator;
+use Laminas\Code\Generator\DocBlockGenerator;
+use Laminas\Code\Reflection\DocBlockReflection;
 
 /**
  * Class proxy builder that is used to generate a child class from the list of joinpoints

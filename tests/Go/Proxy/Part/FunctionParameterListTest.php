@@ -13,7 +13,7 @@ namespace Go\Proxy\Part;
 
 use function class_exists;
 use PHPUnit\Framework\TestCase;
-use Zend\Code\Generator\ValueGenerator;
+use Laminas\Code\Generator\ValueGenerator;
 
 class FunctionParameterListTest extends TestCase
 {

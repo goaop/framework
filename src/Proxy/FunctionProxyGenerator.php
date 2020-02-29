@@ -19,8 +19,8 @@ use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use Go\Proxy\Part\InterceptedFunctionGenerator;
 use ReflectionFunction;
-use Zend\Code\Generator\FileGenerator;
-use Zend\Code\Generator\ValueGenerator;
+use Laminas\Code\Generator\FileGenerator;
+use Laminas\Code\Generator\ValueGenerator;
 
 /**
  * Function proxy builder that is used to generate a proxy-function from the list of joinpoints

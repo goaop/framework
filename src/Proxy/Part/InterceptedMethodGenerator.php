@@ -12,9 +12,9 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use ReflectionMethod;
-use Zend\Code\Generator\DocBlockGenerator;
-use Zend\Code\Generator\MethodGenerator;
-use Zend\Code\Reflection\DocBlockReflection;
+use Laminas\Code\Generator\DocBlockGenerator;
+use Laminas\Code\Generator\MethodGenerator;
+use Laminas\Code\Reflection\DocBlockReflection;
 
 /**
  * Prepares the definition of intercepted method
