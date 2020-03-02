@@ -12,11 +12,11 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use ReflectionFunction;
-use Zend\Code\Generator\AbstractGenerator;
-use Zend\Code\Generator\DocBlockGenerator;
-use Zend\Code\Generator\ParameterGenerator;
-use Zend\Code\Generator\TypeGenerator;
-use Zend\Code\Reflection\DocBlockReflection;
+use Laminas\Code\Generator\AbstractGenerator;
+use Laminas\Code\Generator\DocBlockGenerator;
+use Laminas\Code\Generator\ParameterGenerator;
+use Laminas\Code\Generator\TypeGenerator;
+use Laminas\Code\Reflection\DocBlockReflection;
 
 /**
  * Prepares the definition of intercepted function

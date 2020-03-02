@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Zend\Code\Generator\PropertyGenerator;
-use Zend\Code\Generator\PropertyValueGenerator;
+use Laminas\Code\Generator\PropertyGenerator;
+use Laminas\Code\Generator\PropertyValueGenerator;
 
 /**
  * Prepares the definition for joinpoints private property in the class
@@ -29,7 +29,7 @@ final class JoinPointPropertyGenerator extends PropertyGenerator
      *
      * @param array $advices List of advices to apply per class
      *
-     * @throws \Zend\Code\Generator\Exception\InvalidArgumentException
+     * @throws \Laminas\Code\Generator\Exception\InvalidArgumentException
      */
     public function __construct(array $advices)
     {

@@ -13,7 +13,7 @@ namespace Go\Proxy\Part;
 
 use LogicException;
 use ReflectionMethod;
-use Zend\Code\Generator\MethodGenerator;
+use Laminas\Code\Generator\MethodGenerator;
 use function count;
 
 /**

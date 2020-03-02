@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use ReflectionFunctionAbstract;
-use Zend\Code\Generator\ParameterGenerator;
-use Zend\Code\Generator\ValueGenerator;
+use Laminas\Code\Generator\ParameterGenerator;
+use Laminas\Code\Generator\ValueGenerator;
 
 /**
  * Generates parameters from reflection definition

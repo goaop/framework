@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use ReflectionFunctionAbstract;
-use Zend\Code\Generator\AbstractGenerator;
+use Laminas\Code\Generator\AbstractGenerator;
 
 /**
  * Prepares the function call argument list
