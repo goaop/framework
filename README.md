@@ -3,7 +3,7 @@ Go! Aspect-Oriented Framework for PHP
 
 Go! AOP is a modern aspect-oriented framework in plain PHP with rich features for the new level of software development. The framework allows cross-cutting issues to be solved in the traditional object-oriented PHP code by providing a highly efficient and transparent hook system for your exisiting code.
 
-[![Build Status](https://secure.travis-ci.org/goaop/framework.png?branch=master)](https://travis-ci.org/goaop/framework)
+[![Build Status](https://secure.travis-ci.org/goaop/framework.svg?branch=master)](https://travis-ci.org/goaop/framework)
 [![GitHub release](https://img.shields.io/github/release/goaop/framework.svg)](https://github.com/goaop/framework/releases/latest)
 [![Total Downloads](https://img.shields.io/packagist/dt/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![Daily Downloads](https://img.shields.io/packagist/dd/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
