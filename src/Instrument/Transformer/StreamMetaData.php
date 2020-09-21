@@ -110,7 +110,7 @@ class StreamMetaData
             $this->$mappedKey = $value;
         }
         $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
-        $this->setSource($source);
+        $this->setTokenStreamFromRawTokens(ReflectionEngine::getLexer()->getTokens());
     }
 
     /**
@@ -159,6 +159,16 @@ class StreamMetaData
     private function setSource(string $newSource): void
     {
         $rawTokens = token_get_all($newSource);
+        $this->setTokenStreamFromRawTokens($rawTokens);
+    }
+
+    /**
+     * Sets an array of token identifiers for this file
+     *
+     * @param array $rawTokens
+     */
+    public function setTokenStreamFromRawTokens($rawTokens): void
+    {
         foreach ($rawTokens as $index => $rawToken) {
             $this->tokenStream[$index] = is_array($rawToken) ? $rawToken : [T_STRING, $rawToken];
         }
