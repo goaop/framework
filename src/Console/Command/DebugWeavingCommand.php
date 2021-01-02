@@ -88,6 +88,8 @@ EOT
         }
 
         $io->success('Weaving is stable, there are no errors reported.');
+
+        return 0;
     }
 
     /**

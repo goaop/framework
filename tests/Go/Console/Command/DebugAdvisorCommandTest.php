@@ -25,8 +25,7 @@ class DebugAdvisorCommandTest extends BaseFunctionalTest
 
     public function testItDisplaysStatedAdvisorDebugInfo()
     {
-        $output = self::execute('debug:advisor', '--advisor="Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod"');
-
+        $output        = self::execute('debug:advisor', ['--advisor=Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod']);
         $enumerator    = new Enumerator(realpath($this->configuration['appDir'].'/src'));
         $srcFilesCount = iterator_count($enumerator->enumerate());
 

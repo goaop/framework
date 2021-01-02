@@ -9,7 +9,7 @@ class DebugWeavingCommandTest extends BaseFunctionalTest
 {
     public function testReportInconsistentWeaving()
     {
-        $output = str_replace("\n", ' ', $this->execute('debug:weaving', null, false, 1));
+        $output = str_replace("\n", ' ', $this->execute('debug:weaving', [], false, 1));
 
         $this->assertMatchesRegularExpression('/.+InconsistentlyWeavedClass.php.+generated.+on.+second.+"warmup".+pass.+/', $output);
         $this->assertMatchesRegularExpression('/.+Main.php".+is.+consistently.+weaved.+/', $output);
