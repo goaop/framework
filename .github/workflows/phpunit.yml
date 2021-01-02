@@ -15,7 +15,6 @@ jobs:
           - "lowest"
           - "highest"
         php-version:
-          - "7.3"
           - "7.4"
         operating-system:
           - "ubuntu-latest"
