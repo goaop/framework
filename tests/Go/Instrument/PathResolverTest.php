@@ -58,6 +58,10 @@ class PathResolverTest extends TestCase
     {
         $curDir = getcwd();
         $parent = dirname($curDir);
+        // If we use top-level directory in Docker, then dirname will be '/' and result will be incorrect
+        if ($parent === '/') {
+            $parent = '';
+        }
 
         return [
             ['/some/absolute/file' , '/some/absolute/file'],

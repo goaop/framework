@@ -40,10 +40,10 @@ class FunctionCallArgumentListGeneratorTest extends TestCase
     public function dataGenerator(): array
     {
         return [
-            ['var_dump', '$vars'],                  // var_dump(...$vars)
-            ['array_pop', '[&$stack]'],             // array_pop(&$stack)
-            ['pack', '[$format], $args'],           // pack($format, ...$args)
-            ['strcoll', '[$str1, $str2]'],          // strcoll($str1, $str2)
+            ['var_dump', '$vars'],                    // var_dump(...$vars)
+            ['array_pop', '[&$stack]'],               // array_pop(&$stack)
+            ['array_diff_assoc', '[$arr1], $arrays'], // array_diff_assoc($arr1, ...$arrays)
+            ['strcoll', '[$str1, $str2]'],            // strcoll($str1, $str2)
             ['basename', '\array_slice([$path, $suffix], 0, \func_num_args())'],  // basename($path, $suffix = null)
         ];
     }

@@ -3,12 +3,12 @@ Go! Aspect-Oriented Framework for PHP
 
 Go! AOP is a modern aspect-oriented framework in plain PHP with rich features for the new level of software development. The framework allows cross-cutting issues to be solved in the traditional object-oriented PHP code by providing a highly efficient and transparent hook system for your exisiting code.
 
-[![Build Status](https://secure.travis-ci.org/goaop/framework.svg?branch=master)](https://travis-ci.org/goaop/framework)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/goaop/framework/PHPUnit%20tests)
 [![GitHub release](https://img.shields.io/github/release/goaop/framework.svg)](https://github.com/goaop/framework/releases/latest)
 [![Total Downloads](https://img.shields.io/packagist/dt/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![Daily Downloads](https://img.shields.io/packagist/dd/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![SensioLabs Insight](https://img.shields.io/sensiolabs/i/9f3e6de1-ea14-4910-b2de-99ff431c9252.svg)](https://insight.sensiolabs.com/projects/9f3e6de1-ea14-4910-b2de-99ff431c9252)
-[![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%207.2-8892BF.svg)](https://php.net/)
+[![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%207.3-8892BF.svg)](https://php.net/)
 [![License](https://img.shields.io/packagist/l/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 
 Features
