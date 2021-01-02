@@ -15,7 +15,7 @@ class GoAspectContainerTest extends TestCase
      */
     protected $container;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->container = new GoAspectContainer();
         $this->container->set('kernel.options', []);

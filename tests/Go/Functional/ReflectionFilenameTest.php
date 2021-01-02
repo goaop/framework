@@ -31,7 +31,7 @@ class ReflectionFilenameTest extends BaseFunctionalTest
     /**
      * {@inheritdoc}
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         parent::tearDown();
         $reflectedClass = new \ReflectionClass(FilterInjectorTransformer::class);

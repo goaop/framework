@@ -19,7 +19,7 @@ class FilterInjectorTransformerTest extends TestCase
     /**
      * {@inheritDoc}
      */
-    public function setUp()
+    public function setUp(): void
     {
         if (!self::$transformer) {
             $kernelMock = $this->getKernelMock(

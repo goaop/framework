@@ -19,7 +19,7 @@ class DebugAdvisorCommandTest extends BaseFunctionalTest
         ];
 
         foreach ($expected as $string) {
-            $this->assertContains($string, $output);
+            $this->assertStringContainsString($string, $output);
         }
     }
 
@@ -27,7 +27,7 @@ class DebugAdvisorCommandTest extends BaseFunctionalTest
     {
         $output = self::execute('debug:advisor', '--advisor="Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod"');
 
-        $enumerator = new Enumerator(realpath($this->configuration['appDir'].'/src'));
+        $enumerator    = new Enumerator(realpath($this->configuration['appDir'].'/src'));
         $srcFilesCount = iterator_count($enumerator->enumerate());
 
         $expected = [
@@ -36,7 +36,7 @@ class DebugAdvisorCommandTest extends BaseFunctionalTest
         ];
 
         foreach ($expected as $string) {
-            $this->assertContains($string, $output);
+            $this->assertStringContainsString($string, $output);
         }
     }
 }

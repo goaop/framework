@@ -24,7 +24,7 @@ class MagicConstantTransformerTest extends TestCase
      /**
      * {@inheritDoc}
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->transformer = new MagicConstantTransformer(
             $this->getKernelMock([
