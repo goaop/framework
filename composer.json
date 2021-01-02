@@ -11,7 +11,7 @@
         "php": "^7.3.0",
         "doctrine/annotations": "^1.11.1",
         "doctrine/cache": "^1.10",
-        "goaop/parser-reflection": "^2.1.3",
+        "goaop/parser-reflection": "^3.0",
         "jakubledl/dissect": "~1.0",
         "laminas/laminas-code": "^3.5",
         "symfony/finder": "^3.4|^4.2|^5.0"
