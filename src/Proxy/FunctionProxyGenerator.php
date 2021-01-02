@@ -21,6 +21,7 @@ use Go\Proxy\Part\InterceptedFunctionGenerator;
 use ReflectionFunction;
 use Laminas\Code\Generator\FileGenerator;
 use Laminas\Code\Generator\ValueGenerator;
+use ReflectionNamedType;
 
 /**
  * Function proxy builder that is used to generate a proxy-function from the list of joinpoints
@@ -108,8 +109,8 @@ class FunctionProxyGenerator
 
         $return = 'return ';
         if ($function->hasReturnType()) {
-            $returnType = (string) $function->getReturnType();
-            if ($returnType === 'void') {
+            $returnType = $function->getReturnType();
+            if ($returnType instanceof ReflectionNamedType && $returnType->getName() === 'void') {
                 // void return types should not return anything
                 $return = '';
             }
