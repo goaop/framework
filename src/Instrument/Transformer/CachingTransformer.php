@@ -14,6 +14,7 @@ namespace Go\Instrument\Transformer;
 use Closure;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\ParserReflection\ReflectionEngine;
 use function dirname;
 
 /**
@@ -98,7 +99,8 @@ class CachingTransformer extends BaseSourceTransformer
         }
         if ($processingResult === self::RESULT_TRANSFORMED) {
             // Just replace all tokens in the stream
-            $metadata->tokenStream = token_get_all(file_get_contents($cacheUri));
+            ReflectionEngine::parseFile($cacheUri);
+            $metadata->setTokenStreamFromRawTokens(ReflectionEngine::getLexer()->getTokens());
         }
 
         return $processingResult;
