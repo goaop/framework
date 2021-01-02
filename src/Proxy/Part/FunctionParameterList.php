@@ -14,6 +14,7 @@ namespace Go\Proxy\Part;
 use ReflectionFunctionAbstract;
 use Laminas\Code\Generator\ParameterGenerator;
 use Laminas\Code\Generator\ValueGenerator;
+use ReflectionNamedType;
 
 /**
  * Generates parameters from reflection definition
@@ -44,9 +45,19 @@ final class FunctionParameterList
                 $defaultValue = new ValueGenerator(null);
             }
 
+            $parameterTypeName = null;
+            if (!$useTypeWidening && $reflectionParameter->hasType()) {
+                $parameterReflectionType = $reflectionParameter->getType();
+                if ($parameterReflectionType instanceof ReflectionNamedType) {
+                    $parameterTypeName = $parameterReflectionType->getName();
+                } else {
+                    $parameterTypeName = (string) $parameterReflectionType;
+                }
+            }
+
             $generatedParameter = new ParameterGenerator(
                 $reflectionParameter->getName(),
-                $useTypeWidening ? '' : $reflectionParameter->getType(),
+                $parameterTypeName,
                 $defaultValue,
                 $reflectionParameter->getPosition(),
                 $reflectionParameter->isPassedByReference()

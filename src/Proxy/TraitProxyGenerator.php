@@ -21,6 +21,7 @@ use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\TraitGenerator;
 use Laminas\Code\Generator\ValueGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
+use ReflectionNamedType;
 
 /**
  * Trait proxy builder that is used to generate a trait from the list of joinpoints
@@ -114,8 +115,8 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         $return = 'return ';
         if ($method->hasReturnType()) {
-            $returnType = (string) $method->getReturnType();
-            if ($returnType === 'void') {
+            $returnType = $method->getReturnType();
+            if ($returnType instanceof ReflectionNamedType && $returnType->getName() === 'void') {
                 // void return types should not return anything
                 $return = '';
             }

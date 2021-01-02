@@ -11,10 +11,12 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Laminas\Code\Generator\TypeGenerator;
 use ReflectionMethod;
 use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\MethodGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
+use ReflectionNamedType;
 
 /**
  * Prepares the definition of intercepted method
@@ -36,7 +38,13 @@ final class InterceptedMethodGenerator extends MethodGenerator
         $declaringClass = $reflectionMethod->getDeclaringClass();
 
         if ($reflectionMethod->hasReturnType()) {
-            $this->setReturnType((string) $reflectionMethod->getReturnType());
+            $reflectionReturnType = $reflectionMethod->getReturnType();
+            if ($reflectionReturnType instanceof ReflectionNamedType) {
+                $returnTypeName = $reflectionReturnType->getName();
+            } else {
+                $returnTypeName = (string) $reflectionReturnType;
+            }
+            $this->setReturnType($returnTypeName);
         }
 
         if ($reflectionMethod->getDocComment()) {

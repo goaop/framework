@@ -17,6 +17,7 @@ use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\ParameterGenerator;
 use Laminas\Code\Generator\TypeGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
+use ReflectionNamedType;
 
 /**
  * Prepares the definition of intercepted function
@@ -65,7 +66,13 @@ final class InterceptedFunctionGenerator extends AbstractGenerator
         parent::__construct();
 
         if ($reflectionFunction->hasReturnType()) {
-            $this->returnType = TypeGenerator::fromTypeString((string) $reflectionFunction->getReturnType());
+            $reflectionReturnType = $reflectionFunction->getReturnType();
+            if ($reflectionReturnType instanceof ReflectionNamedType) {
+                $returnTypeName = $reflectionReturnType->getName();
+            } else {
+                $returnTypeName = (string) $reflectionReturnType;
+            }
+            $this->returnType = TypeGenerator::fromTypeString($returnTypeName);
         }
 
         if ($reflectionFunction->getDocComment()) {

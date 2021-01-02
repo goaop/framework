@@ -32,6 +32,7 @@ use ReflectionMethod;
 use Laminas\Code\Generator\ClassGenerator;
 use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
+use ReflectionNamedType;
 
 /**
  * Class proxy builder that is used to generate a child class from the list of joinpoints
@@ -228,10 +229,10 @@ class ClassProxyGenerator
 
         $argumentList = new FunctionCallArgumentListGenerator($method);
         $argumentCode = $argumentList->generate();
-        $return = 'return ';
+        $return       = 'return ';
         if ($method->hasReturnType()) {
-            $returnType = (string) $method->getReturnType();
-            if ($returnType === 'void') {
+            $returnType = $method->getReturnType();
+            if ($returnType instanceof ReflectionNamedType && $returnType->getName() === 'void') {
                 // void return types should not return anything
                 $return = '';
             }
