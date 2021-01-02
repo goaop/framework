@@ -22,7 +22,7 @@ class SelfValueTransformerTest extends TestCase
      /**
      * {@inheritDoc}
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->transformer = new SelfValueTransformer(
             $this->getKernelMock([

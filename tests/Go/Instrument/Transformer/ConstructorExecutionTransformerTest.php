@@ -15,7 +15,7 @@ class ConstructorExecutionTransformerTest extends TestCase
     /**
      * {@inheritDoc}
      */
-    public function setUp()
+    public function setUp(): void
     {
         if (!self::$transformer) {
             self::$transformer = new ConstructorExecutionTransformer();

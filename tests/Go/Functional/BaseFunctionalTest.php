@@ -38,7 +38,7 @@ abstract class BaseFunctionalTest extends TestCase
     /**
      * {@inheritdoc}
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->loadConfiguration();
         $this->clearCache();
@@ -48,7 +48,7 @@ abstract class BaseFunctionalTest extends TestCase
     /**
      * {@inheritdoc}
      */
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->clearCache();
     }

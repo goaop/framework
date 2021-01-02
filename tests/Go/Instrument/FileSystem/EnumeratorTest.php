@@ -18,7 +18,7 @@ class EnumeratorTest extends TestCase
      * @throws \Exception
      * @return void
      */
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         static::$fileSystem = FileSystem::factory('vfs://');
         static::$fileSystem->mount();
@@ -35,7 +35,7 @@ class EnumeratorTest extends TestCase
         }
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         static::$fileSystem->unmount();
     }

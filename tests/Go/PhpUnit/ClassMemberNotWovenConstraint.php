@@ -25,7 +25,6 @@ final class ClassMemberNotWovenConstraint extends Constraint
 
     public function __construct(array $configuration)
     {
-        parent::__construct();
         $this->configuration = $configuration;
     }
 

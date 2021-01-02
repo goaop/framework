@@ -13,7 +13,7 @@ class ClassFieldAccessTest extends TestCase
      */
     protected $classField;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->classField = new ClassFieldAccess(__CLASS__, 'classField', []);
     }

@@ -18,7 +18,7 @@ class DebugAspectCommandTest extends BaseFunctionalTest
         ];
 
         foreach ($expected as $string) {
-            $this->assertContains($string, $output);
+            $this->assertStringContainsString($string, $output);
         }
     }
 }

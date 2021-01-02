@@ -28,12 +28,12 @@ class AdviceMatcherTest extends TestCase
      *
      * @since Method available since Release 3.4.0
      */
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         ReflectionEngine::init(new ComposerLocator());
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->adviceMatcher = new AdviceMatcher();
 

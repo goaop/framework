@@ -13,7 +13,7 @@ class AbstractMethodInvocationTest extends TestCase
      */
     protected $invocation;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->invocation = $this->getMockForAbstractClass(
             AbstractMethodInvocation::class,

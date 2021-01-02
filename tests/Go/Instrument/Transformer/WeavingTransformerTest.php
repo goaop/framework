@@ -42,7 +42,7 @@ class WeavingTransformerTest extends TestCase
     /**
      * @inheritDoc
      */
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         static::$fileSystem = FileSystem::factory('vfs://');
         static::$fileSystem->mount();
@@ -51,7 +51,7 @@ class WeavingTransformerTest extends TestCase
     /**
      * {@inheritDoc}
      */
-    public function setUp()
+    public function setUp(): void
     {
         $container = $this->getContainerMock();
         $reader    = $this->createMock(Reader::class);

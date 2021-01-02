@@ -8,7 +8,7 @@ use Go\Tests\TestProject\Application\Main;
 
 class CacheWarmupCommandTest extends BaseFunctionalTest
 {
-    public function setUp()
+    public function setUp(): void
     {
         $this->loadConfiguration();
         $this->clearCache();
@@ -16,7 +16,7 @@ class CacheWarmupCommandTest extends BaseFunctionalTest
 
     public function testItWarmsUpCache()
     {
-        $this->assertFileNotExists($this->configuration['cacheDir']);
+        $this->assertFileDoesNotExist($this->configuration['cacheDir']);
 
         $this->warmUp();
 

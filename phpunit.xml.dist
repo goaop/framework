@@ -10,16 +10,19 @@
         </testsuite>
     </testsuites>
 
-    <filter>
-        <whitelist>
+    <coverage>
+        <include>
             <directory>./src/</directory>
-        </whitelist>
-    </filter>
+        </include>
+        <report>
+            <clover outputFile="./build/logs/clover.xml"/>
+            <crap4j outputFile="./build/logs/crap4j.xml"/>
+            <xml outputDirectory="./build/coverage/xml"/>
+        </report>
+    </coverage>
+
 
     <logging>
-        <log type="coverage-xml" target="./build/coverage/xml"/>
-        <log type="coverage-clover" target="./build/logs/clover.xml"/>
-        <log type="coverage-crap4j" target="./build/logs/crap4j.xml"/>
-        <log type="junit" target="./build/logs/junit.xml"/>
+        <junit outputFile="./build/logs/junit.xml"/>
     </logging>
 </phpunit>
