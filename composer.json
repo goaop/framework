@@ -14,16 +14,16 @@
         "goaop/parser-reflection": "^3.0",
         "jakubledl/dissect": "~1.0",
         "laminas/laminas-code": "^4.0",
-        "symfony/finder": "^3.4|^4.2|^5.0"
+        "symfony/finder": "^4.4|^5.1"
     },
 
     "require-dev": {
         "adlawson/vfs": "^0.12.1",
         "doctrine/orm": "^2.5",
         "phpunit/phpunit": "^9.5",
-        "symfony/console": "^2.7|^3.0",
-        "symfony/filesystem": "^3.3",
-        "symfony/process": "^3.3",
+        "symfony/console": "^4.4|^5.1",
+        "symfony/filesystem": "^4.4|^5.1",
+        "symfony/process": "^4.4|^5.1",
         "webmozart/glob": "^4.1"
     },
 

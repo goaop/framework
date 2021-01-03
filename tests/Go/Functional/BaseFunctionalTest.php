@@ -106,31 +106,38 @@ abstract class BaseFunctionalTest extends TestCase
      * Execute console command.
      *
      * @param string $command Command to execute.
-     * @param string|null $args Command arguments to append, if any.
+     * @param array $args Optional command arguments to append, if any.
      * @param bool $expectSuccess Should command be executed successfully
      * @param null|int $expectedExitCode If provided, exit code will be asserted.
      *
      * @return string Console output.
      */
-    protected function execute($command, $args = null, $expectSuccess = true, $expectedExitCode = null): string
+    protected function execute($command, array $args = [], $expectSuccess = true, $expectedExitCode = null): string
     {
-        $phpExecutable    = (new PhpExecutableFinder())->find();
-        $commandStatement = sprintf('%s %s --no-ansi %s %s %s',
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        $commandLine   = [
             $phpExecutable,
             $this->configuration['console'],
+            '--no-ansi',
             $command,
             $this->configuration['frontController'],
-            $args ?? ''
-        );
+        ];
+        $commandLine = array_merge($commandLine, $args);
 
-        $process = new Process($commandStatement, null, ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()]);
-        $process->inheritEnvironmentVariables();
+        $process = new Process($commandLine, null, ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()]);
         $process->run();
 
         if ($expectSuccess) {
-            $this->assertTrue($process->isSuccessful(), sprintf('Unable to execute "%s" command, got output: "%s".', $command, $process->getOutput()));
+            $this->assertTrue(
+                $process->isSuccessful(),
+                sprintf(
+                    'Unable to execute "%s" command, got output: "%s".',
+                    $process->getCommandLine(),
+                    $process->getOutput()
+                )
+            );
         } else {
-            $this->assertFalse($process->isSuccessful(), sprintf('Command "%s" excuted successfully, even if it is expected to fail, got output: "%s".', $command, $process->getOutput()));
+            $this->assertFalse($process->isSuccessful(), sprintf('Command "%s" executed successfully, even if it is expected to fail, got output: "%s".', $command, $process->getOutput()));
         }
 
         if (null !== $expectedExitCode) {

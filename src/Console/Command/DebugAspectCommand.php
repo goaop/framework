@@ -66,6 +66,8 @@ EOT
             $aspects[] = $aspect;
         }
         $this->showRegisteredAspectsInfo($io, $aspects);
+
+        return 0;
     }
 
     /**

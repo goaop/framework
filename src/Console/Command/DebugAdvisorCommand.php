@@ -64,6 +64,8 @@ EOT
         } else {
             $this->showAdvisorInformation($io, $advisorId);
         }
+
+        return 0;
     }
 
     private function showAdvisorsList(SymfonyStyle $io): void

@@ -50,5 +50,7 @@ EOT
 
         $warmer = new CacheWarmer($this->aspectKernel, $output);
         $warmer->warmUp();
+
+        return 0;
     }
 }
