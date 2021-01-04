@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -30,9 +31,9 @@ interface Invocation extends Joinpoint
     /**
      * Sets the arguments for current invocation
      *
-     * @api
-     *
      * @param array $arguments New list of arguments
+     *
+     * @api
      */
     public function setArguments(array $arguments): void;
 }

@@ -1,32 +1,35 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
 namespace Go\Core;
 
-use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Advice;
-use Go\Aop\Advisor;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Aop\Support\TruePointFilter;
 use Go\ParserReflection\Locator\ComposerLocator;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
-use PHPUnit\Framework\Testcase;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 class AdviceMatcherTest extends TestCase
 {
-    /**
-     * @var null|AdviceMatcher
-     */
-    protected $adviceMatcher;
+    protected AdviceMatcherInterface $adviceMatcher;
 
-    protected $reflectionClass;
+    protected ReflectionClass $reflectionClass;
 
     /**
-     * This method is called before the first test of this test class is run.
-     *
-     * @since Method available since Release 3.4.0
+     * @inheritDoc
      */
     public static function setUpBeforeClass(): void
     {
@@ -38,7 +41,10 @@ class AdviceMatcherTest extends TestCase
         $this->adviceMatcher = new AdviceMatcher();
 
         $reflectionFile        = new ReflectionFile(__FILE__);
-        $this->reflectionClass = $reflectionFile->getFileNamespace(__NAMESPACE__)->getClass(__CLASS__);
+        $this->reflectionClass = $reflectionFile
+            ->getFileNamespace(__NAMESPACE__)
+            ->getClass(self::class)
+        ;
     }
 
     /**
@@ -62,19 +68,26 @@ class AdviceMatcherTest extends TestCase
         $pointcut
             ->expects($this->any())
             ->method('getClassFilter')
-            ->will($this->returnValue(TruePointFilter::getInstance()));
+            ->will($this->returnValue(TruePointFilter::getInstance()))
+        ;
         $pointcut
             ->expects($this->any())
             ->method('matches')
-            ->will($this->returnCallback(function ($point) use ($funcName) {
-                return $point->name === $funcName;
-            }));
+            ->will(
+                $this->returnCallback(
+                    function ($point) use ($funcName) {
+                        return $point->name === $funcName;
+                    }
+                )
+            )
+        ;
         $pointcut
             ->expects($this->any())
             ->method('getKind')
-            ->will($this->returnValue(Pointcut::KIND_METHOD));
+            ->will($this->returnValue(Pointcut::KIND_METHOD))
+        ;
 
-        $advice = $this->createMock(Advice::class);
+        $advice  = $this->createMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
         $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]);
@@ -94,19 +107,26 @@ class AdviceMatcherTest extends TestCase
         $pointcut
             ->expects($this->any())
             ->method('getClassFilter')
-            ->will($this->returnValue(TruePointFilter::getInstance()));
+            ->will($this->returnValue(TruePointFilter::getInstance()))
+        ;
         $pointcut
             ->expects($this->any())
             ->method('matches')
-            ->will($this->returnCallback(function ($point) use ($propName) {
-                return $point->name === $propName;
-            }));
+            ->will(
+                $this->returnCallback(
+                    function ($point) use ($propName) {
+                        return $point->name === $propName;
+                    }
+                )
+            )
+        ;
         $pointcut
             ->expects($this->any())
             ->method('getKind')
-            ->will($this->returnValue(Pointcut::KIND_PROPERTY));
+            ->will($this->returnValue(Pointcut::KIND_PROPERTY))
+        ;
 
-        $advice = $this->createMock(Advice::class);
+        $advice  = $this->createMock(Advice::class);
         $advisor = new DefaultPointcutAdvisor($pointcut, $advice);
 
         $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]);

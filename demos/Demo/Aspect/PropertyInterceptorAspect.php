@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -22,16 +23,14 @@ use Go\Lang\Annotation\Around;
  */
 class PropertyInterceptorAspect implements Aspect
 {
-
     /**
      * Advice that controls an access to the properties
      *
      * @param FieldAccess $fieldAccess Joinpoint
      *
      * @Around("access(public|protected|private Demo\Example\PropertyDemo->*)")
-     * @return mixed
      */
-    public function aroundFieldAccess(FieldAccess $fieldAccess)
+    public function aroundFieldAccess(FieldAccess $fieldAccess): void
     {
         $isRead = $fieldAccess->getAccessType() == FieldAccess::READ;
         // proceed all internal advices

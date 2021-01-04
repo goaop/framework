@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -11,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Demo\Aspect;
 
+use Demo\Annotation\Cacheable;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
@@ -28,7 +30,7 @@ class CachingAspect implements Aspect
      *
      * Real-life examples will use APC or Memcache to store value in the cache
      *
-     * @param MethodInvocation $invocation Invocation
+     * @return mixed Result of invocation
      *
      * @Around("@execution(Demo\Annotation\Cacheable)")
      */
@@ -36,16 +38,14 @@ class CachingAspect implements Aspect
     {
         static $memoryCache = [];
 
-        $time  = microtime(true);
+        $time = microtime(true);
 
         $obj   = $invocation->getThis();
         $class = is_object($obj) ? get_class($obj) : $obj;
         $key   = $class . ':' . $invocation->getMethod()->name;
         if (!isset($memoryCache[$key])) {
             // We can use ttl value from annotation, but Doctrine annotations doesn't work under GAE
-            if (!isset($_SERVER['APPENGINE_RUNTIME'])) {
-                echo "Ttl is: ", $invocation->getMethod()->getAnnotation('Demo\Annotation\Cacheable')->time, PHP_EOL;
-            }
+            echo "Ttl is: ", $invocation->getMethod()->getAnnotation(Cacheable::class)->time, PHP_EOL;
 
             $memoryCache[$key] = $invocation->proceed();
         }

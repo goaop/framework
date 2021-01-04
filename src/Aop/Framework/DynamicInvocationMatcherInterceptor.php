@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -27,17 +28,13 @@ class DynamicInvocationMatcherInterceptor implements Interceptor
 {
     /**
      * Instance of pointcut to dynamically match joinpoints with args
-     *
-     * @var PointFilter
      */
-    protected $pointFilter;
+    protected PointFilter $pointFilter;
 
     /**
      * Instance of interceptor to invoke
-     *
-     * @var Interceptor
      */
-    protected $interceptor;
+    protected Interceptor $interceptor;
 
     /**
      * Dynamic matcher constructor

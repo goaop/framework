@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -22,7 +23,7 @@ abstract class AbstractGenericAdvisor implements Advisor
     /**
      * Instance of advice
      */
-    protected $advice;
+    protected Advice $advice;
 
     /**
      * Initializes an advisor with advice

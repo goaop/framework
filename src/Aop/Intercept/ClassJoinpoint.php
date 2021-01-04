@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -8,6 +9,7 @@ declare(strict_types = 1);
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
  */
+
 namespace Go\Aop\Intercept;
 
 /**
@@ -17,11 +19,11 @@ namespace Go\Aop\Intercept;
  */
 interface ClassJoinpoint extends Joinpoint
 {
-
     /**
      * Checks if the current joinpoint is dynamic or static
      *
      * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
+     *
      * @see ClassJoinpoint::getThis()
      *
      * @api
@@ -31,9 +33,9 @@ interface ClassJoinpoint extends Joinpoint
     /**
      * Returns the object for which current joinpoint is invoked
      *
-     * @api
-     *
      * @return object|null Instance of object or null for static call/unavailable context
+     *
+     * @api
      */
     public function getThis(): ?object;
 

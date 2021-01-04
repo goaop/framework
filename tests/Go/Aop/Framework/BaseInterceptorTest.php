@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -19,7 +20,7 @@ class BaseInterceptorTest extends AbstractInterceptorTest
     /**
      * Concrete class name for mock, should be redefined with LSB
      */
-    const INVOCATION_CLASS = Invocation::class;
+    protected const INVOCATION_CLASS = Invocation::class;
 
     public function testReturnsRawAdvice()
     {
@@ -49,8 +50,9 @@ class BaseInterceptorTest extends AbstractInterceptorTest
 
     public function testCanUnserializeInterceptor()
     {
-        $advice = $this->getAdvice($sequence);
-        $mock   = new AbstractInterceptorMock($advice);
+        $sequence = [];
+        $advice   = $this->getAdvice($sequence);
+        $mock     = new AbstractInterceptorMock($advice);
 
         $mockClass      = get_class($mock);
         $mockNameLength = strlen($mockClass);

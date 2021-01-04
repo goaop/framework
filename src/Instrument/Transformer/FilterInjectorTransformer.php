@@ -30,27 +30,17 @@ class FilterInjectorTransformer implements SourceTransformer
 
     /**
      * Name of the filter to inject
-     *
-     * @var string
      */
-    protected static $filterName;
+    protected static ?string $filterName = null;
 
     /**
      * Kernel options
-     *
-     * @var array
      */
-    protected static $options = [];
+    protected static array $options = [];
 
-    /**
-     * @var AspectKernel|null
-     */
-    protected static $kernel;
+    protected static ?AspectKernel $kernel = null;
 
-    /**
-     * @var CachePathManager|null
-     */
-    protected static $cachePathManager;
+    protected static ?CachePathManager $cachePathManager = null;
 
     /**
      * Class constructor
@@ -82,14 +72,14 @@ class FilterInjectorTransformer implements SourceTransformer
      * @param string $originalResource Initial resource to include
      * @param string $originalDir Path to the directory from where include was called for resolving relative resources
      */
-    public static function rewrite($originalResource, string $originalDir = ''): string
+    public static function rewrite(string $originalResource, string $originalDir = ''): string
     {
         static $appDir, $cacheDir, $debug;
         if ($appDir === null) {
             extract(self::$options, EXTR_IF_EXISTS);
         }
 
-        $resource = (string) $originalResource;
+        $resource = $originalResource;
         if ($resource[0] !== '/') {
             $shouldCheckExistence = true;
             $resource
@@ -132,7 +122,7 @@ class FilterInjectorTransformer implements SourceTransformer
             $startPosition = $includeExpression->getAttribute('startTokenPos');
             $endPosition   = $includeExpression->getAttribute('endTokenPos');
 
-            $metadata->tokenStream[$startPosition][1] .= ' \\' . __CLASS__ . '::rewrite(';
+            $metadata->tokenStream[$startPosition][1] .= ' \\' . self::class . '::rewrite(';
             if ($metadata->tokenStream[$startPosition+1][0] === T_WHITESPACE) {
                 unset($metadata->tokenStream[$startPosition+1]);
             }

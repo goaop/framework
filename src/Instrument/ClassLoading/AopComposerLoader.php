@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -11,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\ClassLoading;
 
+use SplFileInfo;
 use Go\Core\AspectContainer;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\PathResolver;
@@ -26,29 +28,27 @@ class AopComposerLoader
     /**
      * Instance of original autoloader
      */
-    protected $original;
+    protected ClassLoader $original;
 
     /**
      * AOP kernel options
      */
-    protected $options = [];
+    protected array $options = [];
 
     /**
      * File enumerator
      */
-    protected $fileEnumerator;
+    protected Enumerator $fileEnumerator;
 
     /**
      * Cache state
-     *
-     * @var array
      */
-    private $cacheState;
+    private array $cacheState;
 
     /**
      * Was initialization successful or not
      */
-    private static $wasInitialized = false;
+    private static bool $wasInitialized = false;
 
     /**
      * Constructs an wrapper for the composer loader
@@ -146,7 +146,7 @@ class AopComposerLoader
             $cacheState = $this->cacheState[$file] ?? null;
             if ($cacheState && $isProduction) {
                 $file = $cacheState['cacheUri'] ?: $file;
-            } elseif ($isAllowedFilter(new \SplFileInfo($file))) {
+            } elseif ($isAllowedFilter(new SplFileInfo($file))) {
                 // can be optimized here with $cacheState even for debug mode, but no needed right now
                 $file = FilterInjectorTransformer::rewrite($file);
             }

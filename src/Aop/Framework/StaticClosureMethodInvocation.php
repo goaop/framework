@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -20,22 +21,18 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
 {
     /**
      * Closure to use
-     *
-     * @var Closure
      */
-    protected $closureToCall;
+    protected ?Closure $closureToCall = null;
 
     /**
      * Previous scope of invocation
-     *
-     * @var null|string
      */
-    protected $previousScope;
+    protected ?string $previousScope = null;
 
     /**
      * For static calls we store given argument as 'scope' property
      */
-    protected static $propertyName = 'scope';
+    protected static string $propertyName = 'scope';
 
     /**
      * Proceeds all registered advices for the static method and returns an invocation result
@@ -51,14 +48,16 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
         // Rebind the closure if scope (class name) was changed since last time
         if ($this->previousScope !== $this->scope) {
             if ($this->closureToCall === null) {
-                $this->closureToCall = static::getStaticInvoker($this->reflectionMethod->class, $this->reflectionMethod->name);
+                $this->closureToCall = self::getStaticInvoker(
+                    $this->reflectionMethod->class,
+                    $this->reflectionMethod->name
+                );
             }
             $this->closureToCall = $this->closureToCall->bindTo(null, $this->scope);
             $this->previousScope = $this->scope;
         }
 
         return ($this->closureToCall)($this->arguments);
-
     }
 
     /**
@@ -66,9 +65,7 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
      */
     protected static function getStaticInvoker(string $className, string $methodName): Closure
     {
-        return function (array $args) use ($className, $methodName) {
-            return forward_static_call_array([$className, $methodName], $args);
-        };
+        return fn(array $args) => forward_static_call_array([$className, $methodName], $args);
     }
 
     /**

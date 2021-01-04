@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -19,7 +20,6 @@ use Go\Lang\Annotation\DeclareParents;
  */
 class IntroductionAspect implements Aspect
 {
-
     /**
      * Add a single interface and trait to the class.
      *

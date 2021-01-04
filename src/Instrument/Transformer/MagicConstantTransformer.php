@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -28,17 +29,13 @@ class MagicConstantTransformer extends BaseSourceTransformer
 {
     /**
      * Root path of application
-     *
-     * @var string
      */
-    protected static $rootPath = '';
+    protected static string $rootPath = '';
 
     /**
      * Path to rewrite to (cache directory)
-     *
-     * @var string
      */
-    protected static $rewriteToPath = '';
+    protected static string $rewriteToPath = '';
 
     /**
      * Class constructor
@@ -95,7 +92,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
             if (($methodCallNode->name instanceof Identifier) && ($methodCallNode->name->toString() === 'getFileName')) {
                 $startPosition    = $methodCallNode->getAttribute('startTokenPos');
                 $endPosition      = $methodCallNode->getAttribute('endTokenPos');
-                $expressionPrefix = '\\' . __CLASS__ . '::resolveFileName(';
+                $expressionPrefix = '\\' . self::class . '::resolveFileName(';
 
                 $metadata->tokenStream[$startPosition][1] = $expressionPrefix . $metadata->tokenStream[$startPosition][1];
                 $metadata->tokenStream[$endPosition][1] .= ')';

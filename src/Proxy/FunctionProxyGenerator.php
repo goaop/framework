@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -12,15 +13,15 @@ declare(strict_types = 1);
 namespace Go\Proxy;
 
 use Go\Aop\Framework\ReflectionFunctionInvocation;
-use Go\Aop\Intercept\FunctionInvocation;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use Go\Proxy\Part\InterceptedFunctionGenerator;
-use ReflectionFunction;
 use Laminas\Code\Generator\FileGenerator;
 use Laminas\Code\Generator\ValueGenerator;
+use ReflectionException;
+use ReflectionFunction;
 use ReflectionNamedType;
 
 /**
@@ -31,33 +32,33 @@ class FunctionProxyGenerator
     /**
      * List of advices that are used for generation of child
      */
-    protected $advices = [];
+    protected array $adviceNames = [];
 
     /**
      * Instance of file generator
      */
-    protected $fileGenerator;
+    protected FileGenerator $fileGenerator;
 
     /**
      * Constructs functions stub class from namespace Reflection
      *
      * @param ReflectionFileNamespace $namespace            Reflection of namespace
-     * @param string[][]              $advices              List of function advices
+     * @param string[][]              $adviceNames          List of function advices
      * @param bool                    $useParameterWidening Enables usage of parameter widening feature
      *
-     * @throws \ReflectionException If there is an advice for unknown function
+     * @throws ReflectionException If there is an advice for unknown function
      */
     public function __construct(
         ReflectionFileNamespace $namespace,
-        array $advices = [],
+        array $adviceNames = [],
         bool $useParameterWidening = false
     ) {
-        $this->advices       = $advices;
+        $this->adviceNames   = $adviceNames;
         $this->fileGenerator = new FileGenerator();
         $this->fileGenerator->setNamespace($namespace->getName());
 
         $functionsContent = [];
-        $functionAdvices  = $advices[AspectContainer::FUNCTION_PREFIX] ?? [];
+        $functionAdvices  = $adviceNames[AspectContainer::FUNCTION_PREFIX] ?? [];
         foreach (array_keys($functionAdvices) as $functionName) {
             $functionReflection  = new ReflectionFunction($functionName);
             $functionBody        = $this->getJoinpointInvocationBody($functionReflection);
@@ -71,9 +72,9 @@ class FunctionProxyGenerator
     /**
      * Returns a joinpoint for specific function in the namespace
      *
-     * @param array $advices List of advices
+     * @param array $adviceNames List of advices
      */
-    public static function getJoinPoint(string $functionName, array $advices): FunctionInvocation
+    public static function getJoinPoint(string $functionName, array $adviceNames): ReflectionFunctionInvocation
     {
         static $accessor;
 
@@ -82,11 +83,11 @@ class FunctionProxyGenerator
         }
 
         $filledAdvices = [];
-        foreach ($advices as $advisorName) {
+        foreach ($adviceNames as $advisorName) {
             $filledAdvices[] = $accessor->$advisorName;
         }
 
-        return new ReflectionFunctionInvocation($functionName, $filledAdvices);
+        return new ReflectionFunctionInvocation($filledAdvices, $functionName);
     }
 
     /**
@@ -102,7 +103,7 @@ class FunctionProxyGenerator
      */
     protected function getJoinpointInvocationBody(ReflectionFunction $function): string
     {
-        $class = '\\' . __CLASS__;
+        $class = '\\' . self::class;
 
         $argumentList = new FunctionCallArgumentListGenerator($function);
         $argumentCode = $argumentList->generate();
@@ -116,7 +117,7 @@ class FunctionProxyGenerator
             }
         }
 
-        $functionAdvices = $this->advices[AspectContainer::FUNCTION_PREFIX][$function->name];
+        $functionAdvices = $this->adviceNames[AspectContainer::FUNCTION_PREFIX][$function->name];
         $advicesArray    = new ValueGenerator($functionAdvices, ValueGenerator::TYPE_ARRAY_SHORT);
         $advicesArray->setArrayDepth(1);
         $advicesCode = $advicesArray->generate();

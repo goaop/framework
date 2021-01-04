@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -24,12 +25,12 @@ class SimpleNamespaceFilter implements PointFilter
     /**
      * Namespace name to match, can contain wildcards *,?
      */
-    protected $nsName;
+    protected string $nsName;
 
     /**
      * Pattern for regular expression matching
      */
-    protected $regexp;
+    protected string $regexp;
 
     /**
      * Namespace name matcher constructor that accepts name or glob pattern to match

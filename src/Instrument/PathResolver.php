@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -30,7 +31,7 @@ class PathResolver
      *
      * @return array|bool|string
      */
-    public static function realpath($somePath, $shouldCheckExistence = false)
+    public static function realpath($somePath, bool $shouldCheckExistence = false)
     {
         // Do not resolve empty string/false/arrays into the current path
         if (!$somePath) {
@@ -38,7 +39,7 @@ class PathResolver
         }
 
         if (is_array($somePath)) {
-            return array_map([__CLASS__, __FUNCTION__], $somePath);
+            return array_map([self::class, __FUNCTION__], $somePath);
         }
         // Trick to get scheme name and path in one action. If no scheme, then there will be only one part
         $components = explode('://', $somePath, 2);

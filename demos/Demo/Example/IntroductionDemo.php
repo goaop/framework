@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -11,20 +12,22 @@ declare(strict_types = 1);
 
 namespace Demo\Example;
 
+use ReflectionObject;
+use Serializable;
+
 /**
  * Example class to show how to dynamically add new interfaces and traits to the class
  */
 class IntroductionDemo
 {
-
     /**
      * Method that checks if the current instance implementing Serializable interface
      */
-    public function testSerializable()
+    public function testSerializable(): void
     {
-        if ($this instanceof \Serializable) {
+        if ($this instanceof Serializable) {
             echo get_class($this), ' implements `Serializable` interface now!', PHP_EOL;
-            $reflection = new \ReflectionObject($this);
+            $reflection = new ReflectionObject($this);
             echo "List of interfaces:", PHP_EOL;
             foreach ($reflection->getInterfaceNames() as $interfaceName) {
                 echo '-> ', $interfaceName, PHP_EOL;

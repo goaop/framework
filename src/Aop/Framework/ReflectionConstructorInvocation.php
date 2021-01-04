@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -23,31 +24,25 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
 {
     /**
      * Reflection class
-     *
-     * @var ReflectionClass
      */
-    protected $class;
+    protected ReflectionClass $class;
 
     /**
-     * Instance of created class, can be used for Around or After types of advices
-     *
-     * @var object|null
+     * Instance of created class, can be used for Around or After types of advices.
      */
-    protected $instance;
+    protected ?object $instance = null;
 
     /**
-     * Instance of reflection constructor for class
-     *
-     * @var null|ReflectionMethod
+     * Instance of reflection constructor for class (if present)
      */
-    private $constructor;
+    private ?ReflectionMethod $constructor;
 
     /**
      * Constructor for constructor invocation :)
      *
      * @param array $advices List of advices for this invocation
      */
-    public function __construct(string $className, string $unusedType, array $advices)
+    public function __construct(array $advices, string $className)
     {
         $originalClass = $className;
         if (strpos($originalClass, AspectContainer::AOP_PROXIED_SUFFIX) !== false) {
@@ -58,7 +53,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
         $this->constructor = $constructor = $this->class->getConstructor();
 
         // Give an access to call protected/private constructors
-        if ($constructor && !$constructor->isPublic()) {
+        if ($constructor !== null && !$constructor->isPublic()) {
             $constructor->setAccessible(true);
         }
 
@@ -71,9 +66,9 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
      * Typically this method is called inside previous closure, as instance of Joinpoint is passed to callback
      * Do not call this method directly, only inside callback closures.
      *
-     * @return mixed
+     * @return object Covariant, always new object.
      */
-    final public function proceed()
+    final public function proceed(): object
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current];
@@ -102,7 +97,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Returns the object for which current joinpoint is invoked
      *
-     * @return object|null Instance of object or null for static call/unavailable context
+     * @return object|null Instance of object or null if object hasn't been created yet (Before)
      */
     public function getThis(): ?object
     {
@@ -111,10 +106,8 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
 
     /**
      * Invokes current constructor invocation with all interceptors
-     *
-     * @return mixed
      */
-    final public function __invoke(array $arguments = [])
+    final public function __invoke(array $arguments = []): object
     {
         $this->current   = 0;
         $this->arguments = $arguments;

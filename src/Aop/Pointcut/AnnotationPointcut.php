@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -28,40 +29,32 @@ class AnnotationPointcut implements Pointcut
     /**
      * Annotation class to match
      */
-    protected $annotationName;
+    protected string $annotationName;
 
     /**
      * Annotation reader
-     *
-     * @var null|Reader
      */
-    protected $annotationReader;
+    protected Reader $annotationReader;
 
     /**
      * Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY, KIND_TRAIT
      */
-    protected $filterKind = 0;
+    protected int $filterKind = 0;
 
     /**
      * Specifies name of the expected class to receive
-     *
-     * @var string
      */
-    protected $expectedClass = '';
+    protected string $expectedClass = '';
 
     /**
      * Method to call for annotation reader
-     *
-     * @var string
      */
-    protected $annotationMethod = '';
+    protected string $annotationMethod = '';
 
     /**
      * Static mappings of kind to expected class and method name
-     *
-     * @var array
      */
-    protected static $mappings = [
+    protected static array $mappings = [
         self::KIND_CLASS    => [ReflectionClass::class, 'getClassAnnotation'],
         self::KIND_TRAIT    => [ReflectionClass::class, 'getClassAnnotation'],
         self::KIND_METHOD   => [ReflectionMethod::class, 'getMethodAnnotation'],
@@ -71,7 +64,7 @@ class AnnotationPointcut implements Pointcut
     /**
      * Annotation matcher constructor
      *
-     * @param integer $filterKind Kind of filter, e.g. KIND_CLASS
+     * @param int $filterKind Kind of filter, e.g. KIND_CLASS
      */
     public function __construct(int $filterKind, Reader $annotationReader, string $annotationName)
     {
@@ -97,7 +90,7 @@ class AnnotationPointcut implements Pointcut
 
         $annotation = $this->annotationReader->{$this->annotationMethod}($point, $this->annotationName);
 
-        return (bool) $annotation;
+        return (bool)$annotation;
     }
 
     /**

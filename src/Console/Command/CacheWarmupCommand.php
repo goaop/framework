@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -22,29 +23,30 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class CacheWarmupCommand extends BaseAspectCommand
 {
-
     /**
      * {@inheritDoc}
      */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this
             ->setName('cache:warmup:aop')
             ->setDescription('Warm up the cache with woven aspects')
-            ->setHelp(<<<EOT
+            ->setHelp(
+                <<<EOT
 Initializes the kernel and, if successful, warm up the cache for PHP
 files under the application directory.
 
 By default, the cache directory is taken from configured AspectKernel class.
 EOT
-            );
+            )
+        ;
     }
 
     /**
      * {@inheritDoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);
 

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -22,10 +23,8 @@ class AnnotatedReflectionMethod extends ReflectionMethod implements AnnotationAc
 {
     /**
      * Annotation reader
-     *
-     * @var Reader
      */
-    private static $annotationReader;
+    private static ?Reader $annotationReader = null;
 
     /**
      * Gets concrete annotation by name or null if the requested annotation does not exist.

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -13,10 +14,10 @@ namespace Go\Aop\Support;
 
 use Go\Aop\PointFilter;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 class AndPointFilterTest extends TestCase
 {
-
     /**
      * Tests that filter intersect different kinds of filters
      */
@@ -42,7 +43,7 @@ class AndPointFilterTest extends TestCase
     public function testMatches(PointFilter $first, PointFilter $second, $expected): void
     {
         $filter = new AndPointFilter($first, $second);
-        $result = $filter->matches(new \ReflectionClass(__CLASS__) /* anything */);
+        $result = $filter->matches(new ReflectionClass(__CLASS__) /* anything */);
         $this->assertSame($expected, $result);
     }
 

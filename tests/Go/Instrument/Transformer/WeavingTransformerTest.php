@@ -1,43 +1,39 @@
 <?php
+
 declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
 namespace Go\Instrument\Transformer;
 
 use Doctrine\Common\Annotations\Reader;
+use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
-use Go\Core\AdviceMatcher;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use Vfs\FileSystem;
 
 class WeavingTransformerTest extends TestCase
 {
-    /**
-     * @var FileSystem
-     */
-    protected static $fileSystem;
+    protected static FileSystem $fileSystem;
 
-    /**
-     * @var WeavingTransformer
-     */
-    protected $transformer;
+    protected WeavingTransformer $transformer;
 
-    /**
-     * @var null|AspectKernel|\PHPUnit_Framework_MockObject_MockObject
-     */
-    protected $kernel;
+    protected ?AspectKernel $kernel;
 
-    /**
-     * @var null|AdviceMatcher
-     */
-    protected $adviceMatcher;
+    protected ?AdviceMatcherInterface $adviceMatcher;
 
-    /**
-     * @var null|CachePathManager|\PHPUnit_Framework_MockObject_MockObject
-     */
-    protected $cachePathManager;
+    protected ?CachePathManager $cachePathManager;
 
     /**
      * @inheritDoc
@@ -90,11 +86,11 @@ class WeavingTransformerTest extends TestCase
      */
     public function testMultipleNamespacesInOneFile(): void
     {
-        $metadata = $this->loadTest('multiple-ns');
+        $metadata = $this->loadTestMetadata('multiple-ns');
         $this->transformer->transform($metadata);
 
         $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('multiple-ns-woven')->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-ns-woven')->source);
         $this->assertEquals($expected, $actual);
     }
 
@@ -103,11 +99,11 @@ class WeavingTransformerTest extends TestCase
      */
     public function testEmptyNamespaceInFile(): void
     {
-        $metadata = $this->loadTest('empty-classes');
+        $metadata = $this->loadTestMetadata('empty-classes');
         $this->transformer->transform($metadata);
 
         $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('empty-classes')->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('empty-classes')->source);
         $this->assertEquals($expected, $actual);
     }
 
@@ -116,11 +112,11 @@ class WeavingTransformerTest extends TestCase
      */
     public function testAspectIsSkipped(): void
     {
-        $metadata = $this->loadTest('aspect');
+        $metadata = $this->loadTestMetadata('aspect');
         $this->transformer->transform($metadata);
 
         $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('aspect')->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('aspect')->source);
         $this->assertEquals($expected, $actual);
     }
 
@@ -129,11 +125,11 @@ class WeavingTransformerTest extends TestCase
      */
     public function testWeaverForTypeHint(): void
     {
-        $metadata = $this->loadTest('class-typehint');
+        $metadata = $this->loadTestMetadata('class-typehint');
         $this->transformer->transform($metadata);
 
         $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('class-typehint-woven')->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-typehint-woven')->source);
         $this->assertEquals($expected, $actual);
 
         $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '_proxies/Transformer/_files/class-typehint.php/TestClassTypehint.php');
@@ -145,15 +141,15 @@ class WeavingTransformerTest extends TestCase
      */
     public function testWeaverForPhp7Class(): void
     {
-        $metadata = $this->loadTest('php7-class');
+        $metadata = $this->loadTestMetadata('php7-class');
         $this->transformer->transform($metadata);
 
         $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('php7-class-woven')->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTest('php7-class-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -180,25 +176,27 @@ class WeavingTransformerTest extends TestCase
             ],
             $container
         );
-        $cachePathManager  = $this->getMockBuilder(CachePathManager::class)
+        $cachePathManager = $this->getMockBuilder(CachePathManager::class)
             ->setConstructorArgs([$kernel])
             ->enableProxyingToOriginalMethods()
             ->getMock();
+
         $this->transformer = new WeavingTransformer(
             $kernel,
             $this->adviceMatcher,
             $cachePathManager,
             $loader
         );
-        $metadata          = $this->loadTest('class');
+
+        $metadata = $this->loadTestMetadata('class');
         $this->transformer->transform($metadata);
 
         $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('class-woven')->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTest('class-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -208,21 +206,18 @@ class WeavingTransformerTest extends TestCase
      */
     public function testMultipleClasses(): void
     {
-        $metadata = $this->loadTest('multiple-classes');
+        $metadata = $this->loadTestMetadata('multiple-classes');
         $this->transformer->transform($metadata);
 
         $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTest('multiple-classes-woven')->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-classes-woven')->source);
         $this->assertEquals($expected, $actual);
     }
 
     /**
      * Normalizes string context
-     *
-     * @param string $value
-     * @return string
      */
-    protected function normalizeWhitespaces($value): string
+    protected function normalizeWhitespaces(string $value): string
     {
         return strtr(
             preg_replace('/\s+$/m', '', $value),
@@ -236,11 +231,12 @@ class WeavingTransformerTest extends TestCase
     /**
      * Returns a mock for kernel
      *
-     * @param array $options Additional options for kernel
+     * @param array           $options   Additional options for kernel
      * @param AspectContainer $container Container instance
-     * @return \PHPUnit_Framework_MockObject_MockObject|\Go\Core\AspectKernel
+     *
+     * @return MockObject|AspectKernel
      */
-    protected function getKernelMock($options, $container)
+    protected function getKernelMock(array $options, AspectContainer $container): AspectKernel
     {
         $mock = $this->getMockForAbstractClass(
             AspectKernel::class,
@@ -262,17 +258,17 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
-     * Returns a mock for container
+     * Returns a mock for advice matcher
      *
-     * @return \PHPUnit_Framework_MockObject_MockObject|AdviceMatcher
+     * @return MockObject|AdviceMatcherInterface
      */
-    protected function getAdviceMatcherMock()
+    protected function getAdviceMatcherMock(): AdviceMatcherInterface
     {
-        $mock = $this->createPartialMock(AdviceMatcher::class, ['getAdvicesForClass']);
+        $mock = $this->createMock(AdviceMatcherInterface::class);
         $mock
             ->method('getAdvicesForClass')
             ->will(
-                $this->returnCallback(function (\ReflectionClass $refClass) {
+                $this->returnCallback(function (ReflectionClass $refClass) {
                     $advices  = [];
                     foreach ($refClass->getMethods() as $method) {
                         $advisorId = "advisor.{$refClass->name}->{$method->name}";
@@ -281,17 +277,14 @@ class WeavingTransformerTest extends TestCase
                     return $advices;
                 })
             );
+
         return $mock;
     }
 
     /**
-     *
-     *
      * @param string $name Name of the file to load
-     *
-     * @return StreamMetaData
      */
-    private function loadTest($name): StreamMetaData
+    private function loadTestMetadata(string $name): StreamMetaData
     {
         $fileName = __DIR__ . '/_files/' . $name . '.php';
         $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
@@ -305,9 +298,9 @@ class WeavingTransformerTest extends TestCase
     /**
      * Returns a mock for the container
      *
-     * @return AspectContainer|\PHPUnit_Framework_MockObject_MockObject
+     * @return AspectContainer|MockObject
      */
-    private function getContainerMock()
+    private function getContainerMock(): AspectContainer
     {
         $container = $this->createMock(AspectContainer::class);
 

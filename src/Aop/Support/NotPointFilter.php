@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -21,12 +22,12 @@ class NotPointFilter implements PointFilter
     /**
      * Kind of filter
      */
-    private $kind;
+    private int $kind;
 
     /**
      * Instance of filter to negate
      */
-    private $filter;
+    private PointFilter $filter;
 
     /**
      * Not constructor

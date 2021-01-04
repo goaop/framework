@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -31,8 +32,7 @@ class FluentInterfaceAspect implements Aspect
      *
      * @Around("within(Demo\Aspect\FluentInterface+) && execution(public **->set*(*))")
      *
-     * @param MethodInvocation $invocation
-     * @return mixed|null|object
+     * @return mixed Result of invocation
      */
     protected function aroundMethodExecution(MethodInvocation $invocation)
     {

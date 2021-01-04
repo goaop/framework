@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -11,6 +12,14 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
+use ReflectionClass;
+use ReflectionMethod;
+use Go\Lang\Annotation\DeclareParents;
+use Go\Lang\Annotation\DeclareError;
+use Go\Aop\Framework\TraitIntroductionInfo;
+use Go\Aop\Support\DeclareParentsAdvisor;
+use Go\Aop\Framework\DeclareErrorInterceptor;
+use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Framework;
@@ -46,7 +55,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      * Checks if loader is able to handle specific point of aspect
      *
      * @param Aspect $aspect Instance of aspect
-     * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
+     * @param mixed|ReflectionClass|ReflectionMethod|ReflectionProperty $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
      *
      * @return boolean true if extension is able to create an advisor from reflection and metaInformation
@@ -54,8 +63,8 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
     public function supports(Aspect $aspect, $reflection, $metaInformation = null): bool
     {
         return
-            ($metaInformation instanceof Annotation\DeclareParents) ||
-            ($metaInformation instanceof Annotation\DeclareError);
+            ($metaInformation instanceof DeclareParents) ||
+            ($metaInformation instanceof DeclareError);
     }
 
     /**
@@ -76,20 +85,20 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
         $propertyId  = $reflection->class . '->' . $reflection->name;
 
         switch (true) {
-            case ($metaInformation instanceof Annotation\DeclareParents):
+            case ($metaInformation instanceof DeclareParents):
                 $implement = $metaInformation->defaultImpl;
                 $interface = $metaInformation->interface;
-                $advice    = new Framework\TraitIntroductionInfo($implement, $interface);
-                $advisor   = new Support\DeclareParentsAdvisor($pointcut->getClassFilter(), $advice);
+                $advice    = new TraitIntroductionInfo($implement, $interface);
+                $advisor   = new DeclareParentsAdvisor($pointcut->getClassFilter(), $advice);
                 $loadedItems[$propertyId] = $advisor;
                 break;
 
-            case (($metaInformation instanceof Annotation\DeclareError) && ($pointcut instanceof Pointcut)):
+            case (($metaInformation instanceof DeclareError) && ($pointcut instanceof Pointcut)):
                 $reflection->setAccessible(true);
                 $message = $reflection->getValue($aspect);
                 $level   = $metaInformation->level;
-                $advice  = new Framework\DeclareErrorInterceptor($message, $level, $metaInformation->value);
-                $loadedItems[$propertyId] = new Support\DefaultPointcutAdvisor($pointcut, $advice);
+                $advice  = new DeclareErrorInterceptor($message, $level, $metaInformation->value);
+                $loadedItems[$propertyId] = new DefaultPointcutAdvisor($pointcut, $advice);
                 break;
 
             default:

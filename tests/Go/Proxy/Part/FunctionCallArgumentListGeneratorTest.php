@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -11,22 +12,20 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-
 use PHPUnit\Framework\TestCase;
+use ReflectionFunction;
 
 class FunctionCallArgumentListGeneratorTest extends TestCase
 {
     /**
      * Tests that generator can generate function call argument list
      *
-     * @param string $functionName Function to reflect
      * @dataProvider dataGenerator
-
      * @throws \ReflectionException if function is not present
      */
     public function testGenerate(string $functionName, string $expectedLine): void
     {
-        $reflection = new \ReflectionFunction($functionName);
+        $reflection = new ReflectionFunction($functionName);
         $generator  = new FunctionCallArgumentListGenerator($reflection);
         $actualLine = $generator->generate();
         $this->assertSame($expectedLine, $actualLine);
@@ -34,8 +33,6 @@ class FunctionCallArgumentListGeneratorTest extends TestCase
 
     /**
      * Provides list of functions with expected generated code for calling such functions
-     *
-     * @return array
      */
     public function dataGenerator(): array
     {

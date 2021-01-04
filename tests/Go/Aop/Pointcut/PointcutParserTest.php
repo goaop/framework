@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -9,28 +10,20 @@ declare(strict_types = 1);
  * with this source code in the file LICENSE.
  */
 
-
 namespace Go\Aop\Pointcut;
 
-/**
- * Class PointcutParserTest defines common check for valid grammar parsing
- */
 use Dissect\Lexer\Lexer;
 use Doctrine\Common\Annotations\Reader;
 use Go\Core\AspectContainer;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Class PointcutParserTest defines common check for valid grammar parsing
+ */
 class PointcutParserTest extends TestCase
 {
-    /**
-     * @var null|Lexer
-     */
-    protected $lexer;
-
-    /**
-     * @var null|PointcutParser
-     */
-    protected $parser;
+    protected Lexer $lexer;
+    protected PointcutParser $parser;
 
     /**
      * {@inheritdoc}
@@ -49,7 +42,7 @@ class PointcutParserTest extends TestCase
      *
      * @dataProvider validPointcutDefinitions
      */
-    public function testParsingExpression($pointcutExpression): void
+    public function testParsingExpression(string $pointcutExpression): void
     {
         $stream = $this->lexer->lex($pointcutExpression);
         $result = $this->parser->parse($stream);

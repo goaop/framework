@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -11,12 +12,12 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use ReflectionFunction;
 use Laminas\Code\Generator\AbstractGenerator;
 use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\ParameterGenerator;
 use Laminas\Code\Generator\TypeGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
+use ReflectionFunction;
 use ReflectionNamedType;
 
 /**
@@ -24,35 +25,20 @@ use ReflectionNamedType;
  */
 final class InterceptedFunctionGenerator extends AbstractGenerator
 {
-    /**
-     * @var string
-     */
-    protected $name;
+    protected string $functionName;
 
-    /**
-     * @var DocBlockGenerator|null
-     */
-    protected $docBlock;
+    protected ?DocBlockGenerator $docBlock = null;
 
     /**
      * @var ParameterGenerator[]
      */
-    protected $parameters = [];
+    protected array $parameters = [];
 
-    /**
-     * @var string
-     */
-    protected $body;
+    protected string $functionBody;
 
-    /**
-     * @var null|TypeGenerator
-     */
-    private $returnType;
+    private ?TypeGenerator $returnType = null;
 
-    /**
-     * @var bool
-     */
-    private $returnsReference;
+    private bool $returnsReference;
 
     /**
      * InterceptedMethod constructor.
@@ -70,7 +56,7 @@ final class InterceptedFunctionGenerator extends AbstractGenerator
             if ($reflectionReturnType instanceof ReflectionNamedType) {
                 $returnTypeName = $reflectionReturnType->getName();
             } else {
-                $returnTypeName = (string) $reflectionReturnType;
+                $returnTypeName = (string)$reflectionReturnType;
             }
             $this->returnType = TypeGenerator::fromTypeString($returnTypeName);
         }
@@ -81,17 +67,14 @@ final class InterceptedFunctionGenerator extends AbstractGenerator
         }
 
         $this->returnsReference = $reflectionFunction->returnsReference();
-        $this->name             = $reflectionFunction->getShortName();
+        $this->functionName     = $reflectionFunction->getShortName();
 
-        $parameterList    = new FunctionParameterList($reflectionFunction, $useTypeWidening);
-        $this->parameters = $parameterList->getGeneratedParameters();
-        $this->body       = $body;
+        $parameterList      = new FunctionParameterList($reflectionFunction, $useTypeWidening);
+        $this->parameters   = $parameterList->getGeneratedParameters();
+        $this->functionBody = $body;
     }
 
-    /**
-     * @return string
-     */
-    public function generate()
+    public function generate(): string
     {
         $output = '';
         $indent = $this->getIndentation();
@@ -103,7 +86,7 @@ final class InterceptedFunctionGenerator extends AbstractGenerator
 
         $output .= 'function '
             . ($this->returnsReference ? '& ' : '')
-            . $this->name . '(';
+            . $this->functionName . '(';
 
         if (!empty($this->parameters)) {
             $parameterOutput = [];
@@ -116,14 +99,14 @@ final class InterceptedFunctionGenerator extends AbstractGenerator
 
         $output .= ')';
 
-        if ($this->returnType) {
+        if ($this->returnType !== null) {
             $output .= ' : ' . $this->returnType->generate();
         }
 
         $output .= self::LINE_FEED . '{' . self::LINE_FEED;
 
-        if ($this->body) {
-            $output .= preg_replace('#^((?![a-zA-Z0-9_-]+;).+?)$#m', $indent . '$1', trim($this->body))
+        if ($this->functionBody !== '') {
+            $output .= preg_replace('#^((?![a-zA-Z0-9_-]+;).+?)$#m', $indent . '$1', trim($this->functionBody))
                 . self::LINE_FEED;
         }
 

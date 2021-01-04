@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -23,9 +24,10 @@ class LoggingDemo
      * Executes a task and logs all incoming arguments
      *
      * @Loggable
+     *
      * @param string $task Some specific argument
      */
-    public function execute(string $task)
+    public function execute(string $task): void
     {
         $this->perform($task, 'first');
         $this->perform($task, 'second');
@@ -39,7 +41,7 @@ class LoggingDemo
      * @param string $task Specific task
      * @param string $level
      */
-    protected function perform(string $task, string $level)
+    protected function perform(string $task, string $level): void
     {
         // some logic here
     }
@@ -51,7 +53,7 @@ class LoggingDemo
      *
      * @param string $task Some specific argument
      */
-    public static function runByName(string $task)
+    public static function runByName(string $task): void
     {
         $instance = new static(); // Go! AOP requires LSB to work correctly
         $instance->execute($task);

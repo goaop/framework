@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -16,15 +17,12 @@ namespace Demo\Example;
  */
 class FunctionDemo
 {
-
     /**
      * Some array transformer
      *
      * @param array $data Incoming array
-     *
-     * @return array Outcoming array
      */
-    public function testArrayFunctions(array $data = [])
+    public function testArrayFunctions(array $data = []): array
     {
         return array_flip(array_unique(array_values($data)));
     }
@@ -32,7 +30,7 @@ class FunctionDemo
     /**
      * Outputs a file content
      */
-    public function testFileContent()
+    public function testFileContent(): void
     {
         echo '<pre>', htmlspecialchars(file_get_contents(__FILE__)), '</pre>';
     }

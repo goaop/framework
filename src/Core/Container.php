@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -22,12 +23,12 @@ abstract class Container implements AspectContainer
     /**
      * List of services in the container
      */
-    protected $values = [];
+    protected array $values = [];
 
     /**
      * Store identifiers os services by tags
      */
-    protected $tags = [];
+    protected array $tags = [];
 
     /**
      * Set a service into the container

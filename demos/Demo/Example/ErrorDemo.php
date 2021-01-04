@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -18,13 +19,12 @@ use Demo\Annotation\Deprecated as deprecated; // <== We import specific system a
  */
 class ErrorDemo
 {
-
     /**
      * Some old method that is used by system in production, but shouldn't be used for the new code
      *
      * @deprecated
      */
-    public function oldMethod()
+    public function oldMethod(): void
     {
         echo "Hello, I'm old method", PHP_EOL;
     }
@@ -32,7 +32,7 @@ class ErrorDemo
     /**
      * Method that is very tricky and should generate a notice
      */
-    public function notSoGoodMethod() : float
+    public function notSoGoodMethod(): float
     {
         $value = round(microtime(true)) % 3; // Sometimes this equal to 0
 

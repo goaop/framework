@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -24,7 +25,6 @@ final class ProxyClassReflectionHelper
 {
     private function __construct()
     {
-        // noop
     }
 
     /**
@@ -32,7 +32,6 @@ final class ProxyClassReflectionHelper
      *
      * @param string $className Full qualified class name for which \Go\ParserReflection\ReflectionClass ought to be initialized
      * @param array $configuration Configuration used for Go! AOP project setup
-     * @return ReflectionClass
      */
     public static function createReflectionClass(string $className, array $configuration): ReflectionClass
     {

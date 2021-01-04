@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -28,7 +29,7 @@ class PointcutBuilder
     /**
      * Instance of aspect container
      */
-    protected $container;
+    protected AspectContainer $container;
 
     /**
      * Default constructor for the builder

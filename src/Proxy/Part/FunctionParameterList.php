@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -11,9 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use ReflectionFunctionAbstract;
 use Laminas\Code\Generator\ParameterGenerator;
 use Laminas\Code\Generator\ValueGenerator;
+use ReflectionFunctionAbstract;
 use ReflectionNamedType;
 
 /**
@@ -24,7 +25,7 @@ final class FunctionParameterList
     /**
      * @var ParameterGenerator[]
      */
-    private $generatedParameters = [];
+    private array $generatedParameters = [];
 
     /**
      * ParameterListGenerator constructor.

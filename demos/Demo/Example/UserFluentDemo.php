@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -11,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Demo\Example;
 
+use InvalidArgumentException;
 use Demo\Aspect\FluentInterface;
 
 /**
@@ -18,9 +20,9 @@ use Demo\Aspect\FluentInterface;
  */
 class UserFluentDemo implements FluentInterface
 {
-    protected $name;
-    protected $surname;
-    protected $password;
+    protected ?string $name = null;
+    protected ?string $surname = null;
+    protected ?string $password = null;
 
     public function setName(string $name)
     {
@@ -36,8 +38,8 @@ class UserFluentDemo implements FluentInterface
 
     public function setPassword(string $password)
     {
-        if (!$password) {
-            throw new \InvalidArgumentException("Password shouldn't be empty");
+        if ($password === '') {
+            throw new InvalidArgumentException("Password shouldn't be empty");
         }
         echo "Set user password to ", $password, PHP_EOL;
         $this->password = $password;

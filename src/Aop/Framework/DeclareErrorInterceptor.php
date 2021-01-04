@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -23,20 +24,15 @@ use Go\Aop\Intercept\Joinpoint;
  */
 final class DeclareErrorInterceptor extends AbstractInterceptor
 {
-
     /**
      * Error message to show for this interceptor
-     *
-     * @var string
      */
-    protected $message;
+    protected string $message;
 
     /**
      * Default level of error
-     *
-     * @var int
      */
-    protected $level;
+    protected int $level;
 
     /**
      * Default constructor for interceptor
@@ -77,12 +73,16 @@ final class DeclareErrorInterceptor extends AbstractInterceptor
     private static function getDeclareErrorAdvice(): Closure
     {
         static $adviceMethod;
-        if (!$adviceMethod) {
+
+        if ($adviceMethod === null) {
             $adviceMethod = function (string $scope, string $property, string $message, int $level = E_USER_NOTICE) {
-                $message = vsprintf('[AOP Declare Error]: %s has an error: "%s"', [
-                    $scope . '->' . $property,
-                    $message
-                ]);
+                $message = vsprintf(
+                    '[AOP Declare Error]: %s has an error: "%s"',
+                    [
+                        $scope . '->' . $property,
+                        $message
+                    ]
+                );
                 trigger_error($message, $level);
             };
         }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -28,17 +29,17 @@ class Enumerator
     /**
      * Path to the root directory, where enumeration should start
      */
-    private $rootDirectory;
+    private string $rootDirectory;
 
     /**
      * List of additional include paths, should be below rootDirectory
      */
-    private $includePaths;
+    private array $includePaths;
 
     /**
      * List of additional exclude paths, should be below rootDirectory
      */
-    private $excludePaths;
+    private array $excludePaths;
 
     /**
      * Initializes an enumerator

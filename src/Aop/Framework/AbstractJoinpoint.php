@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -17,6 +18,7 @@ use Go\Aop\AdviceAround;
 use Go\Aop\AdviceBefore;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
+
 use function is_array;
 
 /**
@@ -34,35 +36,29 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * List of advices
      *
-     * @var array|Advice[]|Interceptor[]
+     * @var array<Advice|Interceptor>
      */
-    protected $advices = [];
+    protected array $advices = [];
 
     /**
      * Current advice index
-     *
-     * @var int
      */
-    protected $current = 0;
+    protected int $current = 0;
 
     /**
      * Stack frames to work with recursive calls or with cross-calls inside object
-     *
-     * @var array
      */
-    protected $stackFrames = [];
+    protected array $stackFrames = [];
 
     /**
      * Recursion level for invocation
-     *
-     * @var int
      */
-    protected $level = 0;
+    protected int $level = 0;
 
     /**
      * Initializes list of advices for current joinpoint
      *
-     * @param array $advices List of advices
+     * @param array<Advice|Interceptor> $advices List of advices
      */
     public function __construct(array $advices)
     {
@@ -72,30 +68,34 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * Sorts advices by priority
      *
-     * @param array|Advice[] $advices
-     * @return array|Advice[] Sorted list of advices
+     * @param array<Advice|Interceptor> $advices
+     *
+     * @return array<Advice|Interceptor> Sorted list of advices
      */
     public static function sortAdvices(array $advices): array
     {
         $sortedAdvices = $advices;
-        uasort($sortedAdvices, function (Advice $first, Advice $second) {
-            switch (true) {
-                case $first instanceof AdviceBefore && !($second instanceof AdviceBefore):
-                    return -1;
+        uasort(
+            $sortedAdvices,
+            function (Advice $first, Advice $second) {
+                switch (true) {
+                    case $first instanceof AdviceBefore && !($second instanceof AdviceBefore):
+                        return -1;
 
-                case $first instanceof AdviceAround && !($second instanceof AdviceAround):
-                    return 1;
+                    case $first instanceof AdviceAround && !($second instanceof AdviceAround):
+                        return 1;
 
-                case $first instanceof AdviceAfter && !($second instanceof AdviceAfter):
-                    return $second instanceof AdviceBefore ? 1 : -1;
+                    case $first instanceof AdviceAfter && !($second instanceof AdviceAfter):
+                        return $second instanceof AdviceBefore ? 1 : -1;
 
-                case ($first instanceof OrderedAdvice && $second instanceof OrderedAdvice):
-                    return $first->getAdviceOrder() - $second->getAdviceOrder();
+                    case ($first instanceof OrderedAdvice && $second instanceof OrderedAdvice):
+                        return $first->getAdviceOrder() - $second->getAdviceOrder();
 
-                default:
-                    return 0;
+                    default:
+                        return 0;
+                }
             }
-        });
+        );
 
         return $sortedAdvices;
     }

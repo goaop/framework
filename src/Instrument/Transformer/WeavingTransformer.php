@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -16,6 +17,7 @@ use Go\Aop\Aspect;
 use Go\Aop\Features;
 use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AdviceMatcher;
+use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
@@ -33,33 +35,32 @@ use Go\Proxy\TraitProxyGenerator;
  */
 class WeavingTransformer extends BaseSourceTransformer
 {
-
     /**
      * Advice matcher for class
      */
-    protected $adviceMatcher;
+    protected AdviceMatcherInterface $adviceMatcher;
 
     /**
      * Should we use parameter widening for our decorators
      */
-    protected $useParameterWidening = false;
+    protected bool $useParameterWidening = false;
 
     /**
      * Cache manager
      */
-    private $cachePathManager;
+    private CachePathManager $cachePathManager;
 
     /**
      * Loader for aspects
      */
-    protected $aspectLoader;
+    protected AspectLoader $aspectLoader;
 
     /**
      * Constructs a weaving transformer
      */
     public function __construct(
         AspectKernel $kernel,
-        AdviceMatcher $adviceMatcher,
+        AdviceMatcherInterface $adviceMatcher,
         CachePathManager $cachePathManager,
         AspectLoader $loader
     ) {

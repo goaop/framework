@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -11,9 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Laminas\Code\Generator\MethodGenerator;
 use LogicException;
 use ReflectionMethod;
-use Laminas\Code\Generator\MethodGenerator;
+
 use function count;
 
 /**
@@ -21,28 +23,20 @@ use function count;
  */
 final class InterceptedConstructorGenerator extends MethodGenerator
 {
-
-    /**
-     * Constructor generator
-     *
-     * @var MethodGenerator
-     */
-    private $generatedConstructor;
+    private MethodGenerator $constructorGenerator;
 
     /**
      * InterceptedConstructor
      *
-     * @param array            $interceptedProperties List of intercepted properties for the class
-     * @param ReflectionMethod $constructor           Instance of original constructor or null
-     * @param MethodGenerator  $generatedConstructor  Constructor body generator (if present)
-     * @param bool             $useTypeWidening       Should generator use parameter widening for PHP>=7.2
-     *
-     * @throws LogicException if constructor is private
+     * @param array                 $interceptedProperties List of intercepted properties for the class
+     * @param ReflectionMethod|null $constructor           Instance of original constructor or null
+     * @param MethodGenerator|null  $constructorGenerator  Constructor body generator (if present)
+     * @param bool                  $useTypeWidening       Should generator use parameter widening for PHP>=7.2
      */
     public function __construct(
         array $interceptedProperties,
         ReflectionMethod $constructor = null,
-        MethodGenerator $generatedConstructor = null,
+        MethodGenerator $constructorGenerator = null,
         bool $useTypeWidening = false
     ) {
         $constructorBody = count($interceptedProperties) > 0 ? $this->getConstructorBody($interceptedProperties) : '';
@@ -53,26 +47,27 @@ final class InterceptedConstructorGenerator extends MethodGenerator
             );
         }
         if ($constructor !== null) {
-            if ($generatedConstructor === null) {
+            if ($constructorGenerator === null) {
                 $callArguments        = new FunctionCallArgumentListGenerator($constructor);
                 $splatPrefix          = $constructor->getNumberOfParameters() > 0 ? '...' : '';
                 $parentCallBody       = 'parent::__construct(' . $splatPrefix . $callArguments->generate() . ');';
-                $generatedConstructor = new InterceptedMethodGenerator($constructor, $parentCallBody, $useTypeWidening);
+                $constructorGenerator = new InterceptedMethodGenerator($constructor, $parentCallBody, $useTypeWidening);
             }
-            $constructorBody .= PHP_EOL . $generatedConstructor->getBody();
-            $generatedConstructor->setBody($constructorBody);
+            $constructorBody .= PHP_EOL . $constructorGenerator->getBody();
+            $constructorGenerator->setBody($constructorBody);
         } else {
-            $generatedConstructor = new MethodGenerator('__construct', [], [], $constructorBody);
+            $constructorGenerator = new MethodGenerator('__construct', [], [], $constructorBody);
         }
-        $this->generatedConstructor = $generatedConstructor;
+        assert($constructorGenerator !== null, "Constructor generator should be initialized");
+        $this->constructorGenerator = $constructorGenerator;
     }
 
     /**
      * @inheritdoc
      */
-    public function generate()
+    public function generate(): string
     {
-        return $this->generatedConstructor->generate();
+        return $this->constructorGenerator->generate();
     }
 
     /**

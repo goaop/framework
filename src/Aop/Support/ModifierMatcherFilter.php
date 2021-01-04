@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -21,17 +22,17 @@ class ModifierMatcherFilter implements PointFilter
     /**
      * Bit mask, that should be always match
      */
-    protected $andMask = 0;
+    protected int $andMask = 0;
 
     /**
      * Bit mask, that can be used for additional check
      */
-    protected $orMask = 0;
+    protected int $orMask = 0;
 
     /**
      * Bit mask to exclude specific value from matching, for example, !public
      */
-    protected $notMask = 0;
+    protected int $notMask = 0;
 
     /**
      * Initialize default filter with "and" mask

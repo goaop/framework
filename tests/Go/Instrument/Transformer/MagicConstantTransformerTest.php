@@ -1,25 +1,27 @@
 <?php
+
 declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
 namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
-use Go\Instrument\Transformer\MagicConstantTransformer;
-use Go\Instrument\Transformer\StreamMetaData;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class MagicConstantTransformerTest extends TestCase
 {
-    /**
-     * @var MagicConstantTransformer
-     */
-    protected $transformer;
+    protected MagicConstantTransformer $transformer;
 
-    /**
-     * @var StreamMetaData|null
-     */
-    protected $metadata;
+    protected ?StreamMetaData $metadata;
 
      /**
      * {@inheritDoc}
@@ -37,9 +39,9 @@ class MagicConstantTransformerTest extends TestCase
     /**
      * Returns a mock for kernel
      *
-     * @return \PHPUnit_Framework_MockObject_MockObject|\Go\Core\AspectKernel
+     * @return MockObject|AspectKernel
      */
-    protected function getKernelMock($options)
+    protected function getKernelMock(array $options): AspectKernel
     {
         $mock = $this->getMockForAbstractClass(
             AspectKernel::class,

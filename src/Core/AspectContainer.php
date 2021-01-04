@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -11,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
+use OutOfBoundsException;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
@@ -69,7 +71,7 @@ interface AspectContainer
      * Return a service or value from the container
      *
      * @return mixed
-     * @throws \OutOfBoundsException if service was not found
+     * @throws OutOfBoundsException if service was not found
      */
     public function get(string $id);
 

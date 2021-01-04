@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,6 +13,7 @@ declare(strict_types = 1);
 namespace Go\Proxy\Part;
 
 use Go\Aop\Framework\ClassFieldAccess;
+
 use function array_key_exists;
 use function get_parent_class;
 use function method_exists;
@@ -23,15 +25,13 @@ trait PropertyInterceptionTrait
 {
     /**
      * Holds a collection of current values for intercepted properties
-     *
-     * @var array
      */
-    private $__properties = [];
+    private array $__properties = [];
 
     /**
      * @inheritDoc
      */
-    public function &__get($name)
+    public function &__get(string $name)
     {
         if (array_key_exists($name, $this->__properties)) {
             /** @var ClassFieldAccess $fieldAccess */
@@ -53,7 +53,7 @@ trait PropertyInterceptionTrait
     /**
      * @inheritDoc
      */
-    public function __set($name, $value)
+    public function __set(string $name, $value)
     {
         if (array_key_exists($name, $this->__properties)) {
             /** @var ClassFieldAccess $fieldAccess */

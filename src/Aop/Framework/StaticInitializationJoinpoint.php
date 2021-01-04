@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -14,6 +15,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\ClassJoinpoint;
 use Go\Core\AspectContainer;
 use ReflectionClass;
+
 use function strlen;
 
 /**
@@ -22,32 +24,29 @@ use function strlen;
 class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJoinpoint
 {
 
-    /**
-     * @var ReflectionClass
-     */
-    protected $reflectionClass;
+    protected ReflectionClass $reflectionClass;
 
     /**
      * Constructor for the class static initialization joinpoint
      *
      * @param array $advices List of advices for this invocation
      */
-    public function __construct(string $className, string $unusedType, array $advices)
+    public function __construct(array $advices, string $className)
     {
         $originalClass = $className;
         if (strpos($originalClass, AspectContainer::AOP_PROXIED_SUFFIX)) {
             $originalClass = substr($originalClass, 0, -strlen(AspectContainer::AOP_PROXIED_SUFFIX));
         }
-        $this->reflectionClass = new \ReflectionClass($originalClass);
+        $this->reflectionClass = new ReflectionClass($originalClass);
         parent::__construct($advices);
     }
 
     /**
      * Proceeds to the next interceptor in the chain.
      *
-     * @return void Static initializtion could not return anything
+     * @return void Covariant, as static initializtion could not return anything
      */
-    public function proceed()
+    public function proceed(): void
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current++];

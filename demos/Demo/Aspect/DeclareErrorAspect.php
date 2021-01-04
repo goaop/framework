@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -22,16 +23,14 @@ class DeclareErrorAspect implements Aspect
     /**
      * Message to show when calling the method
      *
-     * @var string
      * @DeclareError("@execution(Demo\Annotation\Deprecated)", level=16384) // E_USER_DEPRECATED
      */
-    protected $message = 'Method is deprecated and should not be called in debug mode';
+    protected string $message = 'Method is deprecated and should not be called in debug mode';
 
     /**
      * Prevent developers from using this method by always generating a warning
      *
-     * @var string
      * @DeclareError("execution(public Demo\Example\ErrorDemo->notSoGoodMethod(*))", level=512) // E_USER_WARNING
      */
-    protected $badMethod = 'Method can generate division by zero! Do not use it!';
+    protected string $badMethod = 'Method can generate division by zero! Do not use it!';
 }

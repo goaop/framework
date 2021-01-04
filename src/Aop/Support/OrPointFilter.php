@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -21,12 +22,14 @@ class OrPointFilter implements PointFilter
     /**
      * Kind of filter
      */
-    private $kind = 0;
+    private int $kind = 0;
 
     /**
      * List of PointFilter to combine
+     *
+     * @var array<PointFilter>
      */
-    private $filters;
+    private array $filters;
 
     /**
      * Or constructor

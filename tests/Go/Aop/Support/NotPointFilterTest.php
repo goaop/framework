@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -13,17 +14,17 @@ namespace Go\Aop\Support;
 
 use Go\Aop\PointFilter;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 class NotPointFilterTest extends TestCase
 {
-
     /**
      * @dataProvider logicCases
      */
-    public function testMatches(PointFilter $first, $expected): void
+    public function testMatches(PointFilter $first, bool $expected): void
     {
         $filter = new NotPointFilter($first);
-        $result = $filter->matches(new \ReflectionClass(__CLASS__) /* anything */);
+        $result = $filter->matches(new ReflectionClass(self::class));
         $this->assertSame($expected, $result);
     }
 

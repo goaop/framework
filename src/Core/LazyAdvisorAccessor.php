@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -23,12 +24,12 @@ class LazyAdvisorAccessor
     /**
      * Instance of aspect container
      */
-    protected $container;
+    protected AspectContainer $container;
 
     /**
      * Aspect loader instance
      */
-    protected $loader;
+    protected AspectLoader $loader;
 
     /**
      * Accessor constructor

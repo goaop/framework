@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -20,11 +21,8 @@ use Go\Lang\Annotation\Around;
  */
 class FunctionInterceptorAspect implements Aspect
 {
-
     /**
      * This advice intercepts an access to the array_*** function in Demo\Example\ namespace
-     *
-     * @param FunctionInvocation $invocation
      *
      * @Around("execution(Demo\Example\array_*(*))")
      *
@@ -44,13 +42,9 @@ class FunctionInterceptorAspect implements Aspect
     /**
      * This advice intercepts an access to the file_get_contents() function
      *
-     * @param FunctionInvocation $invocation
-     *
      * @Around("execution(Demo\Example\file_get_contents(*))")
-     *
-     * @return mixed
      */
-    public function aroundFileGetContents(FunctionInvocation $invocation)
+    public function aroundFileGetContents(FunctionInvocation $invocation): string
     {
         echo 'Calling Around Interceptor for ',
             $invocation,

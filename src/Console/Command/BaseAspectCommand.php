@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -27,15 +28,13 @@ class BaseAspectCommand extends Command
 {
     /**
      * Stores an instance of aspect kernel
-     *
-     * @var null|AspectKernel
      */
-    protected $aspectKernel;
+    protected ?AspectKernel $aspectKernel = null;
 
     /**
      * {@inheritDoc}
      */
-    protected function configure()
+    protected function configure(): void
     {
         $this->addArgument('loader', InputArgument::REQUIRED, 'Path to the aspect loader file');
     }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -11,8 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use ReflectionFunctionAbstract;
 use Laminas\Code\Generator\AbstractGenerator;
+use ReflectionFunctionAbstract;
 
 /**
  * Prepares the function call argument list
@@ -24,19 +25,17 @@ final class FunctionCallArgumentListGenerator extends AbstractGenerator
      *
      * @var string[]
      */
-    private $arguments;
+    private array $arguments = [];
 
     /**
      * If function contains optional arguments
      */
-    private $hasOptionals = false;
+    private bool $hasOptionals = false;
 
     /**
      * Definition of variadic argument or null if function is not variadic
-     *
-     * @var mixed|null
      */
-    private $variadicArgument = null;
+    private ?string $variadicArgument = null;
 
     /**
      * FunctionCallArgumentList constructor.
@@ -61,7 +60,7 @@ final class FunctionCallArgumentListGenerator extends AbstractGenerator
     /**
      * @inheritDoc
      */
-    public function generate()
+    public function generate(): string
     {
         $argumentsPart = [];
         if ($this->variadicArgument !== null) {

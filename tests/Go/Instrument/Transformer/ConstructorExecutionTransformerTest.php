@@ -1,5 +1,14 @@
 <?php
+
 declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
 namespace Go\Instrument\Transformer;
 
@@ -7,19 +16,14 @@ use PHPUnit\Framework\TestCase;
 
 class ConstructorExecutionTransformerTest extends TestCase
 {
-    /**
-     * @var ConstructorExecutionTransformer
-     */
-    protected static $transformer;
+    protected static ConstructorExecutionTransformer $transformer;
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function setUp(): void
+    public static function setUpBeforeClass(): void
     {
-        if (!self::$transformer) {
-            self::$transformer = new ConstructorExecutionTransformer();
-        }
+        self::$transformer = new ConstructorExecutionTransformer();
     }
 
     /**

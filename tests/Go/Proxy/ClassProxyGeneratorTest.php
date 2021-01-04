@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -17,6 +18,8 @@ use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use ReflectionException;
+
 use function substr;
 
 /**
@@ -24,15 +27,13 @@ use function substr;
  */
 class ClassProxyGeneratorTest extends TestCase
 {
-
     /**
      * Test proxy generation for class method
      *
      * @param string $className Name of the class to intercept
      * @param string $methodName Name of the method to intercept
      *
-     * @throws \Go\ParserReflection\ReflectionException
-     * @throws \ReflectionException
+     * @throws ReflectionException
      *
      * @dataProvider dataGenerator
      */

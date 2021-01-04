@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -11,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\PhpUnit;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\Constraint\Constraint;
 
 /**
@@ -18,10 +20,7 @@ use PHPUnit\Framework\Constraint\Constraint;
  */
 final class ClassMemberNotWovenConstraint extends Constraint
 {
-    /**
-     * @var array
-     */
-    private $configuration;
+    private array $configuration;
 
     public function __construct(array $configuration)
     {
@@ -34,7 +33,7 @@ final class ClassMemberNotWovenConstraint extends Constraint
     public function matches($other): bool
     {
         if (!$other instanceof ClassAdvisorIdentifier) {
-            throw new \InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));
+            throw new InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));
         }
 
         $reflectionClass         = ProxyClassReflectionHelper::createReflectionClass($other->getClass(), $this->configuration);

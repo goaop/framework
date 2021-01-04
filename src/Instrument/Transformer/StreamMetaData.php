@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -26,10 +27,8 @@ class StreamMetaData
 {
     /**
      * Mapping between array keys and properties
-     *
-     * @var array
      */
-    private static $propertyMap = [
+    private static array $propertyMap = [
         'stream_type'  => 'streamType',
         'wrapper_type' => 'wrapperType',
         'wrapper_data' => 'wrapperData',
@@ -39,17 +38,13 @@ class StreamMetaData
 
     /**
      * A label describing the underlying implementation of the stream.
-     *
-     * @var string
      */
-    public $streamType;
+    public string $streamType;
 
     /**
      * A label describing the protocol wrapper implementation layered over the stream.
-     *
-     * @var string
      */
-    public $wrapperType;
+    public string $wrapperType;
 
     /**
      * Wrapper-specific data attached to this stream.
@@ -60,38 +55,32 @@ class StreamMetaData
 
     /**
      * Array containing the names of any filters that have been stacked onto this stream.
-     *
-     * @var array
      */
-    public $filterList;
+    public array $filterList;
 
     /**
      * The URI/filename associated with this stream.
-     *
-     * @var string
      */
-    public $uri;
+    public string $uri;
 
     /**
      * Information about syntax tree
      *
      * @var Node[]
      */
-    public $syntaxTree;
+    public array $syntaxTree;
 
     /**
      * List of source tokens
-     *
-     * @var array
      */
-    public $tokenStream = [];
+    public array $tokenStream = [];
 
     /**
      * Creates metadata object from stream
      *
      * @param resource $stream Instance of stream
      * @param string $source Source code or null
-     * @throws \InvalidArgumentException for invalid stream
+     * @throws InvalidArgumentException for invalid stream
      */
     public function __construct($stream, string $source = null)
     {
@@ -167,7 +156,7 @@ class StreamMetaData
      *
      * @param array $rawTokens
      */
-    public function setTokenStreamFromRawTokens($rawTokens): void
+    public function setTokenStreamFromRawTokens(array $rawTokens): void
     {
         foreach ($rawTokens as $index => $rawToken) {
             $this->tokenStream[$index] = is_array($rawToken) ? $rawToken : [T_STRING, $rawToken];

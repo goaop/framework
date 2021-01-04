@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -31,12 +32,12 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     /**
      * Instance of pointcut lexer
      */
-    protected $pointcutLexer;
+    protected Lexer $pointcutLexer;
 
     /**
      * Instance of pointcut parser
      */
-    protected $pointcutParser;
+    protected Parser $pointcutParser;
 
     /**
      * Default loader constructor that accepts pointcut lexer and parser
@@ -50,9 +51,9 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     /**
      * General method for parsing pointcuts
      *
-     * @param mixed|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
+     * @param mixed|ReflectionMethod|ReflectionProperty $reflection Reflection of point
      *
-     * @throws \UnexpectedValueException if there was an error during parsing
+     * @throws UnexpectedValueException if there was an error during parsing
      * @return Pointcut|PointFilter
      */
     final protected function parsePointcut(Aspect $aspect, $reflection, string $pointcutExpression): PointFilter

@@ -1,22 +1,29 @@
 <?php
+
 declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2016, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
 namespace Go\Instrument\FileSystem;
 
 use PHPUnit\Framework\TestCase;
+use SplFileInfo;
 use Vfs\FileSystem;
 
 class EnumeratorTest extends TestCase
 {
-
-    /** @var FileSystem */
-    protected static $fileSystem;
+    protected static FileSystem $fileSystem;
 
     /**
      * Set up fixture test folders and files
      *
      * @throws \Exception
-     * @return void
      */
     public static function setUpBeforeClass(): void
     {
@@ -40,9 +47,6 @@ class EnumeratorTest extends TestCase
         static::$fileSystem->unmount();
     }
 
-    /**
-     * @return array
-     */
     public function pathsProvider(): array
     {
         return [
@@ -90,28 +94,25 @@ class EnumeratorTest extends TestCase
      *
      * @dataProvider pathsProvider
      *
-     * @param array $expectedPaths
-     * @param array $includePaths
-     * @param array $excludePaths
      * @throws \InvalidArgumentException
      * @throws \LogicException
      * @throws \UnexpectedValueException
      */
-    public function testExclude($expectedPaths, $includePaths, $excludePaths): void
+    public function testExclude(array $expectedPaths, array $includePaths, array $excludePaths): void
     {
         $testPaths = [];
 
         /** @var Enumerator $mock */
         $mock = $this->getMockBuilder(Enumerator::class)
             ->setConstructorArgs(['vfs://base', $includePaths, $excludePaths])
-            ->setMethods(['getFileFullPath'])
+            ->onlyMethods(['getFileFullPath'])
             ->getMock();
 
         // Mock getFileRealPath method to provide a pathname
         // VFS does not support getRealPath()
         $mock->expects($this->any())
             ->method('getFileFullPath')
-            ->will($this->returnCallback(function (\SplFileInfo $file) {
+            ->will($this->returnCallback(function (SplFileInfo $file) {
                 return $file->getPathname();
             }));
 

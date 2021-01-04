@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -8,6 +9,7 @@ declare(strict_types = 1);
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
  */
+
 namespace Go\Aop\Intercept;
 
 /**
@@ -26,13 +28,12 @@ namespace Go\Aop\Intercept;
  */
 interface Joinpoint
 {
-
     /**
      * Proceeds to the next interceptor in the chain.
      *
-     * @api
+     * @return mixed Returns covariant return types in implementations: void, object, etc.
      *
-     * @return mixed see the children interfaces' proceed definition.
+     * @api
      */
     public function proceed();
 
