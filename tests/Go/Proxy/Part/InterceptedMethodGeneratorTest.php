@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -13,6 +14,9 @@ namespace Go\Proxy\Part;
 
 use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
+
+use ReflectionMethod;
+
 use function preg_replace;
 
 /**
@@ -23,16 +27,12 @@ class InterceptedMethodGeneratorTest extends TestCase
     /**
      * Tests that generator can generate valid method definition
      *
-     * @param string $className
-     * @param string $methodName
-     * @param string $expectedSignature
-     *
      * @throws \ReflectionException
      * @dataProvider dataGenerator
      */
     public function testGenerate(string $className, string $methodName, string $expectedSignature): void
     {
-        $reflectionMethod = new \ReflectionMethod($className, $methodName);
+        $reflectionMethod = new ReflectionMethod($className, $methodName);
         $generator        = new InterceptedMethodGenerator($reflectionMethod, '');
 
         $generatedCode = $generator->generate();
@@ -45,8 +45,6 @@ class InterceptedMethodGeneratorTest extends TestCase
 
     /**
      * Provides list of methods with expected attributes
-     *
-     * @return array
      */
     public function dataGenerator(): array
     {
@@ -54,17 +52,17 @@ class InterceptedMethodGeneratorTest extends TestCase
             [
                 First::class,
                 'variadicArgsTest',
-                'public function variadicArgsTest(... $args)'
+                'public function variadicArgsTest(... $args) : string'
             ],
             [
                 First::class,
                 'staticLsbRecursion',
-                'public static function staticLsbRecursion($value, $level = 0)'
+                'public static function staticLsbRecursion(int $value, int $level = 0) : int'
             ],
             [
                 First::class,
                 'staticLsbProtected',
-                'protected static function staticLsbProtected()'
+                'protected static function staticLsbProtected() : string'
             ],
             [
                 First::class,
@@ -74,7 +72,7 @@ class InterceptedMethodGeneratorTest extends TestCase
             [
                 First::class,
                 'privateMethod',
-                'private function privateMethod()'
+                'private function privateMethod() : int'
             ],
         ];
     }

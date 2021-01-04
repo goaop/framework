@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -23,10 +24,8 @@ trait PointcutClassFilterTrait
 {
     /**
      * Filter for class
-     *
-     * @var null|PointFilter
      */
-    protected $classFilter;
+    protected ?PointFilter $classFilter = null;
 
     /**
      * Set the ClassFilter to use for this pointcut.

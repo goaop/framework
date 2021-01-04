@@ -1,5 +1,7 @@
 <?php
 declare(strict_types = 1);
+
+use Go\Aop\Proxy;
 /*
  * Go! AOP framework
  *
@@ -186,7 +188,7 @@ switch ($showCase) {
         $aspectName = 'Demo\Aspect\FluentInterfaceAspect';
 
         $example = new UserFluentDemo(); // Original class doesn't provide fluent interface for us
-        if ($example instanceof \Go\Aop\Proxy) { // This check is to prevent fatal errors when AOP is disabled
+        if ($example instanceof Proxy) { // This check is to prevent fatal errors when AOP is disabled
             $example
                 ->setName('John')
                 ->setSurname('Doe')
@@ -229,7 +231,7 @@ switch ($showCase) {
   </pre></div>
   <div class="panel-group" id="accordion">
 <?php // Conditional block with source code of aspect
-if ($aspectName):
+if ($aspectName !== ''):
 ?>
 
     <div class="panel panel-default" id="aspect">

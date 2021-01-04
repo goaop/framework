@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -11,11 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Laminas\Code\Generator\TypeGenerator;
-use ReflectionMethod;
 use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\MethodGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
+use ReflectionMethod;
 use ReflectionNamedType;
 
 /**
@@ -23,7 +23,6 @@ use ReflectionNamedType;
  */
 final class InterceptedMethodGenerator extends MethodGenerator
 {
-
     /**
      * InterceptedMethod constructor.
      *
@@ -42,7 +41,7 @@ final class InterceptedMethodGenerator extends MethodGenerator
             if ($reflectionReturnType instanceof ReflectionNamedType) {
                 $returnTypeName = $reflectionReturnType->getName();
             } else {
-                $returnTypeName = (string) $reflectionReturnType;
+                $returnTypeName = (string)$reflectionReturnType;
             }
             $this->setReturnType($returnTypeName);
         }

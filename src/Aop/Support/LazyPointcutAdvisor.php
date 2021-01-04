@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -24,19 +25,17 @@ class LazyPointcutAdvisor extends AbstractGenericAdvisor implements PointcutAdvi
     /**
      * Pointcut expression represented with string
      */
-    private $pointcutExpression;
+    private string $pointcutExpression;
 
     /**
      * Instance of parsed pointcut
-     *
-     * @var Pointcut|null
      */
-    private $pointcut;
+    private ?Pointcut $pointcut = null;
 
     /**
      * Instance of aspect container
      */
-    private $container;
+    private AspectContainer $container;
 
     /**
      * Creates the LazyPointcutAdvisor by specifying textual pointcut expression and Advice to run when Pointcut matches.

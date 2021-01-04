@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -10,9 +11,11 @@ declare(strict_types = 1);
  */
 
 namespace Go\Instrument\ClassLoading;
+
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use InvalidArgumentException;
+
 use function function_exists;
 
 /**
@@ -26,46 +29,31 @@ class CachePathManager
      */
     private const CACHE_FILE_NAME = '/_transformation.cache';
 
-    /**
-     * @var array
-     */
-    protected $options = [];
+    protected array $options = [];
 
     /**
      * Aspect kernel instance
      */
-    protected $kernel;
+    protected AspectKernel $kernel;
 
-    /**
-     * @var string|null
-     */
-    protected $cacheDir;
+    protected ?string $cacheDir = null;
 
     /**
      * File mode
-     *
-     * @var integer
      */
-    protected $fileMode;
+    protected int $fileMode;
 
-    /**
-     * @var string|null
-     */
-    protected $appDir;
+    protected ?string $appDir = null;
 
     /**
      * Cached metadata for transformation state for the concrete file
-     *
-     * @var array
      */
-    protected $cacheState = [];
+    protected array $cacheState = [];
 
     /**
      * New metadata items, that was not present in $cacheState
-     *
-     * @var array
      */
-    protected $newCacheState = [];
+    protected array $newCacheState = [];
 
     public function __construct(AspectKernel $kernel)
     {
@@ -81,7 +69,8 @@ class CachePathManager
                 if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
                     throw new InvalidArgumentException(
                         "Can not create a directory {$this->cacheDir} for the cache.
-                        Parent directory {$cacheRootDir} is not writable or not exist.");
+                        Parent directory {$cacheRootDir} is not writable or not exist."
+                    );
                 }
                 mkdir($this->cacheDir, $this->fileMode, true);
             }
@@ -96,7 +85,7 @@ class CachePathManager
     }
 
     /**
-     * Returns current cache directory for aspects, can be bull
+     * Returns current cache directory for aspects, can be null
      */
     public function getCacheDir(): ?string
     {
@@ -177,14 +166,17 @@ class CachePathManager
     public function flushCacheState(bool $force = false): void
     {
         if ((!empty($this->newCacheState) && is_writable($this->cacheDir)) || $force) {
-            $fullCacheMap = $this->newCacheState + $this->cacheState;
-            $cachePath    = substr(var_export($this->cacheDir, true), 1, -1);
-            $rootPath     = substr(var_export($this->appDir, true), 1, -1);
-            $cacheData    = '<?php return ' . var_export($fullCacheMap, true) . ';';
-            $cacheData    = strtr($cacheData, [
-                '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
-                '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
-            ]);
+            $fullCacheMap      = $this->newCacheState + $this->cacheState;
+            $cachePath         = substr(var_export($this->cacheDir, true), 1, -1);
+            $rootPath          = substr(var_export($this->appDir, true), 1, -1);
+            $cacheData         = '<?php return ' . var_export($fullCacheMap, true) . ';';
+            $cacheData         = strtr(
+                $cacheData,
+                [
+                    '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
+                    '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
+                ]
+            );
             $fullCacheFileName = $this->cacheDir . self::CACHE_FILE_NAME;
             file_put_contents($fullCacheFileName, $cacheData, LOCK_EX);
             // For cache files we don't want executable bits by default
@@ -203,8 +195,8 @@ class CachePathManager
      */
     public function clearCacheState(): void
     {
-        $this->cacheState       = [];
-        $this->newCacheState    = [];
+        $this->cacheState    = [];
+        $this->newCacheState = [];
 
         $this->flushCacheState(true);
     }

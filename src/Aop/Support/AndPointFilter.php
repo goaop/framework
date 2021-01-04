@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -21,12 +22,14 @@ class AndPointFilter implements PointFilter
     /**
      * Kind of filter
      */
-    private $kind = -1;
+    private int $kind = -1;
 
     /**
      * List of PointFilters to combine with "AND"
+     *
+     * @var array<PointFilter>
      */
-    private $filters;
+    private array $filters;
 
     /**
      * And constructor

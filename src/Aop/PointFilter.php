@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -29,24 +30,23 @@ namespace Go\Aop;
  */
 interface PointFilter
 {
-
-    const KIND_METHOD      = 1;
-    const KIND_PROPERTY    = 2;
-    const KIND_CLASS       = 4;
-    const KIND_TRAIT       = 8;
-    const KIND_FUNCTION    = 16;
-    const KIND_INIT        = 32;
-    const KIND_STATIC_INIT = 64;
-    const KIND_ALL         = 127;
-    const KIND_DYNAMIC     = 256;
+    public const KIND_METHOD      = 1;
+    public const KIND_PROPERTY    = 2;
+    public const KIND_CLASS       = 4;
+    public const KIND_TRAIT       = 8;
+    public const KIND_FUNCTION    = 16;
+    public const KIND_INIT        = 32;
+    public const KIND_STATIC_INIT = 64;
+    public const KIND_ALL         = 127;
+    public const KIND_DYNAMIC     = 256;
 
     /**
      * Performs matching of point of code, returns true if point matches
      *
-     * @param mixed $point Specific part of code, can be any Reflection class
-     * @param null|mixed $context Related context, can be class or namespace
-     * @param null|string|object $instance Invocation instance or string for static calls
-     * @param null|array $arguments Dynamic arguments for method
+     * @param mixed              $point     Specific part of code, can be any Reflection class
+     * @param null|mixed         $context   Related context, can be class or namespace
+     * @param null|string|object $instance  Invocation instance or string for static calls
+     * @param null|array         $arguments Dynamic arguments for method
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool;
 

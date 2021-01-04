@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -30,8 +31,8 @@ class TruePointFilter implements PointFilter
      */
     public static function getInstance(): self
     {
-        static $instance;
-        if (!$instance) {
+        static $instance = null;
+        if ($instance === null) {
             $instance = new self();
         }
 

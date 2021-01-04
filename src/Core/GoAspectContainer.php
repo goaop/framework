@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -33,14 +34,12 @@ class GoAspectContainer extends Container
      *
      * @var string[]
      */
-    protected $resources = [];
+    protected array $resources = [];
 
     /**
      * Cached timestamp for resources
-     *
-     * @var integer
      */
-    protected $maxTimestamp = 0;
+    protected int $maxTimestamp = 0;
 
     /**
      * Constructor for container
@@ -78,18 +77,14 @@ class GoAspectContainer extends Container
             return $loader;
         });
 
-        $this->share('aspect.advisor.accessor', function (Container $container) {
-            return new LazyAdvisorAccessor(
-                $container,
-                $container->get('aspect.cached.loader')
-            );
-        });
+        $this->share('aspect.advisor.accessor', fn(Container $container) => new LazyAdvisorAccessor(
+            $container,
+            $container->get('aspect.cached.loader')
+        ));
 
-        $this->share('aspect.advice_matcher', function (Container $container) {
-            return new AdviceMatcher(
-                $container->get('kernel.interceptFunctions')
-            );
-        });
+        $this->share('aspect.advice_matcher', fn(Container $container) => new AdviceMatcher(
+            $container->get('kernel.interceptFunctions')
+        ));
 
         $this->share('aspect.annotation.cache', function (Container $container) {
             $options = $container->get('kernel.options');
@@ -119,22 +114,16 @@ class GoAspectContainer extends Container
             );
         });
 
-        $this->share('aspect.cache.path.manager', function (Container $container) {
-            return new CachePathManager($container->get('kernel'));
-        });
+        $this->share('aspect.cache.path.manager', fn(Container $container) => new CachePathManager($container->get('kernel')));
 
         // Pointcut services
-        $this->share('aspect.pointcut.lexer', function () {
-            return new PointcutLexer();
-        });
-        $this->share('aspect.pointcut.parser', function (Container $container) {
-            return new PointcutParser(
-                new PointcutGrammar(
-                    $container,
-                    $container->get('aspect.annotation.reader')
-                )
-            );
-        });
+        $this->share('aspect.pointcut.lexer', fn() => new PointcutLexer());
+        $this->share('aspect.pointcut.parser', fn(Container $container) => new PointcutParser(
+            new PointcutGrammar(
+                $container,
+                $container->get('aspect.annotation.reader')
+            )
+        ));
     }
 
     /**
@@ -193,7 +182,7 @@ class GoAspectContainer extends Container
      *
      * @param string $resource Path to the resource
      */
-    public function addResource(string $resource)
+    public function addResource(string $resource): void
     {
         $this->resources[]  = $resource;
         $this->maxTimestamp = 0;

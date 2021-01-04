@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -11,9 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use function class_exists;
-use PHPUnit\Framework\TestCase;
 use Laminas\Code\Generator\ValueGenerator;
+use PHPUnit\Framework\TestCase;
+
+use function class_exists;
 
 class FunctionParameterListTest extends TestCase
 {
@@ -48,8 +50,6 @@ class FunctionParameterListTest extends TestCase
 
     /**
      * Provides list of functions with expected generated args
-     *
-     * @return array
      */
     public function dataGenerator(): array
     {

@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -15,6 +16,7 @@ use Closure;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\ParserReflection\ReflectionEngine;
+
 use function dirname;
 
 /**
@@ -25,10 +27,8 @@ class CachingTransformer extends BaseSourceTransformer
     /**
      * Mask of permission bits for cache files.
      * By default, permissions are affected by the umask system setting
-     *
-     * @var integer|null
      */
-    protected $cacheFileMode;
+    protected int $cacheFileMode = 0770;
 
     /**
      * @var array|Closure|SourceTransformer[]
@@ -38,7 +38,7 @@ class CachingTransformer extends BaseSourceTransformer
     /**
      * Cache manager
      */
-    protected $cacheManager;
+    protected CachePathManager $cacheManager;
 
     /**
      * Class constructor
@@ -86,10 +86,13 @@ class CachingTransformer extends BaseSourceTransformer
                 // For cache files we don't want executable bits by default
                 chmod($cacheUri, $this->cacheFileMode & (~0111));
             }
-            $this->cacheManager->setCacheState($originalUri, [
-                'filemtime' => $_SERVER['REQUEST_TIME'] ?? time(),
-                'cacheUri'  => ($processingResult === self::RESULT_TRANSFORMED) ? $cacheUri : null
-            ]);
+            $this->cacheManager->setCacheState(
+                $originalUri,
+                [
+                    'filemtime' => $_SERVER['REQUEST_TIME'] ?? time(),
+                    'cacheUri'  => ($processingResult === self::RESULT_TRANSFORMED) ? $cacheUri : null
+                ]
+            );
 
             return $processingResult;
         }
@@ -100,7 +103,10 @@ class CachingTransformer extends BaseSourceTransformer
         if ($processingResult === self::RESULT_TRANSFORMED) {
             // Just replace all tokens in the stream
             ReflectionEngine::parseFile($cacheUri);
-            $metadata->setTokenStreamFromRawTokens(ReflectionEngine::getLexer()->getTokens());
+            $metadata->setTokenStreamFromRawTokens(
+                ReflectionEngine::getLexer()
+                                ->getTokens()
+            );
         }
 
         return $processingResult;

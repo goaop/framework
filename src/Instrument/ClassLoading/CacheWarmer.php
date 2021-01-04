@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -29,12 +30,12 @@ class CacheWarmer
     /**
      * Instance of aspect kernel
      */
-    protected $aspectKernel;
+    protected AspectKernel $aspectKernel;
 
     /**
      * Output instance
      */
-    protected $output;
+    protected OutputInterface $output;
 
     /**
      * CacheWarmer constructor.

@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -11,6 +12,8 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
+
 use function get_class;
 
 /**
@@ -20,27 +23,21 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
 {
     /**
      * Closure to use
-     *
-     * @var \Closure
      */
-    protected $closureToCall;
+    protected ?Closure $closureToCall = null;
 
     /**
      * Previous instance of invocation
-     *
-     * @var null|object
      */
-    protected $previousInstance;
+    protected ?object $previousInstance;
 
     /**
      * For dynamic calls we store given argument as 'instance' property
      */
-    protected static $propertyName = 'instance';
+    protected static string $propertyName = 'instance';
 
     /**
      * Invokes original method and return result from it
-     *
-     * @return mixed
      */
     public function proceed()
     {
@@ -68,9 +65,9 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
     /**
      * Returns the object for which current joinpoint is invoked
      *
-     * @return object Instance of object or null for static call/unavailable context
+     * @return object Covariance, always instance of object
      */
-    final public function getThis(): ?object
+    final public function getThis(): object
     {
         return $this->instance;
     }
@@ -79,6 +76,7 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
      * Checks if the current joinpoint is dynamic or static
      *
      * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
+     *
      * @see ClassJoinpoint::getThis()
      */
     final public function isDynamic(): bool

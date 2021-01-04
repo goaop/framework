@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -23,31 +24,31 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Console command for querying an information about aspects
- *
- * @codeCoverageIgnore
  */
 class DebugAspectCommand extends BaseAspectCommand
 {
     /**
      * {@inheritDoc}
      */
-    protected function configure()
+    protected function configure(): void
     {
         parent::configure();
         $this
             ->setName('debug:aspect')
             ->addOption('aspect', null, InputOption::VALUE_OPTIONAL, 'Optional aspect name to filter')
             ->setDescription('Provides an interface for querying the information about aspects')
-            ->setHelp(<<<EOT
+            ->setHelp(
+                <<<EOT
 Allows to query an information about enabled aspects.
 EOT
-            );
+            )
+        ;
     }
 
     /**
      * {@inheritDoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);
 
@@ -103,8 +104,9 @@ EOT
      */
     private function showAspectPointcutsAndAdvisors(SymfonyStyle $io, Aspect $aspect): void
     {
+        $container = $this->aspectKernel->getContainer();
+
         /** @var AspectLoader $aspectLoader */
-        $container    = $this->aspectKernel->getContainer();
         $aspectLoader = $container->get('aspect.loader');
         $io->writeln('<comment>Pointcuts and advices</comment>');
 

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -14,15 +15,25 @@ namespace Go\Core;
 use Closure;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
-use Go\Aop\Framework;
+use Go\Aop\Framework\AfterInterceptor;
+use Go\Aop\Framework\AfterThrowingInterceptor;
+use Go\Aop\Framework\AroundInterceptor;
+use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
+use Go\Lang\Annotation\After;
+use Go\Lang\Annotation\AfterThrowing;
+use Go\Lang\Annotation\Around;
 use Go\Lang\Annotation\BaseInterceptor;
+use Go\Lang\Annotation\Before;
+use ReflectionClass;
 use ReflectionMethod;
+use ReflectionProperty;
 use Reflector;
 use UnexpectedValueException;
+
 use function get_class;
 
 /**
@@ -50,10 +61,10 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      * Checks if loader is able to handle specific point of aspect
      *
      * @param Aspect $aspect Instance of aspect
-     * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
+     * @param mixed|ReflectionClass|ReflectionMethod|ReflectionProperty $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
      *
-     * @return boolean true if extension is able to create an advisor from reflection and metaInformation
+     * @return bool true if extension is able to create an advisor from reflection and metaInformation
      */
     public function supports(Aspect $aspect, $reflection, $metaInformation = null): bool
     {
@@ -108,17 +119,17 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
         $adviceOrder        = $metaInformation->order;
         $pointcutExpression = $metaInformation->value;
         switch (true) {
-            case ($metaInformation instanceof Annotation\Before):
-                return new Framework\BeforeInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
+            case ($metaInformation instanceof Before):
+                return new BeforeInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
-            case ($metaInformation instanceof Annotation\After):
-                return new Framework\AfterInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
+            case ($metaInformation instanceof After):
+                return new AfterInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
-            case ($metaInformation instanceof Annotation\Around):
-                return new Framework\AroundInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
+            case ($metaInformation instanceof Around):
+                return new AroundInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
-            case ($metaInformation instanceof Annotation\AfterThrowing):
-                return new Framework\AfterThrowingInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
+            case ($metaInformation instanceof AfterThrowing):
+                return new AfterThrowingInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
             default:
                 throw new UnexpectedValueException('Unsupported method meta class: ' . get_class($metaInformation));

@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -23,5 +24,4 @@ namespace Go\Lang\Annotation;
  */
 class Pointcut extends BaseAnnotation
 {
-
 }

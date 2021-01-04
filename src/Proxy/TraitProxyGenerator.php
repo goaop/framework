@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -28,24 +29,24 @@ use ReflectionNamedType;
  */
 class TraitProxyGenerator extends ClassProxyGenerator
 {
-
     /**
      * Generates an child code by original class reflection and joinpoints for it
      *
-     * @param ReflectionClass $originalTrait        Original class reflection
-     * @param string          $parentTraitName      Parent trait name to use
-     * @param string[][]      $traitAdvices         List of advices for class
-     * @param bool            $useParameterWidening Enables usage of parameter widening feature
+     * @param ReflectionClass $originalTrait    Original class reflection
+     * @param string          $parentTraitName  Parent trait name to use
+     * @param string[][]      $traitAdviceNames List of advices for class
      */
     public function __construct(
         ReflectionClass $originalTrait,
         string $parentTraitName,
-        array $traitAdvices,
+        array $traitAdviceNames,
         bool $useParameterWidening
     ) {
-        $this->advices        = $traitAdvices;
-        $dynamicMethodAdvices = $traitAdvices[AspectContainer::METHOD_PREFIX] ?? [];
-        $staticMethodAdvices  = $traitAdvices[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
+        $this->adviceNames          = $traitAdviceNames;
+        $this->useParameterWidening = $useParameterWidening;
+
+        $dynamicMethodAdvices = $traitAdviceNames[AspectContainer::METHOD_PREFIX] ?? [];
+        $staticMethodAdvices  = $traitAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
         $interceptedMethods   = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $generatedMethods     = $this->interceptMethods($originalTrait, $interceptedMethods);
 
@@ -74,13 +75,13 @@ class TraitProxyGenerator extends ClassProxyGenerator
     /**
      * Returns a method invocation for the specific trait method
      *
-     * @param array $advices List of advices for this trait method
+     * @param array $adviceNames List of advices for this trait method
      */
     public static function getJoinPoint(
         string $className,
         string $joinPointType,
         string $methodName,
-        array $advices
+        array $adviceNames
     ): MethodInvocation {
         static $accessor;
 
@@ -90,7 +91,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
         }
 
         $filledAdvices = [];
-        foreach ($advices as $advisorName) {
+        foreach ($adviceNames as $advisorName) {
             $filledAdvices[] = $accessor->$advisorName;
         }
 
@@ -105,13 +106,13 @@ class TraitProxyGenerator extends ClassProxyGenerator
     protected function getJoinpointInvocationBody(ReflectionMethod $method): string
     {
         $isStatic = $method->isStatic();
-        $class    = '\\' . __CLASS__;
+        $class    = '\\' . self::class;
         $scope    = $isStatic ? 'static::class' : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
         $argumentList = new FunctionCallArgumentListGenerator($method);
         $argumentCode = $argumentList->generate();
-        $argumentCode = $scope . ($argumentCode ? ", $argumentCode" : '');
+        $argumentCode = $scope . ($argumentCode !== '' ? ", $argumentCode" : '');
 
         $return = 'return ';
         if ($method->hasReturnType()) {
@@ -122,9 +123,12 @@ class TraitProxyGenerator extends ClassProxyGenerator
             }
         }
 
-        $advicesArray = new ValueGenerator($this->advices[$prefix][$method->name], ValueGenerator::TYPE_ARRAY_SHORT);
-        $advicesArray->setArrayDepth(1);
-        $advicesCode = $advicesArray->generate();
+        $advicesArrayValue = new ValueGenerator(
+            $this->adviceNames[$prefix][$method->name],
+            ValueGenerator::TYPE_ARRAY_SHORT
+        );
+        $advicesArrayValue->setArrayDepth(1);
+        $advicesCode = $advicesArrayValue->generate();
 
         return <<<BODY
 static \$__joinPoint;

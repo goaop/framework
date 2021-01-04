@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -11,9 +12,9 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
-use Exception;
 use Go\Aop\AdviceAfter;
 use Go\Aop\Intercept\Joinpoint;
+use Throwable;
 
 /**
  * "After Throwing" interceptor
@@ -24,16 +25,16 @@ final class AfterThrowingInterceptor extends AbstractInterceptor implements Advi
 {
     /**
      * @inheritdoc
-     * @throws Exception
+     * @throws Throwable
      */
     public function invoke(Joinpoint $joinpoint)
     {
         try {
             return $joinpoint->proceed();
-        } catch (Exception $invocationException) {
-            ($this->adviceMethod)($joinpoint, $invocationException);
+        } catch (Throwable $throwableInstance) {
+            ($this->adviceMethod)($joinpoint, $throwableInstance);
 
-            throw $invocationException;
+            throw $throwableInstance;
         }
     }
 }

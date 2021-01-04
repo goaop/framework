@@ -1,19 +1,25 @@
 <?php
+
 declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
 namespace Go\Core;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
-use \PHPUnit\Framework\Testcase;
+use PHPUnit\Framework\TestCase;
 
 class GoAspectContainerTest extends TestCase
 {
-    /**
-     * @var null|GoAspectContainer
-     */
-    protected $container;
+    protected GoAspectContainer $container;
 
     protected function setUp(): void
     {
@@ -27,13 +33,13 @@ class GoAspectContainerTest extends TestCase
      *
      * @dataProvider internalServicesList
      */
-    public function testAllServicesAreConfigured($serviceId)
+    public function testAllServicesAreConfigured(string $serviceId): void
     {
         $service = $this->container->get($serviceId);
         $this->assertNotNull($service);
     }
 
-    public function internalServicesList()
+    public function internalServicesList(): array
     {
         return [
             ['aspect.loader'],
@@ -48,7 +54,7 @@ class GoAspectContainerTest extends TestCase
     /**
      * Tests that pointcut can be registered and accessed
      */
-    public function testPointcutCanBeRegisteredAndReceived()
+    public function testPointcutCanBeRegisteredAndReceived(): void
     {
         $pointcut = $this->createMock(Pointcut::class);
         $this->container->registerPointcut($pointcut, 'test');
@@ -62,7 +68,7 @@ class GoAspectContainerTest extends TestCase
     /**
      * Tests that pointcut can be registered and accessed
      */
-    public function testAdvisorCanBeRegistered()
+    public function testAdvisorCanBeRegistered(): void
     {
         $advisor = $this->createMock(Advisor::class);
         $this->container->registerAdvisor($advisor, 'test');
@@ -75,7 +81,7 @@ class GoAspectContainerTest extends TestCase
     /**
      * Tests that aspect can be registered and accessed
      */
-    public function testAspectCanBeRegisteredAndReceived()
+    public function testAspectCanBeRegisteredAndReceived(): void
     {
         $aspect = $this->createMock(Aspect::class);
         $aspectClass = get_class($aspect);
@@ -91,7 +97,7 @@ class GoAspectContainerTest extends TestCase
     /**
      * Tests that container resources can be added and isFresh works correctly
      */
-    public function testResourceManagement()
+    public function testResourceManagement(): void
     {
         // Without resources this should be always true
         $isFresh = $this->container->isFresh(time());

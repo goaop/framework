@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -10,11 +11,11 @@ declare(strict_types = 1);
  * with this source code in the file LICENSE.
  */
 
+use Composer\InstalledVersions;
+use Go\Console\Command\CacheWarmupCommand;
 use Go\Console\Command\DebugAdvisorCommand;
 use Go\Console\Command\DebugAspectCommand;
-use Go\Console\Command\CacheWarmupCommand;
 use Go\Console\Command\DebugWeavingCommand;
-use Go\Core\AspectKernel;
 use Symfony\Component\Console\Application;
 
 
@@ -31,14 +32,14 @@ if (is_dir($vendor = __DIR__ . '/../vendor')) {
     );
 }
 
-if (!class_exists('Symfony\Component\Console\Application')) {
+if (!class_exists(Application::class)) {
     die(
         'You must install the symfony/console package in order ' .
         'to use the command-line tool.' . PHP_EOL
     );
 }
 
-$app = new Application('Go! AOP', AspectKernel::VERSION);
+$app = new Application('Go! AOP', InstalledVersions::getVersion('goaop/framework'));
 $app->add(new CacheWarmupCommand());
 $app->add(new DebugAspectCommand());
 $app->add(new DebugAdvisorCommand());

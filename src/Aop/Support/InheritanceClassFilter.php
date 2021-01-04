@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -22,7 +23,7 @@ class InheritanceClassFilter implements PointFilter
     /**
      * Parent class or interface name to match in hierarchy
      */
-    protected $parentClass;
+    protected string $parentClass;
 
     /**
      * Inheritance class matcher constructor

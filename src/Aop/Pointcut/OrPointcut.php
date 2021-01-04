@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -14,13 +15,15 @@ namespace Go\Aop\Pointcut;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
 use Go\Aop\Support\OrPointFilter;
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Logical "OR" pointcut that combines two simple pointcuts
  */
 class OrPointcut extends AndPointcut
 {
-
     /**
      * "Or" pointcut constructor
      */
@@ -36,10 +39,10 @@ class OrPointcut extends AndPointcut
     /**
      * Performs matching of point of code
      *
-     * @param mixed $point Specific part of code, can be any Reflection class
-     * @param null|mixed $context Related context, can be class or namespace
-     * @param null|string|object $instance Invocation instance or string for static calls
-     * @param null|array $arguments Dynamic arguments for method
+     * @param mixed              $point     Specific part of code, can be any Reflection class
+     * @param null|mixed         $context   Related context, can be class or namespace
+     * @param null|string|object $instance  Invocation instance or string for static calls
+     * @param null|array         $arguments Dynamic arguments for method
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
     {
@@ -60,9 +63,9 @@ class OrPointcut extends AndPointcut
         $pointcutKind = $pointcut->getKind();
         // We need to recheck filter kind one more time, because of OR syntax
         switch (true) {
-            case ($point instanceof \ReflectionMethod && ($pointcutKind & PointFilter::KIND_METHOD)):
-            case ($point instanceof \ReflectionProperty && ($pointcutKind & PointFilter::KIND_PROPERTY)):
-            case ($point instanceof \ReflectionClass && ($pointcutKind & PointFilter::KIND_CLASS)):
+            case ($point instanceof ReflectionMethod && ($pointcutKind & PointFilter::KIND_METHOD)):
+            case ($point instanceof ReflectionProperty && ($pointcutKind & PointFilter::KIND_PROPERTY)):
+            case ($point instanceof ReflectionClass && ($pointcutKind & PointFilter::KIND_CLASS)):
                 return parent::matchPart($pointcut, $point, $context, $instance, $arguments);
 
             default:

@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -16,11 +17,10 @@ namespace Demo\Example;
  */
 class HumanDemo
 {
-
     /**
      * Eat something
      */
-    public function eat()
+    public function eat(): void
     {
         echo "Eating...", PHP_EOL;
     }
@@ -28,7 +28,7 @@ class HumanDemo
     /**
      * Clean the teeth
      */
-    public function cleanTeeth()
+    public function cleanTeeth(): void
     {
         echo "Cleaning teeth...", PHP_EOL;
     }
@@ -36,7 +36,7 @@ class HumanDemo
     /**
      * Washing up
      */
-    public function washUp()
+    public function washUp(): void
     {
         echo "Washing up...", PHP_EOL;
     }
@@ -44,7 +44,7 @@ class HumanDemo
     /**
      * Working
      */
-    public function work()
+    public function work(): void
     {
         echo "Working...", PHP_EOL;
     }
@@ -52,7 +52,7 @@ class HumanDemo
     /**
      * Go to sleep
      */
-    public function sleep()
+    public function sleep(): void
     {
         echo "Go to sleep...", PHP_EOL;
     }

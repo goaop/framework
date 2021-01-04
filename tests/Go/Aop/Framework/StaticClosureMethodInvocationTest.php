@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
@@ -12,7 +13,6 @@ use PHPUnit\Framework\TestCase;
  */
 class StaticClosureMethodInvocationTest extends TestCase
 {
-
     /**
      * Tests static method invocations with self
      *
@@ -22,7 +22,7 @@ class StaticClosureMethodInvocationTest extends TestCase
      */
     public function testStaticSelfMethodInvocation(string $methodName, int $expectedResult): void
     {
-        $invocation = new StaticClosureMethodInvocation(First::class, $methodName, []);
+        $invocation = new StaticClosureMethodInvocation([],First::class, $methodName);
         $result     = $invocation(First::class);
         $this->assertEquals($expectedResult, $result);
     }
@@ -35,14 +35,14 @@ class StaticClosureMethodInvocationTest extends TestCase
      */
     public function testStaticLsbIsWorking($methodName): void
     {
-        $invocation = new StaticClosureMethodInvocation(First::class, $methodName, []);
+        $invocation = new StaticClosureMethodInvocation([], First::class, $methodName);
         $result     = $invocation(First::class);
         $this->assertEquals(First::class, $result);
     }
 
     public function testValueChangedByReference(): void
     {
-        $invocation = new StaticClosureMethodInvocation(First::class, 'staticPassByReference', []);
+        $invocation = new StaticClosureMethodInvocation([], First::class, 'staticPassByReference');
 
         $value  = 'test';
         $result = $invocation(First::class, [&$value]);
@@ -52,7 +52,7 @@ class StaticClosureMethodInvocationTest extends TestCase
 
     public function testRecursionWorks(): void
     {
-        $invocation = new StaticClosureMethodInvocation(First::class, 'staticLsbRecursion', []);
+        $invocation = new StaticClosureMethodInvocation([],First::class, 'staticLsbRecursion');
         FirstStatic::init($invocation);
 
         $this->assertEquals(5, FirstStatic::staticLsbRecursion(5,0));
@@ -66,7 +66,7 @@ class StaticClosureMethodInvocationTest extends TestCase
             $value = 'ok';
         });
 
-        $invocation = new StaticClosureMethodInvocation(First::class, 'staticSelfPublic', [$advice]);
+        $invocation = new StaticClosureMethodInvocation([$advice], First::class, 'staticSelfPublic');
 
         $result = $invocation(First::class, []);
         $this->assertEquals('ok', $value);
@@ -75,7 +75,7 @@ class StaticClosureMethodInvocationTest extends TestCase
 
     public function testInvocationWithDynamicArguments(): void
     {
-        $invocation = new StaticClosureMethodInvocation(First::class, 'staticVariableArgsTest', []);
+        $invocation = new StaticClosureMethodInvocation([], First::class, 'staticVariableArgsTest');
 
         $args     = [];
         $expected = '';
@@ -89,7 +89,7 @@ class StaticClosureMethodInvocationTest extends TestCase
 
     public function testInvocationWithVariadicArguments(): void
     {
-        $invocation = new StaticClosureMethodInvocation(First::class, 'staticVariadicArgsTest', []);
+        $invocation = new StaticClosureMethodInvocation([], First::class, 'staticVariadicArgsTest');
 
         $args     = [];
         $expected = '';

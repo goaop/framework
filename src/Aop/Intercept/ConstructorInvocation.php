@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -14,15 +15,12 @@ namespace Go\Aop\Intercept;
 use ReflectionMethod;
 
 /**
- * Description of an invocation to a constructor, given to an
- * interceptor upon constructor-call.
+ * Description of an invocation to a constructor, given to an interceptor upon constructor-call.
  *
- * A constructor invocation is a joinpoint and can be intercepted
- * by a constructor interceptor.
+ * A constructor invocation is a joinpoint and can be intercepted by a constructor interceptor.
  */
 interface ConstructorInvocation extends Invocation, ClassJoinpoint
 {
-
     /**
      * Gets the constructor being called or null if it is absent.
      */

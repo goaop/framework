@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -18,7 +19,6 @@ use Demo\Annotation\Cacheable;
  */
 class CacheableDemo
 {
-
     /**
      * Returns a report and explicitly cache a result for future use
      *
@@ -29,7 +29,7 @@ class CacheableDemo
      *
      * @return string
      */
-    public function getReport(string $from) : string
+    public function getReport(string $from): string
     {
         // long calculation for 100ms
         usleep(100 * 1000);

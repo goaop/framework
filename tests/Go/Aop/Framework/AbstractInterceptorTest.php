@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -11,26 +12,29 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Go\Aop\Intercept\Invocation;
-use PHPUnit\Framework\Testcase;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 abstract class AbstractInterceptorTest extends TestCase
 {
     /**
      * Concrete class name for mock, should be redefined with LSB
      */
-    const INVOCATION_CLASS = Invocation::class;
+    protected const INVOCATION_CLASS = Invocation::class;
 
     /**
      * Returns a test advice that writes itself to the sequence
      *
      * @param array $sequenceRecorder
-     * @return callable
      */
-    protected function getAdvice(&$sequenceRecorder)
+    protected function getAdvice(array &$sequenceRecorder): Closure
     {
         return function () use (&$sequenceRecorder) {
             $sequenceRecorder[] = 'advice';
+
             return 'advice';
         };
     }
@@ -39,9 +43,9 @@ abstract class AbstractInterceptorTest extends TestCase
      * Returns an empty invocation that can update the sequence on invocation
      *
      * @param array $sequenceRecorder
-     * @return \PHPUnit_Framework_MockObject_MockObject|Invocation
+     * @return MockObject|Invocation
      */
-    protected function getInvocation(&$sequenceRecorder, $throwException = false)
+    protected function getInvocation(array &$sequenceRecorder, bool $throwException = false): Invocation
     {
         $invocation = $this->getMockBuilder(static::INVOCATION_CLASS)->getMock();
         $invocation
@@ -52,7 +56,7 @@ abstract class AbstractInterceptorTest extends TestCase
                     function () use (&$sequenceRecorder, $throwException) {
                         $sequenceRecorder[] = 'invocation';
                         if ($throwException) {
-                            throw new \RuntimeException('Expected exception');
+                            throw new RuntimeException('Expected exception');
                         }
                         return 'invocation';
                     }

@@ -1,5 +1,14 @@
 <?php
+
 declare(strict_types=1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2017, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
 namespace Go\Functional;
 
@@ -48,15 +57,15 @@ class ClassWeavingTest extends BaseFunctionalTest
         // it weaves FinalClass class
         $this->assertClassIsWoven(FinalClass::class);
 
-        /* @see \Go\Tests\TestProject\Application\FinalClass::somePublicMethod */
+        /* @see FinalClass::somePublicMethod */
         // it weaves somePublicMethod
         $this->assertMethodWoven(FinalClass::class, 'somePublicMethod');
 
-        /* @see \Go\Tests\TestProject\Application\FinalClass::someFinalPublicMethod() */
+        /* @see FinalClass::someFinalPublicMethod() */
         // it should match and weave someFinalPublicMethod
         $this->assertMethodWoven(FinalClass::class, 'someFinalPublicMethod');
 
-        /* @see \Go\Tests\TestProject\Application\ParentWithFinalMethod::someFinalParentMethod() */
+        /* @see ParentWithFinalMethod::someFinalParentMethod() */
         // it should not match with parent final method in the class
         $this->assertMethodNotWoven(FinalClass::class, 'someFinalParentMethod');
     }

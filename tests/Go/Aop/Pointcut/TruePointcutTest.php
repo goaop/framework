@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -9,7 +10,6 @@ declare(strict_types = 1);
  * with this source code in the file LICENSE.
  */
 
-
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
@@ -18,10 +18,7 @@ use PHPUnit\Framework\TestCase;
 
 class TruePointcutTest extends TestCase
 {
-    /**
-     * @var TruePointcut
-     */
-    protected $pointcut;
+    protected TruePointcut $pointcut;
 
     public function setUp(): void
     {

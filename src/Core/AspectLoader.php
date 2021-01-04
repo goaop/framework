@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -30,26 +31,26 @@ class AspectLoader
     /**
      * Aspect container instance
      */
-    protected $container;
+    protected AspectContainer $container;
 
     /**
      * List of aspect loaders
      *
      * @var AspectLoaderExtension[][]
      */
-    protected $loaders = [];
+    protected array $loaders = [];
 
     /**
      * Annotation reader for aspects
      */
-    protected $annotationReader;
+    protected Reader $annotationReader;
 
     /**
-     * List of aspect class names that were loaded
+     * List of aspect class names that have been loaded
      *
      * @var string[]
      */
-    protected $loadedAspects = [];
+    protected array $loadedAspects = [];
 
     /**
      * Loader constructor
@@ -150,7 +151,7 @@ class AspectLoader
      * @param Reflector $reflector Reflection instance
      * @param array|AspectLoaderExtension[] $loaders List of loaders that can produce advisors from aspect class
      *
-     * @throws \InvalidArgumentException If kind of loader isn't supported
+     * @throws InvalidArgumentException If kind of loader isn't supported
      *
      * @return array|Pointcut[]|Advisor[]
      */
@@ -188,7 +189,7 @@ class AspectLoader
      * Return list of annotations for reflection point
      *
      * @return array list of annotations
-     * @throws \InvalidArgumentException if $reflector is unsupported
+     * @throws InvalidArgumentException if $reflector is unsupported
      */
     protected function getAnnotations(Reflector $reflector): array
     {

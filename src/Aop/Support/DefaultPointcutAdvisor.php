@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -29,7 +30,7 @@ class DefaultPointcutAdvisor extends AbstractGenericAdvisor implements PointcutA
     /**
      * The Pointcut targeting the Advice
      */
-    private $pointcut;
+    private Pointcut $pointcut;
 
     /**
      * Creates a DefaultPointcutAdvisor, specifying the Advice to run when Pointcut matches

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -16,30 +17,15 @@ namespace Go\PhpUnit;
  */
 final class ClassAdvisorIdentifier
 {
-    /**
-     * @var string
-     */
-    private $class;
+    private string $class;
 
-    /**
-     * @var string
-     */
-    private $subject;
+    private string $subject;
 
-    /**
-     * @var string
-     */
-    private $target;
+    private string $target;
 
-    /**
-     * @var string
-     */
-    private $advisorIdentifier;
+    private ?string $advisorIdentifier;
 
-    /**
-     * @var null|int
-     */
-    private $index;
+    private ?int $index;
 
     public function __construct(
         $class,
@@ -74,13 +60,11 @@ final class ClassAdvisorIdentifier
     /**
      * Get weaving target.
      *
-     * @see \Go\Core\AspectContainer::METHOD_PREFIX
-     * @see \Go\Core\AspectContainer::PROPERTY_PREFIX
-     * @see \Go\Core\AspectContainer::STATIC_METHOD_PREFIX
-     * @see \Go\Core\AspectContainer::INIT_PREFIX
-     * @see \Go\Core\AspectContainer::STATIC_INIT_PREFIX
-     *
-     * @return string
+     * @see AspectContainer::METHOD_PREFIX
+     * @see AspectContainer::PROPERTY_PREFIX
+     * @see AspectContainer::STATIC_METHOD_PREFIX
+     * @see AspectContainer::INIT_PREFIX
+     * @see AspectContainer::STATIC_INIT_PREFIX
      */
     public function getTarget(): string
     {
@@ -89,20 +73,16 @@ final class ClassAdvisorIdentifier
 
     /**
      * Get get advisor identifier.
-     *
-     * @return string|null
      */
-    public function getAdvisorIdentifier()
+    public function getAdvisorIdentifier(): ?string
     {
         return $this->advisorIdentifier;
     }
 
     /**
      * Get join point ordering index.
-     *
-     * @return int|null
      */
-    public function getIndex()
+    public function getIndex(): ?int
     {
         return $this->index;
     }

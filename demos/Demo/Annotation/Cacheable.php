@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -21,8 +22,6 @@ class Cacheable extends Annotation
 {
     /**
      * Time to cache
-     *
-     * @var int
      */
-    public $time = 0;
+    public int $time = 0;
 }

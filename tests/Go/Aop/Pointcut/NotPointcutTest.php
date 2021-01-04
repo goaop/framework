@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -9,17 +10,14 @@ declare(strict_types = 1);
  * with this source code in the file LICENSE.
  */
 
-
 namespace Go\Aop\Pointcut;
 
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 class NotPointcutTest extends TestCase
 {
-    /**
-     * @var NotPointcut
-     */
-    protected $pointcut;
+    protected NotPointcut $pointcut;
 
     public function setUp(): void
     {
@@ -29,6 +27,6 @@ class NotPointcutTest extends TestCase
     public function testItNeverMatchesForTruePointcut()
     {
         $this->assertFalse($this->pointcut->matches(null));
-        $this->assertFalse($this->pointcut->matches(new \ReflectionClass(self::class)));
+        $this->assertFalse($this->pointcut->matches(new ReflectionClass(self::class)));
     }
 }

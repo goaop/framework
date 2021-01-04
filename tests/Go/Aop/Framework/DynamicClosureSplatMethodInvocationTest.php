@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
@@ -13,16 +14,15 @@ use PHPUnit\Framework\TestCase;
  */
 class DynamicClosureSplatMethodInvocationTest extends TestCase
 {
-
     /**
      * Tests dynamic method invocations
      *
      * @dataProvider dynamicMethodsBatch
      */
-    public function testDynamicMethodInvocation($methodName, $expectedResult): void
+    public function testDynamicMethodInvocation(string $methodName, int $expectedResult): void
     {
         $child      = $this->createMock(First::class);
-        $invocation = new DynamicClosureMethodInvocation(First::class, $methodName, []);
+        $invocation = new DynamicClosureMethodInvocation([], First::class, $methodName);
 
         $result = $invocation($child);
         $this->assertEquals($expectedResult, $result);
@@ -31,7 +31,7 @@ class DynamicClosureSplatMethodInvocationTest extends TestCase
     public function testValueChangedByReference(): void
     {
         $child      = $this->createMock(First::class);
-        $invocation = new DynamicClosureMethodInvocation(First::class, 'passByReference', []);
+        $invocation = new DynamicClosureMethodInvocation([], First::class, 'passByReference');
 
         $value  = 'test';
         $result = $invocation($child, [&$value]);
@@ -42,7 +42,7 @@ class DynamicClosureSplatMethodInvocationTest extends TestCase
     public function testInvocationWithDynamicArguments(): void
     {
         $child      = $this->createMock(First::class);
-        $invocation = new DynamicClosureMethodInvocation(First::class, 'variableArgsTest', []);
+        $invocation = new DynamicClosureMethodInvocation([], First::class, 'variableArgsTest');
 
         $args     = [];
         $expected = '';
@@ -57,7 +57,7 @@ class DynamicClosureSplatMethodInvocationTest extends TestCase
     public function testInvocationWithVariadicArguments(): void
     {
         $child      = $this->createMock(First::class);
-        $invocation = new DynamicClosureMethodInvocation(First::class, 'variadicArgsTest', []);
+        $invocation = new DynamicClosureMethodInvocation([], First::class, 'variadicArgsTest');
 
         $args     = [];
         $expected = '';
@@ -72,7 +72,7 @@ class DynamicClosureSplatMethodInvocationTest extends TestCase
     public function testRecursionWorks(): void
     {
         $child      = $this->createMock(First::class);
-        $invocation = new DynamicClosureMethodInvocation(First::class, 'recursion', []);
+        $invocation = new DynamicClosureMethodInvocation([], First::class, 'recursion');
 
         $child->expects($this->exactly(5))->method('recursion')->will($this->returnCallback(
             function ($value, $level) use ($child, $invocation) {
@@ -96,7 +96,7 @@ class DynamicClosureSplatMethodInvocationTest extends TestCase
                 return $object->proceed();
             }));
 
-        $invocation = new DynamicClosureMethodInvocation(First::class, 'publicMethod', [$advice]);
+        $invocation = new DynamicClosureMethodInvocation([$advice], First::class, 'publicMethod');
 
         $result = $invocation($child, []);
         $this->assertEquals('ok', $value);

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -11,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
+use RuntimeException;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
@@ -25,22 +27,18 @@ class CachedAspectLoader extends AspectLoader
 {
     /**
      * Path to the cache directory
-     *
-     * @var null|string
      */
-    protected $cacheDir;
+    protected ?string $cacheDir = null;
 
     /**
      * File mode for the cache files
-     *
-     * @var integer
      */
-    protected $cacheFileMode;
+    protected int $cacheFileMode;
 
     /**
      * Identifier of original loader
      */
-    protected $loaderId;
+    protected string $loaderId;
 
     /**
      * Cached loader constructor
@@ -92,7 +90,7 @@ class CachedAspectLoader extends AspectLoader
 
             return $this->loader;
         }
-        throw new \RuntimeException('Not implemented');
+        throw new RuntimeException('Not implemented');
     }
 
 

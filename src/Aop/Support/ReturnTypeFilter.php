@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -24,12 +25,12 @@ class ReturnTypeFilter implements PointFilter
     /**
      * Return type name to match, can contain wildcards *,?
      */
-    protected $typeName;
+    protected string $typeName;
 
     /**
      * Pattern for regular expression matching
      */
-    protected $regexp;
+    protected string $regexp;
 
     /**
      * Return type name matcher constructor accepts name or glob pattern of the type to match

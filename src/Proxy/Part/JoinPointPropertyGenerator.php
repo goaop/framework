@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -11,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Laminas\Code\Generator\Exception\InvalidArgumentException;
 use Laminas\Code\Generator\PropertyGenerator;
 use Laminas\Code\Generator\PropertyValueGenerator;
 
@@ -27,13 +29,13 @@ final class JoinPointPropertyGenerator extends PropertyGenerator
     /**
      * JoinPointProperty constructor.
      *
-     * @param array $advices List of advices to apply per class
+     * @param array $adviceNames List of advices to apply per class
      *
-     * @throws \Laminas\Code\Generator\Exception\InvalidArgumentException
+     * @throws InvalidArgumentException
      */
-    public function __construct(array $advices)
+    public function __construct(array $adviceNames)
     {
-        $value = new PropertyValueGenerator($advices, PropertyValueGenerator::TYPE_ARRAY_SHORT);
+        $value = new PropertyValueGenerator($adviceNames, PropertyValueGenerator::TYPE_ARRAY_SHORT);
 
         parent::__construct(self::NAME, $value, PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
 

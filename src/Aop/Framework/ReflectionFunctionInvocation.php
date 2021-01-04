@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,30 +13,30 @@ declare(strict_types = 1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\FunctionInvocation;
+use ReflectionException;
 use ReflectionFunction;
-use function array_merge, array_pop;
+
+use function array_merge;
+use function array_pop;
 
 /**
  * Function invocation implementation
  */
 class ReflectionFunctionInvocation extends AbstractInvocation implements FunctionInvocation
 {
-
     /**
      * Instance of reflection function
-     *
-     * @var ReflectionFunction
      */
-    protected $reflectionFunction;
+    protected ReflectionFunction $reflectionFunction;
 
     /**
      * Constructor for function invocation
      *
      * @param array $advices List of advices for this invocation
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
-    public function __construct(string $functionName, array $advices)
+    public function __construct(array $advices, string $functionName)
     {
         parent::__construct($advices);
         $this->reflectionFunction = new ReflectionFunction($functionName);
@@ -68,7 +69,7 @@ class ReflectionFunctionInvocation extends AbstractInvocation implements Functio
     /**
      * Invokes current function invocation with all interceptors
      *
-     * @param array $arguments List of arguments for function invocation
+     * @param array $arguments         List of arguments for function invocation
      * @param array $variadicArguments Additional list of variadic arguments
      *
      * @return mixed Result of invocation

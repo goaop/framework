@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
@@ -8,22 +9,19 @@ use PHPUnit\Framework\TestCase;
 
 class AbstractMethodInvocationTest extends TestCase
 {
-    /**
-     * @var AbstractMethodInvocation
-     */
-    protected $invocation;
+    protected AbstractMethodInvocation $invocation;
 
     public function setUp(): void
     {
         $this->invocation = $this->getMockForAbstractClass(
             AbstractMethodInvocation::class,
-            [__CLASS__, __FUNCTION__, []]
+            [[], self::class, __FUNCTION__]
         );
     }
 
     public function testInvocationReturnsMethod(): void
     {
-        $this->assertEquals(__CLASS__, $this->invocation->getMethod()->class);
+        $this->assertEquals(self::class, $this->invocation->getMethod()->class);
         $this->assertEquals('setUp', $this->invocation->getMethod()->name);
     }
 

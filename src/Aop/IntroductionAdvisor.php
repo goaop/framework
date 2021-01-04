@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -21,7 +22,6 @@ namespace Go\Aop;
  */
 interface IntroductionAdvisor extends Advisor
 {
-
     /**
      * Returns the filter determining which target classes this introduction should apply to.
      *

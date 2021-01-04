@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -11,6 +12,8 @@ declare(strict_types = 1);
 
 namespace Demo;
 
+use ReflectionFunction;
+
 /**
  * Highlighter utility class
  */
@@ -21,9 +24,9 @@ final class Highlighter
      *
      * @param string $file Name of the file
      */
-    public static function highlight($file)
+    public static function highlight(string $file): void
     {
-        $highlightFileFunc = new \ReflectionFunction('highlight_file');
+        $highlightFileFunc = new ReflectionFunction('highlight_file');
         if (!$highlightFileFunc->isDisabled()) {
             highlight_file($file);
         } else {

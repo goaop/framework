@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -16,5 +17,4 @@ namespace Demo\Aspect;
  */
 interface FluentInterface
 {
-
 }

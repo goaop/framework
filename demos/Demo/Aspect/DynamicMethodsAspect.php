@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -20,21 +21,18 @@ use Go\Lang\Annotation\Before;
  */
 class DynamicMethodsAspect implements Aspect
 {
-
     /**
      * This advice intercepts an execution of __call methods
      *
      * Unlike traditional "execution" pointcut, "dynamic" is checking the name of method in
      * the runtime, allowing to write interceptors for __call more transparently.
      *
-     * @param MethodInvocation $invocation Invocation
-     *
      * @Before("dynamic(public Demo\Example\DynamicMethodsDemo->save*(*))")
      */
-    public function beforeMagicMethodExecution(MethodInvocation $invocation)
+    public function beforeMagicMethodExecution(MethodInvocation $invocation): void
     {
         // we need to unpack args from invocation args
-        list($methodName, $args) = $invocation->getArguments();
+        [$methodName, $args] = $invocation->getArguments();
         echo 'Calling Magic Interceptor for method: ',
             $invocation->getScope(),
             '->',
@@ -51,10 +49,10 @@ class DynamicMethodsAspect implements Aspect
      * @param MethodInvocation $invocation
      * @Before("dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))")
      */
-    public function beforeMagicStaticMethodExecution(MethodInvocation $invocation)
+    public function beforeMagicStaticMethodExecution(MethodInvocation $invocation): void
     {
         // we need to unpack args from invocation args
-        list($methodName, $args) = $invocation->getArguments();
+        [$methodName, $args] = $invocation->getArguments();
         echo 'Calling Static Magic Interceptor for method: ',
             $invocation->getScope(),
             '::',

@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -20,13 +21,13 @@ abstract class AbstractInvocation extends AbstractJoinpoint implements Invocatio
 {
     /**
      * Arguments for invocation
-     *
-     * @var array
      */
-    protected $arguments = [];
+    protected array $arguments = [];
 
     /**
-     * Get the arguments as an array object.
+     * Gets arguments for current invocation
+     *
+     * @api
      */
     public function getArguments(): array
     {
@@ -34,11 +35,9 @@ abstract class AbstractInvocation extends AbstractJoinpoint implements Invocatio
     }
 
     /**
-     * Sets the arguments for current invocation
+     * Sets arguments for current invocation
      *
      * @api
-     *
-     * @param array $arguments New list of arguments
      */
     public function setArguments(array $arguments): void
     {

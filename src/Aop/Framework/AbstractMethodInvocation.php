@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -13,54 +14,44 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Aop\Support\AnnotatedReflectionMethod;
-use ReflectionMethod;
+
 use function array_merge;
 use function array_pop;
 use function count;
-use function is_string;
 
 /**
  * Abstract method invocation implementation
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
-
     /**
      * Instance of object for invoking
-     *
-     * @var object|null
      */
-    protected $instance;
+    protected ?object $instance;
 
     /**
-     * Instance of reflection method for class
-     *
-     * @var ReflectionMethod
+     * Instance of reflection method for invocation
      */
-    protected $reflectionMethod;
+    protected AnnotatedReflectionMethod $reflectionMethod;
 
     /**
      * Class name scope for static invocation
-     *
-     * @var string
      */
-    protected $scope;
+    protected string $scope = '';
 
     /**
-     * This static variable holds the name of field to use to avoid extra "if" section in the __invoke method
+     * This static string variable holds the name of field to use to avoid extra "if" section in the __invoke method
      *
      * Overridden in children classes and initialized via LSB
-     *
-     * @var string
      */
-    protected static $propertyName;
+    protected static string $propertyName;
 
     /**
      * Constructor for method invocation
      *
      * @param array $advices List of advices for this invocation
      */
-    public function __construct(string $className, string $methodName, array $advices)
+    public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices);
         $this->reflectionMethod = $method = new AnnotatedReflectionMethod($className, $methodName);
@@ -74,9 +65,9 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Invokes current method invocation with all interceptors
      *
-     * @param null|object|string $instance Invocation instance (class name for static methods)
-     * @param array $arguments List of arguments for method invocation
-     * @param array $variadicArguments Additional list of variadic arguments
+     * @param null|object|string $instance          Invocation instance (class name for static methods)
+     * @param array              $arguments         List of arguments for method invocation
+     * @param array              $variadicArguments Additional list of variadic arguments
      *
      * @return mixed Result of invocation
      */
@@ -114,9 +105,9 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Gets the method being called.
      *
-     * @return ReflectionMethod|AnnotatedReflectionMethod the method being called.
+     * @return AnnotatedReflectionMethod Covariant, the method being called.
      */
-    public function getMethod(): ReflectionMethod
+    public function getMethod(): AnnotatedReflectionMethod
     {
         return $this->reflectionMethod;
     }

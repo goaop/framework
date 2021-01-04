@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -15,7 +16,6 @@ use Go\Aop\Intercept\Invocation;
 
 class AroundInterceptorTest extends AbstractInterceptorTest
 {
-
     public function testInvocationIsNotCalledWithoutProceed()
     {
         $sequence   = [];

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -20,10 +21,7 @@ use PHPUnit\Framework\Constraint\Constraint;
  */
 final class ClassIsNotWovenConstraint extends Constraint
 {
-    /**
-     * @var array
-     */
-    private $configuration;
+    private array $configuration;
 
     public function __construct(array $configuration)
     {

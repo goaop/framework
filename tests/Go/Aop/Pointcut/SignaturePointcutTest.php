@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -9,7 +10,6 @@ declare(strict_types = 1);
  * with this source code in the file LICENSE.
  */
 
-
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\PointFilter;
@@ -17,19 +17,23 @@ use Go\Aop\Support\NotPointFilter;
 use Go\Aop\Support\TruePointFilter;
 use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
+use ReflectionProperty;
 
 class SignaturePointcutTest extends TestCase
 {
-    private const STUB_CLASS = First::class;
-
     /**
      * Tests that method matched by name directly
      */
     public function testDirectMethodMatchByName(): void
     {
-        $filterKind = PointFilter::KIND_METHOD;
-        $pointcut   = new SignaturePointcut($filterKind, 'publicMethod', TruePointFilter::getInstance());
-        $matched    = $pointcut->matches(new \ReflectionMethod(self::STUB_CLASS, 'publicMethod'));
+        $pointcut = new SignaturePointcut(
+            PointFilter::KIND_METHOD,
+            'publicMethod',
+            TruePointFilter::getInstance()
+        );
+
+        $matched = $pointcut->matches(new ReflectionMethod(First::class, 'publicMethod'));
         $this->assertTrue($matched, "Pointcut should match this method");
     }
 
@@ -38,9 +42,13 @@ class SignaturePointcutTest extends TestCase
      */
     public function testCanMatchProperty(): void
     {
-        $filterKind = PointFilter::KIND_METHOD;
-        $pointcut   = new SignaturePointcut($filterKind, 'public', TruePointFilter::getInstance());
-        $matched    = $pointcut->matches(new \ReflectionProperty(self::STUB_CLASS, 'public'));
+        $pointcut = new SignaturePointcut(
+            PointFilter::KIND_METHOD,
+            'public',
+            TruePointFilter::getInstance()
+        );
+
+        $matched = $pointcut->matches(new ReflectionProperty(First::class, 'public'));
         $this->assertTrue($matched, "Pointcut should match this property");
     }
 
@@ -51,10 +59,8 @@ class SignaturePointcutTest extends TestCase
     {
         $trueInstance = TruePointFilter::getInstance();
         $notInstance  = new NotPointFilter($trueInstance);
-        $filterKind   = PointFilter::KIND_METHOD;
-
-        $pointcut     = new SignaturePointcut($filterKind, 'publicMethod', $notInstance);
-        $matched      = $pointcut->matches(new \ReflectionMethod(self::STUB_CLASS, 'publicMethod'));
+        $pointcut     = new SignaturePointcut(PointFilter::KIND_METHOD, 'publicMethod', $notInstance);
+        $matched      = $pointcut->matches(new ReflectionMethod(First::class, 'publicMethod'));
         $this->assertFalse($matched, "Pointcut should not match modifier");
     }
 
@@ -63,12 +69,16 @@ class SignaturePointcutTest extends TestCase
      */
     public function testRegularPattern(): void
     {
-        $filterKind = PointFilter::KIND_METHOD;
-        $pointcut   = new SignaturePointcut($filterKind, '*Method', TruePointFilter::getInstance());
-        $matched    = $pointcut->matches(new \ReflectionMethod(self::STUB_CLASS, 'publicMethod'));
+        $pointcut = new SignaturePointcut(
+            PointFilter::KIND_METHOD,
+            '*Method',
+            TruePointFilter::getInstance()
+        );
+
+        $matched = $pointcut->matches(new ReflectionMethod(First::class, 'publicMethod'));
         $this->assertTrue($matched, "Pointcut should match this method");
 
-        $matched  = $pointcut->matches(new \ReflectionMethod(self::STUB_CLASS, 'protectedMethod'));
+        $matched = $pointcut->matches(new ReflectionMethod(First::class, 'protectedMethod'));
         $this->assertTrue($matched, "Pointcut should match this method");
     }
 
@@ -77,12 +87,16 @@ class SignaturePointcutTest extends TestCase
      */
     public function testMultipleRegularPattern(): void
     {
-        $filterKind = PointFilter::KIND_METHOD;
-        $pointcut   = new SignaturePointcut($filterKind, 'publicMethod|protectedMethod', TruePointFilter::getInstance());
-        $matched    = $pointcut->matches(new \ReflectionMethod(self::STUB_CLASS, 'publicMethod'));
+        $pointcut = new SignaturePointcut(
+            PointFilter::KIND_METHOD,
+            'publicMethod|protectedMethod',
+            TruePointFilter::getInstance()
+        );
+
+        $matched = $pointcut->matches(new ReflectionMethod(First::class, 'publicMethod'));
         $this->assertTrue($matched, "Pointcut should match this method");
 
-        $matched  = $pointcut->matches(new \ReflectionMethod(self::STUB_CLASS, 'protectedMethod'));
+        $matched = $pointcut->matches(new ReflectionMethod(First::class, 'protectedMethod'));
         $this->assertTrue($matched, "Pointcut should match this method");
     }
 
@@ -93,12 +107,16 @@ class SignaturePointcutTest extends TestCase
      */
     public function testIssue115(): void
     {
-        $filterKind = PointFilter::KIND_METHOD;
-        $pointcut   = new SignaturePointcut($filterKind, 'public|Public', TruePointFilter::getInstance());
-        $matched    = $pointcut->matches(new \ReflectionMethod(self::STUB_CLASS, 'publicMethod'));
+        $pointcut = new SignaturePointcut(
+            PointFilter::KIND_METHOD,
+            'public|Public',
+            TruePointFilter::getInstance()
+        );
+
+        $matched = $pointcut->matches(new ReflectionMethod(First::class, 'publicMethod'));
         $this->assertFalse($matched, "Pointcut should match strict");
 
-        $matched  = $pointcut->matches(new \ReflectionMethod(self::STUB_CLASS, 'staticLsbPublic'));
+        $matched = $pointcut->matches(new ReflectionMethod(First::class, 'staticLsbPublic'));
         $this->assertFalse($matched, "Pointcut should match strict");
     }
 }

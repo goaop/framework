@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -22,30 +23,30 @@ class ClassMemberReference
     /**
      * Filter for class names
      */
-    private $classFilter;
+    private PointFilter $classFilter;
 
     /**
      * Member visibility filter (public/protected/etc)
      */
-    private $visibilityFilter;
+    private ModifierMatcherFilter $visibilityFilter;
 
     /**
      * Filter for access type (statically "::" or dynamically "->")
      */
-    private $accessTypeFilter;
+    private ModifierMatcherFilter $accessTypeFilter;
 
     /**
      * Member name pattern
      */
-    private $memberNamePattern;
+    private string $memberNamePattern;
 
     /**
      * Default constructor
      *
-     * @param PointFilter $classFilter
-     * @param ModifierMatcherFilter $visibilityFilter Public/protected/etc
-     * @param ModifierMatcherFilter $accessTypeFilter Static or dynamic
-     * @param string $memberNamePattern Expression for the name
+     * @param PointFilter           $classFilter
+     * @param ModifierMatcherFilter $visibilityFilter  Public/protected/etc
+     * @param ModifierMatcherFilter $accessTypeFilter  Static or dynamic
+     * @param string                $memberNamePattern Expression for the name
      */
     public function __construct(
         PointFilter $classFilter,

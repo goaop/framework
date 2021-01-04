@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -11,17 +12,21 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Exception;
 use PHPUnit\Framework\TestCase;
+
+use ReflectionFunction;
+
 use function preg_replace;
 
 /**
  * Contains test function with return type to be reflected
  *
- * @return \Exception
+ * @return Exception
  */
-function funcWithReturnTypeAndDocBlock(): \Exception
+function funcWithReturnTypeAndDocBlock(): Exception
 {
-    return new \Exception('Test');
+    return new Exception('Test');
 }
 
 /**
@@ -40,7 +45,7 @@ class InterceptedFunctionGeneratorTest extends TestCase
      */
     public function testGenerate(string $functionName, string $expectedSignature): void
     {
-        $reflectionFunction = new \ReflectionFunction($functionName);
+        $reflectionFunction = new ReflectionFunction($functionName);
         $generator          = new InterceptedFunctionGenerator($reflectionFunction, "\n");
 
         $generatedCode = $generator->generate();
@@ -53,8 +58,6 @@ class InterceptedFunctionGeneratorTest extends TestCase
 
     /**
      * Provides list of methods with expected attributes
-     *
-     * @return array
      */
     public function dataGenerator(): array
     {

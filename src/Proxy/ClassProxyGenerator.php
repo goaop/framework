@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -27,12 +28,13 @@ use Go\Proxy\Part\InterceptedConstructorGenerator;
 use Go\Proxy\Part\InterceptedMethodGenerator;
 use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Proxy\Part\PropertyInterceptionTrait;
-use ReflectionClass;
-use ReflectionMethod;
 use Laminas\Code\Generator\ClassGenerator;
 use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
+use ReflectionClass;
+use ReflectionMethod;
 use ReflectionNamedType;
+use UnexpectedValueException;
 
 /**
  * Class proxy builder that is used to generate a child class from the list of joinpoints
@@ -42,7 +44,7 @@ class ClassProxyGenerator
     /**
      * Static mappings for class name for excluding if..else check
      */
-    protected static $invocationClassMap = [
+    protected static array $invocationClassMap = [
         AspectContainer::METHOD_PREFIX        => DynamicClosureMethodInvocation::class,
         AspectContainer::STATIC_METHOD_PREFIX => StaticClosureMethodInvocation::class,
         AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,
@@ -53,37 +55,44 @@ class ClassProxyGenerator
     /**
      * List of advices that are used for generation of child
      */
-    protected $advices = [];
+    protected array $adviceNames = [];
 
     /**
      * Instance of class generator
      */
-    protected $generator;
+    protected ClassGenerator $generator;
+
+    /**
+     * Should parameter widening be used or not
+     */
+    protected bool $useParameterWidening;
 
     /**
      * Generates an child code by original class reflection and joinpoints for it
      *
      * @param ReflectionClass $originalClass        Original class reflection
      * @param string          $parentClassName      Parent class name to use
-     * @param string[][]      $classAdvices         List of advices for class
+     * @param string[][]      $classAdviceNames     List of advices for class
      * @param bool            $useParameterWidening Enables usage of parameter widening feature
      */
     public function __construct(
         ReflectionClass $originalClass,
         string $parentClassName,
-        array $classAdvices,
+        array $classAdviceNames,
         bool $useParameterWidening
     ) {
-        $this->advices         = $classAdvices;
-        $dynamicMethodAdvices  = $classAdvices[AspectContainer::METHOD_PREFIX] ?? [];
-        $staticMethodAdvices   = $classAdvices[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
-        $propertyAdvices       = $classAdvices[AspectContainer::PROPERTY_PREFIX] ?? [];
+        $this->adviceNames          = $classAdviceNames;
+        $this->useParameterWidening = $useParameterWidening;
+
+        $dynamicMethodAdvices  = $classAdviceNames[AspectContainer::METHOD_PREFIX] ?? [];
+        $staticMethodAdvices   = $classAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
+        $propertyAdvices       = $classAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
         $interceptedMethods    = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $interceptedProperties = array_keys($propertyAdvices);
-        $introducedInterfaces  = $classAdvices[AspectContainer::INTRODUCTION_INTERFACE_PREFIX] ?? [];
-        $introducedTraits      = $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX] ?? [];
+        $introducedInterfaces  = $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX] ?? [];
+        $introducedTraits      = $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX] ?? [];
 
-        $generatedProperties = [new JoinPointPropertyGenerator($classAdvices)];
+        $generatedProperties = [new JoinPointPropertyGenerator($classAdviceNames)];
         $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
 
         $introducedInterfaces[] = '\\' . Proxy::class;
@@ -140,7 +149,7 @@ class ClassProxyGenerator
 
         $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';
         if (isset($joinPoints[$staticInit])) {
-            $joinPoints[$staticInit]->__invoke();
+            ($joinPoints[$staticInit])();
         }
     }
 
@@ -153,7 +162,7 @@ class ClassProxyGenerator
 
         return $classCode
             // Inject advices on call
-            . '\\' . __CLASS__ . '::injectJoinPoints(' . $this->generator->getName() . '::class);';
+            . '\\' . self::class . '::injectJoinPoints(' . $this->generator->getName() . '::class);';
     }
 
     /**
@@ -161,7 +170,7 @@ class ClassProxyGenerator
      *
      * @param array|Advice[][][] $classAdvices Advices for specific class
      *
-     * @throws \UnexpectedValueException If joinPoint type is unknown
+     * @throws UnexpectedValueException If joinPoint type is unknown
      *
      * NB: Extension should be responsible for wrapping advice with join point.
      *
@@ -169,8 +178,8 @@ class ClassProxyGenerator
      */
     protected static function wrapWithJoinPoints(array $classAdvices, string $className): array
     {
-        /** @var LazyAdvisorAccessor $accessor */
-        static $accessor;
+        /** @var ?LazyAdvisorAccessor $accessor */
+        static $accessor = null;
 
         if (!isset($accessor)) {
             $aspectKernel = AspectKernel::getInstance();
@@ -190,7 +199,7 @@ class ClassProxyGenerator
                     $filledAdvices[] = $accessor->$advisorName;
                 }
 
-                $joinpoint = new self::$invocationClassMap[$joinPointType]($className, $joinPointName, $filledAdvices);
+                $joinpoint = new self::$invocationClassMap[$joinPointType]($filledAdvices, $className, $joinPointName);
                 $joinPoints["$joinPointType:$joinPointName"] = $joinpoint;
             }
         }
@@ -212,7 +221,11 @@ class ClassProxyGenerator
             $reflectionMethod = $originalClass->getMethod($methodName);
             $methodBody       = $this->getJoinpointInvocationBody($reflectionMethod);
 
-            $interceptedMethods[$methodName] = new InterceptedMethodGenerator($reflectionMethod, $methodBody);
+            $interceptedMethods[$methodName] = new InterceptedMethodGenerator(
+                $reflectionMethod,
+                $methodBody,
+                $this->useParameterWidening
+            );
         }
 
         return $interceptedMethods;

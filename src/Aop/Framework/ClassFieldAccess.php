@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -15,27 +16,23 @@ use Go\Aop\AspectException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Support\AnnotatedReflectionProperty;
 use ReflectionProperty;
+
 use function get_class;
 
 /**
  * Represents a field access joinpoint
  */
-class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
+final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 {
-
     /**
      * Instance of object for accessing
-     *
-     * @var object
      */
-    protected $instance;
+    protected object $instance;
 
     /**
      * Instance of reflection property
-     *
-     * @var ReflectionProperty
      */
-    protected $reflectionProperty;
+    protected ReflectionProperty $reflectionProperty;
 
     /**
      * New value to set
@@ -46,10 +43,8 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Access type for field access
-     *
-     * @var integer
      */
-    private $accessType;
+    private int $accessType;
 
     /**
      * Copy of the original value of property
@@ -63,7 +58,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @param array $advices List of advices for this invocation
      */
-    public function __construct(string $className, string $fieldName, array $advices)
+    public function __construct(array $advices, string $className, string $fieldName)
     {
         parent::__construct($advices);
 
@@ -114,6 +109,8 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Checks scope rules for accessing property
+     *
+     * @internal
      */
     public function ensureScopeRule(int $stackLevel = 2): void
     {
@@ -121,7 +118,7 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         $isProtected = $property->isProtected();
         $isPrivate   = $property->isPrivate();
         if ($isProtected || $isPrivate) {
-            $backTrace     = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $stackLevel+1);
+            $backTrace     = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $stackLevel + 1);
             $accessor      = $backTrace[$stackLevel] ?? [];
             $propertyClass = $property->class;
             if (isset($accessor['class'])) {
@@ -141,9 +138,9 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Proceed to the next interceptor in the Chain
      *
-     * @return void For field interceptor there is no return values
+     * @return void Covariant, as for field interceptor there is no return value
      */
-    final public function proceed()
+    final public function proceed(): void
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current++];
@@ -155,10 +152,10 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Invokes current field access with all interceptors
      *
-     * @param object $instance Instance of object
-     * @param integer $accessType Type of access: READ or WRITE
-     * @param mixed $originalValue Original value of property
-     * @param mixed $newValue New value to set
+     * @param object $instance      Instance of object
+     * @param int    $accessType    Type of access: READ or WRITE
+     * @param mixed  $originalValue Original value of property
+     * @param mixed  $newValue      New value to set
      *
      * @return mixed
      */
@@ -198,9 +195,9 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Returns the object for which current joinpoint is invoked
      *
-     * @return object|null Instance of object or null for static call/unavailable context
+     * @return object Covariant, always instance of object, can not be null
      */
-    final public function getThis(): ?object
+    final public function getThis(): object
     {
         return $this->instance;
     }
@@ -222,7 +219,6 @@ class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     final public function getScope(): string
     {
-        // $this->instance always contains an object, so we can take it's name as a scope name
         return get_class($this->instance);
     }
 

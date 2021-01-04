@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 /*
  * Go! AOP framework
@@ -17,8 +18,9 @@ use Go\Stubs\Constructor\ClassWithoutConstructor;
 use Go\Stubs\Constructor\ClassWithPrivateConstructor;
 use Go\Stubs\Constructor\ClassWithProtectedConstructor;
 use PHPUnit\Framework\TestCase;
-use function preg_replace;
 use ReflectionClass;
+
+use function preg_replace;
 
 /**
  * Test case for generated method definition
@@ -27,9 +29,6 @@ class InterceptedConstructorGeneratorTest extends TestCase
 {
     /**
      * Tests that generator can generate valid method definition
-     *
-     * @param string $className
-     * @param string $expectedSignature
      *
      * @throws \ReflectionException
      * @dataProvider dataGenerator
@@ -47,8 +46,6 @@ class InterceptedConstructorGeneratorTest extends TestCase
 
     /**
      * Provides list of methods with expected attributes
-     *
-     * @return array
      */
     public function dataGenerator(): array
     {
@@ -90,7 +87,10 @@ class InterceptedConstructorGeneratorTest extends TestCase
 
         $generatedCode = $generator->generate();
         $generatedCode = preg_replace('/^\s+|\s+$/m', '', $generatedCode);
-        $expectedCode  = preg_replace('/^\s+|\s+$/m', '', '
+        $expectedCode  = preg_replace(
+            '/^\s+|\s+$/m',
+            '',
+            '
             public function __construct()
             {
                 $accessor = function(array &$propertyStorage, object $target) {

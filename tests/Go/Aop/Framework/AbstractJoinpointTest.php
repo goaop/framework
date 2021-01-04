@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
@@ -10,10 +11,7 @@ use PHPUnit\Framework\TestCase;
 
 class AbstractJoinpointTest extends TestCase
 {
-    /**
-     * @var AbstractJoinpoint
-     */
-    protected $joinpoint;
+    protected AbstractJoinpoint $joinpoint;
 
     /**
      * @dataProvider sortingTestSource
@@ -116,8 +114,8 @@ class AbstractJoinpointTest extends TestCase
             // #7
             [
                 [
-                    $forth = $this->getOrderedAdvice(4, 'ForthAdvice'),
-                    $first = $this->getOrderedAdvice(1, 'FirstAdvice')
+                    $forth = $this->getOrderedAdvice(4),
+                    $first = $this->getOrderedAdvice(1)
                 ],
                 [
                     get_class($first),
@@ -129,14 +127,10 @@ class AbstractJoinpointTest extends TestCase
 
     /**
      * Returns the ordered advice
-     *
-     * @param int $order Order
-     * @param string $name Mock class name
-     * @return \PHPUnit_Framework_MockObject_MockObject|OrderedAdvice
      */
-    private function getOrderedAdvice($order, $name)
+    private function getOrderedAdvice(int $order): OrderedAdvice
     {
-        $mock = $this->createMock(OrderedAdvice::class, [], [], $name);
+        $mock = $this->createMock(OrderedAdvice::class);
         $mock
             ->method('getAdviceOrder')
             ->willReturn($order);

@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,12 +13,11 @@ declare(strict_types = 1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Aop\Intercept\Interceptor;
 use Go\Core\AspectKernel;
 use ReflectionFunction;
 use ReflectionMethod;
 use Serializable;
-use Go\Aop\Intercept\Interceptor;
-use function get_class;
 
 /**
  * Base class for all framework interceptor implementations
@@ -48,24 +48,24 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serial
     /**
      * Local cache of advices for faster unserialization on big projects
      *
-     * @var Closure[]
+     * @var array<Closure>
      */
-    protected static $localAdvicesCache = [];
+    protected static array $localAdvicesCache = [];
 
     /**
      * Pointcut expression string which was used for this interceptor
      */
-    protected $pointcutExpression;
+    protected string $pointcutExpression;
 
     /**
      * Closure to call
      */
-    protected $adviceMethod;
+    protected Closure $adviceMethod;
 
     /**
      * Advice order
      */
-    private $adviceOrder;
+    private int $adviceOrder;
 
     /**
      * Default constructor for interceptor
@@ -133,6 +133,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serial
     final public function serialize(): string
     {
         $vars = array_filter(get_object_vars($this));
+
         $vars['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
 
         return serialize($vars);
@@ -146,6 +147,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serial
     final public function unserialize($serialized): void
     {
         $vars = unserialize($serialized, ['allowed_classes' => false]);
+
         $vars['adviceMethod'] = static::unserializeAdvice($vars['adviceMethod']);
         foreach ($vars as $key => $value) {
             $this->$key = $value;

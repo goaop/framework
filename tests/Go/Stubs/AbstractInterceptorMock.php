@@ -1,5 +1,14 @@
 <?php
+
 declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
 
 namespace Go\Stubs;
 
@@ -9,12 +18,12 @@ use Go\Aop\Intercept\Joinpoint;
 
 class AbstractInterceptorMock extends AbstractInterceptor
 {
-    private static $advice;
+    private static Closure $advice;
 
     /**
      * {@inheritdoc}
      */
-    public function __construct($adviceMethod, $adviceOrder = 0, $pointcutExpression = '')
+    public function __construct(Closure $adviceMethod, int $adviceOrder = 0, string $pointcutExpression = '')
     {
         self::$advice = $adviceMethod;
         parent::__construct($adviceMethod, $adviceOrder, $pointcutExpression);
@@ -23,7 +32,7 @@ class AbstractInterceptorMock extends AbstractInterceptor
     /**
      * {@inheritdoc}
      */
-    public static function serializeAdvice(Closure $adviceMethod) : array
+    public static function serializeAdvice(Closure $adviceMethod): array
     {
         return [
             'scope'  => 'aspect',
@@ -35,15 +44,17 @@ class AbstractInterceptorMock extends AbstractInterceptor
     /**
      * {@inheritdoc}
      */
-    public static function unserializeAdvice(array $adviceData) : Closure
+    public static function unserializeAdvice(array $adviceData): Closure
     {
         return self::$advice;
     }
 
     /**
      * {@inheritdoc}
+     *
+     * @return Joinpoint Covariant return type
      */
-    public function invoke(Joinpoint $joinpoint)
+    public function invoke(Joinpoint $joinpoint): Joinpoint
     {
         return $joinpoint;
     }

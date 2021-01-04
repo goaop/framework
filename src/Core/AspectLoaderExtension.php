@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -11,6 +12,9 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionProperty;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
@@ -62,7 +66,7 @@ interface AspectLoaderExtension
      * Checks if loader is able to handle specific point of aspect
      *
      * @param Aspect $aspect Instance of aspect
-     * @param mixed|\ReflectionClass|\ReflectionMethod|\ReflectionProperty $reflection Reflection of point
+     * @param mixed|ReflectionClass|ReflectionMethod|ReflectionProperty $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
      */
     public function supports(Aspect $aspect, $reflection, $metaInformation = null): bool;

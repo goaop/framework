@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -23,6 +24,8 @@ use Go\Instrument\Transformer\SelfValueTransformer;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use ReflectionObject;
+use RuntimeException;
+
 use function define;
 
 /**
@@ -30,54 +33,45 @@ use function define;
  */
 abstract class AspectKernel
 {
-
-    /**
-     * Version of kernel
-     */
-    public const VERSION = '3.0.0';
-
     /**
      * Kernel options
      */
-    protected $options = [
+    protected array $options = [
         'features' => 0
     ];
 
     /**
      * Single instance of kernel
-     *
-     * @var static
      */
-    protected static $instance;
+    protected static ?self $instance = null;
 
     /**
      * Default class name for container, can be redefined in children
      */
-    protected static $containerClass = GoAspectContainer::class;
+    protected static string $containerClass = GoAspectContainer::class;
 
     /**
      * Flag to determine if kernel was already initialized or not
      */
-    protected $wasInitialized = false;
+    protected bool $wasInitialized = false;
 
     /**
      * Aspect container instance
-     *
-     * @var AspectContainer
      */
-    protected $container;
+    protected AspectContainer $container;
 
     /**
      * Protected constructor is used to prevent direct creation, but allows customization if needed
      */
-    protected function __construct() {}
+    final protected function __construct() {}
 
     /**
      * Returns the single instance of kernel
      */
     public static function getInstance(): self
     {
-        if (!self::$instance) {
+        if (self::$instance === null) {
+            // PhpStan complains about LSB and args for constructor, so constructor should be final
             self::$instance = new static();
         }
 
@@ -89,7 +83,7 @@ abstract class AspectKernel
      *
      * @param array $options Associative array of options for kernel
      */
-    public function init(array $options = [])
+    public function init(array $options = []): void
     {
         if ($this->wasInitialized) {
             return;
@@ -189,8 +183,8 @@ abstract class AspectKernel
 
         $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
 
-        if (!$options['cacheDir']) {
-            throw new \RuntimeException('You need to provide valid cache directory for Go! AOP framework.');
+        if ($options['cacheDir'] === []) {
+            throw new RuntimeException('You need to provide valid cache directory for Go! AOP framework.');
         }
 
         $options['excludePaths'][] = $options['cacheDir'];

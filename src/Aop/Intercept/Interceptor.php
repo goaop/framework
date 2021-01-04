@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -51,9 +52,9 @@ interface Interceptor extends Advice
     /**
      * Performs extra actions before and after the invocation of joinpoint.
      *
-     * @api
+     * @return mixed The result of the call. Uses covariance in children.
      *
-     * @return mixed The result of the call
+     * @api
      */
     public function invoke(Joinpoint $joinpoint);
 }

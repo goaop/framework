@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -21,12 +22,12 @@ class TraitIntroductionInfo implements IntroductionInfo
     /**
      * Introduced interface
      */
-    private $introducedInterface;
+    private string $introducedInterface;
 
     /**
      * Introduced trait
      */
-    private $introducedTrait;
+    private string $introducedTrait;
 
     /**
      * Creates a TraitIntroductionInfo with given trait name and interface name.

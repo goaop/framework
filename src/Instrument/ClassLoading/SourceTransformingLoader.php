@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -37,21 +38,19 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * String buffer
      */
-    protected $data = '';
+    protected string $data = '';
 
     /**
      * List of transformers
      *
      * @var SourceTransformer[]
      */
-    protected static $transformers = [];
+    protected static array $transformers = [];
 
     /**
      * Identifier of filter
-     *
-     * @var string
      */
-    protected static $filterId;
+    protected static string $filterId;
 
     /**
      * Register current loader as stream filter in PHP
@@ -64,7 +63,7 @@ class SourceTransformingLoader extends PhpStreamFilter
             throw new RuntimeException('Stream filter already registered');
         }
 
-        $result = stream_filter_register($filterId, __CLASS__);
+        $result = stream_filter_register($filterId, self::class);
         if ($result === false) {
             throw new RuntimeException('Stream filter was not registered');
         }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types = 1);
 /*
  * Go! AOP framework
@@ -39,7 +40,7 @@ class OrPointFilterTest extends TestCase
     /**
      * @dataProvider logicCases
      */
-    public function testMatches(PointFilter $first, PointFilter $second, $expected): void
+    public function testMatches(PointFilter $first, PointFilter $second, bool $expected): void
     {
         $filter = new OrPointFilter($first, $second);
         $result = $filter->matches(new \ReflectionClass(__CLASS__) /* anything */);

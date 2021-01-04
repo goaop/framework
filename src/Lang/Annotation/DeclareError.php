@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -26,8 +27,6 @@ class DeclareError extends BaseAnnotation
 {
     /**
      * Interface name to add
-     *
-     * @var integer
      */
-    public $level = E_USER_NOTICE;
+    public int $level = E_USER_NOTICE;
 }

@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -11,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Demo\Aspect;
 
+use Demo\Example\HumanDemo;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\After;
@@ -27,17 +29,18 @@ class HealthyLiveAspect implements Aspect
      *
      * @Pointcut("execution(public Demo\Example\HumanDemo->eat(*))")
      */
-    protected function humanEat() {}
+    protected function humanEat(): void
+    {
+    }
 
     /**
      * Washing hands before eating
      *
-     * @param MethodInvocation $invocation Invocation
      * @Before("$this->humanEat")
      */
-    protected function washUpBeforeEat(MethodInvocation $invocation)
+    protected function washUpBeforeEat(MethodInvocation $invocation): void
     {
-        /** @var $person \Demo\Example\HumanDemo */
+        /** @var $person HumanDemo */
         $person = $invocation->getThis();
         $person->washUp();
     }
@@ -45,12 +48,11 @@ class HealthyLiveAspect implements Aspect
     /**
      * Method that advices to clean the teeth after eating
      *
-     * @param MethodInvocation $invocation Invocation
      * @After("$this->humanEat")
      */
-    protected function cleanTeethAfterEat(MethodInvocation $invocation)
+    protected function cleanTeethAfterEat(MethodInvocation $invocation): void
     {
-        /** @var $person \Demo\Example\HumanDemo */
+        /** @var $person HumanDemo */
         $person = $invocation->getThis();
         $person->cleanTeeth();
     }
@@ -58,12 +60,11 @@ class HealthyLiveAspect implements Aspect
     /**
      * Method that advice to clean the teeth before going to sleep
      *
-     * @param MethodInvocation $invocation Invocation
      * @Before("execution(public Demo\Example\HumanDemo->sleep(*))")
      */
-    protected function cleanTeethBeforeSleep(MethodInvocation $invocation)
+    protected function cleanTeethBeforeSleep(MethodInvocation $invocation): void
     {
-        /** @var $person \Demo\Example\HumanDemo */
+        /** @var $person HumanDemo */
         $person = $invocation->getThis();
         $person->cleanTeeth();
     }
