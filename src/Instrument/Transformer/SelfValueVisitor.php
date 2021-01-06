@@ -68,6 +68,8 @@ final class SelfValueVisitor extends NodeVisitorAbstract
         $this->namespace     = null;
         $this->className     = null;
         $this->replacedNodes = [];
+
+        return null;
     }
 
     /**
@@ -99,6 +101,8 @@ final class SelfValueVisitor extends NodeVisitorAbstract
                 $type = $this->resolveClassName($type);
             }
         }
+
+        return null;
     }
 
     /**
