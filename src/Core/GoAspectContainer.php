@@ -97,7 +97,7 @@ class GoAspectContainer extends Container
                 return new DoctrineCache\FilesystemCache(
                     $options['cacheDir'] . DIRECTORY_SEPARATOR . '_annotations' . DIRECTORY_SEPARATOR,
                     '.annotations.cache',
-                    0777 & (~$options['cacheFileMode'])
+                    0777 & (~(int)$options['cacheFileMode'])
                 );
             }
 
