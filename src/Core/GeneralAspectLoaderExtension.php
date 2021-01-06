@@ -76,7 +76,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      * Loads definition from specific point of aspect into the container
      *
      * @param Aspect $aspect Instance of aspect
-     * @param Reflector|ReflectionMethod $reflection Reflection of point
+     * @param Reflector $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
      *
      * @return array|Pointcut[]|Advisor[]
@@ -85,6 +85,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
      */
     public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null): array
     {
+        assert($reflection instanceof ReflectionMethod, 'Only ReflectionMethod is expected here');
         $loadedItems    = [];
         $pointcut       = $this->parsePointcut($aspect, $reflection, $metaInformation->value);
         $methodId       = get_class($aspect) . '->' . $reflection->name;

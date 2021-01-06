@@ -71,15 +71,16 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      * Loads definition from specific point of aspect into the container
      *
      * @param Aspect $aspect Instance of aspect
-     * @param Reflector|ReflectionProperty $reflection Reflection of point
+     * @param Reflector $reflection Reflection of point
      * @param mixed|null $metaInformation Additional meta-information
      *
      * @throws UnexpectedValueException
      *
      * @return Pointcut[]|Advisor[]
      */
-    public function load(Aspect $aspect, $reflection, $metaInformation = null): array
+    public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null): array
     {
+        assert($reflection instanceof ReflectionProperty, 'Only ReflectionProperty is expected here');
         $loadedItems = [];
         $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation->value);
         $propertyId  = $reflection->class . '->' . $reflection->name;
