@@ -113,11 +113,7 @@ abstract class AbstractJoinpoint implements Joinpoint
         $flattenAdvices = [];
         foreach ($advices as $type => $typedAdvices) {
             foreach ($typedAdvices as $name => $concreteAdvices) {
-                if (is_array($concreteAdvices)) {
-                    $flattenAdvices[$type][$name] = array_keys(self::sortAdvices($concreteAdvices));
-                } else {
-                    $flattenAdvices[$type][$name] = $concreteAdvices;
-                }
+                $flattenAdvices[$type][$name] = array_keys(self::sortAdvices($concreteAdvices));
             }
         }
 

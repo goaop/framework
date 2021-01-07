@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -94,8 +94,8 @@ class AspectLoader
                 $this->container->registerAdvisor($item, $itemId);
             }
         }
-
         $aspectClass = get_class($aspect);
+
         $this->loadedAspects[$aspectClass] = $aspectClass;
     }
 

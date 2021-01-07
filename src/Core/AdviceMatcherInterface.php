@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -25,7 +27,7 @@ interface AdviceMatcherInterface
      *
      * @param Advisor[] $advisors List of advisor to match
      *
-     * @return Advice[][] List of advices for function
+     * @return Advice[][][] List of advices for function
      */
     public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors): array;
 
@@ -34,7 +36,7 @@ interface AdviceMatcherInterface
      *
      * @param Advisor[] $advisors List of advisor to match
      *
-     * @return Advice[][] List of advices for class
+     * @return Advice[][][] List of advices for class
      */
     public function getAdvicesForClass(ReflectionClass $class, array $advisors): array;
 }

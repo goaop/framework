@@ -89,8 +89,8 @@ class ClassProxyGenerator
         $propertyAdvices       = $classAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
         $interceptedMethods    = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $interceptedProperties = array_keys($propertyAdvices);
-        $introducedInterfaces  = $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX] ?? [];
-        $introducedTraits      = $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX] ?? [];
+        $introducedInterfaces  = $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [];
+        $introducedTraits      = $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [];
 
         $generatedProperties = [new JoinPointPropertyGenerator($classAdviceNames)];
         $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
