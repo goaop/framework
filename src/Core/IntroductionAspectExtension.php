@@ -54,7 +54,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                     $implement        = $annotation->defaultImpl;
                     $interface        = $annotation->interface;
                     $introductionInfo = new TraitIntroductionInfo($implement, $interface);
-                    $advisor          = new DeclareParentsAdvisor($pointcut->getClassFilter(), $introductionInfo);
+                    $advisor          = new DeclareParentsAdvisor($pointcut, $introductionInfo);
 
                     $loadedItems[$propertyId] = $advisor;
                 } elseif ($annotation instanceof Annotation\DeclareError) {
