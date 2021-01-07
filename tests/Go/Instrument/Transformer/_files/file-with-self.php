@@ -9,6 +9,8 @@ namespace Test\ns1
 
         private static $foo = 42;
 
+        private self $instance;
+
         public function acceptsAndReturnsSelf(self $instance): self
         {
             return $instance;

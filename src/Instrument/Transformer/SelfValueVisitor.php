@@ -18,6 +18,7 @@ use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\Instanceof_;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\NullableType;
@@ -26,7 +27,9 @@ use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Namespace_;
+use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeVisitorAbstract;
+use UnexpectedValueException;
 
 /**
  * Node visitor that resolves class name for `self` nodes with FQN
@@ -84,8 +87,12 @@ final class SelfValueVisitor extends NodeVisitorAbstract
                 $this->className = new Name($node->name->toString());
             }
         } elseif ($node instanceof ClassMethod || $node instanceof Closure) {
-            $node->returnType = $this->resolveType($node->returnType);
-        } elseif ($node instanceof Param) {
+            if (isset($node->returnType)) {
+                $node->returnType = $this->resolveType($node->returnType);
+            }
+        } elseif (($node instanceof Property) && (isset($node->type))) {
+            $node->type = $this->resolveType($node->type);
+        } elseif (($node instanceof Param) && (isset($node->type))) {
             $node->type = $this->resolveType($node->type);
         } elseif (
             $node instanceof StaticCall
@@ -135,11 +142,9 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     /**
      * Helper method for resolving type nodes
      *
-     * @param Node|string|null $node Instance of node
-     *
-     * @return Node|Name|FullyQualified
+     * @return NullableType|Name|FullyQualified|Identifier
      */
-    private function resolveType($node)
+    private function resolveType(Node $node)
     {
         if ($node instanceof NullableType) {
             $node->type = $this->resolveType($node->type);
@@ -148,7 +153,10 @@ final class SelfValueVisitor extends NodeVisitorAbstract
         if ($node instanceof Name) {
             return $this->resolveClassName($node);
         }
+        if ($node instanceof Identifier) {
+            return $node;
+        }
 
-        return $node;
+        throw new UnexpectedValueException('Unknown node type: ' . get_class($node));
     }
 }
