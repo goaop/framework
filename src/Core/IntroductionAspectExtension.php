@@ -12,22 +12,16 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
-use ReflectionClass;
-use ReflectionMethod;
-use Go\Lang\Annotation\DeclareParents;
-use Go\Lang\Annotation\DeclareError;
-use Go\Aop\Framework\TraitIntroductionInfo;
-use Go\Aop\Support\DeclareParentsAdvisor;
-use Go\Aop\Framework\DeclareErrorInterceptor;
-use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
-use Go\Aop\Framework;
+use Go\Aop\Framework\DeclareErrorInterceptor;
+use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;
-use Go\Aop\Support;
+use Go\Aop\Support\DeclareParentsAdvisor;
+use Go\Aop\Support\DefaultPointcutAdvisor;
 use Go\Lang\Annotation;
-use ReflectionProperty;
-use Reflector;
+use Go\Lang\Annotation\DeclareParents;
+use ReflectionClass;
 use UnexpectedValueException;
 
 /**
@@ -36,74 +30,47 @@ use UnexpectedValueException;
 class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 {
     /**
-     * Introduction aspect loader works with annotations from aspect
-     */
-    public function getKind(): string
-    {
-        return self::KIND_ANNOTATION;
-    }
-
-    /**
-     * Introduction aspect loader works only with properties of aspect
-     */
-    public function getTargets(): array
-    {
-        return [self::TARGET_PROPERTY];
-    }
-
-    /**
-     * Checks if loader is able to handle specific point of aspect
-     *
-     * @param Aspect $aspect Instance of aspect
-     * @param mixed|ReflectionClass|ReflectionMethod|ReflectionProperty $reflection Reflection of point
-     * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
-     *
-     * @return boolean true if extension is able to create an advisor from reflection and metaInformation
-     */
-    public function supports(Aspect $aspect, $reflection, $metaInformation = null): bool
-    {
-        return
-            ($metaInformation instanceof DeclareParents) ||
-            ($metaInformation instanceof DeclareError);
-    }
-
-    /**
      * Loads definition from specific point of aspect into the container
      *
-     * @param Aspect $aspect Instance of aspect
-     * @param Reflector $reflection Reflection of point
-     * @param mixed|null $metaInformation Additional meta-information
+     * @param Aspect          $aspect           Instance of aspect
+     * @param ReflectionClass $reflectionAspect Reflection of point
+     *
+     * @return array<string,Pointcut>|array<string,Advisor>
      *
      * @throws UnexpectedValueException
-     *
-     * @return Pointcut[]|Advisor[]
      */
-    public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null): array
+    public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
     {
-        assert($reflection instanceof ReflectionProperty, 'Only ReflectionProperty is expected here');
         $loadedItems = [];
-        $pointcut    = $this->parsePointcut($aspect, $reflection, $metaInformation->value);
-        $propertyId  = $reflection->class . '->' . $reflection->name;
+        foreach ($reflectionAspect->getProperties() as $aspectProperty)
+        {
+            $propertyId  = $reflectionAspect->getName() . '->'. $aspectProperty->getName();
+            $annotations = $this->reader->getPropertyAnnotations($aspectProperty);
 
-        switch (true) {
-            case ($metaInformation instanceof DeclareParents):
-                $implement = $metaInformation->defaultImpl;
-                $interface = $metaInformation->interface;
-                $advice    = new TraitIntroductionInfo($implement, $interface);
-                $advisor   = new DeclareParentsAdvisor($pointcut->getClassFilter(), $advice);
-                $loadedItems[$propertyId] = $advisor;
-                break;
+            foreach ($annotations as $annotation) {
+                if ($annotation instanceof DeclareParents) {
+                    $pointcut = $this->parsePointcut($aspect, $aspectProperty, $annotation->value);
 
-            case (($metaInformation instanceof DeclareError) && ($pointcut instanceof Pointcut)):
-                $reflection->setAccessible(true);
-                $message = $reflection->getValue($aspect);
-                $level   = $metaInformation->level;
-                $advice  = new DeclareErrorInterceptor($message, $level, $metaInformation->value);
-                $loadedItems[$propertyId] = new DefaultPointcutAdvisor($pointcut, $advice);
-                break;
+                    $implement        = $annotation->defaultImpl;
+                    $interface        = $annotation->interface;
+                    $introductionInfo = new TraitIntroductionInfo($implement, $interface);
+                    $advisor          = new DeclareParentsAdvisor($pointcut->getClassFilter(), $introductionInfo);
 
-            default:
-                throw new UnexpectedValueException('Unsupported pointcut class: ' . get_class($pointcut));
+                    $loadedItems[$propertyId] = $advisor;
+                } elseif ($annotation instanceof Annotation\DeclareError) {
+                    $pointcut = $this->parsePointcut($aspect, $reflectionAspect, $annotation->value);
+
+                    $aspectProperty->setAccessible(true);
+                    $errorMessage     = $aspectProperty->getValue($aspect);
+                    $errorLevel       = $annotation->level;
+                    $introductionInfo = new DeclareErrorInterceptor($errorMessage, $errorLevel, $annotation->value);
+                    $loadedItems[$propertyId] = new DefaultPointcutAdvisor($pointcut, $introductionInfo);
+                    break;
+
+                } else {
+                    throw new UnexpectedValueException('Unsupported annotation class: ' . get_class($annotation));
+                }
+            }
         }
 
         return $loadedItems;
