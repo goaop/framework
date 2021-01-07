@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,17 +12,18 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\ClassLoading;
 
-use php_user_filter as PhpStreamFilter;
-use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\SourceTransformer;
+use Go\Instrument\Transformer\StreamMetaData;
+use php_user_filter as PhpStreamFilter;
 use RuntimeException;
+
 use function strlen;
 
 /**
  * Php class loader filter for processing php code
  *
  * @property resource $stream Stream instance of underlying resource
-*/
+ */
 class SourceTransformingLoader extends PhpStreamFilter
 {
     /**
@@ -87,12 +88,13 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * {@inheritdoc}
      */
-    public function filter($in, $out, &$consumed, $closing)
+    public function filter($in, $out, &$consumed, $closing): int
     {
         while ($bucket = stream_bucket_make_writeable($in)) {
             $this->data .= $bucket->data;
         }
 
+        /** @phpstan-ignore-next-line PhpStan uses old version of phpstorm-stubs, $bucket can be nullable */
         if ($closing || feof($this->stream)) {
             $consumed = strlen($this->data);
 
