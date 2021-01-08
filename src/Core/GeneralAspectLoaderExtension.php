@@ -51,8 +51,7 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
     {
         $loadedItems = [];
-        foreach ($reflectionAspect->getMethods() as $aspectMethod)
-        {
+        foreach ($reflectionAspect->getMethods() as $aspectMethod) {
             $methodId    = $reflectionAspect->getName() . '->'. $aspectMethod->getName();
             $annotations = $this->reader->getMethodAnnotations($aspectMethod);
 
