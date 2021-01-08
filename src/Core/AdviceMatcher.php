@@ -49,7 +49,7 @@ class AdviceMatcher implements AdviceMatcherInterface
      *
      * @param Aop\Advisor[] $advisors List of advisor to match
      *
-     * @return Aop\Advice[] List of advices for class
+     * @return Aop\Advice[][][] List of advices for function
      */
     public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors): array
     {
@@ -81,7 +81,7 @@ class AdviceMatcher implements AdviceMatcherInterface
      *
      * @param array|Aop\Advisor[] $advisors List of advisor to match
      *
-     * @return Aop\Advice[][] List of advices for class
+     * @return Aop\Advice[][][] List of advices for class
      */
     public function getAdvicesForClass(ReflectionClass $class, array $advisors): array
     {
@@ -103,7 +103,7 @@ class AdviceMatcher implements AdviceMatcherInterface
 
             if ($advisor instanceof IntroductionAdvisor) {
                 if ($advisor->getClassFilter()->matches($class)) {
-                    $classAdvices[] = $this->getIntroductionFromAdvisor($originalClass, $advisor, $advisorId);
+                    $classAdvices[] = $this->getIntroductionFromAdvisor($originalClass, $advisor);
                 }
             }
         }
@@ -172,11 +172,12 @@ class AdviceMatcher implements AdviceMatcherInterface
 
     /**
      * Returns list of introduction advices from advisor
+     *
+     * @return Aop\IntroductionInfo[][][]
      */
     private function getIntroductionFromAdvisor(
         ReflectionClass $class,
-        IntroductionAdvisor $advisor,
-        string $advisorId
+        IntroductionAdvisor $advisor
     ): array {
         $classAdvices = [];
         // Do not make introduction for traits
@@ -190,13 +191,13 @@ class AdviceMatcher implements AdviceMatcherInterface
         if (!empty($introducedTrait)) {
             $introducedTrait = '\\' . ltrim($introducedTrait, '\\');
 
-            $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX][$advisorId] = $introducedTrait;
+            $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'][$introducedTrait] = $introduction;
         }
         $introducedInterface = $introduction->getInterface();
         if (!empty($introducedInterface)) {
             $introducedInterface = '\\' . ltrim($introducedInterface, '\\');
 
-            $classAdvices[AspectContainer::INTRODUCTION_INTERFACE_PREFIX][$advisorId] = $introducedInterface;
+            $classAdvices[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'][$introducedInterface] = $introduction;
         }
 
         return $classAdvices;

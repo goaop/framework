@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -9,6 +9,7 @@ declare(strict_types = 1);
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
  */
+
 namespace Go\Bridge\Doctrine;
 
 use Doctrine\Common\EventSubscriber;
@@ -52,16 +53,13 @@ final class MetadataLoadInterceptor implements EventSubscriber
      */
     public function loadClassMetadata(LoadClassMetadataEventArgs $args): void
     {
-        /**
-         * @var ClassMetadata $metadata
-         */
         $metadata = $args->getClassMetadata();
 
         if (1 === preg_match(sprintf('/.+(%s)$/', AspectContainer::AOP_PROXIED_SUFFIX), $metadata->name)) {
-            $metadata->isMappedSuperclass           = true;
-            $metadata->isEmbeddedClass              = false;
-            $metadata->table                        = [];
-            $metadata->customRepositoryClassName    = null;
+            $metadata->isMappedSuperclass        = true;
+            $metadata->isEmbeddedClass           = false;
+            $metadata->table                     = [];
+            $metadata->customRepositoryClassName = null;
 
             $this->removeMappingsFromTraits($metadata);
         }
@@ -97,10 +95,11 @@ final class MetadataLoadInterceptor implements EventSubscriber
     /**
      * Get ALL traits used by one class.
      *
-     * This method is copied from https://github.com/RunOpenCode/traitor-bundle/blob/master/src/RunOpenCode/Bundle/Traitor/Utils/ClassUtils.php
+     * This method is copied from
+     * https://github.com/RunOpenCode/traitor-bundle/blob/master/src/RunOpenCode/Bundle/Traitor/Utils/ClassUtils.php
      *
-     * @param object|string $className Instance of class or FQCN
-     * @param bool          $autoload  Weather to autoload class.
+     * @param class-string $className FQCN
+     * @param bool         $autoload  Weather to autoload class.
      *
      * @throws InvalidArgumentException
      * @throws RuntimeException
@@ -114,8 +113,9 @@ final class MetadataLoadInterceptor implements EventSubscriber
         $traits = [];
         // Get traits of all parent classes
         do {
-            $traits = array_merge(class_uses($className, $autoload), $traits);
-        } while ($className = get_parent_class($className));
+            $traits    = array_merge(class_uses($className, $autoload), $traits);
+            $className = get_parent_class($className);
+        } while ($className);
 
         $traitsToSearch = $traits;
 

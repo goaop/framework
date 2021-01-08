@@ -34,9 +34,12 @@ use function is_array;
 abstract class AbstractJoinpoint implements Joinpoint
 {
     /**
-     * List of advices
+     * List of advices (interceptors)
      *
-     * @var array<Advice|Interceptor>
+     * NB: All current children assume that each advice is Interceptor now.
+     * Whereas, it isn't correct logically, this can be used to satisfy PHPStan check now.
+     *
+     * @var array<Interceptor>
      */
     protected array $advices = [];
 
@@ -58,7 +61,7 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * Initializes list of advices for current joinpoint
      *
-     * @param array<Advice|Interceptor> $advices List of advices
+     * @param array<Interceptor> $advices List of advices (interceptors)
      */
     public function __construct(array $advices)
     {
@@ -110,11 +113,7 @@ abstract class AbstractJoinpoint implements Joinpoint
         $flattenAdvices = [];
         foreach ($advices as $type => $typedAdvices) {
             foreach ($typedAdvices as $name => $concreteAdvices) {
-                if (is_array($concreteAdvices)) {
-                    $flattenAdvices[$type][$name] = array_keys(self::sortAdvices($concreteAdvices));
-                } else {
-                    $flattenAdvices[$type][$name] = $concreteAdvices;
-                }
+                $flattenAdvices[$type][$name] = array_keys(self::sortAdvices($concreteAdvices));
             }
         }
 

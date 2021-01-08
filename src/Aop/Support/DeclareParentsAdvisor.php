@@ -14,8 +14,8 @@ namespace Go\Aop\Support;
 
 use Go\Aop\IntroductionAdvisor;
 use Go\Aop\IntroductionInfo;
+use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutClassFilterTrait;
-use Go\Aop\PointFilter;
 
 /**
  * Introduction advisor delegating to the given object.
@@ -27,9 +27,9 @@ class DeclareParentsAdvisor extends AbstractGenericAdvisor implements Introducti
     /**
      * Creates an advisor for declaring mixins via trait and interface.
      */
-    public function __construct(PointFilter $classFilter, IntroductionInfo $info)
+    public function __construct(Pointcut $pointcut, IntroductionInfo $info)
     {
-        $this->classFilter = $classFilter;
+        $this->classFilter = $pointcut->getClassFilter();
         parent::__construct($info);
     }
 }

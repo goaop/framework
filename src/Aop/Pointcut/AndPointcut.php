@@ -14,6 +14,7 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
 use Go\Aop\Support\AndPointFilter;
+use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
 
@@ -76,11 +77,12 @@ class AndPointcut implements Pointcut
     /**
      * Checks if point filter matches the point
      *
-     * @param Pointcut                            $pointcut
-     * @param ReflectionMethod|ReflectionProperty $point
-     * @param mixed                               $context   Related context, can be class or namespace
-     * @param object|string|null                  $instance  [Optional] Instance for dynamic matching
-     * @param array|null                          $arguments [Optional] Extra arguments for dynamic matching
+     * @param Pointcut                                            $pointcut
+     * @param ReflectionMethod|ReflectionProperty|ReflectionClass $point
+     * @param mixed                                               $context   Related context, can be class or namespace
+     * @param object|string|null                                  $instance  [Optional] Instance for dynamic matching
+     * @param array|null                                          $arguments [Optional] Extra arguments for dynamic
+     *                                                                       matching
      *
      * @return bool
      */

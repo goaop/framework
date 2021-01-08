@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,13 +12,10 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
-use ReflectionClass;
-use ReflectionMethod;
-use ReflectionProperty;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
-use Reflector;
+use ReflectionClass;
 
 /**
  * Extension interface that defines an API for aspect loaders
@@ -26,59 +23,12 @@ use Reflector;
 interface AspectLoaderExtension
 {
     /**
-     * Loader works with class-level definition of aspect
-     */
-    public const TARGET_CLASS = 'class';
-
-    /**
-     * Loader works with method definitions of aspect
-     */
-    public const TARGET_METHOD = 'method';
-
-    /**
-     * Loader works with property definitions of aspect
-     */
-    public const TARGET_PROPERTY = 'property';
-
-    /**
-     * Loader works only with reflections of aspect class, method or property
-     */
-    public const KIND_REFLECTION = 'reflection';
-
-    /**
-     * Loader works with each annotation defined for aspect class, method or property.
-     */
-    public const KIND_ANNOTATION = 'annotation';
-
-    /**
-     * Return kind of loader, can be one of KIND_REFLECTION or KIND_ANNOTATION
-     *
-     * For loader that works with annotations additional metaInformation will be passed
-     */
-    public function getKind(): string;
-
-    /**
-     * Returns one or more target for loader, see TARGET_XXX constants
-     */
-    public function getTargets(): array;
-
-    /**
-     * Checks if loader is able to handle specific point of aspect
-     *
-     * @param Aspect $aspect Instance of aspect
-     * @param mixed|ReflectionClass|ReflectionMethod|ReflectionProperty $reflection Reflection of point
-     * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
-     */
-    public function supports(Aspect $aspect, $reflection, $metaInformation = null): bool;
-
-    /**
      * Loads definition from specific point of aspect into the container
      *
-     * @param Aspect $aspect Instance of aspect
-     * @param Reflector $reflection Reflection of point
-     * @param mixed|null $metaInformation Additional meta-information, e.g. annotation for method
+     * @param Aspect          $aspect           Instance of aspect
+     * @param ReflectionClass $reflectionAspect Reflection of aspect
      *
-     * @return array|Pointcut[]|Advisor[]
+     * @return array<string,Pointcut>|array<string,Advisor>
      */
-    public function load(Aspect $aspect, Reflector $reflection, $metaInformation = null): array;
+    public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array;
 }

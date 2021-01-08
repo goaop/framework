@@ -9,6 +9,8 @@ namespace Test\ns1
 
         private static $foo = 42;
 
+        private \Test\ns1\ClassWithSelf $instance;
+
         public function acceptsAndReturnsSelf(\Test\ns1\ClassWithSelf $instance): \Test\ns1\ClassWithSelf
         {
             return $instance;

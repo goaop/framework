@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -12,15 +12,11 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
-use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
-use InvalidArgumentException;
 use ReflectionClass;
-use ReflectionMethod;
-use ReflectionProperty;
-use Reflector;
+
 use function get_class;
 
 /**
@@ -36,14 +32,9 @@ class AspectLoader
     /**
      * List of aspect loaders
      *
-     * @var AspectLoaderExtension[][]
+     * @var AspectLoaderExtension[]
      */
     protected array $loaders = [];
-
-    /**
-     * Annotation reader for aspects
-     */
-    protected Reader $annotationReader;
 
     /**
      * List of aspect class names that have been loaded
@@ -55,10 +46,9 @@ class AspectLoader
     /**
      * Loader constructor
      */
-    public function __construct(AspectContainer $container, Reader $reader)
+    public function __construct(AspectContainer $container)
     {
-        $this->container        = $container;
-        $this->annotationReader = $reader;
+        $this->container = $container;
     }
 
     /**
@@ -68,10 +58,7 @@ class AspectLoader
      */
     public function registerLoaderExtension(AspectLoaderExtension $loader): void
     {
-        $targets = $loader->getTargets();
-        foreach ($targets as $target) {
-            $this->loaders[$target][] = $loader;
-        }
+        $this->loaders[] = $loader;
     }
 
     /**
@@ -83,25 +70,11 @@ class AspectLoader
      */
     public function load(Aspect $aspect): array
     {
+        $refAspect   = new ReflectionClass($aspect);
         $loadedItems = [];
-        $refAspect   = new \ReflectionClass($aspect);
 
-        if (!empty($this->loaders[AspectLoaderExtension::TARGET_CLASS])) {
-            $loadedItems += $this->loadFrom($aspect, $refAspect, $this->loaders[AspectLoaderExtension::TARGET_CLASS]);
-        }
-
-        if (!empty($this->loaders[AspectLoaderExtension::TARGET_METHOD])) {
-            $refMethods = $refAspect->getMethods();
-            foreach ($refMethods as $refMethod) {
-                $loadedItems += $this->loadFrom($aspect, $refMethod, $this->loaders[AspectLoaderExtension::TARGET_METHOD]);
-            }
-        }
-
-        if (!empty($this->loaders[AspectLoaderExtension::TARGET_PROPERTY])) {
-            $refProperties = $refAspect->getProperties();
-            foreach ($refProperties as $refProperty) {
-                $loadedItems += $this->loadFrom($aspect, $refProperty, $this->loaders[AspectLoaderExtension::TARGET_PROPERTY]);
-            }
+        foreach ($this->loaders as $loader) {
+            $loadedItems += $loader->load($aspect, $refAspect);
         }
 
         return $loadedItems;
@@ -121,8 +94,8 @@ class AspectLoader
                 $this->container->registerAdvisor($item, $itemId);
             }
         }
-
         $aspectClass = get_class($aspect);
+
         $this->loadedAspects[$aspectClass] = $aspectClass;
     }
 
@@ -142,69 +115,5 @@ class AspectLoader
         }
 
         return $unloadedAspects;
-    }
-
-    /**
-     * Load definitions from specific aspect part into the aspect container
-     *
-     * @param Aspect $aspect Aspect instance
-     * @param Reflector $reflector Reflection instance
-     * @param array|AspectLoaderExtension[] $loaders List of loaders that can produce advisors from aspect class
-     *
-     * @throws InvalidArgumentException If kind of loader isn't supported
-     *
-     * @return array|Pointcut[]|Advisor[]
-     */
-    protected function loadFrom(Aspect $aspect, Reflector $reflector, array $loaders): array
-    {
-        $loadedItems = [];
-
-        foreach ($loaders as $loader) {
-            $loaderKind = $loader->getKind();
-            switch ($loaderKind) {
-                case AspectLoaderExtension::KIND_REFLECTION:
-                    if ($loader->supports($aspect, $reflector)) {
-                        $loadedItems += $loader->load($aspect, $reflector);
-                    }
-                    break;
-
-                case AspectLoaderExtension::KIND_ANNOTATION:
-                    $annotations = $this->getAnnotations($reflector);
-                    foreach ($annotations as $annotation) {
-                        if ($loader->supports($aspect, $reflector, $annotation)) {
-                            $loadedItems += $loader->load($aspect, $reflector, $annotation);
-                        }
-                    }
-                    break;
-
-                default:
-                    throw new InvalidArgumentException("Unsupported loader kind {$loaderKind}");
-            }
-        }
-
-        return $loadedItems;
-    }
-
-    /**
-     * Return list of annotations for reflection point
-     *
-     * @return array list of annotations
-     * @throws InvalidArgumentException if $reflector is unsupported
-     */
-    protected function getAnnotations(Reflector $reflector): array
-    {
-        switch (true) {
-            case ($reflector instanceof ReflectionClass):
-                return $this->annotationReader->getClassAnnotations($reflector);
-
-            case ($reflector instanceof ReflectionMethod):
-                return $this->annotationReader->getMethodAnnotations($reflector);
-
-            case ($reflector instanceof ReflectionProperty):
-                return $this->annotationReader->getPropertyAnnotations($reflector);
-
-            default:
-                throw new InvalidArgumentException('Unsupported reflection point ' . get_class($reflector));
-        }
     }
 }
