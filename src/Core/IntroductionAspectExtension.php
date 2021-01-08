@@ -42,8 +42,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
     public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
     {
         $loadedItems = [];
-        foreach ($reflectionAspect->getProperties() as $aspectProperty)
-        {
+        foreach ($reflectionAspect->getProperties() as $aspectProperty) {
             $propertyId  = $reflectionAspect->getName() . '->'. $aspectProperty->getName();
             $annotations = $this->reader->getPropertyAnnotations($aspectProperty);
 
