@@ -68,7 +68,7 @@ class CacheWarmer
 
         $errors = [];
 
-        $displayException = function (\Exception $exception, $path) use (&$errors) {
+        $displayException = function (\Throwable $exception, $path) use (&$errors) {
             $this->output->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: %s', $path));
             $errors[$path] = $exception->getMessage();
         };
