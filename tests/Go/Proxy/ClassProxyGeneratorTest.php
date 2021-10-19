@@ -19,7 +19,6 @@ use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
-
 use function substr;
 
 /**
@@ -79,7 +78,7 @@ class ClassProxyGeneratorTest extends TestCase
         $methodStartPos = $interceptedMethod->getNode()->stmts[0]->getAttribute('startFilePos');
         $methodEndPos   = $interceptedMethod->getNode()->stmts[0]->getAttribute('endFilePos');
         $methodBody     = substr($proxyFileContent, $methodStartPos, ($methodEndPos-$methodStartPos));
-        $this->assertStringStartsWith("return self::\$__joinPoints['method:{$methodName}']->__invoke(", $methodBody);
+        $this->assertStringStartsWith("return self::\$__joinPoints['method:$methodName']->__invoke(", $methodBody);
     }
 
     /**

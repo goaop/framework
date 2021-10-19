@@ -15,6 +15,7 @@ namespace Go\Proxy\Part;
 use Exception;
 use PHPUnit\Framework\TestCase;
 
+use ReflectionException;
 use ReflectionFunction;
 
 use function preg_replace;
@@ -40,7 +41,7 @@ class InterceptedFunctionGeneratorTest extends TestCase
      * @param string $functionName      Name of the function to reflect
      * @param string $expectedSignature Expected function signature
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      * @dataProvider dataGenerator
      */
     public function testGenerate(string $functionName, string $expectedSignature): void
@@ -64,19 +65,19 @@ class InterceptedFunctionGeneratorTest extends TestCase
         return [
             [
                 'var_dump',
-                'function var_dump(... $vars)'
+                'function var_dump(mixed $value, mixed ... $values) : void'
             ],
             [
                 'array_pop',
-                'function array_pop(&$stack)'
+                'function array_pop(array &$array) : mixed'
             ],
             [
                 'strcoll',
-                'function strcoll($str1, $str2)'
+                'function strcoll(string $string1, string $string2) : int'
             ],
             [
                 'microtime',
-                'function microtime($get_as_float = null)'
+                'function microtime(bool $as_float = false) : float|string'
             ],
             [
                 '\Go\Proxy\Part\funcWithReturnTypeAndDocBlock',

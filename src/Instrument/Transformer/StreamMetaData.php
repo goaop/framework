@@ -51,7 +51,7 @@ class StreamMetaData
      *
      * @var mixed
      */
-    public $wrapperData;
+    public mixed $wrapperData;
 
     /**
      * Array containing the names of any filters that have been stacked onto this stream.
@@ -79,7 +79,7 @@ class StreamMetaData
      * Creates metadata object from stream
      *
      * @param resource $stream Instance of stream
-     * @param string $source Source code or null
+     * @param string|null $source Source code or null
      * @throws InvalidArgumentException for invalid stream
      */
     public function __construct($stream, string $source = null)
@@ -98,13 +98,11 @@ class StreamMetaData
             $mappedKey = self::$propertyMap[$key];
             $this->$mappedKey = $value;
         }
+        
         $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
         $this->setTokenStreamFromRawTokens(ReflectionEngine::getLexer()->getTokens());
     }
 
-    /**
-     * @inheritDoc
-     */
     public function __get($name)
     {
         if ($name === 'source') {
@@ -114,9 +112,6 @@ class StreamMetaData
         return null;
     }
 
-    /**
-     * @inheritDoc
-     */
     public function __set($name, $value)
     {
         if ($name === 'source') {

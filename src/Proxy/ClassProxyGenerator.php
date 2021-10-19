@@ -32,6 +32,7 @@ use Laminas\Code\Generator\ClassGenerator;
 use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
 use ReflectionNamedType;
 use UnexpectedValueException;
@@ -68,12 +69,13 @@ class ClassProxyGenerator
     protected bool $useParameterWidening;
 
     /**
-     * Generates an child code by original class reflection and joinpoints for it
+     * Generates a child code by original class reflection and joinpoints for it
      *
-     * @param ReflectionClass $originalClass        Original class reflection
-     * @param string          $parentClassName      Parent class name to use
-     * @param string[][]      $classAdviceNames     List of advices for class
-     * @param bool            $useParameterWidening Enables usage of parameter widening feature
+     * @param ReflectionClass $originalClass Original class reflection
+     * @param string $parentClassName Parent class name to use
+     * @param string[][]|string[][][] $classAdviceNames List of advices for class
+     * @param bool $useParameterWidening Enables usage of parameter widening feature
+     * @throws ReflectionException
      */
     public function __construct(
         ReflectionClass $originalClass,
@@ -136,6 +138,7 @@ class ClassProxyGenerator
      * Inject advices into given class
      *
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
+     * @throws ReflectionException
      */
     public static function injectJoinPoints(string $targetClassName): void
     {
@@ -213,6 +216,7 @@ class ClassProxyGenerator
      * @param string[] $methodNames List of methods to intercept
      *
      * @return InterceptedMethodGenerator[]
+     * @throws ReflectionException
      */
     protected function interceptMethods(ReflectionClass $originalClass, array $methodNames): array
     {
@@ -255,8 +259,6 @@ class ClassProxyGenerator
             $scope = "$scope, $argumentCode";
         }
 
-        $body = "{$return}self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($scope);";
-
-        return $body;
+        return "{$return}self::\$__joinPoints['$prefix:$method->name']->__invoke($scope);";
     }
 }

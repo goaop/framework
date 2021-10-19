@@ -15,6 +15,8 @@ namespace Go\Proxy\Part;
 use Laminas\Code\Generator\ValueGenerator;
 use PHPUnit\Framework\TestCase;
 
+use ReflectionException;
+use ReflectionFunction;
 use function class_exists;
 
 class FunctionParameterListTest extends TestCase
@@ -26,12 +28,12 @@ class FunctionParameterListTest extends TestCase
      * @param int    $expectedArgsNumber Number of expected arguments
      * @param array  $checks             List of checks, where key is argument number, starting from 0 and value are getters
      *
-     * @throws \ReflectionException if function is not present
+     * @throws ReflectionException if function is not present
      * @dataProvider dataGenerator
      */
     public function testgetGeneratedParameters(string $functionName, int $expectedArgsNumber, array $checks): void
     {
-        $reflection    = new \ReflectionFunction($functionName);
+        $reflection    = new ReflectionFunction($functionName);
         $parameterList = new FunctionParameterList($reflection);
         $generatedList = $parameterList->getGeneratedParameters();
         $this->assertCount($expectedArgsNumber, $generatedList);
@@ -55,49 +57,49 @@ class FunctionParameterListTest extends TestCase
     {
         return [
             [
-                'var_dump', // var_dump(...$vars)
-                1,
-                [
-                    [
-                        'getPassedByReference' => false,
-                        'getVariadic'          => true,
-                        'getName'              => 'vars',
-                        'getDefaultValue'      => null,
-                    ]
-                ]
-            ],
-            [
-                'array_pop', // array_pop(&$stack)
-                1,
-                [
-                    [
-                        'getPassedByReference' => true,
-                        'getVariadic'          => false,
-                        'getName'              => 'stack',
-                        'getDefaultValue'      => null,
-                    ]
-                ]
-            ],
-            [
-                'strcoll', // strcoll($str1, $str2)
+                'var_dump', // var_dump(mixed $value, mixed ...$values): void
                 2,
                 [
                     [
                         'getPassedByReference' => false,
                         'getVariadic'          => false,
-                        'getName'              => 'str1',
+                        'getName'              => 'value',
                         'getDefaultValue'      => null,
                     ]
                 ]
             ],
             [
-                'microtime', // microtime($get_as_float = null)
+                'array_pop', // array_pop(array &$array): mixed
+                1,
+                [
+                    [
+                        'getPassedByReference' => true,
+                        'getVariadic'          => false,
+                        'getName'              => 'array',
+                        'getDefaultValue'      => null,
+                    ]
+                ]
+            ],
+            [
+                'strcoll', // strcoll(string $string1, string $string2)
+                2,
+                [
+                    [
+                        'getPassedByReference' => false,
+                        'getVariadic'          => false,
+                        'getName'              => 'string1',
+                        'getDefaultValue'      => null,
+                    ]
+                ]
+            ],
+            [
+                'microtime', // microtime(bool $as_float = false): string|float
                 1,
                 [
                     [
                         'getPassedByReference' => false,
                         'getVariadic'          => false,
-                        'getName'              => 'get_as_float',
+                        'getName'              => 'as_float',
                         'getDefaultValue'      => ValueGenerator::class
                     ]
                 ]

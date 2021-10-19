@@ -14,6 +14,7 @@ namespace Go\Proxy\Part;
 
 use Laminas\Code\Generator\ParameterGenerator;
 use Laminas\Code\Generator\ValueGenerator;
+use ReflectionException;
 use ReflectionFunctionAbstract;
 use ReflectionNamedType;
 
@@ -30,8 +31,9 @@ final class FunctionParameterList
     /**
      * ParameterListGenerator constructor.
      *
-     * @param ReflectionFunctionAbstract $functionLike    Instance of function or method
-     * @param bool                       $useTypeWidening Should generated parameters use type widening
+     * @param ReflectionFunctionAbstract $functionLike Instance of function or method
+     * @param bool $useTypeWidening Should generate parameters using type widening
+     * @throws ReflectionException
      */
     public function __construct(ReflectionFunctionAbstract $functionLike, bool $useTypeWidening = false)
     {
@@ -63,7 +65,7 @@ final class FunctionParameterList
                 $reflectionParameter->getPosition(),
                 $reflectionParameter->isPassedByReference()
             );
-            $generatedParameter->setVariadic($reflectionParameter->isVariadic());
+            if ($reflectionParameter->isVariadic()) $generatedParameter->setVariadic(true);
 
             $this->generatedParameters[] = $generatedParameter;
         }

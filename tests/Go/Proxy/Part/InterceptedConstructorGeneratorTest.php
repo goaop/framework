@@ -17,9 +17,11 @@ use Go\Stubs\Constructor\ClassWithOptionalArgsConstructor;
 use Go\Stubs\Constructor\ClassWithoutConstructor;
 use Go\Stubs\Constructor\ClassWithPrivateConstructor;
 use Go\Stubs\Constructor\ClassWithProtectedConstructor;
+use LogicException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
+use ReflectionException;
 use function preg_replace;
 
 /**
@@ -30,7 +32,7 @@ class InterceptedConstructorGeneratorTest extends TestCase
     /**
      * Tests that generator can generate valid method definition
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      * @dataProvider dataGenerator
      */
     public function testGenerate(string $className, string $expectedSignature): void
@@ -52,7 +54,7 @@ class InterceptedConstructorGeneratorTest extends TestCase
         return [
             [
                 Exception::class,
-                'public function __construct($message = null, $code = null, $previous = null)
+                'public function __construct(string $message = \'\', int $code = 0, \Throwable $previous = null)
                 {
                     parent::__construct(...\array_slice([$message, $code, $previous], 0, \func_num_args()));
                 }'
@@ -111,7 +113,7 @@ class InterceptedConstructorGeneratorTest extends TestCase
 
     public function testThrowsExceptionForPrivateConstructor(): void
     {
-        $this->expectException(\LogicException::class);
+        $this->expectException(LogicException::class);
 
         $reflectionConstructor = (new ReflectionClass(ClassWithPrivateConstructor::class))->getConstructor();
         new InterceptedConstructorGenerator(['foo', 'bar'], $reflectionConstructor);
