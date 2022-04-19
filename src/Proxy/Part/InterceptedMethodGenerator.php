@@ -39,7 +39,7 @@ final class InterceptedMethodGenerator extends MethodGenerator
         if ($reflectionMethod->hasReturnType()) {
             $reflectionReturnType = $reflectionMethod->getReturnType();
             if ($reflectionReturnType instanceof ReflectionNamedType) {
-                $returnTypeName = $reflectionReturnType->getName();
+                $returnTypeName = ($reflectionReturnType->allowsNull() ? '?' : '') . $reflectionReturnType->getName();
             } else {
                 $returnTypeName = (string)$reflectionReturnType;
             }
