@@ -1,6 +1,6 @@
 {
     "name": "goaop/framework",
-    "description": "Framework for aspect-oriented programming in PHP.",
+    "description": "Framework for aspect-oriented programming in PHP. Fork for NetRex and CamStreamer.",
 
     "type": "library",
     "keywords": ["library", "aop", "php", "aspect"],
@@ -8,10 +8,10 @@
     "license": "MIT",
 
     "require": {
-        "php": "^7.4.0",
+        "php": ">=7.4 <=8.2",
         "doctrine/annotations": "^1.11.1",
         "doctrine/cache": "^1.10",
-        "goaop/parser-reflection": "^3.0.1",
+        "goaop/parser-reflection": "dev-master",
         "jakubledl/dissect": "~1.0",
         "laminas/laminas-code": "^4.0",
         "symfony/finder": "^4.4|^5.1"
@@ -64,6 +64,12 @@
             "dev-master": "3.0-dev"
         }
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@github.com:CamStreamer/goaop-framework.git"
+        }
+    ],
     "config": {
         "sort-packages": true
     }
