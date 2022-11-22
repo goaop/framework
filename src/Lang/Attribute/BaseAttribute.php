@@ -14,26 +14,21 @@ namespace Go\Lang\Attribute;
 
 use Attribute;
 
-/**
- * Declare error attribute
- */
-#[Attribute(Attribute::TARGET_PROPERTY)]
-class DeclareError extends BaseAttribute
+#[Attribute]
+abstract class BaseAttribute
 {
     /**
-     * Interface name to add
+     * Value property. Common among all derived classes.
      */
-    public int $level;
+    public string $value;
 
     /**
-     * DeclareError Constructor
+     * BaseAttribute Constructor
      *
      * @param string $value
-     * @param int $level
      */
-    final public function __construct(string $value, int $level = E_USER_NOTICE)
+    public function __construct(string $value)
     {
-        parent::__construct($value);
-        $this->level = $level;
+        $this->value = $value;
     }
 }

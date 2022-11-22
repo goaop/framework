@@ -4,7 +4,7 @@ declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2012-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -28,10 +28,9 @@ use Go\Lang\Attribute\AfterThrowing;
 use Go\Lang\Attribute\Around;
 use Go\Lang\Attribute\BaseInterceptor;
 use Go\Lang\Attribute\Before;
+use ReflectionAttribute;
 use ReflectionClass;
 use UnexpectedValueException;
-
-use function get_class;
 
 /**
  * General aspect loader add common support for general advices, declared as annotations
@@ -53,15 +52,19 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
         $loadedItems = [];
         foreach ($reflectionAspect->getMethods() as $aspectMethod) {
             $methodId    = $reflectionAspect->getName() . '->'. $aspectMethod->getName();
-            $annotations = $this->reader->getMethodAnnotations($aspectMethod);
+            $annotations = $aspectMethod->getAttributes(
+                Attribute\BaseAttribute::class,
+                ReflectionAttribute::IS_INSTANCEOF
+            );
 
             foreach ($annotations as $annotation) {
-                if ($annotation instanceof Attribute\Pointcut) {
-                    $loadedItems[$methodId] = $this->parsePointcut($aspect, $reflectionAspect, $annotation->value);
-                } elseif ($annotation instanceof Attribute\BaseInterceptor) {
-                    $pointcut       = $this->parsePointcut($aspect, $reflectionAspect, $annotation->value);
+                $instance = $annotation->newInstance();
+                if ($instance instanceof Attribute\Pointcut) {
+                    $loadedItems[$methodId] = $this->parsePointcut($aspect, $reflectionAspect, $instance->value);
+                } elseif ($instance instanceof Attribute\BaseInterceptor) {
+                    $pointcut       = $this->parsePointcut($aspect, $reflectionAspect, $instance->value);
                     $adviceCallback = $aspectMethod->getClosure($aspect);
-                    $interceptor    = $this->getInterceptor($annotation, $adviceCallback);
+                    $interceptor    = $this->getInterceptor($instance, $adviceCallback);
 
                     $loadedItems[$methodId] = new DefaultPointcutAdvisor($pointcut, $interceptor);
                 } else {

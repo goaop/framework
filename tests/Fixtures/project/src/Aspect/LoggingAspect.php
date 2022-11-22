@@ -27,9 +27,8 @@ class LoggingAspect implements Aspect
      * Writes a log info before method execution
      *
      * @param MethodInvocation $invocation
-     *
-     * @Pointcut\Before("@execution(Go\Tests\TestProject\Annotation\Loggable)")
      */
+    #[Pointcut\Before("@execution(Go\Tests\TestProject\Attribute\Loggable)")]
     public function beforeMethod(MethodInvocation $invocation)
     {
         $this->logger->info($invocation, $invocation->getArguments());

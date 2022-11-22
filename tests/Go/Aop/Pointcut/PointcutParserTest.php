@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2013-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -61,10 +61,10 @@ class PointcutParserTest extends TestCase
             // Return-type hints for PHP7
             ['execution(public Example->method(*): string)'],
 
-            // This will match property that has First\Second\Annotation\Class annotation
+            // This will match property that has First\Second\Attribute\Class annotation
             ['@access(First\Second\Annotation\Class)'],
 
-            // This will match method execution that has First\Second\Annotation\Class annotation
+            // This will match method execution that has First\Second\Attribute\Class annotation
             ['@execution(First\Second\Annotation\Class)'],
 
             // This will match all the methods in all classes of Go\Aspects\Blog\Package.

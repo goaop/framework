@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2012-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -12,12 +12,12 @@ declare(strict_types=1);
 
 namespace Go\Lang\Attribute;
 
+use Attribute;
+
 /**
- * After advice annotation
- *
- * @Annotation
- * @Target({ "METHOD", "PROPERTY" })
+ * After advice attribute
  */
+#[Attribute(Attribute::TARGET_METHOD | Attribute::TARGET_PROPERTY)]
 class After extends BaseInterceptor
 {
 }

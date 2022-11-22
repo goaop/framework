@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace Go\Tests\TestProject\Application;
 
-use Go\Tests\TestProject\Annotation as Aop;
+use Go\Tests\TestProject\Attribute as Aop;
 
 class Main extends AbstractBar
 {

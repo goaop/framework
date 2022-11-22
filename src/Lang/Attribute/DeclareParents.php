@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2012-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -12,19 +12,13 @@ declare(strict_types=1);
 
 namespace Go\Lang\Attribute;
 
+use Attribute;
+
 /**
- * Declare parents annotation
- *
- * @Annotation
- * @Target("PROPERTY")
- *
- * @Attributes({
- *   @Attribute("value", type = "string", required=true),
- *   @Attribute("interface", type = "string"),
- *   @Attribute("defaultImpl", type = "string")
- * })
+ * Declare parents attribute
  */
-class DeclareParents extends BaseAnnotation
+#[Attribute(Attribute::TARGET_PROPERTY)]
+class DeclareParents extends BaseAttribute
 {
     /**
      * Default implementation (trait name)
@@ -35,4 +29,18 @@ class DeclareParents extends BaseAnnotation
      * Interface name to add
      */
     public string $interface;
+
+    /**
+     * DeclareParents constructor
+     *
+     * @param string $value
+     * @param string $interface
+     * @param string $defaultImpl
+     */
+    public function __construct(string $value, string $interface, string $defaultImpl)
+    {
+        parent::__construct($value);
+        $this->interface = $interface;
+        $this->defaultImpl = $defaultImpl;
+    }
 }
