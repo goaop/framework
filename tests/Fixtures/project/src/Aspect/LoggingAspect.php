@@ -5,7 +5,7 @@ namespace Go\Tests\TestProject\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation as Pointcut;
+use Go\Lang\Attribute as Pointcut;
 use Psr\Log\LoggerInterface;
 
 /**

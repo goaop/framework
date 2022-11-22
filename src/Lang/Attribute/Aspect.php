@@ -10,18 +10,14 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Lang\Annotation;
+namespace Go\Lang\Attribute;
 
 /**
- * Pointcut annotation
+ * Annotation marker class for aspect
  *
  * @Annotation
- * @Target("METHOD")
- *
- * @Attributes({
- *   @Attribute("value", type = "string", required=true)
- * })
+ * @Target("CLASS")
  */
-class Pointcut extends BaseAnnotation
+class Aspect extends BaseAnnotation
 {
 }

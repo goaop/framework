@@ -10,15 +10,11 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Lang\Annotation;
+namespace Go\Lang\Attribute;
 
 /**
- * Default interceptor class with common attributes
+ * Interceptor annotation marker
  */
-class BaseInterceptor extends BaseAnnotation implements Interceptor
+interface Interceptor
 {
-    /**
-     * Order for advice
-     */
-    public int $order = 0;
 }

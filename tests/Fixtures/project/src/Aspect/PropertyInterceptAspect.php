@@ -5,7 +5,7 @@ namespace Go\Tests\TestProject\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Lang\Annotation as Pointcut;
+use Go\Lang\Attribute as Pointcut;
 
 class PropertyInterceptAspect implements Aspect
 {

@@ -15,7 +15,7 @@ namespace Demo\Aspect;
 use Demo\Annotation\Cacheable;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\Around;
+use Go\Lang\Attribute\Around;
 
 /**
  * Caching aspect

@@ -10,14 +10,15 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Lang\Annotation;
+namespace Go\Lang\Attribute;
 
 /**
- * After throwing advice annotation
- *
- * @Annotation
- * @Target("METHOD")
+ * Default interceptor class with common attributes
  */
-class AfterThrowing extends BaseInterceptor
+class BaseInterceptor extends BaseAnnotation implements Interceptor
 {
+    /**
+     * Order for advice
+     */
+    public int $order = 0;
 }

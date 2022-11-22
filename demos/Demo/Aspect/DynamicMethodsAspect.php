@@ -14,7 +14,7 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\Before;
+use Go\Lang\Attribute\Before;
 
 /**
  * Aspect that intercepts specific magic methods, declared with __call and __callStatic

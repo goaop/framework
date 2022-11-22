@@ -19,8 +19,8 @@ use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\DeclareParentsAdvisor;
 use Go\Aop\Support\DefaultPointcutAdvisor;
-use Go\Lang\Annotation;
-use Go\Lang\Annotation\DeclareParents;
+use Go\Lang\Attribute;
+use Go\Lang\Attribute\DeclareParents;
 use ReflectionClass;
 use UnexpectedValueException;
 

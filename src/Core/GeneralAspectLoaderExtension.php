@@ -22,12 +22,12 @@ use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\DefaultPointcutAdvisor;
-use Go\Lang\Annotation;
-use Go\Lang\Annotation\After;
-use Go\Lang\Annotation\AfterThrowing;
-use Go\Lang\Annotation\Around;
-use Go\Lang\Annotation\BaseInterceptor;
-use Go\Lang\Annotation\Before;
+use Go\Lang\Attribute;
+use Go\Lang\Attribute\After;
+use Go\Lang\Attribute\AfterThrowing;
+use Go\Lang\Attribute\Around;
+use Go\Lang\Attribute\BaseInterceptor;
+use Go\Lang\Attribute\Before;
 use ReflectionClass;
 use UnexpectedValueException;
 
@@ -56,9 +56,9 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
             $annotations = $this->reader->getMethodAnnotations($aspectMethod);
 
             foreach ($annotations as $annotation) {
-                if ($annotation instanceof Annotation\Pointcut) {
+                if ($annotation instanceof Attribute\Pointcut) {
                     $loadedItems[$methodId] = $this->parsePointcut($aspect, $reflectionAspect, $annotation->value);
-                } elseif ($annotation instanceof Annotation\BaseInterceptor) {
+                } elseif ($annotation instanceof Attribute\BaseInterceptor) {
                     $pointcut       = $this->parsePointcut($aspect, $reflectionAspect, $annotation->value);
                     $adviceCallback = $aspectMethod->getClosure($aspect);
                     $interceptor    = $this->getInterceptor($annotation, $adviceCallback);

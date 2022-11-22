@@ -6,7 +6,7 @@ namespace Go\Tests\TestProject\Aspect;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Tests\TestProject\Application\InconsistentlyWeavedClass;
-use Go\Lang\Annotation as Pointcut;
+use Go\Lang\Attribute as Pointcut;
 
 /**
  * Apspect can not depend on class that is subject of its weaving
