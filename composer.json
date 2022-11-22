@@ -8,7 +8,7 @@
     "license": "MIT",
 
     "require": {
-        "php": "^7.4.0",
+        "php": "^8.0",
         "doctrine/annotations": "^1.11.1",
         "doctrine/cache": "^1.10",
         "goaop/parser-reflection": "^3.0.1",
