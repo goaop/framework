@@ -63,7 +63,10 @@ final class FunctionParameterList
                 $reflectionParameter->getPosition(),
                 $reflectionParameter->isPassedByReference()
             );
-            $generatedParameter->setVariadic($reflectionParameter->isVariadic());
+
+            if ($reflectionParameter->isVariadic()) {
+                $generatedParameter->setVariadic(true);
+            }
 
             $this->generatedParameters[] = $generatedParameter;
         }
