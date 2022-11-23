@@ -159,8 +159,8 @@ class MonitorAspect implements Aspect
      * Method that will be called before real method
      *
      * @param MethodInvocation $invocation Invocation
-     * @Before("execution(public Example->*(*))")
      */
+    #[Before("execution(public Example->*(*))")]
     public function beforeMethodExecution(MethodInvocation $invocation)
     {
         echo 'Calling Before Interceptor for: ',
@@ -173,8 +173,8 @@ class MonitorAspect implements Aspect
 ```
 
 Easy, isn't it? We declared here that we want to install a hook before the execution of
-all dynamic public methods in the class Example. This is done with the help of annotation
-`@Before("execution(public Example->*(*))")`
+all dynamic public methods in the class Example. This is done with the help of attribute
+`#[Before("execution(public Example->*(*))")]`
 Hooks can be of any types, you will see them later.
 But we don't change any code in the class Example! I can feel your astonishment now.
 
