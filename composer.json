@@ -14,7 +14,7 @@
         "goaop/parser-reflection": "^3.0.1",
         "jakubledl/dissect": "~1.0",
         "laminas/laminas-code": "^4.0",
-        "symfony/finder": "^4.4|^5.1"
+        "symfony/finder": "^4.4|^5.1|^6.1"
     },
 
     "require-dev": {
