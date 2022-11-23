@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2014-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -26,9 +26,8 @@ class DynamicMethodsAspect implements Aspect
      *
      * Unlike traditional "execution" pointcut, "dynamic" is checking the name of method in
      * the runtime, allowing to write interceptors for __call more transparently.
-     *
-     * @Before("dynamic(public Demo\Example\DynamicMethodsDemo->save*(*))")
      */
+    #[Before("dynamic(public Demo\Example\DynamicMethodsDemo->save*(*))")]
     public function beforeMagicMethodExecution(MethodInvocation $invocation): void
     {
         // we need to unpack args from invocation args
@@ -47,8 +46,8 @@ class DynamicMethodsAspect implements Aspect
      * This advice intercepts an execution of methods via __callStatic
      *
      * @param MethodInvocation $invocation
-     * @Before("dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))")
      */
+    #[Before("dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))")]
     public function beforeMagicStaticMethodExecution(MethodInvocation $invocation): void
     {
         // we need to unpack args from invocation args

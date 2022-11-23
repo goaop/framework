@@ -22,7 +22,7 @@ use ReflectionProperty;
 class AnnotatedReflectionProperty extends ReflectionProperty implements AnnotationAccess
 {
     /**
-     * Annotation reader
+     * Attribute reader
      */
     private static ?Reader $annotationReader = null;
 

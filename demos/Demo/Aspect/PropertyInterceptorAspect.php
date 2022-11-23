@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2014-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -27,9 +27,8 @@ class PropertyInterceptorAspect implements Aspect
      * Advice that controls an access to the properties
      *
      * @param FieldAccess $fieldAccess Joinpoint
-     *
-     * @Around("access(public|protected|private Demo\Example\PropertyDemo->*)")
      */
+    #[Around("access(public|protected|private Demo\Example\PropertyDemo->*)")]
     public function aroundFieldAccess(FieldAccess $fieldAccess): void
     {
         $isRead = $fieldAccess->getAccessType() == FieldAccess::READ;

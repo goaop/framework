@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2014-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -30,7 +30,7 @@ class DynamicMethodsDemo
      */
     public function __call(string $name, array $args): void
     {
-        echo "I'm method: {$name}", PHP_EOL;
+        echo "I'm method: $name", PHP_EOL;
     }
 
     /**
@@ -41,6 +41,6 @@ class DynamicMethodsDemo
      */
     public static function __callStatic(string $name, array $args): void
     {
-        echo "I'm static method: {$name}", PHP_EOL;
+        echo "I'm static method: $name", PHP_EOL;
     }
 }

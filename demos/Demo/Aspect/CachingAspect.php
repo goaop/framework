@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2014-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Demo\Aspect;
 
-use Demo\Annotation\Cacheable;
+use Demo\Attribute\Cacheable;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Attribute\Around;
@@ -31,9 +31,8 @@ class CachingAspect implements Aspect
      * Real-life examples will use APC or Memcache to store value in the cache
      *
      * @return mixed Result of invocation
-     *
-     * @Around("@execution(Demo\Annotation\Cacheable)")
      */
+    #[Around("@execution(Demo\Annotation\Cacheable)")]
     public function aroundCacheable(MethodInvocation $invocation)
     {
         static $memoryCache = [];

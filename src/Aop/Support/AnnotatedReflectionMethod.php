@@ -22,7 +22,7 @@ use ReflectionMethod;
 class AnnotatedReflectionMethod extends ReflectionMethod implements AnnotationAccess
 {
     /**
-     * Annotation reader
+     * Attribute reader
      */
     private static ?Reader $annotationReader = null;
 

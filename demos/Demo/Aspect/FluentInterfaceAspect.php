@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2014-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -30,10 +30,9 @@ class FluentInterfaceAspect implements Aspect
     /**
      * Fluent interface advice
      *
-     * @Around("within(Demo\Aspect\FluentInterface+) && execution(public **->set*(*))")
-     *
      * @return mixed Result of invocation
      */
+    #[Around("within(Demo\Aspect\FluentInterface+) && execution(public **->set*(*))")]
     protected function aroundMethodExecution(MethodInvocation $invocation)
     {
         $result = $invocation->proceed();

@@ -20,14 +20,14 @@ abstract class BaseAttribute
     /**
      * Value property. Common among all derived classes.
      */
-    public string $value;
+    public ?string $value;
 
     /**
      * BaseAttribute Constructor
      *
-     * @param string $value
+     * @param string|null $value
      */
-    public function __construct(string $value)
+    public function __construct(string $value = null)
     {
         $this->value = $value;
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2014-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -32,9 +32,8 @@ class LoggingAspect implements Aspect
      * Also you can choose "After" or "Around" advice to access an return value from method.
      *
      * To inject logger into this aspect you can look at Warlock framework with DI+AOP
-     *
-     * @Before("@execution(Demo\Annotation\Loggable)")
      */
+    #[Before("@execution(Demo\Annotation\Loggable)")]
     public function beforeMethodExecution(MethodInvocation $invocation): void
     {
         echo 'Calling Before Interceptor for ',

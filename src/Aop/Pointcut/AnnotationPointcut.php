@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2012-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -20,19 +20,19 @@ use ReflectionMethod;
 use ReflectionProperty;
 
 /**
- * Annotation property pointcut checks property annotation
+ * Attribute property pointcut checks property annotation
  */
 class AnnotationPointcut implements Pointcut
 {
     use PointcutClassFilterTrait;
 
     /**
-     * Annotation class to match
+     * Attribute class to match
      */
     protected string $annotationName;
 
     /**
-     * Annotation reader
+     * Attribute reader
      */
     protected Reader $annotationReader;
 
@@ -62,14 +62,14 @@ class AnnotationPointcut implements Pointcut
     ];
 
     /**
-     * Annotation matcher constructor
+     * Attribute matcher constructor
      *
      * @param int $filterKind Kind of filter, e.g. KIND_CLASS
      */
     public function __construct(int $filterKind, Reader $annotationReader, string $annotationName)
     {
         if (!isset(self::$mappings[$filterKind])) {
-            throw new InvalidArgumentException("Unsupported filter kind {$filterKind}");
+            throw new InvalidArgumentException("Unsupported filter kind $filterKind");
         }
         $this->filterKind       = $filterKind;
         $this->annotationName   = $annotationName;

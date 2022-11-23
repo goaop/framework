@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2014-2022, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -24,10 +24,9 @@ class FunctionInterceptorAspect implements Aspect
     /**
      * This advice intercepts an access to the array_*** function in Demo\Example\ namespace
      *
-     * @Around("execution(Demo\Example\array_*(*))")
-     *
      * @return mixed
      */
+    #[Around("execution(Demo\Example\array_*(*))")]
     public function aroundArrayFunctions(FunctionInvocation $invocation)
     {
         echo 'Calling Around Interceptor for ',
@@ -41,9 +40,8 @@ class FunctionInterceptorAspect implements Aspect
 
     /**
      * This advice intercepts an access to the file_get_contents() function
-     *
-     * @Around("execution(Demo\Example\file_get_contents(*))")
      */
+    #[Around("execution(Demo\Example\file_get_contents(*))")]
     public function aroundFileGetContents(FunctionInvocation $invocation): string
     {
         echo 'Calling Around Interceptor for ',
