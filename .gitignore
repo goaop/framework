@@ -1,5 +1,12 @@
-vendor/
-composer.lock
-phpunit.xml
-tests/Fixtures/project/var/cache/*
-build/
+# Composer
+/vendor/
+/composer.lock
+/.phpunit.result.cache
+
+# Cache
+/tests/Fixtures/project/var/cache/*
+!/tests/Fixtures/project/var/cache/.gitignore
+!/tests/Fixtures/project/var/cache/.gitkeep
+
+# Build
+/build/

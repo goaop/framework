@@ -4,7 +4,7 @@
 
     "type": "library",
     "keywords": ["library", "aop", "php", "aspect"],
-    "homepage": "http://go.aopphp.com/",
+    "homepage": "https://go.aopphp.com/",
     "license": "MIT",
 
     "require": {
