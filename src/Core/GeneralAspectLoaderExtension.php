@@ -33,7 +33,7 @@ use ReflectionClass;
 use UnexpectedValueException;
 
 /**
- * General aspect loader add common support for general advices, declared as annotations
+ * General aspect loader add common support for general advices, declared as attributes
  */
 class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
 {
@@ -51,24 +51,24 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     {
         $loadedItems = [];
         foreach ($reflectionAspect->getMethods() as $aspectMethod) {
-            $methodId    = $reflectionAspect->getName() . '->'. $aspectMethod->getName();
-            $annotations = $aspectMethod->getAttributes(
+            $methodId   = $reflectionAspect->getName() . '->'. $aspectMethod->getName();
+            $attributes = $aspectMethod->getAttributes(
                 Attribute\BaseAttribute::class,
                 ReflectionAttribute::IS_INSTANCEOF
             );
 
-            foreach ($annotations as $annotation) {
-                $instance = $annotation->newInstance();
-                if ($instance instanceof Attribute\Pointcut) {
-                    $loadedItems[$methodId] = $this->parsePointcut($aspect, $reflectionAspect, $instance->value);
-                } elseif ($instance instanceof Attribute\BaseInterceptor) {
-                    $pointcut       = $this->parsePointcut($aspect, $reflectionAspect, $instance->value);
+            foreach ($attributes as $attribute) {
+                $attributeInstance = $attribute->newInstance();
+                if ($attributeInstance instanceof Attribute\Pointcut) {
+                    $loadedItems[$methodId] = $this->parsePointcut($aspect, $reflectionAspect, $attributeInstance->value);
+                } elseif ($attributeInstance instanceof Attribute\BaseInterceptor) {
+                    $pointcut       = $this->parsePointcut($aspect, $reflectionAspect, $attributeInstance->value);
                     $adviceCallback = $aspectMethod->getClosure($aspect);
-                    $interceptor    = $this->getInterceptor($instance, $adviceCallback);
+                    $interceptor    = $this->getInterceptor($attributeInstance, $adviceCallback);
 
                     $loadedItems[$methodId] = new DefaultPointcutAdvisor($pointcut, $interceptor);
                 } else {
-                    throw new UnexpectedValueException('Unsupported annotation class: ' . get_class($annotation));
+                    throw new UnexpectedValueException('Unsupported attribute class: ' . get_class($attribute));
                 }
             }
         }
@@ -77,9 +77,9 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     }
 
     /**
-     * Returns an interceptor instance by meta-type annotation and closure
+     * Returns an interceptor instance by meta-type attribute and closure
      *
-     * @throws UnexpectedValueException For unsupported annotations
+     * @throws UnexpectedValueException For unsupported attributes
      */
     protected function getInterceptor(BaseInterceptor $metaInformation, Closure $adviceCallback): Interceptor
     {
