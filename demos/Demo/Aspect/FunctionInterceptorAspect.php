@@ -41,7 +41,7 @@ class FunctionInterceptorAspect implements Aspect
     /**
      * This advice intercepts an access to the file_get_contents() function
      */
-    #[Around("execution(Demo\Example\file_get_contents(*))")]
+    #[Around("execution(Demo\Example\\file_get_contents(*))")]
     public function aroundFileGetContents(FunctionInvocation $invocation): string
     {
         echo 'Calling Around Interceptor for ',
