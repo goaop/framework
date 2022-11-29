@@ -1,9 +1,25 @@
 version: '3.7'
 
 services:
-  php:
-    image: php:8.0-apache
+  web:
+    image: nginx:latest
     ports:
       - "80:80"
     volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
       - .:/var/www/html
+    networks:
+      - php
+
+  php:
+    build: ./docker/php
+    volumes:
+      - .:/var/www/html
+      - ./docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+      - ./docker/php/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
+    networks:
+      - php
+
+networks:
+  php:
+    driver: bridge
