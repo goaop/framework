@@ -9,7 +9,7 @@
 
     "require": {
         "php": "^7.4.0",
-        "doctrine/annotations": "^1.11.1",
+        "doctrine/annotations": "^1.11.1 || ^2.0.0",
         "doctrine/cache": "^1.10",
         "goaop/parser-reflection": "^3.0.1",
         "jakubledl/dissect": "~1.0",
