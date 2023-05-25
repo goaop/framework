@@ -109,7 +109,7 @@ class ClassProxyGenerator
 
         $this->generator = new ClassGenerator(
             $originalClass->getShortName(),
-            $originalClass->getNamespaceName(),
+            !empty($originalClass->getNamespaceName()) ? $originalClass->getNamespaceName() : null,
             $originalClass->isFinal() ? ClassGenerator::FLAG_FINAL : null,
             $parentClassName,
             $introducedInterfaces,

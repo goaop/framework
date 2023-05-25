@@ -93,6 +93,7 @@ class ClassProxyGeneratorTest extends TestCase
             [First::class, 'publicMethod'],
             [First::class, 'protectedMethod'],
             [First::class, 'passByReference'],
+            [\ClassWithoutNamespace::class, 'publicMethod'],
         ];
     }
 }
