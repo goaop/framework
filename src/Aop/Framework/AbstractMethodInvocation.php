@@ -27,7 +27,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Instance of object for invoking
      */
-    protected ?object $instance;
+    protected ?object $instance = null;
 
     /**
      * Instance of reflection method for invocation

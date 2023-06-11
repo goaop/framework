@@ -65,7 +65,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serial
     /**
      * Advice order
      */
-    private int $adviceOrder;
+    private int $adviceOrder = 0;
 
     /**
      * Default constructor for interceptor

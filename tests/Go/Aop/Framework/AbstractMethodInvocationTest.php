@@ -29,4 +29,41 @@ class AbstractMethodInvocationTest extends TestCase
     {
         $this->assertInstanceOf(AnnotationAccess::class, $this->invocation->getMethod());
     }
+
+    public function testInstanceIsInitialized(): void
+    {
+        $this->expectNotToPerformAssertions();
+        $o = new class extends AbstractMethodInvocation {
+
+            protected static string $propertyName = 'scope';
+            public function __construct()
+            {
+                parent::__construct([new AroundInterceptor(function () {})], '\Go\Aop\Framework\AbstractMethodInvocationTest', 'testInstanceIsInitialized');
+            }
+
+            public function isDynamic(): bool
+            {
+                return false;
+            }
+
+            public function getThis(): ?object
+            {
+                return null;
+            }
+
+            public function getScope(): string
+            {
+                return 'testScope';
+            }
+
+            public function proceed()
+            {
+                if ($this->level < 3) {
+                    $this->__invoke('testInstance');
+                }
+            }
+        };
+
+        $o->__invoke('testInstance');
+    }
 }
