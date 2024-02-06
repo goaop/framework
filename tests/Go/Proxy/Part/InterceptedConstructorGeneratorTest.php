@@ -52,7 +52,7 @@ class InterceptedConstructorGeneratorTest extends TestCase
         return [
             [
                 Exception::class,
-                'public function __construct($message = null, $code = null, $previous = null)
+                'public function __construct(string $message = \'\', int $code = 0, \Throwable $previous = null)
                 {
                     parent::__construct(...\array_slice([$message, $code, $previous], 0, \func_num_args()));
                 }'

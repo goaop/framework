@@ -91,13 +91,13 @@ class FunctionParameterListTest extends TestCase
                 ]
             ],
             [
-                'microtime', // microtime($get_as_float = null)
+                'microtime', // microtime($as_float = false)
                 1,
                 [
                     [
                         'getPassedByReference' => false,
                         'getVariadic'          => false,
-                        'getName'              => 'get_as_float',
+                        'getName'              => 'as_float',
                         'getDefaultValue'      => ValueGenerator::class
                     ]
                 ]

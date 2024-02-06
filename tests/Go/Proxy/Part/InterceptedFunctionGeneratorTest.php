@@ -64,19 +64,19 @@ class InterceptedFunctionGeneratorTest extends TestCase
         return [
             [
                 'var_dump',
-                'function var_dump(... $vars)'
+                'function var_dump(mixed $value, mixed ... $values) : void'
             ],
             [
                 'array_pop',
-                'function array_pop(&$stack)'
+                'function array_pop(array &$array) : mixed'
             ],
             [
                 'strcoll',
-                'function strcoll($str1, $str2)'
+                'function strcoll(string $string1, string $string2) : int'
             ],
             [
                 'microtime',
-                'function microtime($get_as_float = null)'
+                'function microtime(bool $as_float = false) : float|string'
             ],
             [
                 '\Go\Proxy\Part\funcWithReturnTypeAndDocBlock',
