@@ -1,6 +1,7 @@
 name: "PHPStan analysis"
 
 on:
+  pull_request:
   push:
 
 jobs:

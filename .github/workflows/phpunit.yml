@@ -1,6 +1,7 @@
 name: "PHPUnit tests"
 
 on:
+  pull_request:
   push:
 
 jobs:
