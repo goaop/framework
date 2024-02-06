@@ -37,9 +37,7 @@ class OrPointFilterTest extends TestCase
         $this->assertEquals($expected, $filter->getKind());
     }
 
-    /**
-     * @dataProvider logicCases
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('logicCases')]
     public function testMatches(PointFilter $first, PointFilter $second, bool $expected): void
     {
         $filter = new OrPointFilter($first, $second);
@@ -47,7 +45,7 @@ class OrPointFilterTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
-    public function logicCases(): array
+    public static function logicCases(): array
     {
         $true  = TruePointFilter::getInstance();
         $false = new NotPointFilter($true);

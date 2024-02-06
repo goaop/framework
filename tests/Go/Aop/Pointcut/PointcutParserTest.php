@@ -39,9 +39,8 @@ class PointcutParserTest extends TestCase
 
     /**
      * Tests parsing
-     *
-     * @dataProvider validPointcutDefinitions
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('validPointcutDefinitions')]
     public function testParsingExpression(string $pointcutExpression): void
     {
         $stream = $this->lexer->lex($pointcutExpression);
@@ -49,7 +48,7 @@ class PointcutParserTest extends TestCase
         $this->assertNotNull($result);
     }
 
-    public function validPointcutDefinitions(): array
+    public static function validPointcutDefinitions(): array
     {
         return [
             // Execution pointcuts

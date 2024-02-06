@@ -39,7 +39,7 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTest
         $invocation = new ReflectionConstructorInvocation([$before], \Exception::class);
         $this->assertEmpty($sequence);
         $invocation->__invoke(['Message', 100]);
-        $this->assertContains('advice', $sequence);
+        $this->assertStringContainsString('advice', $sequence);
     }
 
     public function testStringRepresentation(): void

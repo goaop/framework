@@ -20,9 +20,9 @@ class FunctionCallArgumentListGeneratorTest extends TestCase
     /**
      * Tests that generator can generate function call argument list
      *
-     * @dataProvider dataGenerator
      * @throws \ReflectionException if function is not present
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dataGenerator')]
     public function testGenerate(string $functionName, string $expectedLine): void
     {
         $reflection = new ReflectionFunction($functionName);
@@ -34,7 +34,7 @@ class FunctionCallArgumentListGeneratorTest extends TestCase
     /**
      * Provides list of functions with expected generated code for calling such functions
      */
-    public function dataGenerator(): array
+    public static function dataGenerator(): array
     {
         return [
             ['var_dump', '$vars'],                    // var_dump(...$vars)

@@ -14,10 +14,10 @@ class AbstractJoinpointTest extends TestCase
     protected AbstractJoinpoint $joinpoint;
 
     /**
-     * @dataProvider sortingTestSource
      * @param array $advices
      * @param array $order
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('sortingTestSource')]
     public function testSortingLogic(array $advices, array $order = []): void
     {
         $advices = AbstractJoinpoint::sortAdvices($advices);

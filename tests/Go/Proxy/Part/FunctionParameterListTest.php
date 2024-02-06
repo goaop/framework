@@ -27,8 +27,8 @@ class FunctionParameterListTest extends TestCase
      * @param array  $checks             List of checks, where key is argument number, starting from 0 and value are getters
      *
      * @throws \ReflectionException if function is not present
-     * @dataProvider dataGenerator
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dataGenerator')]
     public function testgetGeneratedParameters(string $functionName, int $expectedArgsNumber, array $checks): void
     {
         $reflection    = new \ReflectionFunction($functionName);
@@ -51,7 +51,7 @@ class FunctionParameterListTest extends TestCase
     /**
      * Provides list of functions with expected generated args
      */
-    public function dataGenerator(): array
+    public static function dataGenerator(): array
     {
         return [
             [
