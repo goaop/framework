@@ -18,7 +18,6 @@ use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Composer\Autoload\ClassLoader;
-use Doctrine\Common\Annotations\AnnotationRegistry;
 
 /**
  * AopComposerLoader class is responsible to use a weaver for classes instead of original one
@@ -92,13 +91,6 @@ class AopComposerLoader
         foreach ($loaders as &$loader) {
             $loaderToUnregister = $loader;
             if (is_array($loader) && ($loader[0] instanceof ClassLoader)) {
-                $originalLoader = $loader[0];
-                // Configure library loader for doctrine annotation loader
-                AnnotationRegistry::registerLoader(function($class) use ($originalLoader) {
-                    $originalLoader->loadClass($class);
-
-                    return class_exists($class, false);
-                });
                 $loader[0] = new AopComposerLoader($loader[0], $container, $options);
                 self::$wasInitialized = true;
             }
