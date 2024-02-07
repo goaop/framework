@@ -27,14 +27,14 @@ class AbstractJoinpointTest extends TestCase
         }
     }
 
-    public static function sortingTestSource(): array
+    public function sortingTestSource(): array
     {
         return [
             // #0
             [
                 [
-                    static::createMock(AdviceAfter::class),
-                    static::createMock(AdviceBefore::class)
+                    $this->createMock(AdviceAfter::class),
+                    $this->createMock(AdviceBefore::class)
                 ],
                 [
                     AdviceBefore::class,
@@ -44,8 +44,8 @@ class AbstractJoinpointTest extends TestCase
             // #1
             [
                 [
-                    static::createMock(AdviceAfter::class),
-                    static::createMock(AdviceAround::class)
+                    $this->createMock(AdviceAfter::class),
+                    $this->createMock(AdviceAround::class)
                 ],
                 [
                     AdviceAfter::class,
@@ -55,8 +55,8 @@ class AbstractJoinpointTest extends TestCase
             // #2
             [
                 [
-                    static::createMock(AdviceBefore::class),
-                    static::createMock(AdviceAfter::class)
+                    $this->createMock(AdviceBefore::class),
+                    $this->createMock(AdviceAfter::class)
                 ],
                 [
                     AdviceBefore::class,
@@ -66,8 +66,8 @@ class AbstractJoinpointTest extends TestCase
             // #3
             [
                 [
-                    static::createMock(AdviceBefore::class),
-                    static::createMock(AdviceAround::class)
+                    $this->createMock(AdviceBefore::class),
+                    $this->createMock(AdviceAround::class)
                 ],
                 [
                     AdviceBefore::class,
@@ -77,8 +77,8 @@ class AbstractJoinpointTest extends TestCase
             // #4
             [
                 [
-                    static::createMock(AdviceAround::class),
-                    static::createMock(AdviceAfter::class)
+                    $this->createMock(AdviceAround::class),
+                    $this->createMock(AdviceAfter::class)
                 ],
                 [
                     AdviceAfter::class,
@@ -88,8 +88,8 @@ class AbstractJoinpointTest extends TestCase
             // #5
             [
                 [
-                    static::createMock(AdviceAround::class),
-                    static::createMock(AdviceBefore::class)
+                    $this->createMock(AdviceAround::class),
+                    $this->createMock(AdviceBefore::class)
                 ],
                 [
                     AdviceBefore::class,
@@ -99,10 +99,10 @@ class AbstractJoinpointTest extends TestCase
             // #6
             [
                 [
-                    static::createMock(AdviceBefore::class),
-                    static::createMock(AdviceAround::class),
-                    static::createMock(AdviceBefore::class),
-                    static::createMock(AdviceAfter::class),
+                    $this->createMock(AdviceBefore::class),
+                    $this->createMock(AdviceAround::class),
+                    $this->createMock(AdviceBefore::class),
+                    $this->createMock(AdviceAfter::class),
                 ],
                 [
                     AdviceBefore::class,
@@ -114,8 +114,8 @@ class AbstractJoinpointTest extends TestCase
             // #7
             [
                 [
-                    $forth = static::getOrderedAdvice(4),
-                    $first = static::getOrderedAdvice(1)
+                    $forth = $this->getOrderedAdvice(4),
+                    $first = $this->getOrderedAdvice(1)
                 ],
                 [
                     get_class($first),
@@ -128,9 +128,9 @@ class AbstractJoinpointTest extends TestCase
     /**
      * Returns the ordered advice
      */
-    private static function getOrderedAdvice(int $order): OrderedAdvice
+    private function getOrderedAdvice(int $order): OrderedAdvice
     {
-        $mock = static::createMock(OrderedAdvice::class);
+        $mock = $this->createMock(OrderedAdvice::class);
         $mock
             ->method('getAdviceOrder')
             ->willReturn($order);
