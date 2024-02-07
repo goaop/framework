@@ -72,4 +72,14 @@ class SelfValueTransformerTest extends TestCase
         $expected = file_get_contents(__DIR__ . '/_files/file-with-self-transformed.php');
         $this->assertSame($expected, (string) $metadata->source);
     }
+
+    public function testTransformerReplacesAllSelfPlacesWithoutNamespace(): void
+    {
+        $testFile = fopen(__DIR__ . '/_files/file-with-self-no-namespace.php', 'rb');
+        $content  = stream_get_contents($testFile);
+        $metadata = new StreamMetaData($testFile, $content);
+        $this->transformer->transform($metadata);
+        $expected = file_get_contents(__DIR__ . '/_files/file-with-self-no-namespace-transformed.php');
+        $this->assertSame($expected, (string) $metadata->source);
+    }
 }

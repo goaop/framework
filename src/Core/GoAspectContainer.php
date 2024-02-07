@@ -13,7 +13,7 @@ declare(strict_types = 1);
 namespace Go\Core;
 
 use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Annotations\CachedReader;
+use Doctrine\Common\Annotations\PsrCachedReader;
 use Doctrine\Common\Cache as DoctrineCache;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
@@ -104,10 +104,11 @@ class GoAspectContainer extends Container
 
         $this->share('aspect.annotation.reader', function (Container $container) {
             $options = $container->get('kernel.options');
+            $annotationCache = $container->get('aspect.annotation.cache');
 
-            return new CachedReader(
+            return new PsrCachedReader(
                 new AnnotationReader(),
-                $container->get('aspect.annotation.cache'),
+                new DoctrineCache\Psr6\CacheAdapter($annotationCache),
                 $options['debug'] ?? false
             );
         });

@@ -9,7 +9,7 @@
 
     "require": {
         "php": "^7.4.0",
-        "doctrine/annotations": "^1.11.1 || ^2.0.0",
+        "doctrine/annotations": "^2.0",
         "doctrine/cache": "^1.10",
         "goaop/parser-reflection": "^3.0.1",
         "jakubledl/dissect": "~1.0",
@@ -54,7 +54,8 @@
             "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
         },
         "files": [
-            "tests/functions.php"
+            "tests/functions.php",
+            "tests/Go/Stubs/ClassWithoutNamespace.php"
         ]
     },
 
