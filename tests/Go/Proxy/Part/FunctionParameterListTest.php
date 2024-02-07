@@ -60,8 +60,8 @@ class FunctionParameterListTest extends TestCase
                 [
                     [
                         'getPassedByReference' => false,
-                        'getVariadic'          => true,
-                        'getName'              => 'vars',
+                        'getVariadic'          => false,
+                        'getName'              => 'value',
                         'getDefaultValue'      => null,
                     ]
                 ]
