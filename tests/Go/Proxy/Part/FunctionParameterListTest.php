@@ -55,8 +55,8 @@ class FunctionParameterListTest extends TestCase
     {
         return [
             [
-                'var_dump', // var_dump(...$vars)
-                1,
+                'var_dump', // var_dump(mixed $value, mixed ...$values)
+                2,
                 [
                     [
                         'getPassedByReference' => false,
