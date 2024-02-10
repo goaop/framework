@@ -13,8 +13,8 @@
         "doctrine/cache": "^1.10",
         "goaop/parser-reflection": "^4.0.0-RC1",
         "jakubledl/dissect": "~1.0",
-        "laminas/laminas-code": "^4.0",
-        "symfony/finder": "^4.4|^5.1"
+        "laminas/laminas-code": "^4.13",
+        "symfony/finder": "^5.1"
     },
 
     "require-dev": {
@@ -25,6 +25,7 @@
         "symfony/console": "^4.4|^5.1",
         "symfony/filesystem": "^4.4|^5.1",
         "symfony/process": "^4.4|^5.1",
+        "tracy/tracy": "^2.10",
         "webmozart/glob": "^4.1"
     },
 
