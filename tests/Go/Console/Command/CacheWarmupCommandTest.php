@@ -12,10 +12,10 @@ declare(strict_types = 1);
 
 namespace Go\Console\Command;
 
-use Go\Functional\BaseFunctionalTest;
+use Go\Functional\BaseFunctionalTestCase;
 use Go\Tests\TestProject\Application\Main;
 
-class CacheWarmupCommandTest extends BaseFunctionalTest
+class CacheWarmupCommandTest extends BaseFunctionalTestCase
 {
     public function setUp(): void
     {

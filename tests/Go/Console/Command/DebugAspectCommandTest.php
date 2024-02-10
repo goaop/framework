@@ -12,9 +12,9 @@ declare(strict_types = 1);
 
 namespace Go\Console\Command;
 
-use Go\Functional\BaseFunctionalTest;
+use Go\Functional\BaseFunctionalTestCase;
 
-class DebugAspectCommandTest extends BaseFunctionalTest
+class DebugAspectCommandTest extends BaseFunctionalTestCase
 {
     public function testItDisplaysAspectsDebugInfo()
     {
