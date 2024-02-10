@@ -18,7 +18,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-abstract class AbstractInterceptorTest extends TestCase
+abstract class AbstractInterceptorTestCase extends TestCase
 {
     /**
      * Concrete class name for mock, should be redefined with LSB

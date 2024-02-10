@@ -15,7 +15,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\Invocation;
 use Go\Stubs\AbstractInterceptorMock;
 
-class BaseInterceptorTest extends AbstractInterceptorTest
+class BaseInterceptorTest extends AbstractInterceptorTestCase
 {
     /**
      * Concrete class name for mock, should be redefined with LSB
