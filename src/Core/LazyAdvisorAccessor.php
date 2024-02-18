@@ -12,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
+use AllowDynamicProperties;
 use Go\Aop\Advice;
 use Go\Aop\Advisor;
 use InvalidArgumentException;
@@ -19,6 +20,7 @@ use InvalidArgumentException;
 /**
  * Provides an interface for loading of advisors from the container
  */
+#[AllowDynamicProperties]
 class LazyAdvisorAccessor
 {
     /**
@@ -47,16 +49,14 @@ class LazyAdvisorAccessor
      */
     public function __get(string $name): Advice
     {
-        if ($this->container->has($name)) {
-            $advisor = $this->container->get($name);
-        } else {
+        if (!$this->container->has($name)) {
             list(, $advisorName) = explode('.', $name);
-            list($aspect)        = explode('->', $advisorName);
-            $aspectInstance      = $this->container->getAspect($aspect);
+            list($aspect) = explode('->', $advisorName);
+            $aspectInstance = $this->container->getAspect($aspect);
             $this->loader->loadAndRegister($aspectInstance);
 
-            $advisor = $this->container->get($name);
         }
+        $advisor = $this->container->get($name);
 
         if (!$advisor instanceof Advisor) {
             throw new InvalidArgumentException("Reference {$name} is not an advisor");
