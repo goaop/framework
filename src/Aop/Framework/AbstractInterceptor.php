@@ -17,7 +17,6 @@ use Go\Aop\Intercept\Interceptor;
 use Go\Core\AspectKernel;
 use ReflectionFunction;
 use ReflectionMethod;
-use Serializable;
 
 /**
  * Base class for all framework interceptor implementations
@@ -43,7 +42,7 @@ use Serializable;
  *      return $result;
  *   }
  */
-abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serializable
+abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
 {
     /**
      * Local cache of advices for faster unserialization on big projects
@@ -128,28 +127,26 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Serial
     }
 
     /**
-     * Serializes an interceptor into string representation
+     * Serializes an interceptor into it's representation
      */
-    final public function serialize(): string
+    final public function __serialize(): array
     {
-        $vars = array_filter(get_object_vars($this));
+        $state = array_filter(get_object_vars($this));
 
-        $vars['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
+        $state['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
 
-        return serialize($vars);
+        return $state;
     }
 
     /**
-     * Unserialize an interceptor from the string
+     * Un-serializes an interceptor from it's stored state
      *
-     * @param string $serialized The string representation of the object.
+     * @param array $state The stored representation of the interceptor.
      */
-    final public function unserialize($serialized): void
+    final public function __unserialize(array $state): void
     {
-        $vars = unserialize($serialized, ['allowed_classes' => false]);
-
-        $vars['adviceMethod'] = static::unserializeAdvice($vars['adviceMethod']);
-        foreach ($vars as $key => $value) {
+        $state['adviceMethod'] = static::unserializeAdvice($state['adviceMethod']);
+        foreach ($state as $key => $value) {
             $this->$key = $value;
         }
     }
