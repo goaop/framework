@@ -111,8 +111,8 @@ class FunctionProxyGenerator
         $return = 'return ';
         if ($function->hasReturnType()) {
             $returnType = $function->getReturnType();
-            if ($returnType instanceof ReflectionNamedType && $returnType->getName() === 'void') {
-                // void return types should not return anything
+            if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {
+                // void/never return types should not return anything
                 $return = '';
             }
         }
