@@ -48,7 +48,7 @@ class SelfValueTransformer extends BaseSourceTransformer
         foreach ($replacedNodes as $replacedNode)
         {
             $position = $replacedNode->getAttribute('startTokenPos');
-            $metadata->tokenStream[$position][1] = $replacedNode->toString();
+            $metadata->tokenStream[$position]->text = $replacedNode->toString();
         }
     }
 }

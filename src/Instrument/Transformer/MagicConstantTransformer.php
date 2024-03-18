@@ -94,8 +94,8 @@ class MagicConstantTransformer extends BaseSourceTransformer
                 $endPosition      = $methodCallNode->getAttribute('endTokenPos');
                 $expressionPrefix = '\\' . self::class . '::resolveFileName(';
 
-                $metadata->tokenStream[$startPosition][1] = $expressionPrefix . $metadata->tokenStream[$startPosition][1];
-                $metadata->tokenStream[$endPosition][1] .= ')';
+                $metadata->tokenStream[$startPosition]->text = $expressionPrefix . $metadata->tokenStream[$startPosition][1];
+                $metadata->tokenStream[$endPosition]->text .= ')';
             }
 
         }
@@ -119,7 +119,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
             $tokenPosition = $magicConstantNode->getAttribute('startTokenPos');
             $replacement   = $magicConstantNode instanceof Dir ? $magicDirValue : $magicFileValue;
 
-            $metadata->tokenStream[$tokenPosition][1] = "'{$replacement}'";
+            $metadata->tokenStream[$tokenPosition]->text = "'{$replacement}'";
         }
     }
 }

@@ -71,14 +71,14 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         foreach ($newExpressions as $newExpressionNode) {
             $startPosition = $newExpressionNode->getAttribute('startTokenPos');
 
-            $metadata->tokenStream[$startPosition][1] = '\\' . self::class . '::getInstance()->{';
-            if ($metadata->tokenStream[$startPosition + 1][0] === T_WHITESPACE) {
+            $metadata->tokenStream[$startPosition]->text = '\\' . self::class . '::getInstance()->{';
+            if ($metadata->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
                 unset($metadata->tokenStream[$startPosition + 1]);
             }
             $isExplicitClass                            = $newExpressionNode->class instanceof Name;
             $endClassNamePos                            = $newExpressionNode->class->getAttribute('endTokenPos');
             $expressionSuffix                           = $isExplicitClass ? '::class}' : '}';
-            $metadata->tokenStream[$endClassNamePos][1] .= $expressionSuffix;
+            $metadata->tokenStream[$endClassNamePos]->text .= $expressionSuffix;
         }
 
         return self::RESULT_TRANSFORMED;
