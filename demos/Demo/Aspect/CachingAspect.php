@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Demo\Aspect;
 
-use Demo\Annotation\Cacheable;
+use Demo\Attribute\Cacheable;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Annotation\Around;
@@ -32,7 +32,7 @@ class CachingAspect implements Aspect
      *
      * @return mixed Result of invocation
      *
-     * @Around("@execution(Demo\Annotation\Cacheable)")
+     * @Around("@execution(Demo\Attribute\Cacheable)")
      */
     public function aroundCacheable(MethodInvocation $invocation)
     {
@@ -44,8 +44,8 @@ class CachingAspect implements Aspect
         $class = is_object($obj) ? get_class($obj) : $obj;
         $key   = $class . ':' . $invocation->getMethod()->name;
         if (!isset($memoryCache[$key])) {
-            // We can use ttl value from annotation, but Doctrine annotations doesn't work under GAE
-            echo "Ttl is: ", $invocation->getMethod()->getAnnotation(Cacheable::class)->time, PHP_EOL;
+            $attributeArgs = $invocation->getMethod()->getAttributes(Cacheable::class)[0]->getArguments();
+            echo "Ttl is: ", $attributeArgs['time'], PHP_EOL;
 
             $memoryCache[$key] = $invocation->proceed();
         }

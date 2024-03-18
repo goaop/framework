@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Demo\Example;
 
-use Demo\Annotation\Cacheable;
+use Demo\Attribute\Cacheable;
 
 /**
  * Example class to show how to use caching with AOP
@@ -23,12 +23,8 @@ class CacheableDemo
      * Returns a report and explicitly cache a result for future use
      *
      * In this example we use "Cacheable" annotation to explicit mark a method
-     *
-     * @param string $from This can be any value
-     * @Cacheable(time=10)
-     *
-     * @return string
      */
+    #[Cacheable(time: 10)]
     public function getReport(string $from): string
     {
         // long calculation for 100ms

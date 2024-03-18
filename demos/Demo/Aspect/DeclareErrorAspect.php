@@ -23,7 +23,7 @@ class DeclareErrorAspect implements Aspect
     /**
      * Message to show when calling the method
      *
-     * @DeclareError("@execution(Demo\Annotation\Deprecated)", level=16384) // E_USER_DEPRECATED
+     * @DeclareError("@execution(Demo\Attribute\Deprecated)", level=16384) // E_USER_DEPRECATED
      */
     protected string $message = 'Method is deprecated and should not be called in debug mode';
 

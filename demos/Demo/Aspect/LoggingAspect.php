@@ -33,7 +33,7 @@ class LoggingAspect implements Aspect
      *
      * To inject logger into this aspect you can look at Warlock framework with DI+AOP
      *
-     * @Before("@execution(Demo\Annotation\Loggable)")
+     * @Before("@execution(Demo\Attribute\Loggable)")
      */
     public function beforeMethodExecution(MethodInvocation $invocation): void
     {

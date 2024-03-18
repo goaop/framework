@@ -33,8 +33,7 @@ class PointcutParserTest extends TestCase
         parent::setUp();
         $this->lexer  = new PointcutLexer();
         $container    = $this->createMock(AspectContainer::class);
-        $annotReader  = $this->createMock(Reader::class);
-        $this->parser = new PointcutParser(new PointcutGrammar($container, $annotReader));
+        $this->parser = new PointcutParser(new PointcutGrammar($container));
     }
 
     /**
