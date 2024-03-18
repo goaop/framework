@@ -142,7 +142,6 @@ class ClassProxyGenerator
         $reflectionClass    = new ReflectionClass($targetClassName);
         $joinPointsProperty = $reflectionClass->getProperty(JoinPointPropertyGenerator::NAME);
 
-        $joinPointsProperty->setAccessible(true);
         $advices    = $joinPointsProperty->getValue();
         $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
         $joinPointsProperty->setValue(null, $joinPoints);

@@ -50,12 +50,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
         }
 
         $this->class       = new ReflectionClass($originalClass);
-        $this->constructor = $constructor = $this->class->getConstructor();
-
-        // Give an access to call protected/private constructors
-        if ($constructor !== null && !$constructor->isPublic()) {
-            $constructor->setAccessible(true);
-        }
+        $this->constructor = $this->class->getConstructor();
 
         parent::__construct($advices);
     }

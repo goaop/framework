@@ -54,12 +54,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices);
-        $this->reflectionMethod = $method = new AnnotatedReflectionMethod($className, $methodName);
-
-        // Give an access to call protected method
-        if ($method->isProtected()) {
-            $method->setAccessible(true);
-        }
+        $this->reflectionMethod = new AnnotatedReflectionMethod($className, $methodName);
     }
 
     /**

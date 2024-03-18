@@ -59,7 +59,6 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                 } elseif ($annotation instanceof Annotation\DeclareError) {
                     $pointcut = $this->parsePointcut($aspect, $reflectionAspect, $annotation->value);
 
-                    $aspectProperty->setAccessible(true);
                     $errorMessage     = $aspectProperty->getValue($aspect);
                     $errorLevel       = $annotation->level;
                     $introductionInfo = new DeclareErrorInterceptor($errorMessage, $errorLevel, $annotation->value);

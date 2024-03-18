@@ -116,7 +116,6 @@ final class ConstructorExecutionTransformer implements SourceTransformer
             $dynamicInit = AspectContainer::INIT_PREFIX . ':root';
             try {
                 $joinPointsRef = new ReflectionProperty($fullClassName, '__joinPoints');
-                $joinPointsRef->setAccessible(true);
                 $joinPoints = $joinPointsRef->getValue();
                 if (isset($joinPoints[$dynamicInit])) {
                     $invocation = $joinPoints[$dynamicInit];

@@ -61,11 +61,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     {
         parent::__construct($advices);
 
-        $this->reflectionProperty = $reflectionProperty = new AnnotatedReflectionProperty($className, $fieldName);
-        // Give an access to protected field
-        if ($reflectionProperty->isProtected()) {
-            $reflectionProperty->setAccessible(true);
-        }
+        $this->reflectionProperty = new AnnotatedReflectionProperty($className, $fieldName);
     }
 
     /**
