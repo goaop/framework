@@ -13,8 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Aop\Support\AnnotatedReflectionMethod;
-
+use ReflectionMethod;
 use function array_merge;
 use function array_pop;
 use function count;
@@ -32,7 +31,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Instance of reflection method for invocation
      */
-    protected AnnotatedReflectionMethod $reflectionMethod;
+    protected ReflectionMethod $reflectionMethod;
 
     /**
      * Class name scope for static invocation
@@ -54,7 +53,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices);
-        $this->reflectionMethod = new AnnotatedReflectionMethod($className, $methodName);
+        $this->reflectionMethod = new ReflectionMethod($className, $methodName);
     }
 
     /**
@@ -99,10 +98,8 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
 
     /**
      * Gets the method being called.
-     *
-     * @return AnnotatedReflectionMethod Covariant, the method being called.
      */
-    public function getMethod(): AnnotatedReflectionMethod
+    public function getMethod(): ReflectionMethod
     {
         return $this->reflectionMethod;
     }
