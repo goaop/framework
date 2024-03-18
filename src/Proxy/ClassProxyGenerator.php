@@ -145,7 +145,7 @@ class ClassProxyGenerator
         $joinPointsProperty->setAccessible(true);
         $advices    = $joinPointsProperty->getValue();
         $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
-        $joinPointsProperty->setValue($joinPoints);
+        $joinPointsProperty->setValue(null, $joinPoints);
 
         $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';
         if (isset($joinPoints[$staticInit])) {
