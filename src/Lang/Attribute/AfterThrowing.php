@@ -10,14 +10,14 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Lang\Annotation;
+namespace Go\Lang\Attribute;
 
 /**
- * Around advice annotation
+ * After throwing advice annotation
  *
  * @Annotation
- * @Target({ "METHOD", "PROPERTY" })
+ * @Target("METHOD")
  */
-class Around extends BaseInterceptor
+class AfterThrowing extends BaseInterceptor
 {
 }

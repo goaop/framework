@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
-use Go\Lang\Annotation\DeclareParents;
+use Go\Lang\Attribute\DeclareParents;
 
 /**
  * Introduction aspect can dynamically add new interfaces and traits to the class

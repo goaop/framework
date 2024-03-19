@@ -3,7 +3,7 @@
 namespace Go\Tests\TestProject\Aspect;
 
 use Go\Aop\Aspect;
-use Go\Lang\Annotation as Pointcut;
+use Go\Lang\Attribute as Pointcut;
 
 class WeavingAspect implements Aspect
 {

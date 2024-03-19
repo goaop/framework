@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
-use Go\Lang\Annotation\DeclareError;
+use Go\Lang\Attribute\DeclareError;
 
 /**
  * This aspect can be very useful for development to generate an error when executing prohibited methods

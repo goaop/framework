@@ -14,7 +14,7 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\FunctionInvocation;
-use Go\Lang\Annotation\Around;
+use Go\Lang\Attribute\Around;
 
 /**
  * Function interceptor can intercept an access to the system functions

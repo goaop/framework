@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Go\Tests\TestProject\Aspect;
 
 use Go\Aop\Aspect;
-use Go\Lang\Annotation as Pointcut;
+use Go\Lang\Attribute as Pointcut;
 
 class InitializationAspect implements Aspect
 {

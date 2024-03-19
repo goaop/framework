@@ -15,9 +15,9 @@ namespace Demo\Aspect;
 use Demo\Example\HumanDemo;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\After;
-use Go\Lang\Annotation\Before;
-use Go\Lang\Annotation\Pointcut;
+use Go\Lang\Attribute\After;
+use Go\Lang\Attribute\Before;
+use Go\Lang\Attribute\Pointcut;
 
 /**
  * Healthy live aspect

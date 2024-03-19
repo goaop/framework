@@ -10,11 +10,14 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Lang\Annotation;
+namespace Go\Lang\Attribute;
 
 /**
- * Interceptor annotation marker
+ * After advice annotation
+ *
+ * @Annotation
+ * @Target({ "METHOD", "PROPERTY" })
  */
-interface Interceptor
+class After extends BaseInterceptor
 {
 }
