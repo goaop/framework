@@ -117,10 +117,7 @@ class GoAspectContainer extends Container
         // Pointcut services
         $this->share('aspect.pointcut.lexer', fn() => new PointcutLexer());
         $this->share('aspect.pointcut.parser', fn(Container $container) => new PointcutParser(
-            new PointcutGrammar(
-                $container,
-                $container->get('aspect.annotation.reader')
-            )
+            new PointcutGrammar($container)
         ));
     }
 

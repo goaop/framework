@@ -41,8 +41,8 @@ class InterceptedFunctionGeneratorTest extends TestCase
      * @param string $expectedSignature Expected function signature
      *
      * @throws \ReflectionException
-     * @dataProvider dataGenerator
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dataGenerator')]
     public function testGenerate(string $functionName, string $expectedSignature): void
     {
         $reflectionFunction = new ReflectionFunction($functionName);
@@ -59,24 +59,24 @@ class InterceptedFunctionGeneratorTest extends TestCase
     /**
      * Provides list of methods with expected attributes
      */
-    public function dataGenerator(): array
+    public static function dataGenerator(): array
     {
         return [
             [
                 'var_dump',
-                'function var_dump(... $vars)'
+                'function var_dump(mixed $value, mixed ... $values) : void'
             ],
             [
                 'array_pop',
-                'function array_pop(&$stack)'
+                'function array_pop(array &$array) : mixed'
             ],
             [
                 'strcoll',
-                'function strcoll($str1, $str2)'
+                'function strcoll(string $string1, string $string2) : int'
             ],
             [
                 'microtime',
-                'function microtime($get_as_float = null)'
+                'function microtime(bool $as_float = false) : float|string'
             ],
             [
                 '\Go\Proxy\Part\funcWithReturnTypeAndDocBlock',

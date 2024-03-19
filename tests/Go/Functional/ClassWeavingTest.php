@@ -17,7 +17,7 @@ use Go\Tests\TestProject\Application\FinalClass;
 use Go\Tests\TestProject\Application\FooInterface;
 use Go\Tests\TestProject\Application\Main;
 
-class ClassWeavingTest extends BaseFunctionalTest
+class ClassWeavingTest extends BaseFunctionalTestCase
 {
     public function testPropertyWeaving()
     {

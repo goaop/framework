@@ -15,7 +15,7 @@ namespace Go\Aop\Framework;
 
 use RuntimeException;
 
-class AfterThrowingInterceptorTest extends AbstractInterceptorTest
+class AfterThrowingInterceptorTest extends AbstractInterceptorTestCase
 {
     public function testAdviceIsNotCalledAfterInvocation()
     {

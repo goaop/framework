@@ -20,9 +20,9 @@ class FunctionCallArgumentListGeneratorTest extends TestCase
     /**
      * Tests that generator can generate function call argument list
      *
-     * @dataProvider dataGenerator
      * @throws \ReflectionException if function is not present
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dataGenerator')]
     public function testGenerate(string $functionName, string $expectedLine): void
     {
         $reflection = new ReflectionFunction($functionName);
@@ -34,13 +34,13 @@ class FunctionCallArgumentListGeneratorTest extends TestCase
     /**
      * Provides list of functions with expected generated code for calling such functions
      */
-    public function dataGenerator(): array
+    public static function dataGenerator(): array
     {
         return [
-            ['var_dump', '$vars'],                    // var_dump(...$vars)
-            ['array_pop', '[&$stack]'],               // array_pop(&$stack)
-            ['array_diff_assoc', '[$arr1], $arrays'], // array_diff_assoc($arr1, ...$arrays)
-            ['strcoll', '[$str1, $str2]'],            // strcoll($str1, $str2)
+            ['var_dump', '\array_slice([$value], 0, \func_num_args()), $values'],                    // var_dump(...$vars)
+            ['array_pop', '[&$array]'],               // array_pop(&$stack)
+            ['array_diff_assoc', '\array_slice([$array], 0, \func_num_args()), $arrays'], // array_diff_assoc($arr1, array ...$arrays)
+            ['strcoll', '[$string1, $string2]'],            // strcoll($string1, $string2)
             ['basename', '\array_slice([$path, $suffix], 0, \func_num_args())'],  // basename($path, $suffix = null)
         ];
     }

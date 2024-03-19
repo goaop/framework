@@ -71,14 +71,14 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         foreach ($newExpressions as $newExpressionNode) {
             $startPosition = $newExpressionNode->getAttribute('startTokenPos');
 
-            $metadata->tokenStream[$startPosition][1] = '\\' . self::class . '::getInstance()->{';
-            if ($metadata->tokenStream[$startPosition + 1][0] === T_WHITESPACE) {
+            $metadata->tokenStream[$startPosition]->text = '\\' . self::class . '::getInstance()->{';
+            if ($metadata->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
                 unset($metadata->tokenStream[$startPosition + 1]);
             }
             $isExplicitClass                            = $newExpressionNode->class instanceof Name;
             $endClassNamePos                            = $newExpressionNode->class->getAttribute('endTokenPos');
             $expressionSuffix                           = $isExplicitClass ? '::class}' : '}';
-            $metadata->tokenStream[$endClassNamePos][1] .= $expressionSuffix;
+            $metadata->tokenStream[$endClassNamePos]->text .= $expressionSuffix;
         }
 
         return self::RESULT_TRANSFORMED;
@@ -116,7 +116,6 @@ final class ConstructorExecutionTransformer implements SourceTransformer
             $dynamicInit = AspectContainer::INIT_PREFIX . ':root';
             try {
                 $joinPointsRef = new ReflectionProperty($fullClassName, '__joinPoints');
-                $joinPointsRef->setAccessible(true);
                 $joinPoints = $joinPointsRef->getValue();
                 if (isset($joinPoints[$dynamicInit])) {
                     $invocation = $joinPoints[$dynamicInit];

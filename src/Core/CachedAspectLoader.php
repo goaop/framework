@@ -12,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
+use AllowDynamicProperties;
 use RuntimeException;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
@@ -23,6 +24,7 @@ use ReflectionClass;
  *
  * @property AspectLoader $loader
  */
+#[AllowDynamicProperties]
 class CachedAspectLoader extends AspectLoader
 {
     /**

@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Pointcut;
 use InvalidArgumentException;
 use ReflectionClass;
@@ -22,63 +21,52 @@ use ReflectionProperty;
 /**
  * Annotation property pointcut checks property annotation
  */
-class AnnotationPointcut implements Pointcut
+class AttributePointcut implements Pointcut
 {
     use PointcutClassFilterTrait;
 
     /**
-     * Annotation class to match
+     * Attribute class to match
      */
-    protected string $annotationName;
-
-    /**
-     * Annotation reader
-     */
-    protected Reader $annotationReader;
+    protected string $attributeClassName;
 
     /**
      * Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY, KIND_TRAIT
      */
-    protected int $filterKind = 0;
+    protected int $filterKind;
 
     /**
      * Specifies name of the expected class to receive
      */
-    protected string $expectedClass = '';
+    protected string $expectedClass;
 
     /**
-     * Method to call for annotation reader
-     */
-    protected string $annotationMethod = '';
-
-    /**
-     * Static mappings of kind to expected class and method name
+     * Static mappings of kind to expected class
      */
     protected static array $mappings = [
-        self::KIND_CLASS    => [ReflectionClass::class, 'getClassAnnotation'],
-        self::KIND_TRAIT    => [ReflectionClass::class, 'getClassAnnotation'],
-        self::KIND_METHOD   => [ReflectionMethod::class, 'getMethodAnnotation'],
-        self::KIND_PROPERTY => [ReflectionProperty::class, 'getPropertyAnnotation']
+        self::KIND_CLASS    => ReflectionClass::class,
+        self::KIND_TRAIT    => ReflectionClass::class,
+        self::KIND_METHOD   => ReflectionMethod::class,
+        self::KIND_PROPERTY => ReflectionProperty::class,
     ];
 
     /**
-     * Annotation matcher constructor
+     * Attribute matcher constructor
      *
      * @param int $filterKind Kind of filter, e.g. KIND_CLASS
      */
-    public function __construct(int $filterKind, Reader $annotationReader, string $annotationName)
+    public function __construct(int $filterKind, string $attributeClassName)
     {
         if (!isset(self::$mappings[$filterKind])) {
             throw new InvalidArgumentException("Unsupported filter kind {$filterKind}");
         }
-        $this->filterKind       = $filterKind;
-        $this->annotationName   = $annotationName;
-        $this->annotationReader = $annotationReader;
-
-        [$this->expectedClass, $this->annotationMethod] = self::$mappings[$filterKind];
+        $this->filterKind         = $filterKind;
+        $this->attributeClassName = $attributeClassName;
+        $this->expectedClass      = self::$mappings[$filterKind];
     }
 
     /**
+     * @param ReflectionClass|ReflectionMethod|ReflectionProperty $point
      * {@inheritdoc}
      */
     public function matches($point, $context = null, $instance = null, array $arguments = null): bool
@@ -88,9 +76,9 @@ class AnnotationPointcut implements Pointcut
             return false;
         }
 
-        $annotation = $this->annotationReader->{$this->annotationMethod}($point, $this->annotationName);
+        $attributes = $point->getAttributes($this->attributeClassName);
 
-        return (bool)$annotation;
+        return count($attributes) > 0;
     }
 
     /**

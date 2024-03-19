@@ -14,7 +14,7 @@ namespace Go\Aop\Framework;
 
 use Go\Core\AspectContainer;
 
-class ReflectionConstructorInvocationTest extends AbstractInterceptorTest
+class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
 {
     public function testCanCreateObjectDuringInvocation(): void
     {

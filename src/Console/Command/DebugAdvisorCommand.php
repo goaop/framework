@@ -86,7 +86,6 @@ EOT
             $expression = '';
             try {
                 $pointcutExpression = new ReflectionProperty($advice, 'pointcutExpression');
-                $pointcutExpression->setAccessible(true);
                 $expression = $pointcutExpression->getValue($advice);
             } catch (ReflectionException $e) {
                 // nothing here, just ignore

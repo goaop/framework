@@ -4,7 +4,6 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\Support\AnnotationAccess;
 use PHPUnit\Framework\TestCase;
 
 class ClassFieldAccessTest extends TestCase
@@ -20,10 +19,5 @@ class ClassFieldAccessTest extends TestCase
     {
         $this->assertEquals(self::class, $this->classField->getField()->class);
         $this->assertEquals('classField', $this->classField->getField()->name);
-    }
-
-    public function testProvidesAccessToAnnotations(): void
-    {
-        $this->assertInstanceOf(AnnotationAccess::class, $this->classField->getField());
     }
 }

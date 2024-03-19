@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Demo\Example;
 
-use Demo\Annotation\Loggable;
+use Demo\Attribute\Loggable;
 
 /**
  * Example class to show how to use logging with AOP
@@ -23,10 +23,9 @@ class LoggingDemo
     /**
      * Executes a task and logs all incoming arguments
      *
-     * @Loggable
-     *
      * @param string $task Some specific argument
      */
+    #[Loggable]
     public function execute(string $task): void
     {
         $this->perform($task, 'first');
@@ -36,11 +35,10 @@ class LoggingDemo
     /**
      * Protected method can be also loggable
      *
-     * @Loggable
-     *
      * @param string $task Specific task
      * @param string $level
      */
+    #[Loggable]
     protected function perform(string $task, string $level): void
     {
         // some logic here
@@ -49,10 +47,9 @@ class LoggingDemo
     /**
      * Everything is possible with AOP, so static methods can be intercepted too
      *
-     * @Loggable
-     *
      * @param string $task Some specific argument
      */
+    #[Loggable]
     public static function runByName(string $task): void
     {
         $instance = new static(); // Go! AOP requires LSB to work correctly

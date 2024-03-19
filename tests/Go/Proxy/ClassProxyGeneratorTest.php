@@ -34,9 +34,8 @@ class ClassProxyGeneratorTest extends TestCase
      * @param string $methodName Name of the method to intercept
      *
      * @throws ReflectionException
-     *
-     * @dataProvider dataGenerator
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dataGenerator')]
     public function testGenerateProxyMethod(string $className, string $methodName): void
     {
         $reflectionClass = new ReflectionClass($className);
@@ -87,7 +86,7 @@ class ClassProxyGeneratorTest extends TestCase
      *
      * @return array
      */
-    public function dataGenerator(): array
+    public static function dataGenerator(): array
     {
         return [
             [First::class, 'publicMethod'],

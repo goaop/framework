@@ -27,7 +27,7 @@ use Symfony\Component\Process\Process;
 /**
  * Base class for functional tests.
  */
-abstract class BaseFunctionalTest extends TestCase
+abstract class BaseFunctionalTestCase extends TestCase
 {
     /**
      * Configuration which ought to be used in this test suite.

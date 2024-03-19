@@ -37,9 +37,7 @@ class AndPointFilterTest extends TestCase
         $this->assertEquals(PointFilter::KIND_METHOD, $filter->getKind());
     }
 
-    /**
-     * @dataProvider logicCases
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('logicCases')]
     public function testMatches(PointFilter $first, PointFilter $second, $expected): void
     {
         $filter = new AndPointFilter($first, $second);
@@ -47,7 +45,7 @@ class AndPointFilterTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
-    public function logicCases(): array
+    public static function logicCases(): array
     {
         $true  = TruePointFilter::getInstance();
         $false = new NotPointFilter($true);

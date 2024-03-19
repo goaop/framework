@@ -16,6 +16,7 @@ use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
 use PhpParser\Node;
+use PhpToken;
 use function is_array, is_resource;
 
 /**
@@ -72,6 +73,8 @@ class StreamMetaData
 
     /**
      * List of source tokens
+     *
+     * @var PhpToken[]
      */
     public array $tokenStream = [];
 
@@ -99,7 +102,7 @@ class StreamMetaData
             $this->$mappedKey = $value;
         }
         $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
-        $this->setTokenStreamFromRawTokens(ReflectionEngine::getLexer()->getTokens());
+        $this->setTokenStreamFromRawTokens(...ReflectionEngine::getParser()->getTokens());
     }
 
     /**
@@ -132,7 +135,9 @@ class StreamMetaData
     {
         $transformedSource = '';
         foreach ($this->tokenStream as $token) {
-            $transformedSource .= $token[1] ?? $token;
+            if ($token->id !== 0) {
+                $transformedSource .= $token->text;
+            }
         }
 
         return $transformedSource;
@@ -147,19 +152,15 @@ class StreamMetaData
      */
     private function setSource(string $newSource): void
     {
-        $rawTokens = token_get_all($newSource);
-        $this->setTokenStreamFromRawTokens($rawTokens);
+        $rawTokens = PhpToken::tokenize($newSource);
+        $this->setTokenStreamFromRawTokens(...$rawTokens);
     }
 
     /**
      * Sets an array of token identifiers for this file
-     *
-     * @param array $rawTokens
      */
-    public function setTokenStreamFromRawTokens(array $rawTokens): void
+    public function setTokenStreamFromRawTokens(PhpToken ...$rawTokens): void
     {
-        foreach ($rawTokens as $index => $rawToken) {
-            $this->tokenStream[$index] = is_array($rawToken) ? $rawToken : [T_STRING, $rawToken];
-        }
+        $this->tokenStream = $rawTokens;
     }
 }

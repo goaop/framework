@@ -16,10 +16,10 @@ class StaticClosureMethodInvocationTest extends TestCase
     /**
      * Tests static method invocations with self
      *
-     * @dataProvider staticSelfMethodsBatch
      * @param string $methodName Method to invoke
      * @param int $expectedResult Expected result
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('staticSelfMethodsBatch')]
     public function testStaticSelfMethodInvocation(string $methodName, int $expectedResult): void
     {
         $invocation = new StaticClosureMethodInvocation([],First::class, $methodName);
@@ -30,9 +30,9 @@ class StaticClosureMethodInvocationTest extends TestCase
     /**
      * Tests static method invocations with Late Static Binding
      *
-     * @dataProvider staticLsbMethodsBatch
      * @param string $methodName Method to invoke
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('staticLsbMethodsBatch')]
     public function testStaticLsbIsWorking($methodName): void
     {
         $invocation = new StaticClosureMethodInvocation([], First::class, $methodName);
@@ -101,7 +101,7 @@ class StaticClosureMethodInvocationTest extends TestCase
         }
     }
 
-    public function staticSelfMethodsBatch(): array
+    public static function staticSelfMethodsBatch(): array
     {
         return [
             ['staticSelfPublic', T_PUBLIC],
@@ -110,7 +110,7 @@ class StaticClosureMethodInvocationTest extends TestCase
         ];
     }
 
-    public function staticLsbMethodsBatch(): array
+    public static function staticLsbMethodsBatch(): array
     {
         return [
             ['staticLsbPublic'],

@@ -29,7 +29,7 @@ class MetadataLoadInterceptorTest extends TestCase
         ];
 
         $metadataInterceptor = new MetadataLoadInterceptor();
-        $entityManager = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
+        $entityManager = $this->createMock(EntityManager::class);
 
         /**
          * @var ClassMetadata $metadata
@@ -46,7 +46,7 @@ class MetadataLoadInterceptorTest extends TestCase
     {
         $metadata = new ClassMetadata(Entity__AopProxied::class);
         $metadataInterceptor = new MetadataLoadInterceptor();
-        $entityManager = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
+        $entityManager = $this->createMock(EntityManager::class);
 
         $metadata->isMappedSuperclass = false;
         $metadata->isEmbeddedClass = true;

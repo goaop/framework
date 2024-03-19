@@ -30,16 +30,15 @@ class GoAspectContainerTest extends TestCase
 
     /**
      * Tests that all services are registered
-     *
-     * @dataProvider internalServicesList
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('internalServicesList')]
     public function testAllServicesAreConfigured(string $serviceId): void
     {
         $service = $this->container->get($serviceId);
         $this->assertNotNull($service);
     }
 
-    public function internalServicesList(): array
+    public static function internalServicesList(): array
     {
         return [
             ['aspect.loader'],

@@ -35,9 +35,8 @@ class PathResolverTest extends TestCase
 
     /**
      * Test for checking the logic of custom realpath() implementation
-     *
-     * @dataProvider realpathExamples
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('realpathExamples')]
     public function testRealpathWorkingCorrectly(string $path, string $expected): void
     {
         // Trick to get scheme name and path in one action. If no scheme, then there will be only one part
@@ -59,7 +58,7 @@ class PathResolverTest extends TestCase
      *
      * @return array
      */
-    public function realpathExamples(): array
+    public static function realpathExamples(): array
     {
         $curDir = getcwd();
         $parent = dirname($curDir);

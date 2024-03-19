@@ -12,10 +12,10 @@ declare(strict_types = 1);
 
 namespace Go\Console\Command;
 
-use Go\Functional\BaseFunctionalTest;
+use Go\Functional\BaseFunctionalTestCase;
 use Go\Instrument\FileSystem\Enumerator;
 
-class DebugAdvisorCommandTest extends BaseFunctionalTest
+class DebugAdvisorCommandTest extends BaseFunctionalTestCase
 {
     public function testItDisplaysAdvisorsDebugInfo()
     {

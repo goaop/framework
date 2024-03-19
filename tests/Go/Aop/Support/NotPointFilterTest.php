@@ -18,9 +18,7 @@ use ReflectionClass;
 
 class NotPointFilterTest extends TestCase
 {
-    /**
-     * @dataProvider logicCases
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('logicCases')]
     public function testMatches(PointFilter $first, bool $expected): void
     {
         $filter = new NotPointFilter($first);
@@ -28,7 +26,7 @@ class NotPointFilterTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
-    public function logicCases(): array
+    public static function logicCases(): array
     {
         $true  = TruePointFilter::getInstance();
         $false = new NotPointFilter($true);

@@ -122,12 +122,12 @@ class FilterInjectorTransformer implements SourceTransformer
             $startPosition = $includeExpression->getAttribute('startTokenPos');
             $endPosition   = $includeExpression->getAttribute('endTokenPos');
 
-            $metadata->tokenStream[$startPosition][1] .= ' \\' . self::class . '::rewrite(';
-            if ($metadata->tokenStream[$startPosition+1][0] === T_WHITESPACE) {
+            $metadata->tokenStream[$startPosition]->text .= ' \\' . self::class . '::rewrite(';
+            if ($metadata->tokenStream[$startPosition+1]->id === T_WHITESPACE) {
                 unset($metadata->tokenStream[$startPosition+1]);
             }
 
-            $metadata->tokenStream[$endPosition][1] .= ', __DIR__)';
+            $metadata->tokenStream[$endPosition]->text .= ', __DIR__)';
         }
 
         return self::RESULT_TRANSFORMED;

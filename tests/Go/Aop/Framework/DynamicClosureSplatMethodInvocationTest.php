@@ -16,9 +16,8 @@ class DynamicClosureSplatMethodInvocationTest extends TestCase
 {
     /**
      * Tests dynamic method invocations
-     *
-     * @dataProvider dynamicMethodsBatch
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dynamicMethodsBatch')]
     public function testDynamicMethodInvocation(string $methodName, int $expectedResult): void
     {
         $child      = $this->createMock(First::class);
@@ -103,7 +102,7 @@ class DynamicClosureSplatMethodInvocationTest extends TestCase
         $this->assertEquals(T_PUBLIC, $result);
     }
 
-    public function dynamicMethodsBatch(): array
+    public static function dynamicMethodsBatch(): array
     {
         return [
             ['publicMethod', T_PUBLIC],

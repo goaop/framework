@@ -10,18 +10,12 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Demo\Annotation;
+namespace Demo\Attribute;
 
-use Doctrine\Common\Annotations\Annotation;
+use Attribute;
 
-/**
- * @Annotation
- * @Target("METHOD")
- */
-class Cacheable extends Annotation
+#[Attribute(Attribute::TARGET_METHOD)]
+readonly class Cacheable
 {
-    /**
-     * Time to cache
-     */
-    public int $time = 0;
+    public function __construct(public int $time) {}
 }

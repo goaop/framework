@@ -94,7 +94,6 @@ class SourceTransformingLoader extends PhpStreamFilter
             $this->data .= $bucket->data;
         }
 
-        /** @phpstan-ignore-next-line PhpStan uses old version of phpstorm-stubs, $bucket can be nullable */
         if ($closing || feof($this->stream)) {
             $consumed = strlen($this->data);
 

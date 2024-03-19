@@ -14,7 +14,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Invocation;
 
-class AroundInterceptorTest extends AbstractInterceptorTest
+class AroundInterceptorTest extends AbstractInterceptorTestCase
 {
     public function testInvocationIsNotCalledWithoutProceed()
     {

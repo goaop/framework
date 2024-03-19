@@ -1,28 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
-         colors="true"
-         bootstrap="./vendor/autoload.php">
-    <testsuites>
-        <testsuite name="Go! AOP Test Suite">
-            <directory>./tests/Go/</directory>
-        </testsuite>
-    </testsuites>
-
-    <coverage>
-        <include>
-            <directory>./src/</directory>
-        </include>
-        <report>
-            <clover outputFile="./build/logs/clover.xml"/>
-            <crap4j outputFile="./build/logs/crap4j.xml"/>
-            <xml outputDirectory="./build/coverage/xml"/>
-        </report>
-    </coverage>
-
-
-    <logging>
-        <junit outputFile="./build/logs/junit.xml"/>
-    </logging>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd" colors="true" bootstrap="./vendor/autoload.php">
+  <testsuites>
+    <testsuite name="Go! AOP Test Suite">
+      <directory>./tests/Go/</directory>
+    </testsuite>
+  </testsuites>
+  <coverage>
+    <report>
+      <clover outputFile="./build/logs/clover.xml"/>
+      <crap4j outputFile="./build/logs/crap4j.xml"/>
+      <xml outputDirectory="./build/coverage/xml"/>
+    </report>
+  </coverage>
+  <logging>
+    <junit outputFile="./build/logs/junit.xml"/>
+  </logging>
+  <source>
+    <include>
+      <directory>./src/</directory>
+    </include>
+  </source>
 </phpunit>
