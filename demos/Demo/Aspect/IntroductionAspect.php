@@ -12,8 +12,10 @@ declare(strict_types=1);
 
 namespace Demo\Aspect;
 
+use Demo\Aspect\Introduce\SerializableImpl;
 use Go\Aop\Aspect;
 use Go\Lang\Attribute\DeclareParents;
+use Serializable;
 
 /**
  * Introduction aspect can dynamically add new interfaces and traits to the class
@@ -22,16 +24,11 @@ class IntroductionAspect implements Aspect
 {
     /**
      * Add a single interface and trait to the class.
-     *
-     * You can also give several interfaces/traits via []
-     *
-     * @DeclareParents(
-     *   value="within(Demo\Example\IntroductionDemo)",
-     *   interface="Serializable",
-     *   defaultImpl="Demo\Aspect\Introduce\SerializableImpl"
-     * )
-     *
-     * @var null
      */
-    protected $introduction;
+    #[DeclareParents(
+        'within(Demo\Example\IntroductionDemo)',
+        interface: Serializable::class,
+        trait: SerializableImpl::class
+    )]
+    protected null $introduction;
 }

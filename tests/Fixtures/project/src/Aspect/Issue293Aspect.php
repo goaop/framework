@@ -10,9 +10,8 @@ class Issue293Aspect implements Aspect
 {
     /**
      * Intercepts only public/protected static methods
-     *
-     * @Pointcut\After("execution(public|protected Go\Tests\TestProject\Application\Issue293*::*(*))")
      */
+    #[Pointcut\After("execution(public|protected Go\Tests\TestProject\Application\Issue293*::*(*))")]
     public function afterPublicOrProtectedStaticMethods()
     {
         echo 'It invokes only after static methods, not for dynamics.';

@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2024, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -12,21 +12,23 @@ declare(strict_types=1);
 
 namespace Go\Lang\Attribute;
 
+use Attribute;
+
 /**
- * Declare error annotation
- *
- * @Annotation
- * @Target("PROPERTY")
- *
- * @Attributes({
- *   @Attribute("value", type = "string", required=true),
- *   @Attribute("level", type = "integer"),
- * })
+ * Declares error attribute
  */
-class DeclareError extends BaseAnnotation
+#[Attribute(Attribute::TARGET_PROPERTY)]
+class DeclareError extends AbstractAttribute
 {
     /**
-     * Interface name to add
+     * @inheritdoc
+     * @param int $level Error level to generate
      */
-    public int $level = E_USER_NOTICE;
+    public function __construct(
+        string              $expression,
+        readonly public int $level = E_USER_NOTICE,
+        int                 $order = 0,
+    ) {
+        parent::__construct($expression, $order);
+    }
 }

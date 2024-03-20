@@ -32,9 +32,8 @@ class LoggingAspect implements Aspect
      * Also you can choose "After" or "Around" advice to access an return value from method.
      *
      * To inject logger into this aspect you can look at Warlock framework with DI+AOP
-     *
-     * @Before("@execution(Demo\Attribute\Loggable)")
      */
+    #[Before("@execution(Demo\Attribute\Loggable)")]
     public function beforeMethodExecution(MethodInvocation $invocation): void
     {
         echo 'Calling Before Interceptor for ',

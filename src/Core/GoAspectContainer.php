@@ -12,9 +12,6 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Annotations\CachedReader;
-use Doctrine\Common\Cache as DoctrineCache;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
@@ -48,14 +45,13 @@ class GoAspectContainer extends Container
     {
         // Register all services in the container
         $this->share('aspect.loader', function (Container $container) {
-            $annotReader  = $container->get('aspect.annotation.reader');
             $aspectLoader = new AspectLoader($container);
             $lexer        = $container->get('aspect.pointcut.lexer');
             $parser       = $container->get('aspect.pointcut.parser');
 
             // Register general aspect loader extension
-            $aspectLoader->registerLoaderExtension(new GeneralAspectLoaderExtension($lexer, $parser, $annotReader));
-            $aspectLoader->registerLoaderExtension(new IntroductionAspectExtension($lexer, $parser, $annotReader));
+            $aspectLoader->registerLoaderExtension(new AttributeAspectLoaderExtension($lexer, $parser));
+            $aspectLoader->registerLoaderExtension(new IntroductionAspectExtension($lexer, $parser));
 
             return $aspectLoader;
         });
@@ -83,34 +79,6 @@ class GoAspectContainer extends Container
         $this->share('aspect.advice_matcher', fn(Container $container) => new AdviceMatcher(
             $container->get('kernel.interceptFunctions')
         ));
-
-        $this->share('aspect.annotation.cache', function (Container $container) {
-            $options = $container->get('kernel.options');
-
-            if (!empty($options['annotationCache'])) {
-                return $options['annotationCache'];
-            }
-
-            if (!empty($options['cacheDir'])) {
-                return new DoctrineCache\FilesystemCache(
-                    $options['cacheDir'] . DIRECTORY_SEPARATOR . '_annotations' . DIRECTORY_SEPARATOR,
-                    '.annotations.cache',
-                    0777 & (~(int)$options['cacheFileMode'])
-                );
-            }
-
-            return new DoctrineCache\ArrayCache();
-        });
-
-        $this->share('aspect.annotation.reader', function (Container $container) {
-            $options = $container->get('kernel.options');
-
-            return new CachedReader(
-                new AnnotationReader(),
-                $container->get('aspect.annotation.cache'),
-                $options['debug'] ?? false
-            );
-        });
 
         $this->share('aspect.cache.path.manager', fn(Container $container) => new CachePathManager($container->get('kernel')));
 

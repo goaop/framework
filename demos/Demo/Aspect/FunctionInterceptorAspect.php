@@ -23,12 +23,9 @@ class FunctionInterceptorAspect implements Aspect
 {
     /**
      * This advice intercepts an access to the array_*** function in Demo\Example\ namespace
-     *
-     * @Around("execution(Demo\Example\array_*(*))")
-     *
-     * @return mixed
      */
-    public function aroundArrayFunctions(FunctionInvocation $invocation)
+    #[Around('execution(Demo\Example\array_*(*))')]
+    public function aroundArrayFunctions(FunctionInvocation $invocation): mixed
     {
         echo 'Calling Around Interceptor for ',
             $invocation,
@@ -41,9 +38,8 @@ class FunctionInterceptorAspect implements Aspect
 
     /**
      * This advice intercepts an access to the file_get_contents() function
-     *
-     * @Around("execution(Demo\Example\file_get_contents(*))")
      */
+    #[Around('execution(Demo\Example\file_get_contents(*))')]
     public function aroundFileGetContents(FunctionInvocation $invocation): string
     {
         echo 'Calling Around Interceptor for ',

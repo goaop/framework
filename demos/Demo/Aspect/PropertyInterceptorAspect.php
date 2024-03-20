@@ -25,11 +25,8 @@ class PropertyInterceptorAspect implements Aspect
 {
     /**
      * Advice that controls an access to the properties
-     *
-     * @param FieldAccess $fieldAccess Joinpoint
-     *
-     * @Around("access(public|protected|private Demo\Example\PropertyDemo->*)")
      */
+    #[Around("access(public|protected|private Demo\Example\PropertyDemo->*)")]
     public function aroundFieldAccess(FieldAccess $fieldAccess): void
     {
         $isRead = $fieldAccess->getAccessType() == FieldAccess::READ;

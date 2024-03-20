@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Dissect\Lexer\Lexer;
-use Doctrine\Common\Annotations\Reader;
 use Go\Core\AspectContainer;
 use PHPUnit\Framework\TestCase;
 

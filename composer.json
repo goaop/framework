@@ -9,8 +9,6 @@
 
     "require": {
         "php": "^8.2.0",
-        "doctrine/annotations": "^1.11.1",
-        "doctrine/cache": "^1.10",
         "goaop/parser-reflection": "4.x-dev",
         "goaop/dissect": "^3.0",
         "laminas/laminas-code": "^4.13",

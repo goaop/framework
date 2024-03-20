@@ -22,26 +22,25 @@ use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\DefaultPointcutAdvisor;
-use Go\Lang\Annotation;
-use Go\Lang\Annotation\After;
-use Go\Lang\Annotation\AfterThrowing;
-use Go\Lang\Annotation\Around;
-use Go\Lang\Annotation\BaseInterceptor;
-use Go\Lang\Annotation\Before;
+use Go\Lang\Attribute;
+use Go\Lang\Attribute\After;
+use Go\Lang\Attribute\AfterThrowing;
+use Go\Lang\Attribute\Around;
+use Go\Lang\Attribute\AbstractInterceptor;
+use Go\Lang\Attribute\Before;
 use ReflectionClass;
 use UnexpectedValueException;
 
 use function get_class;
 
 /**
- * General aspect loader add common support for general advices, declared as annotations
+ * Attribute aspect loader add common support for general advices, declared as attributes
  */
-class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
+class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
 {
     /**
      * Loads definition from specific point of aspect into the container
      *
-     * @param Aspect          $aspect           Instance of aspect
      * @param ReflectionClass $reflectionAspect Reflection of point
      *
      * @return array<string,Pointcut>|array<string,Advisor>
@@ -52,20 +51,21 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     {
         $loadedItems = [];
         foreach ($reflectionAspect->getMethods() as $aspectMethod) {
-            $methodId    = $reflectionAspect->getName() . '->'. $aspectMethod->getName();
-            $annotations = $this->reader->getMethodAnnotations($aspectMethod);
+            $methodId   = $reflectionAspect->getName() . '->'. $aspectMethod->getName();
+            $attributes = $aspectMethod->getAttributes();
 
-            foreach ($annotations as $annotation) {
-                if ($annotation instanceof Annotation\Pointcut) {
-                    $loadedItems[$methodId] = $this->parsePointcut($aspect, $reflectionAspect, $annotation->value);
-                } elseif ($annotation instanceof Annotation\BaseInterceptor) {
-                    $pointcut       = $this->parsePointcut($aspect, $reflectionAspect, $annotation->value);
+            foreach ($attributes as $reflectionAttribute) {
+                $attribute = $reflectionAttribute->newInstance();
+                if ($attribute instanceof Attribute\Pointcut) {
+                    $loadedItems[$methodId] = $this->parsePointcut($aspect, $reflectionAspect, $attribute->expression);
+                } elseif ($attribute instanceof Attribute\Interceptor) {
+                    $pointcut       = $this->parsePointcut($aspect, $reflectionAspect, $attribute->expression);
                     $adviceCallback = $aspectMethod->getClosure($aspect);
-                    $interceptor    = $this->getInterceptor($annotation, $adviceCallback);
+                    $interceptor    = $this->getInterceptor($attribute, $adviceCallback);
 
                     $loadedItems[$methodId] = new DefaultPointcutAdvisor($pointcut, $interceptor);
                 } else {
-                    throw new UnexpectedValueException('Unsupported annotation class: ' . get_class($annotation));
+                    throw new UnexpectedValueException('Unsupported attribute class: ' . get_class($attribute));
                 }
             }
         }
@@ -74,29 +74,29 @@ class GeneralAspectLoaderExtension extends AbstractAspectLoaderExtension
     }
 
     /**
-     * Returns an interceptor instance by meta-type annotation and closure
+     * Returns an interceptor instance by meta-type attribute and closure
      *
      * @throws UnexpectedValueException For unsupported annotations
      */
-    protected function getInterceptor(BaseInterceptor $metaInformation, Closure $adviceCallback): Interceptor
+    protected function getInterceptor(AbstractInterceptor $interceptorAttribute, Closure $adviceCallback): Interceptor
     {
-        $adviceOrder        = $metaInformation->order;
-        $pointcutExpression = $metaInformation->value;
+        $adviceOrder        = $interceptorAttribute->order;
+        $pointcutExpression = $interceptorAttribute->expression;
         switch (true) {
-            case ($metaInformation instanceof Before):
+            case ($interceptorAttribute instanceof Before):
                 return new BeforeInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
-            case ($metaInformation instanceof After):
+            case ($interceptorAttribute instanceof After):
                 return new AfterInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
-            case ($metaInformation instanceof Around):
+            case ($interceptorAttribute instanceof Around):
                 return new AroundInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
-            case ($metaInformation instanceof AfterThrowing):
+            case ($interceptorAttribute instanceof AfterThrowing):
                 return new AfterThrowingInterceptor($adviceCallback, $adviceOrder, $pointcutExpression);
 
             default:
-                throw new UnexpectedValueException('Unsupported method meta class: ' . get_class($metaInformation));
+                throw new UnexpectedValueException('Unsupported method meta class: ' . get_class($interceptorAttribute));
         }
     }
 }

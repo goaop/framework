@@ -29,12 +29,9 @@ class CachingAspect implements Aspect
      * then invoke original method and store it's result in the cache.
      *
      * Real-life examples will use APC or Memcache to store value in the cache
-     *
-     * @return mixed Result of invocation
-     *
-     * @Around("@execution(Demo\Attribute\Cacheable)")
      */
-    public function aroundCacheable(MethodInvocation $invocation)
+    #[Around('@execution(Demo\Attribute\Cacheable)')]
+    protected function aroundCacheable(MethodInvocation $invocation): mixed
     {
         static $memoryCache = [];
 
