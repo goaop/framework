@@ -94,7 +94,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
                 $endPosition      = $methodCallNode->getAttribute('endTokenPos');
                 $expressionPrefix = '\\' . self::class . '::resolveFileName(';
 
-                $metadata->tokenStream[$startPosition]->text = $expressionPrefix . $metadata->tokenStream[$startPosition][1];
+                $metadata->tokenStream[$startPosition]->text = $expressionPrefix . $metadata->tokenStream[$startPosition]->text;
                 $metadata->tokenStream[$endPosition]->text .= ')';
             }
 
