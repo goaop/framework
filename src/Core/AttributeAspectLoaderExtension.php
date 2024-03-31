@@ -58,7 +58,7 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
                 $attribute = $reflectionAttribute->newInstance();
                 if ($attribute instanceof Attribute\Pointcut) {
                     $loadedItems[$methodId] = $this->parsePointcut($aspect, $reflectionAspect, $attribute->expression);
-                } elseif ($attribute instanceof Attribute\Interceptor) {
+                } elseif ($attribute instanceof Attribute\AbstractInterceptor) {
                     $pointcut       = $this->parsePointcut($aspect, $reflectionAspect, $attribute->expression);
                     $adviceCallback = $aspectMethod->getClosure($aspect);
                     $interceptor    = $this->getInterceptor($attribute, $adviceCallback);
