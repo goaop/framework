@@ -104,8 +104,7 @@ class CachingTransformer extends BaseSourceTransformer
             // Just replace all tokens in the stream
             ReflectionEngine::parseFile($cacheUri);
             $metadata->setTokenStreamFromRawTokens(
-                ReflectionEngine::getLexer()
-                                ->getTokens()
+                ...ReflectionEngine::getParser()->getTokens()
             );
         }
 

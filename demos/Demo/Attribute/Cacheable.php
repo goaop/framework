@@ -10,14 +10,12 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Lang\Annotation;
+namespace Demo\Attribute;
 
-/**
- * Around advice annotation
- *
- * @Annotation
- * @Target({ "METHOD", "PROPERTY" })
- */
-class Around extends BaseInterceptor
+use Attribute;
+
+#[Attribute(Attribute::TARGET_METHOD)]
+readonly class Cacheable
 {
+    public function __construct(public int $time) {}
 }

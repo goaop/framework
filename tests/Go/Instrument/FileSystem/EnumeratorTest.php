@@ -47,7 +47,7 @@ class EnumeratorTest extends TestCase
         static::$fileSystem->unmount();
     }
 
-    public function pathsProvider(): array
+    public static function pathsProvider(): array
     {
         return [
             [
@@ -92,12 +92,12 @@ class EnumeratorTest extends TestCase
     /**
      * Test wildcard path matching for Enumerator.
      *
-     * @dataProvider pathsProvider
      *
      * @throws \InvalidArgumentException
      * @throws \LogicException
      * @throws \UnexpectedValueException
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('pathsProvider')]
     public function testExclude(array $expectedPaths, array $includePaths, array $excludePaths): void
     {
         $testPaths = [];

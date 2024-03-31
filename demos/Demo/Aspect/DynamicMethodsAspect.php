@@ -14,7 +14,7 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\Before;
+use Go\Lang\Attribute\Before;
 
 /**
  * Aspect that intercepts specific magic methods, declared with __call and __callStatic
@@ -26,9 +26,8 @@ class DynamicMethodsAspect implements Aspect
      *
      * Unlike traditional "execution" pointcut, "dynamic" is checking the name of method in
      * the runtime, allowing to write interceptors for __call more transparently.
-     *
-     * @Before("dynamic(public Demo\Example\DynamicMethodsDemo->save*(*))")
      */
+    #[Before('dynamic(public Demo\Example\DynamicMethodsDemo->save*(*))')]
     public function beforeMagicMethodExecution(MethodInvocation $invocation): void
     {
         // we need to unpack args from invocation args
@@ -45,10 +44,8 @@ class DynamicMethodsAspect implements Aspect
 
     /**
      * This advice intercepts an execution of methods via __callStatic
-     *
-     * @param MethodInvocation $invocation
-     * @Before("dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))")
      */
+    #[Before('dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))')]
     public function beforeMagicStaticMethodExecution(MethodInvocation $invocation): void
     {
         // we need to unpack args from invocation args

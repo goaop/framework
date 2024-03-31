@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Demo\Example;
 
-use Demo\Annotation\Deprecated as deprecated; // <== We import specific system annotation
+use Demo\Attribute\Deprecated;
 
 /**
  * In this class we use system functions that will be intercepted by aspect
@@ -21,9 +21,8 @@ class ErrorDemo
 {
     /**
      * Some old method that is used by system in production, but shouldn't be used for the new code
-     *
-     * @deprecated
      */
+    #[Deprecated]
     public function oldMethod(): void
     {
         echo "Hello, I'm old method", PHP_EOL;

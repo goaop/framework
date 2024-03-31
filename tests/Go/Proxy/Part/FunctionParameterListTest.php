@@ -27,8 +27,8 @@ class FunctionParameterListTest extends TestCase
      * @param array  $checks             List of checks, where key is argument number, starting from 0 and value are getters
      *
      * @throws \ReflectionException if function is not present
-     * @dataProvider dataGenerator
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dataGenerator')]
     public function testgetGeneratedParameters(string $functionName, int $expectedArgsNumber, array $checks): void
     {
         $reflection    = new \ReflectionFunction($functionName);
@@ -51,17 +51,17 @@ class FunctionParameterListTest extends TestCase
     /**
      * Provides list of functions with expected generated args
      */
-    public function dataGenerator(): array
+    public static function dataGenerator(): array
     {
         return [
             [
-                'var_dump', // var_dump(...$vars)
-                1,
+                'var_dump', // var_dump(mixed $value, mixed ...$values)
+                2,
                 [
                     [
                         'getPassedByReference' => false,
-                        'getVariadic'          => true,
-                        'getName'              => 'vars',
+                        'getVariadic'          => false,
+                        'getName'              => 'value',
                         'getDefaultValue'      => null,
                     ]
                 ]
@@ -73,7 +73,7 @@ class FunctionParameterListTest extends TestCase
                     [
                         'getPassedByReference' => true,
                         'getVariadic'          => false,
-                        'getName'              => 'stack',
+                        'getName'              => 'array',
                         'getDefaultValue'      => null,
                     ]
                 ]
@@ -85,19 +85,19 @@ class FunctionParameterListTest extends TestCase
                     [
                         'getPassedByReference' => false,
                         'getVariadic'          => false,
-                        'getName'              => 'str1',
+                        'getName'              => 'string1',
                         'getDefaultValue'      => null,
                     ]
                 ]
             ],
             [
-                'microtime', // microtime($get_as_float = null)
+                'microtime', // microtime($as_float = false)
                 1,
                 [
                     [
                         'getPassedByReference' => false,
                         'getVariadic'          => false,
-                        'getName'              => 'get_as_float',
+                        'getName'              => 'as_float',
                         'getDefaultValue'      => ValueGenerator::class
                     ]
                 ]

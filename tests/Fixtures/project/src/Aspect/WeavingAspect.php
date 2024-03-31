@@ -3,15 +3,14 @@
 namespace Go\Tests\TestProject\Aspect;
 
 use Go\Aop\Aspect;
-use Go\Lang\Annotation as Pointcut;
+use Go\Lang\Attribute as Pointcut;
 
 class WeavingAspect implements Aspect
 {
     /**
      * Intercepts method in the final class
-     *
-     * @Pointcut\After("execution(public Go\Tests\TestProject\Application\FinalClass->*(*))")
      */
+    #[Pointcut\After("execution(public Go\Tests\TestProject\Application\FinalClass->*(*))")]
     public function afterPublicMethodInTheFinalClass()
     {
         echo 'It intercepts methods in the final class';
@@ -19,9 +18,8 @@ class WeavingAspect implements Aspect
 
     /**
      * Doesn't intercept interfaces
-     *
-     * @Pointcut\After("execution(public Go\Tests\TestProject\Application\FooInterface->*(*))")
      */
+    #[Pointcut\After("execution(public Go\Tests\TestProject\Application\FooInterface->*(*))")]
     public function afterPublicMethodInTheInterface()
     {
         echo 'It does not intercept methods in the interface';

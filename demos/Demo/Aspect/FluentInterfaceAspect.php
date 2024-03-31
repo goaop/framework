@@ -14,7 +14,7 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\Around;
+use Go\Lang\Attribute\Around;
 
 /**
  * Fluent interface aspect provides an easy way to reuse "chain" interface for classes
@@ -29,12 +29,9 @@ class FluentInterfaceAspect implements Aspect
 {
     /**
      * Fluent interface advice
-     *
-     * @Around("within(Demo\Aspect\FluentInterface+) && execution(public **->set*(*))")
-     *
-     * @return mixed Result of invocation
      */
-    protected function aroundMethodExecution(MethodInvocation $invocation)
+    #[Around('within(Demo\Aspect\FluentInterface+) && execution(public **->set*(*))')]
+    protected function aroundMethodExecution(MethodInvocation $invocation): mixed
     {
         $result = $invocation->proceed();
 

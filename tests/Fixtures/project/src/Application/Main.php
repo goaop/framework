@@ -13,9 +13,7 @@ class Main extends AbstractBar
 
     public $publicClassProperty;
 
-    /**
-     * @Aop\Loggable()
-     */
+    #[Aop\Loggable]
     public function doSomething()
     {
         echo 'I did something';

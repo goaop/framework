@@ -15,7 +15,6 @@ namespace Go\Aop\Pointcut;
 use Closure;
 use Dissect\Lexer\Token;
 use Dissect\Parser\Grammar;
-use Doctrine\Common\Annotations\Reader;
 use Go\Aop\PointFilter;
 use Go\Aop\Support\AndPointFilter;
 use Go\Aop\Support\InheritanceClassFilter;
@@ -36,7 +35,7 @@ class PointcutGrammar extends Grammar
     /**
      * Constructs a pointcut grammar with AST
      */
-    public function __construct(AspectContainer $container, Reader $annotationReader)
+    public function __construct(AspectContainer $container)
     {
         $this('empty')
             ->is(/* empty */);
@@ -109,10 +108,10 @@ class PointcutGrammar extends Grammar
         $this('annotatedAccessPointcut')
             ->is('annotation', 'access', '(', 'namespaceName', ')')
             ->call(
-                function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
+                function ($_0, $_1, $_2, $attributeClassName) {
                     $kindProperty = PointFilter::KIND_PROPERTY;
 
-                    return new AnnotationPointcut($kindProperty, $annotationReader, $annotationClassName);
+                    return new AttributePointcut($kindProperty, $attributeClassName);
                 }
             )
         ;
@@ -120,10 +119,10 @@ class PointcutGrammar extends Grammar
         $this('annotatedExecutionPointcut')
             ->is('annotation', 'execution', '(', 'namespaceName', ')')
             ->call(
-                function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
+                function ($_0, $_1, $_2, $attributeClassName) {
                     $kindMethod = PointFilter::KIND_METHOD;
 
-                    return new AnnotationPointcut($kindMethod, $annotationReader, $annotationClassName);
+                    return new AttributePointcut($kindMethod, $attributeClassName);
                 }
             )
         ;
@@ -131,10 +130,10 @@ class PointcutGrammar extends Grammar
         $this('annotatedWithinPointcut')
             ->is('annotation', 'within', '(', 'namespaceName', ')')
             ->call(
-                function ($_0, $_1, $_2, $annotationClassName) use ($annotationReader) {
+                function ($_0, $_1, $_2, $attributeClassName) {
                     $pointcut    = new TruePointcut(PointFilter::KIND_ALL);
                     $kindClass   = PointFilter::KIND_CLASS;
-                    $classFilter = new AnnotationPointcut($kindClass, $annotationReader, $annotationClassName);
+                    $classFilter = new AttributePointcut($kindClass, $attributeClassName);
                     $pointcut->setClassFilter($classFilter);
 
                     return $pointcut;

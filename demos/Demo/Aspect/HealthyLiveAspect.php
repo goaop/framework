@@ -15,9 +15,9 @@ namespace Demo\Aspect;
 use Demo\Example\HumanDemo;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\After;
-use Go\Lang\Annotation\Before;
-use Go\Lang\Annotation\Pointcut;
+use Go\Lang\Attribute\After;
+use Go\Lang\Attribute\Before;
+use Go\Lang\Attribute\Pointcut;
 
 /**
  * Healthy live aspect
@@ -26,18 +26,16 @@ class HealthyLiveAspect implements Aspect
 {
     /**
      * Pointcut for eat method
-     *
-     * @Pointcut("execution(public Demo\Example\HumanDemo->eat(*))")
      */
+    #[Pointcut('execution(public Demo\Example\HumanDemo->eat(*))')]
     protected function humanEat(): void
     {
     }
 
     /**
      * Washing hands before eating
-     *
-     * @Before("$this->humanEat")
      */
+    #[Before('$this->humanEat')]
     protected function washUpBeforeEat(MethodInvocation $invocation): void
     {
         /** @var $person HumanDemo */
@@ -47,9 +45,8 @@ class HealthyLiveAspect implements Aspect
 
     /**
      * Method that advices to clean the teeth after eating
-     *
-     * @After("$this->humanEat")
      */
+    #[After('$this->humanEat')]
     protected function cleanTeethAfterEat(MethodInvocation $invocation): void
     {
         /** @var $person HumanDemo */
@@ -59,9 +56,8 @@ class HealthyLiveAspect implements Aspect
 
     /**
      * Method that advice to clean the teeth before going to sleep
-     *
-     * @Before("execution(public Demo\Example\HumanDemo->sleep(*))")
      */
+    #[Before('execution(public Demo\Example\HumanDemo->sleep(*))')]
     protected function cleanTeethBeforeSleep(MethodInvocation $invocation): void
     {
         /** @var $person HumanDemo */

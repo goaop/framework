@@ -14,7 +14,7 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\Before;
+use Go\Lang\Attribute\Before;
 
 /**
  * Logging aspect
@@ -32,9 +32,8 @@ class LoggingAspect implements Aspect
      * Also you can choose "After" or "Around" advice to access an return value from method.
      *
      * To inject logger into this aspect you can look at Warlock framework with DI+AOP
-     *
-     * @Before("@execution(Demo\Annotation\Loggable)")
      */
+    #[Before("@execution(Demo\Attribute\Loggable)")]
     public function beforeMethodExecution(MethodInvocation $invocation): void
     {
         echo 'Calling Before Interceptor for ',

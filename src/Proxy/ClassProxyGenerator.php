@@ -142,10 +142,9 @@ class ClassProxyGenerator
         $reflectionClass    = new ReflectionClass($targetClassName);
         $joinPointsProperty = $reflectionClass->getProperty(JoinPointPropertyGenerator::NAME);
 
-        $joinPointsProperty->setAccessible(true);
         $advices    = $joinPointsProperty->getValue();
         $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
-        $joinPointsProperty->setValue($joinPoints);
+        $joinPointsProperty->setValue(null, $joinPoints);
 
         $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';
         if (isset($joinPoints[$staticInit])) {
@@ -245,8 +244,8 @@ class ClassProxyGenerator
         $return       = 'return ';
         if ($method->hasReturnType()) {
             $returnType = $method->getReturnType();
-            if ($returnType instanceof ReflectionNamedType && $returnType->getName() === 'void') {
-                // void return types should not return anything
+            if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {
+                // void/never return types should not return anything
                 $return = '';
             }
         }

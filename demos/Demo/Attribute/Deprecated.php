@@ -10,14 +10,11 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Demo\Annotation;
+namespace Demo\Attribute;
 
-use Doctrine\Common\Annotations\Annotation;
+use Attribute;
 
-/**
- * @Annotation
- * @Target("METHOD")
- */
-class Deprecated extends Annotation
+#[Attribute(Attribute::TARGET_METHOD)]
+class Deprecated extends \JetBrains\PhpStorm\Deprecated
 {
 }

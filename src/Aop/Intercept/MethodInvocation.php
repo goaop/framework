@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Aop\Intercept;
 
-use Go\Aop\Support\AnnotatedReflectionMethod;
 use ReflectionMethod;
 
 /**
@@ -27,7 +26,7 @@ interface MethodInvocation extends Invocation, ClassJoinpoint
      *
      * @api
      *
-     * @return ReflectionMethod|AnnotatedReflectionMethod the method being called.
+     * @return ReflectionMethod the method being called.
      */
     public function getMethod(): ReflectionMethod;
 

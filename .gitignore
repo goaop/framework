@@ -3,3 +3,4 @@ composer.lock
 phpunit.xml
 tests/Fixtures/project/var/cache/*
 build/
+/.phpunit.result.cache

@@ -12,7 +12,6 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
-use Doctrine\Common\Annotations\Reader;
 use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -50,10 +49,9 @@ class WeavingTransformerTest extends TestCase
     public function setUp(): void
     {
         $container = $this->getContainerMock();
-        $reader    = $this->createMock(Reader::class);
         $loader    = $this
             ->getMockBuilder(AspectLoader::class)
-            ->setConstructorArgs([$container, $reader])
+            ->setConstructorArgs([$container])
             ->getMock();
 
         $this->adviceMatcher = $this->getAdviceMatcherMock();
@@ -160,10 +158,9 @@ class WeavingTransformerTest extends TestCase
     public function testTransformerWithIncludePaths(): void
     {
         $container = $this->getContainerMock();
-        $reader    = $this->createMock(Reader::class);
         $loader    = $this
             ->getMockBuilder(AspectLoader::class)
-            ->setConstructorArgs([$container, $reader])
+            ->setConstructorArgs([$container])
             ->getMock();
 
         $kernel = $this->getKernelMock(

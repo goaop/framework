@@ -19,8 +19,8 @@ use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\DeclareParentsAdvisor;
 use Go\Aop\Support\DefaultPointcutAdvisor;
-use Go\Lang\Annotation;
-use Go\Lang\Annotation\DeclareParents;
+use Go\Lang\Attribute\DeclareError;
+use Go\Lang\Attribute\DeclareParents;
 use ReflectionClass;
 use UnexpectedValueException;
 
@@ -43,31 +43,31 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
     {
         $loadedItems = [];
         foreach ($reflectionAspect->getProperties() as $aspectProperty) {
-            $propertyId  = $reflectionAspect->getName() . '->'. $aspectProperty->getName();
-            $annotations = $this->reader->getPropertyAnnotations($aspectProperty);
+            $propertyId = $reflectionAspect->getName() . '->'. $aspectProperty->getName();
+            $attributes = $aspectProperty->getAttributes();
 
-            foreach ($annotations as $annotation) {
-                if ($annotation instanceof DeclareParents) {
-                    $pointcut = $this->parsePointcut($aspect, $aspectProperty, $annotation->value);
+            foreach ($attributes as $reflectionAttribute) {
+                $attribute = $reflectionAttribute->newInstance();
+                if ($attribute instanceof DeclareParents) {
+                    $pointcut = $this->parsePointcut($aspect, $aspectProperty, $attribute->expression);
 
-                    $implement        = $annotation->defaultImpl;
-                    $interface        = $annotation->interface;
+                    $implement        = $attribute->trait;
+                    $interface        = $attribute->interface;
                     $introductionInfo = new TraitIntroductionInfo($implement, $interface);
                     $advisor          = new DeclareParentsAdvisor($pointcut, $introductionInfo);
 
                     $loadedItems[$propertyId] = $advisor;
-                } elseif ($annotation instanceof Annotation\DeclareError) {
-                    $pointcut = $this->parsePointcut($aspect, $reflectionAspect, $annotation->value);
+                } elseif ($attribute instanceof DeclareError) {
+                    $pointcut = $this->parsePointcut($aspect, $reflectionAspect, $attribute->expression);
 
-                    $aspectProperty->setAccessible(true);
                     $errorMessage     = $aspectProperty->getValue($aspect);
-                    $errorLevel       = $annotation->level;
-                    $introductionInfo = new DeclareErrorInterceptor($errorMessage, $errorLevel, $annotation->value);
+                    $errorLevel       = $attribute->level;
+                    $introductionInfo = new DeclareErrorInterceptor($errorMessage, $errorLevel, $attribute->expression);
                     $loadedItems[$propertyId] = new DefaultPointcutAdvisor($pointcut, $introductionInfo);
                     break;
 
                 } else {
-                    throw new UnexpectedValueException('Unsupported annotation class: ' . get_class($annotation));
+                    throw new UnexpectedValueException('Unsupported attribute class: ' . get_class($attribute));
                 }
             }
         }

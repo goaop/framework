@@ -15,7 +15,7 @@ namespace Go\Functional;
 use Go\Tests\TestProject\Application\Issue293DynamicMembers;
 use Go\Tests\TestProject\Application\Issue293StaticMembers;
 
-class Issue293Test extends BaseFunctionalTest
+class Issue293Test extends BaseFunctionalTestCase
 {
     /**
      * test for https://github.com/goaop/framework/issues/293

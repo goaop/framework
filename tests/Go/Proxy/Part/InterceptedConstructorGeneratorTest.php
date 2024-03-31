@@ -31,8 +31,8 @@ class InterceptedConstructorGeneratorTest extends TestCase
      * Tests that generator can generate valid method definition
      *
      * @throws \ReflectionException
-     * @dataProvider dataGenerator
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dataGenerator')]
     public function testGenerate(string $className, string $expectedSignature): void
     {
         $reflectionConstructor = (new ReflectionClass($className))->getConstructor();
@@ -47,12 +47,12 @@ class InterceptedConstructorGeneratorTest extends TestCase
     /**
      * Provides list of methods with expected attributes
      */
-    public function dataGenerator(): array
+    public static function dataGenerator(): array
     {
         return [
             [
                 Exception::class,
-                'public function __construct($message = null, $code = null, $previous = null)
+                'public function __construct(string $message = \'\', int $code = 0, \Throwable $previous = null)
                 {
                     parent::__construct(...\array_slice([$message, $code, $previous], 0, \func_num_args()));
                 }'

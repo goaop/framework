@@ -17,7 +17,6 @@ use Dissect\Lexer\Lexer;
 use Dissect\Lexer\TokenStream\TokenStream;
 use Dissect\Parser\Exception\UnexpectedTokenException;
 use Dissect\Parser\Parser;
-use Doctrine\Common\Annotations\Reader;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use Go\Aop\PointFilter;
@@ -41,18 +40,12 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     protected Parser $pointcutParser;
 
     /**
-     * Instance of annotation reader
-     */
-    protected Reader $reader;
-
-    /**
      * Default loader constructor that accepts pointcut lexer and parser
      */
-    public function __construct(Lexer $pointcutLexer, Parser $pointcutParser, Reader $reader)
+    public function __construct(Lexer $pointcutLexer, Parser $pointcutParser)
     {
         $this->pointcutLexer  = $pointcutLexer;
         $this->pointcutParser = $pointcutParser;
-        $this->reader         = $reader;
     }
 
     /**

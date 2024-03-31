@@ -5,7 +5,7 @@ namespace Go\Tests\TestProject\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation as Pointcut;
+use Go\Lang\Attribute as Pointcut;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -25,11 +25,8 @@ class LoggingAspect implements Aspect
 
     /**
      * Writes a log info before method execution
-     *
-     * @param MethodInvocation $invocation
-     *
-     * @Pointcut\Before("@execution(Go\Tests\TestProject\Annotation\Loggable)")
      */
+    #[Pointcut\Before("@execution(Go\Tests\TestProject\Annotation\Loggable)")]
     public function beforeMethod(MethodInvocation $invocation)
     {
         $this->logger->info($invocation, $invocation->getArguments());

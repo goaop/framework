@@ -8,23 +8,22 @@
     "license": "MIT",
 
     "require": {
-        "php": "^7.4.0",
-        "doctrine/annotations": "^1.11.1",
-        "doctrine/cache": "^1.10",
-        "goaop/parser-reflection": "^3.0.1",
-        "jakubledl/dissect": "~1.0",
-        "laminas/laminas-code": "^4.0",
-        "symfony/finder": "^4.4|^5.1"
+        "php": "^8.2.0",
+        "goaop/parser-reflection": "4.x-dev",
+        "goaop/dissect": "^3.0",
+        "laminas/laminas-code": "^4.13",
+        "symfony/finder": "^5.1"
     },
 
     "require-dev": {
         "adlawson/vfs": "^0.12.1",
         "doctrine/orm": "^2.5",
-        "phpstan/phpstan": "^0.12.64",
-        "phpunit/phpunit": "^9.5",
+        "phpstan/phpstan": "^1.10.57",
+        "phpunit/phpunit": "^10.5.10",
         "symfony/console": "^4.4|^5.1",
         "symfony/filesystem": "^4.4|^5.1",
         "symfony/process": "^4.4|^5.1",
+        "tracy/tracy": "^2.10",
         "webmozart/glob": "^4.1"
     },
 
@@ -61,7 +60,7 @@
     "minimum-stability": "stable",
     "extra": {
         "branch-alias": {
-            "dev-master": "3.0-dev"
+            "dev-master": "4.0-dev"
         }
     },
     "config": {

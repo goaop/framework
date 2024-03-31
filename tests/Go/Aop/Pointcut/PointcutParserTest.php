@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Dissect\Lexer\Lexer;
-use Doctrine\Common\Annotations\Reader;
 use Go\Core\AspectContainer;
 use PHPUnit\Framework\TestCase;
 
@@ -33,15 +32,13 @@ class PointcutParserTest extends TestCase
         parent::setUp();
         $this->lexer  = new PointcutLexer();
         $container    = $this->createMock(AspectContainer::class);
-        $annotReader  = $this->createMock(Reader::class);
-        $this->parser = new PointcutParser(new PointcutGrammar($container, $annotReader));
+        $this->parser = new PointcutParser(new PointcutGrammar($container));
     }
 
     /**
      * Tests parsing
-     *
-     * @dataProvider validPointcutDefinitions
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('validPointcutDefinitions')]
     public function testParsingExpression(string $pointcutExpression): void
     {
         $stream = $this->lexer->lex($pointcutExpression);
@@ -49,7 +46,7 @@ class PointcutParserTest extends TestCase
         $this->assertNotNull($result);
     }
 
-    public function validPointcutDefinitions(): array
+    public static function validPointcutDefinitions(): array
     {
         return [
             // Execution pointcuts

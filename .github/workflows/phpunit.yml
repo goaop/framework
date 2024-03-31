@@ -1,6 +1,7 @@
 name: "PHPUnit tests"
 
 on:
+  pull_request:
   push:
 
 jobs:
@@ -15,7 +16,7 @@ jobs:
           - "lowest"
           - "highest"
         php-version:
-          - "7.4"
+          - "8.2"
         operating-system:
           - "ubuntu-latest"
 

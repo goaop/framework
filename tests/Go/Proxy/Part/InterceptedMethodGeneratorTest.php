@@ -28,8 +28,8 @@ class InterceptedMethodGeneratorTest extends TestCase
      * Tests that generator can generate valid method definition
      *
      * @throws \ReflectionException
-     * @dataProvider dataGenerator
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dataGenerator')]
     public function testGenerate(string $className, string $methodName, string $expectedSignature): void
     {
         $reflectionMethod = new ReflectionMethod($className, $methodName);
@@ -46,7 +46,7 @@ class InterceptedMethodGeneratorTest extends TestCase
     /**
      * Provides list of methods with expected attributes
      */
-    public function dataGenerator(): array
+    public static function dataGenerator(): array
     {
         return [
             [

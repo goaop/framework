@@ -18,7 +18,7 @@ use Go\Tests\TestProject\Application\Main;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use InvalidArgumentException;
 
-class ReflectionFilenameTest extends BaseFunctionalTest
+class ReflectionFilenameTest extends BaseFunctionalTestCase
 {
     protected function warmUp(): void
     {
