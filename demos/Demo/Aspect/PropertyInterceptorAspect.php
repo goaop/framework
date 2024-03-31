@@ -14,6 +14,7 @@ namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\FieldAccess;
+use Go\Aop\Intercept\FieldAccessType;
 use Go\Lang\Attribute\Around;
 
 /**
@@ -29,7 +30,7 @@ class PropertyInterceptorAspect implements Aspect
     #[Around("access(public|protected|private Demo\Example\PropertyDemo->*)")]
     public function aroundFieldAccess(FieldAccess $fieldAccess): void
     {
-        $isRead = $fieldAccess->getAccessType() == FieldAccess::READ;
+        $isRead = $fieldAccess->getAccessType() === FieldAccessType::READ;
         // proceed all internal advices
         $fieldAccess->proceed();
 

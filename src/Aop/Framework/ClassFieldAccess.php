@@ -14,6 +14,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\AspectException;
 use Go\Aop\Intercept\FieldAccess;
+use Go\Aop\Intercept\FieldAccessType;
 use ReflectionProperty;
 use function get_class;
 
@@ -42,7 +43,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Access type for field access
      */
-    private int $accessType;
+    private FieldAccessType $accessType;
 
     /**
      * Copy of the original value of property
@@ -63,10 +64,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         $this->reflectionProperty = new ReflectionProperty($className, $fieldName);
     }
 
-    /**
-     * Returns the access type.
-     */
-    public function getAccessType(): int
+    public function getAccessType(): FieldAccessType
     {
         return $this->accessType;
     }
@@ -151,7 +149,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @return mixed
      */
-    final public function &__invoke(object $instance, int $accessType, &$originalValue, $newValue = NAN)
+    final public function &__invoke(object $instance, FieldAccessType $accessType, &$originalValue, $newValue = NAN)
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->instance, $this->accessType, &$this->value, &$this->newValue];
@@ -168,7 +166,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
             $this->proceed();
 
-            if ($accessType === self::READ) {
+            if ($accessType === FieldAccessType::READ) {
                 $result = &$this->value;
             } else {
                 $result = &$this->newValue;
@@ -221,7 +219,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     {
         return sprintf(
             '%s(%s->%s)',
-            $this->accessType === self::READ ? 'get' : 'set',
+            $this->accessType->value,
             $this->getScope(),
             $this->reflectionProperty->name
         );

@@ -24,16 +24,6 @@ use ReflectionProperty;
 interface FieldAccess extends ClassJoinpoint
 {
     /**
-     * The read access type
-     */
-    public const READ = 0;
-
-    /**
-     * The write access type
-     */
-    public const WRITE = 1;
-
-    /**
      * Gets the field being accessed.
      *
      * @api
@@ -59,5 +49,5 @@ interface FieldAccess extends ClassJoinpoint
      *
      * @api
      */
-    public function getAccessType(): int;
+    public function getAccessType(): FieldAccessType;
 }
