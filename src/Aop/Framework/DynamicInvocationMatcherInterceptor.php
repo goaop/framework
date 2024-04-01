@@ -24,31 +24,17 @@ use ReflectionClass;
  * For each invocation interceptor asks the pointcut if it matches the invocation.
  * Matcher will receive reflection point, object instance and invocation arguments to make a decision
  */
-class DynamicInvocationMatcherInterceptor implements Interceptor
+readonly class DynamicInvocationMatcherInterceptor implements Interceptor
 {
-    /**
-     * Instance of pointcut to dynamically match joinpoints with args
-     */
-    protected PointFilter $pointFilter;
-
-    /**
-     * Instance of interceptor to invoke
-     */
-    protected Interceptor $interceptor;
-
     /**
      * Dynamic matcher constructor
      */
-    public function __construct(PointFilter $pointFilter, Interceptor $interceptor)
-    {
-        $this->pointFilter = $pointFilter;
-        $this->interceptor = $interceptor;
-    }
+    public function __construct(
+        private PointFilter $pointFilter,
+        private Interceptor $interceptor
+    ){}
 
-    /**
-     * @inheritdoc
-     */
-    final public function invoke(Joinpoint $joinpoint)
+    final public function invoke(Joinpoint $joinpoint): mixed
     {
         if ($joinpoint instanceof MethodInvocation) {
             $method       = $joinpoint->getMethod();

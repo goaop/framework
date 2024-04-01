@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
 use ReflectionMethod;
 use function array_merge;
@@ -23,20 +24,7 @@ use function count;
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
-    /**
-     * Instance of object for invoking
-     */
-    protected ?object $instance;
-
-    /**
-     * Instance of reflection method for invocation
-     */
-    protected ReflectionMethod $reflectionMethod;
-
-    /**
-     * Class name scope for static invocation
-     */
-    protected string $scope = '';
+    protected readonly ReflectionMethod $reflectionMethod;
 
     /**
      * This static string variable holds the name of field to use to avoid extra "if" section in the __invoke method
@@ -46,29 +34,35 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     protected static string $propertyName;
 
     /**
+     * Stack frames to work with recursive calls or with cross-calls inside object
+     *
+     * @var (array&array<int, array{array<mixed>, object|class-string, int}>)
+     */
+    private array $stackFrames = [];
+
+    /**
      * Constructor for method invocation
      *
-     * @param array $advices List of advices for this invocation
+     * @param array<Interceptor>        $advices List of advices for this invocation
+     * @param (string&class-string)     $className Class, containing method to invoke
+     * @param (string&non-empty-string) $methodName Name of the method to invoke
      */
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices);
-        $this->reflectionMethod = new ReflectionMethod($className, $methodName);
+        $reflectionMethod = new ReflectionMethod($className, $methodName);
+
+        // If we have method inside AOP proxy class, we would like to use prototype instead
+        if ($reflectionMethod->hasPrototype()) {
+            $reflectionMethod = $reflectionMethod->getPrototype();
+        }
+        $this->reflectionMethod = $reflectionMethod;
     }
 
-    /**
-     * Invokes current method invocation with all interceptors
-     *
-     * @param null|object|string $instance          Invocation instance (class name for static methods)
-     * @param array              $arguments         List of arguments for method invocation
-     * @param array              $variadicArguments Additional list of variadic arguments
-     *
-     * @return mixed Result of invocation
-     */
-    final public function __invoke($instance = null, array $arguments = [], array $variadicArguments = [])
+    final public function __invoke(object|string $instanceOrScope, array $arguments = [], array $variadicArguments = []): mixed
     {
         if ($this->level > 0) {
-            $this->stackFrames[] = [$this->arguments, $this->scope, $this->instance, $this->current];
+            $this->stackFrames[] = [$this->arguments, $this->{static::$propertyName}, $this->current];
         }
 
         if (count($variadicArguments) > 0) {
@@ -81,24 +75,21 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
             $this->current   = 0;
             $this->arguments = $arguments;
 
-            $this->{static::$propertyName} = $instance;
+            $this->{static::$propertyName} = $instanceOrScope;
 
             return $this->proceed();
         } finally {
             --$this->level;
 
-            if ($this->level > 0) {
-                [$this->arguments, $this->scope, $this->instance, $this->current] = array_pop($this->stackFrames);
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
+                [$this->arguments, $this->{static::$propertyName}, $this->current] = $stackFrame;
             } else {
-                $this->instance  = null;
+                unset($this->{static::$propertyName});
                 $this->arguments = [];
             }
         }
     }
 
-    /**
-     * Gets the method being called.
-     */
     public function getMethod(): ReflectionMethod
     {
         return $this->reflectionMethod;

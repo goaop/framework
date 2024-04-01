@@ -22,7 +22,7 @@ interface ClassJoinpoint extends Joinpoint
     /**
      * Checks if the current joinpoint is dynamic or static
      *
-     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
+     * Dynamic joinpoint contains a reference to an object that can be received via {@see getThis()} method call
      *
      * @see ClassJoinpoint::getThis()
      *
@@ -31,9 +31,7 @@ interface ClassJoinpoint extends Joinpoint
     public function isDynamic(): bool;
 
     /**
-     * Returns the object for which current joinpoint is invoked
-     *
-     * @return object|null Instance of object or null for static call/unavailable context
+     * Returns the object for which current joinpoint is invoked or null for static calls
      *
      * @api
      */
@@ -41,6 +39,8 @@ interface ClassJoinpoint extends Joinpoint
 
     /**
      * Returns the static scope name (class name) of this joinpoint.
+     *
+     * @return (string&class-string)
      *
      * @api
      */

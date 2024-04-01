@@ -143,7 +143,7 @@ class ClassProxyGenerator
         $joinPointsProperty = $reflectionClass->getProperty(JoinPointPropertyGenerator::NAME);
 
         $advices    = $joinPointsProperty->getValue();
-        $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->getParentClass()->name);
+        $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->name);
         $joinPointsProperty->setValue(null, $joinPoints);
 
         $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';

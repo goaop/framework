@@ -14,6 +14,7 @@ namespace Go\Proxy\Part;
 
 use Go\Aop\Framework\ClassFieldAccess;
 
+use Go\Aop\Intercept\FieldAccessType;
 use function array_key_exists;
 use function get_parent_class;
 use function method_exists;
@@ -38,7 +39,7 @@ trait PropertyInterceptionTrait
             $fieldAccess = self::$__joinPoints["prop:$name"];
             $fieldAccess->ensureScopeRule();
 
-            $value = &$fieldAccess->__invoke($this, ClassFieldAccess::READ, $this->__properties[$name]);
+            $value = &$fieldAccess->__invoke($this, FieldAccessType::READ, $this->__properties[$name]);
         } elseif (method_exists(get_parent_class(), __FUNCTION__)) {
             $value = parent::__get($name);
         } else {
@@ -62,7 +63,7 @@ trait PropertyInterceptionTrait
 
             $this->__properties[$name] = $fieldAccess->__invoke(
                 $this,
-                ClassFieldAccess::WRITE,
+                FieldAccessType::WRITE,
                 $this->__properties[$name],
                 $value
             );
