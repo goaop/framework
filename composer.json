@@ -53,7 +53,8 @@
             "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
         },
         "files": [
-            "tests/functions.php"
+            "tests/functions.php",
+            "tests/Go/Stubs/ClassWithoutNamespace.php"
         ]
     },
 

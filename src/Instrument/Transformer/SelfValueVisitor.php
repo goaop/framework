@@ -81,7 +81,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     public function enterNode(Node $node)
     {
         if ($node instanceof Namespace_) {
-            $this->namespace = $node->name->toString();
+            $this->namespace = !empty($node->name) ? $node->name->toString() : null;
         } elseif ($node instanceof Class_) {
             if ($node->name !== null) {
                 $this->className = new Name($node->name->toString());
