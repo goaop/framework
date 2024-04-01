@@ -39,13 +39,6 @@ final class FunctionParameterList
         foreach ($reflectionParameters as $reflectionParameter) {
             $defaultValue = null;
 
-            $isDefaultValueAvailable = $reflectionParameter->isDefaultValueAvailable();
-            if ($isDefaultValueAvailable) {
-                $defaultValue = new ValueGenerator($reflectionParameter->getDefaultValue());
-            } elseif ($reflectionParameter->isOptional() && !$reflectionParameter->isVariadic()) {
-                $defaultValue = new ValueGenerator(null);
-            }
-
             $parameterTypeName = null;
             if (!$useTypeWidening && $reflectionParameter->hasType()) {
                 $parameterReflectionType = $reflectionParameter->getType();
@@ -64,6 +57,19 @@ final class FunctionParameterList
                 $reflectionParameter->isPassedByReference()
             );
             $generatedParameter->setVariadic($reflectionParameter->isVariadic());
+
+            if (!$reflectionParameter->isVariadic()) {
+                $isDefaultValueAvailable = $reflectionParameter->isDefaultValueAvailable();
+                if ($isDefaultValueAvailable) {
+                    $defaultValue = new ValueGenerator($reflectionParameter->getDefaultValue());
+                } elseif ($reflectionParameter->isOptional()) {
+                    $defaultValue = new ValueGenerator(null);
+                }
+
+                if ($defaultValue instanceof ValueGenerator) {
+                    $generatedParameter->setDefaultValue($defaultValue);
+                }
+            }
 
             $this->generatedParameters[] = $generatedParameter;
         }
