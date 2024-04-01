@@ -13,7 +13,9 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Aop\AspectException;
 use Go\Aop\Intercept\Interceptor;
+use Go\Aop\OrderedAdvice;
 use Go\Core\AspectKernel;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -31,7 +33,8 @@ use ReflectionMethod;
  *
  * After and before interceptors are simple closures that will be invoked after and before main invocation.
  *
- * Framework models an interceptor as an PHP-closure, maintaining a chain of interceptors "around" the joinpoint:
+ * Framework models an interceptor as an PHP {@see Closure}, maintaining a chain of interceptors "around" the joinpoint:
+ * <pre>
  *   public function (Joinpoint $joinPoint)
  *   {
  *      echo 'Before action';
@@ -41,78 +44,69 @@ use ReflectionMethod;
  *
  *      return $result;
  *   }
+ * </pre>
  */
 abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
 {
     /**
-     * Local cache of advices for faster unserialization on big projects
-     *
-     * @var array<Closure>
+     * @var (array&array<string, Closure>) Local hashmap of advices for faster unserialization
      */
-    protected static array $localAdvicesCache = [];
-
-    /**
-     * Pointcut expression string which was used for this interceptor
-     */
-    protected string $pointcutExpression;
-
-    /**
-     * Closure to call
-     */
-    protected Closure $adviceMethod;
-
-    /**
-     * Advice order
-     */
-    private int $adviceOrder;
+    private static array $localAdvicesCache = [];
 
     /**
      * Default constructor for interceptor
      */
-    public function __construct(Closure $adviceMethod, int $adviceOrder = 0, string $pointcutExpression = '')
-    {
-        $this->adviceMethod       = $adviceMethod;
-        $this->adviceOrder        = $adviceOrder;
-        $this->pointcutExpression = $pointcutExpression;
-    }
+    public function __construct(
+        protected readonly Closure $adviceMethod,
+        private readonly int $adviceOrder = 0,
+        protected readonly string $pointcutExpression = ''
+    ) {}
 
     /**
-     * Serialize advice method into array
+     * Serializes advice closure into array
+     *
+     * @return array{name: string, class?: string}
      */
     public static function serializeAdvice(Closure $adviceMethod): array
     {
-        $refAdvice = new ReflectionFunction($adviceMethod);
+        $reflectionAdvice     = new ReflectionFunction($adviceMethod);
+        $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
 
-        return [
-            'method' => $refAdvice->name,
-            'class'  => $refAdvice->getClosureScopeClass()->name
-        ];
+        $packedAdvice = ['name' => $reflectionAdvice->name];
+        if (!isset($scopeReflectionClass)) {
+            throw new AspectException('Could not pack an interceptor without aspect name');
+        }
+        $packedAdvice['class'] = $scopeReflectionClass->name;
+
+        return $packedAdvice;
     }
 
     /**
      * Unserialize an advice
      *
-     * @param array $adviceData Information about advice
+     * @param array{name: string, class?: string} $adviceData Information about advice
      */
     public static function unserializeAdvice(array $adviceData): Closure
     {
+        // General unpacking supports only aspect's advices
+        if (!isset($adviceData['class'])) {
+            throw new AspectException('Could not unpack an interceptor without aspect name');
+        }
         $aspectName = $adviceData['class'];
-        $methodName = $adviceData['method'];
+        $methodName = $adviceData['name'];
 
-        if (!isset(static::$localAdvicesCache["$aspectName->$methodName"])) {
-            $aspect    = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
-            $refMethod = new ReflectionMethod($aspectName, $methodName);
-            $advice    = $refMethod->getClosure($aspect);
+        // With aspect name and method name, we can restore back a closure for it
+        if (!isset(self::$localAdvicesCache["$aspectName->$methodName"])) {
+            $aspect = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
+            $advice = (new ReflectionMethod($aspectName, $methodName))->getClosure($aspect);
 
-            static::$localAdvicesCache["$aspectName->$methodName"] = $advice;
+            assert(isset($advice), 'getClosure() can not be null on modern PHP versions');
+            self::$localAdvicesCache["$aspectName->$methodName"] = $advice;
         }
 
-        return static::$localAdvicesCache["$aspectName->$methodName"];
+        return self::$localAdvicesCache["$aspectName->$methodName"];
     }
 
-    /**
-     * Returns the advice order
-     */
     public function getAdviceOrder(): int
     {
         return $this->adviceOrder;
@@ -120,6 +114,8 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
 
     /**
      * Getter for extracting the advice closure from Interceptor
+     *
+     * @internal
      */
     public function getRawAdvice(): Closure
     {
@@ -127,12 +123,16 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     }
 
     /**
-     * Serializes an interceptor into it's representation
+     * Serializes an interceptor into it's array shape representation
+     *
+     * @return non-empty-array<string, mixed>
      */
     final public function __serialize(): array
     {
+        // Compressing state representation to avoid default values, eg pointcutExpression = '' or adviceOrder = 0
         $state = array_filter(get_object_vars($this));
 
+        // Override closure with array representation to enable serialization
         $state['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
 
         return $state;
@@ -141,7 +141,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     /**
      * Un-serializes an interceptor from it's stored state
      *
-     * @param array $state The stored representation of the interceptor.
+     * @param array{adviceMethod: array{name: string, class?: string}} $state The stored representation of the interceptor.
      */
     final public function __unserialize(array $state): void
     {

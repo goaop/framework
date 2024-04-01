@@ -7,6 +7,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceAround;
 use Go\Aop\AdviceBefore;
+use Go\Aop\OrderedAdvice;
 use PHPUnit\Framework\TestCase;
 
 class AbstractJoinpointTest extends TestCase

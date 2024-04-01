@@ -13,57 +13,53 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\ConstructorInvocation;
-use Go\Core\AspectContainer;
+use Go\Aop\Intercept\Interceptor;
 use ReflectionClass;
 use ReflectionMethod;
 
 /**
  * Reflection constructor invocation implementation
+ *
+ * @template T of object
  */
 class ReflectionConstructorInvocation extends AbstractInvocation implements ConstructorInvocation
 {
     /**
-     * Reflection class
+     * @var ReflectionClass<T> Reflection of given class
      */
-    protected ReflectionClass $class;
+    private readonly ReflectionClass $class;
 
     /**
-     * Instance of created class, can be used for Around or After types of advices.
+     * @var null|(object&T) Instance of created class, can be used for Around or After types of advices.
      */
-    protected ?object $instance = null;
+    private ?object $instance = null;
 
     /**
      * Instance of reflection constructor for class (if present)
      */
-    private ?ReflectionMethod $constructor;
+    private readonly ?ReflectionMethod $constructor;
 
     /**
      * Constructor for constructor invocation :)
      *
-     * @param array $advices List of advices for this invocation
+     * @param array<Interceptor>      $advices List of advices for this invocation
+     * @phpstan-param class-string<T> $className Name of the class
      */
     public function __construct(array $advices, string $className)
     {
-        $originalClass = $className;
-        if (strpos($originalClass, AspectContainer::AOP_PROXIED_SUFFIX) !== false) {
-            $originalClass = substr($originalClass, 0, -strlen(AspectContainer::AOP_PROXIED_SUFFIX));
-        }
-
-        $this->class       = new ReflectionClass($originalClass);
+        $this->class       = new ReflectionClass($className);
         $this->constructor = $this->class->getConstructor();
 
         parent::__construct($advices);
     }
 
     /**
-     * Proceed to the next interceptor in the Chain
+     * @inheritdoc
      *
-     * Typically this method is called inside previous closure, as instance of Joinpoint is passed to callback
-     * Do not call this method directly, only inside callback closures.
-     *
-     * @return object Covariant, always new object.
+     * @return (mixed|T) Covariant, always new object.
+     * @throws \ReflectionException If class is internal and cannot be created without constructor
      */
-    final public function proceed(): object
+    final public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current];
@@ -73,17 +69,13 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
         }
 
         $this->instance = $this->class->newInstanceWithoutConstructor();
-        $constructor    = $this->getConstructor();
-        if ($constructor !== null) {
-            $constructor->invoke($this->instance, ...$this->arguments);
-        }
+
+        // Null-safe invocation of constructor with constructor arguments
+        $this->getConstructor()?->invoke($this->instance, ...$this->arguments);
 
         return $this->instance;
     }
 
-    /**
-     * Gets the constructor being called or null if it is absent.
-     */
     public function getConstructor(): ?ReflectionMethod
     {
         return $this->constructor;
@@ -92,7 +84,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Returns the object for which current joinpoint is invoked
      *
-     * @return object|null Instance of object or null if object hasn't been created yet (Before)
+     * @return (object&T)|null Instance of object or null if object hasn't been created yet (Before)
      */
     public function getThis(): ?object
     {
@@ -101,8 +93,11 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
 
     /**
      * Invokes current constructor invocation with all interceptors
+     *
+     * @param array<mixed> $arguments Arguments for constructor invocation
+     * @return (mixed|T) Instance of object or anything else from interceptors, eg Around type can replace object
      */
-    final public function __invoke(array $arguments = []): object
+    final public function __invoke(array $arguments = []): mixed
     {
         $this->current   = 0;
         $this->arguments = $arguments;
@@ -111,20 +106,13 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     }
 
     /**
-     * Checks if the current joinpoint is dynamic or static
-     *
-     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
-     *
-     * @see ClassJoinpoint::getThis()
+     * @return true Covariance, always true for new object creation
      */
-    public function isDynamic(): bool
+    public function isDynamic(): true
     {
         return true;
     }
 
-    /**
-     * Returns the static scope name (class name) of this joinpoint.
-     */
     public function getScope(): string
     {
         return $this->class->getName();

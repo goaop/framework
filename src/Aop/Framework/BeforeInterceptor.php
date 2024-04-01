@@ -22,10 +22,7 @@ use Go\Aop\Intercept\Joinpoint;
  */
 final class BeforeInterceptor extends AbstractInterceptor implements AdviceBefore
 {
-    /**
-     * @inheritdoc
-     */
-    public function invoke(Joinpoint $joinpoint)
+    public function invoke(Joinpoint $joinpoint): mixed
     {
         ($this->adviceMethod)($joinpoint);
 

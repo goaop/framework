@@ -10,9 +10,7 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Aop\Framework;
-
-use Go\Aop\Advice;
+namespace Go\Aop;
 
 /**
  * Ordered advice can have a custom order to implement sorting

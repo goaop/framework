@@ -35,14 +35,14 @@ interface FieldAccess extends ClassJoinpoint
      *
      * @api
      */
-    public function &getValue();
+    public function &getValue(): mixed;
 
     /**
      * Gets the value that must be set to the field, applicable only for WRITE access type
      *
      * @api
      */
-    public function &getValueToSet();
+    public function &getValueToSet(): mixed;
 
     /**
      * Returns the access type.

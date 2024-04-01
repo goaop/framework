@@ -20,7 +20,8 @@ class AbstractMethodInvocationTest extends TestCase
 
     public function testInvocationReturnsMethod(): void
     {
-        $this->assertEquals(self::class, $this->invocation->getMethod()->class);
+        // AbstractMethodInvocation uses prototype methods to avoid hard-coded class sufixes
+        $this->assertEquals(parent::class, $this->invocation->getMethod()->class);
         $this->assertEquals('setUp', $this->invocation->getMethod()->name);
     }
 }

@@ -14,32 +14,40 @@ namespace Go\Aop\Framework;
 
 use Closure;
 
-use function get_class;
-
 /**
  * Dynamic closure method invocation is responsible to call dynamic methods via closure
  */
 final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
 {
     /**
-     * Closure to use
-     */
-    protected ?Closure $closureToCall = null;
-
-    /**
-     * Previous instance of invocation
-     */
-    protected ?object $previousInstance;
-
-    /**
      * For dynamic calls we store given argument as 'instance' property
+     *
+     * @see parent::__invoke() method to find out how this optimization works
+     * @see $instance Property, which is referenced by this static property
      */
     protected static string $propertyName = 'instance';
 
     /**
-     * Invokes original method and return result from it
+     * @var object Instance of object for invoking, should be protected as it's read in parent class
+     * @see parent::__invoke() where this variable is accessed via {@see $propertyName} value
      */
-    public function proceed()
+    protected object $instance;
+
+    /**
+     * Closure to use
+     */
+    private ?Closure $closureToCall;
+
+    /**
+     * @var object Previous instance of invocation
+     */
+    private object $closureInstance;
+
+    /**
+     * @inheritdoc
+     * @return mixed Covariant, always mixed
+     */
+    public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current++];
@@ -48,22 +56,23 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
         }
 
         // Fill the closure only once if it's empty
-        if ($this->closureToCall === null) {
-            $this->closureToCall    = $this->reflectionMethod->getClosure($this->instance);
-            $this->previousInstance = $this->instance;
+        if (!isset($this->closureToCall)) {
+            $this->closureToCall   = $this->reflectionMethod->getClosure($this->instance);
+            $this->closureInstance = $this->instance;
         }
 
         // Rebind the closure if instance was changed since last time
-        if ($this->previousInstance !== $this->instance) {
-            $this->closureToCall    = $this->closureToCall->bindTo($this->instance, $this->reflectionMethod->class);
-            $this->previousInstance = $this->instance;
+        // This code won't work with {@see Closure::call()} as it fails to rebind closure created from method
+        if ($this->closureInstance !== $this->instance) {
+            $this->closureToCall   = $this->closureToCall?->bindTo($this->instance, $this->reflectionMethod->class);
+            $this->closureInstance = $this->instance;
         }
 
-        return ($this->closureToCall)(...$this->arguments);
+        return ($this->closureToCall)?->__invoke(...$this->arguments);
     }
 
     /**
-     * Returns the object for which current joinpoint is invoked
+     * @inheritdoc
      *
      * @return object Covariance, always instance of object
      */
@@ -73,24 +82,17 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
     }
 
     /**
-     * Checks if the current joinpoint is dynamic or static
-     *
-     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
-     *
-     * @see ClassJoinpoint::getThis()
+     * @return true Covariance, always true for dynamic method calls
      */
-    final public function isDynamic(): bool
+    final public function isDynamic(): true
     {
         return true;
     }
 
-    /**
-     * Returns the static scope name (class name) of this joinpoint.
-     */
     final public function getScope(): string
     {
         // Due to optimization $this->scope won't be filled for each invocation
         // However, $this->instance always contains an object, so we can take it's name as a scope name
-        return get_class($this->instance);
+        return $this->instance::class;
     }
 }

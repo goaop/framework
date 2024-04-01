@@ -23,26 +23,7 @@ use Go\Aop\Advice;
  * access, exceptions...
  *
  * This interface is not used directly. Use the the sub-interfaces
- * to intercept specific events. For instance, the following class
- * implements some specific interceptors in order to implement a
- * debugger:
- *
- * <pre class=code>
- * class DebuggingInterceptor implements Interceptor
- * {
- *     public function invoke(Joinpoint $i)
- *     {
- *         $this->debug($i->getStaticPart(), $i->getThis(), $i->getArgs());
- *
- *         return $i->proceed();
- *     }
- *
- *     protected function debug($accessibleObject, $object, $value)
- *     {
- *         ...
- *     }
- * }
- * </pre>
+ * to intercept specific events.
  *
  * @see Joinpoint
  * @api
@@ -50,11 +31,9 @@ use Go\Aop\Advice;
 interface Interceptor extends Advice
 {
     /**
-     * Performs extra actions before and after the invocation of joinpoint.
-     *
-     * @return mixed The result of the call. Uses covariance in children.
+     * Performs extra actions before, after or around the invocation of joinpoint.
      *
      * @api
      */
-    public function invoke(Joinpoint $joinpoint);
+    public function invoke(Joinpoint $joinpoint): mixed;
 }

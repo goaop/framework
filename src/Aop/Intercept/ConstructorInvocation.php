@@ -18,6 +18,8 @@ use ReflectionMethod;
  * Description of an invocation to a constructor, given to an interceptor upon constructor-call.
  *
  * A constructor invocation is a joinpoint and can be intercepted by a constructor interceptor.
+ *
+ * @api
  */
 interface ConstructorInvocation extends Invocation, ClassJoinpoint
 {

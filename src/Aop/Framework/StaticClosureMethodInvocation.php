@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Aop\AspectException;
 
 /**
  * Static closure method invocation is responsible to call static methods via closure
@@ -20,24 +21,33 @@ use Closure;
 final class StaticClosureMethodInvocation extends AbstractMethodInvocation
 {
     /**
-     * Closure to use
-     */
-    protected ?Closure $closureToCall = null;
-
-    /**
-     * Previous scope of invocation
-     */
-    protected ?string $previousScope = null;
-
-    /**
      * For static calls we store given argument as 'scope' property
+     *
+     * @see parent::__invoke() method to find out how this optimization works
+     * @see $scope Property, which is referenced by this static property
      */
     protected static string $propertyName = 'scope';
 
     /**
-     * Proceeds all registered advices for the static method and returns an invocation result
+     * @var (string&class-string) Class name scope for static invocation
      */
-    public function proceed()
+    protected string $scope;
+
+    /**
+     * Closure to use
+     */
+    protected ?Closure $closureToCall;
+
+    /**
+     * @var null|(string&class-string) Previous scope of invocation or null for first call
+     */
+    protected ?string $previousScope = null;
+
+    /**
+     * @inheritdoc
+     * @return mixed Covariant, always mixed
+     */
+    public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current++];
@@ -47,7 +57,7 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
 
         // Rebind the closure if scope (class name) was changed since last time
         if ($this->previousScope !== $this->scope) {
-            if ($this->closureToCall === null) {
+            if (!isset($this->closureToCall)) {
                 $this->closureToCall = self::getStaticInvoker(
                     $this->reflectionMethod->class,
                     $this->reflectionMethod->name
@@ -57,7 +67,7 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
             $this->previousScope = $this->scope;
         }
 
-        return ($this->closureToCall)($this->arguments);
+        return ($this->closureToCall)?->__invoke($this->arguments);
     }
 
     /**
@@ -65,34 +75,33 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
      */
     protected static function getStaticInvoker(string $className, string $methodName): Closure
     {
-        return fn(array $args) => forward_static_call_array([$className, $methodName], $args);
+        $staticCallback = [$className, $methodName];
+        // We can not check callable fully because of protected static methods, as we will be inside LSB call later
+        if (!is_callable($staticCallback, true)) {
+            throw new AspectException("Invalid static callback given {$className}::{$methodName}");
+        }
+
+        return fn(array $arguments): mixed => forward_static_call_array($staticCallback, $arguments);
     }
 
     /**
-     * Checks if the current joinpoint is dynamic or static
-     *
-     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
-     *
-     * @see ClassJoinpoint::getThis()
+     * @return false Covariance, always false for static initialization
      */
-    final public function isDynamic(): bool
+    final public function isDynamic(): false
     {
         return false;
     }
 
     /**
-     * Returns the object for which current joinpoint is invoked
+     * @inheritdoc
      *
-     * @return object Instance of object or null for static call/unavailable context
+     * @return null Covariance, always null for static invocations
      */
-    final public function getThis(): ?object
+    final public function getThis(): null
     {
         return null;
     }
 
-    /**
-     * Returns the static scope name (class name) of this joinpoint.
-     */
     final public function getScope(): string
     {
         // $this->scope contains the current class scope that was received via static::class

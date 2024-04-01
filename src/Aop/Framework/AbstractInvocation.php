@@ -20,26 +20,16 @@ use Go\Aop\Intercept\Invocation;
 abstract class AbstractInvocation extends AbstractJoinpoint implements Invocation
 {
     /**
-     * Arguments for invocation
+     * @var array<mixed> Arguments for invocation, can be mutated by the {@see setArguments()} method
      */
     protected array $arguments = [];
 
-    /**
-     * Gets arguments for current invocation
-     *
-     * @api
-     */
-    public function getArguments(): array
+    final public function getArguments(): array
     {
         return $this->arguments;
     }
 
-    /**
-     * Sets arguments for current invocation
-     *
-     * @api
-     */
-    public function setArguments(array $arguments): void
+    final public function setArguments(array $arguments): void
     {
         $this->arguments = $arguments;
     }

@@ -13,37 +13,35 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\ClassJoinpoint;
-use Go\Core\AspectContainer;
+use Go\Aop\Intercept\Interceptor;
 use ReflectionClass;
-
-use function strlen;
 
 /**
  * Static initialization joinpoint is invoked after class is loaded into memory
+ *
+ * @template T of object
  */
 class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJoinpoint
 {
-
-    protected ReflectionClass $reflectionClass;
+    /**
+     * @var ReflectionClass<T> Reflection of given class
+     */
+    private readonly ReflectionClass $reflectionClass;
 
     /**
      * Constructor for the class static initialization joinpoint
      *
-     * @param array $advices List of advices for this invocation
+     * @param array<Interceptor> $advices List of advices for this invocation
+     * @phpstan-param class-string<T> $className Name of the class
      */
     public function __construct(array $advices, string $className)
     {
-        $originalClass = $className;
-        if (strpos($originalClass, AspectContainer::AOP_PROXIED_SUFFIX)) {
-            $originalClass = substr($originalClass, 0, -strlen(AspectContainer::AOP_PROXIED_SUFFIX));
-        }
-        $this->reflectionClass = new ReflectionClass($originalClass);
+        $this->reflectionClass = new ReflectionClass($className);
         parent::__construct($advices);
     }
 
     /**
-     * Proceeds to the next interceptor in the chain.
-     *
+     * @inheritdoc
      * @return void Covariant, as static initializtion could not return anything
      */
     public function proceed(): void
@@ -64,30 +62,23 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
     }
 
     /**
-     * Returns the object for which current joinpoint is invoked
+     * @inheritdoc
      *
-     * @return object|null Instance of object or null for static call/unavailable context
+     * @return null Covariance, always null for static initialization
      */
-    public function getThis(): ?object
+    public function getThis(): null
     {
         return null;
     }
 
     /**
-     * Checks if the current joinpoint is dynamic or static
-     *
-     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
-     *
-     * @see ClassJoinpoint::getThis()
+     * @return false Covariance, always false for static method calls
      */
-    public function isDynamic(): bool
+    public function isDynamic(): false
     {
         return false;
     }
 
-    /**
-     * Returns the static scope name (class name) of this joinpoint.
-     */
     public function getScope(): string
     {
         return $this->reflectionClass->getName();

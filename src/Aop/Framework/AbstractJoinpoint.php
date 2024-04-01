@@ -18,8 +18,7 @@ use Go\Aop\AdviceAround;
 use Go\Aop\AdviceBefore;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
-
-use function is_array;
+use Go\Aop\OrderedAdvice;
 
 /**
  *  Abstract joinpoint for framework
@@ -34,24 +33,9 @@ use function is_array;
 abstract class AbstractJoinpoint implements Joinpoint
 {
     /**
-     * List of advices (interceptors)
-     *
-     * NB: All current children assume that each advice is Interceptor now.
-     * Whereas, it isn't correct logically, this can be used to satisfy PHPStan check now.
-     *
-     * @var array<Interceptor>
-     */
-    protected array $advices = [];
-
-    /**
      * Current advice index
      */
     protected int $current = 0;
-
-    /**
-     * Stack frames to work with recursive calls or with cross-calls inside object
-     */
-    protected array $stackFrames = [];
 
     /**
      * Recursion level for invocation
@@ -63,10 +47,7 @@ abstract class AbstractJoinpoint implements Joinpoint
      *
      * @param array<Interceptor> $advices List of advices (interceptors)
      */
-    public function __construct(array $advices)
-    {
-        $this->advices = $advices;
-    }
+    public function __construct(protected readonly array $advices = []) {}
 
     /**
      * Sorts advices by priority
@@ -80,23 +61,12 @@ abstract class AbstractJoinpoint implements Joinpoint
         $sortedAdvices = $advices;
         uasort(
             $sortedAdvices,
-            function (Advice $first, Advice $second) {
-                switch (true) {
-                    case $first instanceof AdviceBefore && !($second instanceof AdviceBefore):
-                        return -1;
-
-                    case $first instanceof AdviceAround && !($second instanceof AdviceAround):
-                        return 1;
-
-                    case $first instanceof AdviceAfter && !($second instanceof AdviceAfter):
-                        return $second instanceof AdviceBefore ? 1 : -1;
-
-                    case ($first instanceof OrderedAdvice && $second instanceof OrderedAdvice):
-                        return $first->getAdviceOrder() - $second->getAdviceOrder();
-
-                    default:
-                        return 0;
-                }
+            fn(Advice $first, Advice $second) => match (true) {
+                $first instanceof AdviceBefore && !($second instanceof AdviceBefore) => -1,
+                $first instanceof AdviceAround && !($second instanceof AdviceAround) => 1,
+                $first instanceof AdviceAfter && !($second instanceof AdviceAfter) => $second instanceof AdviceBefore ? 1 : -1,
+                $first instanceof OrderedAdvice && $second instanceof OrderedAdvice => $first->getAdviceOrder() - $second->getAdviceOrder(),
+                default => 0,
             }
         );
 
@@ -106,7 +76,9 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * Replace concrete advices with list of ids
      *
-     * @param Advice[][][] $advices List of advices
+     * @param array<array<array<string, Advice|Interceptor>>> $advices List of advices
+     *
+     * @return array<array<array<string>>> Sorted identifier of advices/interceptors
      */
     public static function flatAndSortAdvices(array $advices): array
     {

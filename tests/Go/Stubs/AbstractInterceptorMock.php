@@ -20,30 +20,12 @@ class AbstractInterceptorMock extends AbstractInterceptor
 {
     private static Closure $advice;
 
-    /**
-     * {@inheritdoc}
-     */
     public function __construct(Closure $adviceMethod, int $adviceOrder = 0, string $pointcutExpression = '')
     {
         self::$advice = $adviceMethod;
         parent::__construct($adviceMethod, $adviceOrder, $pointcutExpression);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public static function serializeAdvice(Closure $adviceMethod): array
-    {
-        return [
-            'scope'  => 'aspect',
-            'method' => 'Go\Aop\Framework\{closure}',
-            'aspect' => 'Go\Aop\Framework\BaseInterceptorTest'
-        ];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public static function unserializeAdvice(array $adviceData): Closure
     {
         return self::$advice;

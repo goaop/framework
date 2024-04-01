@@ -15,8 +15,8 @@ namespace Go\Aop\Framework;
 use Go\Aop\AspectException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldAccessType;
+use Go\Aop\Intercept\Interceptor;
 use ReflectionProperty;
-use function get_class;
 
 /**
  * Represents a field access joinpoint
@@ -24,21 +24,26 @@ use function get_class;
 final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 {
     /**
+     * Stack frames to work with recursive calls or with cross-calls inside object
+     *
+     * @phpstan-var array<int, array{object, FieldAccessType, mixed, mixed}>>
+     */
+    private array $stackFrames = [];
+
+    /**
      * Instance of object for accessing
      */
-    protected object $instance;
+    private object $instance;
 
     /**
      * Instance of reflection property
      */
-    protected ReflectionProperty $reflectionProperty;
+    private readonly ReflectionProperty $reflectionProperty;
 
     /**
      * New value to set
-     *
-     * @var mixed
      */
-    protected $newValue;
+    private mixed $newValue;
 
     /**
      * Access type for field access
@@ -47,20 +52,23 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Copy of the original value of property
-     *
-     * @var mixed
      */
-    private $value;
+    private mixed $value;
 
     /**
      * Constructor for field access
      *
-     * @param array $advices List of advices for this invocation
+     * @param array<Interceptor> $advices List of advices for this invocation
+     * @param (string&class-string) $className
      */
     public function __construct(array $advices, string $className, string $fieldName)
     {
         parent::__construct($advices);
-
+        // We should bind our interceptor to the parent class where property is usually declared
+        $parentClass = get_parent_class($className);
+        if ($parentClass !== false && property_exists($parentClass, $fieldName)) {
+            $className = $parentClass;
+        }
         $this->reflectionProperty = new ReflectionProperty($className, $fieldName);
     }
 
@@ -69,28 +77,19 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         return $this->accessType;
     }
 
-    /**
-     * Gets the field being accessed.
-     */
     public function getField(): ReflectionProperty
     {
         return $this->reflectionProperty;
     }
 
-    /**
-     * Gets the current value of property
-     */
-    public function &getValue()
+    public function &getValue(): mixed
     {
         $value = &$this->value;
 
         return $value;
     }
 
-    /**
-     * Gets the value that must be set to the field.
-     */
-    public function &getValueToSet()
+    public function &getValueToSet(): mixed
     {
         $newValue = &$this->newValue;
 
@@ -126,7 +125,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     }
 
     /**
-     * Proceed to the next interceptor in the Chain
+     * @inheritdoc
      *
      * @return void Covariant, as for field interceptor there is no return value
      */
@@ -142,14 +141,11 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Invokes current field access with all interceptors
      *
-     * @param object $instance      Instance of object
-     * @param int    $accessType    Type of access: READ or WRITE
-     * @param mixed  $originalValue Original value of property
-     * @param mixed  $newValue      New value to set
+     * @param mixed $originalValue Original value of property, passed by reference
      *
      * @return mixed
      */
-    final public function &__invoke(object $instance, FieldAccessType $accessType, &$originalValue, $newValue = NAN)
+    final public function &__invoke(object $instance, FieldAccessType $accessType, mixed &$originalValue, mixed $newValue = NAN): mixed
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->instance, $this->accessType, &$this->value, &$this->newValue];
@@ -176,14 +172,14 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         } finally {
             --$this->level;
 
-            if ($this->level > 0) {
-                [$this->instance, $this->accessType, $this->value, $this->newValue] = array_pop($this->stackFrames);
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
+                [$this->instance, $this->accessType, $this->value, $this->newValue] = $stackFrame;
             }
         }
     }
 
     /**
-     * Returns the object for which current joinpoint is invoked
+     * @inheritdoc
      *
      * @return object Covariant, always instance of object, can not be null
      */
@@ -193,23 +189,16 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     }
 
     /**
-     * Checks if the current joinpoint is dynamic or static
-     *
-     * Dynamic joinpoint contains a reference to an object that can be received via getThis() method call
-     *
-     * @see ClassJoinpoint::getThis()
+     * @return true Covariance, always true for class properties
      */
-    final public function isDynamic(): bool
+    final public function isDynamic(): true
     {
         return true;
     }
 
-    /**
-     * Returns the static scope name (class name) of this joinpoint.
-     */
     final public function getScope(): string
     {
-        return get_class($this->instance);
+        return $this->instance::class;
     }
 
     /**

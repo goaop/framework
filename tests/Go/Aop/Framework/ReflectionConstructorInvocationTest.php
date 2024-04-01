@@ -23,14 +23,6 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
         $this->assertInstanceOf(\Exception::class, $result);
     }
 
-    public function testKnowsAboutSpecialClassSuffix(): void
-    {
-        $specialName = \Exception::class . AspectContainer::AOP_PROXIED_SUFFIX;
-        $invocation  = new ReflectionConstructorInvocation([], $specialName);
-        $result      = $invocation->__invoke();
-        $this->assertInstanceOf(\Exception::class, $result);
-    }
-
     public function testCanExecuteAdvicesDuringConstruct(): void
     {
         $sequence   = [];

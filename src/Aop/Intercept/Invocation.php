@@ -15,7 +15,8 @@ namespace Go\Aop\Intercept;
 /**
  * This interface represents an invocation in the program
  *
- * An invocation is a callable joinpoint and can be intercepted by an interceptor
+ * An invocation is a callable joinpoint and can be intercepted by an interceptor. All invocation
+ * instances provide API for accessing/modification of invocation arguments.
  *
  * @api
  */
@@ -24,6 +25,7 @@ interface Invocation extends Joinpoint
     /**
      * Get the arguments of invocation as an array.
      *
+     * @return array<mixed>
      * @api
      */
     public function getArguments(): array;
@@ -31,8 +33,7 @@ interface Invocation extends Joinpoint
     /**
      * Sets the arguments for current invocation
      *
-     * @param array $arguments New list of arguments
-     *
+     * @param array<mixed> $arguments New list of arguments
      * @api
      */
     public function setArguments(array $arguments): void;
