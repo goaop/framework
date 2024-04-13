@@ -22,7 +22,7 @@ class DeclareError extends AbstractAttribute
 {
     /**
      * @inheritdoc
-     * @param int $level Error level to generate
+     * @param int&(\E_USER_NOTICE|\E_USER_WARNING|\E_USER_ERROR|\E_USER_DEPRECATED) $level Default level of error, only E_USER_* constants
      */
     public function __construct(
         string              $expression,

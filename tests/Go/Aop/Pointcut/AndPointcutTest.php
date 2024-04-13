@@ -10,45 +10,49 @@ declare(strict_types = 1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Aop\Support;
+namespace Go\Aop\Pointcut;
 
-use Go\Aop\PointFilter;
+use Go\Aop\Pointcut;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
-class AndPointFilterTest extends TestCase
+class AndPointcutTest extends TestCase
 {
     /**
      * Tests that filter intersect different kinds of filters
      */
     public function testKindIsIntersected(): void
     {
-        $first = $this->createMock(PointFilter::class);
+        $first = $this->createMock(Pointcut::class);
         $first
             ->method('getKind')
-            ->willReturn(PointFilter::KIND_METHOD | PointFilter::KIND_PROPERTY);
+            ->willReturn(Pointcut::KIND_METHOD | Pointcut::KIND_PROPERTY);
 
-        $second = $this->createMock(PointFilter::class);
+        $second = $this->createMock(Pointcut::class);
         $second
             ->method('getKind')
-            ->willReturn(PointFilter::KIND_METHOD | PointFilter::KIND_FUNCTION);
+            ->willReturn(Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION);
 
-        $filter = new AndPointFilter($first, $second);
-        $this->assertEquals(PointFilter::KIND_METHOD, $filter->getKind());
+        $filter = new AndPointcut(null, $first, $second);
+        $this->assertEquals(Pointcut::KIND_METHOD, $filter->getKind());
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('logicCases')]
-    public function testMatches(PointFilter $first, PointFilter $second, $expected): void
+    public function testMatches(Pointcut $first, Pointcut $second, bool $expected): void
     {
-        $filter = new AndPointFilter($first, $second);
-        $result = $filter->matches(new ReflectionClass(__CLASS__) /* anything */);
+        $filter = new AndPointcut(null, $first, $second);
+        $result = $filter->matches(
+            new ReflectionClass(self::class),
+            new \ReflectionMethod(self::class, __FUNCTION__),
+            /* anything */
+        );
         $this->assertSame($expected, $result);
     }
 
     public static function logicCases(): array
     {
-        $true  = TruePointFilter::getInstance();
-        $false = new NotPointFilter($true);
+        $true  = new TruePointcut();
+        $false = new NotPointcut($true);
         return [
             [$false, $false, false],
             [$false, $true, false],

@@ -17,49 +17,33 @@ use Go\Aop\Framework\DynamicInvocationMatcherInterceptor;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Pointcut;
 use Go\Aop\PointcutAdvisor;
-use Go\Aop\PointFilter;
 
 /**
  * Convenient Pointcut-driven Advisor implementation.
  *
  * This is the most commonly used Advisor implementation. It can be used with any pointcut and advice type,
- * except for introductions. There is normally no need to subclass this class, or to implement custom Advisors.
+ * including introductions.
  */
-class DefaultPointcutAdvisor extends AbstractGenericAdvisor implements PointcutAdvisor
+final readonly class GenericPointcutAdvisor implements PointcutAdvisor
 {
-    /**
-     * The Pointcut targeting the Advice
-     */
-    private Pointcut $pointcut;
+    public function __construct(private Pointcut $pointcut, private Advice $advice) {}
 
-    /**
-     * Creates a DefaultPointcutAdvisor, specifying the Advice to run when Pointcut matches
-     */
-    public function __construct(Pointcut $pointcut, Advice $advice)
-    {
-        $this->pointcut = $pointcut;
-        parent::__construct($advice);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getAdvice(): Advice
     {
-        $advice = parent::getAdvice();
-        if (($advice instanceof Interceptor) && ($this->pointcut->getKind() & PointFilter::KIND_DYNAMIC)) {
+        // For dynamic pointcuts, we use special dynamic invocation matcher interceptor
+        // This part can't be moved to the constructor, as it breaks lazy-evaluation for PointcutReference
+        if (($this->advice instanceof Interceptor) && ($this->pointcut->getKind() & Pointcut::KIND_DYNAMIC)) {
             $advice = new DynamicInvocationMatcherInterceptor(
                 $this->pointcut,
-                $advice
+                $this->advice
             );
+        } else {
+            $advice = $this->advice;
         }
 
         return $advice;
     }
 
-    /**
-     * Get the Pointcut that drives this advisor.
-     */
     public function getPointcut(): Pointcut
     {
         return $this->pointcut;

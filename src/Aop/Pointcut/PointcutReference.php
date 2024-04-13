@@ -13,9 +13,13 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
-use Go\Aop\PointFilter;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\ParserReflection\ReflectionFileNamespace;
+use ReflectionClass;
+use ReflectionFunction;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
  * Reference to the pointcut holds an id of pointcut to fetch when needed
@@ -25,65 +29,35 @@ final class PointcutReference implements Pointcut
     private ?Pointcut $pointcut = null;
 
     /**
-     * Name of the pointcut to fetch from the container
-     */
-    private string $pointcutId;
-
-    /**
-     * Instance of aspect container
-     */
-    private AspectContainer $container;
-
-    /**
      * Pointcut reference constructor
-     */
-    public function __construct(AspectContainer $container, string $pointcutId)
-    {
-        $this->container  = $container;
-        $this->pointcutId = $pointcutId;
-    }
-
-    /**
-     * Performs matching of point of code
      *
-     * @param mixed              $point     Specific part of code, can be any Reflection class
-     * @param null|mixed         $context   Related context, can be class or namespace
-     * @param null|string|object $instance  Invocation instance or string for static calls
-     * @param null|array         $arguments Dynamic arguments for method
+     * @param string $pointcutId Name of the pointcut to fetch from the container
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
-    {
-        return $this->getPointcut()->matches($point, $context, $instance, $arguments);
+    public function __construct(
+        private AspectContainer $container,
+        private readonly string $pointcutId
+    ) {}
+
+    public function matches(
+        ReflectionClass|ReflectionFileNamespace                $context,
+        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
+        object|string                                          $instanceOrScope = null,
+        array                                                  $arguments = null
+    ): bool {
+        return $this->getPointcut()->matches($context, $reflector, $instanceOrScope, $arguments);
     }
 
-    /**
-     * Returns the kind of point filter
-     */
     public function getKind(): int
     {
         return $this->getPointcut()->getKind();
     }
 
-    /**
-     * Return the class filter for this pointcut.
-     */
-    public function getClassFilter(): PointFilter
-    {
-        return $this->getPointcut()->getClassFilter();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function __sleep()
+    public function __sleep(): array
     {
         return ['pointcutId'];
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function __wakeup()
+    public function __wakeup(): void
     {
         $this->container = AspectKernel::getInstance()->getContainer();
     }
@@ -93,7 +67,7 @@ final class PointcutReference implements Pointcut
      */
     private function getPointcut(): Pointcut
     {
-        if (!$this->pointcut) {
+        if (!isset($this->pointcut)) {
             $this->pointcut = $this->container->getPointcut($this->pointcutId);
         }
 

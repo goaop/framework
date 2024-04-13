@@ -25,10 +25,12 @@ interface AspectLoaderExtension
     /**
      * Loads definition from specific point of aspect into the container
      *
-     * @param Aspect          $aspect           Instance of aspect
-     * @param ReflectionClass $reflectionAspect Reflection of aspect
+     * @param Aspect&T           $aspect           Instance of aspect
+     * @param ReflectionClass<T> $reflectionAspect Reflection of aspect
      *
      * @return array<string,Pointcut>|array<string,Advisor>
+     *
+     * @template T of Aspect
      */
     public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array;
 }

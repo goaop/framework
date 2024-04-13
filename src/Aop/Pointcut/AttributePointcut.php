@@ -13,79 +13,62 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
-use InvalidArgumentException;
+use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionClass;
+use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionProperty;
 
 /**
- * Annotation property pointcut checks property annotation
+ * Attribute property pointcut checks joinpoint attributes
+ *
+ * @see https://www.php.net/manual/en/reflectionfunctionabstract.getattributes.php
+ * @see https://www.php.net/manual/en/reflectionclass.getattributes.php
+ * @see https://www.php.net/manual/en/reflectionproperty.getattributes.php
+ *
  */
-class AttributePointcut implements Pointcut
+final readonly class AttributePointcut implements Pointcut
 {
-    use PointcutClassFilterTrait;
-
-    /**
-     * Attribute class to match
-     */
-    protected string $attributeClassName;
-
-    /**
-     * Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY, KIND_TRAIT
-     */
-    protected int $filterKind;
-
-    /**
-     * Specifies name of the expected class to receive
-     */
-    protected string $expectedClass;
-
-    /**
-     * Static mappings of kind to expected class
-     */
-    protected static array $mappings = [
-        self::KIND_CLASS    => ReflectionClass::class,
-        self::KIND_TRAIT    => ReflectionClass::class,
-        self::KIND_METHOD   => ReflectionMethod::class,
-        self::KIND_PROPERTY => ReflectionProperty::class,
-    ];
-
     /**
      * Attribute matcher constructor
      *
-     * @param int $filterKind Kind of filter, e.g. KIND_CLASS
+     * @param int $pointcutKind Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY, KIND_TRAIT
+     * @param (string&class-string) $attributeClassName Attribute class to match
      */
-    public function __construct(int $filterKind, string $attributeClassName)
-    {
-        if (!isset(self::$mappings[$filterKind])) {
-            throw new InvalidArgumentException("Unsupported filter kind {$filterKind}");
-        }
-        $this->filterKind         = $filterKind;
-        $this->attributeClassName = $attributeClassName;
-        $this->expectedClass      = self::$mappings[$filterKind];
-    }
+    public function __construct(
+        private int    $pointcutKind,
+        private string $attributeClassName,
+        private bool   $useContextForMatching = false,
+    ) {}
 
-    /**
-     * @param ReflectionClass|ReflectionMethod|ReflectionProperty $point
-     * {@inheritdoc}
-     */
-    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
-    {
-        $expectedClass = $this->expectedClass;
-        if (!$point instanceof $expectedClass) {
+    final public function matches(
+        ReflectionClass|ReflectionFileNamespace                $context,
+        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
+        object|string                                          $instanceOrScope = null,
+        array                                                  $arguments = null
+    ): bool {
+        // If we don't use context for matching and we do static check, then always match
+        if (!$this->useContextForMatching && !isset($reflector)) {
+            return true;
+        }
+
+        // Otherwise we select either context for matching (eg for @within) or reflector (eg for @execution)
+        if ($this->useContextForMatching) {
+            $instanceToCheck = $context;
+        } else {
+            $instanceToCheck = $reflector;
+        }
+
+        if (!isset($instanceToCheck) || !method_exists($instanceToCheck, 'getAttributes')) {
             return false;
         }
 
-        $attributes = $point->getAttributes($this->attributeClassName);
-
-        return count($attributes) > 0;
+        // Final static matching by checking attributes for given reflector
+        return count($instanceToCheck->getAttributes($this->attributeClassName)) > 0;
     }
 
-    /**
-     * Returns the kind of point filter
-     */
     public function getKind(): int
     {
-        return $this->filterKind;
+        return $this->pointcutKind;
     }
 }

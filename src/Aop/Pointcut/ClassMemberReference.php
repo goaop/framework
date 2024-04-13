@@ -12,26 +12,25 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\PointFilter;
-use Go\Aop\Support\ModifierMatcherFilter;
+use Go\Aop\Pointcut;
 
 /**
  * Readonly data transfer object for storing a reference to the class member (property or method)
  */
-readonly class ClassMemberReference
+final readonly class ClassMemberReference
 {
     /**
      * Default constructor
      *
-     * @param PointFilter           $classFilter       Filter for class names
-     * @param ModifierMatcherFilter $visibilityFilter  Member visibility filter (public/protected/etc)
-     * @param ModifierMatcherFilter $accessTypeFilter  Filter for access type (statically "::" or dynamically "->")
-     * @param string                $memberNamePattern Expression for the name
+     * @param Pointcut         $classFilter Filter for class names
+     * @param ModifierPointcut $visibilityFilter Member visibility filter (public/protected/etc)
+     * @param ModifierPointcut $accessTypeFilter Filter for access type (statically "::" or dynamically "->")
+     * @param string           $memberNamePattern Expression for the name
      */
     public function __construct(
-        public PointFilter           $classFilter,
-        public ModifierMatcherFilter $visibilityFilter,
-        public ModifierMatcherFilter $accessTypeFilter,
-        public string                $memberNamePattern
+        public Pointcut         $classFilter,
+        public ModifierPointcut $visibilityFilter,
+        public ModifierPointcut $accessTypeFilter,
+        public string           $memberNamePattern
     ) {}
 }

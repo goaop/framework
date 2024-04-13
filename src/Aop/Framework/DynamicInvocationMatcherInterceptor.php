@@ -15,7 +15,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Aop\PointFilter;
+use Go\Aop\Pointcut;
 use ReflectionClass;
 
 /**
@@ -27,10 +27,10 @@ use ReflectionClass;
 readonly class DynamicInvocationMatcherInterceptor implements Interceptor
 {
     /**
-     * Dynamic matcher constructor
+     * Dynamic invocation matcher constructor
      */
     public function __construct(
-        private PointFilter $pointFilter,
+        private Pointcut    $pointcut,
         private Interceptor $interceptor
     ){}
 
@@ -40,7 +40,7 @@ readonly class DynamicInvocationMatcherInterceptor implements Interceptor
             $method       = $joinpoint->getMethod();
             $context      = $joinpoint->getThis() ?? $joinpoint->getScope();
             $contextClass = new ReflectionClass($context);
-            if ($this->pointFilter->matches($method, $contextClass, $context, $joinpoint->getArguments())) {
+            if ($this->pointcut->matches($contextClass, $method, $context, $joinpoint->getArguments())) {
                 return $this->interceptor->invoke($joinpoint);
             }
         }

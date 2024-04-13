@@ -12,19 +12,31 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Dissect\Lexer\TokenStream\TokenStream;
 use Dissect\Parser\LALR1\Parser;
+use Go\Aop\Pointcut;
 
 /**
  * Pointcut parser extends the default parser with parse table and strict typehint for grammar
  */
-class PointcutParser extends Parser
+final class PointcutParser extends Parser
 {
-    /**
-     * {@inheritDoc}
-     */
     public function __construct(PointcutGrammar $grammar)
     {
         $parseTable = include __DIR__ . '/PointcutParseTable.php';
         parent::__construct($grammar, $parseTable);
+    }
+
+    /**
+     * @return Pointcut Covariant, always {@see Pointcut}
+     */
+    public function parse(TokenStream $stream): Pointcut
+    {
+        $result = parent::parse($stream);
+        if (!$result instanceof Pointcut) {
+            throw new \UnexpectedValueException("Expected instance of Pointcut to be received during parsing");
+        }
+
+        return $result;
     }
 }
