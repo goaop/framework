@@ -13,13 +13,13 @@ declare(strict_types = 1);
 namespace Go\Core;
 
 use Dissect\Lexer\Exception\RecognitionException;
-use Dissect\Lexer\Lexer;
 use Dissect\Lexer\TokenStream\TokenStream;
 use Dissect\Parser\Exception\UnexpectedTokenException;
-use Dissect\Parser\Parser;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
-use Go\Aop\PointFilter;
+use Go\Aop\Pointcut\PointcutLexer;
+use Go\Aop\Pointcut\PointcutParser;
+use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
 use UnexpectedValueException;
@@ -30,34 +30,25 @@ use UnexpectedValueException;
 abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
 {
     /**
-     * Instance of pointcut lexer
-     */
-    protected Lexer $pointcutLexer;
-
-    /**
-     * Instance of pointcut parser
-     */
-    protected Parser $pointcutParser;
-
-    /**
      * Default loader constructor that accepts pointcut lexer and parser
      */
-    public function __construct(Lexer $pointcutLexer, Parser $pointcutParser)
-    {
-        $this->pointcutLexer  = $pointcutLexer;
-        $this->pointcutParser = $pointcutParser;
-    }
+    public function __construct(
+        protected PointcutLexer $pointcutLexer,
+        protected PointcutParser $pointcutParser
+    ) {}
 
     /**
      * General method for parsing pointcuts
      *
-     * @param mixed|ReflectionMethod|ReflectionProperty $reflection Reflection of point
-     *
      * @throws UnexpectedValueException if there was an error during parsing
-     * @return Pointcut|PointFilter
+     * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
+     * @template T of Aspect
      */
-    final protected function parsePointcut(Aspect $aspect, $reflection, string $pointcutExpression): PointFilter
-    {
+    final protected function parsePointcut(
+        Aspect $aspect,
+        ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
+        string $pointcutExpression
+    ): Pointcut {
         $stream = $this->makeLexicalAnalyze($aspect, $reflection, $pointcutExpression);
 
         return $this->parseTokenStream($reflection, $pointcutExpression, $stream);
@@ -66,12 +57,16 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     /**
      * Performs lexical analyze of pointcut
      *
-     * @param ReflectionMethod|ReflectionProperty $reflection
+     * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
+     * @template T of Aspect
      *
      * @throws UnexpectedValueException
      */
-    private function makeLexicalAnalyze(Aspect $aspect, $reflection, string $pointcutExpression): TokenStream
-    {
+    private function makeLexicalAnalyze(
+        Aspect $aspect,
+        ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
+        string $pointcutExpression
+    ): TokenStream {
         try {
             $resolvedThisPointcut = str_replace('$this', \get_class($aspect), $pointcutExpression);
             $stream = $this->pointcutLexer->lex($resolvedThisPointcut);
@@ -97,12 +92,16 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     /**
      * Performs parsing of pointcut
      *
-     * @param ReflectionMethod|ReflectionProperty $reflection
+     * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
+     * @template T of Aspect
      *
      * @throws UnexpectedValueException
      */
-    private function parseTokenStream($reflection, string $pointcutExpression, TokenStream $stream): PointFilter
-    {
+    private function parseTokenStream(
+        ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
+        string $pointcutExpression,
+        TokenStream $stream
+    ): Pointcut {
         try {
             $pointcut = $this->pointcutParser->parse($stream);
         } catch (UnexpectedTokenException $e) {

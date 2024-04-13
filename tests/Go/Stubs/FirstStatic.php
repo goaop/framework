@@ -27,4 +27,19 @@ class FirstStatic extends First
     {
         return static::$invocation->__invoke(self::class, [$value, $level]);
     }
+
+    private static function privateStaticNever(): never
+    {
+        throw new \RuntimeException('Not implemented yet');
+    }
+
+    public static final function publicStaticFinal(): void
+    {
+        // nothing here
+    }
+
+    private function privateDynamicNever(): never
+    {
+        throw new \RuntimeException('Not implemented yet');
+    }
 }

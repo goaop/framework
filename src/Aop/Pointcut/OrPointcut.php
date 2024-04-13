@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
@@ -13,63 +13,59 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
-use Go\Aop\PointFilter;
-use Go\Aop\Support\OrPointFilter;
+use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionClass;
+use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionProperty;
 
 /**
- * Logical "OR" pointcut that combines two simple pointcuts
+ * Logical "or" filter.
  */
-class OrPointcut extends AndPointcut
+final readonly class OrPointcut implements Pointcut
 {
     /**
-     * "Or" pointcut constructor
+     * Kind of filter
      */
-    public function __construct(Pointcut $first, Pointcut $second)
-    {
-        $this->first  = $first;
-        $this->second = $second;
-        $this->kind   = $first->getKind() | $second->getKind();
-
-        $this->classFilter = new OrPointFilter($first->getClassFilter(), $second->getClassFilter());
-    }
+    private int $pointcutKind;
 
     /**
-     * Performs matching of point of code
+     * List of Pointcut to combine
      *
-     * @param mixed              $point     Specific part of code, can be any Reflection class
-     * @param null|mixed         $context   Related context, can be class or namespace
-     * @param null|string|object $instance  Invocation instance or string for static calls
-     * @param null|array         $arguments Dynamic arguments for method
+     * @var array<Pointcut>
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
-    {
-        return $this->matchPart($this->first, $point, $context, $instance, $arguments)
-            || $this->matchPart($this->second, $point, $context, $instance, $arguments);
-    }
+    private array $pointcuts;
 
     /**
-     * @inheritDoc
+     * Or constructor
      */
-    protected function matchPart(
-        Pointcut $pointcut,
-        $point,
-        $context = null,
-        $instance = null,
-        array $arguments = null
-    ): bool {
-        $pointcutKind = $pointcut->getKind();
-        // We need to recheck filter kind one more time, because of OR syntax
-        switch (true) {
-            case ($point instanceof ReflectionMethod && ($pointcutKind & PointFilter::KIND_METHOD)):
-            case ($point instanceof ReflectionProperty && ($pointcutKind & PointFilter::KIND_PROPERTY)):
-            case ($point instanceof ReflectionClass && ($pointcutKind & PointFilter::KIND_CLASS)):
-                return parent::matchPart($pointcut, $point, $context, $instance, $arguments);
-
-            default:
-                return false;
+    public function __construct(Pointcut ...$pointcuts)
+    {
+        $pointcutKind = 0;
+        foreach ($pointcuts as $singlePointcut) {
+            $pointcutKind |= $singlePointcut->getKind();
         }
+        $this->pointcutKind  = $pointcutKind;
+        $this->pointcuts     = $pointcuts;
+    }
+
+    public function matches(
+        ReflectionClass|ReflectionFileNamespace                $context,
+        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
+        object|string                                          $instanceOrScope = null,
+        array                                                  $arguments = null
+    ): bool {
+        foreach ($this->pointcuts as $singlePointcut) {
+            if ($singlePointcut->matches($context, $reflector, $instanceOrScope, $arguments)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function getKind(): int
+    {
+        return $this->pointcutKind;
     }
 }

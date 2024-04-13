@@ -1,10 +1,10 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2013, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -13,60 +13,42 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
+use Go\ParserReflection\ReflectionFileNamespace;
+use ReflectionClass;
+use ReflectionFunction;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
- * Signature method pointcut checks method signature (modifiers and name) to match it
+ * Logical "not" pointcut filter.
  */
-class NotPointcut implements Pointcut
+final readonly class NotPointcut implements Pointcut
 {
-    use PointcutClassFilterTrait;
+    /**
+     * Not constructor
+     */
+    public function __construct(private Pointcut $pointcut) {}
 
     /**
-     * Pointcut to invert
+     * @return ($reflector is null ? true : bool)
      */
-    protected Pointcut $pointcut;
-
-    /**
-     * Kind of pointcut
-     */
-    protected int $kind = 0;
-
-    /**
-     * Inverse pointcut matcher
-     */
-    public function __construct(Pointcut $pointcut)
-    {
-        $this->pointcut = $pointcut;
-        $this->kind     = $pointcut->getKind();
-    }
-
-    /**
-     * Performs matching of point of code
-     *
-     * @param mixed              $point     Specific part of code, can be any Reflection class
-     * @param null|mixed         $context   Related context, can be class or namespace
-     * @param null|string|object $instance  Invocation instance or string for static calls
-     * @param null|array         $arguments Dynamic arguments for method
-     */
-    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
-    {
-        $isMatchesPre = $this->pointcut->getClassFilter()->matches($context);
-        if (!$isMatchesPre) {
-            return true;
-        }
-        $isMatchesPoint = $this->pointcut->matches($point, $context, $instance, $arguments);
-        if (!$isMatchesPoint) {
+    public function matches(
+        ReflectionClass|ReflectionFileNamespace                $context,
+        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
+        object|string                                          $instanceOrScope = null,
+        array                                                  $arguments = null
+    ): bool {
+        // For Logical "not" expression without reflector, we should match statically for any context
+        if (!isset($reflector)) {
             return true;
         }
 
-        return false;
+        // Otherwise we return inverted result from static/dynamic matching
+        return !$this->pointcut->matches($context, $reflector, $instanceOrScope, $arguments);
     }
 
-    /**
-     * Returns the kind of point filter
-     */
     public function getKind(): int
     {
-        return $this->kind;
+        return $this->pointcut->getKind();
     }
 }

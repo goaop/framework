@@ -14,8 +14,6 @@ namespace Go\Aop;
 
 /**
  * Super-interface for all Advisors that are driven by a pointcut.
- *
- * This covers nearly all advisors except introduction advisors, for which method-level matching doesn't apply.
  */
 interface PointcutAdvisor extends Advisor
 {

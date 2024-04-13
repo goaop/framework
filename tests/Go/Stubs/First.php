@@ -12,12 +12,16 @@ declare(strict_types = 1);
 
 namespace Go\Stubs;
 
+#[StubAttribute(First::class)]
 class First
 {
 
     private int $private = T_PRIVATE;
     protected int $protected = T_PROTECTED;
     public int $public = T_PUBLIC;
+
+    #[StubAttribute(First::class)]
+    public string $publicWithAttribute = 'attribute';
 
     private static int $staticPrivate = T_PRIVATE;
     protected static int $staticProtected = T_PROTECTED;
@@ -37,6 +41,22 @@ class First
     public function publicMethod(): int
     {
         return $this->public;
+    }
+
+    public final function publicFinalMethod(): void
+    {
+        // nothing here
+    }
+
+    protected final function protectedFinalMethod(): void
+    {
+        // nothing here
+    }
+
+    #[StubAttribute(First::class)]
+    public function publicMethodWithAttribute(): string
+    {
+        return $this->publicWithAttribute;
     }
 
     // Static methods that access self:: properties

@@ -24,20 +24,12 @@ use Go\Core\AspectContainer;
 /**
  * Pointcut builder provides simple DSL for declaring pointcuts in plain PHP code
  */
-class PointcutBuilder
+final readonly class PointcutBuilder
 {
-    /**
-     * Instance of aspect container
-     */
-    protected AspectContainer $container;
-
     /**
      * Default constructor for the builder
      */
-    public function __construct(AspectContainer $container)
-    {
-        $this->container = $container;
-    }
+    public function __construct(private AspectContainer $container) {}
 
     /**
      * Declares the "Before" hook for specific pointcut expression
@@ -77,6 +69,9 @@ class PointcutBuilder
 
     /**
      * Declares the error message for specific pointcut expression with concrete error level
+     *
+     * @param (string&non-empty-string) $message Error message to show for this intercepton
+     * @param int&(E_USER_NOTICE|E_USER_WARNING|E_USER_ERROR|E_USER_DEPRECATED) $errorLevel Default level of error, only E_USER_* constants
      */
     public function declareError(string $pointcutExpression, string $message, int $errorLevel = E_USER_ERROR): void
     {

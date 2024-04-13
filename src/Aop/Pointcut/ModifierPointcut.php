@@ -10,29 +10,34 @@ declare(strict_types = 1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Aop\Support;
+namespace Go\Aop\Pointcut;
 
-use Go\Aop\PointFilter;
+use Go\Aop\Pointcut;
+use Go\ParserReflection\ReflectionFileNamespace;
+use ReflectionClass;
+use ReflectionFunction;
+use ReflectionMethod;
+use ReflectionProperty;
 
 /**
- * ModifierMatcherFilter performs checks on modifiers for reflection point
+ * ModifierPointcut performs matching on modifiers for reflector
  */
-class ModifierMatcherFilter implements PointFilter
+final class ModifierPointcut implements Pointcut
 {
     /**
      * Bit mask, that should be always match
      */
-    protected int $andMask = 0;
+    private int $andMask;
 
     /**
      * Bit mask, that can be used for additional check
      */
-    protected int $orMask = 0;
+    private int $orMask = 0;
 
     /**
      * Bit mask to exclude specific value from matching, for example, !public
      */
-    protected int $notMask = 0;
+    private int $notMask = 0;
 
     /**
      * Initialize default filter with "and" mask
@@ -45,16 +50,25 @@ class ModifierMatcherFilter implements PointFilter
     }
 
     /**
-     * Performs matching of point of code
-     *
-     * @param mixed $point Specific part of code, can be any Reflection class
-     * @param null|mixed $context Related context, can be class or namespace
-     * @param null|string|object $instance Invocation instance or string for static calls
-     * @param null|array $arguments Dynamic arguments for method
+     * @return ($reflector is null ? true : bool)
      */
-    public function matches($point, $context = null, $instance = null, array $arguments = null): bool
-    {
-        $modifiers = $point->getModifiers();
+    public function matches(
+        ReflectionClass|ReflectionFileNamespace                $context,
+        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
+        object|string                                          $instanceOrScope = null,
+        array                                                  $arguments = null
+    ): bool {
+        // With context only we always match, as we don't know about modifiers of given reflector
+        if (!isset($reflector)) {
+            return true;
+        }
+
+        // Only ReflectionFunction doesn't have getModifiers method
+        if ($reflector instanceof ReflectionFunction) {
+            $modifiers = 0;
+        } else {
+            $modifiers = $reflector->getModifiers();
+        }
 
         return !($this->notMask & $modifiers) &&
             (($this->andMask === ($this->andMask & $modifiers)) || ($this->orMask & $modifiers));
@@ -90,11 +104,8 @@ class ModifierMatcherFilter implements PointFilter
         return $this;
     }
 
-    /**
-     * Returns the kind of point filter
-     */
     public function getKind(): int
     {
-        return self::KIND_ALL;
+        return Pointcut::KIND_ALL;
     }
 }

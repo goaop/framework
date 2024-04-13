@@ -13,12 +13,12 @@ declare(strict_types = 1);
 namespace Go\Core;
 
 use Go\Aop;
-use Go\Aop\IntroductionAdvisor;
+use Go\Aop\IntroductionInfo;
 use Go\Aop\PointcutAdvisor;
-use Go\Aop\PointFilter;
-use Go\Aop\Support\NamespacedReflectionFunction;
+use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionClass;
+use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionProperty;
 
@@ -62,8 +62,8 @@ class AdviceMatcher implements AdviceMatcherInterface
         foreach ($advisors as $advisorId => $advisor) {
             if ($advisor instanceof PointcutAdvisor) {
                 $pointcut = $advisor->getPointcut();
-                $isFunctionAdvisor = $pointcut->getKind() & PointFilter::KIND_FUNCTION;
-                if ($isFunctionAdvisor && $pointcut->getClassFilter()->matches($namespace)) {
+                $isFunctionAdvisor = $pointcut->getKind() & Pointcut::KIND_FUNCTION;
+                if ($isFunctionAdvisor && $pointcut->matches($namespace)) {
                     $advices[] = $this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $advisorId, $pointcut);
                 }
             }
@@ -96,14 +96,12 @@ class AdviceMatcher implements AdviceMatcherInterface
         foreach ($advisors as $advisorId => $advisor) {
             if ($advisor instanceof PointcutAdvisor) {
                 $pointcut = $advisor->getPointcut();
-                if ($pointcut->getClassFilter()->matches($class)) {
-                    $classAdvices[] = $this->getAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut);
+                if (($pointcut->getKind() & Pointcut::KIND_CLASS) && $pointcut->matches($class)) {
+                    $classAdvices[] = $this->getClassAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut);
                 }
-            }
 
-            if ($advisor instanceof IntroductionAdvisor) {
-                if ($advisor->getClassFilter()->matches($class)) {
-                    $classAdvices[] = $this->getIntroductionFromAdvisor($originalClass, $advisor);
+                if ($pointcut->matches($class)) {
+                    $classAdvices[] = $this->getClassLevelAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut);
                 }
             }
         }
@@ -115,33 +113,48 @@ class AdviceMatcher implements AdviceMatcherInterface
     }
 
     /**
-     * Returns list of advices from advisor and point filter
+     * Returns list of class advices from advisor and point filter
      */
-    private function getAdvicesFromAdvisor(
+    private function getClassAdvicesFromAdvisor(
         ReflectionClass $class,
         PointcutAdvisor $advisor,
         string $advisorId,
-        PointFilter $filter
+        Pointcut $pointcut
     ): array {
         $classAdvices = [];
-        $filterKind   = $filter->getKind();
+        $pointcutKind = $pointcut->getKind();
+        $advice       = $advisor->getAdvice();
 
-        // Check class only for class filters
-        if (($filterKind & PointFilter::KIND_CLASS) !== 0) {
-            if ($filter->matches($class)) {
-                // Dynamic initialization
-                if (($filterKind & PointFilter::KIND_INIT) !== 0) {
-                    $classAdvices[AspectContainer::INIT_PREFIX]['root'][$advisorId] = $advisor->getAdvice();
-                }
-                // Static initalization
-                if (($filterKind & PointFilter::KIND_STATIC_INIT) !== 0) {
-                    $classAdvices[AspectContainer::STATIC_INIT_PREFIX]['root'][$advisorId] = $advisor->getAdvice();
-                }
-            }
+        // Dynamic initialization (creation of instance with new)
+        if (($pointcutKind & Pointcut::KIND_INIT) !== 0) {
+            $classAdvices[AspectContainer::INIT_PREFIX]['root'][$advisorId] = $advice;
+        }
+        // Static initalization (when class just loaded)
+        if (($pointcutKind & Pointcut::KIND_STATIC_INIT) !== 0) {
+            $classAdvices[AspectContainer::STATIC_INIT_PREFIX]['root'][$advisorId] = $advice;
+        }
+        // Introduction which can add interfaces or traits
+        if (($pointcutKind & Pointcut::KIND_INTRODUCTION) !== 0 && $advice instanceof IntroductionInfo && !$class->isTrait()) {
+            $classAdvices = [...$this->getIntroductionAdvices($advice)];
         }
 
+        return $classAdvices;
+    }
+
+    /**
+     * Returns list of advices from advisor and point filter
+     */
+    private function getClassLevelAdvicesFromAdvisor(
+        ReflectionClass $class,
+        PointcutAdvisor $advisor,
+        string $advisorId,
+        Pointcut $pointcut
+    ): array {
+        $classAdvices = [];
+        $pointcutKind = $pointcut->getKind();
+
         // Check methods in class only for method filters
-        if (($filterKind & PointFilter::KIND_METHOD) !== 0) {
+        if (($pointcutKind & Pointcut::KIND_METHOD) !== 0) {
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
             foreach ($class->getMethods($mask) as $method) {
                 // abstract and parent final methods could not be woven
@@ -150,7 +163,7 @@ class AdviceMatcher implements AdviceMatcherInterface
                     continue;
                 }
 
-                if ($filter->matches($method, $class)) {
+                if ($pointcut->matches($class, $method)) {
                     $prefix = $method->isStatic() ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
                     $classAdvices[$prefix][$method->name][$advisorId] = $advisor->getAdvice();
                 }
@@ -158,10 +171,10 @@ class AdviceMatcher implements AdviceMatcherInterface
         }
 
         // Check properties in class only for property filters
-        if (($filterKind & PointFilter::KIND_PROPERTY) !== 0) {
+        if (($pointcutKind & Pointcut::KIND_PROPERTY) !== 0) {
             $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
             foreach ($class->getProperties($mask) as $property) {
-                if ($filter->matches($property, $class) && !$property->isStatic()) {
+                if ($pointcut->matches($class, $property) && !$property->isStatic()) {
                     $classAdvices[AspectContainer::PROPERTY_PREFIX][$property->name][$advisorId] = $advisor->getAdvice();
                 }
             }
@@ -173,20 +186,11 @@ class AdviceMatcher implements AdviceMatcherInterface
     /**
      * Returns list of introduction advices from advisor
      *
-     * @return Aop\IntroductionInfo[][][]
+     * @return IntroductionInfo[][][]
      */
-    private function getIntroductionFromAdvisor(
-        ReflectionClass $class,
-        IntroductionAdvisor $advisor
-    ): array {
+    private function getIntroductionAdvices(IntroductionInfo $introduction): array {
         $classAdvices = [];
-        // Do not make introduction for traits
-        if ($class->isTrait()) {
-            return $classAdvices;
-        }
 
-        /** @var Aop\IntroductionInfo $introduction */
-        $introduction    = $advisor->getAdvice();
         $introducedTrait = $introduction->getTrait();
         if (!empty($introducedTrait)) {
             $introducedTrait = '\\' . ltrim($introducedTrait, '\\');
@@ -210,18 +214,18 @@ class AdviceMatcher implements AdviceMatcherInterface
         ReflectionFileNamespace $namespace,
         PointcutAdvisor $advisor,
         string $advisorId,
-        PointFilter $pointcut
+        Pointcut $pointcut
     ): array {
         $functions = [];
         $advices   = [];
 
         $listOfGlobalFunctions = get_defined_functions();
         foreach ($listOfGlobalFunctions['internal'] as $functionName) {
-            $functions[$functionName] = new NamespacedReflectionFunction($functionName, $namespace->getName());
+            $functions[$functionName] = new ReflectionFunction($functionName);
         }
 
         foreach ($functions as $functionName => $function) {
-            if ($pointcut->matches($function, $namespace)) {
+            if ($pointcut->matches($namespace, $function)) {
                 $advices[AspectContainer::FUNCTION_PREFIX][$functionName][$advisorId] = $advisor->getAdvice();
             }
         }

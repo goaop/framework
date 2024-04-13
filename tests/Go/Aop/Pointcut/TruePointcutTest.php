@@ -12,9 +12,10 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\PointFilter;
-use Go\Aop\Support\TruePointFilter;
+use Go\Aop\Pointcut;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionMethod;
 
 class TruePointcutTest extends TestCase
 {
@@ -25,32 +26,32 @@ class TruePointcutTest extends TestCase
         $this->pointcut = new TruePointcut();
     }
 
-    public function testItAlwaysMatchesForAnything()
+    public function testItAlwaysMatchesForAnything(): void
     {
-        $this->assertTrue($this->pointcut->matches(null));
-        $this->assertTrue($this->pointcut->matches(new \ReflectionClass(self::class)));
+        $this->assertTrue($this->pointcut->matches(new ReflectionClass(self::class)));
+        $this->assertTrue(
+            $this->pointcut->matches(
+                new ReflectionClass(self::class),
+                new ReflectionMethod(self::class, __FUNCTION__)
+            )
+        );
     }
 
-    public function testItMatchesWithDefaultKinds()
+    public function testItMatchesWithDefaultKinds(): void
     {
         $kind = $this->pointcut->getKind();
-        $this->assertTrue((bool)($kind & PointFilter::KIND_METHOD));
-        $this->assertTrue((bool)($kind & PointFilter::KIND_PROPERTY));
-        $this->assertTrue((bool)($kind & PointFilter::KIND_CLASS));
-        $this->assertTrue((bool)($kind & PointFilter::KIND_TRAIT));
-        $this->assertTrue((bool)($kind & PointFilter::KIND_FUNCTION));
-        $this->assertTrue((bool)($kind & PointFilter::KIND_INIT));
-        $this->assertTrue((bool)($kind & PointFilter::KIND_STATIC_INIT));
+        $this->assertTrue((bool)($kind & Pointcut::KIND_METHOD));
+        $this->assertTrue((bool)($kind & Pointcut::KIND_PROPERTY));
+        $this->assertTrue((bool)($kind & Pointcut::KIND_CLASS));
+        $this->assertTrue((bool)($kind & Pointcut::KIND_TRAIT));
+        $this->assertTrue((bool)($kind & Pointcut::KIND_FUNCTION));
+        $this->assertTrue((bool)($kind & Pointcut::KIND_INIT));
+        $this->assertTrue((bool)($kind & Pointcut::KIND_STATIC_INIT));
     }
 
-    public function testItDoesNotMatchWithDynamicKindByDefault()
+    public function testItDoesNotMatchWithDynamicKindByDefault(): void
     {
         $kind = $this->pointcut->getKind();
-        $this->assertFalse((bool)($kind & PointFilter::KIND_DYNAMIC));
-    }
-
-    public function testItUsesTruePointFilterForClass()
-    {
-        $this->assertInstanceOf(TruePointFilter::class, $this->pointcut->getClassFilter());
+        $this->assertFalse((bool)($kind & Pointcut::KIND_DYNAMIC));
     }
 }

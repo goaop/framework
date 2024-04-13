@@ -87,9 +87,6 @@ class PointcutParserTest extends TestCase
             // Parenthesis
             ['within(DemoInterface+) && ( within(**) || within(*) )'],
 
-            // Control flow execution pointcuts
-            ['cflowbelow(execution(public Example->method(*)))'],
-
             // Function pointcut
             ['execution(Demo\*\Test\**\*(*))'],
             ['execution(Demo\Namespace\array_*_er(*))'],

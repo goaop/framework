@@ -1,10 +1,10 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2017, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2014, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -12,21 +12,40 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\Pointcut;
+use Go\Stubs\FirstStatic;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use ReflectionMethod;
 
 class NotPointcutTest extends TestCase
 {
-    protected NotPointcut $pointcut;
-
-    public function setUp(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('logicCases')]
+    public function testMatches(Pointcut $first, bool $expected): void
     {
-        $this->pointcut = new NotPointcut(new TruePointcut());
+        $filter = new NotPointcut($first);
+        $result = $filter->matches(
+            new ReflectionClass(self::class),
+            new ReflectionMethod(self::class, __FUNCTION__)
+        );
+        $this->assertSame($expected, $result);
     }
 
-    public function testItNeverMatchesForTruePointcut()
+    public static function logicCases(): \Generator
     {
-        $this->assertFalse($this->pointcut->matches(null));
-        $this->assertFalse($this->pointcut->matches(new ReflectionClass(self::class)));
+        $true  = new TruePointcut();
+        $false = new NotPointcut($true);
+
+        yield [$false, true];
+        yield [$true, false];
+    }
+
+    public function testAlwaysMatchesWithoutReflectorInstance(): void
+    {
+        $truePointcut  = new TruePointcut();
+        $falsePointcut = new NotPointcut($truePointcut);
+
+        $reflectionClass = new ReflectionClass(FirstStatic::class);
+        $this->assertTrue($falsePointcut->matches($reflectionClass));
     }
 }
