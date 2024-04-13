@@ -21,7 +21,7 @@
         "phpstan/phpstan": "^1.10.57",
         "phpunit/phpunit": "^10.5.10",
         "symfony/console": "^4.4|^5.1",
-        "symfony/filesystem": "^4.4|^5.1",
+        "symfony/filesystem": "^6.4 || ^7.0",
         "symfony/process": "^4.4|^5.1",
         "tracy/tracy": "^2.10",
         "webmozart/glob": "^4.1"
