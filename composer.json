@@ -12,7 +12,7 @@
         "goaop/parser-reflection": "4.x-dev",
         "goaop/dissect": "^3.0",
         "laminas/laminas-code": "^4.13",
-        "symfony/finder": "^5.1"
+        "symfony/finder": "^5.1 || ^7.0"
     },
 
     "require-dev": {
