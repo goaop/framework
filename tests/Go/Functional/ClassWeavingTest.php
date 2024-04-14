@@ -22,11 +22,11 @@ class ClassWeavingTest extends BaseFunctionalTestCase
     public function testPropertyWeaving()
     {
         // it weaves Main class public and protected properties
-        $this->assertPropertyWoven(Main::class, 'publicClassProperty', 'advisor.Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
-        $this->assertPropertyWoven(Main::class, 'protectedClassProperty', 'advisor.Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
+        $this->assertPropertyWoven(Main::class, 'publicClassProperty', 'Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
+        $this->assertPropertyWoven(Main::class, 'protectedClassProperty', 'Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
 
         // it does not weaves Main class private property
-        $this->assertPropertyNotWoven(Main::class, 'privateClassProperty', 'advisor.Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
+        $this->assertPropertyNotWoven(Main::class, 'privateClassProperty', 'Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
     }
 
     /**
@@ -38,9 +38,9 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertClassIsWoven(Main::class);
 
         // it weaves Main class methods
-        $this->assertMethodWoven(Main::class, 'doSomething', 'advisor.Go\\Tests\\TestProject\\Aspect\\LoggingAspect->beforeMethod', 0);
-        $this->assertMethodWoven(Main::class, 'doSomething', 'advisor.Go\\Tests\\TestProject\\Aspect\\DoSomethingAspect->afterDoSomething', 1);
-        $this->assertMethodWoven(Main::class, 'doSomethingElse', 'advisor.Go\\Tests\\TestProject\\Aspect\\DoSomethingAspect->afterDoSomething');
+        $this->assertMethodWoven(Main::class, 'doSomething', 'Go\\Tests\\TestProject\\Aspect\\LoggingAspect->beforeMethod', 0);
+        $this->assertMethodWoven(Main::class, 'doSomething', 'Go\\Tests\\TestProject\\Aspect\\DoSomethingAspect->afterDoSomething', 1);
+        $this->assertMethodWoven(Main::class, 'doSomethingElse', 'Go\\Tests\\TestProject\\Aspect\\DoSomethingAspect->afterDoSomething');
 
         // it does not weaves AbstractBar class
         $this->assertClassIsNotWoven(AbstractBar::class);
@@ -48,8 +48,8 @@ class ClassWeavingTest extends BaseFunctionalTestCase
 
     public function testClassInitializationWeaving()
     {
-        $this->assertClassInitializationWoven(Main::class, 'advisor.Go\\Tests\\TestProject\\Aspect\\InitializationAspect->beforeInstanceInitialization');
-        $this->assertClassStaticInitializationWoven(Main::class, 'advisor.Go\\Tests\\TestProject\\Aspect\\InitializationAspect->afterClassStaticInitialization');
+        $this->assertClassInitializationWoven(Main::class, 'Go\\Tests\\TestProject\\Aspect\\InitializationAspect->beforeInstanceInitialization');
+        $this->assertClassStaticInitializationWoven(Main::class, 'Go\\Tests\\TestProject\\Aspect\\InitializationAspect->afterClassStaticInitialization');
     }
 
     public function testItWeavesFinalClasses()

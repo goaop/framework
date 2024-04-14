@@ -15,6 +15,7 @@ namespace Go\Proxy;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Core\LazyAdvisorAccessor;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use ReflectionClass;
 use ReflectionMethod;
@@ -87,7 +88,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         if ($accessor === null) {
             $aspectKernel = AspectKernel::getInstance();
-            $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
+            $accessor     = $aspectKernel->getContainer()->getService(LazyAdvisorAccessor::class);
         }
 
         $filledAdvices = [];

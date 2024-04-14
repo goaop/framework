@@ -74,7 +74,7 @@ class CachingTransformer extends BaseSourceTransformer
 
         if ($cacheModified < $lastModified
             || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)
-            || !$this->container->isFresh($cacheModified)
+            || !$this->container->hasAnyResourceChangedSince($cacheModified)
         ) {
             $processingResult = $this->processTransformers($metadata);
             if ($processingResult === self::RESULT_TRANSFORMED) {

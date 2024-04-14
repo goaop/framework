@@ -12,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Advisor;
 use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -302,10 +303,10 @@ class WeavingTransformerTest extends TestCase
         $container = $this->createMock(AspectContainer::class);
 
         $container
-            ->method('getByTag')
-            ->will($this->returnValueMap([
-                ['advisor', []]
-            ]));
+            ->method('getServicesByInterface')
+            ->willReturnMap([
+                [Advisor::class, []]
+            ]);
 
         return $container;
     }

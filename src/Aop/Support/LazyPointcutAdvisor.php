@@ -14,6 +14,8 @@ namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
 use Go\Aop\Pointcut;
+use Go\Aop\Pointcut\PointcutLexer;
+use Go\Aop\Pointcut\PointcutParser;
 use Go\Aop\PointcutAdvisor;
 use Go\Core\AspectContainer;
 
@@ -42,12 +44,8 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
     {
         if (!isset($this->pointcut)) {
             // Inject these dependencies and make them lazy!
-
-            /** @var Pointcut\PointcutLexer $lexer */
-            $lexer = $this->container->get('aspect.pointcut.lexer');
-
-            /** @var Pointcut\PointcutParser $parser */
-            $parser = $this->container->get('aspect.pointcut.parser');
+            $lexer  = $this->container->getService(PointcutLexer::class);
+            $parser = $this->container->getService(PointcutParser::class);
 
             $tokenStream    = $lexer->lex($this->pointcutExpression);
             $this->pointcut = $parser->parse($tokenStream);

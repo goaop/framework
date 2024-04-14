@@ -84,9 +84,9 @@ final readonly class PointcutBuilder
      */
     private function registerAdviceInContainer(string $pointcutExpression, Advice $adviceToInvoke): void
     {
-        $this->container->registerAdvisor(
-            new LazyPointcutAdvisor($this->container, $pointcutExpression, $adviceToInvoke),
-            $this->getPointcutId($pointcutExpression)
+        $this->container->add(
+            $this->getPointcutId($pointcutExpression),
+            new LazyPointcutAdvisor($this->container, $pointcutExpression, $adviceToInvoke)
         );
     }
 

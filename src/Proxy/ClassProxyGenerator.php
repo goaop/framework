@@ -177,12 +177,11 @@ class ClassProxyGenerator
      */
     protected static function wrapWithJoinPoints(array $classAdvices, string $className): array
     {
-        /** @var ?LazyAdvisorAccessor $accessor */
         static $accessor = null;
 
         if (!isset($accessor)) {
             $aspectKernel = AspectKernel::getInstance();
-            $accessor     = $aspectKernel->getContainer()->get('aspect.advisor.accessor');
+            $accessor     = $aspectKernel->getContainer()->getService(LazyAdvisorAccessor::class);
         }
 
         $joinPoints = [];

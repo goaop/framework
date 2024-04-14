@@ -88,7 +88,7 @@ class WeavingTransformer extends BaseSourceTransformer
         if (!empty($unloadedAspects)) {
             $this->loadAndRegisterAspects($unloadedAspects);
         }
-        $advisors = $this->container->getByTag('advisor');
+        $advisors = $this->container->getServicesByInterface(Advisor::class);
 
         $namespaces = $parsedSource->getFileNamespaces();
 
@@ -254,7 +254,7 @@ class WeavingTransformer extends BaseSourceTransformer
             $fileName = str_replace('\\', '/', $namespace->getName()) . '.php';
 
             $functionFileName = $cacheDir . $fileName;
-            if (!file_exists($functionFileName) || !$this->container->isFresh(filemtime($functionFileName))) {
+            if (!file_exists($functionFileName) || !$this->container->hasAnyResourceChangedSince(filemtime($functionFileName))) {
                 $functionAdvices = AbstractJoinpoint::flatAndSortAdvices($functionAdvices);
                 $dirname         = dirname($functionFileName);
                 if (!file_exists($dirname)) {

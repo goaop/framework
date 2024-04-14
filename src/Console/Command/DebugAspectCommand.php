@@ -61,9 +61,9 @@ EOT
         $aspectName = $input->getOption('aspect');
         if (!$aspectName) {
             $io->text('<info>' . get_class($this->aspectKernel) . '</info> has following enabled aspects:');
-            $aspects = $container->getByTag('aspect');
-        } else {
-            $aspect    = $container->getAspect($aspectName);
+            $aspects = $container->getServicesByInterface(Aspect::class);
+        } elseif (is_string($aspectName) && is_subclass_of($aspectName, Aspect::class)) {
+            $aspect    = $container->getService($aspectName);
             $aspects[] = $aspect;
         }
         $this->showRegisteredAspectsInfo($io, $aspects);
@@ -106,8 +106,7 @@ EOT
     {
         $container = $this->aspectKernel->getContainer();
 
-        /** @var AspectLoader $aspectLoader */
-        $aspectLoader = $container->get('aspect.loader');
+        $aspectLoader = $container->getService(AspectLoader::class);
         $io->writeln('<comment>Pointcuts and advices</comment>');
 
         $aspectItems     = $aspectLoader->load($aspect);

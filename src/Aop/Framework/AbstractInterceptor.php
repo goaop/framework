@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Aop\Aspect;
 use Go\Aop\AspectException;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\OrderedAdvice;
@@ -89,7 +90,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     public static function unserializeAdvice(array $adviceData): Closure
     {
         // General unpacking supports only aspect's advices
-        if (!isset($adviceData['class'])) {
+        if (!isset($adviceData['class']) || !is_subclass_of($adviceData['class'], Aspect::class)) {
             throw new AspectException('Could not unpack an interceptor without aspect name');
         }
         $aspectName = $adviceData['class'];
@@ -97,7 +98,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
 
         // With aspect name and method name, we can restore back a closure for it
         if (!isset(self::$localAdvicesCache["$aspectName->$methodName"])) {
-            $aspect = AspectKernel::getInstance()->getContainer()->getAspect($aspectName);
+            $aspect = AspectKernel::getInstance()->getContainer()->getService($aspectName);
             $advice = (new ReflectionMethod($aspectName, $methodName))->getClosure($aspect);
 
             assert(isset($advice), 'getClosure() can not be null on modern PHP versions');

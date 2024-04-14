@@ -15,6 +15,8 @@ namespace Go\Core;
 use AllowDynamicProperties;
 use Go\Aop\Advice;
 use Go\Aop\Advisor;
+use Go\Aop\Aspect;
+use Go\Aop\AspectException;
 use InvalidArgumentException;
 
 /**
@@ -50,14 +52,15 @@ class LazyAdvisorAccessor
     public function __get(string $name): Advice
     {
         if (!$this->container->has($name)) {
-            list(, $advisorName) = explode('.', $name);
-            list($aspect) = explode('->', $advisorName);
-            $aspectInstance = $this->container->getAspect($aspect);
+            [$aspectName] = explode('->', $name, 2);
+            if (!is_subclass_of($aspectName, Aspect::class)) {
+                throw new AspectException("{$aspectName} is not a valid aspect class");
+            }
+            $aspectInstance = $this->container->getService($aspectName);
             $this->loader->loadAndRegister($aspectInstance);
 
         }
-        $advisor = $this->container->get($name);
-
+        $advisor = $this->container->getValue($name);
         if (!$advisor instanceof Advisor) {
             throw new InvalidArgumentException("Reference {$name} is not an advisor");
         }

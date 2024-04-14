@@ -17,48 +17,29 @@ use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use ReflectionClass;
 
-use function get_class;
-
 /**
  * Loader of aspects into the container
  */
 class AspectLoader
 {
     /**
-     * Aspect container instance
+     * @var AspectLoaderExtension[] List of aspect loaders
      */
-    protected AspectContainer $container;
+    protected readonly array $aspectLoaders;
 
     /**
-     * List of aspect loaders
-     *
-     * @var AspectLoaderExtension[]
-     */
-    protected array $loaders = [];
-
-    /**
-     * List of aspect class names that have been loaded
-     *
-     * @var string[]
+     * @var class-string[] List of aspect class names that have been loaded
      */
     protected array $loadedAspects = [];
 
     /**
      * Loader constructor
      */
-    public function __construct(AspectContainer $container)
-    {
-        $this->container = $container;
-    }
-
-    /**
-     * Register an aspect loader extension
-     *
-     * This method allows to extend the logic of aspect loading by registering an extension for loader.
-     */
-    public function registerLoaderExtension(AspectLoaderExtension $loader): void
-    {
-        $this->loaders[] = $loader;
+    public function __construct(
+        protected AspectContainer $container,
+        AspectLoaderExtension ...$aspectLoaders,
+    ) {
+        $this->aspectLoaders = $aspectLoaders;
     }
 
     /**
@@ -73,7 +54,7 @@ class AspectLoader
         $refAspect   = new ReflectionClass($aspect);
         $loadedItems = [];
 
-        foreach ($this->loaders as $loader) {
+        foreach ($this->aspectLoaders as $loader) {
             $loadedItems += $loader->load($aspect, $refAspect);
         }
 
@@ -87,16 +68,9 @@ class AspectLoader
     {
         $loadedItems = $this->load($aspect);
         foreach ($loadedItems as $itemId => $item) {
-            if ($item instanceof Pointcut) {
-                $this->container->registerPointcut($item, $itemId);
-            }
-            if ($item instanceof Advisor) {
-                $this->container->registerAdvisor($item, $itemId);
-            }
+            $this->container->add($itemId, $item);
         }
-        $aspectClass = get_class($aspect);
-
-        $this->loadedAspects[$aspectClass] = $aspectClass;
+        $this->loadedAspects[$aspect::class] = $aspect::class;
     }
 
     /**
@@ -108,8 +82,8 @@ class AspectLoader
     {
         $unloadedAspects = [];
 
-        foreach ($this->container->getByTag('aspect') as $aspect) {
-            if (!isset($this->loadedAspects[get_class($aspect)])) {
+        foreach ($this->container->getServicesByInterface(Aspect::class) as $aspect) {
+            if (!isset($this->loadedAspects[$aspect::class])) {
                 $unloadedAspects[] = $aspect;
             }
         }
