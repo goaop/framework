@@ -14,6 +14,7 @@ namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -43,15 +44,7 @@ class SelfValueTransformerTest extends TestCase
      */
     protected function getKernelMock(array $options): AspectKernel
     {
-        $mock = $this->getMockForAbstractClass(
-            AspectKernel::class,
-            [],
-            '',
-            false,
-            true,
-            true,
-            ['getOptions', 'getContainer']
-        );
+        $mock = $this->createMock(AspectKernel::class);
         $mock
             ->method('getOptions')
             ->willReturn($options);
@@ -63,23 +56,48 @@ class SelfValueTransformerTest extends TestCase
         return $mock;
     }
 
-    public function testTransformerReplacesAllSelfPlaces(): void
-    {
-        $testFile = fopen(__DIR__ . '/_files/file-with-self.php', 'rb');
-        $content  = stream_get_contents($testFile);
-        $metadata = new StreamMetaData($testFile, $content);
-        $this->transformer->transform($metadata);
-        $expected = file_get_contents(__DIR__ . '/_files/file-with-self-transformed.php');
-        $this->assertSame($expected, (string) $metadata->source);
+    #[DataProvider("filesDataProvider")]
+    public function testTransformerProcessFiles(
+        string $sourceFileWithContent,
+        string $fileWithExpectedContent,
+    ): void {
+        try {
+            $sourceFile     = fopen($sourceFileWithContent, 'rb');
+            $sourceContent  = stream_get_contents($sourceFile);
+            $sourceMetadata = new StreamMetaData($sourceFile, $sourceContent);
+            $this->transformer->transform($sourceMetadata);
+
+            $expected = file_get_contents($fileWithExpectedContent);
+            $this->assertSame($expected, $sourceMetadata->source);
+
+        } finally {
+            if (isset($sourceFile) && is_resource($sourceFile)) {
+                fclose($sourceFile);
+            }
+        }
     }
 
-    public function testTransformerReplacesAllSelfPlacesWithoutNamespace(): void
+    public static function filesDataProvider(): \Generator
     {
-        $testFile = fopen(__DIR__ . '/_files/file-with-self-no-namespace.php', 'rb');
-        $content  = stream_get_contents($testFile);
-        $metadata = new StreamMetaData($testFile, $content);
-        $this->transformer->transform($metadata);
-        $expected = file_get_contents(__DIR__ . '/_files/file-with-self-no-namespace-transformed.php');
-        $this->assertSame($expected, (string) $metadata->source);
+        yield 'file-with-self.php' => [
+            __DIR__ . '/_files/file-with-self.php',
+            __DIR__ . '/_files/file-with-self-transformed.php'
+        ];
+        yield 'file-with-self-no-namespace.php' => [
+            __DIR__ . '/_files/file-with-self-no-namespace.php',
+            __DIR__ . '/_files/file-with-self-no-namespace-transformed.php'
+        ];
+        yield 'php80-file.php' => [
+            __DIR__ . '/_files/php80-file.php',
+            __DIR__ . '/_files/php80-file-transformed.php'
+        ];
+        yield 'php81-file.php' => [
+            __DIR__ . '/_files/php81-file.php',
+            __DIR__ . '/_files/php81-file-transformed.php'
+        ];
+        yield 'php82-file.php' => [
+            __DIR__ . '/_files/php82-file.php',
+            __DIR__ . '/_files/php82-file-transformed.php'
+        ];
     }
 }
