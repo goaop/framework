@@ -13,7 +13,6 @@ declare(strict_types = 1);
 namespace Go\Core;
 
 use Closure;
-use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Framework\AfterInterceptor;
 use Go\Aop\Framework\AfterThrowingInterceptor;
@@ -30,8 +29,6 @@ use Go\Lang\Attribute\Before;
 use ReflectionClass;
 use ReflectionMethod;
 use UnexpectedValueException;
-
-use function get_class;
 
 /**
  * Attribute aspect loader add common support for general advices, declared as attributes
@@ -55,7 +52,7 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
 
                     $loadedItems[$methodId] = new GenericPointcutAdvisor($pointcut, $interceptor);
                 } else {
-                    throw new UnexpectedValueException('Unsupported attribute class: ' . get_class($attribute));
+                    throw new UnexpectedValueException('Unsupported attribute class: ' . $attribute::class);
                 }
             }
         }
@@ -83,7 +80,7 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
             $interceptorAttribute instanceof After => new AfterInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
             $interceptorAttribute instanceof Around => new AroundInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
             $interceptorAttribute instanceof AfterThrowing => new AfterThrowingInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
-            default => throw new UnexpectedValueException('Unsupported method meta class: ' . get_class($interceptorAttribute)),
+            default => throw new UnexpectedValueException('Unsupported method meta class: ' . $interceptorAttribute::class),
         };
     }
 }

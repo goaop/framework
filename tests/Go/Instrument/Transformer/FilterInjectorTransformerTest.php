@@ -12,11 +12,10 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
-use Go\Core\GoAspectContainer;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
@@ -38,7 +37,7 @@ class FilterInjectorTransformerTest extends TestCase
                     'debug'         => false,
                     'features'      => 0
                 ],
-                $this->createMock(GoAspectContainer::class)
+                $this->createMock(AspectContainer::class)
             );
             $cachePathManager = $this
                 ->getMockBuilder(CachePathManager::class)
@@ -51,7 +50,7 @@ class FilterInjectorTransformerTest extends TestCase
     /**
      * Returns a mock for kernel
      */
-    protected function getKernelMock(array $options, GoAspectContainer $container): AspectKernel
+    protected function getKernelMock(array $options, AspectContainer $container): AspectKernel
     {
         $mock = $this->getMockForAbstractClass(
             AspectKernel::class,

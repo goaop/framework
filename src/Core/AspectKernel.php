@@ -12,8 +12,10 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
+use Go\Aop\AspectException;
 use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
+use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\CachingTransformer;
@@ -23,7 +25,6 @@ use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\SelfValueTransformer;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
-use ReflectionObject;
 use RuntimeException;
 
 use function define;
@@ -47,8 +48,9 @@ abstract class AspectKernel
 
     /**
      * Default class name for container, can be redefined in children
+     * @var class-string
      */
-    protected static string $containerClass = GoAspectContainer::class;
+    protected static string $containerClass = Container::class;
 
     /**
      * Flag to determine if kernel was already initialized or not
@@ -81,7 +83,16 @@ abstract class AspectKernel
     /**
      * Init the kernel and make adjustments
      *
-     * @param array $options Associative array of options for kernel
+     * @param array{
+     *   debug?: bool,
+     *   appDir?: literal-string&non-falsy-string,
+     *   cacheDir?: string|null,
+     *   cacheFileMode?: int,
+     *   features?: int,
+     *   includePaths?: array{},
+     *   excludePaths?: array{},
+     *   containerClass?: class-string
+     * } $options Additional kernel options
      */
     public function init(array $options = []): void
     {
@@ -93,21 +104,24 @@ abstract class AspectKernel
         define('AOP_ROOT_DIR', $this->options['appDir']);
         define('AOP_CACHE_DIR', $this->options['cacheDir']);
 
-        /** @var AspectContainer $container */
-        $container = $this->container = new $this->options['containerClass'];
-        $container->set('kernel', $this);
-        $container->set('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
-        $container->set('kernel.options', $this->options);
+        $resourcesToTrack = [];
+        if ($this->options['debug']) {
+            $resourcesToTrack[] = $this->getFileNameWhereInitialized();
+        }
+
+        if (!is_subclass_of($this->options['containerClass'], AspectContainer::class)) {
+            throw new AspectException("Invalid aspect container class");
+        }
+
+        $container = $this->container = new $this->options['containerClass']($resourcesToTrack);
+        $container->add(AspectKernel::class, $this);
+        $container->add('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
+        $container->add('kernel.options', $this->options);
 
         SourceTransformingLoader::register();
 
         foreach ($this->registerTransformers() as $sourceTransformer) {
             SourceTransformingLoader::addTransformer($sourceTransformer);
-        }
-
-        // Register kernel resources in the container for debug mode
-        if ($this->options['debug']) {
-            $this->addKernelResourcesToContainer($container);
         }
 
         AopComposerLoader::init($this->options, $container);
@@ -151,7 +165,6 @@ abstract class AspectKernel
      *   appDir   - string Path to the application root directory.
      *   cacheDir - string Path to the cache directory where compiled classes will be stored
      *   cacheFileMode - integer Binary mask of permission bits that is set to cache files
-     *   annotationCache - Doctrine\Common\Cache\Cache. If not provided, Doctrine\Common\Cache\PhpFileCache is used.
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
@@ -164,7 +177,6 @@ abstract class AspectKernel
             'cacheDir'        => null,
             'cacheFileMode'   => 0770 & ~umask(), // Respect user umask() policy
             'features'        => 0,
-            'annotationCache' => null,
             'includePaths'    => [],
             'excludePaths'    => [],
             'containerClass'  => static::$containerClass,
@@ -179,14 +191,12 @@ abstract class AspectKernel
      */
     protected function normalizeOptions(array $options): array
     {
-        $options = array_replace($this->getDefaultOptions(), $options);
+        $options = [...$this->getDefaultOptions(), ...$options];
 
-        $options['cacheDir'] = PathResolver::realpath($options['cacheDir']);
-
-        if ($options['cacheDir'] === []) {
+        if (empty($options['cacheDir'])) {
             throw new RuntimeException('You need to provide valid cache directory for Go! AOP framework.');
         }
-
+        $options['cacheDir']       = PathResolver::realpath($options['cacheDir']);
         $options['excludePaths'][] = $options['cacheDir'];
         $options['excludePaths'][] = __DIR__ . '/../';
         $options['appDir']         = PathResolver::realpath($options['appDir']);
@@ -210,7 +220,7 @@ abstract class AspectKernel
      */
     protected function registerTransformers(): array
     {
-        $cacheManager     = $this->getContainer()->get('aspect.cache.path.manager');
+        $cacheManager     = $this->getContainer()->getService(CachePathManager::class);
         $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
         $magicTransformer = new MagicConstantTransformer($this);
 
@@ -225,9 +235,9 @@ abstract class AspectKernel
             $transformers[]  = new SelfValueTransformer($this);
             $transformers[]  = new WeavingTransformer(
                 $this,
-                $this->container->get('aspect.advice_matcher'),
+                $this->container->getService(AdviceMatcher::class),
                 $cacheManager,
-                $this->container->get('aspect.cached.loader')
+                $this->container->getService(CachedAspectLoader::class)
             );
             $transformers[] = $magicTransformer;
 
@@ -240,14 +250,13 @@ abstract class AspectKernel
     }
 
     /**
-     * Add resources of kernel to the container
+     * Returns a file name where kernel has been initialized
      */
-    protected function addKernelResourcesToContainer(AspectContainer $container): void
+    final protected function getFileNameWhereInitialized(): string
     {
-        $trace    = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-        $refClass = new ReflectionObject($this);
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        assert(isset($trace[1]['file']), "There should be at least 2 stack frames here");
 
-        $container->addResource($trace[1]['file']);
-        $container->addResource($refClass->getFileName());
+        return $trace[1]['file'];
     }
 }

@@ -59,7 +59,7 @@ EOT
 
         $io->title('Weaving debug information');
 
-        $cachePathManager = $this->aspectKernel->getContainer()->get('aspect.cache.path.manager');
+        $cachePathManager = $this->aspectKernel->getContainer()->getService(CachePathManager::class);
         $warmer           = new CacheWarmer($this->aspectKernel, new NullOutput());
         $warmer->warmUp();
 

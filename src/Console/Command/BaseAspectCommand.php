@@ -29,7 +29,7 @@ class BaseAspectCommand extends Command
     /**
      * Stores an instance of aspect kernel
      */
-    protected ?AspectKernel $aspectKernel = null;
+    protected AspectKernel $aspectKernel;
 
     /**
      * {@inheritDoc}

@@ -14,9 +14,8 @@ namespace Go\Console\Command;
 
 use Go\Aop\Advisor;
 use Go\Core\AdviceMatcher;
-use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
-use Go\Core\AspectLoader;
+use Go\Core\CachedAspectLoader;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\ParserReflection\ReflectionFile;
 use ReflectionClass;
@@ -63,9 +62,10 @@ EOT
         $io->title('Advisor debug information');
 
         $advisorId = $input->getOption('advisor');
-        if (!$advisorId) {
+        if (empty($advisorId)) {
             $this->showAdvisorsList($io);
         } else {
+            assert(is_string($advisorId), "Option 'advisor' must be a string, " . gettype($advisorId) . " given");
             $this->showAdvisorInformation($io, $advisorId);
         }
 
@@ -81,7 +81,6 @@ EOT
 
         $tableRows = [];
         foreach ($advisors as $id => $advisor) {
-            [, $id] = explode('.', $id, 2);
             $advice     = $advisor->getAdvice();
             $expression = '';
             try {
@@ -106,11 +105,13 @@ EOT
     {
         $aspectContainer = $this->aspectKernel->getContainer();
 
-        /** @var AdviceMatcherInterface $adviceMatcher */
-        $adviceMatcher = $aspectContainer->get('aspect.advice_matcher');
+        $adviceMatcher = $aspectContainer->getService(AdviceMatcher::class);
         $this->loadAdvisorsList($aspectContainer);
 
-        $advisor = $aspectContainer->getAdvisor($advisorId);
+        $advisor = $aspectContainer->getValue($advisorId);
+        if (!$advisor instanceof Advisor) {
+            throw new \InvalidArgumentException("Invalid advisor {$advisorId} given");
+        }
         $options = $this->aspectKernel->getOptions();
 
         $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
@@ -151,14 +152,11 @@ EOT
      */
     private function loadAdvisorsList(AspectContainer $aspectContainer): array
     {
-        /** @var AspectLoader $aspectLoader */
-        $aspectLoader = $aspectContainer->get('aspect.cached.loader');
+        $aspectLoader = $aspectContainer->getService(CachedAspectLoader::class);
         $aspects      = $aspectLoader->getUnloadedAspects();
         foreach ($aspects as $aspect) {
             $aspectLoader->loadAndRegister($aspect);
         }
-        $advisors = $aspectContainer->getByTag('advisor');
-
-        return $advisors;
+        return $aspectContainer->getServicesByInterface(Advisor::class);
     }
 }
