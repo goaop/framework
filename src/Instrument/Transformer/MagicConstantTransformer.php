@@ -13,12 +13,14 @@ declare(strict_types = 1);
 namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectKernel;
+use PhpParser\Node;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Scalar\MagicConst;
 use PhpParser\Node\Scalar\MagicConst\Dir;
 use PhpParser\Node\Scalar\MagicConst\File;
 use PhpParser\NodeTraverser;
 use PhpParser\Node\Identifier;
+use PhpParser\NodeVisitor\FindingVisitor;
 
 /**
  * Transformer that replaces magic __DIR__ and __FILE__ constants in the source code
@@ -81,7 +83,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
      */
     private function wrapReflectionGetFileName(StreamMetaData $metadata): void
     {
-        $methodCallFinder = new NodeFinderVisitor([MethodCall::class]);
+        $methodCallFinder = new FindingVisitor(fn(Node $node) => $node instanceof MethodCall);
         $traverser        = new NodeTraverser();
         $traverser->addVisitor($methodCallFinder);
         $traverser->traverse($metadata->syntaxTree);
@@ -106,7 +108,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
      */
     private function replaceMagicDirFileConstants(StreamMetaData $metadata): void
     {
-        $magicConstFinder = new NodeFinderVisitor([Dir::class, File::class]);
+        $magicConstFinder = new FindingVisitor(fn(Node $node) => $node instanceof Dir || $node instanceof File);
         $traverser        = new NodeTraverser();
         $traverser->addVisitor($magicConstFinder);
         $traverser->traverse($metadata->syntaxTree);

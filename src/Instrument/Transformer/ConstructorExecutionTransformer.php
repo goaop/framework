@@ -18,6 +18,7 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
 use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\FindingVisitor;
 use ReflectionException;
 use ReflectionProperty;
 
@@ -54,7 +55,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
      */
     public function transform(StreamMetaData $metadata): string
     {
-        $newExpressionFinder = new NodeFinderVisitor([New_::class]);
+        $newExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof New_);
 
         // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
         $traverser = new NodeTraverser();

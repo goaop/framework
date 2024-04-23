@@ -14,8 +14,10 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
+use PhpParser\Node;
 use PhpParser\Node\Expr\Include_;
 use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\FindingVisitor;
 use RuntimeException;
 
 /**
@@ -104,7 +106,7 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public function transform(StreamMetaData $metadata): string
     {
-        $includeExpressionFinder = new NodeFinderVisitor([Include_::class]);
+        $includeExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof Include_);
 
         // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
         $traverser = new NodeTraverser();
