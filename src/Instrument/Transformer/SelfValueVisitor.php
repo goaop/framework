@@ -19,6 +19,7 @@ use PhpParser\Node\Expr\Instanceof_;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
+use PhpParser\Node\IntersectionType;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\NullableType;
@@ -28,6 +29,8 @@ use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Property;
+use PhpParser\Node\Stmt\Trait_;
+use PhpParser\Node\UnionType;
 use PhpParser\NodeVisitorAbstract;
 use UnexpectedValueException;
 
@@ -142,7 +145,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     /**
      * Helper method for resolving type nodes
      *
-     * @return NullableType|Name|FullyQualified|Identifier
+     * @return NullableType|Name|FullyQualified|Identifier|UnionType|IntersectionType
      */
     private function resolveType(Node $node)
     {
@@ -154,6 +157,15 @@ final class SelfValueVisitor extends NodeVisitorAbstract
             return $this->resolveClassName($node);
         }
         if ($node instanceof Identifier) {
+            return $node;
+        }
+
+        if ($node instanceof UnionType || $node instanceof IntersectionType) {
+            $types = [];
+            foreach ($node->types as $type) {
+                $types[] = $this->resolveType($type);
+            }
+            $node->types = $types;
             return $node;
         }
 
