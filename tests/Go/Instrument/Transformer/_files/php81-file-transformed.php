@@ -55,11 +55,11 @@ enum BackedPhp81EnumHTTPStatusWithMethod: int
         return static::getLabel($this);
     }
 
-    public static function getLabel(\Go\ParserReflection\Stub\ClassWithPhp81ReadOnlyProperties $value): string {
+    public static function getLabel(self $value): string {
         return match ($value) {
-            \Go\ParserReflection\Stub\ClassWithPhp81ReadOnlyProperties::OK => 'OK',
-            \Go\ParserReflection\Stub\ClassWithPhp81ReadOnlyProperties::ACCESS_DENIED => 'Access Denied',
-            \Go\ParserReflection\Stub\ClassWithPhp81ReadOnlyProperties::NOT_FOUND => 'Page Not Found',
+            self::OK => 'OK',
+            self::ACCESS_DENIED => 'Access Denied',
+            self::NOT_FOUND => 'Page Not Found',
         };
     }
 }

@@ -77,7 +77,7 @@ trait TraitWithPhp82Constant
 
     protected function ensureVersion(): void
     {
-        if (\Go\ParserReflection\Stub\ClassWithPhp82NullFalseTypes::CURRENT_VERSION < \Go\ParserReflection\Stub\ClassWithPhp82NullFalseTypes::MIN_VERSION) {
+        if (self::CURRENT_VERSION < self::MIN_VERSION) {
             throw new \Exception('Current version is too old');
         }
     }

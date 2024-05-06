@@ -26,9 +26,12 @@ use PhpParser\Node\NullableType;
 use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
+use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Property;
+use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\UnionType;
 use PhpParser\NodeVisitorAbstract;
 use UnexpectedValueException;
@@ -54,6 +57,8 @@ final class SelfValueVisitor extends NodeVisitorAbstract
      * Current class name
      */
     protected ?Name $className = null;
+
+    private bool $isInsideTraitOrEnum = false;
 
     /**
      * Returns list of changed `self` nodes
@@ -109,6 +114,8 @@ final class SelfValueVisitor extends NodeVisitorAbstract
             foreach ($node->types as &$type) {
                 $type = $this->resolveClassName($type);
             }
+        } elseif ($node instanceof ClassLike) {
+            $this->isInsideTraitOrEnum = $node instanceof Trait_ || $node instanceof Enum_;
         }
 
         return null;
@@ -125,6 +132,10 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     {
         // Skip all names except special `self`
         if (strtolower($name->toString()) !== 'self') {
+            return $name;
+        }
+
+        if ($this->isInsideTraitOrEnum) {
             return $name;
         }
 
