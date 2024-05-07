@@ -58,8 +58,6 @@ final class SelfValueVisitor extends NodeVisitorAbstract
      */
     protected ?Name $className = null;
 
-    private bool $isInsideTraitOrEnum = false;
-
     /**
      * Returns list of changed `self` nodes
      *
