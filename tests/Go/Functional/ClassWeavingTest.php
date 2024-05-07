@@ -13,13 +13,14 @@ declare(strict_types=1);
 namespace Go\Functional;
 
 use Go\Tests\TestProject\Application\AbstractBar;
+use Go\Tests\TestProject\Application\ClassWithComplexTypes;
 use Go\Tests\TestProject\Application\FinalClass;
 use Go\Tests\TestProject\Application\FooInterface;
 use Go\Tests\TestProject\Application\Main;
 
 class ClassWeavingTest extends BaseFunctionalTestCase
 {
-    public function testPropertyWeaving()
+    public function testPropertyWeaving(): void
     {
         // it weaves Main class public and protected properties
         $this->assertPropertyWoven(Main::class, 'publicClassProperty', 'Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
@@ -32,7 +33,7 @@ class ClassWeavingTest extends BaseFunctionalTestCase
     /**
      * test for https://github.com/goaop/framework/issues/335
      */
-    public function testItDoesNotWeaveAbstractMethods()
+    public function testItDoesNotWeaveAbstractMethods(): void
     {
         // it weaves Main class
         $this->assertClassIsWoven(Main::class);
@@ -46,13 +47,13 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertClassIsNotWoven(AbstractBar::class);
     }
 
-    public function testClassInitializationWeaving()
+    public function testClassInitializationWeaving(): void
     {
         $this->assertClassInitializationWoven(Main::class, 'Go\\Tests\\TestProject\\Aspect\\InitializationAspect->beforeInstanceInitialization');
         $this->assertClassStaticInitializationWoven(Main::class, 'Go\\Tests\\TestProject\\Aspect\\InitializationAspect->afterClassStaticInitialization');
     }
 
-    public function testItWeavesFinalClasses()
+    public function testItWeavesFinalClasses(): void
     {
         // it weaves FinalClass class
         $this->assertClassIsWoven(FinalClass::class);
@@ -70,8 +71,18 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertMethodNotWoven(FinalClass::class, 'someFinalParentMethod');
     }
 
-    public function testItDoesNotWeaveInterfaces()
+    public function testItDoesNotWeaveInterfaces(): void
     {
         $this->assertClassIsNotWoven(FooInterface::class);
+    }
+
+    public function testItDoesWeaveMethodWithComplexTypes(): void
+    {
+        // it weaves ClassWithComplexTypes class
+        $this->assertClassIsWoven(ClassWithComplexTypes::class);
+
+        $this->assertMethodWoven(ClassWithComplexTypes::class, 'publicMethodWithUnionTypeReturn');
+        $this->assertMethodWoven(ClassWithComplexTypes::class, 'publicMethodWithIntersectionTypeReturn');
+        $this->assertMethodWoven(ClassWithComplexTypes::class, 'publicMethodWithDNFTypeReturn');
     }
 }
