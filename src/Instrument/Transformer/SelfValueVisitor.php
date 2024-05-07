@@ -89,10 +89,6 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     {
         if ($node instanceof Namespace_) {
             $this->namespace = !empty($node->name) ? $node->name->toString() : null;
-        } elseif ($node instanceof Class_) {
-            if ($node->name !== null) {
-                $this->className = new Name($node->name->toString());
-            }
         } elseif ($node instanceof ClassMethod || $node instanceof Closure) {
             if (isset($node->returnType)) {
                 $node->returnType = $this->resolveType($node->returnType);
@@ -115,7 +111,11 @@ final class SelfValueVisitor extends NodeVisitorAbstract
                 $type = $this->resolveClassName($type);
             }
         } elseif ($node instanceof ClassLike) {
-            $this->isInsideTraitOrEnum = $node instanceof Trait_ || $node instanceof Enum_;
+            if (! $node instanceof Trait_) {
+                $this->className = new Name($node->name->toString());
+            } else {
+                $this->className = null;
+            }
         }
 
         return null;
@@ -135,7 +135,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
             return $name;
         }
 
-        if ($this->isInsideTraitOrEnum) {
+        if ($this->className === null) {
             return $name;
         }
 
