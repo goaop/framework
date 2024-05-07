@@ -108,7 +108,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
             }
         } elseif ($node instanceof ClassLike) {
             if (! $node instanceof Trait_) {
-                $this->className = !empty($node->name) ? $node->name->toString() : null;
+                $this->className = !empty($node->name) ? new Name($node->name->toString()) : null;
             } else {
                 $this->className = null;
             }
