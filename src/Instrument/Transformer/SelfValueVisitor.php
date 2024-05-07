@@ -19,15 +19,18 @@ use PhpParser\Node\Expr\Instanceof_;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
+use PhpParser\Node\IntersectionType;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\NullableType;
 use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Catch_;
-use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Property;
+use PhpParser\Node\Stmt\Trait_;
+use PhpParser\Node\UnionType;
 use PhpParser\NodeVisitorAbstract;
 use UnexpectedValueException;
 
@@ -82,10 +85,6 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     {
         if ($node instanceof Namespace_) {
             $this->namespace = !empty($node->name) ? $node->name->toString() : null;
-        } elseif ($node instanceof Class_) {
-            if ($node->name !== null) {
-                $this->className = new Name($node->name->toString());
-            }
         } elseif ($node instanceof ClassMethod || $node instanceof Closure) {
             if (isset($node->returnType)) {
                 $node->returnType = $this->resolveType($node->returnType);
@@ -107,6 +106,12 @@ final class SelfValueVisitor extends NodeVisitorAbstract
             foreach ($node->types as &$type) {
                 $type = $this->resolveClassName($type);
             }
+        } elseif ($node instanceof ClassLike) {
+            if (! $node instanceof Trait_) {
+                $this->className = !empty($node->name) ? new Name($node->name->toString()) : null;
+            } else {
+                $this->className = null;
+            }
         }
 
         return null;
@@ -126,6 +131,10 @@ final class SelfValueVisitor extends NodeVisitorAbstract
             return $name;
         }
 
+        if ($this->className === null) {
+            return $name;
+        }
+
         // Save the original name
         $originalName = $name;
         $name = clone $originalName;
@@ -142,7 +151,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     /**
      * Helper method for resolving type nodes
      *
-     * @return NullableType|Name|FullyQualified|Identifier
+     * @return NullableType|Name|FullyQualified|Identifier|UnionType|IntersectionType
      */
     private function resolveType(Node $node)
     {
@@ -154,6 +163,15 @@ final class SelfValueVisitor extends NodeVisitorAbstract
             return $this->resolveClassName($node);
         }
         if ($node instanceof Identifier) {
+            return $node;
+        }
+
+        if ($node instanceof UnionType || $node instanceof IntersectionType) {
+            $types = [];
+            foreach ($node->types as $type) {
+                $types[] = $this->resolveType($type);
+            }
+            $node->types = $types;
             return $node;
         }
 

@@ -99,5 +99,9 @@ class SelfValueTransformerTest extends TestCase
             __DIR__ . '/_files/php82-file.php',
             __DIR__ . '/_files/php82-file-transformed.php'
         ];
+        yield 'anonymous-class.php' => [
+            __DIR__ . '/_files/anonymous-class.php',
+            __DIR__ . '/_files/anonymous-class-transformed.php'
+        ];
     }
 }
