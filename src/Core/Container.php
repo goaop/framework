@@ -15,6 +15,10 @@ namespace Go\Core;
 use Closure;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
+use Go\Aop\Pointcut\DNF\Parser\TokenizerParser;
+use Go\Aop\Pointcut\DNF\Parser\TokenizerParserInterface;
+use Go\Aop\Pointcut\DNF\SemanticAnalyzer;
+use Go\Aop\Pointcut\DNF\SemanticAnalyzerInterface;
 use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
@@ -96,6 +100,9 @@ class Container implements AspectContainer
         $this->addLazy(CachePathManager::class, fn(AspectContainer $container) => new CachePathManager(
             $container->getService(AspectKernel::class)
         ));
+
+        $this->addLazy(TokenizerParserInterface::class, static fn(AspectContainer $c) => new TokenizerParser());
+        $this->addLazy(SemanticAnalyzerInterface::class, static fn(AspectContainer $c) => new SemanticAnalyzer());
     }
 
     final public function registerAspect(Aspect $aspect): void

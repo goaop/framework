@@ -13,6 +13,9 @@ declare(strict_types = 1);
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
+use Go\Aop\Pointcut\DNF\Parser\TokenizerParserInterface;
+use Go\Aop\Pointcut\DNF\SemanticAnalyzerInterface;
+use Go\Core\AspectKernel;
 use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionClass;
 use ReflectionFunction;
@@ -25,11 +28,25 @@ use function in_array;
  */
 final readonly class ClassInheritancePointcut implements Pointcut
 {
+    private const DNF_TOKENS = ['(', ')', '&', '|'];
+
+    private TokenizerParserInterface $tokenizerParser;
+    private SemanticAnalyzerInterface $semanticAnalyzer;
+
     /**
      * Inheritance class matcher constructor
+     *
      * @param (string&class-string) $parentClassOrInterfaceName Parent class or interface name to match in hierarchy
      */
-    public function __construct(private string $parentClassOrInterfaceName) {}
+    public function __construct(private string $parentClassOrInterfaceName)
+    {
+        $this->tokenizerParser = AspectKernel::getInstance()->getContainer()->getService(
+            TokenizerParserInterface::class
+        );
+        $this->semanticAnalyzer = AspectKernel::getInstance()->getContainer()->getService(
+            SemanticAnalyzerInterface::class
+        );
+    }
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
@@ -42,12 +59,27 @@ final readonly class ClassInheritancePointcut implements Pointcut
             return false;
         }
 
-        // Otherwise, we match only if given context is child of given previously class name (either interface or class)
-        return $context->isSubclassOf($this->parentClassOrInterfaceName) || in_array($this->parentClassOrInterfaceName, $context->getInterfaceNames());
+        if (!$this->isDNFType()) {
+            // Otherwise, we match only if given context is child of given previously class name (either interface or class)
+            return $context->isSubclassOf($this->parentClassOrInterfaceName) || in_array($this->parentClassOrInterfaceName, $context->getInterfaceNames());
+        }
+
+        return $this->checkDNFType($context);
     }
 
     public function getKind(): int
     {
         return self::KIND_CLASS;
+    }
+
+    private function isDNFType(): bool
+    {
+        return array_intersect(str_split($this->parentClassOrInterfaceName), self::DNF_TOKENS) !== [];
+    }
+
+    private function checkDNFType(ReflectionClass|ReflectionFileNamespace $context): bool
+    {
+        $ast = $this->tokenizerParser->parse($this->parentClassOrInterfaceName);
+        return $this->semanticAnalyzer->verifyTree($ast, $context);
     }
 }

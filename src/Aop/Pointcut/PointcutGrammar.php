@@ -266,14 +266,18 @@ final class PointcutGrammar extends Grammar
             ->is('namespacePattern')
             ->call(
                 function ($pattern) {
-
                     return $pattern === '**'
                         ? new TruePointcut()
                         : new NamePointcut(Pointcut::KIND_ALL, $pattern, true);
                 }
             )
             ->is('namespacePattern', '+')
-            ->call(fn($parentClassName) => new ClassInheritancePointcut($parentClassName))
+            ->call(static function (...$args) {
+                return array_map(
+                    static fn (string $class) => new ClassInheritancePointcut($class),
+                    array_filter($args, 'is_string')
+                );
+            })
         ;
 
         $this('argumentList')
@@ -300,6 +304,12 @@ final class PointcutGrammar extends Grammar
             ->is('namespacePattern', 'nsSeparator', 'namePatternPart')
             ->call($stringConverter)
             ->is('namespacePattern', 'nsSeparator', '**')
+            ->call($stringConverter)
+            ->is('namespacePattern', '&', 'namespacePattern')
+            ->call($stringConverter)
+            ->is('(' , 'namespacePattern', '&', 'namespacePattern', ')')
+            ->call($stringConverter)
+            ->is('namespacePattern', '|', 'namespacePattern')
             ->call($stringConverter)
         ;
 

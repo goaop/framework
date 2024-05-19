@@ -39,8 +39,20 @@ final readonly class AndPointcut implements Pointcut
     /**
      * And constructor
      */
-    public function __construct(int $pointcutKind = null, Pointcut ...$pointcuts)
+    public function __construct(int $pointcutKind = null)
     {
+        $args = func_get_args();
+
+        if (is_array($args[1])) {
+            $pointcuts = $args[1];
+        } else {
+            $pointcuts = array_slice($args, 1);
+        }
+
+        if (count(array_filter($pointcuts, static fn ($pointcut) => $pointcut instanceof Pointcut)) !== count($pointcuts)) {
+            throw new \Exception('only pointcats allowed to be passed');
+        }
+
         // If we don't have specified kind, it will be calculated as intersection then
         if (!isset($pointcutKind)) {
             $pointcutKind = -1;
