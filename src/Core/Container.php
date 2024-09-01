@@ -59,33 +59,33 @@ class Container implements AspectContainer
     {
         $this->resources = array_combine($resources, $resources);
 
-        $this->addLazy(PointcutLexer::class, fn(): PointcutLexer => new PointcutLexer());
+        $this->addLazyService(PointcutLexer::class, fn(): PointcutLexer => new PointcutLexer());
 
-        $this->addLazy(PointcutParser::class, fn(AspectContainer $container): PointcutParser => new PointcutParser(
+        $this->addLazyService(PointcutParser::class, fn(AspectContainer $container): PointcutParser => new PointcutParser(
             new PointcutGrammar($container)
         ));
 
-        $this->addLazy(AdviceMatcher::class, fn(AspectContainer $container): AdviceMatcher => new AdviceMatcher(
+        $this->addLazyService(AdviceMatcher::class, fn(AspectContainer $container): AdviceMatcher => new AdviceMatcher(
             (bool) $container->getValue('kernel.interceptFunctions')
         ));
 
-        $this->addLazy(AttributeAspectLoaderExtension::class, fn(AspectContainer $container): AttributeAspectLoaderExtension => new AttributeAspectLoaderExtension(
+        $this->addLazyService(AttributeAspectLoaderExtension::class, fn(AspectContainer $container): AttributeAspectLoaderExtension => new AttributeAspectLoaderExtension(
             $container->getService(PointcutLexer::class),
             $container->getService(PointcutParser::class)
         ));
 
-        $this->addLazy(IntroductionAspectExtension::class, fn(AspectContainer $container): IntroductionAspectExtension => new IntroductionAspectExtension(
+        $this->addLazyService(IntroductionAspectExtension::class, fn(AspectContainer $container): IntroductionAspectExtension => new IntroductionAspectExtension(
             $container->getService(PointcutLexer::class),
             $container->getService(PointcutParser::class)
         ));
 
-        $this->addLazy(AspectLoader::class, fn(AspectContainer $container): AspectLoader => new AspectLoader(
+        $this->addLazyService(AspectLoader::class, fn(AspectContainer $container): AspectLoader => new AspectLoader(
             $container,
             $container->getService(AttributeAspectLoaderExtension::class),
             $container->getService(IntroductionAspectExtension::class),
         ));
 
-        $this->addLazy(CachedAspectLoader::class, function (AspectContainer $container) {
+        $this->addLazyService(CachedAspectLoader::class, function (AspectContainer $container) {
             $options = $container->getValue('kernel.options');
             if (is_array($options) && !empty($options['cacheDir'])) {
                 $loader = new CachedAspectLoader($container, AspectLoader::class, $options);
@@ -96,12 +96,12 @@ class Container implements AspectContainer
             return $loader;
         });
 
-        $this->addLazy(LazyAdvisorAccessor::class, fn(AspectContainer $container): LazyAdvisorAccessor => new LazyAdvisorAccessor(
+        $this->addLazyService(LazyAdvisorAccessor::class, fn(AspectContainer $container): LazyAdvisorAccessor => new LazyAdvisorAccessor(
             $container,
             $container->getService(CachedAspectLoader::class)
         ));
 
-        $this->addLazy(CachePathManager::class, fn(AspectContainer $container): CachePathManager => new CachePathManager(
+        $this->addLazyService(CachePathManager::class, fn(AspectContainer $container): CachePathManager => new CachePathManager(
             $container->getService(AspectKernel::class)
         ));
     }
@@ -123,7 +123,7 @@ class Container implements AspectContainer
             } else {
                 // If it is our lazy Closure, we look at internal closure return type to check if it is a class
                 $reflectionClosure     = new ReflectionFunction($value);
-                $lazyDefinitionClosure = $reflectionClosure->getStaticVariables()['lazyDefinitionClosure'] ?? null;
+                $lazyDefinitionClosure = $reflectionClosure->getStaticVariables()['lazyInitializationClosure'] ?? null;
                 $lazyReturnType        = $lazyDefinitionClosure
                     ? (new ReflectionFunction($lazyDefinitionClosure))->getReturnType()
                     : null;
@@ -144,6 +144,16 @@ class Container implements AspectContainer
                 $this->addResource($fileName);
             }
         }
+    }
+
+    final public function addLazyService(string $id, Closure $lazyInitializationClosure): void
+    {
+        $this->add($id, function (self $container) use ($id, $lazyInitializationClosure): void {
+
+            $evaluatedLazyValue = $lazyInitializationClosure($container);
+            // Here we just replace Closure with resolved value to optimize access
+            $container->values[$id] = $evaluatedLazyValue;
+        });
     }
 
     final public function getService(string $className): object
@@ -210,20 +220,5 @@ class Container implements AspectContainer
             // Invalidation of calculated timestamp
             unset($this->cachedMaxTimestamp);
         }
-    }
-
-    /**
-     * Add value in the container, uses lazy-loading scheme to optimize init time
-     *
-     * @param Closure(AspectContainer $container): object $lazyDefinitionClosure
-     */
-    final protected function addLazy(string $id, Closure $lazyDefinitionClosure): void
-    {
-        $this->add($id, function (self $container) use ($id, $lazyDefinitionClosure): void {
-
-            $evaluatedLazyValue = $lazyDefinitionClosure($container);
-            // Here we just replace Closure with resolved value to optimize access
-            $container->values[$id] = $evaluatedLazyValue;
-        });
     }
 }

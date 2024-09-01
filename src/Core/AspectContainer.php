@@ -12,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
+use Closure;
 use OutOfBoundsException;
 use Go\Aop\Aspect;
 
@@ -123,4 +124,12 @@ interface AspectContainer
      * @param mixed $value Value to store, if it is a Closure, it MAY be lazily-evaluated during getService() call
      */
     public function add(string $id, mixed $value): void;
+
+    /**
+     * Adds a lazy service in the container, uses lazy-initialization Closure to optimize init time
+     *
+     * @param class-string $id Identifier of value to store, must be equal to the class-name
+     * @param Closure(AspectContainer $container): object $lazyInitializationClosure
+     */
+    public function addLazyService(string $id, Closure $lazyInitializationClosure): void;
 }
