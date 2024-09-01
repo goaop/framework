@@ -112,14 +112,15 @@ interface AspectContainer
     /**
      * Checks if there are any file resources with changes after since given timestamp
      *
-     * @return bool Whether or not there are new changes (filemtime of any resource is greater than given)
+     * @return bool Whether or not there are new changes (file modification time of any resource is greater than given)
      */
     public function hasAnyResourceChangedSince(int $timestamp): bool;
 
     /**
      * Adds a new item into the container
      *
-     * @param mixed $value Value to store
+     * @param string|class-string $id Identifier of value to store, either string literal or class-name
+     * @param mixed $value Value to store, if it is a Closure, it MAY be lazily-evaluated during getService() call
      */
     public function add(string $id, mixed $value): void;
 }
