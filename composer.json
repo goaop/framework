@@ -9,6 +9,7 @@
 
     "require": {
         "php": "^8.2.0",
+        "ext-tokenizer": "*",
         "goaop/parser-reflection": "4.x-dev",
         "goaop/dissect": "^3.0",
         "laminas/laminas-code": "^4.13",
