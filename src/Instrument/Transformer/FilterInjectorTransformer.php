@@ -101,10 +101,8 @@ class FilterInjectorTransformer implements SourceTransformer
 
     /**
      * Wrap all includes into rewrite filter
-     *
-     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata): string
+    public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
         $includeExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof Include_);
 
@@ -117,7 +115,7 @@ class FilterInjectorTransformer implements SourceTransformer
         $includeExpressions = $includeExpressionFinder->getFoundNodes();
 
         if (empty($includeExpressions)) {
-            return self::RESULT_ABSTAIN;
+            return TransformerResultEnum::RESULT_ABSTAIN;
         }
 
         foreach ($includeExpressions as $includeExpression) {
@@ -132,6 +130,6 @@ class FilterInjectorTransformer implements SourceTransformer
             $metadata->tokenStream[$endPosition]->text .= ', __DIR__)';
         }
 
-        return self::RESULT_TRANSFORMED;
+        return TransformerResultEnum::RESULT_TRANSFORMED;
     }
 }

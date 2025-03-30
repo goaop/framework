@@ -50,10 +50,8 @@ final class ConstructorExecutionTransformer implements SourceTransformer
 
     /**
      * Rewrites all "new" expressions with our implementation
-     *
-     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata): string
+    public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
         $newExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof New_);
 
@@ -66,7 +64,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         $newExpressions = $newExpressionFinder->getFoundNodes();
 
         if (empty($newExpressions)) {
-            return self::RESULT_ABSTAIN;
+            return TransformerResultEnum::RESULT_ABSTAIN;
         }
 
         foreach ($newExpressions as $newExpressionNode) {
@@ -82,7 +80,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
             $metadata->tokenStream[$endClassNamePos]->text .= $expressionSuffix;
         }
 
-        return self::RESULT_TRANSFORMED;
+        return TransformerResultEnum::RESULT_TRANSFORMED;
     }
 
     /**

@@ -51,16 +51,14 @@ class MagicConstantTransformer extends BaseSourceTransformer
 
     /**
      * This method may transform the supplied source and return a new replacement for it
-     *
-     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata): string
+    public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
         $this->replaceMagicDirFileConstants($metadata);
         $this->wrapReflectionGetFileName($metadata);
 
         // We should always vote abstain, because if there is only changes for magic constants, we can drop them
-        return self::RESULT_ABSTAIN;
+        return TransformerResultEnum::RESULT_ABSTAIN;
     }
 
     /**

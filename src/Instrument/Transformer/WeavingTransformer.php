@@ -74,11 +74,8 @@ class WeavingTransformer extends BaseSourceTransformer
 
     /**
      * This method may transform the supplied source and return a new replacement for it
-     *
-     * @param StreamMetaData $metadata
-     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata): string
+    public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
         $totalTransformations = 0;
         $parsedSource         = new ReflectionFile($metadata->uri, $metadata->syntaxTree);
@@ -111,7 +108,7 @@ class WeavingTransformer extends BaseSourceTransformer
             $totalTransformations += (integer) $wasFunctionsProcessed;
         }
 
-        $result = ($totalTransformations > 0) ? self::RESULT_TRANSFORMED : self::RESULT_ABSTAIN;
+        $result = ($totalTransformations > 0) ? TransformerResultEnum::RESULT_TRANSFORMED : TransformerResultEnum::RESULT_ABSTAIN;
 
         return $result;
     }

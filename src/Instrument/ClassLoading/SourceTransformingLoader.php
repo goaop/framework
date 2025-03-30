@@ -14,6 +14,7 @@ namespace Go\Instrument\ClassLoading;
 
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
+use Go\Instrument\Transformer\TransformerResultEnum;
 use php_user_filter as PhpStreamFilter;
 use RuntimeException;
 
@@ -123,7 +124,7 @@ class SourceTransformingLoader extends PhpStreamFilter
     {
         foreach (self::$transformers as $transformer) {
             $result = $transformer->transform($metadata);
-            if ($result === SourceTransformer::RESULT_ABORTED) {
+            if ($result === TransformerResultEnum::RESULT_ABORTED) {
                 break;
             }
         }
