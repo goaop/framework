@@ -1,5 +1,16 @@
 Changelog
 ======
+
+4.x-dev (Work in Progress)
+* [Feature] Full PHP 8.2+ compatibility with comprehensive syntax support
+* [Feature] Added PHP 8 compatibility tests and documentation
+* [Feature] Support for PHP 8.0+ features: union types, named parameters, attributes, constructor property promotion, mixed type, static return type
+* [Feature] Support for PHP 8.1+ features: readonly properties, enums, intersection types, never return type, final class constants  
+* [Feature] Support for PHP 8.2+ features: readonly classes, DNF types, null/false/true types, constants in traits
+* [Documentation] Added UPGRADE-PHP8.md guide for PHP 8 migration
+* [Known Issue] getConstants() filter parameter accepted but not fully implemented in parser-reflection dependency
+* [BC BREAK] Minimum PHP version raised to 8.2
+
 3.0.0 (December 4, 2019)
 * [BC BREAK] Switched to the PHP7.2 and upper, strict types, return type hints and new syntax
 * [BC BREAK] Removed the Joinpoint->getThis() method, as not all joinpoints belongs to classes (eg. FunctionInvocation)
