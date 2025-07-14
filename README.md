@@ -47,6 +47,11 @@ Installation
 
 Go! AOP framework can be installed with composer. Installation is quite easy:
 
+### Requirements
+
+- **PHP 8.2+** (for PHP 8 compatibility details, see [UPGRADE-PHP8.md](UPGRADE-PHP8.md))
+- **Composer** for dependency management
+
 1. Download the framework using composer
 2. Create an application aspect kernel
 3. Configure the aspect kernel in the front controller
