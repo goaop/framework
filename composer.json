@@ -17,7 +17,7 @@
 
     "require-dev": {
         "adlawson/vfs": "^0.12.1",
-        "doctrine/orm": "^2.5",
+        "doctrine/orm": "^2.5 || ^3.0",
         "phpstan/phpstan": "^1.10.57",
         "phpunit/phpunit": "^10.5.10",
         "symfony/console": "^6.4 || ^7.0",
