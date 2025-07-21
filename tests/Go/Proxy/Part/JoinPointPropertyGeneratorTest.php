@@ -27,15 +27,15 @@ class JoinPointPropertyGeneratorTest extends TestCase
         $generator = new JoinPointPropertyGenerator([
             'method' => [
                 'execute' => [
-                    'advisor.Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
+                    'Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
                 ],
                 'perform' => [
-                    'advisor.Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
+                    'Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
                 ],
             ],
             'static' => [
                 'runByName' => [
-                    'advisor.Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
+                    'Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
                 ],
             ],
         ]);
@@ -50,15 +50,15 @@ class JoinPointPropertyGeneratorTest extends TestCase
             private static $__joinPoints = [
                 \'method\' => [
                     \'execute\' => [
-                        \'advisor.Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
+                        \'Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
                     ],
                     \'perform\' => [
-                        \'advisor.Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
+                        \'Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
                     ],
                 ],
                 \'static\' => [
                     \'runByName\' => [
-                        \'advisor.Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
+                        \'Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
                     ],
                 ],
             ];'

@@ -49,30 +49,50 @@ class InterceptedMethodGeneratorTest extends TestCase
     public static function dataGenerator(): array
     {
         return [
-            [
+            'variadicArgsTest' => [
                 First::class,
                 'variadicArgsTest',
                 'public function variadicArgsTest(... $args) : string'
             ],
-            [
+            'staticLsbRecursion' => [
                 First::class,
                 'staticLsbRecursion',
                 'public static function staticLsbRecursion(int $value, int $level = 0) : int'
             ],
-            [
+            'staticLsbProtected' => [
                 First::class,
                 'staticLsbProtected',
                 'protected static function staticLsbProtected() : string'
             ],
-            [
+            'passByReference' => [
                 First::class,
                 'passByReference',
                 'public function passByReference(&$valueByReference)'
             ],
-            [
+            'privateMethod' => [
                 First::class,
                 'privateMethod',
                 'private function privateMethod() : int'
+            ],
+            'publicMethodWithUnionTypeReturn' => [
+                First::class,
+                'publicMethodWithUnionTypeReturn',
+                'public function publicMethodWithUnionTypeReturn(\Closure|\Exception $value) : \Closure|\Exception'
+            ],
+            'publicMethodWithIntersectionTypeReturn' => [
+                First::class,
+                'publicMethodWithIntersectionTypeReturn',
+                'public function publicMethodWithIntersectionTypeReturn(\Countable&\Exception $value) : \Countable&\Exception'
+            ],
+            'publicMethodWithDNFTypeReturn' => [
+                First::class,
+                'publicMethodWithDNFTypeReturn',
+                'public function publicMethodWithDNFTypeReturn((\Countable&\Exception)|\Iterator $value) : (\Countable&\Exception)|\Iterator'
+            ],
+            'publicMethodWithAttribute' => [
+                First::class,
+                'publicMethodWithAttribute',
+                'public function publicMethodWithAttribute(#[\Go\Stubs\StubAttribute("argument")] string $argument) : string'
             ],
         ];
     }

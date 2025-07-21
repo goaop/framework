@@ -12,7 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Countable;
 use Exception;
+use Go\Stubs\StubAttribute;
+use Iterator;
 use PHPUnit\Framework\TestCase;
 
 use ReflectionFunction;
@@ -27,6 +30,17 @@ use function preg_replace;
 function funcWithReturnTypeAndDocBlock(): Exception
 {
     return new Exception('Test');
+}
+
+#[StubAttribute("function")]
+function funcWithAttributes(#[StubAttribute("argument")] string $argument): string
+{
+    return $argument;
+}
+
+function funcWithDNFTypeReturn(Iterator|(Exception&Countable) $value): Iterator|(Exception&Countable)
+{
+    return $value;
 }
 
 /**
@@ -62,25 +76,33 @@ class InterceptedFunctionGeneratorTest extends TestCase
     public static function dataGenerator(): array
     {
         return [
-            [
+            'var_dump' => [
                 'var_dump',
                 'function var_dump(mixed $value, mixed ... $values) : void'
             ],
-            [
+            'array_pop' => [
                 'array_pop',
                 'function array_pop(array &$array) : mixed'
             ],
-            [
+            'strcoll' => [
                 'strcoll',
                 'function strcoll(string $string1, string $string2) : int'
             ],
-            [
+            'microtime' => [
                 'microtime',
                 'function microtime(bool $as_float = false) : float|string'
             ],
-            [
+            'funcWithReturnTypeAndDocBlock' => [
                 '\Go\Proxy\Part\funcWithReturnTypeAndDocBlock',
                 'function funcWithReturnTypeAndDocBlock() : \Exception'
+            ],
+            'funcWithAttributes' => [
+                '\Go\Proxy\Part\funcWithAttributes',
+                'function funcWithAttributes(#[\Go\Stubs\StubAttribute("argument")] string $argument) : string'
+            ],
+            'funcWithDNFTypeReturn' => [
+                '\Go\Proxy\Part\funcWithDNFTypeReturn',
+                'function funcWithDNFTypeReturn((\Countable&\Exception)|\Iterator $value) : (\Countable&\Exception)|\Iterator'
             ],
         ];
     }
