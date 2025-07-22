@@ -1,0 +1,130 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Go! AOP Framework PHP 8 Compatibility Checker
+ * 
+ * This script helps verify that your environment is properly configured
+ * for PHP 8 compatibility with the Go! AOP Framework.
+ */
+
+if (PHP_VERSION_ID < 80200) {
+    echo "❌ PHP 8.2+ is required. Current version: " . PHP_VERSION . "\n";
+    echo "Please upgrade to PHP 8.2 or higher.\n";
+    exit(1);
+}
+
+echo "✅ PHP Version: " . PHP_VERSION . " (compatible)\n";
+
+// Check if composer is available
+$autoloadPath = __DIR__ . '/../vendor/autoload.php';
+if (!file_exists($autoloadPath)) {
+    echo "❌ Composer dependencies not installed\n";
+    echo "Run: composer install\n";
+    exit(1);
+}
+
+require_once $autoloadPath;
+
+echo "✅ Composer autoloader available\n";
+
+// Check parser-reflection version
+try {
+    if (!class_exists('\Go\ParserReflection\ReflectionFile')) {
+        echo "❌ Parser-reflection library not available\n";
+        echo "Run: composer install\n";
+        exit(1);
+    }
+    $reflection = new \Go\ParserReflection\ReflectionFile(__FILE__);
+    echo "✅ Parser-reflection library loaded\n";
+} catch (Exception $e) {
+    echo "❌ Parser-reflection error: " . $e->getMessage() . "\n";
+    exit(1);
+}
+
+// Test getConstants compatibility
+echo "\n--- Testing getConstants() PHP 8 compatibility ---\n";
+
+$testCode = '<?php
+namespace CompatTest;
+class TestClass {
+    const PUBLIC_CONST = "public";
+    protected const PROTECTED_CONST = "protected";
+    private const PRIVATE_CONST = "private";
+}';
+
+$testFile = sys_get_temp_dir() . '/compat_test.php';
+file_put_contents($testFile, $testCode);
+
+try {
+    $reflectionFile = new \Go\ParserReflection\ReflectionFile($testFile);
+    include_once $testFile;
+    
+    $namespace = $reflectionFile->getFileNamespace('CompatTest');
+    $class = $namespace->getClass('CompatTest\TestClass');
+    
+    $allConstants = $class->getConstants();
+    $publicConstants = $class->getConstants(\ReflectionClassConstant::IS_PUBLIC);
+    
+    echo "  All constants: " . count($allConstants) . "\n";
+    echo "  Public constants (with filter): " . count($publicConstants) . "\n";
+    
+    if (count($publicConstants) === count($allConstants)) {
+        echo "  ⚠️  Filter parameter accepted but not properly implemented\n";
+        echo "      This is a known issue. See UPGRADE-PHP8.md for details.\n";
+    } else {
+        echo "  ✅ Filter parameter working correctly\n";
+    }
+    
+} catch (Exception $e) {
+    echo "❌ Error testing getConstants(): " . $e->getMessage() . "\n";
+} finally {
+    unlink($testFile);
+}
+
+// Test PHP 8 syntax parsing
+echo "\n--- Testing PHP 8 syntax parsing ---\n";
+
+$syntaxTests = [
+    'Union Types' => '<?php class Test { public string|int $prop; }',
+    'Attributes' => '<?php #[\Attribute] class A {} #[A] class B {}',
+    'Named Parameters' => '<?php class Test { function f($a = "", $b = "") {} function g() { $this->f(b: "x", a: "y"); } }',
+];
+
+foreach ($syntaxTests as $name => $code) {
+    $testFile = sys_get_temp_dir() . '/syntax_test_' . md5($name) . '.php';
+    file_put_contents($testFile, $code);
+    
+    try {
+        new \Go\ParserReflection\ReflectionFile($testFile);
+        echo "  ✅ $name\n";
+    } catch (Exception $e) {
+        echo "  ❌ $name: " . $e->getMessage() . "\n";
+    } finally {
+        unlink($testFile);
+    }
+}
+
+echo "\n--- Framework Core Classes ---\n";
+
+// Test core framework classes
+$coreClasses = [
+    'Go\Core\AdviceMatcher',
+    'Go\Instrument\Transformer\MagicConstantTransformer',
+    'Go\Aop\Pointcut\TruePointcut',
+];
+
+foreach ($coreClasses as $className) {
+    try {
+        $reflection = new ReflectionClass($className);
+        echo "  ✅ $className\n";
+    } catch (Exception $e) {
+        echo "  ❌ $className: " . $e->getMessage() . "\n";
+    }
+}
+
+echo "\n🎉 PHP 8 compatibility check complete!\n";
+echo "\nFor detailed information about PHP 8 compatibility, see:\n";
+echo "  - UPGRADE-PHP8.md\n";
+echo "  - CHANGELOG.md\n";
+echo "\nIf you encounter issues, please report them at:\n";
+echo "  https://github.com/goaop/framework/issues\n";
