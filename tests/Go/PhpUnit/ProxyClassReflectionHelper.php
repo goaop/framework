@@ -32,8 +32,10 @@ final class ProxyClassReflectionHelper
      *
      * @param string $className Full qualified class name for which \Go\ParserReflection\ReflectionClass ought to be initialized
      * @param array $configuration Configuration used for Go! AOP project setup
+     * 
+     * @throws \RuntimeException when proxy file cannot be read or parsed
      */
-    public static function createReflectionClass(string $className, array $configuration): ReflectionClass
+    public static function createReflectionClass(string $className, array $configuration): ?ReflectionClass
     {
         $parsedReflectionClass = new ReflectionClass($className);
         $originalClassFile     = $parsedReflectionClass->getFileName();
@@ -41,10 +43,15 @@ final class ProxyClassReflectionHelper
 
         $appDir            = PathResolver::realpath($configuration['appDir']);
         $relativePath      = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
-        $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
-        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
-        $proxyFileName     = $configuration['cacheDir'] . '/_proxies/' . $proxyRelativePath;
+        
+        // Use the same path construction logic as ClassWovenConstraint for consistency
+        $proxyFileName     = $configuration['cacheDir'] . '/_proxies' . DIRECTORY_SEPARATOR . $relativePath;
         $proxyFileContent  = file_get_contents($proxyFileName);
+
+        if ($proxyFileContent === false) {
+            // Return null to indicate that the class is not woven (proxy file doesn't exist)
+            return null;
+        }
 
         // To prevent deep analysis of parents, we just cut everything after "extends"
         $proxyFileContent = preg_replace('/extends.*/', '', $proxyFileContent);

@@ -10,6 +10,29 @@ use Go\Aop\AdviceBefore;
 use Go\Aop\OrderedAdvice;
 use PHPUnit\Framework\TestCase;
 
+// Test implementations for static data provider
+class TestAdviceAfter implements AdviceAfter
+{
+    public function invoke($invocation) { return null; }
+}
+
+class TestAdviceBefore implements AdviceBefore
+{
+    public function invoke($invocation) { return null; }
+}
+
+class TestAdviceAround implements AdviceAround
+{
+    public function invoke($invocation) { return null; }
+}
+
+class TestOrderedAdvice implements OrderedAdvice
+{
+    public function __construct(private int $order) {}
+    public function getAdviceOrder(): int { return $this->order; }
+    public function invoke($invocation) { return null; }
+}
+
 class AbstractJoinpointTest extends TestCase
 {
     protected AbstractJoinpoint $joinpoint;
@@ -28,95 +51,95 @@ class AbstractJoinpointTest extends TestCase
         }
     }
 
-    public function sortingTestSource(): array
+    public static function sortingTestSource(): array
     {
         return [
             // #0
             [
                 [
-                    $this->createMock(AdviceAfter::class),
-                    $this->createMock(AdviceBefore::class)
+                    new TestAdviceAfter(),
+                    new TestAdviceBefore()
                 ],
                 [
-                    AdviceBefore::class,
-                    AdviceAfter::class
+                    TestAdviceBefore::class,
+                    TestAdviceAfter::class
                 ]
             ],
             // #1
             [
                 [
-                    $this->createMock(AdviceAfter::class),
-                    $this->createMock(AdviceAround::class)
+                    new TestAdviceAfter(),
+                    new TestAdviceAround()
                 ],
                 [
-                    AdviceAfter::class,
-                    AdviceAround::class
+                    TestAdviceAfter::class,
+                    TestAdviceAround::class
                 ]
             ],
             // #2
             [
                 [
-                    $this->createMock(AdviceBefore::class),
-                    $this->createMock(AdviceAfter::class)
+                    new TestAdviceBefore(),
+                    new TestAdviceAfter()
                 ],
                 [
-                    AdviceBefore::class,
-                    AdviceAfter::class
+                    TestAdviceBefore::class,
+                    TestAdviceAfter::class
                 ]
             ],
             // #3
             [
                 [
-                    $this->createMock(AdviceBefore::class),
-                    $this->createMock(AdviceAround::class)
+                    new TestAdviceBefore(),
+                    new TestAdviceAround()
                 ],
                 [
-                    AdviceBefore::class,
-                    AdviceAround::class
+                    TestAdviceBefore::class,
+                    TestAdviceAround::class
                 ]
             ],
             // #4
             [
                 [
-                    $this->createMock(AdviceAround::class),
-                    $this->createMock(AdviceAfter::class)
+                    new TestAdviceAround(),
+                    new TestAdviceAfter()
                 ],
                 [
-                    AdviceAfter::class,
-                    AdviceAround::class
+                    TestAdviceAfter::class,
+                    TestAdviceAround::class
                 ]
             ],
             // #5
             [
                 [
-                    $this->createMock(AdviceAround::class),
-                    $this->createMock(AdviceBefore::class)
+                    new TestAdviceAround(),
+                    new TestAdviceBefore()
                 ],
                 [
-                    AdviceBefore::class,
-                    AdviceAround::class
+                    TestAdviceBefore::class,
+                    TestAdviceAround::class
                 ]
             ],
             // #6
             [
                 [
-                    $this->createMock(AdviceBefore::class),
-                    $this->createMock(AdviceAround::class),
-                    $this->createMock(AdviceBefore::class),
-                    $this->createMock(AdviceAfter::class),
+                    new TestAdviceBefore(),
+                    new TestAdviceAround(),
+                    new TestAdviceBefore(),
+                    new TestAdviceAfter(),
                 ],
                 [
-                    AdviceBefore::class,
-                    AdviceBefore::class,
-                    AdviceAfter::class,
-                    AdviceAround::class,
+                    TestAdviceBefore::class,
+                    TestAdviceBefore::class,
+                    TestAdviceAfter::class,
+                    TestAdviceAround::class,
                 ]
             ],
             // #7
             [
                 [
-                    $forth = $this->getOrderedAdvice(4),
-                    $first = $this->getOrderedAdvice(1)
+                    $forth = new TestOrderedAdvice(4),
+                    $first = new TestOrderedAdvice(1)
                 ],
                 [
                     get_class($first),

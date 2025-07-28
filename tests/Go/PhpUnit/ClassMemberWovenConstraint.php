@@ -36,6 +36,11 @@ final class ClassMemberWovenConstraint extends Constraint
         }
 
         $reflectionClass         = ProxyClassReflectionHelper::createReflectionClass($other->getClass(), $this->configuration);
+        
+        // If proxy class reflection cannot be created, the class is not woven
+        if ($reflectionClass === null) {
+            return false;
+        }
         $wovenAdvisorIdentifiers = $reflectionClass->getStaticPropertyValue('__joinPoints', null);
         $target                  = $other->getTarget();
 
