@@ -35,8 +35,8 @@ final class InterceptedConstructorGenerator extends MethodGenerator
      */
     public function __construct(
         array $interceptedProperties,
-        ReflectionMethod $constructor = null,
-        MethodGenerator $constructorGenerator = null,
+        ?ReflectionMethod $constructor = null,
+        ?MethodGenerator $constructorGenerator = null,
         bool $useTypeWidening = false
     ) {
         $constructorBody = count($interceptedProperties) > 0 ? $this->getConstructorBody($interceptedProperties) : '';
