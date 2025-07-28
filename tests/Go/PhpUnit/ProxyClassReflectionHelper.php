@@ -46,6 +46,10 @@ final class ProxyClassReflectionHelper
         $proxyFileName     = $configuration['cacheDir'] . '/_proxies/' . $proxyRelativePath;
         $proxyFileContent  = file_get_contents($proxyFileName);
 
+        if ($proxyFileContent === false) {
+            throw new \RuntimeException("Could not read proxy file: {$proxyFileName}");
+        }
+
         // To prevent deep analysis of parents, we just cut everything after "extends"
         $proxyFileContent = preg_replace('/extends.*/', '', $proxyFileContent);
         $proxyFileAST     = ReflectionEngine::parseFile($proxyFileName, $proxyFileContent);
