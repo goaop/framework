@@ -101,7 +101,6 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
             $aspect = AspectKernel::getInstance()->getContainer()->getService($aspectName);
             $advice = (new ReflectionMethod($aspectName, $methodName))->getClosure($aspect);
 
-            assert(isset($advice), 'getClosure() can not be null on modern PHP versions');
             self::$localAdvicesCache["$aspectName->$methodName"] = $advice;
         }
 

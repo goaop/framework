@@ -58,7 +58,6 @@ final class InterceptedConstructorGenerator extends MethodGenerator
         } else {
             $constructorGenerator = new MethodGenerator('__construct', [], [], $constructorBody);
         }
-        assert($constructorGenerator !== null, "Constructor generator should be initialized");
         $this->constructorGenerator = $constructorGenerator;
     }
 
