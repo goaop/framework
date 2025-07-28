@@ -32,8 +32,10 @@ final class ProxyClassReflectionHelper
      *
      * @param string $className Full qualified class name for which \Go\ParserReflection\ReflectionClass ought to be initialized
      * @param array $configuration Configuration used for Go! AOP project setup
+     * 
+     * @throws \RuntimeException when proxy file cannot be read or parsed
      */
-    public static function createReflectionClass(string $className, array $configuration): ReflectionClass
+    public static function createReflectionClass(string $className, array $configuration): ?ReflectionClass
     {
         $parsedReflectionClass = new ReflectionClass($className);
         $originalClassFile     = $parsedReflectionClass->getFileName();
@@ -47,7 +49,8 @@ final class ProxyClassReflectionHelper
         $proxyFileContent  = file_get_contents($proxyFileName);
 
         if ($proxyFileContent === false) {
-            throw new \RuntimeException("Could not read proxy file: {$proxyFileName}");
+            // Return null to indicate that the class is not woven (proxy file doesn't exist)
+            return null;
         }
 
         // To prevent deep analysis of parents, we just cut everything after "extends"
