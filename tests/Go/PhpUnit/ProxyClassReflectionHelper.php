@@ -41,9 +41,9 @@ final class ProxyClassReflectionHelper
 
         $appDir            = PathResolver::realpath($configuration['appDir']);
         $relativePath      = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
-        $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
-        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
-        $proxyFileName     = $configuration['cacheDir'] . '/_proxies/' . $proxyRelativePath;
+        
+        // Use the same path construction logic as ClassWovenConstraint for consistency
+        $proxyFileName     = $configuration['cacheDir'] . '/_proxies' . DIRECTORY_SEPARATOR . $relativePath;
         $proxyFileContent  = file_get_contents($proxyFileName);
 
         if ($proxyFileContent === false) {
