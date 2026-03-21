@@ -31,9 +31,9 @@ class CachingTransformer extends BaseSourceTransformer
     protected int $cacheFileMode = 0770;
 
     /**
-     * @var SourceTransformer[]|callable(): SourceTransformer[]
+     * @var SourceTransformer[]|Closure(): SourceTransformer[]
      */
-    protected $transformers = [];
+    protected array|Closure $transformers = [];
 
     /**
      * Cache manager
@@ -43,9 +43,9 @@ class CachingTransformer extends BaseSourceTransformer
     /**
      * Class constructor
      *
-     * @param SourceTransformer[]|callable(): SourceTransformer[] $transformers Source transformers or callable that should return transformers
+     * @param SourceTransformer[]|Closure(): SourceTransformer[] $transformers Source transformers or closure that should return transformers
      */
-    public function __construct(AspectKernel $kernel, $transformers, CachePathManager $cacheManager)
+    public function __construct(AspectKernel $kernel, array|Closure $transformers, CachePathManager $cacheManager)
     {
         parent::__construct($kernel);
         $this->cacheManager  = $cacheManager;
