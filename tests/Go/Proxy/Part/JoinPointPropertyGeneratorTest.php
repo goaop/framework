@@ -24,21 +24,7 @@ class JoinPointPropertyGeneratorTest extends TestCase
      */
     public function testGenerate(): void
     {
-        $generator = new JoinPointPropertyGenerator([
-            'method' => [
-                'execute' => [
-                    'advisor.Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
-                ],
-                'perform' => [
-                    'advisor.Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
-                ],
-            ],
-            'static' => [
-                'runByName' => [
-                    'advisor.Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
-                ],
-            ],
-        ]);
+        $generator = new JoinPointPropertyGenerator();
         $this->assertSame('__joinPoints', $generator->getName());
         $propertyCode = $generator->generate();
         $expectedCode = preg_replace(
@@ -46,21 +32,20 @@ class JoinPointPropertyGeneratorTest extends TestCase
             '',
             '/**
              * List of applied advices per class
+             *
+             * Typed as MethodInvocation because generated method bodies (method:* and static:*
+             * keys)
+             * call ->__invoke() directly. Other joinpoint types stored here use explicit
+             * casts:
+             *   - prop:*        ClassFieldAccess — cast in PropertyInterceptionTrait
+             *   - staticinit:*  StaticInitializationJoinpoint — instanceof check in
+             * ClassProxyGenerator::injectJoinPoints()
+             *   - init:*        ReflectionConstructorInvocation — accessed via
+             * ConstructorExecutionTransformer
+             *
+             * @var array<string, \Go\Aop\Intercept\MethodInvocation>
              */
-            private static $__joinPoints = [
-                \'method\' => [
-                    \'execute\' => [
-                        \'advisor.Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
-                    ],
-                    \'perform\' => [
-                        \'advisor.Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
-                    ],
-                ],
-                \'static\' => [
-                    \'runByName\' => [
-                        \'advisor.Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
-                    ],
-                ],
+            private static array $__joinPoints = [
             ];'
         );
         $actualCode = preg_replace('/^\s+|\s+$/m', '', $propertyCode);

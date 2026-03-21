@@ -16,6 +16,11 @@ use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
+use PhpParser\ConstExprEvaluator;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Identifier;
+use PhpParser\Node\Name;
+use PhpParser\NodeFinder;
 
 /**
  * Utility functions that helps initialization of reflection classes that introspects classes and its members
@@ -25,6 +30,50 @@ final class ProxyClassReflectionHelper
 {
     private function __construct()
     {
+    }
+
+    /**
+     * Extracts the advice names array from the injectJoinPoints() call in the generated proxy file.
+     *
+     * @param string $className     Full qualified class name
+     * @param array  $configuration Configuration used for Go! AOP project setup
+     *
+     * @return string[][][] Advice names indexed by join point type and name, or empty array if not found
+     */
+    public static function extractAdvicesFromProxyFile(string $className, array $configuration): array
+    {
+        $parsedReflectionClass = new ReflectionClass($className);
+        $originalClassFile     = $parsedReflectionClass->getFileName();
+
+        $appDir            = PathResolver::realpath($configuration['appDir']);
+        $relativePath      = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
+        $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
+        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
+        $proxyFileName     = $configuration['cacheDir'] . '/_proxies/' . $proxyRelativePath;
+
+        if (!file_exists($proxyFileName)) {
+            return [];
+        }
+
+        $ast = ReflectionEngine::parseFile($proxyFileName);
+
+        /** @var StaticCall|null $injectCall */
+        $injectCall = (new NodeFinder())->findFirst($ast, static function ($node): bool {
+            return $node instanceof StaticCall
+                && $node->name instanceof Identifier
+                && $node->name->toString() === 'injectJoinPoints'
+                && $node->class instanceof Name
+                && str_ends_with($node->class->toString(), 'ClassProxyGenerator');
+        });
+
+        if ($injectCall === null || count($injectCall->args) < 2) {
+            return [];
+        }
+
+        $advicesNode = $injectCall->args[1]->value;
+        $result      = (new ConstExprEvaluator())->evaluateSilently($advicesNode);
+
+        return is_array($result) ? $result : [];
     }
 
     /**

@@ -12,9 +12,13 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Go\Aop\Intercept\MethodInvocation;
+use Laminas\Code\Generator\DocBlock\Tag\VarTag;
+use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\Exception\InvalidArgumentException;
 use Laminas\Code\Generator\PropertyGenerator;
 use Laminas\Code\Generator\PropertyValueGenerator;
+use Laminas\Code\Generator\TypeGenerator;
 
 /**
  * Prepares the definition for joinpoints private property in the class
@@ -29,16 +33,27 @@ final class JoinPointPropertyGenerator extends PropertyGenerator
     /**
      * JoinPointProperty constructor.
      *
-     * @param string[][][] $adviceNames List of advices to apply per class
-     *
      * @throws InvalidArgumentException
      */
-    public function __construct(array $adviceNames)
+    public function __construct()
     {
-        $value = new PropertyValueGenerator($adviceNames, PropertyValueGenerator::TYPE_ARRAY_SHORT);
+        $value = new PropertyValueGenerator([], PropertyValueGenerator::TYPE_ARRAY_SHORT);
 
         parent::__construct(self::NAME, $value, PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
 
-        $this->setDocBlock('List of applied advices per class');
+        $this->setType(TypeGenerator::fromTypeString('array'));
+
+        $docBlock = new DocBlockGenerator(
+            'List of applied advices per class',
+            implode("\n", [
+                'Typed as MethodInvocation because generated method bodies (method:* and static:* keys)',
+                'call ->__invoke() directly. Other joinpoint types stored here use explicit casts:',
+                '  - prop:*        ClassFieldAccess — cast in PropertyInterceptionTrait',
+                '  - staticinit:*  StaticInitializationJoinpoint — instanceof check in ClassProxyGenerator::injectJoinPoints()',
+                '  - init:*        ReflectionConstructorInvocation — accessed via ConstructorExecutionTransformer',
+            ])
+        );
+        $docBlock->setTag(new VarTag(null, 'array<string, \\' . MethodInvocation::class . '>'));
+        $this->setDocBlock($docBlock);
     }
 }

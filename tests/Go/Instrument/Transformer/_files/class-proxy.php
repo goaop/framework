@@ -6,31 +6,20 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
 {
     /**
      * List of applied advices per class
+     *
+     * Typed as MethodInvocation because generated method bodies (method:* and static:*
+     * keys)
+     * call ->__invoke() directly. Other joinpoint types stored here use explicit
+     * casts:
+     *   - prop:*        ClassFieldAccess — cast in PropertyInterceptionTrait
+     *   - staticinit:*  StaticInitializationJoinpoint — instanceof check in
+     * ClassProxyGenerator::injectJoinPoints()
+     *   - init:*        ReflectionConstructorInvocation — accessed via
+     * ConstructorExecutionTransformer
+     *
+     * @var array<string, \Go\Aop\Intercept\MethodInvocation>
      */
-    private static $__joinPoints = [
-        'method' => [
-            'publicMethod' => [
-                'advisor.Test\\ns1\\TestClass->publicMethod',
-            ],
-            'protectedMethod' => [
-                'advisor.Test\\ns1\\TestClass->protectedMethod',
-            ],
-            'publicStaticMethod' => [
-                'advisor.Test\\ns1\\TestClass->publicStaticMethod',
-            ],
-            'protectedStaticMethod' => [
-                'advisor.Test\\ns1\\TestClass->protectedStaticMethod',
-            ],
-            'publicMethodDynamicArguments' => [
-                'advisor.Test\\ns1\\TestClass->publicMethodDynamicArguments',
-            ],
-            'publicMethodFixedArguments' => [
-                'advisor.Test\\ns1\\TestClass->publicMethodFixedArguments',
-            ],
-            'methodWithSpecialTypeArguments' => [
-                'advisor.Test\\ns1\\TestClass->methodWithSpecialTypeArguments',
-            ],
-        ],
+    private static array $__joinPoints = [
     ];
 
     public function publicMethod()
@@ -72,4 +61,28 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
         return self::$__joinPoints['method:methodWithSpecialTypeArguments']->__invoke($this, [$instance]);
     }
 }
-\Go\Proxy\ClassProxyGenerator::injectJoinPoints(TestClass::class);
+\Go\Proxy\ClassProxyGenerator::injectJoinPoints(TestClass::class, [
+    'method' => [
+        'publicMethod' => [
+            'advisor.Test\\ns1\\TestClass->publicMethod',
+        ],
+        'protectedMethod' => [
+            'advisor.Test\\ns1\\TestClass->protectedMethod',
+        ],
+        'publicStaticMethod' => [
+            'advisor.Test\\ns1\\TestClass->publicStaticMethod',
+        ],
+        'protectedStaticMethod' => [
+            'advisor.Test\\ns1\\TestClass->protectedStaticMethod',
+        ],
+        'publicMethodDynamicArguments' => [
+            'advisor.Test\\ns1\\TestClass->publicMethodDynamicArguments',
+        ],
+        'publicMethodFixedArguments' => [
+            'advisor.Test\\ns1\\TestClass->publicMethodFixedArguments',
+        ],
+        'methodWithSpecialTypeArguments' => [
+            'advisor.Test\\ns1\\TestClass->methodWithSpecialTypeArguments',
+        ],
+    ],
+]);
