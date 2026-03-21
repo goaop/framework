@@ -48,11 +48,13 @@ class ClassProxyGenerator
      * @var array<string, class-string<Joinpoint>>
      */
     protected static array $invocationClassMap = [
+        // MethodInvocation subtypes — directly invoked via self::$__joinPoints[key]->__invoke() in generated method bodies
         AspectContainer::METHOD_PREFIX        => DynamicClosureMethodInvocation::class,
         AspectContainer::STATIC_METHOD_PREFIX => StaticClosureMethodInvocation::class,
-        AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,
-        AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class,
-        AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class
+        // Non-MethodInvocation types — accessed through explicit casts or instanceof checks, not from generated method bodies
+        AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,              // cast in PropertyInterceptionTrait
+        AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class, // instanceof check in injectJoinPoints()
+        AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class // accessed via ConstructorExecutionTransformer
     ];
 
     /**
@@ -157,6 +159,8 @@ class ClassProxyGenerator
         $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->name);
         $joinPointsProperty->setValue(null, $joinPoints);
 
+        // staticinit:root is a StaticInitializationJoinpoint, not a MethodInvocation.
+        // It is invoked here immediately after class load, not from generated method bodies.
         $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';
         if (isset($joinPoints[$staticInit]) && $joinPoints[$staticInit] instanceof StaticInitializationJoinpoint) {
             ($joinPoints[$staticInit])();

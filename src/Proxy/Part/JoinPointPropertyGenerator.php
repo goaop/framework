@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Go\Aop\Intercept\Joinpoint;
+use Go\Aop\Intercept\MethodInvocation;
 use Laminas\Code\Generator\DocBlock\Tag\VarTag;
 use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\Exception\InvalidArgumentException;
@@ -43,8 +43,17 @@ final class JoinPointPropertyGenerator extends PropertyGenerator
 
         $this->setType(TypeGenerator::fromTypeString('array'));
 
-        $docBlock = new DocBlockGenerator('List of applied advices per class');
-        $docBlock->setTag(new VarTag(null, 'array<string, \\' . Joinpoint::class . '>'));
+        $docBlock = new DocBlockGenerator(
+            'List of applied advices per class',
+            implode("\n", [
+                'Typed as MethodInvocation because generated method bodies (method:* and static:* keys)',
+                'call ->__invoke() directly. Other joinpoint types stored here use explicit casts:',
+                '  - prop:*        ClassFieldAccess — cast in PropertyInterceptionTrait',
+                '  - staticinit:*  StaticInitializationJoinpoint — instanceof check in ClassProxyGenerator::injectJoinPoints()',
+                '  - init:*        ReflectionConstructorInvocation — accessed via ConstructorExecutionTransformer',
+            ])
+        );
+        $docBlock->setTag(new VarTag(null, 'array<string, \\' . MethodInvocation::class . '>'));
         $this->setDocBlock($docBlock);
     }
 }

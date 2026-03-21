@@ -35,6 +35,7 @@ trait PropertyInterceptionTrait
     public function &__get(string $name)
     {
         if (array_key_exists($name, $this->__properties)) {
+            // prop:* entries are ClassFieldAccess, not MethodInvocation — explicit cast required
             /** @var ClassFieldAccess $fieldAccess */
             $fieldAccess = self::$__joinPoints["prop:$name"];
             $fieldAccess->ensureScopeRule();
@@ -57,6 +58,7 @@ trait PropertyInterceptionTrait
     public function __set(string $name, $value)
     {
         if (array_key_exists($name, $this->__properties)) {
+            // prop:* entries are ClassFieldAccess, not MethodInvocation — explicit cast required
             /** @var ClassFieldAccess $fieldAccess */
             $fieldAccess = self::$__joinPoints["prop:$name"];
             $fieldAccess->ensureScopeRule();

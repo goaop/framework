@@ -7,7 +7,17 @@ class TestClass extends TestClass__AopProxied implements \Go\Aop\Proxy
     /**
      * List of applied advices per class
      *
-     * @var array<string, \Go\Aop\Intercept\Joinpoint>
+     * Typed as MethodInvocation because generated method bodies (method:* and static:*
+     * keys)
+     * call ->__invoke() directly. Other joinpoint types stored here use explicit
+     * casts:
+     *   - prop:*        ClassFieldAccess — cast in PropertyInterceptionTrait
+     *   - staticinit:*  StaticInitializationJoinpoint — instanceof check in
+     * ClassProxyGenerator::injectJoinPoints()
+     *   - init:*        ReflectionConstructorInvocation — accessed via
+     * ConstructorExecutionTransformer
+     *
+     * @var array<string, \Go\Aop\Intercept\MethodInvocation>
      */
     private static array $__joinPoints = [
     ];
