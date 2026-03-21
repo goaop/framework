@@ -42,7 +42,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     /**
      * List of replaced nodes
      *
-     * @var Node[]
+     * @var FullyQualified[]
      */
     protected array $replacedNodes = [];
 
@@ -59,7 +59,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     /**
      * Returns list of changed `self` nodes
      *
-     * @return Node[]
+     * @return FullyQualified[]
      */
     public function getReplacedNodes(): array
     {

@@ -44,7 +44,7 @@ class FunctionProxyGenerator
      * Constructs functions stub class from namespace Reflection
      *
      * @param ReflectionFileNamespace $namespace            Reflection of namespace
-     * @param string[][]              $adviceNames          List of function advices
+     * @param string[][][]            $adviceNames          List of function advices
      * @param bool                    $useParameterWidening Enables usage of parameter widening feature
      *
      * @throws ReflectionException If there is an advice for unknown function

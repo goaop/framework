@@ -72,7 +72,7 @@ class ClassProxyGenerator
      *
      * @param ReflectionClass $originalClass        Original class reflection
      * @param string          $parentClassName      Parent class name to use
-     * @param string[][]      $classAdviceNames     List of advices for class
+     * @param string[][][]    $classAdviceNames     List of advices for class
      * @param bool            $useParameterWidening Enables usage of parameter widening feature
      */
     public function __construct(

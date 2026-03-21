@@ -35,7 +35,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
      *
      * @param ReflectionClass $originalTrait    Original class reflection
      * @param string          $parentTraitName  Parent trait name to use
-     * @param string[][]      $traitAdviceNames List of advices for class
+     * @param string[][][]    $traitAdviceNames List of advices for class
      */
     public function __construct(
         ReflectionClass $originalTrait,
