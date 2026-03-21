@@ -15,6 +15,7 @@ namespace Go\Proxy\Part;
 use Laminas\Code\Generator\Exception\InvalidArgumentException;
 use Laminas\Code\Generator\PropertyGenerator;
 use Laminas\Code\Generator\PropertyValueGenerator;
+use Laminas\Code\Generator\TypeGenerator;
 
 /**
  * Prepares the definition for joinpoints private property in the class
@@ -29,16 +30,15 @@ final class JoinPointPropertyGenerator extends PropertyGenerator
     /**
      * JoinPointProperty constructor.
      *
-     * @param string[][][] $adviceNames List of advices to apply per class
-     *
      * @throws InvalidArgumentException
      */
-    public function __construct(array $adviceNames)
+    public function __construct()
     {
-        $value = new PropertyValueGenerator($adviceNames, PropertyValueGenerator::TYPE_ARRAY_SHORT);
+        $value = new PropertyValueGenerator([], PropertyValueGenerator::TYPE_ARRAY_SHORT);
 
         parent::__construct(self::NAME, $value, PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
 
+        $this->setType(TypeGenerator::fromTypeString('array'));
         $this->setDocBlock('List of applied advices per class');
     }
 }

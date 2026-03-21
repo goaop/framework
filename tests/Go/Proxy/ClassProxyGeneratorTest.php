@@ -71,7 +71,7 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyHasJoinpointProperty = $proxyClass->hasProperty(JoinPointPropertyGenerator::NAME);
         $this->assertTrue($proxyHasJoinpointProperty, 'Child should have joinpoint property in it');
         $joinPoints = $proxyClass->getStaticPropertyValue(JoinPointPropertyGenerator::NAME);
-        $this->assertSame($classAdvices, $joinPoints);
+        $this->assertSame([], $joinPoints);
 
         $this->assertTrue($proxyClass->hasMethod($methodName));
         $interceptedMethod = $proxyClass->getMethod($methodName);

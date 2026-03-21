@@ -6,60 +6,7 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
     /**
      * List of applied advices per class
      */
-    private static $__joinPoints = [
-        'method' => [
-            'stringSth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->stringSth',
-            ],
-            'floatSth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->floatSth',
-            ],
-            'boolSth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->boolSth',
-            ],
-            'intSth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->intSth',
-            ],
-            'callableSth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->callableSth',
-            ],
-            'arraySth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->arraySth',
-            ],
-            'variadicStringSthByRef' => [
-                'advisor.Test\\ns1\\TestPhp7Class->variadicStringSthByRef',
-            ],
-            'exceptionArg' => [
-                'advisor.Test\\ns1\\TestPhp7Class->exceptionArg',
-            ],
-            'stringRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->stringRth',
-            ],
-            'floatRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->floatRth',
-            ],
-            'boolRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->boolRth',
-            ],
-            'intRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->intRth',
-            ],
-            'callableRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->callableRth',
-            ],
-            'arrayRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->arrayRth',
-            ],
-            'exceptionRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->exceptionRth',
-            ],
-            'noRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->noRth',
-            ],
-            'returnSelf' => [
-                'advisor.Test\\ns1\\TestPhp7Class->returnSelf',
-            ],
-        ],
+    private static array $__joinPoints = [
     ];
     public function stringSth(string $arg)
     {
@@ -134,4 +81,58 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
         return self::$__joinPoints['method:returnSelf']->__invoke($this);
     }
 }
-\Go\Proxy\ClassProxyGenerator::injectJoinPoints(TestPhp7Class::class);
+\Go\Proxy\ClassProxyGenerator::injectJoinPoints(TestPhp7Class::class, [
+    'method' => [
+        'stringSth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->stringSth',
+        ],
+        'floatSth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->floatSth',
+        ],
+        'boolSth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->boolSth',
+        ],
+        'intSth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->intSth',
+        ],
+        'callableSth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->callableSth',
+        ],
+        'arraySth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->arraySth',
+        ],
+        'variadicStringSthByRef' => [
+            'advisor.Test\\ns1\\TestPhp7Class->variadicStringSthByRef',
+        ],
+        'exceptionArg' => [
+            'advisor.Test\\ns1\\TestPhp7Class->exceptionArg',
+        ],
+        'stringRth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->stringRth',
+        ],
+        'floatRth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->floatRth',
+        ],
+        'boolRth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->boolRth',
+        ],
+        'intRth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->intRth',
+        ],
+        'callableRth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->callableRth',
+        ],
+        'arrayRth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->arrayRth',
+        ],
+        'exceptionRth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->exceptionRth',
+        ],
+        'noRth' => [
+            'advisor.Test\\ns1\\TestPhp7Class->noRth',
+        ],
+        'returnSelf' => [
+            'advisor.Test\\ns1\\TestPhp7Class->returnSelf',
+        ],
+    ],
+]);

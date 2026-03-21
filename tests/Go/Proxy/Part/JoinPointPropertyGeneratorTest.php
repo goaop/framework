@@ -24,21 +24,7 @@ class JoinPointPropertyGeneratorTest extends TestCase
      */
     public function testGenerate(): void
     {
-        $generator = new JoinPointPropertyGenerator([
-            'method' => [
-                'execute' => [
-                    'advisor.Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
-                ],
-                'perform' => [
-                    'advisor.Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
-                ],
-            ],
-            'static' => [
-                'runByName' => [
-                    'advisor.Demo\\Aspect\\LoggingAspect->beforeMethodExecution',
-                ],
-            ],
-        ]);
+        $generator = new JoinPointPropertyGenerator();
         $this->assertSame('__joinPoints', $generator->getName());
         $propertyCode = $generator->generate();
         $expectedCode = preg_replace(
@@ -47,20 +33,7 @@ class JoinPointPropertyGeneratorTest extends TestCase
             '/**
              * List of applied advices per class
              */
-            private static $__joinPoints = [
-                \'method\' => [
-                    \'execute\' => [
-                        \'advisor.Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
-                    ],
-                    \'perform\' => [
-                        \'advisor.Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
-                    ],
-                ],
-                \'static\' => [
-                    \'runByName\' => [
-                        \'advisor.Demo\\\\Aspect\\\\LoggingAspect->beforeMethodExecution\',
-                    ],
-                ],
+            private static array $__joinPoints = [
             ];'
         );
         $actualCode = preg_replace('/^\s+|\s+$/m', '', $propertyCode);

@@ -30,6 +30,7 @@ use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Proxy\Part\PropertyInterceptionTrait;
 use Laminas\Code\Generator\ClassGenerator;
 use Laminas\Code\Generator\DocBlockGenerator;
+use Laminas\Code\Generator\ValueGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
 use ReflectionClass;
 use ReflectionMethod;
@@ -96,7 +97,7 @@ class ClassProxyGenerator
         $introducedInterfaces  = $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [];
         $introducedTraits      = $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [];
 
-        $generatedProperties = [new JoinPointPropertyGenerator($classAdviceNames)];
+        $generatedProperties = [new JoinPointPropertyGenerator()];
         $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
 
         $introducedInterfaces[] = '\\' . Proxy::class;
@@ -142,8 +143,10 @@ class ClassProxyGenerator
      * Inject advices into given class
      *
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
+     *
+     * @param string[][][] $advices List of advices to inject
      */
-    public static function injectJoinPoints(string $targetClassName): void
+    public static function injectJoinPoints(string $targetClassName, array $advices = []): void
     {
         if (!class_exists($targetClassName)) {
             return;
@@ -151,7 +154,6 @@ class ClassProxyGenerator
         $reflectionClass    = new ReflectionClass($targetClassName);
         $joinPointsProperty = $reflectionClass->getProperty(JoinPointPropertyGenerator::NAME);
 
-        $advices    = $joinPointsProperty->getValue();
         $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->name);
         $joinPointsProperty->setValue(null, $joinPoints);
 
@@ -166,17 +168,18 @@ class ClassProxyGenerator
      */
     public function generate(): string
     {
-        $classCode = $this->generator->generate();
+        $classCode    = $this->generator->generate();
+        $advicesValue = new ValueGenerator($this->adviceNames, ValueGenerator::TYPE_ARRAY_SHORT);
 
         return $classCode
             // Inject advices on call
-            . '\\' . self::class . '::injectJoinPoints(' . $this->generator->getName() . '::class);';
+            . '\\' . self::class . '::injectJoinPoints(' . $this->generator->getName() . '::class, ' . $advicesValue->generate() . ');';
     }
 
     /**
      * Wrap advices with joinpoint object
      *
-     * @param array|Advice[][][] $classAdvices Advices for specific class
+     * @param string[][][] $classAdvices Advisor name strings indexed by join point type and name
      *
      * @throws UnexpectedValueException If joinPoint type is unknown
      *

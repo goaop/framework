@@ -28,6 +28,52 @@ final class ProxyClassReflectionHelper
     }
 
     /**
+     * Extracts the advice names array from the injectJoinPoints() call in the generated proxy file.
+     *
+     * @param string $className     Full qualified class name
+     * @param array  $configuration Configuration used for Go! AOP project setup
+     *
+     * @return string[][][] Advice names indexed by join point type and name, or empty array if not found
+     */
+    public static function extractAdvicesFromProxyFile(string $className, array $configuration): array
+    {
+        $parsedReflectionClass = new ReflectionClass($className);
+        $originalClassFile     = $parsedReflectionClass->getFileName();
+
+        $appDir            = PathResolver::realpath($configuration['appDir']);
+        $relativePath      = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
+        $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
+        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
+        $proxyFileName     = $configuration['cacheDir'] . '/_proxies/' . $proxyRelativePath;
+
+        if (!file_exists($proxyFileName)) {
+            return [];
+        }
+
+        $proxyFileContent = file_get_contents($proxyFileName);
+        $pos              = strrpos($proxyFileContent, '::injectJoinPoints(');
+
+        if ($pos === false) {
+            return [];
+        }
+
+        $callStr  = substr($proxyFileContent, $pos);
+        $commaPos = strpos($callStr, ',');
+
+        if ($commaPos === false) {
+            return [];
+        }
+
+        $arrayStr = trim(substr($callStr, $commaPos + 1));
+
+        if (str_ends_with(rtrim($arrayStr), ');')) {
+            $arrayStr = substr(rtrim($arrayStr), 0, -2);
+        }
+
+        return eval('return ' . $arrayStr . ';');
+    }
+
+    /**
      * Creates \Go\ParserReflection\ReflectionClass instance that introspects class without loading class into memory.
      *
      * @param string $className Full qualified class name for which \Go\ParserReflection\ReflectionClass ought to be initialized
