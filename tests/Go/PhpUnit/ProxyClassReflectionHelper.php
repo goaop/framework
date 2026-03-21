@@ -16,6 +16,11 @@ use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
+use PhpParser\ConstExprEvaluator;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Identifier;
+use PhpParser\Node\Name;
+use PhpParser\NodeFinder;
 
 /**
  * Utility functions that helps initialization of reflection classes that introspects classes and its members
@@ -50,27 +55,25 @@ final class ProxyClassReflectionHelper
             return [];
         }
 
-        $proxyFileContent = file_get_contents($proxyFileName);
-        $pos              = strrpos($proxyFileContent, '::injectJoinPoints(');
+        $ast = ReflectionEngine::parseFile($proxyFileName);
 
-        if ($pos === false) {
+        /** @var StaticCall|null $injectCall */
+        $injectCall = (new NodeFinder())->findFirst($ast, static function ($node): bool {
+            return $node instanceof StaticCall
+                && $node->name instanceof Identifier
+                && $node->name->toString() === 'injectJoinPoints'
+                && $node->class instanceof Name
+                && str_ends_with($node->class->toString(), 'ClassProxyGenerator');
+        });
+
+        if ($injectCall === null || count($injectCall->args) < 2) {
             return [];
         }
 
-        $callStr  = substr($proxyFileContent, $pos);
-        $commaPos = strpos($callStr, ',');
+        $advicesNode = $injectCall->args[1]->value;
+        $result      = (new ConstExprEvaluator())->evaluateSilently($advicesNode);
 
-        if ($commaPos === false) {
-            return [];
-        }
-
-        $arrayStr = trim(substr($callStr, $commaPos + 1));
-
-        if (str_ends_with(rtrim($arrayStr), ');')) {
-            $arrayStr = substr(rtrim($arrayStr), 0, -2);
-        }
-
-        return eval('return ' . $arrayStr . ';');
+        return is_array($result) ? $result : [];
     }
 
     /**
