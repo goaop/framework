@@ -8,7 +8,7 @@ Go! AOP is a modern aspect-oriented framework in plain PHP with rich features fo
 [![Total Downloads](https://img.shields.io/packagist/dt/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![Daily Downloads](https://img.shields.io/packagist/dd/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![SensioLabs Insight](https://img.shields.io/sensiolabs/i/34549463-37d3-4368-94f5-812880d3ce4c.svg)](https://insight.sensiolabs.com/projects/34549463-37d3-4368-94f5-812880d3ce4c)
-[![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%208.2-8892BF.svg)](https://php.net/)
+[![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%208.4-8892BF.svg)](https://www.php.net/supported-versions.php)
 [![License](https://img.shields.io/packagist/l/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 
 Features
@@ -66,7 +66,7 @@ After that just configure your web server to `demos/` folder and open it in your
 
 Ask composer to download the latest version of Go! AOP framework with its dependencies by running the command:
 
-``` bash
+```bash
 composer require goaop/framework
 ```
 
@@ -83,7 +83,7 @@ application in one place.
 The framework provides base class to make it easier to create your own kernel.
 To create your application kernel, extend the abstract class `Go\Core\AspectKernel`
 
-``` php
+```php
 <?php
 // app/ApplicationAspectKernel.php
 
@@ -98,12 +98,8 @@ class ApplicationAspectKernel extends AspectKernel
 
     /**
      * Configure an AspectContainer with advisors, aspects and pointcuts
-     *
-     * @param AspectContainer $container
-     *
-     * @return void
      */
-    protected function configureAop(AspectContainer $container)
+    protected function configureAop(AspectContainer $container): void
     {
     }
 }
@@ -136,7 +132,7 @@ $applicationAspectKernel->init([
 Aspect is the key element of AOP philosophy. Go! AOP framework just uses simple PHP classes for declaring aspects, which makes it possible to use all features of OOP for aspect classes.
 As an example let's intercept all the methods and display their names:
 
-``` php
+```php
 // Aspect/MonitorAspect.php
 
 namespace Aspect;
@@ -144,10 +140,10 @@ namespace Aspect;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Annotation\After;
-use Go\Lang\Annotation\Before;
-use Go\Lang\Annotation\Around;
-use Go\Lang\Annotation\Pointcut;
+use Go\Lang\Attribute\After;
+use Go\Lang\Attribute\Before;
+use Go\Lang\Attribute\Around;
+use Go\Lang\Attribute\Pointcut;
 
 /**
  * Monitor aspect
@@ -157,10 +153,8 @@ class MonitorAspect implements Aspect
 
     /**
      * Method that will be called before real method
-     *
-     * @param MethodInvocation $invocation Invocation
-     * @Before("execution(public Example->*(*))")
      */
+    #[Before("execution(public Example->*(*))")]
     public function beforeMethodExecution(MethodInvocation $invocation)
     {
         echo 'Calling Before Interceptor for: ',
@@ -173,8 +167,8 @@ class MonitorAspect implements Aspect
 ```
 
 Easy, isn't it? We declared here that we want to install a hook before the execution of
-all dynamic public methods in the class Example. This is done with the help of annotation
-`@Before("execution(public Example->*(*))")`
+all dynamic public methods in the class Example. This is done with the help of attribute
+`#[Before("execution(public Example->*(*))")]`
 Hooks can be of any types, you will see them later.
 But we don't change any code in the class Example! I can feel your astonishment now.
 
