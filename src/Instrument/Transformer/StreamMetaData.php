@@ -28,6 +28,8 @@ class StreamMetaData
 {
     /**
      * Mapping between array keys and properties
+     *
+     * @var array<string, string>
      */
     private static array $propertyMap = [
         'stream_type'  => 'streamType',
@@ -56,6 +58,8 @@ class StreamMetaData
 
     /**
      * Array containing the names of any filters that have been stacked onto this stream.
+     *
+     * @var string[]
      */
     public array $filterList;
 
@@ -91,7 +95,7 @@ class StreamMetaData
             throw new InvalidArgumentException('Stream should be valid resource');
         }
         $metadata = stream_get_meta_data($stream);
-        if (preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
+        if (isset($metadata['uri']) && preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
             $metadata['uri'] = PathResolver::realpath($matches[1]);
         }
         foreach ($metadata as $key => $value) {
@@ -108,7 +112,7 @@ class StreamMetaData
     /**
      * @inheritDoc
      */
-    public function __get($name)
+    public function __get(string $name): mixed
     {
         if ($name === 'source') {
             return $this->getSource();
@@ -120,9 +124,9 @@ class StreamMetaData
     /**
      * @inheritDoc
      */
-    public function __set($name, $value)
+    public function __set(string $name, mixed $value): void
     {
-        if ($name === 'source') {
+        if ($name === 'source' && is_string($value)) {
             trigger_error('Setting StreamMetaData->source is deprecated, use tokenStream instead', E_USER_DEPRECATED);
             $this->setSource($value);
         }

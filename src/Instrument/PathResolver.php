@@ -26,10 +26,10 @@ class PathResolver
     /**
      * Custom replacement for realpath() and stream_resolve_include_path()
      *
-     * @param string|array $somePath Path without normalization or array of paths
+     * @param string|string[] $somePath Path without normalization or array of paths
      * @param bool $shouldCheckExistence Flag for checking existence of resolved filename
      *
-     * @return array|bool|string
+     * @return ($somePath is array ? list<string|false> : string|false)
      */
     public static function realpath($somePath, bool $shouldCheckExistence = false)
     {
@@ -39,11 +39,17 @@ class PathResolver
         }
 
         if (is_array($somePath)) {
-            return array_map([self::class, __FUNCTION__], $somePath);
+            return array_values(array_map([self::class, __FUNCTION__], $somePath));
         }
         // Trick to get scheme name and path in one action. If no scheme, then there will be only one part
         $components = explode('://', $somePath, 2);
-        [$pathScheme, $path] = isset($components[1]) ? $components : [null, $components[0]];
+        if (isset($components[1])) {
+            $pathScheme = $components[0];
+            $path       = $components[1];
+        } else {
+            $pathScheme = null;
+            $path       = $components[0];
+        }
 
         // Optimization to bypass complex logic for simple paths (eg. not in phar archives)
         if (!$pathScheme && ($fastPath = stream_resolve_include_path($somePath))) {

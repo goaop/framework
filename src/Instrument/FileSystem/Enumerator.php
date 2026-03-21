@@ -33,20 +33,24 @@ class Enumerator
 
     /**
      * List of additional include paths, should be below rootDirectory
+     *
+     * @var string[]
      */
     private array $includePaths;
 
     /**
      * List of additional exclude paths, should be below rootDirectory
+     *
+     * @var string[]
      */
     private array $excludePaths;
 
     /**
      * Initializes an enumerator
      *
-     * @param string $rootDirectory Path to the root directory
-     * @param array  $includePaths  List of additional include paths
-     * @param array  $excludePaths  List of additional exclude paths
+     * @param string   $rootDirectory Path to the root directory
+     * @param string[] $includePaths  List of additional include paths
+     * @param string[] $excludePaths  List of additional exclude paths
      */
     public function __construct(string $rootDirectory, array $includePaths = [], array $excludePaths = [])
     {
@@ -143,6 +147,7 @@ class Enumerator
     /**
      * Returns collection of directories to look at
      *
+     * @return string[]
      * @throws UnexpectedValueException if directory not under the root
      */
     private function getInPaths(): array
@@ -166,6 +171,8 @@ class Enumerator
 
     /**
      * Returns the list of excluded paths
+     *
+     * @return string[]
      */
     private function getExcludePaths(): array
     {

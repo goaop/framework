@@ -31,7 +31,7 @@ class CachingTransformer extends BaseSourceTransformer
     protected int $cacheFileMode = 0770;
 
     /**
-     * @var array|Closure|SourceTransformer[]
+     * @var SourceTransformer[]|callable(): SourceTransformer[]
      */
     protected $transformers = [];
 
@@ -43,7 +43,7 @@ class CachingTransformer extends BaseSourceTransformer
     /**
      * Class constructor
      *
-     * @param array|callable $transformers Source transformers or callable that should return transformers
+     * @param SourceTransformer[]|callable(): SourceTransformer[] $transformers Source transformers or callable that should return transformers
      */
     public function __construct(AspectKernel $kernel, $transformers, CachePathManager $cacheManager)
     {
@@ -61,14 +61,15 @@ class CachingTransformer extends BaseSourceTransformer
         $originalUri      = $metadata->uri;
         $processingResult = TransformerResultEnum::RESULT_ABSTAIN;
         $cacheUri         = $this->cacheManager->getCachePathForResource($originalUri);
-        // Guard to disable overwriting of original files
-        if ($cacheUri === $originalUri) {
+        // Guard to disable overwriting of original files or when cache is unavailable
+        if ($cacheUri === false || $cacheUri === $originalUri) {
             return TransformerResultEnum::RESULT_ABORTED;
         }
 
         $lastModified  = filemtime($originalUri);
         $cacheState    = $this->cacheManager->queryCacheState($originalUri);
-        $cacheModified = $cacheState ? $cacheState['filemtime'] : 0;
+        $cacheFilemtime = $cacheState !== null ? ($cacheState['filemtime'] ?? 0) : 0;
+        $cacheModified  = is_int($cacheFilemtime) ? $cacheFilemtime : 0;
 
         if ($cacheModified < $lastModified
             || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)

@@ -150,7 +150,11 @@ class WeavingTransformer extends BaseSourceTransformer
             ? new TraitProxyGenerator($class, $newParentName, $advices, $this->useParameterWidening)
             : new ClassProxyGenerator($class, $newParentName, $advices, $this->useParameterWidening);
 
-        $refNamespace = new ReflectionFileNamespace($class->getFileName(), $class->getNamespaceName());
+        $classFileName = $class->getFileName();
+        if ($classFileName === false) {
+            return false;
+        }
+        $refNamespace = new ReflectionFileNamespace($classFileName, $class->getNamespaceName());
         foreach ($refNamespace->getNamespaceAliases() as $fqdn => $alias) {
             // Either we have a string or Identifier node
             if ($alias !== null) {
@@ -169,7 +173,14 @@ class WeavingTransformer extends BaseSourceTransformer
         $contentToInclude = $this->saveProxyToCache($class, $childCode);
 
         // Get last token for this class
-        $lastClassToken = $class->getNode()->getAttribute('endTokenPos');
+        $classNode = $class->getNode();
+        if ($classNode === null) {
+            return false;
+        }
+        $lastClassToken = $classNode->getAttribute('endTokenPos');
+        if (!is_int($lastClassToken)) {
+            return false;
+        }
 
         $metadata->tokenStream[$lastClassToken]->text .= PHP_EOL . $contentToInclude;
 
@@ -179,7 +190,7 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Adjust definition of original class source to enable extending
      *
-     * @param array $advices List of class advices (used to check for final methods and make them non-final)
+     * @param array<string, array<string, array<string, mixed>>> $advices List of class advices
      */
     private function adjustOriginalClass(
         ReflectionClass $class,
@@ -188,7 +199,13 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
-        $position  = $classNode->getAttribute('startTokenPos');
+        if ($classNode === null) {
+            return;
+        }
+        $position = $classNode->getAttribute('startTokenPos');
+        if (!is_int($position)) {
+            return;
+        }
         do {
             if (isset($streamMetaData->tokenStream[$position])) {
                 $token = $streamMetaData->tokenStream[$position];
@@ -217,6 +234,9 @@ class WeavingTransformer extends BaseSourceTransformer
             }
             $methodNode = $finalMethod->getNode();
             $position   = $methodNode->getAttribute('startTokenPos');
+            if (!is_int($position)) {
+                continue;
+            }
             do {
                 if (isset($streamMetaData->tokenStream[$position])) {
                     $token = $streamMetaData->tokenStream[$position];
@@ -251,7 +271,8 @@ class WeavingTransformer extends BaseSourceTransformer
             $fileName = str_replace('\\', '/', $namespace->getName()) . '.php';
 
             $functionFileName = $cacheDir . $fileName;
-            if (!file_exists($functionFileName) || !$this->container->hasAnyResourceChangedSince(filemtime($functionFileName))) {
+            $filemtime = file_exists($functionFileName) ? filemtime($functionFileName) : false;
+            if ($filemtime === false || !$this->container->hasAnyResourceChangedSince($filemtime)) {
                 $functionAdvices = AbstractJoinpoint::flatAndSortAdvices($functionAdvices);
                 $dirname         = dirname($functionFileName);
                 if (!file_exists($dirname)) {
@@ -280,7 +301,11 @@ class WeavingTransformer extends BaseSourceTransformer
         static $cacheDirSuffix = '/_proxies/';
 
         $cacheDir          = $this->cachePathManager->getCacheDir() . $cacheDirSuffix;
-        $relativePath      = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $class->getFileName());
+        $classFileName     = $class->getFileName();
+        if ($classFileName === false) {
+            return '';
+        }
+        $relativePath      = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $classFileName);
         $proxyRelativePath = str_replace('\\', '/', $relativePath . '/' . $class->getName() . '.php');
         $proxyFileName     = $cacheDir . $proxyRelativePath;
         $dirname           = dirname($proxyFileName);
@@ -301,7 +326,7 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Utility method to load and register unloaded aspects
      *
-     * @param array $unloadedAspects List of unloaded aspects
+     * @param Aspect[] $unloadedAspects List of unloaded aspects
      */
     private function loadAndRegisterAspects(array $unloadedAspects): void
     {

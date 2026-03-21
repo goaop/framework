@@ -32,6 +32,8 @@ class FunctionProxyGenerator
 {
     /**
      * List of advices that are used for generation of child
+     *
+     * @var string[][][]
      */
     protected array $adviceNames = [];
 
@@ -44,7 +46,7 @@ class FunctionProxyGenerator
      * Constructs functions stub class from namespace Reflection
      *
      * @param ReflectionFileNamespace $namespace            Reflection of namespace
-     * @param string[][]              $adviceNames          List of function advices
+     * @param string[][][]            $adviceNames          List of function advices
      * @param bool                    $useParameterWidening Enables usage of parameter widening feature
      *
      * @throws ReflectionException If there is an advice for unknown function
@@ -73,7 +75,7 @@ class FunctionProxyGenerator
     /**
      * Returns a joinpoint for specific function in the namespace
      *
-     * @param array $adviceNames List of advices
+     * @param string[] $adviceNames List of advices
      */
     public static function getJoinPoint(string $functionName, array $adviceNames): ReflectionFunctionInvocation
     {

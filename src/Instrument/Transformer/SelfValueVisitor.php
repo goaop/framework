@@ -42,7 +42,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     /**
      * List of replaced nodes
      *
-     * @var Node[]
+     * @var FullyQualified[]
      */
     protected array $replacedNodes = [];
 
@@ -59,7 +59,7 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     /**
      * Returns list of changed `self` nodes
      *
-     * @return Node[]
+     * @return FullyQualified[]
      */
     public function getReplacedNodes(): array
     {
@@ -140,7 +140,10 @@ final class SelfValueVisitor extends NodeVisitorAbstract
         $name = clone $originalName;
         $name->setAttribute('originalName', $originalName);
 
-        $fullClassName    = Name::concat($this->namespace, $this->className);
+        $fullClassName = Name::concat($this->namespace, $this->className);
+        if ($fullClassName === null) {
+            return $name;
+        }
         $resolvedSelfName = new FullyQualified('\\' . ltrim($fullClassName->toString(), '\\'), $name->getAttributes());
 
         $this->replacedNodes[] = $resolvedSelfName;
@@ -156,7 +159,9 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     private function resolveType(Node $node)
     {
         if ($node instanceof NullableType) {
-            $node->type = $this->resolveType($node->type);
+            if ($node->type instanceof Name) {
+                $node->type = $this->resolveClassName($node->type);
+            }
             return $node;
         }
         if ($node instanceof Name) {
@@ -166,12 +171,27 @@ final class SelfValueVisitor extends NodeVisitorAbstract
             return $node;
         }
 
-        if ($node instanceof UnionType || $node instanceof IntersectionType) {
-            $types = [];
-            foreach ($node->types as $type) {
-                $types[] = $this->resolveType($type);
+        if ($node instanceof UnionType) {
+            foreach ($node->types as $key => $type) {
+                if ($type instanceof Name) {
+                    $node->types[$key] = $this->resolveClassName($type);
+                } elseif ($type instanceof IntersectionType) {
+                    foreach ($type->types as $innerKey => $innerType) {
+                        if ($innerType instanceof Name) {
+                            $type->types[$innerKey] = $this->resolveClassName($innerType);
+                        }
+                    }
+                }
             }
-            $node->types = $types;
+            return $node;
+        }
+
+        if ($node instanceof IntersectionType) {
+            foreach ($node->types as $key => $type) {
+                if ($type instanceof Name) {
+                    $node->types[$key] = $this->resolveClassName($type);
+                }
+            }
             return $node;
         }
 

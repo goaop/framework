@@ -77,8 +77,8 @@ EOT
                 continue;
             }
 
-            if (isset($proxies[$path]) && $proxies[$path] !== $content) {
-                $io->error(sprintf('Proxy on path "%s" is weaved differnlty on second "warmup" pass.', $path));
+            if ($proxies[$path] !== $content) {
+                $io->error(sprintf('Proxy on path "%s" is weaved differently on second "warmup" pass.', $path));
                 $errors++;
                 continue;
             }
@@ -99,6 +99,8 @@ EOT
 
     /**
      * Gets Go! AOP generated proxy classes (paths and their contents) from the cache.
+     *
+     * @return array<string, string>
      */
     private function getProxies(CachePathManager $cachePathManager): array
     {
@@ -118,7 +120,10 @@ EOT
          */
         foreach ($iterator as $splFileInfo) {
             if ($splFileInfo->isFile()) {
-                $proxies[$splFileInfo->getPathname()] = file_get_contents($splFileInfo->getPathname());
+                $content = file_get_contents($splFileInfo->getPathname());
+                if ($content !== false) {
+                    $proxies[$splFileInfo->getPathname()] = $content;
+                }
             }
         }
 

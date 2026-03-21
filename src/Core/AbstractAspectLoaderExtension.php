@@ -76,12 +76,10 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                 $message,
                 $pointcutExpression,
                 (isset($reflection->class) ? $reflection->class . '->' : '') . $reflection->name,
-                method_exists($reflection, 'getFileName')
-                    ? $reflection->getFileName()
-                    : $reflection->getDeclaringClass()->getFileName(),
-                method_exists($reflection, 'getStartLine')
-                    ? $reflection->getStartLine()
-                    : 0
+                $reflection instanceof ReflectionProperty
+                    ? (string) $reflection->getDeclaringClass()->getFileName()
+                    : (string) $reflection->getFileName(),
+                $reflection instanceof ReflectionProperty ? 0 : (int) $reflection->getStartLine()
             );
             throw new UnexpectedValueException($message, 0, $e);
         }
@@ -113,12 +111,10 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                 $token->getValue(),
                 $pointcutExpression,
                 (isset($reflection->class) ? $reflection->class . '->' : '') . $reflection->name,
-                method_exists($reflection, 'getFileName')
-                    ? $reflection->getFileName()
-                    : $reflection->getDeclaringClass()->getFileName(),
-                method_exists($reflection, 'getStartLine')
-                    ? $reflection->getStartLine()
-                    : 0,
+                $reflection instanceof ReflectionProperty
+                    ? (string) $reflection->getDeclaringClass()->getFileName()
+                    : (string) $reflection->getFileName(),
+                $reflection instanceof ReflectionProperty ? 0 : (int) $reflection->getStartLine(),
                 implode(', ', $e->getExpected())
             );
             throw new UnexpectedValueException($message, 0, $e);

@@ -135,6 +135,10 @@ EOT
         }
     }
 
+    /**
+     * @param ReflectionClass<object> $reflectionClass
+     * @param array<string, array<string, mixed>> $advices
+     */
     private function writeInfoAboutAdvices(SymfonyStyle $io, ReflectionClass $reflectionClass, array $advices): void
     {
         $className = $reflectionClass->getName();

@@ -14,6 +14,7 @@ namespace Go\Instrument\ClassLoading;
 
 use SplFileInfo;
 use Go\Core\AspectContainer;
+use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
@@ -21,6 +22,8 @@ use Composer\Autoload\ClassLoader;
 
 /**
  * AopComposerLoader class is responsible to use a weaver for classes instead of original one
+ *
+ * @phpstan-import-type KernelOptions from AspectKernel
  */
 class AopComposerLoader
 {
@@ -31,8 +34,19 @@ class AopComposerLoader
 
     /**
      * AOP kernel options
+     *
+     * @phpstan-var KernelOptions
      */
-    protected array $options = [];
+    protected array $options = [
+        'debug'          => false,
+        'appDir'         => '',
+        'cacheDir'       => null,
+        'cacheFileMode'  => 0,
+        'features'       => 0,
+        'includePaths'   => [],
+        'excludePaths'   => [],
+        'containerClass' => AspectKernel::class,
+    ];
 
     /**
      * File enumerator
@@ -41,6 +55,8 @@ class AopComposerLoader
 
     /**
      * Cache state
+     *
+     * @var array<string, mixed>
      */
     private array $cacheState;
 
@@ -52,9 +68,9 @@ class AopComposerLoader
     /**
      * Constructs an wrapper for the composer loader
      *
-     * @param array $options Configuration options
+     * @phpstan-param KernelOptions $options Configuration options
      */
-    public function __construct(ClassLoader $original, AspectContainer $container, array $options = [])
+    public function __construct(ClassLoader $original, AspectContainer $container, array $options)
     {
         $this->options  = $options;
         $this->original = $original;
@@ -71,7 +87,7 @@ class AopComposerLoader
 
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
         $this->fileEnumerator = $fileEnumerator;
-        $this->cacheState     = $container->getService(CachePathManager::class)->queryCacheState();
+        $this->cacheState     = $container->getService(CachePathManager::class)->queryCacheState() ?? [];
     }
 
     /**
@@ -79,7 +95,7 @@ class AopComposerLoader
      *
      * Replaces original composer autoloader with wrapper
      *
-     * @param array $options Aspect kernel options
+     * @phpstan-param KernelOptions $options Aspect kernel options
      */
     public static function init(array $options, AspectContainer $container): bool
     {
@@ -131,10 +147,14 @@ class AopComposerLoader
         $file = $this->original->findFile($class);
 
         if ($file !== false) {
-            $file = PathResolver::realpath($file)?:$file;
+            $resolved = PathResolver::realpath($file);
+            if (is_string($resolved)) {
+                $file = $resolved;
+            }
             $cacheState = $this->cacheState[$file] ?? null;
             if ($cacheState && $isProduction) {
-                $file = $cacheState['cacheUri'] ?: $file;
+                $cacheUri = is_array($cacheState) && is_string($cacheState['cacheUri'] ?? null) ? $cacheState['cacheUri'] : null;
+                $file     = $cacheUri ?: $file;
             } elseif ($isAllowedFilter(new SplFileInfo($file))) {
                 // can be optimized here with $cacheState even for debug mode, but no needed right now
                 $file = FilterInjectorTransformer::rewrite($file);

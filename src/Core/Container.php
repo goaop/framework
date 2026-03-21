@@ -86,8 +86,8 @@ class Container implements AspectContainer
         ));
 
         $this->addLazyService(CachedAspectLoader::class, function (AspectContainer $container) {
-            $options = $container->getValue('kernel.options');
-            if (is_array($options) && !empty($options['cacheDir'])) {
+            $options = $container->getService(AspectKernel::class)->getOptions();
+            if (!empty($options['cacheDir'])) {
                 $loader = new CachedAspectLoader($container, AspectLoader::class, $options);
             } else {
                 $loader = $container->getService(AspectLoader::class);

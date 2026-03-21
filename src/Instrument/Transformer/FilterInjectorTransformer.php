@@ -37,6 +37,8 @@ class FilterInjectorTransformer implements SourceTransformer
 
     /**
      * Kernel options
+     *
+     * @var array<string, mixed>
      */
     protected static array $options = [];
 
@@ -89,10 +91,12 @@ class FilterInjectorTransformer implements SourceTransformer
                 ?: PathResolver::realpath("{$originalDir}/{$resource}", $shouldCheckExistence)
                 ?: $originalResource;
         }
-        $cachedResource = self::$cachePathManager->getCachePathForResource($resource);
+        $cachedResource = self::$cachePathManager !== null
+            ? self::$cachePathManager->getCachePathForResource($resource)
+            : false;
 
-        // If the cache is disabled or no cache yet, then use on-fly method
-        if (!$cacheDir || $debug || !file_exists($cachedResource)) {
+        // If the cache is disabled, resource path not resolvable, or no cache yet, then use on-fly method
+        if ($cachedResource === false || !$cacheDir || $debug || !file_exists($cachedResource)) {
             return self::PHP_FILTER_READ . self::$filterName . '/resource=' . $resource;
         }
 
@@ -121,6 +125,9 @@ class FilterInjectorTransformer implements SourceTransformer
         foreach ($includeExpressions as $includeExpression) {
             $startPosition = $includeExpression->getAttribute('startTokenPos');
             $endPosition   = $includeExpression->getAttribute('endTokenPos');
+            if (!is_int($startPosition) || !is_int($endPosition)) {
+                continue;
+            }
 
             $metadata->tokenStream[$startPosition]->text .= ' \\' . self::class . '::rewrite(';
             if ($metadata->tokenStream[$startPosition+1]->id === T_WHITESPACE) {

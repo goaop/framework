@@ -17,13 +17,26 @@ use Go\Core\AspectKernel;
 
 /**
  * Base source transformer class definition
+ *
+ * @phpstan-import-type KernelOptions from AspectKernel
  */
 abstract class BaseSourceTransformer implements SourceTransformer
 {
     /**
      * Transformer options
+     *
+     * @phpstan-var KernelOptions
      */
-    protected array $options = [];
+    protected array $options = [
+        'debug'          => false,
+        'appDir'         => '',
+        'cacheDir'       => null,
+        'cacheFileMode'  => 0,
+        'features'       => 0,
+        'includePaths'   => [],
+        'excludePaths'   => [],
+        'containerClass' => AspectKernel::class,
+    ];
 
     /**
      * Aspect kernel instance
@@ -38,10 +51,10 @@ abstract class BaseSourceTransformer implements SourceTransformer
     /**
      * Default constructor for transformer
      */
-    public function __construct(AspectKernel $kernel, array $options = [])
+    public function __construct(AspectKernel $kernel)
     {
         $this->kernel    = $kernel;
         $this->container = $kernel->getContainer();
-        $this->options   = $options ?: $kernel->getOptions();
+        $this->options   = $kernel->getOptions();
     }
 }

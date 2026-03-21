@@ -12,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -33,9 +34,9 @@ class TraitProxyGenerator extends ClassProxyGenerator
     /**
      * Generates an child code by original class reflection and joinpoints for it
      *
-     * @param ReflectionClass $originalTrait    Original class reflection
-     * @param string          $parentTraitName  Parent trait name to use
-     * @param string[][]      $traitAdviceNames List of advices for class
+     * @param ReflectionClass<object> $originalTrait    Original class reflection
+     * @param string                  $parentTraitName  Parent trait name to use
+     * @param string[][][]            $traitAdviceNames List of advices for class
      */
     public function __construct(
         ReflectionClass $originalTrait,
@@ -51,6 +52,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
         $interceptedMethods   = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $generatedMethods     = $this->interceptMethods($originalTrait, $interceptedMethods);
 
+        $docComment = $originalTrait->getDocComment();
         $this->generator = new TraitGenerator(
             $originalTrait->getShortName(),
             $originalTrait->getNamespaceName(),
@@ -59,7 +61,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
             [],
             [],
             $generatedMethods,
-            DocBlockGenerator::fromReflection(new DocBlockReflection($originalTrait->getDocComment()))
+            $docComment !== false ? DocBlockGenerator::fromReflection(new DocBlockReflection($docComment)) : null
         );
 
         // Normalize FQDN
@@ -76,14 +78,14 @@ class TraitProxyGenerator extends ClassProxyGenerator
     /**
      * Returns a method invocation for the specific trait method
      *
-     * @param array $adviceNames List of advices for this trait method
+     * @param string[] $adviceNames List of advices for this trait method
      */
     public static function getJoinPoint(
         string $className,
         string $joinPointType,
         string $methodName,
         array $adviceNames
-    ): MethodInvocation {
+    ): Joinpoint {
         static $accessor;
 
         if ($accessor === null) {

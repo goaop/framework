@@ -29,7 +29,18 @@ class ContainerTest extends TestCase
     protected function setUp(): void
     {
         $this->container = new Container();
-        $this->container->add(AspectKernel::class, $this->createMock(AspectKernel::class));
+        $mockKernel = $this->createMock(AspectKernel::class);
+        $mockKernel->method('getOptions')->willReturn([
+            'debug'          => false,
+            'appDir'         => '',
+            'cacheDir'       => '/tmp',
+            'cacheFileMode'  => 0770,
+            'features'       => 0,
+            'includePaths'   => [],
+            'excludePaths'   => [],
+            'containerClass' => Container::class,
+        ]);
+        $this->container->add(AspectKernel::class, $mockKernel);
         $this->container->add('kernel.options', ['cacheDir' => '/tmp']);
         $this->container->add('kernel.interceptFunctions', false);
     }
