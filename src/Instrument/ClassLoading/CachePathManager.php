@@ -116,7 +116,9 @@ class CachePathManager
             return false;
         }
 
-        return str_replace($this->appDir, $this->cacheDir, $resource);
+        return $this->appDir !== null
+            ? str_replace($this->appDir, $this->cacheDir, $resource)
+            : $resource;
     }
 
     /**
@@ -170,7 +172,7 @@ class CachePathManager
      */
     public function flushCacheState(bool $force = false): void
     {
-        if ((!empty($this->newCacheState) && is_writable($this->cacheDir)) || $force) {
+        if ((!empty($this->newCacheState) && $this->cacheDir !== null && is_writable($this->cacheDir)) || $force) {
             $fullCacheMap      = $this->newCacheState + $this->cacheState;
             $cachePath         = substr(var_export($this->cacheDir, true), 1, -1);
             $rootPath          = substr(var_export($this->appDir, true), 1, -1);

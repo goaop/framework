@@ -75,7 +75,7 @@ class AopComposerLoader
 
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
         $this->fileEnumerator = $fileEnumerator;
-        $this->cacheState     = $container->getService(CachePathManager::class)->queryCacheState();
+        $this->cacheState     = $container->getService(CachePathManager::class)->queryCacheState() ?? [];
     }
 
     /**

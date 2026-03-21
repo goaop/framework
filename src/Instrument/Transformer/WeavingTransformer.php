@@ -173,7 +173,11 @@ class WeavingTransformer extends BaseSourceTransformer
         $contentToInclude = $this->saveProxyToCache($class, $childCode);
 
         // Get last token for this class
-        $lastClassToken = $class->getNode()->getAttribute('endTokenPos');
+        $classNode = $class->getNode();
+        if ($classNode === null) {
+            return false;
+        }
+        $lastClassToken = $classNode->getAttribute('endTokenPos');
 
         $metadata->tokenStream[$lastClassToken]->text .= PHP_EOL . $contentToInclude;
 
@@ -192,6 +196,9 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
+        if ($classNode === null) {
+            return;
+        }
         $position  = $classNode->getAttribute('startTokenPos');
         do {
             if (isset($streamMetaData->tokenStream[$position])) {

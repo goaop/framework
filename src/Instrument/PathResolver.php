@@ -43,7 +43,13 @@ class PathResolver
         }
         // Trick to get scheme name and path in one action. If no scheme, then there will be only one part
         $components = explode('://', $somePath, 2);
-        [$pathScheme, $path] = isset($components[1]) ? $components : [null, $components[0]];
+        if (isset($components[1])) {
+            $pathScheme = $components[0];
+            $path       = $components[1];
+        } else {
+            $pathScheme = null;
+            $path       = $components[0];
+        }
 
         // Optimization to bypass complex logic for simple paths (eg. not in phar archives)
         if (!$pathScheme && ($fastPath = stream_resolve_include_path($somePath))) {

@@ -131,6 +131,6 @@ EOT
     {
         $text = preg_replace('|^\s*/?\*+/?|m', '', $comment);
 
-        return $text;
+        return $text ?? $comment;
     }
 }

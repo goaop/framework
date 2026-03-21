@@ -91,7 +91,9 @@ class FilterInjectorTransformer implements SourceTransformer
                 ?: PathResolver::realpath("{$originalDir}/{$resource}", $shouldCheckExistence)
                 ?: $originalResource;
         }
-        $cachedResource = self::$cachePathManager->getCachePathForResource($resource);
+        $cachedResource = self::$cachePathManager !== null
+            ? self::$cachePathManager->getCachePathForResource($resource)
+            : false;
 
         // If the cache is disabled, resource path not resolvable, or no cache yet, then use on-fly method
         if ($cachedResource === false || !$cacheDir || $debug || !file_exists($cachedResource)) {
