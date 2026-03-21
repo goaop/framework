@@ -3,10 +3,12 @@ name: "PHPUnit tests"
 on:
   pull_request:
   push:
+    branches:
+      - master
 
 jobs:
   phpunit:
-    name: "PHPUnit tests"
+    name: "PHPUnit tests (${{ matrix.dependencies }}, ${{ matrix.php-version }}, ${{ matrix.operating-system }})"
 
     runs-on: ${{ matrix.operating-system }}
 

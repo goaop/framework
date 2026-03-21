@@ -85,11 +85,11 @@ final class MetadataLoadInterceptor implements EventSubscriber
                 $name = $property->getName();
 
                 if (isset($metadata->fieldMappings[$name])) {
-                    $mapping = $metadata->fieldMappings[$name];
+                    $columnName = $metadata->getColumnName($name);
 
                     unset(
                         $metadata->fieldMappings[$name],
-                        $metadata->fieldNames[$mapping->columnName],
+                        $metadata->fieldNames[$columnName],
                         $metadata->columnNames[$name]
                     );
                 }

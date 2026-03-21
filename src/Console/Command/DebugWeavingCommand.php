@@ -78,7 +78,7 @@ EOT
             }
 
             if ($proxies[$path] !== $content) {
-                $io->error(sprintf('Proxy on path "%s" is weaved differnlty on second "warmup" pass.', $path));
+                $io->error(sprintf('Proxy on path "%s" is weaved differently on second "warmup" pass.', $path));
                 $errors++;
                 continue;
             }

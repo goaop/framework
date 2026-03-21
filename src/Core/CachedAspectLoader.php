@@ -100,8 +100,11 @@ class CachedAspectLoader extends AspectLoader
      */
     protected function loadFromCache(string $fileName): array
     {
-        $content     = file_get_contents($fileName);
-        $loadedItems = unserialize($content !== false ? $content : '');
+        $content = file_get_contents($fileName);
+        if ($content === false) {
+            return [];
+        }
+        $loadedItems = unserialize($content);
 
         if (!is_array($loadedItems)) {
             return [];

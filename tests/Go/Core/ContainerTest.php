@@ -38,7 +38,7 @@ class ContainerTest extends TestCase
             'features'       => 0,
             'includePaths'   => [],
             'excludePaths'   => [],
-            'containerClass' => AspectKernel::class,
+            'containerClass' => Container::class,
         ]);
         $this->container->add(AspectKernel::class, $mockKernel);
         $this->container->add('kernel.options', ['cacheDir' => '/tmp']);

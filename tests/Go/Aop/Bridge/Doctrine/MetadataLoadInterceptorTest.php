@@ -14,7 +14,6 @@ namespace Go\Aop\Bridge\Doctrine;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Mapping\FieldMapping;
 use Go\Bridge\Doctrine\MetadataLoadInterceptor;
 use Go\Core\AspectContainer;
 use PHPUnit\Framework\TestCase;
@@ -54,13 +53,19 @@ class MetadataLoadInterceptorTest extends TestCase
         $metadata->table = ['table_name'];
         $metadata->customRepositoryClassName = 'CustomRepositoryClass';
 
-        $metadata->fieldMappings['mappedField'] = new FieldMapping(
-            type: 'string',
-            fieldName: 'mappedField',
-            columnName: 'mapped_field',
-        );
-        $metadata->fieldNames['mapped_field'] = 'mappedField';
         $metadata->columnNames['mappedField'] = 'mapped_field';
+        $metadata->fieldNames['mapped_field'] = 'mappedField';
+
+        // Support both Doctrine ORM 2.x (array) and 3.x (FieldMapping object)
+        if (class_exists(\Doctrine\ORM\Mapping\FieldMapping::class)) {
+            $metadata->fieldMappings['mappedField'] = new \Doctrine\ORM\Mapping\FieldMapping(
+                type: 'string',
+                fieldName: 'mappedField',
+                columnName: 'mapped_field',
+            );
+        } else {
+            $metadata->fieldMappings['mappedField'] = ['columnName' => 'mapped_field', 'fieldName' => 'mappedField'];
+        }
 
         $metadataInterceptor->loadClassMetadata(new LoadClassMetadataEventArgs($metadata, $entityManager));
 

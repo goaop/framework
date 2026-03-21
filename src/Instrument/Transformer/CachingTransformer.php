@@ -68,7 +68,8 @@ class CachingTransformer extends BaseSourceTransformer
 
         $lastModified  = filemtime($originalUri);
         $cacheState    = $this->cacheManager->queryCacheState($originalUri);
-        $cacheModified = ($cacheState !== null && is_int($cacheState['filemtime'])) ? $cacheState['filemtime'] : 0;
+        $cacheFilemtime = $cacheState !== null ? ($cacheState['filemtime'] ?? 0) : 0;
+        $cacheModified  = is_int($cacheFilemtime) ? $cacheFilemtime : 0;
 
         if ($cacheModified < $lastModified
             || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)
