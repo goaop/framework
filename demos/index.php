@@ -152,7 +152,7 @@ switch ($showCase) {
     case 'loggable':
         $aspectName = 'Demo\Aspect\LoggingAspect';
 
-        $example = new LoggingDemo();
+        $example = new LoggingDemo('abc');
         $example->execute('LoggingTask'); // Logging for dynamic methods
         LoggingDemo::runByName('StaticTask'); // Logging for static methods
         break;

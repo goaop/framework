@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use JetBrains\PhpStorm\Deprecated;
 use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\MethodGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
@@ -21,6 +22,7 @@ use ReflectionNamedType;
 /**
  * Prepares the definition of intercepted method
  */
+#[Deprecated(reason: "Code generation switched to the AST")]
 final class InterceptedMethodGenerator extends MethodGenerator
 {
     /**

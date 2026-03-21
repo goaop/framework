@@ -16,14 +16,13 @@ use Go\Aop\Intercept\MethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
-use Go\Proxy\Part\FunctionCallArgumentListGenerator;
-use ReflectionClass;
-use ReflectionMethod;
+use Go\Proxy\Part\TraitMethodInvocationCallASTGenerator;
 use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\TraitGenerator;
-use Laminas\Code\Generator\ValueGenerator;
 use Laminas\Code\Reflection\DocBlockReflection;
-use ReflectionNamedType;
+use PhpParser\PrettyPrinter\Standard;
+use ReflectionClass;
+use ReflectionMethod;
 
 /**
  * Trait proxy builder that is used to generate a trait from the list of joinpoints
@@ -96,7 +95,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
             $filledAdvices[] = $accessor->$advisorName;
         }
 
-        $joinPoint = new self::$invocationClassMap[$joinPointType]($className, $methodName . '➩', $filledAdvices);
+        $joinPoint = new self::$invocationClassMap[$joinPointType]($filledAdvices, $className, $methodName . '➩');
 
         return $joinPoint;
     }
@@ -107,37 +106,13 @@ class TraitProxyGenerator extends ClassProxyGenerator
     protected function getJoinpointInvocationBody(ReflectionMethod $method): string
     {
         $isStatic = $method->isStatic();
-        $class    = '\\' . self::class;
-        $scope    = $isStatic ? 'static::class' : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
 
-        $argumentList = new FunctionCallArgumentListGenerator($method);
-        $argumentCode = $argumentList->generate();
-        $argumentCode = $scope . ($argumentCode !== '' ? ", $argumentCode" : '');
+        $methodCall = new TraitMethodInvocationCallASTGenerator($method);
+        $statements = $methodCall->generate($this->adviceNames[$prefix][$method->name]);
+        $printer    = new Standard();
 
-        $return = 'return ';
-        if ($method->hasReturnType()) {
-            $returnType = $method->getReturnType();
-            if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {
-                // void/never return types should not return anything
-                $return = '';
-            }
-        }
-
-        $advicesArrayValue = new ValueGenerator(
-            $this->adviceNames[$prefix][$method->name],
-            ValueGenerator::TYPE_ARRAY_SHORT
-        );
-        $advicesArrayValue->setArrayDepth(1);
-        $advicesCode = $advicesArrayValue->generate();
-
-        return <<<BODY
-static \$__joinPoint;
-if (\$__joinPoint === null) {
-    \$__joinPoint = {$class}::getJoinPoint(__CLASS__, '{$prefix}', '{$method->name}', {$advicesCode});
-}
-{$return}\$__joinPoint->__invoke($argumentCode);
-BODY;
+        return $printer->prettyPrint($statements);
     }
 
     /**

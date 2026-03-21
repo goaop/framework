@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use JetBrains\PhpStorm\Deprecated;
 use Laminas\Code\Generator\ParameterGenerator;
 use Laminas\Code\Generator\ValueGenerator;
 use ReflectionFunctionAbstract;
@@ -20,6 +21,7 @@ use ReflectionNamedType;
 /**
  * Generates parameters from reflection definition
  */
+#[Deprecated(reason: "Code generation switched to the AST")]
 final class FunctionParameterList
 {
     /**

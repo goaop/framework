@@ -13,7 +13,10 @@ declare(strict_types=1);
 namespace Demo\Aspect;
 
 use Go\Aop\Aspect;
+use Go\Aop\Framework\ClassFieldAccess;
+use Go\Aop\Intercept\Invocation;
 use Go\Aop\Intercept\MethodInvocation;
+use Go\Lang\Attribute\After;
 use Go\Lang\Attribute\Before;
 
 /**
@@ -42,4 +45,15 @@ class LoggingAspect implements Aspect
              json_encode($invocation->getArguments()),
              PHP_EOL;
     }
+//
+//    /**
+//     * This advice intercepts an access of loggable properties
+//     */
+//    #[Before("@access(Demo\Attribute\Loggable)")]
+//    public function beforePropertyAccess(ClassFieldAccess $classFieldAccess): void
+//    {
+//        echo 'Calling Before Interceptor for ',
+//        $classFieldAccess,
+//        PHP_EOL;
+//    }
 }

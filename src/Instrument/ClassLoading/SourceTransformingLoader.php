@@ -12,10 +12,19 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Core\AspectKernel;
+use Go\Instrument\FileSystem\FileCachePool;
+use Go\Instrument\Transformer\IncludeNodeWrapperVisitor;
+use Go\Instrument\Transformer\MagicDirFileConstantReplaceVisitor;
+use Go\Instrument\Transformer\SelfValueVisitor;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResultEnum;
 use php_user_filter as PhpStreamFilter;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\CloningVisitor;
+use PhpParser\PrettyPrinter\Standard;
+use Psr\Cache\CacheItemPoolInterface;
 use RuntimeException;
 
 use function strlen;
@@ -23,34 +32,24 @@ use function strlen;
 /**
  * Php class loader filter for processing php code
  */
-class SourceTransformingLoader extends PhpStreamFilter
+final class SourceTransformingLoader extends PhpStreamFilter
 {
-    /**
-     * Php filter definition
-     */
-    public const PHP_FILTER_READ = 'php://filter/read=';
-
     /**
      * Default PHP filter name for registration
      */
     public const FILTER_IDENTIFIER = 'go.source.transforming.loader';
 
-    /**
-     * String buffer
-     */
-    protected string $data = '';
+    private string $filterBuffer = '';
 
     /**
-     * List of transformers
-     *
-     * @var SourceTransformer[]
+     * @var SourceTransformer[] List of transformers
      */
-    protected static array $transformers = [];
+    private static array $transformers = [];
 
     /**
      * Identifier of filter
      */
-    protected static string $filterId;
+    private static string $registeredFilterIdentifier;
 
     /**
      * Register current loader as stream filter in PHP
@@ -59,15 +58,11 @@ class SourceTransformingLoader extends PhpStreamFilter
      */
     public static function register(string $filterId = self::FILTER_IDENTIFIER): void
     {
-        if (!empty(self::$filterId)) {
-            throw new RuntimeException('Stream filter already registered');
-        }
-
         $result = stream_filter_register($filterId, self::class);
         if ($result === false) {
-            throw new RuntimeException('Stream filter was not registered');
+            throw new RuntimeException('Stream filter was not registered, possibly already registered');
         }
-        self::$filterId = $filterId;
+        self::$registeredFilterIdentifier = $filterId;
     }
 
     /**
@@ -77,29 +72,31 @@ class SourceTransformingLoader extends PhpStreamFilter
      */
     public static function getId(): string
     {
-        if (empty(self::$filterId)) {
+        if (!isset(self::$registeredFilterIdentifier)) {
             throw new RuntimeException('Stream filter was not registered');
         }
 
-        return self::$filterId;
+        return self::$registeredFilterIdentifier;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function filter($in, $out, &$consumed, $closing): int
+    public function filter($in, $out, &$consumed, bool $closing): int
     {
         while ($bucket = stream_bucket_make_writeable($in)) {
-            $this->data .= $bucket->data;
+            $this->filterBuffer .= $bucket->data;
         }
 
         if ($closing || feof($this->stream)) {
-            $consumed = strlen($this->data);
+            $consumed = strlen($this->filterBuffer);
 
-            // $this->stream contains pointer to the source
-            $metadata = new StreamMetaData($this->stream, $this->data);
-            self::transformCode($metadata);
+            $metadata = new StreamMetaData($this->stream, $this->filterBuffer);
+            // here we should check if there is a version in the cache and it's fresh, then we can bypass AST analysis below
+//            if (true || !cacheIsFresh($metadata)) {
+                $source = self::transformCode($metadata);
+                // Store somehow in the cache
+//            }
+            // otherwise we can use cached version
 
+//            $bucket = stream_bucket_new($this->stream, $source);
             $bucket = stream_bucket_new($this->stream, $metadata->source);
             stream_bucket_append($out, $bucket);
 
@@ -120,8 +117,23 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Transforms source code by passing it through all transformers
      */
-    public static function transformCode(StreamMetaData $metadata): void
+    private static function transformCode(StreamMetaData $metadata): void
     {
+
+//        $traverser = new NodeTraverser(
+//            // Run CloningVisitor before making changes to the AST to be able to reconstruct code again
+//            new CloningVisitor(),
+//            new IncludeNodeWrapperVisitor('var_dump'),
+//            new MagicDirFileConstantReplaceVisitor($metadata),
+//            new SelfValueVisitor()
+//        );
+//        $newSyntaxTree = $traverser->traverse($metadata->syntaxTree);
+//
+//        $printer = new Standard();
+//        $source  = $printer->printFormatPreserving($newSyntaxTree, $metadata->syntaxTree, $metadata->originalTokenStream);
+//
+//        return $source;
+//
         foreach (self::$transformers as $transformer) {
             $result = $transformer->transform($metadata);
             if ($result === TransformerResultEnum::RESULT_ABORTED) {

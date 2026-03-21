@@ -14,6 +14,7 @@ namespace Go\Proxy\Part;
 
 use Laminas\Code\Generator\MethodGenerator;
 use LogicException;
+use PhpParser\PrettyPrinter\Standard;
 use ReflectionMethod;
 
 use function count;
@@ -48,9 +49,12 @@ final class InterceptedConstructorGenerator extends MethodGenerator
         }
         if ($constructor !== null) {
             if ($constructorGenerator === null) {
-                $callArguments        = new FunctionCallArgumentListGenerator($constructor);
-                $splatPrefix          = $constructor->getNumberOfParameters() > 0 ? '...' : '';
-                $parentCallBody       = 'parent::__construct(' . $splatPrefix . $callArguments->generate() . ');';
+                $parentConstructorCall = new ParentConstructorCallASTGenerator($constructor);
+                $invocation            = $parentConstructorCall->generate();
+
+                $printer        = new Standard();
+                $parentCallBody = $printer->prettyPrint([$invocation]);
+
                 $constructorGenerator = new InterceptedMethodGenerator($constructor, $parentCallBody, $useTypeWidening);
             }
             $constructorBody .= PHP_EOL . $constructorGenerator->getBody();

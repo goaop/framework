@@ -12,12 +12,14 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use JetBrains\PhpStorm\Deprecated;
 use Laminas\Code\Generator\AbstractGenerator;
 use ReflectionFunctionAbstract;
 
 /**
  * Prepares the function call argument list
  */
+#[Deprecated(reason: "Code generation switched to the AST")]
 final class FunctionCallArgumentListGenerator extends AbstractGenerator
 {
     /**

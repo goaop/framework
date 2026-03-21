@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\Transformer;
 
 use PhpParser\Node;
+<<<<<<< Updated upstream
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\Instanceof_;
@@ -20,10 +21,11 @@ use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\IntersectionType;
+=======
+>>>>>>> Stashed changes
 use PhpParser\Node\Name;
-use PhpParser\Node\Name\FullyQualified;
-use PhpParser\Node\NullableType;
 use PhpParser\Node\Param;
+<<<<<<< Updated upstream
 use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -31,8 +33,11 @@ use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\UnionType;
+=======
+use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\Namespace_;
+>>>>>>> Stashed changes
 use PhpParser\NodeVisitorAbstract;
-use UnexpectedValueException;
 
 /**
  * Node visitor that resolves class name for `self` nodes with FQN
@@ -40,21 +45,19 @@ use UnexpectedValueException;
 final class SelfValueVisitor extends NodeVisitorAbstract
 {
     /**
-     * List of replaced nodes
-     *
-     * @var Node[]
+     * @var Node[] List of replaced nodes
      */
-    protected array $replacedNodes = [];
+    private array $replacedNodes = [];
 
     /**
      * Current namespace
      */
-    protected ?string $namespace = null;
+    private ?string $namespace = null;
 
     /**
      * Current class name
      */
-    protected ?Name $className = null;
+    private ?string $className = null;
 
     /**
      * Returns list of changed `self` nodes
@@ -68,22 +71,13 @@ final class SelfValueVisitor extends NodeVisitorAbstract
 
     /**
      * @inheritDoc
+     *
+     * @return Name|null Covariance, either null for all non-relevant nodes or resolved FQN Name node for "self"
      */
-    public function beforeTraverse(array $nodes)
-    {
-        $this->namespace     = null;
-        $this->className     = null;
-        $this->replacedNodes = [];
-
-        return null;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function enterNode(Node $node)
+    public function enterNode(Node $node): Name|null
     {
         if ($node instanceof Namespace_) {
+<<<<<<< Updated upstream
             $this->namespace = !empty($node->name) ? $node->name->toString() : null;
         } elseif ($node instanceof ClassMethod || $node instanceof Closure) {
             if (isset($node->returnType)) {
@@ -112,6 +106,15 @@ final class SelfValueVisitor extends NodeVisitorAbstract
             } else {
                 $this->className = null;
             }
+=======
+            // There might be root namespace node, in this case namespace name will be null
+            $this->namespace = $node->name?->toString();
+        } elseif ($node instanceof Class_) {
+            // For anonymous classes name will be null
+            $this->className = $node->name?->toString();
+        } elseif ($node instanceof Name && strtolower($node->name) === 'self') {
+            return $this->resolveSelfClassName($node);
+>>>>>>> Stashed changes
         }
 
         return null;
@@ -120,12 +123,11 @@ final class SelfValueVisitor extends NodeVisitorAbstract
     /**
      * Resolves `self` class name with value
      *
-     * @param Name $name Instance of original node
-     *
-     * @return Name|FullyQualified
+     * @param Name $nameNode Instance of original node
      */
-    protected function resolveClassName(Name $name): Name
+    private function resolveSelfClassName(Name $nameNode): Name
     {
+<<<<<<< Updated upstream
         // Skip all names except special `self`
         if (strtolower($name->toString()) !== 'self') {
             return $name;
@@ -140,13 +142,16 @@ final class SelfValueVisitor extends NodeVisitorAbstract
         $name = clone $originalName;
         $name->setAttribute('originalName', $originalName);
 
+=======
+>>>>>>> Stashed changes
         $fullClassName    = Name::concat($this->namespace, $this->className);
-        $resolvedSelfName = new FullyQualified('\\' . ltrim($fullClassName->toString(), '\\'), $name->getAttributes());
+        $resolvedSelfName = new Name('\\' . ltrim($fullClassName->toString(), '\\'), $nameNode->getAttributes());
 
         $this->replacedNodes[] = $resolvedSelfName;
 
         return $resolvedSelfName;
     }
+<<<<<<< Updated upstream
 
     /**
      * Helper method for resolving type nodes
@@ -177,4 +182,6 @@ final class SelfValueVisitor extends NodeVisitorAbstract
 
         throw new UnexpectedValueException('Unknown node type: ' . get_class($node));
     }
+=======
+>>>>>>> Stashed changes
 }

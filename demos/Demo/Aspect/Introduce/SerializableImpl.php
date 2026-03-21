@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Demo\Aspect\Introduce;
 
+use Demo\Attribute\Loggable;
+
 /**
  * Example class to test aspects
  */
@@ -32,6 +34,7 @@ trait SerializableImpl
      *
      * @param string $serialized The string representation of the object.
      */
+    #[Loggable]
     public function unserialize($serialized): void
     {
         $data = unserialize($serialized);

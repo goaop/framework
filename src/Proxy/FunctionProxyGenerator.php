@@ -17,13 +17,12 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use Go\ParserReflection\ReflectionFileNamespace;
-use Go\Proxy\Part\FunctionCallArgumentListGenerator;
+use Go\Proxy\Part\FunctionInvocationCallASTGenerator;
 use Go\Proxy\Part\InterceptedFunctionGenerator;
 use Laminas\Code\Generator\FileGenerator;
-use Laminas\Code\Generator\ValueGenerator;
+use PhpParser\PrettyPrinter\Standard;
 use ReflectionException;
 use ReflectionFunction;
-use ReflectionNamedType;
 
 /**
  * Function proxy builder that is used to generate a proxy-function from the list of joinpoints
@@ -104,31 +103,10 @@ class FunctionProxyGenerator
      */
     protected function getJoinpointInvocationBody(ReflectionFunction $function): string
     {
-        $class = '\\' . self::class;
+        $functionCall = new FunctionInvocationCallASTGenerator($function);
+        $statements   = $functionCall->generate($this->adviceNames[AspectContainer::FUNCTION_PREFIX][$function->name]);
+        $printer      = new Standard();
 
-        $argumentList = new FunctionCallArgumentListGenerator($function);
-        $argumentCode = $argumentList->generate();
-
-        $return = 'return ';
-        if ($function->hasReturnType()) {
-            $returnType = $function->getReturnType();
-            if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {
-                // void/never return types should not return anything
-                $return = '';
-            }
-        }
-
-        $functionAdvices = $this->adviceNames[AspectContainer::FUNCTION_PREFIX][$function->name];
-        $advicesArray    = new ValueGenerator($functionAdvices, ValueGenerator::TYPE_ARRAY_SHORT);
-        $advicesArray->setArrayDepth(1);
-        $advicesCode = $advicesArray->generate();
-
-        return <<<BODY
-static \$__joinPoint;
-if (\$__joinPoint === null) {
-    \$__joinPoint = {$class}::getJoinPoint('{$function->name}', {$advicesCode});
-}
-{$return}\$__joinPoint->__invoke($argumentCode);
-BODY;
+        return $printer->prettyPrint($statements);
     }
 }

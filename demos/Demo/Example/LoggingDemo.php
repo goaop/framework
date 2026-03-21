@@ -13,12 +13,24 @@ declare(strict_types=1);
 namespace Demo\Example;
 
 use Demo\Attribute\Loggable;
+use Throwable;
 
 /**
  * Example class to show how to use logging with AOP
  */
 class LoggingDemo
 {
+    #[Loggable]
+    protected string $value = '';
+
+    #[Loggable]
+    protected string $more = '';
+
+    #[oggable]
+    public function __construct(string $a, string $b = 'test', string ...$values)
+    {
+        $this->value = $a;
+    }
 
     /**
      * Executes a task and logs all incoming arguments
@@ -26,10 +38,12 @@ class LoggingDemo
      * @param string $task Some specific argument
      */
     #[Loggable]
-    public function execute(string $task): void
+    public function execute(string|int $task): Throwable&\Stringable
     {
         $this->perform($task, 'first');
         $this->perform($task, 'second');
+
+        return new \Exception('Test');
     }
 
     /**
@@ -42,6 +56,7 @@ class LoggingDemo
     protected function perform(string $task, string $level): void
     {
         // some logic here
+        $this->value = $task;
     }
 
     /**
@@ -52,7 +67,7 @@ class LoggingDemo
     #[Loggable]
     public static function runByName(string $task): void
     {
-        $instance = new static(); // Go! AOP requires LSB to work correctly
+        $instance = new self($task); // Go! AOP requires LSB to work correctly
         $instance->execute($task);
     }
 }

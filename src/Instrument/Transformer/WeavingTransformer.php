@@ -26,6 +26,7 @@ use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionFile;
 use Go\ParserReflection\ReflectionFileNamespace;
 use Go\ParserReflection\ReflectionMethod;
+use Go\Proxy\ClassProxyASTGenerator;
 use Go\Proxy\ClassProxyGenerator;
 use Go\Proxy\FunctionProxyGenerator;
 use Go\Proxy\TraitProxyGenerator;
@@ -187,8 +188,9 @@ class WeavingTransformer extends BaseSourceTransformer
         StreamMetaData $streamMetaData,
         string $newClassName
     ): void {
-        $classNode = $class->getNode();
-        $position  = $classNode->getAttribute('startTokenPos');
+        $classNode    = $class->getNode();
+        $position     = $classNode->getAttribute('startTokenPos');
+        $namePosition = $classNode->name->getStartTokenPos();
         do {
             if (isset($streamMetaData->tokenStream[$position])) {
                 $token = $streamMetaData->tokenStream[$position];
@@ -196,8 +198,8 @@ class WeavingTransformer extends BaseSourceTransformer
                 if ($token->id === T_FINAL) {
                     unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position+1]);
                 }
-                // First string is class/trait name
-                if ($token->id === T_STRING) {
+                // Look for a class/trait name
+                if ($position === $namePosition) {
                     $streamMetaData->tokenStream[$position]->text = $newClassName;
                     // We have finished our job, can break this loop
                     break;

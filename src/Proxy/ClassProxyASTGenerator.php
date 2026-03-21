@@ -23,16 +23,16 @@ use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
+use Go\ParserReflection\ReflectionAttribute;
+use Go\Proxy\Part\InterceptedConstructorASTGenerator;
 use Go\Proxy\Part\InterceptedConstructorGenerator;
 use Go\Proxy\Part\InterceptedMethodASTGenerator;
-use Go\Proxy\Part\InterceptedMethodGenerator;
+use Go\Proxy\Part\JoinPointPropertyASTGenerator;
 use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Proxy\Part\MethodInvocationCallASTGenerator;
 use Go\Proxy\Part\PropertyInterceptionTrait;
-use JetBrains\PhpStorm\Deprecated;
-use Laminas\Code\Generator\ClassGenerator;
-use Laminas\Code\Generator\DocBlockGenerator;
-use Laminas\Code\Reflection\DocBlockReflection;
+use PhpParser\Builder\Class_;
+use PhpParser\BuilderFactory;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\PrettyPrinter\Standard;
 use ReflectionClass;
@@ -42,11 +42,10 @@ use UnexpectedValueException;
 /**
  * Class proxy builder that is used to generate a child class from the list of joinpoints
  */
-#[Deprecated(reason: "Code generation switched to the AST")]
-class ClassProxyGenerator
+class ClassProxyASTGenerator
 {
     /**
-     * Static mappings for class name for excluding if..else check
+     * @var array&array<string,class-string> Static mappings for class name for excluding if..else check
      */
     protected static array $invocationClassMap = [
         AspectContainer::METHOD_PREFIX        => DynamicClosureMethodInvocation::class,
@@ -56,86 +55,103 @@ class ClassProxyGenerator
         AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class
     ];
 
-    /**
-     * List of advices that are used for generation of child
-     */
-    protected array $adviceNames = [];
+    private Class_ $classToBuild;
 
-    /**
-     * Instance of class generator
-     */
-    protected ClassGenerator $generator;
-
-    /**
-     * Should parameter widening be used or not
-     */
-    protected bool $useParameterWidening;
+    private array  $useAliases;
 
     /**
      * Generates an child code by original class reflection and joinpoints for it
      *
-     * @param ReflectionClass $originalClass        Original class reflection
+     * @param ReflectionClass $reflectionClass        Original class reflection
      * @param string          $parentClassName      Parent class name to use
-     * @param string[][]      $classAdviceNames     List of advices for class
+     * @param string[][]      $adviceNames     List of advices for class
      * @param bool            $useParameterWidening Enables usage of parameter widening feature
      */
     public function __construct(
-        ReflectionClass $originalClass,
-        string $parentClassName,
-        array $classAdviceNames,
-        bool $useParameterWidening
+        private readonly ReflectionClass $reflectionClass,
+        private readonly string          $parentClassName,
+        array                            $adviceNames = [],
+        private readonly bool            $useParameterWidening = true
     ) {
-        $this->adviceNames          = $classAdviceNames;
-        $this->useParameterWidening = $useParameterWidening;
-
-        $dynamicMethodAdvices  = $classAdviceNames[AspectContainer::METHOD_PREFIX] ?? [];
-        $staticMethodAdvices   = $classAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
-        $propertyAdvices       = $classAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
+        $dynamicMethodAdvices  = $adviceNames[AspectContainer::METHOD_PREFIX] ?? [];
+        $staticMethodAdvices   = $adviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
+        $propertyAdvices       = $adviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
         $interceptedMethods    = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $interceptedProperties = array_keys($propertyAdvices);
-        $introducedInterfaces  = $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [];
-        $introducedTraits      = $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [];
+        $introducedInterfaces  = $adviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [];
+        $introducedTraits      = $adviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [];
 
-        $generatedProperties = [new JoinPointPropertyGenerator($classAdviceNames)];
-        $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
+        $generatedASTProperties = [(new JoinPointPropertyASTGenerator())->generate($adviceNames)];
+        $generatedASTMethods    = $this->interceptMethods($reflectionClass, $interceptedMethods);
 
         $introducedInterfaces[] = '\\' . Proxy::class;
 
         if (!empty($interceptedProperties)) {
-            $generatedMethods['__construct'] = new InterceptedConstructorGenerator(
+            $generatedASTMethods['__construct'] = new InterceptedConstructorASTGenerator(
                 $interceptedProperties,
-                $originalClass->getConstructor(),
-                $generatedMethods['__construct'] ?? null,
+                $reflectionClass->getConstructor(),
+                $generatedASTMethods['__construct'] ?? null,
                 $useParameterWidening
             );
             $introducedTraits[] = '\\' . PropertyInterceptionTrait::class;
         }
 
+        $builder      = new BuilderFactory();
+        $classToBuild = $builder->class($reflectionClass->getShortName());
+        $classToBuild->extend('\\' . $this->parentClassName);
+        $classToBuild->implement(...$introducedInterfaces);
 
-
-        $this->generator = new ClassGenerator(
-            $originalClass->getShortName(),
-            !empty($originalClass->getNamespaceName()) ? $originalClass->getNamespaceName() : null,
-            $originalClass->isFinal() ? ClassGenerator::FLAG_FINAL : null,
-            $parentClassName,
-            $introducedInterfaces,
-            $generatedProperties,
-            $generatedMethods
-        );
-        if ($originalClass->getDocComment()) {
-            $reflectionDocBlock = new DocBlockReflection($originalClass->getDocComment());
-            $this->generator->setDocBlock(DocBlockGenerator::fromReflection($reflectionDocBlock));
+        if (count($introducedTraits) > 0) {
+            $classToBuild->addStmt($builder->useTrait(...$introducedTraits));
         }
 
-        $this->generator->addTraits($introducedTraits);
+        if ($reflectionClass->isFinal()) {
+            $classToBuild->makeFinal();
+        }
+
+        if ($reflectionClass->isReadOnly()) {
+            $classToBuild->makeReadonly();
+        }
+
+        if (count($generatedASTMethods) > 0) {
+            $classToBuild->addStmts($generatedASTMethods);
+        }
+
+        if (count($generatedASTProperties) > 0) {
+            $classToBuild->addStmts($generatedASTProperties);
+        }
+
+        if ($reflectionClass->getDocComment()) {
+            $classToBuild->setDocComment($reflectionClass->getDocComment());
+        }
+
+        foreach ($reflectionClass->getAttributes() as $attribute) {
+            if ($attribute instanceof ReflectionAttribute) {
+                // This will generate attribute in the exact way it was defined in the original class
+                $classToBuild->addAttribute($attribute->getNode());
+            } else {
+                // Otherwise we try to do our best with attribute name and arguments pair
+                $classToBuild->addAttribute(
+                    $builder->attribute(
+                        '\\' . $attribute->getName(),
+                        $attribute->getArguments()
+                    )
+                );
+            }
+        }
+
+        $this->classToBuild = $classToBuild;
     }
 
     /**
      * Adds use alias for this class
+     *
+     * @param string&class-string $use
+     * @param string|null $useAlias Short alias name to use or null if there is no alias defined.
      */
-    public function addUse(string $use, string $useAlias = null): void
+    public function addUse(string $use, string|null $useAlias = null): void
     {
-        $this->generator->addUse($use, $useAlias);
+        $this->useAliases[$use] = $useAlias;
     }
 
     /**
@@ -163,11 +179,31 @@ class ClassProxyGenerator
      */
     public function generate(): string
     {
-        $classCode = $this->generator->generate();
+        $printer    = new Standard();
+        $builder    = new BuilderFactory();
+
+        $statements = [];
+        if ($this->reflectionClass->inNamespace()) {
+            $statements[] = $builder->namespace($this->reflectionClass->getNamespaceName())->getNode();
+        }
+        if (count($this->useAliases) > 0) {
+            foreach ($this->useAliases as $use => $useAlias) {
+                $namespaceParts = explode('\\', $use);
+                $lastPart       = array_pop($namespaceParts);
+                $useNodeBuilder = $builder->use($use);
+                if ($lastPart !== $useAlias) {
+                    $useNodeBuilder->as($useAlias);
+                }
+                $statements[] = $useNodeBuilder->getNode();
+            }
+        }
+        $statements[] = $this->classToBuild->getNode();
+
+        $classCode = $printer->prettyPrint($statements);
 
         return $classCode
             // Inject advices on call
-            . '\\' . self::class . '::injectJoinPoints(' . $this->generator->getName() . '::class);';
+            . '\\' . self::class . '::injectJoinPoints(' . $this->reflectionClass->getShortName() . '::class);';
     }
 
     /**
@@ -223,13 +259,13 @@ class ClassProxyGenerator
         $interceptedMethods = [];
         foreach ($methodNames as $methodName) {
             $reflectionMethod = $originalClass->getMethod($methodName);
-            $methodBody       = $this->getJoinpointInvocationBody($reflectionMethod);
-
-            $interceptedMethods[$methodName] = new InterceptedMethodGenerator(
+            $methodGenerator  = new InterceptedMethodASTGenerator(
                 $reflectionMethod,
-                $methodBody,
+                [(new MethodInvocationCallASTGenerator($reflectionMethod))->generate()],
                 $this->useParameterWidening
             );
+
+            $interceptedMethods[$methodName] = $methodGenerator->generate();
         }
 
         return $interceptedMethods;

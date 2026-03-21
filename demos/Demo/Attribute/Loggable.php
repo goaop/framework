@@ -14,7 +14,7 @@ namespace Demo\Attribute;
 
 use Attribute;
 
-#[Attribute(Attribute::TARGET_METHOD)]
+#[Attribute(Attribute::TARGET_ALL)]
 class Loggable
 {
 }

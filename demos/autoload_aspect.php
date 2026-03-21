@@ -21,5 +21,5 @@ AwesomeAspectKernel::getInstance()->init([
     'appDir'   => __DIR__ . '/../demos',
     'cacheDir' => __DIR__ . '/cache',
 
-    'features' => Features::INTERCEPT_FUNCTIONS,
+//    'features' => Features::INTERCEPT_FUNCTIONS //| Features::INTERCEPT_INITIALIZATIONS | Features::INTERCEPT_INCLUDES,
 ]);

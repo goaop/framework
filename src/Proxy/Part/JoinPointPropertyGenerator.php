@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use JetBrains\PhpStorm\Deprecated;
 use Laminas\Code\Generator\Exception\InvalidArgumentException;
 use Laminas\Code\Generator\PropertyGenerator;
 use Laminas\Code\Generator\PropertyValueGenerator;
@@ -19,6 +20,7 @@ use Laminas\Code\Generator\PropertyValueGenerator;
 /**
  * Prepares the definition for joinpoints private property in the class
  */
+#[Deprecated(reason: "Code generation switched to the AST")]
 final class JoinPointPropertyGenerator extends PropertyGenerator
 {
     /**
