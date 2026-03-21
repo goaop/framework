@@ -52,8 +52,8 @@ final readonly class OrPointcut implements Pointcut
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
-        object|string                                          $instanceOrScope = null,
-        array                                                  $arguments = null
+        null|object|string                                     $instanceOrScope = null,
+        ?array                                                 $arguments = null
     ): bool {
         foreach ($this->pointcuts as $singlePointcut) {
             if ($singlePointcut->matches($context, $reflector, $instanceOrScope, $arguments)) {

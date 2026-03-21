@@ -29,8 +29,8 @@ final class MatchInheritedPointcut implements Pointcut
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
-        object|string                                          $instanceOrScope = null,
-        array                                                  $arguments = null
+        null|object|string                                     $instanceOrScope = null,
+        ?array                                                 $arguments = null
     ): bool {
         // Inherited items can be only inside class context
         if (!$context instanceof ReflectionClass) {
