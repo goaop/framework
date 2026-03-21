@@ -207,7 +207,7 @@ class WeavingTransformer extends BaseSourceTransformer
         } while (true);
 
         foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
-            if (!$finalMethod instanceof ReflectionMethod || $finalMethod->getDeclaringClass()->name !== $class->name) {
+            if ($finalMethod->getDeclaringClass()->name !== $class->name) {
                 continue;
             }
             $hasDynamicAdvice = isset($advices[AspectContainer::METHOD_PREFIX][$finalMethod->name]);

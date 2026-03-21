@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Go! AOP Framework** — an Aspect-Oriented Programming (AOP) framework for PHP 8.2+. It intercepts PHP class/method/function execution transparently by transforming source code at load time via a custom PHP stream wrapper, without requiring PECL extensions, annotations at runtime, or eval.
+**Go! AOP Framework** — an Aspect-Oriented Programming (AOP) framework for PHP 8.4+. It intercepts PHP class/method/function execution transparently by transforming source code at load time via a custom PHP stream wrapper, without requiring PECL extensions, annotations at runtime, or eval.
 
-Package: `goaop/framework` | Namespace root: `Go\` | PHP: `^8.2`
+Package: `goaop/framework` | Namespace root: `Go\` | PHP: `^8.4.0`
 
 ## Commands
 
@@ -84,5 +84,5 @@ Each transformer returns `TransformerResultEnum`: `RESULT_TRANSFORMED`, `RESULT_
 - Tests mirror the `src/` structure under `tests/Go/`
 - Functional/integration tests live in `tests/Go/Functional/`
 - Test fixtures (stub classes for weaving) live in `tests/Go/Stubs/` and `tests/Fixtures/project/src/` (autoloaded as `Go\Tests\TestProject\`)
-- PHPUnit 10, bootstrap is `vendor/autoload.php` (no separate test bootstrap)
+- PHPUnit 11, bootstrap is `vendor/autoload.php` (no separate test bootstrap)
 - PHPStan baseline is `phpstan-baseline.php` — add new accepted errors there rather than inline suppression when appropriate
