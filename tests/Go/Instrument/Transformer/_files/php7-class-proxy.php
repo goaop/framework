@@ -5,6 +5,8 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
 {
     /**
      * List of applied advices per class
+     *
+     * @var array<string, \Go\Aop\Intercept\Joinpoint>
      */
     private static array $__joinPoints = [
     ];

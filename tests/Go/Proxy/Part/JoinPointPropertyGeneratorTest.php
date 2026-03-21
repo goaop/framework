@@ -32,6 +32,8 @@ class JoinPointPropertyGeneratorTest extends TestCase
             '',
             '/**
              * List of applied advices per class
+             *
+             * @var array<string, \Go\Aop\Intercept\Joinpoint>
              */
             private static array $__joinPoints = [
             ];'

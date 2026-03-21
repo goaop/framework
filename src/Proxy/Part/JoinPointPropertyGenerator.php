@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Go\Aop\Intercept\Joinpoint;
+use Laminas\Code\Generator\DocBlock\Tag\VarTag;
+use Laminas\Code\Generator\DocBlockGenerator;
 use Laminas\Code\Generator\Exception\InvalidArgumentException;
 use Laminas\Code\Generator\PropertyGenerator;
 use Laminas\Code\Generator\PropertyValueGenerator;
@@ -39,6 +42,9 @@ final class JoinPointPropertyGenerator extends PropertyGenerator
         parent::__construct(self::NAME, $value, PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
 
         $this->setType(TypeGenerator::fromTypeString('array'));
-        $this->setDocBlock('List of applied advices per class');
+
+        $docBlock = new DocBlockGenerator('List of applied advices per class');
+        $docBlock->setTag(new VarTag(null, 'array<string, \\' . Joinpoint::class . '>'));
+        $this->setDocBlock($docBlock);
     }
 }
