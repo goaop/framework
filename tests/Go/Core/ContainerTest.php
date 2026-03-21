@@ -124,7 +124,7 @@ class ContainerTest extends TestCase
         $isFresh = $this->container->hasAnyResourceChangedSince($realMtime - 3600);
         $this->assertFalse($isFresh);
 
-        $isFresh = $this->container->hasAnyResourceChangedSince($realMtime + 3600);
+        $isFresh = $this->container->hasAnyResourceChangedSince(time() + 3600);
         $this->assertTrue($isFresh);
     }
 

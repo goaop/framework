@@ -36,8 +36,8 @@ final readonly class TruePointcut implements Pointcut
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
-        object|string                                          $instanceOrScope = null,
-        array                                                  $arguments = null
+        null|object|string                                     $instanceOrScope = null,
+        ?array                                                 $arguments = null
     ): true {
         return true;
     }

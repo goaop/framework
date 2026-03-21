@@ -127,7 +127,7 @@ class ClassProxyGenerator
     /**
      * Adds use alias for this class
      */
-    public function addUse(string $use, string $useAlias = null): void
+    public function addUse(string $use, ?string $useAlias = null): void
     {
         $this->generator->addUse($use, $useAlias);
     }
