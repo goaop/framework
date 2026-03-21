@@ -102,10 +102,10 @@ class WeavingTransformer extends BaseSourceTransformer
                     $class,
                     $parsedSource->isStrictMode()
                 );
-                $totalTransformations += (integer) $wasClassProcessed;
+                $totalTransformations += (int) $wasClassProcessed;
             }
             $wasFunctionsProcessed = $this->processFunctions($advisors, $metadata, $namespace);
-            $totalTransformations += (integer) $wasFunctionsProcessed;
+            $totalTransformations += (int) $wasFunctionsProcessed;
         }
 
         $result = ($totalTransformations > 0) ? TransformerResultEnum::RESULT_TRANSFORMED : TransformerResultEnum::RESULT_ABSTAIN;
