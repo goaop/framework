@@ -52,17 +52,17 @@ class InterceptedMethodGeneratorTest extends TestCase
             [
                 First::class,
                 'variadicArgsTest',
-                'public function variadicArgsTest(... $args) : string'
+                'public function variadicArgsTest(... $args): string'
             ],
             [
                 First::class,
                 'staticLsbRecursion',
-                'public static function staticLsbRecursion(int $value, int $level = 0) : int'
+                'public static function staticLsbRecursion(int $value, int $level = 0): int'
             ],
             [
                 First::class,
                 'staticLsbProtected',
-                'protected static function staticLsbProtected() : string'
+                'protected static function staticLsbProtected(): string'
             ],
             [
                 First::class,
@@ -72,7 +72,7 @@ class InterceptedMethodGeneratorTest extends TestCase
             [
                 First::class,
                 'privateMethod',
-                'private function privateMethod() : int'
+                'private function privateMethod(): int'
             ],
         ];
     }

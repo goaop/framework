@@ -93,31 +93,31 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
     {
         return self::$__joinPoints['method:exceptionArg']->__invoke($this, [$exception, $localException]);
     }
-    public function stringRth(string $arg) : string
+    public function stringRth(string $arg): string
     {
         return self::$__joinPoints['method:stringRth']->__invoke($this, [$arg]);
     }
-    public function floatRth(float $arg) : float
+    public function floatRth(float $arg): float
     {
         return self::$__joinPoints['method:floatRth']->__invoke($this, [$arg]);
     }
-    public function boolRth(bool $arg) : bool
+    public function boolRth(bool $arg): bool
     {
         return self::$__joinPoints['method:boolRth']->__invoke($this, [$arg]);
     }
-    public function intRth(int $arg) : int
+    public function intRth(int $arg): int
     {
         return self::$__joinPoints['method:intRth']->__invoke($this, [$arg]);
     }
-    public function callableRth(callable $arg) : callable
+    public function callableRth(callable $arg): callable
     {
         return self::$__joinPoints['method:callableRth']->__invoke($this, [$arg]);
     }
-    public function arrayRth(array $arg) : array
+    public function arrayRth(array $arg): array
     {
         return self::$__joinPoints['method:arrayRth']->__invoke($this, [$arg]);
     }
-    public function exceptionRth(\Exception $exception) : \Exception
+    public function exceptionRth(\Exception $exception): \Exception
     {
         return self::$__joinPoints['method:exceptionRth']->__invoke($this, [$exception]);
     }
