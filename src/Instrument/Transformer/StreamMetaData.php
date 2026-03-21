@@ -85,7 +85,7 @@ class StreamMetaData
      * @param string $source Source code or null
      * @throws InvalidArgumentException for invalid stream
      */
-    public function __construct($stream, string $source = null)
+    public function __construct($stream, ?string $source = null)
     {
         if (!is_resource($stream)) {
             throw new InvalidArgumentException('Stream should be valid resource');

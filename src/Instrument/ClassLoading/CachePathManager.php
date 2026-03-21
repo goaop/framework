@@ -121,7 +121,7 @@ class CachePathManager
      *
      * @return array|null Information or null if no record in the cache
      */
-    public function queryCacheState(string $resource = null): ?array
+    public function queryCacheState(?string $resource = null): ?array
     {
         if ($resource === null) {
             return $this->cacheState;
