@@ -108,7 +108,7 @@ class CachePathManager
     /**
      * Returns cache path for requested file name
      *
-     * @return bool|string
+     * @return string|false
      */
     public function getCachePathForResource(string $resource)
     {

@@ -67,7 +67,8 @@ class CachedAspectLoader extends AspectLoader
         $fileName  = $this->cacheDir . '/_aspect/' . sha1($refAspect->getName());
 
         // If cache is present and actual, then use it
-        if (file_exists($fileName) && filemtime($fileName) >= filemtime($refAspect->getFileName())) {
+        $aspectFileName = $refAspect->getFileName();
+        if ($aspectFileName !== false && file_exists($fileName) && filemtime($fileName) >= filemtime($aspectFileName)) {
             $loadedItems = $this->loadFromCache($fileName);
         } else {
             $loadedItems = $this->loader->load($aspect);
@@ -99,7 +100,7 @@ class CachedAspectLoader extends AspectLoader
     protected function loadFromCache(string $fileName): array
     {
         $content     = file_get_contents($fileName);
-        $loadedItems = unserialize($content);
+        $loadedItems = unserialize($content !== false ? $content : '');
 
         return $loadedItems;
     }

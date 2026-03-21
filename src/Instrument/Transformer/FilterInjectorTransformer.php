@@ -93,8 +93,8 @@ class FilterInjectorTransformer implements SourceTransformer
         }
         $cachedResource = self::$cachePathManager->getCachePathForResource($resource);
 
-        // If the cache is disabled or no cache yet, then use on-fly method
-        if (!$cacheDir || $debug || !file_exists($cachedResource)) {
+        // If the cache is disabled, resource path not resolvable, or no cache yet, then use on-fly method
+        if ($cachedResource === false || !$cacheDir || $debug || !file_exists($cachedResource)) {
             return self::PHP_FILTER_READ . self::$filterName . '/resource=' . $resource;
         }
 

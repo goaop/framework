@@ -52,6 +52,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
         $interceptedMethods   = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $generatedMethods     = $this->interceptMethods($originalTrait, $interceptedMethods);
 
+        $docComment = $originalTrait->getDocComment();
         $this->generator = new TraitGenerator(
             $originalTrait->getShortName(),
             $originalTrait->getNamespaceName(),
@@ -60,7 +61,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
             [],
             [],
             $generatedMethods,
-            DocBlockGenerator::fromReflection(new DocBlockReflection($originalTrait->getDocComment()))
+            $docComment !== false ? DocBlockGenerator::fromReflection(new DocBlockReflection($docComment)) : null
         );
 
         // Normalize FQDN

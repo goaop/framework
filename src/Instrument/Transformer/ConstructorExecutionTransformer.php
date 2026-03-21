@@ -117,17 +117,19 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         if (!isset(self::$constructorInvocationsCache[$fullClassName])) {
             $invocation  = null;
             $dynamicInit = AspectContainer::INIT_PREFIX . ':root';
-            try {
-                $joinPointsRef = new ReflectionProperty($fullClassName, '__joinPoints');
-                $joinPoints = $joinPointsRef->getValue();
-                if (isset($joinPoints[$dynamicInit])) {
-                    $invocation = $joinPoints[$dynamicInit];
+            if (class_exists($fullClassName)) {
+                try {
+                    $joinPointsRef = new ReflectionProperty($fullClassName, '__joinPoints');
+                    $joinPoints = $joinPointsRef->getValue();
+                    if (isset($joinPoints[$dynamicInit])) {
+                        $invocation = $joinPoints[$dynamicInit];
+                    }
+                } catch (ReflectionException $e) {
+                    $invocation = null;
                 }
-            } catch (ReflectionException $e) {
-                $invocation = null;
-            }
-            if (!$invocation) {
-                $invocation = new ReflectionConstructorInvocation([], $fullClassName);
+                if (!$invocation) {
+                    $invocation = new ReflectionConstructorInvocation([], $fullClassName);
+                }
             }
             self::$constructorInvocationsCache[$fullClassName] = $invocation;
         }

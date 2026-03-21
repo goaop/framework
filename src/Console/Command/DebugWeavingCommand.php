@@ -120,7 +120,10 @@ EOT
          */
         foreach ($iterator as $splFileInfo) {
             if ($splFileInfo->isFile()) {
-                $proxies[$splFileInfo->getPathname()] = file_get_contents($splFileInfo->getPathname());
+                $content = file_get_contents($splFileInfo->getPathname());
+                if ($content !== false) {
+                    $proxies[$splFileInfo->getPathname()] = $content;
+                }
             }
         }
 

@@ -50,7 +50,7 @@ class BaseAspectCommand extends Command
     {
         $loader = $input->getArgument('loader');
         $path   = stream_resolve_include_path($loader);
-        if (!is_readable($path)) {
+        if ($path === false || !is_readable($path)) {
             throw new InvalidArgumentException("Invalid loader path: {$loader}");
         }
 

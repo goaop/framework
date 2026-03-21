@@ -125,7 +125,7 @@ class ClassProxyGenerator
             $this->generator->setDocBlock(DocBlockGenerator::fromReflection($reflectionDocBlock));
         }
 
-        $this->generator->addTraits($introducedTraits);
+        $this->generator->addTraits(array_values($introducedTraits));
     }
 
     /**
@@ -133,7 +133,9 @@ class ClassProxyGenerator
      */
     public function addUse(string $use, ?string $useAlias = null): void
     {
-        $this->generator->addUse($use, $useAlias);
+        if ($use !== '') {
+            $this->generator->addUse($use, $useAlias !== '' ? $useAlias : null);
+        }
     }
 
     /**
@@ -143,6 +145,9 @@ class ClassProxyGenerator
      */
     public static function injectJoinPoints(string $targetClassName): void
     {
+        if (!class_exists($targetClassName)) {
+            return;
+        }
         $reflectionClass    = new ReflectionClass($targetClassName);
         $joinPointsProperty = $reflectionClass->getProperty(JoinPointPropertyGenerator::NAME);
 
@@ -151,7 +156,7 @@ class ClassProxyGenerator
         $joinPointsProperty->setValue(null, $joinPoints);
 
         $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';
-        if (isset($joinPoints[$staticInit])) {
+        if (isset($joinPoints[$staticInit]) && $joinPoints[$staticInit] instanceof StaticInitializationJoinpoint) {
             ($joinPoints[$staticInit])();
         }
     }

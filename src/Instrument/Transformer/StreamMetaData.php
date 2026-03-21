@@ -95,7 +95,7 @@ class StreamMetaData
             throw new InvalidArgumentException('Stream should be valid resource');
         }
         $metadata = stream_get_meta_data($stream);
-        if (preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
+        if (isset($metadata['uri']) && preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
             $metadata['uri'] = PathResolver::realpath($matches[1]);
         }
         foreach ($metadata as $key => $value) {

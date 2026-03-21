@@ -61,8 +61,8 @@ class CachingTransformer extends BaseSourceTransformer
         $originalUri      = $metadata->uri;
         $processingResult = TransformerResultEnum::RESULT_ABSTAIN;
         $cacheUri         = $this->cacheManager->getCachePathForResource($originalUri);
-        // Guard to disable overwriting of original files
-        if ($cacheUri === $originalUri) {
+        // Guard to disable overwriting of original files or when cache is unavailable
+        if ($cacheUri === false || $cacheUri === $originalUri) {
             return TransformerResultEnum::RESULT_ABORTED;
         }
 
