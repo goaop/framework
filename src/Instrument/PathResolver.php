@@ -31,9 +31,9 @@ class PathResolver
      *
      * @return ($somePath is array ? list<string|false> : string|false)
      */
-    public static function realpath($somePath, bool $shouldCheckExistence = false)
+    public static function realpath(string|array $somePath, bool $shouldCheckExistence = false): string|array|false
     {
-        // Do not resolve empty string/false/arrays into the current path
+        // Do not resolve empty string/empty arrays into the current path
         if (!$somePath) {
             return $somePath;
         }
