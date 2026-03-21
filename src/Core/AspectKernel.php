@@ -224,7 +224,7 @@ abstract class AspectKernel
         }
 
         $rawExcludePaths = is_array($merged['excludePaths'] ?? null) ? $merged['excludePaths'] : [];
-        $excludePaths    = array_values(array_filter($rawExcludePaths, 'is_string'));
+        $excludePaths    = array_values(array_filter($rawExcludePaths, is_string(...)));
         $excludePaths[]  = $cacheDir;
         $excludePaths[]  = __DIR__ . '/../';
 
@@ -232,7 +232,7 @@ abstract class AspectKernel
         $cacheFileMode = is_int($merged['cacheFileMode'] ?? null) ? $merged['cacheFileMode'] : (0770 & ~umask());
         $features      = is_int($merged['features'] ?? null) ? $merged['features'] : 0;
         $rawIncludePaths = is_array($merged['includePaths'] ?? null) ? $merged['includePaths'] : [];
-        $includePaths    = array_values(array_filter($rawIncludePaths, 'is_string'));
+        $includePaths    = array_values(array_filter($rawIncludePaths, is_string(...)));
         $debug         = is_bool($merged['debug'] ?? null) ? $merged['debug'] : false;
 
         $containerClass       = static::$containerClass;
@@ -256,8 +256,8 @@ abstract class AspectKernel
             'cacheDir'       => $resolvedCacheDir,
             'cacheFileMode'  => $cacheFileMode,
             'features'       => $features,
-            'includePaths'   => array_values(array_filter($resolvedIncludePaths, 'is_string')),
-            'excludePaths'   => array_values(array_filter($resolvedExcludePaths, 'is_string')),
+            'includePaths'   => array_values(array_filter($resolvedIncludePaths, is_string(...))),
+            'excludePaths'   => array_values(array_filter($resolvedExcludePaths, is_string(...))),
             'containerClass' => $containerClass,
         ];
     }
