@@ -43,6 +43,8 @@ class ClassProxyGenerator
 {
     /**
      * Static mappings for class name for excluding if..else check
+     *
+     * @var array<string, class-string<Joinpoint>>
      */
     protected static array $invocationClassMap = [
         AspectContainer::METHOD_PREFIX        => DynamicClosureMethodInvocation::class,
@@ -54,6 +56,8 @@ class ClassProxyGenerator
 
     /**
      * List of advices that are used for generation of child
+     *
+     * @var string[][][]
      */
     protected array $adviceNames = [];
 
@@ -70,10 +74,10 @@ class ClassProxyGenerator
     /**
      * Generates an child code by original class reflection and joinpoints for it
      *
-     * @param ReflectionClass $originalClass        Original class reflection
-     * @param string          $parentClassName      Parent class name to use
-     * @param string[][][]    $classAdviceNames     List of advices for class
-     * @param bool            $useParameterWidening Enables usage of parameter widening feature
+     * @param ReflectionClass<object> $originalClass        Original class reflection
+     * @param string                  $parentClassName      Parent class name to use
+     * @param string[][][]            $classAdviceNames     List of advices for class
+     * @param bool                    $useParameterWidening Enables usage of parameter widening feature
      */
     public function __construct(
         ReflectionClass $originalClass,
@@ -208,6 +212,7 @@ class ClassProxyGenerator
     /**
      * Returns list of intercepted method generators for class by method names
      *
+     * @param ReflectionClass<object> $originalClass
      * @param string[] $methodNames List of methods to intercept
      *
      * @return InterceptedMethodGenerator[]

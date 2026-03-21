@@ -29,7 +29,7 @@ final class JoinPointPropertyGenerator extends PropertyGenerator
     /**
      * JoinPointProperty constructor.
      *
-     * @param array $adviceNames List of advices to apply per class
+     * @param string[][][] $adviceNames List of advices to apply per class
      *
      * @throws InvalidArgumentException
      */

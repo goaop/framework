@@ -28,7 +28,7 @@ final class InterceptedConstructorGenerator extends MethodGenerator
     /**
      * InterceptedConstructor
      *
-     * @param array                 $interceptedProperties List of intercepted properties for the class
+     * @param string[]              $interceptedProperties List of intercepted properties for the class
      * @param ReflectionMethod|null $constructor           Instance of original constructor or null
      * @param MethodGenerator|null  $constructorGenerator  Constructor body generator (if present)
      * @param bool                  $useTypeWidening       Should generator use parameter widening for PHP>=7.2
@@ -72,7 +72,7 @@ final class InterceptedConstructorGenerator extends MethodGenerator
     /**
      * Returns constructor code
      *
-     * @param array $interceptedProperties List of properties to intercept
+     * @param string[] $interceptedProperties List of properties to intercept
      */
     private function getConstructorBody(array $interceptedProperties): string
     {

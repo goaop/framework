@@ -2,6 +2,6 @@ includes:
 	- phpstan-baseline.php
 
 parameters:
-  level: 5
+  level: 6
   paths:
     - src

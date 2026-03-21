@@ -22,6 +22,8 @@ abstract class BaseSourceTransformer implements SourceTransformer
 {
     /**
      * Transformer options
+     *
+     * @var array<string, mixed>
      */
     protected array $options = [];
 
@@ -37,6 +39,8 @@ abstract class BaseSourceTransformer implements SourceTransformer
 
     /**
      * Default constructor for transformer
+     *
+     * @param array<string, mixed> $options
      */
     public function __construct(AspectKernel $kernel, array $options = [])
     {

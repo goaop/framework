@@ -32,6 +32,8 @@ class FunctionProxyGenerator
 {
     /**
      * List of advices that are used for generation of child
+     *
+     * @var string[][][]
      */
     protected array $adviceNames = [];
 
@@ -73,7 +75,7 @@ class FunctionProxyGenerator
     /**
      * Returns a joinpoint for specific function in the namespace
      *
-     * @param array $adviceNames List of advices
+     * @param string[] $adviceNames List of advices
      */
     public static function getJoinPoint(string $functionName, array $adviceNames): ReflectionFunctionInvocation
     {

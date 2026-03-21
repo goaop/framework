@@ -36,6 +36,8 @@ abstract class AspectKernel
 {
     /**
      * Kernel options
+     *
+     * @var array<string, mixed>
      */
     protected array $options = [
         'features' => 0
@@ -152,6 +154,8 @@ abstract class AspectKernel
 
     /**
      * Returns list of kernel options
+     *
+     * @return array<string, mixed>
      */
     public function getOptions(): array
     {
@@ -168,6 +172,8 @@ abstract class AspectKernel
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
+     *
+     * @return array<string, mixed>
      */
     protected function getDefaultOptions(): array
     {
@@ -187,7 +193,8 @@ abstract class AspectKernel
     /**
      * Normalizes options for the kernel
      *
-     * @param array $options List of options
+     * @param array<string, mixed> $options List of options
+     * @return array<string, mixed>
      */
     protected function normalizeOptions(array $options): array
     {
@@ -210,7 +217,7 @@ abstract class AspectKernel
     /**
      * Configures an AspectContainer with advisors, aspects and pointcuts
      */
-    abstract protected function configureAop(AspectContainer $container);
+    abstract protected function configureAop(AspectContainer $container): void;
 
     /**
      * Returns list of source transformers, that will be applied to the PHP source

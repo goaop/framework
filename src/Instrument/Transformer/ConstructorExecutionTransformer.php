@@ -32,6 +32,8 @@ final class ConstructorExecutionTransformer implements SourceTransformer
 {
     /**
      * List of constructor invocations per class
+     *
+     * @var array<string, ReflectionConstructorInvocation<object>>
      */
     private static array $constructorInvocationsCache = [];
 
@@ -96,8 +98,8 @@ final class ConstructorExecutionTransformer implements SourceTransformer
     /**
      * Magic interceptor for instance creation
      *
-     * @param string $className Name of the class to construct
-     * @param array  $args      Arguments for the constructor
+     * @param string  $className Name of the class to construct
+     * @param mixed[] $args      Arguments for the constructor
      */
     public function __call(string $className, array $args): object
     {
@@ -106,6 +108,8 @@ final class ConstructorExecutionTransformer implements SourceTransformer
 
     /**
      * Default implementation for accessing joinpoint or creating a new one on-fly
+     *
+     * @param mixed[] $arguments
      */
     protected static function construct(string $fullClassName, array $arguments = []): object
     {

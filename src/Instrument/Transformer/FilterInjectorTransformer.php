@@ -37,6 +37,8 @@ class FilterInjectorTransformer implements SourceTransformer
 
     /**
      * Kernel options
+     *
+     * @var array<string, mixed>
      */
     protected static array $options = [];
 

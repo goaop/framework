@@ -179,7 +179,7 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Adjust definition of original class source to enable extending
      *
-     * @param array $advices List of class advices (used to check for final methods and make them non-final)
+     * @param array<string, array<string, array<string, mixed>>> $advices List of class advices
      */
     private function adjustOriginalClass(
         ReflectionClass $class,
@@ -301,7 +301,7 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Utility method to load and register unloaded aspects
      *
-     * @param array $unloadedAspects List of unloaded aspects
+     * @param object[] $unloadedAspects List of unloaded aspects
      */
     private function loadAndRegisterAspects(array $unloadedAspects): void
     {

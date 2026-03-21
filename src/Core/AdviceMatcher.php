@@ -79,7 +79,8 @@ class AdviceMatcher implements AdviceMatcherInterface
     /**
      * Return list of advices for class
      *
-     * @param array|Aop\Advisor[] $advisors List of advisor to match
+     * @param ReflectionClass<object> $class
+     * @param Aop\Advisor[] $advisors List of advisor to match
      *
      * @return Aop\Advice[][][] List of advices for class
      */
@@ -114,6 +115,9 @@ class AdviceMatcher implements AdviceMatcherInterface
 
     /**
      * Returns list of class advices from advisor and point filter
+     *
+     * @param ReflectionClass<object> $class
+     * @return Aop\Advice[][][]
      */
     private function getClassAdvicesFromAdvisor(
         ReflectionClass $class,
@@ -143,6 +147,9 @@ class AdviceMatcher implements AdviceMatcherInterface
 
     /**
      * Returns list of advices from advisor and point filter
+     *
+     * @param ReflectionClass<object> $class
+     * @return Aop\Advice[][][]
      */
     private function getClassLevelAdvicesFromAdvisor(
         ReflectionClass $class,
@@ -209,6 +216,8 @@ class AdviceMatcher implements AdviceMatcherInterface
 
     /**
      * Returns list of function advices for specific namespace
+     *
+     * @return Aop\Advice[][][]
      */
     private function getFunctionAdvicesFromAdvisor(
         ReflectionFileNamespace $namespace,

@@ -31,6 +31,8 @@ class AopComposerLoader
 
     /**
      * AOP kernel options
+     *
+     * @var array<string, mixed>
      */
     protected array $options = [];
 
@@ -41,6 +43,8 @@ class AopComposerLoader
 
     /**
      * Cache state
+     *
+     * @var array<string, mixed>
      */
     private array $cacheState;
 
@@ -52,7 +56,7 @@ class AopComposerLoader
     /**
      * Constructs an wrapper for the composer loader
      *
-     * @param array $options Configuration options
+     * @param array<string, mixed> $options Configuration options
      */
     public function __construct(ClassLoader $original, AspectContainer $container, array $options = [])
     {
@@ -79,7 +83,7 @@ class AopComposerLoader
      *
      * Replaces original composer autoloader with wrapper
      *
-     * @param array $options Aspect kernel options
+     * @param array<string, mixed> $options Aspect kernel options
      */
     public static function init(array $options, AspectContainer $container): bool
     {

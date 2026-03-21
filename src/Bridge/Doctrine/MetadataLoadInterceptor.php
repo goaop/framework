@@ -68,6 +68,8 @@ final class MetadataLoadInterceptor implements EventSubscriber
     /**
      * Remove fields in Go! AOP proxied class metadata that are inherited
      * from traits.
+     *
+     * @param ClassMetadata<object> $metadata
      */
     private function removeMappingsFromTraits(ClassMetadata $metadata): void
     {
@@ -101,6 +103,7 @@ final class MetadataLoadInterceptor implements EventSubscriber
      * @param class-string $className FQCN
      * @param bool         $autoload  Weather to autoload class.
      *
+     * @return array<class-string>
      * @throws InvalidArgumentException
      * @throws RuntimeException
      */

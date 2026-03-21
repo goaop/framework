@@ -29,6 +29,7 @@ class CachePathManager
      */
     private const CACHE_FILE_NAME = '/_transformation.cache';
 
+    /** @var array<string, mixed> */
     protected array $options = [];
 
     /**
@@ -47,11 +48,15 @@ class CachePathManager
 
     /**
      * Cached metadata for transformation state for the concrete file
+     *
+     * @var array<string, mixed>
      */
     protected array $cacheState = [];
 
     /**
      * New metadata items, that was not present in $cacheState
+     *
+     * @var array<string, mixed>
      */
     protected array $newCacheState = [];
 
@@ -119,7 +124,7 @@ class CachePathManager
      *
      * @param string|null $resource Name of the file or null to get all information
      *
-     * @return array|null Information or null if no record in the cache
+     * @return array<string, mixed>|null Information or null if no record in the cache
      */
     public function queryCacheState(?string $resource = null): ?array
     {
@@ -143,7 +148,7 @@ class CachePathManager
      *
      * This data will be persisted during object destruction
      *
-     * @param array $metadata Miscellaneous information about resource
+     * @param array<string, mixed> $metadata Miscellaneous information about resource
      */
     public function setCacheState(string $resource, array $metadata): void
     {

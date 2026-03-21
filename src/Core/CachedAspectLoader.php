@@ -39,13 +39,16 @@ class CachedAspectLoader extends AspectLoader
 
     /**
      * Identifier of original loader
+     *
+     * @var class-string<AspectLoader>
      */
     protected string $loaderId;
 
     /**
      * Cached loader constructor
      *
-     * @param array $options List of kernel options
+     * @param class-string<AspectLoader> $loaderId
+     * @param array<string, mixed> $options List of kernel options
      */
     public function __construct(AspectContainer $container, string $loaderId, array $options = [])
     {
@@ -77,7 +80,7 @@ class CachedAspectLoader extends AspectLoader
     /**
      * {@inheritdoc}
      */
-    public function __get($name)
+    public function __get(string $name): mixed
     {
         if ($name === 'loader') {
             $this->loader = $this->container->getService($this->loaderId);
