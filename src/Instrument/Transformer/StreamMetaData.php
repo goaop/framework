@@ -126,7 +126,7 @@ class StreamMetaData
      */
     public function __set(string $name, mixed $value): void
     {
-        if ($name === 'source') {
+        if ($name === 'source' && is_string($value)) {
             trigger_error('Setting StreamMetaData->source is deprecated, use tokenStream instead', E_USER_DEPRECATED);
             $this->setSource($value);
         }

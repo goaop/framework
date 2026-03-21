@@ -49,7 +49,10 @@ class BaseAspectCommand extends Command
     protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
     {
         $loader = $input->getArgument('loader');
-        $path   = stream_resolve_include_path($loader);
+        if (!is_string($loader)) {
+            throw new InvalidArgumentException('Loader argument must be a string');
+        }
+        $path = stream_resolve_include_path($loader);
         if ($path === false || !is_readable($path)) {
             throw new InvalidArgumentException("Invalid loader path: {$loader}");
         }

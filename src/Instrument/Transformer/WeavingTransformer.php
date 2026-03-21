@@ -178,6 +178,9 @@ class WeavingTransformer extends BaseSourceTransformer
             return false;
         }
         $lastClassToken = $classNode->getAttribute('endTokenPos');
+        if (!is_int($lastClassToken)) {
+            return false;
+        }
 
         $metadata->tokenStream[$lastClassToken]->text .= PHP_EOL . $contentToInclude;
 
@@ -199,7 +202,10 @@ class WeavingTransformer extends BaseSourceTransformer
         if ($classNode === null) {
             return;
         }
-        $position  = $classNode->getAttribute('startTokenPos');
+        $position = $classNode->getAttribute('startTokenPos');
+        if (!is_int($position)) {
+            return;
+        }
         do {
             if (isset($streamMetaData->tokenStream[$position])) {
                 $token = $streamMetaData->tokenStream[$position];
@@ -228,6 +234,9 @@ class WeavingTransformer extends BaseSourceTransformer
             }
             $methodNode = $finalMethod->getNode();
             $position   = $methodNode->getAttribute('startTokenPos');
+            if (!is_int($position)) {
+                continue;
+            }
             do {
                 if (isset($streamMetaData->tokenStream[$position])) {
                     $token = $streamMetaData->tokenStream[$position];

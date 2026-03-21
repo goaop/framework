@@ -23,6 +23,7 @@ use ReflectionClass;
  * Cached loader is responsible for faster initialization of pointcuts/advisors for concrete aspect
  *
  * @property AspectLoader $loader
+ * @phpstan-import-type KernelOptions from AspectKernel
  */
 #[AllowDynamicProperties]
 class CachedAspectLoader extends AspectLoader
@@ -48,12 +49,12 @@ class CachedAspectLoader extends AspectLoader
      * Cached loader constructor
      *
      * @param class-string<AspectLoader> $loaderId
-     * @param array<string, mixed> $options List of kernel options
+     * @phpstan-param KernelOptions $options List of kernel options
      */
-    public function __construct(AspectContainer $container, string $loaderId, array $options = [])
+    public function __construct(AspectContainer $container, string $loaderId, array $options)
     {
-        $this->cacheDir      = $options['cacheDir'] ?? null;
-        $this->cacheFileMode = $options['cacheFileMode'] ?? 0770 & ~umask();
+        $this->cacheDir      = $options['cacheDir'];
+        $this->cacheFileMode = $options['cacheFileMode'];
         $this->loaderId      = $loaderId;
         $this->container     = $container;
     }
@@ -102,7 +103,13 @@ class CachedAspectLoader extends AspectLoader
         $content     = file_get_contents($fileName);
         $loadedItems = unserialize($content !== false ? $content : '');
 
-        return $loadedItems;
+        if (!is_array($loadedItems)) {
+            return [];
+        }
+        /** @var array<string, Pointcut|Advisor> $filtered */
+        $filtered = array_filter($loadedItems, fn($item) => $item instanceof Pointcut || $item instanceof Advisor);
+
+        return $filtered;
     }
 
     /**

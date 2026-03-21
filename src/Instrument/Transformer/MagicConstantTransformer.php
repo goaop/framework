@@ -46,7 +46,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
     {
         parent::__construct($kernel);
         self::$rootPath      = $this->options['appDir'];
-        self::$rewriteToPath = $this->options['cacheDir'];
+        self::$rewriteToPath = $this->options['cacheDir'] ?? '';
     }
 
     /**
@@ -92,6 +92,9 @@ class MagicConstantTransformer extends BaseSourceTransformer
             if (($methodCallNode->name instanceof Identifier) && ($methodCallNode->name->toString() === 'getFileName')) {
                 $startPosition    = $methodCallNode->getAttribute('startTokenPos');
                 $endPosition      = $methodCallNode->getAttribute('endTokenPos');
+                if (!is_int($startPosition) || !is_int($endPosition)) {
+                    continue;
+                }
                 $expressionPrefix = '\\' . self::class . '::resolveFileName(';
 
                 $metadata->tokenStream[$startPosition]->text = $expressionPrefix . $metadata->tokenStream[$startPosition]->text;
@@ -117,7 +120,10 @@ class MagicConstantTransformer extends BaseSourceTransformer
         $magicDirValue  = dirname($magicFileValue);
         foreach ($magicConstants as $magicConstantNode) {
             $tokenPosition = $magicConstantNode->getAttribute('startTokenPos');
-            $replacement   = $magicConstantNode instanceof Dir ? $magicDirValue : $magicFileValue;
+            if (!is_int($tokenPosition)) {
+                continue;
+            }
+            $replacement = $magicConstantNode instanceof Dir ? $magicDirValue : $magicFileValue;
 
             $metadata->tokenStream[$tokenPosition]->text = "'{$replacement}'";
         }

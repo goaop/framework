@@ -125,6 +125,9 @@ class FilterInjectorTransformer implements SourceTransformer
         foreach ($includeExpressions as $includeExpression) {
             $startPosition = $includeExpression->getAttribute('startTokenPos');
             $endPosition   = $includeExpression->getAttribute('endTokenPos');
+            if (!is_int($startPosition) || !is_int($endPosition)) {
+                continue;
+            }
 
             $metadata->tokenStream[$startPosition]->text .= ' \\' . self::class . '::rewrite(';
             if ($metadata->tokenStream[$startPosition+1]->id === T_WHITESPACE) {

@@ -89,7 +89,7 @@ final class MetadataLoadInterceptor implements EventSubscriber
 
                     unset(
                         $metadata->fieldMappings[$name],
-                        $metadata->fieldNames[$mapping['columnName']],
+                        $metadata->fieldNames[$mapping->columnName],
                         $metadata->columnNames[$name]
                     );
                 }

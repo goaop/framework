@@ -63,10 +63,11 @@ class CachePathManager
     public function __construct(AspectKernel $kernel)
     {
         $this->kernel   = $kernel;
-        $this->options  = $kernel->getOptions();
-        $this->appDir   = $this->options['appDir'];
-        $this->cacheDir = $this->options['cacheDir'];
-        $this->fileMode = $this->options['cacheFileMode'];
+        $options        = $kernel->getOptions();
+        $this->options  = $options;
+        $this->appDir   = $options['appDir'];
+        $this->cacheDir = $options['cacheDir'];
+        $this->fileMode = $options['cacheFileMode'];
 
         if ($this->cacheDir) {
             if (!is_dir($this->cacheDir)) {
@@ -126,7 +127,7 @@ class CachePathManager
      *
      * @param string|null $resource Name of the file or null to get all information
      *
-     * @return array<string, mixed>|null Information or null if no record in the cache
+     * @return array<mixed, mixed>|null Information or null if no record in the cache
      */
     public function queryCacheState(?string $resource = null): ?array
     {
@@ -135,11 +136,13 @@ class CachePathManager
         }
 
         if (isset($this->newCacheState[$resource])) {
-            return $this->newCacheState[$resource];
+            $result = $this->newCacheState[$resource];
+            return is_array($result) ? $result : null;
         }
 
         if (isset($this->cacheState[$resource])) {
-            return $this->cacheState[$resource];
+            $result = $this->cacheState[$resource];
+            return is_array($result) ? $result : null;
         }
 
         return null;

@@ -33,7 +33,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
     /**
      * List of constructor invocations per class
      *
-     * @var array<string, ReflectionConstructorInvocation<object>>
+     * @var array<string, ReflectionConstructorInvocation<object>|null>
      */
     private static array $constructorInvocationsCache = [];
 
@@ -71,13 +71,19 @@ final class ConstructorExecutionTransformer implements SourceTransformer
 
         foreach ($newExpressions as $newExpressionNode) {
             $startPosition = $newExpressionNode->getAttribute('startTokenPos');
+            if (!is_int($startPosition)) {
+                continue;
+            }
 
             $metadata->tokenStream[$startPosition]->text = '\\' . self::class . '::getInstance()->{';
             if ($metadata->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
                 unset($metadata->tokenStream[$startPosition + 1]);
             }
-            $isExplicitClass                            = $newExpressionNode->class instanceof Name;
-            $endClassNamePos                            = $newExpressionNode->class->getAttribute('endTokenPos');
+            $isExplicitClass = $newExpressionNode->class instanceof Name;
+            $endClassNamePos = $newExpressionNode->class->getAttribute('endTokenPos');
+            if (!is_int($endClassNamePos)) {
+                continue;
+            }
             $expressionSuffix                           = $isExplicitClass ? '::class}' : '}';
             $metadata->tokenStream[$endClassNamePos]->text .= $expressionSuffix;
         }
@@ -121,8 +127,11 @@ final class ConstructorExecutionTransformer implements SourceTransformer
                 try {
                     $joinPointsRef = new ReflectionProperty($fullClassName, '__joinPoints');
                     $joinPoints = $joinPointsRef->getValue();
-                    if (isset($joinPoints[$dynamicInit])) {
-                        $invocation = $joinPoints[$dynamicInit];
+                    if (is_array($joinPoints) && isset($joinPoints[$dynamicInit])) {
+                        $jp = $joinPoints[$dynamicInit];
+                        if ($jp instanceof ReflectionConstructorInvocation) {
+                            $invocation = $jp;
+                        }
                     }
                 } catch (ReflectionException $e) {
                     $invocation = null;
@@ -134,6 +143,16 @@ final class ConstructorExecutionTransformer implements SourceTransformer
             self::$constructorInvocationsCache[$fullClassName] = $invocation;
         }
 
-        return self::$constructorInvocationsCache[$fullClassName]->__invoke($arguments);
+        $cachedInvocation = self::$constructorInvocationsCache[$fullClassName];
+        if ($cachedInvocation === null) {
+            throw new \LogicException("Cannot instantiate non-existent class: {$fullClassName}");
+        }
+
+        $result = $cachedInvocation->__invoke($arguments);
+        if (!is_object($result)) {
+            throw new \LogicException('Constructor invocation did not return an object');
+        }
+
+        return $result;
     }
 }

@@ -79,6 +79,9 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
         switch (true) {
             case ($interceptorAttribute instanceof DeclareError):
                 $errorMessage = $aspectProperty->getDefaultValue();
+                if (!is_string($errorMessage) || $errorMessage === '') {
+                    throw new \UnexpectedValueException('DeclareError property must have a non-empty string default value');
+                }
                 return new DeclareErrorInterceptor($errorMessage, $interceptorAttribute->level, $pointcutExpression);
 
             case ($interceptorAttribute instanceof DeclareParents):

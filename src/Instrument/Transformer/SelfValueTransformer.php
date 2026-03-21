@@ -43,9 +43,11 @@ class SelfValueTransformer extends BaseSourceTransformer
      */
     private function adjustSelfTokens(StreamMetaData $metadata, array $replacedNodes): void
     {
-        foreach ($replacedNodes as $replacedNode)
-        {
+        foreach ($replacedNodes as $replacedNode) {
             $position = $replacedNode->getAttribute('startTokenPos');
+            if (!is_int($position)) {
+                continue;
+            }
             $metadata->tokenStream[$position]->text = $replacedNode->toString();
         }
     }
