@@ -112,9 +112,9 @@ class EnumeratorTest extends TestCase
         // VFS does not support getRealPath()
         $mock->expects($this->any())
             ->method('getFileFullPath')
-            ->will($this->returnCallback(function (SplFileInfo $file) {
+            ->willReturnCallback(function (SplFileInfo $file) {
                 return $file->getPathname();
-            }));
+            });
 
         $iterator = $mock->enumerate();
 

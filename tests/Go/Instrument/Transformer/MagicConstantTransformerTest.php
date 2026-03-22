@@ -43,25 +43,16 @@ class MagicConstantTransformerTest extends TestCase
      */
     protected function getKernelMock(array $options): AspectKernel
     {
-        $mock = $this->getMockForAbstractClass(
-            AspectKernel::class,
-            [],
-            '',
-            false,
-            true,
-            true,
-            ['getOptions', 'getContainer']
-        );
+        $mock = $this->getMockBuilder(AspectKernel::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['configureAop', 'getOptions', 'getContainer'])
+            ->getMock();
         $mock->expects($this->any())
             ->method('getOptions')
-            ->will(
-                $this->returnValue($options)
-            );
+            ->willReturn($options);
         $mock->expects($this->any())
             ->method('getContainer')
-            ->will(
-                $this->returnValue($this->createMock(AspectContainer::class))
-            );
+            ->willReturn($this->createMock(AspectContainer::class));
 
         return $mock;
     }

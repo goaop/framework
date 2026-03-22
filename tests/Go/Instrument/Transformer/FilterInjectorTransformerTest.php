@@ -52,15 +52,10 @@ class FilterInjectorTransformerTest extends TestCase
      */
     protected function getKernelMock(array $options, AspectContainer $container): AspectKernel
     {
-        $mock = $this->getMockForAbstractClass(
-            AspectKernel::class,
-            [],
-            '',
-            false,
-            true,
-            true,
-            ['getOptions', 'getContainer']
-        );
+        $mock = $this->getMockBuilder(AspectKernel::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['configureAop', 'getOptions', 'getContainer'])
+            ->getMock();
         $mock
             ->method('getOptions')
             ->willReturn($options);

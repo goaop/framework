@@ -66,11 +66,7 @@ class WeavingTransformerTest extends TestCase
             ],
             $container
         );
-        $this->cachePathManager = $this
-            ->getMockBuilder(CachePathManager::class)
-            ->setConstructorArgs([$this->kernel])
-            ->enableProxyingToOriginalMethods()
-            ->getMock();
+        $this->cachePathManager = new CachePathManager($this->kernel);
 
         $this->transformer = new WeavingTransformer(
             $this->kernel,
@@ -174,10 +170,7 @@ class WeavingTransformerTest extends TestCase
             ],
             $container
         );
-        $cachePathManager = $this->getMockBuilder(CachePathManager::class)
-            ->setConstructorArgs([$kernel])
-            ->enableProxyingToOriginalMethods()
-            ->getMock();
+        $cachePathManager = new CachePathManager($kernel);
 
         $this->transformer = new WeavingTransformer(
             $kernel,
@@ -236,15 +229,10 @@ class WeavingTransformerTest extends TestCase
      */
     protected function getKernelMock(array $options, AspectContainer $container): AspectKernel
     {
-        $mock = $this->getMockForAbstractClass(
-            AspectKernel::class,
-            [],
-            '',
-            false,
-            true,
-            true,
-            ['getOptions', 'getContainer', 'hasFeature']
-        );
+        $mock = $this->getMockBuilder(AspectKernel::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['configureAop', 'getOptions', 'getContainer', 'hasFeature'])
+            ->getMock();
 
         $mock->method('getOptions')
             ->willReturn($options);
@@ -265,16 +253,14 @@ class WeavingTransformerTest extends TestCase
         $mock = $this->createMock(AdviceMatcherInterface::class);
         $mock
             ->method('getAdvicesForClass')
-            ->will(
-                $this->returnCallback(function (ReflectionClass $refClass) {
-                    $advices  = [];
-                    foreach ($refClass->getMethods() as $method) {
-                        $advisorId = "advisor.{$refClass->name}->{$method->name}";
-                        $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
-                    }
-                    return $advices;
-                })
-            );
+            ->willReturnCallback(function (ReflectionClass $refClass) {
+                $advices  = [];
+                foreach ($refClass->getMethods() as $method) {
+                    $advisorId = "advisor.{$refClass->name}->{$method->name}";
+                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
+                }
+                return $advices;
+            });
 
         return $mock;
     }

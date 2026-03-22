@@ -51,16 +51,14 @@ abstract class AbstractInterceptorTestCase extends TestCase
         $invocation
             ->expects($this->any())
             ->method('proceed')
-            ->will(
-                $this->returnCallback(
-                    function () use (&$sequenceRecorder, $throwException) {
-                        $sequenceRecorder[] = 'invocation';
-                        if ($throwException) {
-                            throw new RuntimeException('Expected exception');
-                        }
-                        return 'invocation';
+            ->willReturnCallback(
+                function () use (&$sequenceRecorder, $throwException) {
+                    $sequenceRecorder[] = 'invocation';
+                    if ($throwException) {
+                        throw new RuntimeException('Expected exception');
                     }
-                )
+                    return 'invocation';
+                }
             );
 
         return $invocation;
