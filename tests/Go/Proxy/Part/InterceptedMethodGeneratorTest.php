@@ -92,7 +92,7 @@ class InterceptedMethodGeneratorTest extends TestCase
             'publicMethodWithAttribute' => [
                 First::class,
                 'publicMethodWithAttribute',
-                "public function publicMethodWithAttribute(\n    #[\\Go\\Stubs\\StubAttribute('argument')]\n    string \$argument\n): string"
+                "#[\\Go\\Stubs\\StubAttribute('Go\\Stubs\\First')]\npublic function publicMethodWithAttribute(\n    #[\\Go\\Stubs\\StubAttribute('argument')]\n    string \$argument\n): string"
             ],
         ];
     }

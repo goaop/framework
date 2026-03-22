@@ -32,7 +32,6 @@ final class InterceptedMethodGenerator
     public function __construct(ReflectionMethod $reflectionMethod, string $body, bool $useTypeWidening = false)
     {
         $this->generator = MethodGenerator::fromReflection($reflectionMethod, $useTypeWidening);
-        $this->generator->clearMethodAttributes();
         $this->generator->setBody($body);
     }
 

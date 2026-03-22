@@ -118,15 +118,6 @@ final class MethodGenerator
         return $generator;
     }
 
-    /**
-     * Removes any method-level attributes that were collected from reflection.
-     * Use this when generating proxy methods that should not repeat the original method's attributes.
-     */
-    public function clearMethodAttributes(): void
-    {
-        $this->reflectionAttributes = [];
-    }
-
     public function setVisibility(string $visibility): void
     {
         $this->visibility = $visibility;
