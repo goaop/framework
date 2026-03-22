@@ -13,6 +13,9 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use PHPUnit\Framework\TestCase;
+use PhpParser\BuilderFactory;
+use PhpParser\Node\AttributeGroup;
+use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Property;
 
 class PropertyGeneratorTest extends TestCase
@@ -103,5 +106,24 @@ class PropertyGeneratorTest extends TestCase
     {
         $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PUBLIC);
         $this->assertInstanceOf(PropertyNodeProvider::class, $gen);
+    }
+
+    public function testAddAttributeGroups(): void
+    {
+        $factory = new BuilderFactory();
+        $attrGroup = new AttributeGroup([$factory->attribute(new Name\FullyQualified('Deprecated'))]);
+        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PUBLIC);
+        $gen->addAttributeGroups([$attrGroup]);
+        $output = $gen->generate();
+        $this->assertStringContainsString('#[', $output);
+        $this->assertStringContainsString('Deprecated', $output);
+    }
+
+    public function testAddAttributeGroupsEmpty(): void
+    {
+        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PUBLIC);
+        $gen->addAttributeGroups([]);
+        $output = $gen->generate();
+        $this->assertStringNotContainsString('#[', $output);
     }
 }

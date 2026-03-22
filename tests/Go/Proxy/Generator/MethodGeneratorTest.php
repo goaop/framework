@@ -40,6 +40,11 @@ class MethodGeneratorTestStub
     {
         return $ex;
     }
+
+    #[\Deprecated]
+    public function deprecatedMethod(): void {}
+
+    public function methodWithSensitiveParam(#[\SensitiveParameter] string $secret): void {}
 }
 
 class MethodGeneratorTest extends TestCase
@@ -266,5 +271,20 @@ class MethodGeneratorTest extends TestCase
         $output = $gen->generate();
         // Just check it generates without error
         $this->assertStringContainsString('function publicMethod', $output);
+    }
+
+    public function testFromReflectionPreservesAttribute(): void
+    {
+        $gen = MethodGenerator::fromReflection($this->getMethod('deprecatedMethod'));
+        $output = $gen->generate();
+        $this->assertStringContainsString('Deprecated', $output);
+        $this->assertStringContainsString('#[', $output);
+    }
+
+    public function testFromReflectionNoAttributeWhenNone(): void
+    {
+        $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
+        $output = $gen->generate();
+        $this->assertStringNotContainsString('#[', $output);
     }
 }

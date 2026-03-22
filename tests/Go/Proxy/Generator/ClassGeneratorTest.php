@@ -13,6 +13,9 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use PHPUnit\Framework\TestCase;
+use PhpParser\BuilderFactory;
+use PhpParser\Node\AttributeGroup;
+use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_;
 use ReflectionMethod;
 
@@ -159,5 +162,24 @@ class ClassGeneratorTest extends TestCase
         $gen = new ClassGenerator('MyClass', null, null, null, ['', '\Countable']);
         $output = $gen->generate();
         $this->assertStringContainsString('Countable', $output);
+    }
+
+    public function testAddAttributeGroups(): void
+    {
+        $factory = new BuilderFactory();
+        $attrGroup = new AttributeGroup([$factory->attribute(new Name\FullyQualified('Deprecated'))]);
+        $gen = new ClassGenerator('MyClass', null, null, null);
+        $gen->addAttributeGroups([$attrGroup]);
+        $output = $gen->generate();
+        $this->assertStringContainsString('#[', $output);
+        $this->assertStringContainsString('Deprecated', $output);
+    }
+
+    public function testAddAttributeGroupsEmpty(): void
+    {
+        $gen = new ClassGenerator('MyClass', null, null, null);
+        $gen->addAttributeGroups([]);
+        $output = $gen->generate();
+        $this->assertStringNotContainsString('#[', $output);
     }
 }

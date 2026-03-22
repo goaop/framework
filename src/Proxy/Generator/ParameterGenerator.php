@@ -15,6 +15,7 @@ namespace Go\Proxy\Generator;
 use PhpParser\BuilderFactory;
 use PhpParser\Node;
 use PhpParser\PrettyPrinter\Standard;
+use ReflectionAttribute;
 use ReflectionNamedType;
 use ReflectionParameter;
 
@@ -31,6 +32,9 @@ final class ParameterGenerator
     private bool $byRef;
     private bool $variadic;
     private ?ValueGenerator $defaultValue;
+
+    /** @var ReflectionAttribute<object>[] */
+    private array $reflectionAttributes = [];
 
     public function __construct(
         string $name,
@@ -75,13 +79,17 @@ final class ParameterGenerator
             }
         }
 
-        return new self(
+        $generator = new self(
             $param->getName(),
             $type,
             $param->isPassedByReference(),
             $param->isVariadic(),
             $defaultValue,
         );
+
+        $generator->reflectionAttributes = $param->getAttributes();
+
+        return $generator;
     }
 
     public function getName(): string
@@ -132,6 +140,10 @@ final class ParameterGenerator
         }
         if ($this->defaultValue !== null) {
             $builder->setDefault($this->defaultValue->getNode());
+        }
+
+        foreach (AttributeGroupsGenerator::fromReflectionAttributes($this->reflectionAttributes) as $attrGroup) {
+            $builder->addAttribute($attrGroup);
         }
 
         return $builder->getNode();

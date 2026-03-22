@@ -19,6 +19,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
+use ReflectionAttribute;
 use ReflectionMethod;
 use ReflectionNamedType;
 
@@ -52,6 +53,9 @@ final class MethodGenerator
 
     /** @var ParameterGenerator[] */
     private array $parameters = [];
+
+    /** @var ReflectionAttribute<object>[] */
+    private array $reflectionAttributes = [];
 
     /** @var Stmt[]|null null for abstract methods */
     private ?array $stmts = [];
@@ -107,6 +111,9 @@ final class MethodGenerator
         foreach ($method->getParameters() as $reflectionParam) {
             $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam, $useWidening));
         }
+
+        // Attributes
+        $generator->reflectionAttributes = $method->getAttributes();
 
         return $generator;
     }
@@ -250,6 +257,10 @@ final class MethodGenerator
 
         foreach ($this->parameters as $param) {
             $builder->addParam($param->getNode());
+        }
+
+        foreach (AttributeGroupsGenerator::fromReflectionAttributes($this->reflectionAttributes) as $attrGroup) {
+            $builder->addAttribute($attrGroup);
         }
 
         if (!$this->abstract && !$this->isInterface && $this->stmts !== null) {

@@ -14,6 +14,7 @@ namespace Go\Proxy\Generator;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Comment\Doc;
+use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_ as ClassNode;
 use PhpParser\Node\Stmt\TraitUse;
@@ -57,6 +58,9 @@ final class ClassGenerator implements GeneratorInterface
     private array $traits = [];
 
     private ?DocBlockGenerator $docBlock = null;
+
+    /** @var AttributeGroup[] */
+    private array $attrGroups = [];
 
     /**
      * @param string[]               $interfaces  FQCNs of interfaces to implement
@@ -108,6 +112,16 @@ final class ClassGenerator implements GeneratorInterface
         $this->docBlock = $docBlock;
     }
 
+    /**
+     * Sets attribute groups to emit on the class declaration.
+     *
+     * @param AttributeGroup[] $attrGroups
+     */
+    public function addAttributeGroups(array $attrGroups): void
+    {
+        $this->attrGroups = $attrGroups;
+    }
+
     public function getName(): string
     {
         return $this->name;
@@ -126,6 +140,10 @@ final class ClassGenerator implements GeneratorInterface
         }
         if ($this->flags & self::FLAG_ABSTRACT) {
             $builder->makeAbstract();
+        }
+
+        foreach ($this->attrGroups as $attrGroup) {
+            $builder->addAttribute($attrGroup);
         }
 
         if ($this->parentClass !== null && $this->parentClass !== '') {

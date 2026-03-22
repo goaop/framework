@@ -18,6 +18,7 @@ use PhpParser\Node\Stmt\Function_;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
+use ReflectionAttribute;
 use ReflectionFunction;
 use ReflectionNamedType;
 
@@ -45,6 +46,9 @@ final class FunctionGenerator
 
     /** @var Stmt[] */
     private array $stmts = [];
+
+    /** @var ReflectionAttribute<object>[] */
+    private array $reflectionAttributes = [];
 
     public function __construct(string $name)
     {
@@ -84,6 +88,9 @@ final class FunctionGenerator
         foreach ($function->getParameters() as $reflectionParam) {
             $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam, $useWidening));
         }
+
+        // Attributes
+        $generator->reflectionAttributes = $function->getAttributes();
 
         return $generator;
     }
@@ -180,6 +187,10 @@ final class FunctionGenerator
 
         foreach ($this->parameters as $param) {
             $builder->addParam($param->getNode());
+        }
+
+        foreach (AttributeGroupsGenerator::fromReflectionAttributes($this->reflectionAttributes) as $attrGroup) {
+            $builder->addAttribute($attrGroup);
         }
 
         foreach ($this->stmts as $stmt) {

@@ -23,6 +23,7 @@ use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
+use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\ClassGenerator;
 use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\GeneratorInterface;
@@ -120,7 +121,7 @@ class ClassProxyGenerator
             array_values($generatedMethods)
         );
 
-        $this->generator = new ClassGenerator(
+        $classGenerator = new ClassGenerator(
             $originalClass->getShortName(),
             !empty($originalClass->getNamespaceName()) ? $originalClass->getNamespaceName() : null,
             $originalClass->isFinal() ? ClassGenerator::FLAG_FINAL : null,
@@ -131,9 +132,17 @@ class ClassProxyGenerator
         );
 
         if ($originalClass->getDocComment()) {
-            $this->generator->setDocBlock(DocBlockGenerator::fromDocComment($originalClass->getDocComment()));
+            $classGenerator->setDocBlock(DocBlockGenerator::fromDocComment($originalClass->getDocComment()));
         }
 
+        // Copy PHP 8+ attributes from original class to proxy so that runtime
+        // attribute inspection on proxy objects returns the same attributes
+        $classAttrGroups = AttributeGroupsGenerator::fromReflectionAttributes($originalClass->getAttributes());
+        if (!empty($classAttrGroups)) {
+            $classGenerator->addAttributeGroups($classAttrGroups);
+        }
+
+        $this->generator = $classGenerator;
         $this->generator->addTraits(array_values($introducedTraits));
     }
 

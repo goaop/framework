@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use PhpParser\BuilderFactory;
+use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Stmt\Property as PropertyNode;
 use PhpParser\PrettyPrinter\Standard;
 
@@ -36,6 +37,9 @@ final class PropertyGenerator implements PropertyNodeProvider
     private ?TypeGenerator $type      = null;
     private ?DocBlockGenerator $docBlock = null;
 
+    /** @var AttributeGroup[] */
+    private array $attrGroups = [];
+
     public function __construct(string $name, mixed $defaultValue = null, int $flags = self::FLAG_PUBLIC)
     {
         $this->name         = $name;
@@ -52,6 +56,16 @@ final class PropertyGenerator implements PropertyNodeProvider
     public function setDocBlock(DocBlockGenerator $docBlock): void
     {
         $this->docBlock = $docBlock;
+    }
+
+    /**
+     * Sets attribute groups to emit on the property declaration.
+     *
+     * @param AttributeGroup[] $attrGroups
+     */
+    public function addAttributeGroups(array $attrGroups): void
+    {
+        $this->attrGroups = $attrGroups;
     }
 
     public function getName(): string
@@ -89,6 +103,10 @@ final class PropertyGenerator implements PropertyNodeProvider
 
         if ($this->docBlock !== null) {
             $builder->setDocComment($this->docBlock->generate());
+        }
+
+        foreach ($this->attrGroups as $attrGroup) {
+            $builder->addAttribute($attrGroup);
         }
 
         return $builder->getNode();

@@ -42,6 +42,11 @@ function funcGenHelper_classReturn(): Exception
     return new Exception();
 }
 
+#[\Deprecated]
+function funcGenHelper_deprecated(): void {}
+
+function funcGenHelper_noAttr(): void {}
+
 class FunctionGeneratorTest extends TestCase
 {
     public function testFromReflectionSimple(): void
@@ -191,5 +196,20 @@ class FunctionGeneratorTest extends TestCase
         $output = $gen->generate();
         $this->assertStringContainsString('function myFunc', $output);
         $this->assertStringContainsString('return 42', $output);
+    }
+
+    public function testFromReflectionPreservesFunctionAttribute(): void
+    {
+        $gen = FunctionGenerator::fromReflection(new ReflectionFunction(__NAMESPACE__ . '\funcGenHelper_deprecated'));
+        $output = $gen->generate();
+        $this->assertStringContainsString('Deprecated', $output);
+        $this->assertStringContainsString('#[', $output);
+    }
+
+    public function testFromReflectionNoAttributeWhenNone(): void
+    {
+        $gen = FunctionGenerator::fromReflection(new ReflectionFunction(__NAMESPACE__ . '\funcGenHelper_noAttr'));
+        $output = $gen->generate();
+        $this->assertStringNotContainsString('#[', $output);
     }
 }

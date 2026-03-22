@@ -28,6 +28,8 @@ function paramGenHelper_variadic(string ...$items): void {}
 function paramGenHelper_variadicByRef(int &...$nums): void {}
 function paramGenHelper_classType(Exception $ex): void {}
 function paramGenHelper_noType($x): void {}
+function paramGenHelper_sensitiveParam(#[\SensitiveParameter] string $secret): void {}
+function paramGenHelper_noAttrParam(string $name): void {}
 
 class ParameterGeneratorTest extends TestCase
 {
@@ -130,5 +132,24 @@ class ParameterGeneratorTest extends TestCase
         $output = $gen->generate();
         // With widening, the type should be removed
         $this->assertSame('$name', $output);
+    }
+
+    public function testFromReflectionPreservesParameterAttribute(): void
+    {
+        $gen = ParameterGenerator::fromReflection(
+            $this->getParam(__NAMESPACE__ . '\paramGenHelper_sensitiveParam', 0)
+        );
+        $output = $gen->generate();
+        $this->assertStringContainsString('SensitiveParameter', $output);
+        $this->assertStringContainsString('#[', $output);
+    }
+
+    public function testFromReflectionNoAttributeWhenNone(): void
+    {
+        $gen = ParameterGenerator::fromReflection(
+            $this->getParam(__NAMESPACE__ . '\paramGenHelper_noAttrParam', 0)
+        );
+        $output = $gen->generate();
+        $this->assertStringNotContainsString('#[', $output);
     }
 }
