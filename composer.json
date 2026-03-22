@@ -12,7 +12,7 @@
         "ext-tokenizer": "*",
         "goaop/parser-reflection": "4.x-dev",
         "goaop/dissect": "^3.0",
-        "laminas/laminas-code": "^4.17",
+        "nikic/php-parser": "^5.0",
         "symfony/finder": "^6.4 || ^7.0"
     },
 
@@ -55,7 +55,11 @@
         },
         "files": [
             "tests/functions.php",
-            "tests/Go/Stubs/ClassWithoutNamespace.php"
+            "tests/Go/Stubs/ClassWithoutNamespace.php",
+            "tests/Go/Proxy/Generator/Stubs/AttributeGroupsGeneratorStubs.php",
+            "tests/Go/Proxy/Generator/Stubs/FunctionGeneratorStubs.php",
+            "tests/Go/Proxy/Generator/Stubs/TypeGeneratorStubs.php",
+            "tests/Go/Proxy/Generator/Stubs/ParameterGeneratorStubs.php"
         ]
     },
 

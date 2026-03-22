@@ -52,7 +52,7 @@ class InterceptedMethodGeneratorTest extends TestCase
             [
                 First::class,
                 'variadicArgsTest',
-                'public function variadicArgsTest(... $args): string'
+                'public function variadicArgsTest(...$args): string'
             ],
             [
                 First::class,

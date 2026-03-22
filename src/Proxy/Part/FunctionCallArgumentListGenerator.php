@@ -12,13 +12,12 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Laminas\Code\Generator\AbstractGenerator;
 use ReflectionFunctionAbstract;
 
 /**
  * Prepares the function call argument list
  */
-final class FunctionCallArgumentListGenerator extends AbstractGenerator
+final class FunctionCallArgumentListGenerator
 {
     /**
      * List of function arguments
@@ -44,10 +43,8 @@ final class FunctionCallArgumentListGenerator extends AbstractGenerator
      */
     public function __construct(ReflectionFunctionAbstract $functionLike)
     {
-        parent::__construct();
-
         foreach ($functionLike->getParameters() as $parameter) {
-            $byReference  = ($parameter->isPassedByReference() && !$parameter->isVariadic()) ? '&' : '';
+            $byReference        = ($parameter->isPassedByReference() && !$parameter->isVariadic()) ? '&' : '';
             $this->hasOptionals = $this->hasOptionals || $parameter->isOptional();
             $this->arguments[]  = $byReference . '$' . $parameter->name;
         }
@@ -57,9 +54,6 @@ final class FunctionCallArgumentListGenerator extends AbstractGenerator
         }
     }
 
-    /**
-     * @inheritDoc
-     */
     public function generate(): string
     {
         $argumentsPart = [];

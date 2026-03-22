@@ -13,35 +13,33 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use Go\Aop\Intercept\MethodInvocation;
-use Laminas\Code\Generator\DocBlock\Tag\VarTag;
-use Laminas\Code\Generator\DocBlockGenerator;
-use Laminas\Code\Generator\Exception\InvalidArgumentException;
-use Laminas\Code\Generator\PropertyGenerator;
-use Laminas\Code\Generator\PropertyValueGenerator;
-use Laminas\Code\Generator\TypeGenerator;
+use Go\Proxy\Generator\DocBlockGenerator;
+use Go\Proxy\Generator\PropertyGenerator;
+use Go\Proxy\Generator\PropertyNodeProvider;
+use Go\Proxy\Generator\TypeGenerator;
+use PhpParser\Node\Stmt\Property as PropertyNode;
 
 /**
  * Prepares the definition for joinpoints private property in the class
  */
-final class JoinPointPropertyGenerator extends PropertyGenerator
+final class JoinPointPropertyGenerator implements PropertyNodeProvider
 {
     /**
      * Default property name for storing join points in the class
      */
     public const NAME = '__joinPoints';
 
-    /**
-     * JoinPointProperty constructor.
-     *
-     * @throws InvalidArgumentException
-     */
+    private PropertyGenerator $generator;
+
     public function __construct()
     {
-        $value = new PropertyValueGenerator([], PropertyValueGenerator::TYPE_ARRAY_SHORT);
+        $this->generator = new PropertyGenerator(
+            self::NAME,
+            PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC
+        );
+        $this->generator->setDefaultValue([]);
 
-        parent::__construct(self::NAME, $value, PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
-
-        $this->setType(TypeGenerator::fromTypeString('array'));
+        $this->generator->setType(TypeGenerator::fromTypeString('array'));
 
         $docBlock = new DocBlockGenerator(
             'List of applied advices per class',
@@ -53,7 +51,22 @@ final class JoinPointPropertyGenerator extends PropertyGenerator
                 '  - init:*        ReflectionConstructorInvocation — accessed via ConstructorExecutionTransformer',
             ])
         );
-        $docBlock->setTag(new VarTag(null, 'array<string, \\' . MethodInvocation::class . '>'));
-        $this->setDocBlock($docBlock);
+        $docBlock->addTag('var', 'array<string, \\' . MethodInvocation::class . '>');
+        $this->generator->setDocBlock($docBlock);
+    }
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function generate(): string
+    {
+        return $this->generator->generate();
+    }
+
+    public function getNode(): PropertyNode
+    {
+        return $this->generator->getNode();
     }
 }

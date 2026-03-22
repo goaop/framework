@@ -1,25 +1,20 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
+class TestPhp7Class extends \Test\ns1\TestPhp7Class__AopProxied implements \Go\Aop\Proxy
 {
     /**
      * List of applied advices per class
      *
-     * Typed as MethodInvocation because generated method bodies (method:* and static:*
-     * keys)
-     * call ->__invoke() directly. Other joinpoint types stored here use explicit
-     * casts:
+     * Typed as MethodInvocation because generated method bodies (method:* and static:* keys)
+     * call ->__invoke() directly. Other joinpoint types stored here use explicit casts:
      *   - prop:*        ClassFieldAccess — cast in PropertyInterceptionTrait
-     *   - staticinit:*  StaticInitializationJoinpoint — instanceof check in
-     * ClassProxyGenerator::injectJoinPoints()
-     *   - init:*        ReflectionConstructorInvocation — accessed via
-     * ConstructorExecutionTransformer
+     *   - staticinit:*  StaticInitializationJoinpoint — instanceof check in ClassProxyGenerator::injectJoinPoints()
+     *   - init:*        ReflectionConstructorInvocation — accessed via ConstructorExecutionTransformer
      *
      * @var array<string, \Go\Aop\Intercept\MethodInvocation>
      */
-    private static array $__joinPoints = [
-    ];
+    private static array $__joinPoints = [];
     public function stringSth(string $arg)
     {
         return self::$__joinPoints['method:stringSth']->__invoke($this, [$arg]);
@@ -44,7 +39,7 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
     {
         return self::$__joinPoints['method:arraySth']->__invoke($this, [$arg]);
     }
-    public function variadicStringSthByRef(string &... $args)
+    public function variadicStringSthByRef(string &...$args)
     {
         return self::$__joinPoints['method:variadicStringSthByRef']->__invoke($this, $args);
     }
@@ -96,55 +91,55 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
 \Go\Proxy\ClassProxyGenerator::injectJoinPoints(TestPhp7Class::class, [
     'method' => [
         'stringSth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->stringSth',
+            'advisor.Test\ns1\TestPhp7Class->stringSth',
         ],
         'floatSth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->floatSth',
+            'advisor.Test\ns1\TestPhp7Class->floatSth',
         ],
         'boolSth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->boolSth',
+            'advisor.Test\ns1\TestPhp7Class->boolSth',
         ],
         'intSth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->intSth',
+            'advisor.Test\ns1\TestPhp7Class->intSth',
         ],
         'callableSth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->callableSth',
+            'advisor.Test\ns1\TestPhp7Class->callableSth',
         ],
         'arraySth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->arraySth',
+            'advisor.Test\ns1\TestPhp7Class->arraySth',
         ],
         'variadicStringSthByRef' => [
-            'advisor.Test\\ns1\\TestPhp7Class->variadicStringSthByRef',
+            'advisor.Test\ns1\TestPhp7Class->variadicStringSthByRef',
         ],
         'exceptionArg' => [
-            'advisor.Test\\ns1\\TestPhp7Class->exceptionArg',
+            'advisor.Test\ns1\TestPhp7Class->exceptionArg',
         ],
         'stringRth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->stringRth',
+            'advisor.Test\ns1\TestPhp7Class->stringRth',
         ],
         'floatRth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->floatRth',
+            'advisor.Test\ns1\TestPhp7Class->floatRth',
         ],
         'boolRth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->boolRth',
+            'advisor.Test\ns1\TestPhp7Class->boolRth',
         ],
         'intRth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->intRth',
+            'advisor.Test\ns1\TestPhp7Class->intRth',
         ],
         'callableRth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->callableRth',
+            'advisor.Test\ns1\TestPhp7Class->callableRth',
         ],
         'arrayRth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->arrayRth',
+            'advisor.Test\ns1\TestPhp7Class->arrayRth',
         ],
         'exceptionRth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->exceptionRth',
+            'advisor.Test\ns1\TestPhp7Class->exceptionRth',
         ],
         'noRth' => [
-            'advisor.Test\\ns1\\TestPhp7Class->noRth',
+            'advisor.Test\ns1\TestPhp7Class->noRth',
         ],
         'returnSelf' => [
-            'advisor.Test\\ns1\\TestPhp7Class->returnSelf',
+            'advisor.Test\ns1\TestPhp7Class->returnSelf',
         ],
     ],
 ]);

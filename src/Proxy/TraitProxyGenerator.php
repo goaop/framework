@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -13,17 +13,15 @@ declare(strict_types = 1);
 namespace Go\Proxy;
 
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Intercept\MethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
+use Go\Proxy\Generator\DocBlockGenerator;
+use Go\Proxy\Generator\TraitGenerator;
+use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use ReflectionClass;
 use ReflectionMethod;
-use Laminas\Code\Generator\DocBlockGenerator;
-use Laminas\Code\Generator\TraitGenerator;
-use Laminas\Code\Generator\ValueGenerator;
-use Laminas\Code\Reflection\DocBlockReflection;
 use ReflectionNamedType;
 
 /**
@@ -53,26 +51,32 @@ class TraitProxyGenerator extends ClassProxyGenerator
         $generatedMethods     = $this->interceptMethods($originalTrait, $interceptedMethods);
 
         $docComment = $originalTrait->getDocComment();
-        $this->generator = new TraitGenerator(
-            $originalTrait->getShortName(),
-            $originalTrait->getNamespaceName(),
-            null,
-            null,
-            [],
-            [],
-            $generatedMethods,
-            $docComment !== false ? DocBlockGenerator::fromReflection(new DocBlockReflection($docComment)) : null
+        $docBlock   = $docComment !== false ? DocBlockGenerator::fromDocComment($docComment) : null;
+
+        $methodGenerators = array_map(
+            static fn($m) => $m->getGenerator(),
+            array_values($generatedMethods)
         );
 
-        // Normalize FQDN
+        $traitGenerator = new TraitGenerator(
+            $originalTrait->getShortName(),
+            $originalTrait->getNamespaceName(),
+            $methodGenerators,
+            $docBlock
+        );
+
+        // Normalize FQDN for the parent trait reference
         $namespaceParts       = explode('\\', $parentTraitName);
         $parentNormalizedName = end($namespaceParts);
-        $this->generator->addTrait($parentNormalizedName);
+        $traitGenerator->addTrait($parentNormalizedName);
 
         foreach ($interceptedMethods as $methodName) {
             $fullName = $parentNormalizedName . '::' . $methodName;
-            $this->generator->addTraitAlias($fullName, $methodName . '➩', ReflectionMethod::IS_PROTECTED);
+            $traitGenerator->addTraitAlias($fullName, $methodName . '➩', ReflectionMethod::IS_PROTECTED);
         }
+
+        // Store generator instance for compatibility with parent generate() call
+        $this->generator = $traitGenerator;
     }
 
     /**
@@ -127,8 +131,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
         }
 
         $advicesArrayValue = new ValueGenerator(
-            $this->adviceNames[$prefix][$method->name],
-            ValueGenerator::TYPE_ARRAY_SHORT
+            $this->adviceNames[$prefix][$method->name]
         );
         $advicesArrayValue->setArrayDepth(1);
         $advicesCode = $advicesArrayValue->generate();

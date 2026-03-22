@@ -13,22 +13,5 @@ $ignoreErrors[] = [
 	'count' => 1,
 	'path' => __DIR__ . '/src/Proxy/Part/PropertyInterceptionTrait.php',
 ];
-$ignoreErrors[] = [
-	// ClassProxyGenerator is a code generator: the parent class name is valid but the class does not
-	// exist yet at analysis time (it is defined in the weaved file after transformation).
-	// class_exists() cannot be used here as the class is being generated, not loaded.
-	'message' => '#^Parameter \#4 \$extends of class Laminas\\\\Code\\\\Generator\\\\ClassGenerator constructor expects class\-string\|null, string given\.$#',
-	'identifier' => 'argument.type',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Proxy/ClassProxyGenerator.php',
-];
-$ignoreErrors[] = [
-	// Same reason as above: the introduced interface names are class names that will exist at runtime
-	// but cannot be proven as class-string at static analysis time in a code generation context.
-	'message' => '#^Parameter \#5 \$interfaces of class Laminas\\\\Code\\\\Generator\\\\ClassGenerator constructor expects array\<class\-string\>, array\<string\> given\.$#',
-	'identifier' => 'argument.type',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Proxy/ClassProxyGenerator.php',
-];
 
 return ['parameters' => ['ignoreErrors' => $ignoreErrors]];

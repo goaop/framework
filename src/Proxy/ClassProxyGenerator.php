@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -23,15 +23,16 @@ use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
+use Go\Proxy\Generator\AttributeGroupsGenerator;
+use Go\Proxy\Generator\ClassGenerator;
+use Go\Proxy\Generator\DocBlockGenerator;
+use Go\Proxy\Generator\GeneratorInterface;
+use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use Go\Proxy\Part\InterceptedConstructorGenerator;
 use Go\Proxy\Part\InterceptedMethodGenerator;
 use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Proxy\Part\PropertyInterceptionTrait;
-use Laminas\Code\Generator\ClassGenerator;
-use Laminas\Code\Generator\DocBlockGenerator;
-use Laminas\Code\Generator\ValueGenerator;
-use Laminas\Code\Reflection\DocBlockReflection;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -65,9 +66,9 @@ class ClassProxyGenerator
     protected array $adviceNames = [];
 
     /**
-     * Instance of class generator
+     * Instance of class generator (ClassGenerator or TraitGenerator via TraitProxyGenerator)
      */
-    protected ClassGenerator $generator;
+    protected GeneratorInterface $generator;
 
     /**
      * Should parameter widening be used or not
@@ -114,21 +115,35 @@ class ClassProxyGenerator
             $introducedTraits[] = '\\' . PropertyInterceptionTrait::class;
         }
 
-        $this->generator = new ClassGenerator(
+        // Extract underlying MethodGenerator instances for ClassGenerator
+        $methodGenerators = array_map(
+            static fn($m) => $m->getGenerator(),
+            array_values($generatedMethods)
+        );
+
+        $classGenerator = new ClassGenerator(
             $originalClass->getShortName(),
             !empty($originalClass->getNamespaceName()) ? $originalClass->getNamespaceName() : null,
             $originalClass->isFinal() ? ClassGenerator::FLAG_FINAL : null,
             $parentClassName,
             $introducedInterfaces,
             $generatedProperties,
-            $generatedMethods
+            $methodGenerators
         );
+
         if ($originalClass->getDocComment()) {
-            $reflectionDocBlock = new DocBlockReflection($originalClass->getDocComment());
-            $this->generator->setDocBlock(DocBlockGenerator::fromReflection($reflectionDocBlock));
+            $classGenerator->setDocBlock(DocBlockGenerator::fromDocComment($originalClass->getDocComment()));
         }
 
-        $this->generator->addTraits(array_values($introducedTraits));
+        // Copy PHP 8+ attributes from original class to proxy so that runtime
+        // attribute inspection on proxy objects returns the same attributes
+        $classAttrGroups = AttributeGroupsGenerator::fromReflectionAttributes($originalClass->getAttributes());
+        if (!empty($classAttrGroups)) {
+            $classGenerator->addAttributeGroups($classAttrGroups);
+        }
+
+        $classGenerator->addTraits(array_values($introducedTraits));
+        $this->generator = $classGenerator;
     }
 
     /**
@@ -136,7 +151,7 @@ class ClassProxyGenerator
      */
     public function addUse(string $use, ?string $useAlias = null): void
     {
-        if ($use !== '') {
+        if ($use !== '' && $this->generator instanceof ClassGenerator) {
             $this->generator->addUse($use, $useAlias !== '' ? $useAlias : null);
         }
     }
@@ -173,11 +188,11 @@ class ClassProxyGenerator
     public function generate(): string
     {
         $classCode    = $this->generator->generate();
-        $advicesValue = new ValueGenerator($this->adviceNames, ValueGenerator::TYPE_ARRAY_SHORT);
+        $advicesValue = new ValueGenerator($this->adviceNames);
 
         return $classCode
             // Inject advices on call
-            . '\\' . self::class . '::injectJoinPoints(' . $this->generator->getName() . '::class, ' . $advicesValue->generate() . ');';
+            . "\n" . '\\' . self::class . '::injectJoinPoints(' . $this->generator->getName() . '::class, ' . $advicesValue->generate() . ');';
     }
 
     /**
