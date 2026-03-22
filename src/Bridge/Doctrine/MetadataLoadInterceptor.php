@@ -68,23 +68,28 @@ final class MetadataLoadInterceptor implements EventSubscriber
     /**
      * Remove fields in Go! AOP proxied class metadata that are inherited
      * from traits.
+     *
+     * @param ClassMetadata<object> $metadata
      */
     private function removeMappingsFromTraits(ClassMetadata $metadata): void
     {
         $traits = $this->getTraits($metadata->name);
 
         foreach ($traits as $trait) {
+            if (!trait_exists($trait)) {
+                continue;
+            }
             $trait = new ReflectionClass($trait);
 
             foreach ($trait->getProperties() as $property) {
                 $name = $property->getName();
 
                 if (isset($metadata->fieldMappings[$name])) {
-                    $mapping = $metadata->fieldMappings[$name];
+                    $columnName = $metadata->getColumnName($name);
 
                     unset(
                         $metadata->fieldMappings[$name],
-                        $metadata->fieldNames[$mapping['columnName']],
+                        $metadata->fieldNames[$columnName],
                         $metadata->columnNames[$name]
                     );
                 }
@@ -101,6 +106,7 @@ final class MetadataLoadInterceptor implements EventSubscriber
      * @param class-string $className FQCN
      * @param bool         $autoload  Weather to autoload class.
      *
+     * @return string[]
      * @throws InvalidArgumentException
      * @throws RuntimeException
      */
@@ -113,22 +119,22 @@ final class MetadataLoadInterceptor implements EventSubscriber
         $traits = [];
         // Get traits of all parent classes
         do {
-            $traits    = array_merge(class_uses($className, $autoload), $traits);
+            $traits    = array_merge(class_uses($className, $autoload) ?: [], $traits);
             $className = get_parent_class($className);
         } while ($className);
 
         $traitsToSearch = $traits;
 
         while (count($traitsToSearch) > 0) {
-            $newTraits      = class_uses(array_pop($traitsToSearch), $autoload);
+            $newTraits      = class_uses(array_pop($traitsToSearch), $autoload) ?: [];
             $traits         = array_merge($newTraits, $traits);
             $traitsToSearch = array_merge($newTraits, $traitsToSearch);
         }
 
         foreach ($traits as $trait => $same) {
-            $traits = array_merge(class_uses($trait, $autoload), $traits);
+            $traits = array_merge(class_uses($trait, $autoload) ?: [], $traits);
         }
 
-        return array_unique(array_map(fn($fqcn) => ltrim($fqcn, '\\'), $traits));
+        return array_values(array_unique(array_map(fn(string $fqcn) => ltrim($fqcn, '\\'), $traits)));
     }
 }

@@ -12,17 +12,16 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Laminas\Code\Generator\DocBlockGenerator;
-use Laminas\Code\Generator\MethodGenerator;
-use Laminas\Code\Reflection\DocBlockReflection;
+use Go\Proxy\Generator\MethodGenerator;
 use ReflectionMethod;
-use ReflectionNamedType;
 
 /**
  * Prepares the definition of intercepted method
  */
-final class InterceptedMethodGenerator extends MethodGenerator
+final class InterceptedMethodGenerator
 {
+    private MethodGenerator $generator;
+
     /**
      * InterceptedMethod constructor.
      *
@@ -32,42 +31,40 @@ final class InterceptedMethodGenerator extends MethodGenerator
      */
     public function __construct(ReflectionMethod $reflectionMethod, string $body, bool $useTypeWidening = false)
     {
-        parent::__construct($reflectionMethod->getName());
+        $this->generator = MethodGenerator::fromReflection($reflectionMethod, $useTypeWidening);
+        $this->generator->setBody($body);
+    }
 
-        $declaringClass = $reflectionMethod->getDeclaringClass();
+    public function generate(): string
+    {
+        return $this->generator->generate();
+    }
 
-        if ($reflectionMethod->hasReturnType()) {
-            $reflectionReturnType = $reflectionMethod->getReturnType();
-            if ($reflectionReturnType instanceof ReflectionNamedType) {
-                $returnTypeName = ($reflectionReturnType->allowsNull() ? '?' : '') . $reflectionReturnType->getName();
-            } else {
-                $returnTypeName = (string)$reflectionReturnType;
-            }
-            $this->setReturnType($returnTypeName);
-        }
+    public function getBody(): string
+    {
+        return $this->generator->getBody();
+    }
 
-        if ($reflectionMethod->getDocComment()) {
-            $reflectionDocBlock = new DocBlockReflection($reflectionMethod->getDocComment());
-            $this->setDocBlock(DocBlockGenerator::fromReflection($reflectionDocBlock));
-        }
+    public function setBody(string $body): void
+    {
+        $this->generator->setBody($body);
+    }
 
-        $this->setFinal($reflectionMethod->isFinal());
+    public function getName(): string
+    {
+        return $this->generator->getName();
+    }
 
-        if ($reflectionMethod->isPrivate()) {
-            $this->setVisibility(self::VISIBILITY_PRIVATE);
-        } elseif ($reflectionMethod->isProtected()) {
-            $this->setVisibility(self::VISIBILITY_PROTECTED);
-        } else {
-            $this->setVisibility(self::VISIBILITY_PUBLIC);
-        }
+    public function getNode(): \PhpParser\Node\Stmt\ClassMethod
+    {
+        return $this->generator->getNode();
+    }
 
-        $this->setInterface($declaringClass->isInterface());
-        $this->setStatic($reflectionMethod->isStatic());
-        $this->setReturnsReference($reflectionMethod->returnsReference());
-        $this->setName($reflectionMethod->getName());
-
-        $parameterList = new FunctionParameterList($reflectionMethod, $useTypeWidening);
-        $this->setParameters($parameterList->getGeneratedParameters());
-        $this->setBody($body);
+    /**
+     * Returns the underlying MethodGenerator for direct access.
+     */
+    public function getGenerator(): MethodGenerator
+    {
+        return $this->generator;
     }
 }

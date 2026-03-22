@@ -14,8 +14,7 @@ namespace Go\Proxy\Part;
 
 use Countable;
 use Exception;
-use Go\Stubs\StubAttribute;
-use Iterator;
+use Go\Proxy\Generator\FunctionGenerator;
 use PHPUnit\Framework\TestCase;
 
 use ReflectionFunction;
@@ -44,6 +43,22 @@ function funcWithDNFTypeReturn(Iterator|(Exception&Countable) $value): Iterator|
 }
 
 /**
+ * Contains test function with nullable parameters and nullable return type
+ */
+function funcWithNullableParams(?string $name = null, int $count = 0): ?string
+{
+    return $name !== null ? str_repeat($name, $count) : null;
+}
+
+/**
+ * Contains test function with standalone null return type (PHP 8.2+)
+ */
+function funcReturningNull(): null
+{
+    return null;
+}
+
+/**
  * Test case for generated function definition
  */
 class InterceptedFunctionGeneratorTest extends TestCase
@@ -60,7 +75,8 @@ class InterceptedFunctionGeneratorTest extends TestCase
     public function testGenerate(string $functionName, string $expectedSignature): void
     {
         $reflectionFunction = new ReflectionFunction($functionName);
-        $generator          = new InterceptedFunctionGenerator($reflectionFunction, "\n");
+        $generator          = FunctionGenerator::fromReflection($reflectionFunction);
+        $generator->setBody("\n");
 
         $generatedCode = $generator->generate();
         // Clean PhpDoc comment, @see https://stackoverflow.com/a/4207149/801258
@@ -71,30 +87,45 @@ class InterceptedFunctionGeneratorTest extends TestCase
     }
 
     /**
-     * Provides list of methods with expected attributes
+     * Provides list of methods with expected attributes.
+     * Signatures follow PhpParser PrettyPrinter format:
+     *   - no space after `...` for variadic params
+     *   - return type separated by `: ` (colon + one space, no leading space)
      */
     public static function dataGenerator(): array
     {
         return [
             'var_dump' => [
                 'var_dump',
-                'function var_dump(mixed $value, mixed ... $values) : void'
+                'function var_dump(mixed $value, mixed ...$values): void'
             ],
             'array_pop' => [
                 'array_pop',
-                'function array_pop(array &$array) : mixed'
+                'function array_pop(array &$array): mixed'
             ],
             'strcoll' => [
                 'strcoll',
-                'function strcoll(string $string1, string $string2) : int'
+                'function strcoll(string $string1, string $string2): int'
             ],
             'microtime' => [
                 'microtime',
-                'function microtime(bool $as_float = false) : float|string'
+                'function microtime(bool $as_float = false): string|float'
             ],
             'funcWithReturnTypeAndDocBlock' => [
                 '\Go\Proxy\Part\funcWithReturnTypeAndDocBlock',
-                'function funcWithReturnTypeAndDocBlock() : \Exception'
+                'function funcWithReturnTypeAndDocBlock(): \Exception'
+            ],
+            [
+                'array_slice',
+                'function array_slice(array $array, int $offset, ?int $length = null, bool $preserve_keys = false): array'
+            ],
+            [
+                '\Go\Proxy\Part\funcWithNullableParams',
+                'function funcWithNullableParams(?string $name = null, int $count = 0): ?string'
+            ],
+            [
+                '\Go\Proxy\Part\funcReturningNull',
+                'function funcReturningNull(): null'
             ],
             'funcWithAttributes' => [
                 '\Go\Proxy\Part\funcWithAttributes',

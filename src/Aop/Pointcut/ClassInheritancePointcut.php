@@ -33,9 +33,9 @@ final readonly class ClassInheritancePointcut implements Pointcut
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
-        object|string                                          $instanceOrScope = null,
-        array                                                  $arguments = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
+        null|object|string                                     $instanceOrScope = null,
+        ?array                                                 $arguments = null
     ): bool {
         // We match only with ReflectionClass as a context
         if (!$context instanceof ReflectionClass) {

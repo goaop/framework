@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Laminas\Code\Generator\ValueGenerator;
+use Go\Proxy\Generator\ValueGenerator;
 use PHPUnit\Framework\TestCase;
 
 use function class_exists;

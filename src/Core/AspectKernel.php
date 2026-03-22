@@ -31,14 +31,34 @@ use function define;
 
 /**
  * Abstract aspect kernel is used to prepare an application to work with aspects.
+ *
+ * @phpstan-type KernelOptions array{
+ *   debug: bool,
+ *   appDir: string,
+ *   cacheDir: string|null,
+ *   cacheFileMode: int,
+ *   features: int,
+ *   includePaths: string[],
+ *   excludePaths: string[],
+ *   containerClass: class-string
+ * }
  */
 abstract class AspectKernel
 {
     /**
      * Kernel options
+     *
+     * @phpstan-var KernelOptions
      */
     protected array $options = [
-        'features' => 0
+        'debug'          => false,
+        'appDir'         => '',
+        'cacheDir'       => null,
+        'cacheFileMode'  => 0,
+        'features'       => 0,
+        'includePaths'   => [],
+        'excludePaths'   => [],
+        'containerClass' => Container::class,
     ];
 
     /**
@@ -152,6 +172,8 @@ abstract class AspectKernel
 
     /**
      * Returns list of kernel options
+     *
+     * @phpstan-return KernelOptions
      */
     public function getOptions(): array
     {
@@ -168,6 +190,8 @@ abstract class AspectKernel
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
+     *
+     * @phpstan-return KernelOptions
      */
     protected function getDefaultOptions(): array
     {
@@ -187,30 +211,61 @@ abstract class AspectKernel
     /**
      * Normalizes options for the kernel
      *
-     * @param array $options List of options
+     * @param array<string, mixed> $options List of options
+     * @phpstan-return KernelOptions
      */
     protected function normalizeOptions(array $options): array
     {
-        $options = [...$this->getDefaultOptions(), ...$options];
+        $merged = [...$this->getDefaultOptions(), ...$options];
 
-        if (empty($options['cacheDir'])) {
+        $cacheDir = is_string($merged['cacheDir'] ?? null) ? $merged['cacheDir'] : null;
+        if (empty($cacheDir)) {
             throw new RuntimeException('You need to provide valid cache directory for Go! AOP framework.');
         }
-        $options['cacheDir']       = PathResolver::realpath($options['cacheDir']);
-        $options['excludePaths'][] = $options['cacheDir'];
-        $options['excludePaths'][] = __DIR__ . '/../';
-        $options['appDir']         = PathResolver::realpath($options['appDir']);
-        $options['cacheFileMode']  = (int) $options['cacheFileMode'];
-        $options['includePaths']   = PathResolver::realpath($options['includePaths']);
-        $options['excludePaths']   = PathResolver::realpath($options['excludePaths']);
 
-        return $options;
+        $rawExcludePaths = is_array($merged['excludePaths'] ?? null) ? $merged['excludePaths'] : [];
+        $excludePaths    = array_values(array_filter($rawExcludePaths, is_string(...)));
+        $excludePaths[]  = $cacheDir;
+        $excludePaths[]  = __DIR__ . '/../';
+
+        $appDir        = is_string($merged['appDir'] ?? null) ? $merged['appDir'] : '';
+        $cacheFileMode = is_int($merged['cacheFileMode'] ?? null) ? $merged['cacheFileMode'] : (0770 & ~umask());
+        $features      = is_int($merged['features'] ?? null) ? $merged['features'] : 0;
+        $rawIncludePaths = is_array($merged['includePaths'] ?? null) ? $merged['includePaths'] : [];
+        $includePaths    = array_values(array_filter($rawIncludePaths, is_string(...)));
+        $debug         = is_bool($merged['debug'] ?? null) ? $merged['debug'] : false;
+
+        $containerClass       = static::$containerClass;
+        $containerClassOption = $merged['containerClass'] ?? null;
+        if (is_string($containerClassOption) && class_exists($containerClassOption)) {
+            $containerClass = $containerClassOption;
+        }
+
+        $resolvedCacheDir = PathResolver::realpath($cacheDir);
+        $resolvedCacheDir = is_string($resolvedCacheDir) ? $resolvedCacheDir : $cacheDir;
+
+        $resolvedAppDir = PathResolver::realpath($appDir);
+        $resolvedAppDir = is_string($resolvedAppDir) ? $resolvedAppDir : $appDir;
+
+        $resolvedIncludePaths = PathResolver::realpath($includePaths);
+        $resolvedExcludePaths = PathResolver::realpath($excludePaths);
+
+        return [
+            'debug'          => $debug,
+            'appDir'         => $resolvedAppDir,
+            'cacheDir'       => $resolvedCacheDir,
+            'cacheFileMode'  => $cacheFileMode,
+            'features'       => $features,
+            'includePaths'   => array_values(array_filter($resolvedIncludePaths, is_string(...))),
+            'excludePaths'   => array_values(array_filter($resolvedExcludePaths, is_string(...))),
+            'containerClass' => $containerClass,
+        ];
     }
 
     /**
      * Configures an AspectContainer with advisors, aspects and pointcuts
      */
-    abstract protected function configureAop(AspectContainer $container);
+    abstract protected function configureAop(AspectContainer $container): void;
 
     /**
      * Returns list of source transformers, that will be applied to the PHP source

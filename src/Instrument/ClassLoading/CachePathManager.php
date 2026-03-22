@@ -29,6 +29,7 @@ class CachePathManager
      */
     private const CACHE_FILE_NAME = '/_transformation.cache';
 
+    /** @var array<string, mixed> */
     protected array $options = [];
 
     /**
@@ -47,21 +48,26 @@ class CachePathManager
 
     /**
      * Cached metadata for transformation state for the concrete file
+     *
+     * @var array<string, mixed>
      */
     protected array $cacheState = [];
 
     /**
      * New metadata items, that was not present in $cacheState
+     *
+     * @var array<string, mixed>
      */
     protected array $newCacheState = [];
 
     public function __construct(AspectKernel $kernel)
     {
         $this->kernel   = $kernel;
-        $this->options  = $kernel->getOptions();
-        $this->appDir   = $this->options['appDir'];
-        $this->cacheDir = $this->options['cacheDir'];
-        $this->fileMode = $this->options['cacheFileMode'];
+        $options        = $kernel->getOptions();
+        $this->options  = $options;
+        $this->appDir   = $options['appDir'];
+        $this->cacheDir = $options['cacheDir'];
+        $this->fileMode = $options['cacheFileMode'];
 
         if ($this->cacheDir) {
             if (!is_dir($this->cacheDir)) {
@@ -103,7 +109,7 @@ class CachePathManager
     /**
      * Returns cache path for requested file name
      *
-     * @return bool|string
+     * @return string|false
      */
     public function getCachePathForResource(string $resource)
     {
@@ -111,7 +117,9 @@ class CachePathManager
             return false;
         }
 
-        return str_replace($this->appDir, $this->cacheDir, $resource);
+        return $this->appDir !== null
+            ? str_replace($this->appDir, $this->cacheDir, $resource)
+            : $resource;
     }
 
     /**
@@ -119,20 +127,22 @@ class CachePathManager
      *
      * @param string|null $resource Name of the file or null to get all information
      *
-     * @return array|null Information or null if no record in the cache
+     * @return array<mixed, mixed>|null Information or null if no record in the cache
      */
-    public function queryCacheState(string $resource = null): ?array
+    public function queryCacheState(?string $resource = null): ?array
     {
         if ($resource === null) {
             return $this->cacheState;
         }
 
         if (isset($this->newCacheState[$resource])) {
-            return $this->newCacheState[$resource];
+            $result = $this->newCacheState[$resource];
+            return is_array($result) ? $result : null;
         }
 
         if (isset($this->cacheState[$resource])) {
-            return $this->cacheState[$resource];
+            $result = $this->cacheState[$resource];
+            return is_array($result) ? $result : null;
         }
 
         return null;
@@ -143,7 +153,7 @@ class CachePathManager
      *
      * This data will be persisted during object destruction
      *
-     * @param array $metadata Miscellaneous information about resource
+     * @param array<string, mixed> $metadata Miscellaneous information about resource
      */
     public function setCacheState(string $resource, array $metadata): void
     {
@@ -165,7 +175,7 @@ class CachePathManager
      */
     public function flushCacheState(bool $force = false): void
     {
-        if ((!empty($this->newCacheState) && is_writable($this->cacheDir)) || $force) {
+        if ((!empty($this->newCacheState) && $this->cacheDir !== null && is_writable($this->cacheDir)) || $force) {
             $fullCacheMap      = $this->newCacheState + $this->cacheState;
             $cachePath         = substr(var_export($this->cacheDir, true), 1, -1);
             $rootPath          = substr(var_export($this->appDir, true), 1, -1);

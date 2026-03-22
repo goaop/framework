@@ -23,6 +23,7 @@ use ReflectionClass;
  * Cached loader is responsible for faster initialization of pointcuts/advisors for concrete aspect
  *
  * @property AspectLoader $loader
+ * @phpstan-import-type KernelOptions from AspectKernel
  */
 #[AllowDynamicProperties]
 class CachedAspectLoader extends AspectLoader
@@ -39,18 +40,21 @@ class CachedAspectLoader extends AspectLoader
 
     /**
      * Identifier of original loader
+     *
+     * @var class-string<AspectLoader>
      */
     protected string $loaderId;
 
     /**
      * Cached loader constructor
      *
-     * @param array $options List of kernel options
+     * @param class-string<AspectLoader> $loaderId
+     * @phpstan-param KernelOptions $options List of kernel options
      */
-    public function __construct(AspectContainer $container, string $loaderId, array $options = [])
+    public function __construct(AspectContainer $container, string $loaderId, array $options)
     {
-        $this->cacheDir      = $options['cacheDir'] ?? null;
-        $this->cacheFileMode = $options['cacheFileMode'] ?? 0770 & ~umask();
+        $this->cacheDir      = $options['cacheDir'];
+        $this->cacheFileMode = $options['cacheFileMode'];
         $this->loaderId      = $loaderId;
         $this->container     = $container;
     }
@@ -64,7 +68,8 @@ class CachedAspectLoader extends AspectLoader
         $fileName  = $this->cacheDir . '/_aspect/' . sha1($refAspect->getName());
 
         // If cache is present and actual, then use it
-        if (file_exists($fileName) && filemtime($fileName) >= filemtime($refAspect->getFileName())) {
+        $aspectFileName = $refAspect->getFileName();
+        if ($aspectFileName !== false && file_exists($fileName) && filemtime($fileName) >= filemtime($aspectFileName)) {
             $loadedItems = $this->loadFromCache($fileName);
         } else {
             $loadedItems = $this->loader->load($aspect);
@@ -77,7 +82,7 @@ class CachedAspectLoader extends AspectLoader
     /**
      * {@inheritdoc}
      */
-    public function __get($name)
+    public function __get(string $name): mixed
     {
         if ($name === 'loader') {
             $this->loader = $this->container->getService($this->loaderId);
@@ -95,10 +100,19 @@ class CachedAspectLoader extends AspectLoader
      */
     protected function loadFromCache(string $fileName): array
     {
-        $content     = file_get_contents($fileName);
+        $content = file_get_contents($fileName);
+        if ($content === false) {
+            return [];
+        }
         $loadedItems = unserialize($content);
 
-        return $loadedItems;
+        if (!is_array($loadedItems)) {
+            return [];
+        }
+        /** @var array<string, Pointcut|Advisor> $filtered */
+        $filtered = array_filter($loadedItems, fn($item) => $item instanceof Pointcut || $item instanceof Advisor);
+
+        return $filtered;
     }
 
     /**

@@ -12,33 +12,61 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Laminas\Code\Generator\Exception\InvalidArgumentException;
-use Laminas\Code\Generator\PropertyGenerator;
-use Laminas\Code\Generator\PropertyValueGenerator;
+use Go\Aop\Intercept\MethodInvocation;
+use Go\Proxy\Generator\DocBlockGenerator;
+use Go\Proxy\Generator\PropertyGenerator;
+use Go\Proxy\Generator\PropertyNodeProvider;
+use Go\Proxy\Generator\TypeGenerator;
+use PhpParser\Node\Stmt\Property as PropertyNode;
 
 /**
  * Prepares the definition for joinpoints private property in the class
  */
-final class JoinPointPropertyGenerator extends PropertyGenerator
+final class JoinPointPropertyGenerator implements PropertyNodeProvider
 {
     /**
      * Default property name for storing join points in the class
      */
     public const NAME = '__joinPoints';
 
-    /**
-     * JoinPointProperty constructor.
-     *
-     * @param array $adviceNames List of advices to apply per class
-     *
-     * @throws InvalidArgumentException
-     */
-    public function __construct(array $adviceNames)
+    private PropertyGenerator $generator;
+
+    public function __construct()
     {
-        $value = new PropertyValueGenerator($adviceNames, PropertyValueGenerator::TYPE_ARRAY_SHORT);
+        $this->generator = new PropertyGenerator(
+            self::NAME,
+            PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC
+        );
+        $this->generator->setDefaultValue([]);
 
-        parent::__construct(self::NAME, $value, PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
+        $this->generator->setType(TypeGenerator::fromTypeString('array'));
 
-        $this->setDocBlock('List of applied advices per class');
+        $docBlock = new DocBlockGenerator(
+            'List of applied advices per class',
+            implode("\n", [
+                'Typed as MethodInvocation because generated method bodies (method:* and static:* keys)',
+                'call ->__invoke() directly. Other joinpoint types stored here use explicit casts:',
+                '  - prop:*        ClassFieldAccess — cast in PropertyInterceptionTrait',
+                '  - staticinit:*  StaticInitializationJoinpoint — instanceof check in ClassProxyGenerator::injectJoinPoints()',
+                '  - init:*        ReflectionConstructorInvocation — accessed via ConstructorExecutionTransformer',
+            ])
+        );
+        $docBlock->addTag('var', 'array<string, \\' . MethodInvocation::class . '>');
+        $this->generator->setDocBlock($docBlock);
+    }
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    public function generate(): string
+    {
+        return $this->generator->generate();
+    }
+
+    public function getNode(): PropertyNode
+    {
+        return $this->generator->getNode();
     }
 }

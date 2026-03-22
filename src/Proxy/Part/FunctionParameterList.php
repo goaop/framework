@@ -12,10 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Laminas\Code\Generator\ParameterGenerator;
-use Laminas\Code\Generator\ValueGenerator;
+use Go\Proxy\Generator\ParameterGenerator;
 use ReflectionFunctionAbstract;
-use ReflectionNamedType;
 
 /**
  * Generates parameters from reflection definition
@@ -35,43 +33,8 @@ final class FunctionParameterList
      */
     public function __construct(ReflectionFunctionAbstract $functionLike, bool $useTypeWidening = false)
     {
-        $reflectionParameters = $functionLike->getParameters();
-        foreach ($reflectionParameters as $reflectionParameter) {
-            $defaultValue = null;
-
-            $parameterTypeName = null;
-            if (!$useTypeWidening && $reflectionParameter->hasType()) {
-                $parameterReflectionType = $reflectionParameter->getType();
-                if ($parameterReflectionType instanceof ReflectionNamedType) {
-                    $parameterTypeName = $parameterReflectionType->getName();
-                } else {
-                    $parameterTypeName = (string) $parameterReflectionType;
-                }
-            }
-
-            $generatedParameter = new ParameterGenerator(
-                $reflectionParameter->getName(),
-                $parameterTypeName,
-                $defaultValue,
-                $reflectionParameter->getPosition(),
-                $reflectionParameter->isPassedByReference()
-            );
-            $generatedParameter->setVariadic($reflectionParameter->isVariadic());
-
-            if (!$reflectionParameter->isVariadic()) {
-                $isDefaultValueAvailable = $reflectionParameter->isDefaultValueAvailable();
-                if ($isDefaultValueAvailable) {
-                    $defaultValue = new ValueGenerator($reflectionParameter->getDefaultValue());
-                } elseif ($reflectionParameter->isOptional()) {
-                    $defaultValue = new ValueGenerator(null);
-                }
-
-                if ($defaultValue instanceof ValueGenerator) {
-                    $generatedParameter->setDefaultValue($defaultValue);
-                }
-            }
-
-            $this->generatedParameters[] = $generatedParameter;
+        foreach ($functionLike->getParameters() as $reflectionParameter) {
+            $this->generatedParameters[] = ParameterGenerator::fromReflection($reflectionParameter, $useTypeWidening);
         }
     }
 

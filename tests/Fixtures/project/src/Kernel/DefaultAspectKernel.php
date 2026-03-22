@@ -18,7 +18,7 @@ class DefaultAspectKernel extends AspectKernel
     /**
      * {@inheritdoc}
      */
-    protected function configureAop(AspectContainer $container)
+    protected function configureAop(AspectContainer $container): void
     {
         $container->registerAspect(new LoggingAspect(new NullLogger()));
         $container->registerAspect(new DoSomethingAspect());

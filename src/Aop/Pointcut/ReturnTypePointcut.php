@@ -60,9 +60,9 @@ final readonly class ReturnTypePointcut implements Pointcut
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
-        object|string                                          $instanceOrScope = null,
-        array                                                  $arguments = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
+        null|object|string                                     $instanceOrScope = null,
+        ?array                                                 $arguments = null
     ): bool {
         // With only static context we always match, as we don't have any information about concrete reflector
         if (!isset($reflector)) {

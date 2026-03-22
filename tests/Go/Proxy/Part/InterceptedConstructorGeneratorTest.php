@@ -52,14 +52,14 @@ class InterceptedConstructorGeneratorTest extends TestCase
         return [
             [
                 Exception::class,
-                'public function __construct(string $message = \'\', int $code = 0, \Throwable $previous = null)
+                'public function __construct(string $message = \'\', int $code = 0, ?\Throwable $previous = null)
                 {
                     parent::__construct(...\array_slice([$message, $code, $previous], 0, \func_num_args()));
                 }'
             ],
             [
                 ClassWithOptionalArgsConstructor::class,
-                'public function __construct(int $foo = 42, bool $bar = false, \stdClass $instance = null)
+                'public function __construct(int $foo = 42, bool $bar = false, ?\stdClass $instance = null)
                 {
                     parent::__construct(...\array_slice([$foo, $bar, $instance], 0, \func_num_args()));
                 }'
@@ -93,17 +93,11 @@ class InterceptedConstructorGeneratorTest extends TestCase
             '
             public function __construct()
             {
-                $accessor = function(array &$propertyStorage, object $target) {
-                    $propertyStorage = [
-                        \'foo\' => &$target->foo,
-                        \'bar\' => &$target->bar
-                    ];
-                    unset(
-                        $target->foo,
-                        $target->bar
-                    );
+                $accessor = function (array &$propertyStorage, object $target) {
+                    $propertyStorage = [\'foo\' => &$target->foo, \'bar\' => &$target->bar];
+                    unset($target->foo, $target->bar);
                 };
-                ($accessor->bindTo($this, parent::class))($this->__properties, $this);
+                $accessor->bindTo($this, parent::class)($this->__properties, $this);
             }'
         );
         $this->assertSame($expectedCode, $generatedCode);

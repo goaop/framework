@@ -70,9 +70,7 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
         Aspect $aspect,
         ReflectionMethod $aspectMethod
     ): Interceptor {
-        $adviceCallback = $aspectMethod->getClosure($aspect);
-        assert($adviceCallback instanceof Closure, "getClosure should always return Closure");
-
+        $adviceCallback     = $aspectMethod->getClosure($aspect);
         $adviceOrder        = $interceptorAttribute->order;
         $pointcutExpression = $interceptorAttribute->expression;
         return match (true) {

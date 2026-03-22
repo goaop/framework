@@ -14,8 +14,10 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
+use PhpParser\Node;
 use PhpParser\Node\Expr\Include_;
 use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\FindingVisitor;
 use RuntimeException;
 
 /**
@@ -35,6 +37,8 @@ class FilterInjectorTransformer implements SourceTransformer
 
     /**
      * Kernel options
+     *
+     * @var array<string, mixed>
      */
     protected static array $options = [];
 
@@ -87,10 +91,12 @@ class FilterInjectorTransformer implements SourceTransformer
                 ?: PathResolver::realpath("{$originalDir}/{$resource}", $shouldCheckExistence)
                 ?: $originalResource;
         }
-        $cachedResource = self::$cachePathManager->getCachePathForResource($resource);
+        $cachedResource = self::$cachePathManager !== null
+            ? self::$cachePathManager->getCachePathForResource($resource)
+            : false;
 
-        // If the cache is disabled or no cache yet, then use on-fly method
-        if (!$cacheDir || $debug || !file_exists($cachedResource)) {
+        // If the cache is disabled, resource path not resolvable, or no cache yet, then use on-fly method
+        if ($cachedResource === false || !$cacheDir || $debug || !file_exists($cachedResource)) {
             return self::PHP_FILTER_READ . self::$filterName . '/resource=' . $resource;
         }
 
@@ -99,12 +105,10 @@ class FilterInjectorTransformer implements SourceTransformer
 
     /**
      * Wrap all includes into rewrite filter
-     *
-     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata): string
+    public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
-        $includeExpressionFinder = new NodeFinderVisitor([Include_::class]);
+        $includeExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof Include_);
 
         // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
         $traverser = new NodeTraverser();
@@ -115,12 +119,15 @@ class FilterInjectorTransformer implements SourceTransformer
         $includeExpressions = $includeExpressionFinder->getFoundNodes();
 
         if (empty($includeExpressions)) {
-            return self::RESULT_ABSTAIN;
+            return TransformerResultEnum::RESULT_ABSTAIN;
         }
 
         foreach ($includeExpressions as $includeExpression) {
             $startPosition = $includeExpression->getAttribute('startTokenPos');
             $endPosition   = $includeExpression->getAttribute('endTokenPos');
+            if (!is_int($startPosition) || !is_int($endPosition)) {
+                continue;
+            }
 
             $metadata->tokenStream[$startPosition]->text .= ' \\' . self::class . '::rewrite(';
             if ($metadata->tokenStream[$startPosition+1]->id === T_WHITESPACE) {
@@ -130,6 +137,6 @@ class FilterInjectorTransformer implements SourceTransformer
             $metadata->tokenStream[$endPosition]->text .= ', __DIR__)';
         }
 
-        return self::RESULT_TRANSFORMED;
+        return TransformerResultEnum::RESULT_TRANSFORMED;
     }
 }

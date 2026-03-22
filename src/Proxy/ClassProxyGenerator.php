@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -23,14 +23,16 @@ use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
+use Go\Proxy\Generator\AttributeGroupsGenerator;
+use Go\Proxy\Generator\ClassGenerator;
+use Go\Proxy\Generator\DocBlockGenerator;
+use Go\Proxy\Generator\GeneratorInterface;
+use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use Go\Proxy\Part\InterceptedConstructorGenerator;
 use Go\Proxy\Part\InterceptedMethodGenerator;
 use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Proxy\Part\PropertyInterceptionTrait;
-use Laminas\Code\Generator\ClassGenerator;
-use Laminas\Code\Generator\DocBlockGenerator;
-use Laminas\Code\Reflection\DocBlockReflection;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -43,24 +45,30 @@ class ClassProxyGenerator
 {
     /**
      * Static mappings for class name for excluding if..else check
+     *
+     * @var array<string, class-string<Joinpoint>>
      */
     protected static array $invocationClassMap = [
+        // MethodInvocation subtypes — directly invoked via self::$__joinPoints[key]->__invoke() in generated method bodies
         AspectContainer::METHOD_PREFIX        => DynamicClosureMethodInvocation::class,
         AspectContainer::STATIC_METHOD_PREFIX => StaticClosureMethodInvocation::class,
-        AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,
-        AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class,
-        AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class
+        // Non-MethodInvocation types — accessed through explicit casts or instanceof checks, not from generated method bodies
+        AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,              // cast in PropertyInterceptionTrait
+        AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class, // instanceof check in injectJoinPoints()
+        AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class // accessed via ConstructorExecutionTransformer
     ];
 
     /**
      * List of advices that are used for generation of child
+     *
+     * @var string[][][]
      */
     protected array $adviceNames = [];
 
     /**
-     * Instance of class generator
+     * Instance of class generator (ClassGenerator or TraitGenerator via TraitProxyGenerator)
      */
-    protected ClassGenerator $generator;
+    protected GeneratorInterface $generator;
 
     /**
      * Should parameter widening be used or not
@@ -70,10 +78,10 @@ class ClassProxyGenerator
     /**
      * Generates an child code by original class reflection and joinpoints for it
      *
-     * @param ReflectionClass $originalClass        Original class reflection
-     * @param string          $parentClassName      Parent class name to use
-     * @param string[][]      $classAdviceNames     List of advices for class
-     * @param bool            $useParameterWidening Enables usage of parameter widening feature
+     * @param ReflectionClass<object> $originalClass        Original class reflection
+     * @param string                  $parentClassName      Parent class name to use
+     * @param string[][][]            $classAdviceNames     List of advices for class
+     * @param bool                    $useParameterWidening Enables usage of parameter widening feature
      */
     public function __construct(
         ReflectionClass $originalClass,
@@ -92,7 +100,7 @@ class ClassProxyGenerator
         $introducedInterfaces  = $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [];
         $introducedTraits      = $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [];
 
-        $generatedProperties = [new JoinPointPropertyGenerator($classAdviceNames)];
+        $generatedProperties = [new JoinPointPropertyGenerator()];
         $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
 
         $introducedInterfaces[] = '\\' . Proxy::class;
@@ -107,47 +115,69 @@ class ClassProxyGenerator
             $introducedTraits[] = '\\' . PropertyInterceptionTrait::class;
         }
 
-        $this->generator = new ClassGenerator(
+        // Extract underlying MethodGenerator instances for ClassGenerator
+        $methodGenerators = array_map(
+            static fn($m) => $m->getGenerator(),
+            array_values($generatedMethods)
+        );
+
+        $classGenerator = new ClassGenerator(
             $originalClass->getShortName(),
             !empty($originalClass->getNamespaceName()) ? $originalClass->getNamespaceName() : null,
             $originalClass->isFinal() ? ClassGenerator::FLAG_FINAL : null,
             $parentClassName,
             $introducedInterfaces,
             $generatedProperties,
-            $generatedMethods
+            $methodGenerators
         );
+
         if ($originalClass->getDocComment()) {
-            $reflectionDocBlock = new DocBlockReflection($originalClass->getDocComment());
-            $this->generator->setDocBlock(DocBlockGenerator::fromReflection($reflectionDocBlock));
+            $classGenerator->setDocBlock(DocBlockGenerator::fromDocComment($originalClass->getDocComment()));
         }
 
-        $this->generator->addTraits($introducedTraits);
+        // Copy PHP 8+ attributes from original class to proxy so that runtime
+        // attribute inspection on proxy objects returns the same attributes
+        $classAttrGroups = AttributeGroupsGenerator::fromReflectionAttributes($originalClass->getAttributes());
+        if (!empty($classAttrGroups)) {
+            $classGenerator->addAttributeGroups($classAttrGroups);
+        }
+
+        $classGenerator->addTraits(array_values($introducedTraits));
+        $this->generator = $classGenerator;
     }
 
     /**
      * Adds use alias for this class
      */
-    public function addUse(string $use, string $useAlias = null): void
+    public function addUse(string $use, ?string $useAlias = null): void
     {
-        $this->generator->addUse($use, $useAlias);
+        if ($use !== '' && $this->generator instanceof ClassGenerator) {
+            $this->generator->addUse($use, $useAlias !== '' ? $useAlias : null);
+        }
     }
 
     /**
      * Inject advices into given class
      *
      * NB This method will be used as a callback during source code evaluation to inject joinpoints
+     *
+     * @param string[][][] $advices List of advices to inject
      */
-    public static function injectJoinPoints(string $targetClassName): void
+    public static function injectJoinPoints(string $targetClassName, array $advices = []): void
     {
+        if (!class_exists($targetClassName)) {
+            return;
+        }
         $reflectionClass    = new ReflectionClass($targetClassName);
         $joinPointsProperty = $reflectionClass->getProperty(JoinPointPropertyGenerator::NAME);
 
-        $advices    = $joinPointsProperty->getValue();
         $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->name);
         $joinPointsProperty->setValue(null, $joinPoints);
 
+        // staticinit:root is a StaticInitializationJoinpoint, not a MethodInvocation.
+        // It is invoked here immediately after class load, not from generated method bodies.
         $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';
-        if (isset($joinPoints[$staticInit])) {
+        if (isset($joinPoints[$staticInit]) && $joinPoints[$staticInit] instanceof StaticInitializationJoinpoint) {
             ($joinPoints[$staticInit])();
         }
     }
@@ -157,17 +187,18 @@ class ClassProxyGenerator
      */
     public function generate(): string
     {
-        $classCode = $this->generator->generate();
+        $classCode    = $this->generator->generate();
+        $advicesValue = new ValueGenerator($this->adviceNames);
 
         return $classCode
             // Inject advices on call
-            . '\\' . self::class . '::injectJoinPoints(' . $this->generator->getName() . '::class);';
+            . "\n" . '\\' . self::class . '::injectJoinPoints(' . $this->generator->getName() . '::class, ' . $advicesValue->generate() . ');';
     }
 
     /**
      * Wrap advices with joinpoint object
      *
-     * @param array|Advice[][][] $classAdvices Advices for specific class
+     * @param string[][][] $classAdvices Advisor name strings indexed by join point type and name
      *
      * @throws UnexpectedValueException If joinPoint type is unknown
      *
@@ -208,6 +239,7 @@ class ClassProxyGenerator
     /**
      * Returns list of intercepted method generators for class by method names
      *
+     * @param ReflectionClass<object> $originalClass
      * @param string[] $methodNames List of methods to intercept
      *
      * @return InterceptedMethodGenerator[]

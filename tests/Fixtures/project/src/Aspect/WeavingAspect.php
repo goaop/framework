@@ -24,4 +24,10 @@ class WeavingAspect implements Aspect
     {
         echo 'It does not intercept methods in the interface';
     }
+
+    #[Pointcut\After("within(Go\Tests\TestProject\Application\ClassWithComplexTypes) && execution(public **->*(*))")]
+    public function afterComplexTypeMethods(): void
+    {
+        echo 'It intercepts methods with complex types';
+    }
 }

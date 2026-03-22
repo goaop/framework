@@ -18,6 +18,7 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
 use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\FindingVisitor;
 use ReflectionException;
 use ReflectionProperty;
 
@@ -31,6 +32,8 @@ final class ConstructorExecutionTransformer implements SourceTransformer
 {
     /**
      * List of constructor invocations per class
+     *
+     * @var array<string, ReflectionConstructorInvocation<object>|null>
      */
     private static array $constructorInvocationsCache = [];
 
@@ -49,12 +52,10 @@ final class ConstructorExecutionTransformer implements SourceTransformer
 
     /**
      * Rewrites all "new" expressions with our implementation
-     *
-     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata): string
+    public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
-        $newExpressionFinder = new NodeFinderVisitor([New_::class]);
+        $newExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof New_);
 
         // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
         $traverser = new NodeTraverser();
@@ -65,23 +66,26 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         $newExpressions = $newExpressionFinder->getFoundNodes();
 
         if (empty($newExpressions)) {
-            return self::RESULT_ABSTAIN;
+            return TransformerResultEnum::RESULT_ABSTAIN;
         }
 
         foreach ($newExpressions as $newExpressionNode) {
             $startPosition = $newExpressionNode->getAttribute('startTokenPos');
+            $endClassNamePos = $newExpressionNode->class->getAttribute('endTokenPos');
+            if (!is_int($startPosition) || !is_int($endClassNamePos)) {
+                continue;
+            }
 
+            $isExplicitClass = $newExpressionNode->class instanceof Name;
             $metadata->tokenStream[$startPosition]->text = '\\' . self::class . '::getInstance()->{';
             if ($metadata->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
                 unset($metadata->tokenStream[$startPosition + 1]);
             }
-            $isExplicitClass                            = $newExpressionNode->class instanceof Name;
-            $endClassNamePos                            = $newExpressionNode->class->getAttribute('endTokenPos');
             $expressionSuffix                           = $isExplicitClass ? '::class}' : '}';
             $metadata->tokenStream[$endClassNamePos]->text .= $expressionSuffix;
         }
 
-        return self::RESULT_TRANSFORMED;
+        return TransformerResultEnum::RESULT_TRANSFORMED;
     }
 
     /**
@@ -97,8 +101,8 @@ final class ConstructorExecutionTransformer implements SourceTransformer
     /**
      * Magic interceptor for instance creation
      *
-     * @param string $className Name of the class to construct
-     * @param array  $args      Arguments for the constructor
+     * @param string  $className Name of the class to construct
+     * @param mixed[] $args      Arguments for the constructor
      */
     public function __call(string $className, array $args): object
     {
@@ -107,6 +111,8 @@ final class ConstructorExecutionTransformer implements SourceTransformer
 
     /**
      * Default implementation for accessing joinpoint or creating a new one on-fly
+     *
+     * @param mixed[] $arguments
      */
     protected static function construct(string $fullClassName, array $arguments = []): object
     {
@@ -114,21 +120,36 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         if (!isset(self::$constructorInvocationsCache[$fullClassName])) {
             $invocation  = null;
             $dynamicInit = AspectContainer::INIT_PREFIX . ':root';
-            try {
-                $joinPointsRef = new ReflectionProperty($fullClassName, '__joinPoints');
-                $joinPoints = $joinPointsRef->getValue();
-                if (isset($joinPoints[$dynamicInit])) {
-                    $invocation = $joinPoints[$dynamicInit];
+            if (class_exists($fullClassName)) {
+                try {
+                    $joinPointsRef = new ReflectionProperty($fullClassName, '__joinPoints');
+                    $joinPoints = $joinPointsRef->getValue();
+                    if (is_array($joinPoints) && isset($joinPoints[$dynamicInit])) {
+                        $jp = $joinPoints[$dynamicInit];
+                        if ($jp instanceof ReflectionConstructorInvocation) {
+                            $invocation = $jp;
+                        }
+                    }
+                } catch (ReflectionException $e) {
+                    $invocation = null;
                 }
-            } catch (ReflectionException $e) {
-                $invocation = null;
-            }
-            if (!$invocation) {
-                $invocation = new ReflectionConstructorInvocation([], $fullClassName);
+                if (!$invocation) {
+                    $invocation = new ReflectionConstructorInvocation([], $fullClassName);
+                }
             }
             self::$constructorInvocationsCache[$fullClassName] = $invocation;
         }
 
-        return self::$constructorInvocationsCache[$fullClassName]->__invoke($arguments);
+        $cachedInvocation = self::$constructorInvocationsCache[$fullClassName];
+        if ($cachedInvocation === null) {
+            throw new \LogicException("Cannot instantiate non-existent class: {$fullClassName}");
+        }
+
+        $result = $cachedInvocation->__invoke($arguments);
+        if (!is_object($result)) {
+            throw new \LogicException('Constructor invocation did not return an object');
+        }
+
+        return $result;
     }
 }

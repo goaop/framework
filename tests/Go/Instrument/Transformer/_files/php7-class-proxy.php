@@ -1,66 +1,20 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
+class TestPhp7Class extends \Test\ns1\TestPhp7Class__AopProxied implements \Go\Aop\Proxy
 {
     /**
      * List of applied advices per class
+     *
+     * Typed as MethodInvocation because generated method bodies (method:* and static:* keys)
+     * call ->__invoke() directly. Other joinpoint types stored here use explicit casts:
+     *   - prop:*        ClassFieldAccess — cast in PropertyInterceptionTrait
+     *   - staticinit:*  StaticInitializationJoinpoint — instanceof check in ClassProxyGenerator::injectJoinPoints()
+     *   - init:*        ReflectionConstructorInvocation — accessed via ConstructorExecutionTransformer
+     *
+     * @var array<string, \Go\Aop\Intercept\MethodInvocation>
      */
-    private static $__joinPoints = [
-        'method' => [
-            'stringSth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->stringSth',
-            ],
-            'floatSth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->floatSth',
-            ],
-            'boolSth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->boolSth',
-            ],
-            'intSth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->intSth',
-            ],
-            'callableSth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->callableSth',
-            ],
-            'arraySth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->arraySth',
-            ],
-            'variadicStringSthByRef' => [
-                'advisor.Test\\ns1\\TestPhp7Class->variadicStringSthByRef',
-            ],
-            'exceptionArg' => [
-                'advisor.Test\\ns1\\TestPhp7Class->exceptionArg',
-            ],
-            'stringRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->stringRth',
-            ],
-            'floatRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->floatRth',
-            ],
-            'boolRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->boolRth',
-            ],
-            'intRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->intRth',
-            ],
-            'callableRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->callableRth',
-            ],
-            'arrayRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->arrayRth',
-            ],
-            'exceptionRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->exceptionRth',
-            ],
-            'noRth' => [
-                'advisor.Test\\ns1\\TestPhp7Class->noRth',
-            ],
-            'returnSelf' => [
-                'advisor.Test\\ns1\\TestPhp7Class->returnSelf',
-            ],
-        ],
-    ];
+    private static array $__joinPoints = [];
     public function stringSth(string $arg)
     {
         return self::$__joinPoints['method:stringSth']->__invoke($this, [$arg]);
@@ -85,7 +39,7 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
     {
         return self::$__joinPoints['method:arraySth']->__invoke($this, [$arg]);
     }
-    public function variadicStringSthByRef(string &... $args)
+    public function variadicStringSthByRef(string &...$args)
     {
         return self::$__joinPoints['method:variadicStringSthByRef']->__invoke($this, $args);
     }
@@ -93,31 +47,31 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
     {
         return self::$__joinPoints['method:exceptionArg']->__invoke($this, [$exception, $localException]);
     }
-    public function stringRth(string $arg) : string
+    public function stringRth(string $arg): string
     {
         return self::$__joinPoints['method:stringRth']->__invoke($this, [$arg]);
     }
-    public function floatRth(float $arg) : float
+    public function floatRth(float $arg): float
     {
         return self::$__joinPoints['method:floatRth']->__invoke($this, [$arg]);
     }
-    public function boolRth(bool $arg) : bool
+    public function boolRth(bool $arg): bool
     {
         return self::$__joinPoints['method:boolRth']->__invoke($this, [$arg]);
     }
-    public function intRth(int $arg) : int
+    public function intRth(int $arg): int
     {
         return self::$__joinPoints['method:intRth']->__invoke($this, [$arg]);
     }
-    public function callableRth(callable $arg) : callable
+    public function callableRth(callable $arg): callable
     {
         return self::$__joinPoints['method:callableRth']->__invoke($this, [$arg]);
     }
-    public function arrayRth(array $arg) : array
+    public function arrayRth(array $arg): array
     {
         return self::$__joinPoints['method:arrayRth']->__invoke($this, [$arg]);
     }
-    public function exceptionRth(\Exception $exception) : \Exception
+    public function exceptionRth(\Exception $exception): \Exception
     {
         return self::$__joinPoints['method:exceptionRth']->__invoke($this, [$exception]);
     }
@@ -134,4 +88,58 @@ class TestPhp7Class extends TestPhp7Class__AopProxied implements \Go\Aop\Proxy
         return self::$__joinPoints['method:returnSelf']->__invoke($this);
     }
 }
-\Go\Proxy\ClassProxyGenerator::injectJoinPoints(TestPhp7Class::class);
+\Go\Proxy\ClassProxyGenerator::injectJoinPoints(TestPhp7Class::class, [
+    'method' => [
+        'stringSth' => [
+            'advisor.Test\ns1\TestPhp7Class->stringSth',
+        ],
+        'floatSth' => [
+            'advisor.Test\ns1\TestPhp7Class->floatSth',
+        ],
+        'boolSth' => [
+            'advisor.Test\ns1\TestPhp7Class->boolSth',
+        ],
+        'intSth' => [
+            'advisor.Test\ns1\TestPhp7Class->intSth',
+        ],
+        'callableSth' => [
+            'advisor.Test\ns1\TestPhp7Class->callableSth',
+        ],
+        'arraySth' => [
+            'advisor.Test\ns1\TestPhp7Class->arraySth',
+        ],
+        'variadicStringSthByRef' => [
+            'advisor.Test\ns1\TestPhp7Class->variadicStringSthByRef',
+        ],
+        'exceptionArg' => [
+            'advisor.Test\ns1\TestPhp7Class->exceptionArg',
+        ],
+        'stringRth' => [
+            'advisor.Test\ns1\TestPhp7Class->stringRth',
+        ],
+        'floatRth' => [
+            'advisor.Test\ns1\TestPhp7Class->floatRth',
+        ],
+        'boolRth' => [
+            'advisor.Test\ns1\TestPhp7Class->boolRth',
+        ],
+        'intRth' => [
+            'advisor.Test\ns1\TestPhp7Class->intRth',
+        ],
+        'callableRth' => [
+            'advisor.Test\ns1\TestPhp7Class->callableRth',
+        ],
+        'arrayRth' => [
+            'advisor.Test\ns1\TestPhp7Class->arrayRth',
+        ],
+        'exceptionRth' => [
+            'advisor.Test\ns1\TestPhp7Class->exceptionRth',
+        ],
+        'noRth' => [
+            'advisor.Test\ns1\TestPhp7Class->noRth',
+        ],
+        'returnSelf' => [
+            'advisor.Test\ns1\TestPhp7Class->returnSelf',
+        ],
+    ],
+]);

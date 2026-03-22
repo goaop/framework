@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -17,10 +17,10 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
 use Go\ParserReflection\ReflectionFileNamespace;
+use Go\Proxy\Generator\FileGenerator;
+use Go\Proxy\Generator\FunctionGenerator;
+use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
-use Go\Proxy\Part\InterceptedFunctionGenerator;
-use Laminas\Code\Generator\FileGenerator;
-use Laminas\Code\Generator\ValueGenerator;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionNamedType;
@@ -32,6 +32,8 @@ class FunctionProxyGenerator
 {
     /**
      * List of advices that are used for generation of child
+     *
+     * @var string[][][]
      */
     protected array $adviceNames = [];
 
@@ -44,7 +46,7 @@ class FunctionProxyGenerator
      * Constructs functions stub class from namespace Reflection
      *
      * @param ReflectionFileNamespace $namespace            Reflection of namespace
-     * @param string[][]              $adviceNames          List of function advices
+     * @param string[][][]            $adviceNames          List of function advices
      * @param bool                    $useParameterWidening Enables usage of parameter widening feature
      *
      * @throws ReflectionException If there is an advice for unknown function
@@ -61,10 +63,11 @@ class FunctionProxyGenerator
         $functionsContent = [];
         $functionAdvices  = $adviceNames[AspectContainer::FUNCTION_PREFIX] ?? [];
         foreach (array_keys($functionAdvices) as $functionName) {
-            $functionReflection  = new ReflectionFunction($functionName);
-            $functionBody        = $this->getJoinpointInvocationBody($functionReflection);
-            $interceptedFunction = new InterceptedFunctionGenerator($functionReflection, $functionBody, $useParameterWidening);
-            $functionsContent[]  = $interceptedFunction->generate();
+            $functionReflection = new ReflectionFunction($functionName);
+            $functionBody       = $this->getJoinpointInvocationBody($functionReflection);
+            $funcGenerator      = FunctionGenerator::fromReflection($functionReflection, $useParameterWidening);
+            $funcGenerator->setBody($functionBody);
+            $functionsContent[] = $funcGenerator->generate();
         }
 
         $this->fileGenerator->setBody(implode("\n", $functionsContent));
@@ -73,7 +76,7 @@ class FunctionProxyGenerator
     /**
      * Returns a joinpoint for specific function in the namespace
      *
-     * @param array $adviceNames List of advices
+     * @param string[] $adviceNames List of advices
      */
     public static function getJoinPoint(string $functionName, array $adviceNames): ReflectionFunctionInvocation
     {
@@ -119,7 +122,7 @@ class FunctionProxyGenerator
         }
 
         $functionAdvices = $this->adviceNames[AspectContainer::FUNCTION_PREFIX][$function->name];
-        $advicesArray    = new ValueGenerator($functionAdvices, ValueGenerator::TYPE_ARRAY_SHORT);
+        $advicesArray    = new ValueGenerator($functionAdvices);
         $advicesArray->setArrayDepth(1);
         $advicesCode = $advicesArray->generate();
 

@@ -26,7 +26,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Stack frames to work with recursive calls or with cross-calls inside object
      *
-     * @phpstan-var array<int, array{object, FieldAccessType, mixed, mixed}>>
+     * @phpstan-var array<int, array{object, FieldAccessType, mixed, mixed}>
      */
     private array $stackFrames = [];
 

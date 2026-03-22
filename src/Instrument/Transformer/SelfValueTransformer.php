@@ -22,10 +22,8 @@ class SelfValueTransformer extends BaseSourceTransformer
 {
     /**
      * This method may transform the supplied source and return a new replacement for it
-     *
-     * @return string See RESULT_XXX constants in the interface
      */
-    public function transform(StreamMetaData $metadata): string
+    public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
         $selfValueVisitor = new SelfValueVisitor();
         $traverser        = new NodeTraverser();
@@ -35,7 +33,7 @@ class SelfValueTransformer extends BaseSourceTransformer
         $this->adjustSelfTokens($metadata, $selfValueVisitor->getReplacedNodes());
 
         // We should always vote abstain, because if there are only changes for self we can drop them
-        return self::RESULT_ABSTAIN;
+        return TransformerResultEnum::RESULT_ABSTAIN;
     }
 
     /**
@@ -45,9 +43,11 @@ class SelfValueTransformer extends BaseSourceTransformer
      */
     private function adjustSelfTokens(StreamMetaData $metadata, array $replacedNodes): void
     {
-        foreach ($replacedNodes as $replacedNode)
-        {
+        foreach ($replacedNodes as $replacedNode) {
             $position = $replacedNode->getAttribute('startTokenPos');
+            if (!is_int($position)) {
+                continue;
+            }
             $metadata->tokenStream[$position]->text = $replacedNode->toString();
         }
     }

@@ -35,12 +35,13 @@ trait PropertyInterceptionTrait
     public function &__get(string $name)
     {
         if (array_key_exists($name, $this->__properties)) {
+            // prop:* entries are ClassFieldAccess, not MethodInvocation — explicit cast required
             /** @var ClassFieldAccess $fieldAccess */
             $fieldAccess = self::$__joinPoints["prop:$name"];
             $fieldAccess->ensureScopeRule();
 
             $value = &$fieldAccess->__invoke($this, FieldAccessType::READ, $this->__properties[$name]);
-        } elseif (method_exists(get_parent_class(), __FUNCTION__)) {
+        } elseif (method_exists(get_parent_class($this), __FUNCTION__)) {
             $value = parent::__get($name);
         } else {
             trigger_error("Trying to access undeclared property {$name}");
@@ -57,6 +58,7 @@ trait PropertyInterceptionTrait
     public function __set(string $name, $value)
     {
         if (array_key_exists($name, $this->__properties)) {
+            // prop:* entries are ClassFieldAccess, not MethodInvocation — explicit cast required
             /** @var ClassFieldAccess $fieldAccess */
             $fieldAccess = self::$__joinPoints["prop:$name"];
             $fieldAccess->ensureScopeRule();
@@ -67,7 +69,7 @@ trait PropertyInterceptionTrait
                 $this->__properties[$name],
                 $value
             );
-        } elseif (method_exists(get_parent_class(), __FUNCTION__)) {
+        } elseif (method_exists(get_parent_class($this), __FUNCTION__)) {
             parent::__set($name, $value);
         } else {
             $this->$name = $value;

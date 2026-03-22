@@ -39,7 +39,7 @@ final readonly class AndPointcut implements Pointcut
     /**
      * And constructor
      */
-    public function __construct(int $pointcutKind = null, Pointcut ...$pointcuts)
+    public function __construct(?int $pointcutKind = null, Pointcut ...$pointcuts)
     {
         // If we don't have specified kind, it will be calculated as intersection then
         if (!isset($pointcutKind)) {
@@ -54,9 +54,9 @@ final readonly class AndPointcut implements Pointcut
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
-        object|string                                          $instanceOrScope = null,
-        array                                                  $arguments = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
+        null|object|string                                     $instanceOrScope = null,
+        ?array                                                 $arguments = null
     ): bool {
         foreach ($this->pointcuts as $singlePointcut) {
             if (!$singlePointcut->matches($context, $reflector, $instanceOrScope, $arguments)) {

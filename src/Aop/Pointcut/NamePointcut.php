@@ -54,9 +54,9 @@ final readonly class NamePointcut implements Pointcut
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction $reflector = null,
-        object|string                                          $instanceOrScope = null,
-        array                                                  $arguments = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
+        null|object|string                                     $instanceOrScope = null,
+        ?array                                                 $arguments = null
     ): bool {
         // Let's determine what will be used for matching - context or reflector
         if ($this->useContextForMatching) {

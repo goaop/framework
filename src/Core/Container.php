@@ -20,6 +20,9 @@ use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\ClassLoading\CachePathManager;
 use OutOfBoundsException;
+use ReflectionClass;
+use ReflectionFunction;
+use ReflectionNamedType;
 use ReflectionObject;
 
 /**
@@ -45,7 +48,7 @@ class Container implements AspectContainer
     /**
      * @var (array&array<string, string>) Hashmap of resources for application
      */
-    private array $resources = [];
+    private array $resources;
 
     /**
      * Constructor for container
@@ -56,30 +59,35 @@ class Container implements AspectContainer
     {
         $this->resources = array_combine($resources, $resources);
 
-        $this->addLazy(PointcutLexer::class, fn() => new PointcutLexer());
+        $this->addLazyService(PointcutLexer::class, fn(): PointcutLexer => new PointcutLexer());
 
-        $this->addLazy(PointcutParser::class, fn(AspectContainer $container) => new PointcutParser(
+        $this->addLazyService(PointcutParser::class, fn(AspectContainer $container): PointcutParser => new PointcutParser(
             new PointcutGrammar($container)
         ));
 
-        $this->addLazy(AdviceMatcher::class, fn(AspectContainer $container) => new AdviceMatcher(
+        $this->addLazyService(AdviceMatcher::class, fn(AspectContainer $container): AdviceMatcher => new AdviceMatcher(
             (bool) $container->getValue('kernel.interceptFunctions')
         ));
 
-        $this->addLazy(AspectLoader::class, function (AspectContainer $container) {
-            $lexer  = $container->getService(PointcutLexer::class);
-            $parser = $container->getService(PointcutParser::class);
+        $this->addLazyService(AttributeAspectLoaderExtension::class, fn(AspectContainer $container): AttributeAspectLoaderExtension => new AttributeAspectLoaderExtension(
+            $container->getService(PointcutLexer::class),
+            $container->getService(PointcutParser::class)
+        ));
 
-            return new AspectLoader(
-                $container,
-                new AttributeAspectLoaderExtension($lexer, $parser),
-                new IntroductionAspectExtension($lexer, $parser)
-            );
-        });
+        $this->addLazyService(IntroductionAspectExtension::class, fn(AspectContainer $container): IntroductionAspectExtension => new IntroductionAspectExtension(
+            $container->getService(PointcutLexer::class),
+            $container->getService(PointcutParser::class)
+        ));
 
-        $this->addLazy(CachedAspectLoader::class, function (AspectContainer $container) {
-            $options = $container->getValue('kernel.options');
-            if (is_array($options) && !empty($options['cacheDir'])) {
+        $this->addLazyService(AspectLoader::class, fn(AspectContainer $container): AspectLoader => new AspectLoader(
+            $container,
+            $container->getService(AttributeAspectLoaderExtension::class),
+            $container->getService(IntroductionAspectExtension::class),
+        ));
+
+        $this->addLazyService(CachedAspectLoader::class, function (AspectContainer $container) {
+            $options = $container->getService(AspectKernel::class)->getOptions();
+            if (!empty($options['cacheDir'])) {
                 $loader = new CachedAspectLoader($container, AspectLoader::class, $options);
             } else {
                 $loader = $container->getService(AspectLoader::class);
@@ -88,12 +96,12 @@ class Container implements AspectContainer
             return $loader;
         });
 
-        $this->addLazy(LazyAdvisorAccessor::class, fn(AspectContainer $container) => new LazyAdvisorAccessor(
+        $this->addLazyService(LazyAdvisorAccessor::class, fn(AspectContainer $container): LazyAdvisorAccessor => new LazyAdvisorAccessor(
             $container,
             $container->getService(CachedAspectLoader::class)
         ));
 
-        $this->addLazy(CachePathManager::class, fn(AspectContainer $container) => new CachePathManager(
+        $this->addLazyService(CachePathManager::class, fn(AspectContainer $container): CachePathManager => new CachePathManager(
             $container->getService(AspectKernel::class)
         ));
     }
@@ -108,30 +116,57 @@ class Container implements AspectContainer
         $this->values[$id] = $value;
 
         // For objects we would like to use interface names as tags, eg Pointcut, Advisor, Aspect, etc
-        if (is_object($value) && !$value instanceof Closure) {
-            $reflectionObject = new ReflectionObject($value);
-            foreach ($reflectionObject->getInterfaceNames() as $interfaceTagName) {
+        if (is_object($value)) {
+            // If it is real object (not a lazy closure), then we use it directly
+            if (!$value instanceof Closure) {
+                $reflectionInstance = new ReflectionObject($value);
+            } else {
+                // If it is our lazy Closure, we look at internal closure return type to check if it is a class
+                $reflectionClosure     = new ReflectionFunction($value);
+                $lazyDefinitionClosure = $reflectionClosure->getStaticVariables()['lazyInitializationClosure'] ?? null;
+                $lazyReturnType        = $lazyDefinitionClosure
+                    ? (new ReflectionFunction($lazyDefinitionClosure))->getReturnType()
+                    : null;
+
+                if ($lazyReturnType instanceof ReflectionNamedType && class_exists($lazyReturnType->getName())) {
+                    $reflectionInstance = new ReflectionClass($lazyReturnType->getName());
+                }
+            }
+        }
+
+        if (isset($reflectionInstance)) {
+            foreach ($reflectionInstance->getInterfaceNames() as $interfaceTagName) {
                 $this->tags[$interfaceTagName][] = $id;
             }
             // Also register corresponding file names to track freshness of container
-            $fileName = $reflectionObject->getFileName();
+            $fileName = $reflectionInstance->getFileName();
             if (is_string($fileName)) {
                 $this->addResource($fileName);
             }
         }
     }
 
+    final public function addLazyService(string $id, Closure $lazyInitializationClosure): void
+    {
+        $this->add($id, function (self $container) use ($id, $lazyInitializationClosure): void {
+
+            $evaluatedLazyValue = $lazyInitializationClosure($container);
+            // Here we just replace Closure with resolved value to optimize access
+            $container->values[$id] = $evaluatedLazyValue;
+        });
+    }
+
     final public function getService(string $className): object
     {
         if (!isset($this->values[$className])) {
-            throw new OutOfBoundsException("Value {$className} is not defined in the container");
+            throw new OutOfBoundsException("Value $className is not defined in the container");
         }
         // Support for lazy-evaluation and initialization
         if ($this->values[$className] instanceof Closure) {
-            return $this->values[$className]($this);
+            $this->values[$className]($this);
         }
         if (!$this->values[$className] instanceof $className) {
-            throw new AspectException("Service {$className} is not properly registered");
+            throw new AspectException("Service $className is not properly registered");
         }
 
         return $this->values[$className];
@@ -140,7 +175,7 @@ class Container implements AspectContainer
     final public function getValue(string $key): mixed
     {
         if (!isset($this->values[$key])) {
-            throw new OutOfBoundsException("Value {$key} is not defined in the container");
+            throw new OutOfBoundsException("Value $key is not defined in the container");
         }
 
         return $this->values[$key];
@@ -185,22 +220,5 @@ class Container implements AspectContainer
             // Invalidation of calculated timestamp
             unset($this->cachedMaxTimestamp);
         }
-    }
-
-    /**
-     * Add value in the container, uses lazy-loading scheme to optimize init time
-     *
-     * @param Closure(AspectContainer $container): object $lazyDefinitionClosure
-     */
-    final protected function addLazy(string $id, Closure $lazyDefinitionClosure): void
-    {
-        $this->add($id, function (self $container) use ($id, $lazyDefinitionClosure): object {
-
-            $evaluatedLazyValue = $lazyDefinitionClosure($container);
-            // Here we just replace Closure with resolved value to optimize access
-            $container->values[$id] = $evaluatedLazyValue;
-
-            return $evaluatedLazyValue;
-        });
     }
 }

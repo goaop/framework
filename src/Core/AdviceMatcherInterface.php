@@ -34,6 +34,7 @@ interface AdviceMatcherInterface
     /**
      * Return list of advices for class
      *
+     * @param ReflectionClass<object> $class
      * @param Advisor[] $advisors List of advisor to match
      *
      * @return Advice[][][] List of advices for class
