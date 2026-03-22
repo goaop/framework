@@ -75,20 +75,28 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
         Aspect $aspect,
         ReflectionProperty $aspectProperty
     ): Advice {
-        $pointcutExpression = $interceptorAttribute->expression;
-        switch (true) {
-            case ($interceptorAttribute instanceof DeclareError):
-                $errorMessage = $aspectProperty->getDefaultValue();
-                if (!is_string($errorMessage) || $errorMessage === '') {
-                    throw new \UnexpectedValueException('DeclareError property must have a non-empty string default value');
-                }
-                return new DeclareErrorInterceptor($errorMessage, $interceptorAttribute->level, $pointcutExpression);
+        return match (true) {
+            $interceptorAttribute instanceof DeclareError =>
+                $this->createDeclareErrorAdvice($aspectProperty, $interceptorAttribute),
+            $interceptorAttribute instanceof DeclareParents =>
+                new TraitIntroductionInfo($interceptorAttribute->trait, $interceptorAttribute->interface),
+            default =>
+                throw new UnexpectedValueException('Unsupported attribute class: ' . get_class($interceptorAttribute)),
+        };
+    }
 
-            case ($interceptorAttribute instanceof DeclareParents):
-                return new TraitIntroductionInfo($interceptorAttribute->trait, $interceptorAttribute->interface);
-
-            default:
-                throw new UnexpectedValueException('Unsupported attribute class: ' . get_class($interceptorAttribute));
+    /**
+     * Creates a DeclareErrorInterceptor after validating the property's default value.
+     *
+     * @throws \UnexpectedValueException if the property default value is not a non-empty string
+     */
+    private function createDeclareErrorAdvice(ReflectionProperty $aspectProperty, DeclareError $attribute): DeclareErrorInterceptor
+    {
+        $errorMessage = $aspectProperty->getDefaultValue();
+        if (!is_string($errorMessage) || $errorMessage === '') {
+            throw new \UnexpectedValueException('DeclareError property must have a non-empty string default value');
         }
+
+        return new DeclareErrorInterceptor($errorMessage, $attribute->level, $attribute->expression);
     }
 }

@@ -51,10 +51,8 @@ class StreamMetaData
 
     /**
      * Wrapper-specific data attached to this stream.
-     *
-     * @var mixed
      */
-    public $wrapperData;
+    public mixed $wrapperData;
 
     /**
      * Array containing the names of any filters that have been stacked onto this stream.

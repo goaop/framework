@@ -26,23 +26,12 @@ use InvalidArgumentException;
 class LazyAdvisorAccessor
 {
     /**
-     * Instance of aspect container
-     */
-    protected AspectContainer $container;
-
-    /**
-     * Aspect loader instance
-     */
-    protected AspectLoader $loader;
-
-    /**
      * Accessor constructor
      */
-    public function __construct(AspectContainer $container, AspectLoader $loader)
-    {
-        $this->container = $container;
-        $this->loader    = $loader;
-    }
+    public function __construct(
+        protected AspectContainer $container,
+        protected AspectLoader $loader
+    ) {}
 
     /**
      * Magic advice accessor
