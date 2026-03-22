@@ -38,6 +38,14 @@ function funcWithNullableParams(?string $name = null, int $count = 0): ?string
 }
 
 /**
+ * Contains test function with standalone null return type (PHP 8.2+)
+ */
+function funcReturningNull(): null
+{
+    return null;
+}
+
+/**
  * Test case for generated function definition
  */
 class InterceptedFunctionGeneratorTest extends TestCase
@@ -97,6 +105,10 @@ class InterceptedFunctionGeneratorTest extends TestCase
             [
                 '\Go\Proxy\Part\funcWithNullableParams',
                 'function funcWithNullableParams(?string $name = null, int $count = 0) : ?string'
+            ],
+            [
+                '\Go\Proxy\Part\funcReturningNull',
+                'function funcReturningNull() : null'
             ],
         ];
     }

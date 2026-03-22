@@ -44,7 +44,7 @@ final class FunctionParameterList
                 $parameterReflectionType = $reflectionParameter->getType();
                 if ($parameterReflectionType instanceof ReflectionNamedType) {
                     $typeName          = $parameterReflectionType->getName();
-                    $parameterTypeName = ($parameterReflectionType->allowsNull() && $typeName !== 'mixed' ? '?' : '') . $typeName;
+                    $parameterTypeName = ($parameterReflectionType->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null' ? '?' : '') . $typeName;
                 } else {
                     $parameterTypeName = (string) $parameterReflectionType;
                 }
