@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Aop\Intercept\Joinpoint;
-use Go\Aop\Intercept\MethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
@@ -76,8 +75,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
             $traitGenerator->addTraitAlias($fullName, $methodName . '➩', ReflectionMethod::IS_PROTECTED);
         }
 
-        // Store as ClassGenerator for compatibility with parent generate() call
-        // We cast via the parent property (TraitGenerator is not a ClassGenerator, use a local field)
+        // Store generator instance for compatibility with parent generate() call
         $this->generator = $traitGenerator;
     }
 

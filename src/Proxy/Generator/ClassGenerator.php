@@ -135,10 +135,10 @@ final class ClassGenerator implements GeneratorInterface
     {
         $builder = self::getFactory()->class($this->name);
 
-        if ($this->flags & self::FLAG_FINAL) {
+        if (($this->flags ?? 0) & self::FLAG_FINAL) {
             $builder->makeFinal();
         }
-        if ($this->flags & self::FLAG_ABSTRACT) {
+        if (($this->flags ?? 0) & self::FLAG_ABSTRACT) {
             $builder->makeAbstract();
         }
 

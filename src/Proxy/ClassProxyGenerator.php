@@ -142,8 +142,8 @@ class ClassProxyGenerator
             $classGenerator->addAttributeGroups($classAttrGroups);
         }
 
+        $classGenerator->addTraits(array_values($introducedTraits));
         $this->generator = $classGenerator;
-        $this->generator->addTraits(array_values($introducedTraits));
     }
 
     /**

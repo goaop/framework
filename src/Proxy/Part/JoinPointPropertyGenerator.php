@@ -17,7 +17,6 @@ use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\PropertyGenerator;
 use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\TypeGenerator;
-use Go\Proxy\Generator\ValueGenerator;
 use PhpParser\Node\Stmt\Property as PropertyNode;
 
 /**
