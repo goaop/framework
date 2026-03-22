@@ -12,8 +12,11 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Countable;
 use Exception;
 use Go\Proxy\Generator\FunctionGenerator;
+use Go\Stubs\StubAttribute;
+use Iterator;
 use PHPUnit\Framework\TestCase;
 
 use ReflectionFunction;
@@ -28,6 +31,17 @@ use function preg_replace;
 function funcWithReturnTypeAndDocBlock(): Exception
 {
     return new Exception('Test');
+}
+
+#[StubAttribute("function")]
+function funcWithAttributes(#[StubAttribute("argument")] string $argument): string
+{
+    return $argument;
+}
+
+function funcWithDNFTypeReturn(Iterator|(Exception&Countable) $value): Iterator|(Exception&Countable)
+{
+    return $value;
 }
 
 /**
@@ -83,23 +97,23 @@ class InterceptedFunctionGeneratorTest extends TestCase
     public static function dataGenerator(): array
     {
         return [
-            [
+            'var_dump' => [
                 'var_dump',
                 'function var_dump(mixed $value, mixed ...$values): void'
             ],
-            [
+            'array_pop' => [
                 'array_pop',
                 'function array_pop(array &$array): mixed'
             ],
-            [
+            'strcoll' => [
                 'strcoll',
                 'function strcoll(string $string1, string $string2): int'
             ],
-            [
+            'microtime' => [
                 'microtime',
                 'function microtime(bool $as_float = false): string|float'
             ],
-            [
+            'funcWithReturnTypeAndDocBlock' => [
                 '\Go\Proxy\Part\funcWithReturnTypeAndDocBlock',
                 'function funcWithReturnTypeAndDocBlock(): \Exception'
             ],
@@ -114,6 +128,14 @@ class InterceptedFunctionGeneratorTest extends TestCase
             [
                 '\Go\Proxy\Part\funcReturningNull',
                 'function funcReturningNull(): null'
+            ],
+            'funcWithAttributes' => [
+                '\Go\Proxy\Part\funcWithAttributes',
+                "#[\\Go\\Stubs\\StubAttribute('function')]\nfunction funcWithAttributes(\n    #[\\Go\\Stubs\\StubAttribute('argument')]\n    string \$argument\n): string"
+            ],
+            'funcWithDNFTypeReturn' => [
+                '\Go\Proxy\Part\funcWithDNFTypeReturn',
+                'function funcWithDNFTypeReturn(\Iterator|(\Exception&\Countable) $value): \Iterator|(\Exception&\Countable)'
             ],
         ];
     }

@@ -12,6 +12,11 @@ declare(strict_types = 1);
 
 namespace Go\Stubs;
 
+use Closure;
+use Countable;
+use Exception;
+use Iterator;
+
 #[StubAttribute(First::class)]
 class First
 {
@@ -38,6 +43,9 @@ class First
         return $this->protected;
     }
 
+    /**
+     * @return int Some description
+     */
     public function publicMethod(): int
     {
         return $this->public;
@@ -53,10 +61,28 @@ class First
         // nothing here
     }
 
+    /**
+     * @link https://github.com/laminas/laminas-code/pull/145 For tracking why attributes are not suuported
+     */
     #[StubAttribute(First::class)]
-    public function publicMethodWithAttribute(): string
+    public function publicMethodWithAttribute(#[StubAttribute("argument")] string $argument): string
     {
-        return $this->publicWithAttribute;
+        return $argument;
+    }
+
+    public function publicMethodWithUnionTypeReturn(Exception|Closure $value): Exception|Closure
+    {
+        return $value;
+    }
+
+    public function publicMethodWithIntersectionTypeReturn(Exception&Countable $value): Exception&Countable
+    {
+        return $value;
+    }
+
+    public function publicMethodWithDNFTypeReturn(Iterator|(Exception&Countable) $value): Iterator|(Exception&Countable)
+    {
+        return $value;
     }
 
     // Static methods that access self:: properties
