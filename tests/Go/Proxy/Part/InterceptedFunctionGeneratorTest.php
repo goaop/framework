@@ -30,6 +30,14 @@ function funcWithReturnTypeAndDocBlock(): Exception
 }
 
 /**
+ * Contains test function with nullable parameters and nullable return type
+ */
+function funcWithNullableParams(?string $name = null, int $count = 0): ?string
+{
+    return $name !== null ? str_repeat($name, $count) : null;
+}
+
+/**
  * Test case for generated function definition
  */
 class InterceptedFunctionGeneratorTest extends TestCase
@@ -81,6 +89,14 @@ class InterceptedFunctionGeneratorTest extends TestCase
             [
                 '\Go\Proxy\Part\funcWithReturnTypeAndDocBlock',
                 'function funcWithReturnTypeAndDocBlock() : \Exception'
+            ],
+            [
+                'array_slice',
+                'function array_slice(array $array, int $offset, ?int $length = null, bool $preserve_keys = false) : array'
+            ],
+            [
+                '\Go\Proxy\Part\funcWithNullableParams',
+                'function funcWithNullableParams(?string $name = null, int $count = 0) : ?string'
             ],
         ];
     }

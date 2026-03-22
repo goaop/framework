@@ -54,7 +54,8 @@ final class InterceptedFunctionGenerator extends AbstractGenerator
         if ($reflectionFunction->hasReturnType()) {
             $reflectionReturnType = $reflectionFunction->getReturnType();
             if ($reflectionReturnType instanceof ReflectionNamedType) {
-                $returnTypeName = $reflectionReturnType->getName();
+                $typeName       = $reflectionReturnType->getName();
+                $returnTypeName = ($reflectionReturnType->allowsNull() && $typeName !== 'mixed' ? '?' : '') . $typeName;
             } else {
                 $returnTypeName = (string)$reflectionReturnType;
             }
