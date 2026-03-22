@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: "PHPStan analysis - PHP8.4"
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout"
@@ -29,4 +30,4 @@ jobs:
       - name: "Install dependencies"
         run: "composer install --no-interaction --no-progress"
       - name: "Static analysis"
-        run: "vendor/bin/phpstan analyze --memory-limit=512M"
+        run: "vendor/bin/phpstan analyze --memory-limit=1G"

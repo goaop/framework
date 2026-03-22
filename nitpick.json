@@ -1,6 +1,0 @@
-{
-  "ignore": [
-    "tests/*",
-    "phpstan-baseline.php"
-  ]
-}
