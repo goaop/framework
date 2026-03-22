@@ -7,7 +7,6 @@ Go! AOP is a modern aspect-oriented framework in plain PHP with rich features fo
 [![GitHub release](https://img.shields.io/github/release/goaop/framework.svg)](https://github.com/goaop/framework/releases/latest)
 [![Total Downloads](https://img.shields.io/packagist/dt/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![Daily Downloads](https://img.shields.io/packagist/dd/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
-[![SensioLabs Insight](https://img.shields.io/sensiolabs/i/34549463-37d3-4368-94f5-812880d3ce4c.svg)](https://insight.sensiolabs.com/projects/34549463-37d3-4368-94f5-812880d3ce4c)
 [![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%208.4-8892BF.svg)](https://www.php.net/supported-versions.php)
 [![License](https://img.shields.io/packagist/l/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 
@@ -109,21 +108,21 @@ class ApplicationAspectKernel extends AspectKernel
 
 To configure the aspect kernel, call `init()` method of kernel instance.
 
-``` php
-// front-controller, for Symfony2 application it's web/app_dev.php
+```php
+<?php
 
 include __DIR__ . '/vendor/autoload.php'; // use composer
 
 // Initialize an application aspect container
 $applicationAspectKernel = ApplicationAspectKernel::getInstance();
 $applicationAspectKernel->init([
-        'debug'        => true, // use 'false' for production mode
-        'appDir'       => __DIR__ . '/..', // Application root directory
-        'cacheDir'     => __DIR__ . '/path/to/cache/for/aop', // Cache directory
-        // Include paths restricts the directories where aspects should be applied, or empty for all source files
-        'includePaths' => [
-            __DIR__ . '/../src/'
-        ]
+    'debug'        => true, // use 'false' for production mode
+    'appDir'       => __DIR__ . '/..', // Application root directory
+    'cacheDir'     => __DIR__ . '/path/to/cache/for/aop', // Cache directory
+    // Include paths restricts the directories where aspects should be applied, or empty for all source files
+    'includePaths' => [
+        __DIR__ . '/../src/'
+    ]
 ]);
 ```
 
@@ -133,17 +132,15 @@ Aspect is the key element of AOP philosophy. Go! AOP framework just uses simple 
 As an example let's intercept all the methods and display their names:
 
 ```php
+<?php
+
 // Aspect/MonitorAspect.php
 
 namespace Aspect;
 
 use Go\Aop\Aspect;
-use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\MethodInvocation;
-use Go\Lang\Attribute\After;
 use Go\Lang\Attribute\Before;
-use Go\Lang\Attribute\Around;
-use Go\Lang\Attribute\Pointcut;
 
 /**
  * Monitor aspect
@@ -170,13 +167,13 @@ Easy, isn't it? We declared here that we want to install a hook before the execu
 all dynamic public methods in the class Example. This is done with the help of attribute
 `#[Before("execution(public Example->*(*))")]`
 Hooks can be of any types, you will see them later.
-But we don't change any code in the class Example! I can feel your astonishment now.
 
 ### 5. Register the aspect in the aspect kernel
 
 To register the aspect just add an instance of it in the `configureAop()` method of the kernel:
 
-``` php
+```php
+<?php
 // app/ApplicationAspectKernel.php
 
 use Aspect\MonitorAspect;
@@ -193,19 +190,7 @@ use Aspect\MonitorAspect;
 
 ### 6. Optional configurations
 
-#### 6.1 Custom annotation cache
-
-By default, Go! AOP uses `Doctrine\Common\Cache\FilesystemCache` for caching
-annotations. However, if you need to use any other caching engine
-for annotation, you may configure cache driver via `annotationCache` configuration
-option of your application aspect kernel. Only requirement is
-that cache driver implements `Doctrine\Common\Cache\Cache` interface.
-
-This can be very useful when deploying to read-only filesystems. In that
-case, you may use, per example, `Doctrine\Common\Cache\ArrayCache` or some
-memory-based cache driver.
-
-#### 6.2 Support for weaving Doctrine entities (experimental, alpha)
+#### 6.1 Support for weaving Doctrine entities (experimental, alpha)
 
 Weaving Doctrine entities can not be supported out of the box due to the fact
 that Go! AOP generates two sets of classes for each weaved entity, a concrete class and
