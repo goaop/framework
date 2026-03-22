@@ -12,27 +12,15 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Exception;
 use PHPUnit\Framework\TestCase;
 use PhpParser\Node;
 use ReflectionFunction;
 use ReflectionParameter;
 
-/**
- * Helper functions for parameter reflection tests.
- */
-function paramGenHelper_simple(string $name, int $count = 0): void {}
-function paramGenHelper_nullable(?string $name = null): void {}
-function paramGenHelper_byRef(array &$data): void {}
-function paramGenHelper_variadic(string ...$items): void {}
-function paramGenHelper_variadicByRef(int &...$nums): void {}
-function paramGenHelper_classType(Exception $ex): void {}
-function paramGenHelper_noType($x): void {}
-function paramGenHelper_sensitiveParam(#[\SensitiveParameter] string $secret): void {}
-function paramGenHelper_noAttrParam(string $name): void {}
-
 class ParameterGeneratorTest extends TestCase
 {
+    private const STUBS_NS = 'Go\Proxy\Generator\Stubs';
+
     private function getParam(string $func, int $idx = 0): ReflectionParameter
     {
         return (new ReflectionFunction($func))->getParameters()[$idx];
@@ -40,63 +28,63 @@ class ParameterGeneratorTest extends TestCase
 
     public function testFromReflectionSimple(): void
     {
-        $gen = ParameterGenerator::fromReflection($this->getParam(__NAMESPACE__ . '\paramGenHelper_simple', 0));
+        $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_simple', 0));
         $output = $gen->generate();
         $this->assertSame('string $name', $output);
     }
 
     public function testFromReflectionWithDefault(): void
     {
-        $gen = ParameterGenerator::fromReflection($this->getParam(__NAMESPACE__ . '\paramGenHelper_simple', 1));
+        $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_simple', 1));
         $output = $gen->generate();
         $this->assertSame('int $count = 0', $output);
     }
 
     public function testFromReflectionNullable(): void
     {
-        $gen = ParameterGenerator::fromReflection($this->getParam(__NAMESPACE__ . '\paramGenHelper_nullable', 0));
+        $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_nullable', 0));
         $output = $gen->generate();
         $this->assertSame('?string $name = null', $output);
     }
 
     public function testFromReflectionByRef(): void
     {
-        $gen = ParameterGenerator::fromReflection($this->getParam(__NAMESPACE__ . '\paramGenHelper_byRef', 0));
+        $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_byRef', 0));
         $output = $gen->generate();
         $this->assertSame('array &$data', $output);
     }
 
     public function testFromReflectionVariadic(): void
     {
-        $gen = ParameterGenerator::fromReflection($this->getParam(__NAMESPACE__ . '\paramGenHelper_variadic', 0));
+        $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_variadic', 0));
         $output = $gen->generate();
         $this->assertSame('string ...$items', $output);
     }
 
     public function testFromReflectionVariadicByRef(): void
     {
-        $gen = ParameterGenerator::fromReflection($this->getParam(__NAMESPACE__ . '\paramGenHelper_variadicByRef', 0));
+        $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_variadicByRef', 0));
         $output = $gen->generate();
         $this->assertSame('int &...$nums', $output);
     }
 
     public function testFromReflectionClassType(): void
     {
-        $gen = ParameterGenerator::fromReflection($this->getParam(__NAMESPACE__ . '\paramGenHelper_classType', 0));
+        $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_classType', 0));
         $output = $gen->generate();
         $this->assertSame('\Exception $ex', $output);
     }
 
     public function testFromReflectionNoType(): void
     {
-        $gen = ParameterGenerator::fromReflection($this->getParam(__NAMESPACE__ . '\paramGenHelper_noType', 0));
+        $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_noType', 0));
         $output = $gen->generate();
         $this->assertSame('$x', $output);
     }
 
     public function testGetNodeReturnsParam(): void
     {
-        $gen = ParameterGenerator::fromReflection($this->getParam(__NAMESPACE__ . '\paramGenHelper_simple', 0));
+        $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_simple', 0));
         $node = $gen->getNode();
         $this->assertInstanceOf(Node\Param::class, $node);
         $this->assertSame('name', (string) $node->var->name);
@@ -126,7 +114,7 @@ class ParameterGeneratorTest extends TestCase
     {
         // When useWidening=true, builtin-typed params lose their type constraint
         $gen = ParameterGenerator::fromReflection(
-            $this->getParam(__NAMESPACE__ . '\paramGenHelper_simple', 0),
+            $this->getParam(self::STUBS_NS . '\paramGenHelper_simple', 0),
             true
         );
         $output = $gen->generate();
@@ -137,7 +125,7 @@ class ParameterGeneratorTest extends TestCase
     public function testFromReflectionPreservesParameterAttribute(): void
     {
         $gen = ParameterGenerator::fromReflection(
-            $this->getParam(__NAMESPACE__ . '\paramGenHelper_sensitiveParam', 0)
+            $this->getParam(self::STUBS_NS . '\paramGenHelper_sensitiveParam', 0)
         );
         $output = $gen->generate();
         $this->assertStringContainsString('SensitiveParameter', $output);
@@ -147,7 +135,7 @@ class ParameterGeneratorTest extends TestCase
     public function testFromReflectionNoAttributeWhenNone(): void
     {
         $gen = ParameterGenerator::fromReflection(
-            $this->getParam(__NAMESPACE__ . '\paramGenHelper_noAttrParam', 0)
+            $this->getParam(self::STUBS_NS . '\paramGenHelper_noAttrParam', 0)
         );
         $output = $gen->generate();
         $this->assertStringNotContainsString('#[', $output);

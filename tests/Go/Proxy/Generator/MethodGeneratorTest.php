@@ -12,40 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Exception;
+use Go\Proxy\Generator\Stubs\MethodGeneratorTestStub;
 use PHPUnit\Framework\TestCase;
 use PhpParser\Node\Stmt\ClassMethod;
-use ReflectionClass;
 use ReflectionMethod;
-
-class MethodGeneratorTestStub
-{
-    public function publicMethod(string $name, int $count = 0): string
-    {
-        return str_repeat($name, $count);
-    }
-
-    protected function protectedMethod(): void {}
-
-    private function privateMethod(): void {}
-
-    public static function staticMethod(array $data): array
-    {
-        return $data;
-    }
-
-    final public function finalMethod(): void {}
-
-    public function methodWithException(\Exception $ex): ?\Exception
-    {
-        return $ex;
-    }
-
-    #[\Deprecated]
-    public function deprecatedMethod(): void {}
-
-    public function methodWithSensitiveParam(#[\SensitiveParameter] string $secret): void {}
-}
 
 class MethodGeneratorTest extends TestCase
 {

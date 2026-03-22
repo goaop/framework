@@ -12,36 +12,14 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Countable;
-use Exception;
-use Iterator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
-use ReflectionParameter;
-
-/**
- * Helper functions for reflection-based type tests.
- */
-function typeGenHelper_namedInt(int $x): void {}
-function typeGenHelper_intersection(\Countable&\Iterator $x): void {}
-function typeGenHelper_namedString(string $x): void {}
-function typeGenHelper_namedFloat(float $x): void {}
-function typeGenHelper_namedBool(bool $x): void {}
-function typeGenHelper_namedArray(array $x): void {}
-function typeGenHelper_namedCallable(callable $x): void {}
-function typeGenHelper_namedMixed(mixed $x): void {}
-function typeGenHelper_namedObject(object $x): void {}
-function typeGenHelper_namedClass(Exception $x): void {}
-function typeGenHelper_nullable(?string $x): void {}
-function typeGenHelper_nullableClass(?Exception $x): void {}
-function typeGenHelper_union(int|string $x): void {}
-function typeGenHelper_unionWithNull(int|null $x): void {}
-function typeGenHelper_voidReturn(): void {}
-function typeGenHelper_nullReturn(): ?string { return null; }
 
 class TypeGeneratorTest extends TestCase
 {
+    private const STUBS_NS = 'Go\Proxy\Generator\Stubs';
+
     #[DataProvider('fromTypeStringProvider')]
     public function testFromTypeString(string $input, string $expected): void
     {
@@ -96,19 +74,20 @@ class TypeGeneratorTest extends TestCase
 
     public static function fromReflectionTypeProvider(): array
     {
+        $ns = 'Go\Proxy\Generator\Stubs';
         return [
-            'int'          => [__NAMESPACE__ . '\typeGenHelper_namedInt', 'int'],
-            'string'       => [__NAMESPACE__ . '\typeGenHelper_namedString', 'string'],
-            'float'        => [__NAMESPACE__ . '\typeGenHelper_namedFloat', 'float'],
-            'bool'         => [__NAMESPACE__ . '\typeGenHelper_namedBool', 'bool'],
-            'array'        => [__NAMESPACE__ . '\typeGenHelper_namedArray', 'array'],
-            'mixed'        => [__NAMESPACE__ . '\typeGenHelper_namedMixed', 'mixed'],
-            'object'       => [__NAMESPACE__ . '\typeGenHelper_namedObject', 'object'],
-            'class'        => [__NAMESPACE__ . '\typeGenHelper_namedClass', '\Exception'],
-            'nullable'     => [__NAMESPACE__ . '\typeGenHelper_nullable', '?string'],
-            'nullable cls' => [__NAMESPACE__ . '\typeGenHelper_nullableClass', '?\Exception'],
-            'union'        => [__NAMESPACE__ . '\typeGenHelper_union', 'string|int'],
-            'union+null'   => [__NAMESPACE__ . '\typeGenHelper_unionWithNull', '?int'],
+            'int'          => [$ns . '\typeGenHelper_namedInt', 'int'],
+            'string'       => [$ns . '\typeGenHelper_namedString', 'string'],
+            'float'        => [$ns . '\typeGenHelper_namedFloat', 'float'],
+            'bool'         => [$ns . '\typeGenHelper_namedBool', 'bool'],
+            'array'        => [$ns . '\typeGenHelper_namedArray', 'array'],
+            'mixed'        => [$ns . '\typeGenHelper_namedMixed', 'mixed'],
+            'object'       => [$ns . '\typeGenHelper_namedObject', 'object'],
+            'class'        => [$ns . '\typeGenHelper_namedClass', '\Exception'],
+            'nullable'     => [$ns . '\typeGenHelper_nullable', '?string'],
+            'nullable cls' => [$ns . '\typeGenHelper_nullableClass', '?\Exception'],
+            'union'        => [$ns . '\typeGenHelper_union', 'string|int'],
+            'union+null'   => [$ns . '\typeGenHelper_unionWithNull', '?int'],
         ];
     }
 
@@ -165,7 +144,7 @@ class TypeGeneratorTest extends TestCase
 
     public function testFromReflectionIntersectionType(): void
     {
-        $param = (new ReflectionFunction(__NAMESPACE__ . '\typeGenHelper_intersection'))->getParameters()[0];
+        $param = (new ReflectionFunction(self::STUBS_NS . '\typeGenHelper_intersection'))->getParameters()[0];
         $gen = TypeGenerator::fromReflectionType($param->getType());
         $output = $gen->generate();
         $this->assertStringContainsString('Countable', $output);

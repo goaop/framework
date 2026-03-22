@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
+use Go\Proxy\Generator\Stubs\MethodGeneratorTestStub;
 use PHPUnit\Framework\TestCase;
 use PhpParser\Node\Stmt\Trait_;
 use ReflectionMethod;

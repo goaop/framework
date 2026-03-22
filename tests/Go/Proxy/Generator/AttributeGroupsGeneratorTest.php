@@ -12,70 +12,17 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Attribute;
+use Go\Proxy\Generator\Stubs\AttrGenHelperClass;
 use PHPUnit\Framework\TestCase;
 use PhpParser\Node\AttributeGroup;
 use PhpParser\PrettyPrinter\Standard;
 use ReflectionFunction;
 use ReflectionMethod;
 
-/**
- * Test attribute classes for AttributeGroupsGeneratorTest.
- */
-#[Attribute(Attribute::TARGET_ALL)]
-class TestNoArgsAttr {}
-
-#[Attribute(Attribute::TARGET_ALL)]
-class TestArgsAttr
-{
-    public function __construct(
-        public string $value,
-        public int $count = 1,
-    ) {}
-}
-
-#[Attribute(Attribute::TARGET_ALL)]
-class TestNamedArgsAttr
-{
-    public function __construct(
-        public string $label = '',
-        public bool $enabled = true,
-    ) {}
-}
-
-/**
- * Helper functions for reflection-based attribute tests.
- */
-#[TestNoArgsAttr]
-function attrGenHelper_noArgs(): void {}
-
-#[TestArgsAttr('hello', 3)]
-function attrGenHelper_withArgs(): void {}
-
-#[TestNamedArgsAttr(label: 'test', enabled: false)]
-function attrGenHelper_namedArgs(): void {}
-
-#[TestNoArgsAttr]
-#[TestArgsAttr('multi')]
-function attrGenHelper_multipleAttrs(): void {}
-
-/**
- * Helper class for class-level attribute tests.
- */
-#[TestNoArgsAttr]
-class AttrGenHelperClass
-{
-    #[TestNoArgsAttr]
-    public string $annotatedProp = '';
-
-    #[TestArgsAttr('method_value')]
-    public function annotatedMethod(): void {}
-
-    public function methodWithAttrParam(#[TestNoArgsAttr] string $name): void {}
-}
-
 class AttributeGroupsGeneratorTest extends TestCase
 {
+    private const STUBS_NS = 'Go\Proxy\Generator\Stubs';
+
     private static Standard $printer;
 
     public static function setUpBeforeClass(): void
@@ -100,7 +47,7 @@ class AttributeGroupsGeneratorTest extends TestCase
 
     public function testSingleAttributeNoArgs(): void
     {
-        $func = new ReflectionFunction(__NAMESPACE__ . '\attrGenHelper_noArgs');
+        $func = new ReflectionFunction(self::STUBS_NS . '\attrGenHelper_noArgs');
         $groups = AttributeGroupsGenerator::fromReflectionAttributes($func->getAttributes());
         $this->assertCount(1, $groups);
         $this->assertInstanceOf(AttributeGroup::class, $groups[0]);
@@ -110,7 +57,7 @@ class AttributeGroupsGeneratorTest extends TestCase
 
     public function testAttributeWithPositionalArgs(): void
     {
-        $func = new ReflectionFunction(__NAMESPACE__ . '\attrGenHelper_withArgs');
+        $func = new ReflectionFunction(self::STUBS_NS . '\attrGenHelper_withArgs');
         $groups = AttributeGroupsGenerator::fromReflectionAttributes($func->getAttributes());
         $this->assertCount(1, $groups);
         $output = $this->generateGroups($groups);
@@ -121,7 +68,7 @@ class AttributeGroupsGeneratorTest extends TestCase
 
     public function testAttributeWithNamedArgs(): void
     {
-        $func = new ReflectionFunction(__NAMESPACE__ . '\attrGenHelper_namedArgs');
+        $func = new ReflectionFunction(self::STUBS_NS . '\attrGenHelper_namedArgs');
         $groups = AttributeGroupsGenerator::fromReflectionAttributes($func->getAttributes());
         $this->assertCount(1, $groups);
         $output = $this->generateGroups($groups);
@@ -134,18 +81,18 @@ class AttributeGroupsGeneratorTest extends TestCase
 
     public function testMultipleAttributesProduceMultipleGroups(): void
     {
-        $func = new ReflectionFunction(__NAMESPACE__ . '\attrGenHelper_multipleAttrs');
+        $func = new ReflectionFunction(self::STUBS_NS . '\attrGenHelper_multipleAttrs');
         $groups = AttributeGroupsGenerator::fromReflectionAttributes($func->getAttributes());
         $this->assertCount(2, $groups);
     }
 
     public function testAttributeNameIsFQN(): void
     {
-        $func = new ReflectionFunction(__NAMESPACE__ . '\attrGenHelper_noArgs');
+        $func = new ReflectionFunction(self::STUBS_NS . '\attrGenHelper_noArgs');
         $groups = AttributeGroupsGenerator::fromReflectionAttributes($func->getAttributes());
         $output = $this->generateGroups($groups);
         // Must be fully-qualified name (starts with backslash)
-        $this->assertStringContainsString('\\' . __NAMESPACE__ . '\\TestNoArgsAttr', $output);
+        $this->assertStringContainsString('\\' . self::STUBS_NS . '\\TestNoArgsAttr', $output);
     }
 
     public function testMethodAttributes(): void

@@ -55,7 +55,11 @@
         },
         "files": [
             "tests/functions.php",
-            "tests/Go/Stubs/ClassWithoutNamespace.php"
+            "tests/Go/Stubs/ClassWithoutNamespace.php",
+            "tests/Go/Proxy/Generator/Stubs/AttributeGroupsGeneratorStubs.php",
+            "tests/Go/Proxy/Generator/Stubs/FunctionGeneratorStubs.php",
+            "tests/Go/Proxy/Generator/Stubs/TypeGeneratorStubs.php",
+            "tests/Go/Proxy/Generator/Stubs/ParameterGeneratorStubs.php"
         ]
     },
 
