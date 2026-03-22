@@ -89,7 +89,8 @@ class ClassGeneratorTest extends TestCase
 
     public function testWithProperty(): void
     {
-        $prop = new PropertyGenerator('myProp', [], PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
+        $prop = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
+        $prop->setDefaultValue([]);
         $prop->setType(TypeGenerator::fromTypeString('array'));
         $gen = new ClassGenerator('MyClass', null, null, null, [], [$prop]);
         $output = $gen->generate();

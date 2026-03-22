@@ -35,9 +35,9 @@ final class JoinPointPropertyGenerator implements PropertyNodeProvider
     {
         $this->generator = new PropertyGenerator(
             self::NAME,
-            [],
             PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC
         );
+        $this->generator->setDefaultValue([]);
 
         $this->generator->setType(TypeGenerator::fromTypeString('array'));
 

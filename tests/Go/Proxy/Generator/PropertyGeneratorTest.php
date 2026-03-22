@@ -22,28 +22,28 @@ class PropertyGeneratorTest extends TestCase
 {
     public function testBasicPublicProperty(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PUBLIC);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PUBLIC);
         $output = $gen->generate();
         $this->assertStringContainsString('public $myProp', $output);
     }
 
     public function testProtectedProperty(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PROTECTED);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PROTECTED);
         $output = $gen->generate();
         $this->assertStringContainsString('protected $myProp', $output);
     }
 
     public function testPrivateProperty(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PRIVATE);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PRIVATE);
         $output = $gen->generate();
         $this->assertStringContainsString('private $myProp', $output);
     }
 
     public function testStaticProperty(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
         $output = $gen->generate();
         $this->assertStringContainsString('static', $output);
         $this->assertStringContainsString('private', $output);
@@ -51,30 +51,33 @@ class PropertyGeneratorTest extends TestCase
 
     public function testPropertyWithDefaultValue(): void
     {
-        $gen = new PropertyGenerator('myProp', [], PropertyGenerator::FLAG_PRIVATE);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PRIVATE);
+        $gen->setDefaultValue([]);
         $output = $gen->generate();
         $this->assertStringContainsString('= []', $output);
     }
 
     public function testPropertyWithStringDefault(): void
     {
-        $gen = new PropertyGenerator('myProp', 'hello', PropertyGenerator::FLAG_PUBLIC);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PUBLIC);
+        $gen->setDefaultValue('hello');
         $output = $gen->generate();
         $this->assertStringContainsString("= 'hello'", $output);
     }
 
     public function testPropertyWithNullDefault(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PUBLIC);
-        // null default means "no explicit default" in our implementation
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PUBLIC);
+        $gen->setDefaultValue(null);
         $gen->setType(TypeGenerator::fromTypeString('?string'));
         $output = $gen->generate();
         $this->assertStringContainsString('?string', $output);
+        $this->assertStringContainsString('= null', $output);
     }
 
     public function testSetType(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
         $gen->setType(TypeGenerator::fromTypeString('array'));
         $output = $gen->generate();
         $this->assertStringContainsString('array', $output);
@@ -82,7 +85,7 @@ class PropertyGeneratorTest extends TestCase
 
     public function testSetDocBlock(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PRIVATE);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PRIVATE);
         $gen->setDocBlock(new DocBlockGenerator('My prop doc.'));
         $output = $gen->generate();
         $this->assertStringContainsString('My prop doc.', $output);
@@ -90,7 +93,7 @@ class PropertyGeneratorTest extends TestCase
 
     public function testGetNode(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PUBLIC);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PUBLIC);
         $node = $gen->getNode();
         $this->assertInstanceOf(Property::class, $node);
         $this->assertSame('myProp', (string) $node->props[0]->name);
@@ -98,13 +101,13 @@ class PropertyGeneratorTest extends TestCase
 
     public function testGetName(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PUBLIC);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PUBLIC);
         $this->assertSame('myProp', $gen->getName());
     }
 
     public function testImplementsPropertyNodeProvider(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PUBLIC);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PUBLIC);
         $this->assertInstanceOf(PropertyNodeProvider::class, $gen);
     }
 
@@ -112,7 +115,7 @@ class PropertyGeneratorTest extends TestCase
     {
         $factory = new BuilderFactory();
         $attrGroup = new AttributeGroup([$factory->attribute(new Name\FullyQualified('Deprecated'))]);
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PUBLIC);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PUBLIC);
         $gen->addAttributeGroups([$attrGroup]);
         $output = $gen->generate();
         $this->assertStringContainsString('#[', $output);
@@ -121,7 +124,7 @@ class PropertyGeneratorTest extends TestCase
 
     public function testAddAttributeGroupsEmpty(): void
     {
-        $gen = new PropertyGenerator('myProp', null, PropertyGenerator::FLAG_PUBLIC);
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PUBLIC);
         $gen->addAttributeGroups([]);
         $output = $gen->generate();
         $this->assertStringNotContainsString('#[', $output);

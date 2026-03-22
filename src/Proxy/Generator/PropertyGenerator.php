@@ -27,17 +27,12 @@ final class PropertyGenerator implements PropertyNodeProvider
     public const FLAG_PRIVATE   = 0b0100;
     public const FLAG_STATIC    = 0b1000;
 
-    /**
-     * Sentinel value used to distinguish "no default" from an explicit null default.
-     */
-    private const NO_DEFAULT = '__go_aop_property_no_default__';
-
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
 
     private string $name;
     private int $flags;
-    private mixed $defaultValue = self::NO_DEFAULT;
+    private mixed $defaultValue;
     private bool $hasDefault    = false;
     private ?TypeGenerator $type      = null;
     private ?DocBlockGenerator $docBlock = null;
@@ -45,15 +40,16 @@ final class PropertyGenerator implements PropertyNodeProvider
     /** @var AttributeGroup[] */
     private array $attrGroups = [];
 
-    public function __construct(string $name, mixed $defaultValue = self::NO_DEFAULT, int $flags = self::FLAG_PUBLIC)
+    public function __construct(string $name, int $flags = self::FLAG_PUBLIC)
     {
         $this->name  = $name;
         $this->flags = $flags;
+    }
 
-        if ($defaultValue !== self::NO_DEFAULT) {
-            $this->defaultValue = $defaultValue;
-            $this->hasDefault   = true;
-        }
+    public function setDefaultValue(mixed $defaultValue): void
+    {
+        $this->defaultValue = $defaultValue;
+        $this->hasDefault   = true;
     }
 
     public function setType(TypeGenerator $type): void
