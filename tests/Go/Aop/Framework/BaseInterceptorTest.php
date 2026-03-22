@@ -27,10 +27,10 @@ class BaseInterceptorTest extends AbstractInterceptorTestCase
         $sequence = [];
         $advice   = $this->getAdvice($sequence);
 
-        $interceptor = $this->getMockForAbstractClass(
-            AbstractInterceptor::class,
-            [$advice]
-        );
+        $interceptor = $this->getMockBuilder(AbstractInterceptor::class)
+            ->setConstructorArgs([$advice])
+            ->onlyMethods(['invoke'])
+            ->getMock();
         $this->assertEquals($advice, $interceptor->getRawAdvice());
     }
 

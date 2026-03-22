@@ -73,11 +73,11 @@ class DynamicClosureSplatMethodInvocationTest extends TestCase
         $child      = $this->createMock(First::class);
         $invocation = new DynamicClosureMethodInvocation([], First::class, 'recursion');
 
-        $child->expects($this->exactly(5))->method('recursion')->will($this->returnCallback(
+        $child->expects($this->exactly(5))->method('recursion')->willReturnCallback(
             function ($value, $level) use ($child, $invocation) {
                 return $invocation($child, [$value, $level]);
             }
-        ));
+        );
 
         $this->assertEquals(5, $child->recursion(5,0));
         $this->assertEquals(20, $child->recursion(5,3));
@@ -90,10 +90,10 @@ class DynamicClosureSplatMethodInvocationTest extends TestCase
         $advice = $this->createMock(Interceptor::class);
         $advice->expects($this->once())
             ->method('invoke')
-            ->will($this->returnCallback(function (MethodInvocation $object) use (&$value) {
+            ->willReturnCallback(function (MethodInvocation $object) use (&$value) {
                 $value = 'ok';
                 return $object->proceed();
-            }));
+            });
 
         $invocation = new DynamicClosureMethodInvocation([$advice], First::class, 'publicMethod');
 

@@ -12,10 +12,10 @@ class AbstractMethodInvocationTest extends TestCase
 
     public function setUp(): void
     {
-        $this->invocation = $this->getMockForAbstractClass(
-            AbstractMethodInvocation::class,
-            [[], self::class, __FUNCTION__]
-        );
+        $this->invocation = $this->getMockBuilder(AbstractMethodInvocation::class)
+            ->setConstructorArgs([[], self::class, __FUNCTION__])
+            ->onlyMethods(['proceed', 'isDynamic', 'getThis', 'getScope'])
+            ->getMock();
     }
 
     public function testInvocationReturnsMethod(): void
