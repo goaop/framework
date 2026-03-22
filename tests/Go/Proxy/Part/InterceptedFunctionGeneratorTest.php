@@ -15,6 +15,8 @@ namespace Go\Proxy\Part;
 use Countable;
 use Exception;
 use Go\Proxy\Generator\FunctionGenerator;
+use Go\Stubs\StubAttribute;
+use Iterator;
 use PHPUnit\Framework\TestCase;
 
 use ReflectionFunction;
@@ -129,11 +131,11 @@ class InterceptedFunctionGeneratorTest extends TestCase
             ],
             'funcWithAttributes' => [
                 '\Go\Proxy\Part\funcWithAttributes',
-                'function funcWithAttributes(#[\Go\Stubs\StubAttribute("argument")] string $argument) : string'
+                "#[\\Go\\Stubs\\StubAttribute('function')]\nfunction funcWithAttributes(\n    #[\\Go\\Stubs\\StubAttribute('argument')]\n    string \$argument\n): string"
             ],
             'funcWithDNFTypeReturn' => [
                 '\Go\Proxy\Part\funcWithDNFTypeReturn',
-                'function funcWithDNFTypeReturn((\Countable&\Exception)|\Iterator $value) : (\Countable&\Exception)|\Iterator'
+                'function funcWithDNFTypeReturn(\Iterator|(\Exception&\Countable) $value): \Iterator|(\Exception&\Countable)'
             ],
         ];
     }

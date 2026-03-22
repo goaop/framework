@@ -77,22 +77,22 @@ class InterceptedMethodGeneratorTest extends TestCase
             'publicMethodWithUnionTypeReturn' => [
                 First::class,
                 'publicMethodWithUnionTypeReturn',
-                'public function publicMethodWithUnionTypeReturn(\Closure|\Exception $value) : \Closure|\Exception'
+                'public function publicMethodWithUnionTypeReturn(\Exception|\Closure $value): \Exception|\Closure'
             ],
             'publicMethodWithIntersectionTypeReturn' => [
                 First::class,
                 'publicMethodWithIntersectionTypeReturn',
-                'public function publicMethodWithIntersectionTypeReturn(\Countable&\Exception $value) : \Countable&\Exception'
+                'public function publicMethodWithIntersectionTypeReturn(\Exception&\Countable $value): \Exception&\Countable'
             ],
             'publicMethodWithDNFTypeReturn' => [
                 First::class,
                 'publicMethodWithDNFTypeReturn',
-                'public function publicMethodWithDNFTypeReturn((\Countable&\Exception)|\Iterator $value) : (\Countable&\Exception)|\Iterator'
+                'public function publicMethodWithDNFTypeReturn(\Iterator|(\Exception&\Countable) $value): \Iterator|(\Exception&\Countable)'
             ],
             'publicMethodWithAttribute' => [
                 First::class,
                 'publicMethodWithAttribute',
-                'public function publicMethodWithAttribute(#[\Go\Stubs\StubAttribute("argument")] string $argument) : string'
+                "public function publicMethodWithAttribute(\n    #[\\Go\\Stubs\\StubAttribute('argument')]\n    string \$argument\n): string"
             ],
         ];
     }
