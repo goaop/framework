@@ -54,6 +54,11 @@ final class PropertyGenerator implements PropertyNodeProvider
         $this->docBlock = $docBlock;
     }
 
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
     /**
      * Returns the underlying AST property node.
      */
