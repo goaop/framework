@@ -93,17 +93,11 @@ class InterceptedConstructorGeneratorTest extends TestCase
             '
             public function __construct()
             {
-                $accessor = function(array &$propertyStorage, object $target) {
-                    $propertyStorage = [
-                        \'foo\' => &$target->foo,
-                        \'bar\' => &$target->bar
-                    ];
-                    unset(
-                        $target->foo,
-                        $target->bar
-                    );
+                $accessor = function (array &$propertyStorage, object $target) {
+                    $propertyStorage = [\'foo\' => &$target->foo, \'bar\' => &$target->bar];
+                    unset($target->foo, $target->bar);
                 };
-                ($accessor->bindTo($this, parent::class))($this->__properties, $this);
+                $accessor->bindTo($this, parent::class)($this->__properties, $this);
             }'
         );
         $this->assertSame($expectedCode, $generatedCode);

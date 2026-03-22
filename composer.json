@@ -12,7 +12,7 @@
         "ext-tokenizer": "*",
         "goaop/parser-reflection": "4.x-dev",
         "goaop/dissect": "^3.0",
-        "laminas/laminas-code": "^4.17",
+        "nikic/php-parser": "^5.0",
         "symfony/finder": "^6.4 || ^7.0"
     },
 

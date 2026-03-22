@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use Exception;
+use Go\Proxy\Generator\FunctionGenerator;
 use PHPUnit\Framework\TestCase;
 
 use ReflectionFunction;
@@ -62,7 +63,8 @@ class InterceptedFunctionGeneratorTest extends TestCase
     public function testGenerate(string $functionName, string $expectedSignature): void
     {
         $reflectionFunction = new ReflectionFunction($functionName);
-        $generator          = new InterceptedFunctionGenerator($reflectionFunction, "\n");
+        $generator          = FunctionGenerator::fromReflection($reflectionFunction);
+        $generator->setBody("\n");
 
         $generatedCode = $generator->generate();
         // Clean PhpDoc comment, @see https://stackoverflow.com/a/4207149/801258
@@ -73,42 +75,45 @@ class InterceptedFunctionGeneratorTest extends TestCase
     }
 
     /**
-     * Provides list of methods with expected attributes
+     * Provides list of methods with expected attributes.
+     * Signatures follow PhpParser PrettyPrinter format:
+     *   - no space after `...` for variadic params
+     *   - return type separated by `: ` (colon + one space, no leading space)
      */
     public static function dataGenerator(): array
     {
         return [
             [
                 'var_dump',
-                'function var_dump(mixed $value, mixed ... $values) : void'
+                'function var_dump(mixed $value, mixed ...$values): void'
             ],
             [
                 'array_pop',
-                'function array_pop(array &$array) : mixed'
+                'function array_pop(array &$array): mixed'
             ],
             [
                 'strcoll',
-                'function strcoll(string $string1, string $string2) : int'
+                'function strcoll(string $string1, string $string2): int'
             ],
             [
                 'microtime',
-                'function microtime(bool $as_float = false) : float|string'
+                'function microtime(bool $as_float = false): string|float'
             ],
             [
                 '\Go\Proxy\Part\funcWithReturnTypeAndDocBlock',
-                'function funcWithReturnTypeAndDocBlock() : \Exception'
+                'function funcWithReturnTypeAndDocBlock(): \Exception'
             ],
             [
                 'array_slice',
-                'function array_slice(array $array, int $offset, ?int $length = null, bool $preserve_keys = false) : array'
+                'function array_slice(array $array, int $offset, ?int $length = null, bool $preserve_keys = false): array'
             ],
             [
                 '\Go\Proxy\Part\funcWithNullableParams',
-                'function funcWithNullableParams(?string $name = null, int $count = 0) : ?string'
+                'function funcWithNullableParams(?string $name = null, int $count = 0): ?string'
             ],
             [
                 '\Go\Proxy\Part\funcReturningNull',
-                'function funcReturningNull() : null'
+                'function funcReturningNull(): null'
             ],
         ];
     }
