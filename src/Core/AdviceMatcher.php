@@ -168,11 +168,19 @@ class AdviceMatcher implements AdviceMatcherInterface
 
         // Check methods in class only for method filters
         if (($pointcutKind & Pointcut::KIND_METHOD) !== 0) {
-            $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED;
+            // Private methods are supported by the trait-based proxy engine: the original private method
+            // body lives in the trait and is aliased as __aop__<method>; the proxy overrides it with the
+            // same private visibility so the join-point chain is invoked on every in-class call.
+            $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED | ReflectionMethod::IS_PRIVATE;
             foreach ($class->getMethods($mask) as $method) {
                 // abstract and parent final methods could not be woven
                 $isParentFinalMethod = ($method->getDeclaringClass()->name !== $class->name) && $method->isFinal();
                 if ($isParentFinalMethod || $method->isAbstract()) {
+                    continue;
+                }
+                // Private methods inherited from a parent class cannot be overridden — skip them.
+                // Only private methods declared in the class itself (or its trait body) can be intercepted.
+                if ($method->isPrivate() && $method->getDeclaringClass()->name !== $class->name) {
                     continue;
                 }
 

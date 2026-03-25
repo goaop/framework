@@ -160,6 +160,45 @@ class ClassProxyGeneratorTest extends TestCase
     }
 
     /**
+     * Tests that private instance and static methods are intercepted correctly:
+     * - The proxy overrides them with the same `private` visibility
+     * - The trait-use block aliases each as `private __aop__<method>`
+     * - The method body delegates to the join-point chain
+     *
+     * This is a new capability in the trait-based engine; the old extend-based engine
+     * could not intercept private methods because PHP disallows overriding them in subclasses.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateInterceptsPrivateMethods(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $classAdvices    = [
+            'method' => [
+                'privateMethod'      => ['test'], // private function
+            ],
+            'static' => [
+                'staticSelfPrivate'  => ['test'], // private static function
+            ],
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'OriginalBodyTrait', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        // Trait alias must exist for each private method
+        $this->assertStringContainsString('__aop__privateMethod', $proxyFileContent);
+        $this->assertStringContainsString('__aop__staticSelfPrivate', $proxyFileContent);
+
+        // Proxy methods must keep private visibility
+        $this->assertStringContainsString('private function privateMethod(', $proxyFileContent);
+        $this->assertStringContainsString('private static function staticSelfPrivate(', $proxyFileContent);
+
+        // Method bodies must call the join-point chain
+        $this->assertStringContainsString("self::\$__joinPoints['method:privateMethod']->__invoke(", $proxyFileContent);
+        $this->assertStringContainsString("self::\$__joinPoints['static:staticSelfPrivate']->__invoke(", $proxyFileContent);
+    }
+
+    /**
      * Regression test: when an aspect only introduces interfaces/traits (no method advices),
      * the original class body trait must still be included in the proxy's use block.
      * Without this, all original class methods are invisible on the proxy instance.
