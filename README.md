@@ -1,7 +1,8 @@
 Go! Aspect-Oriented Framework for PHP
 -----------------
 
-Go! AOP is a modern aspect-oriented framework in plain PHP with rich features for the new level of software development. The framework allows cross-cutting issues to be solved in the traditional object-oriented PHP code by providing a highly efficient and transparent hook system for your exisiting code.
+This framework brings **Aspect-Oriented Programming** to PHP — a powerful paradigm for handling cross-cutting concerns that don't fit neatly into traditional OOP like logging, caching, and security checks across hundreds of methods. **Go! AOP** solves this problem elegantly—define such behaviors as aspect classes **once**, and **apply them automatically everywhere** when needed. Your business logic stays clean, your infrastructure code stays organized.
+
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/goaop/framework/phpunit.yml?branch=master)
 ![PHPStan Badge](https://img.shields.io/badge/PHPStan-level%2010-brightgreen.svg?style=flat&link=https%3A%2F%2Fphpstan.org%2Fuser-guide%2Frule-levels)
@@ -10,37 +11,106 @@ Go! AOP is a modern aspect-oriented framework in plain PHP with rich features fo
 [![Daily Downloads](https://img.shields.io/packagist/dd/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%208.4-8892BF.svg)](https://www.php.net/supported-versions.php)
 [![License](https://img.shields.io/packagist/l/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
+[![Sponsor](https://img.shields.io/badge/Sponsor-❤️-lightgray?style=flat&logo=github)](https://github.com/sponsors/lisachenko)
 
-Features
-------------
-* Provides dynamic hook system for PHP without changes in the original source code.
-* Doesn't require any PECL-extentions (php-aop, runkit, uopz) and DI-containers to work.
-* Object-oriented design of aspects, joinpoints and pointcuts.
-* Intercepting an execution of any public or protected method in a classes.
-* Intercepting an execution of static methods and methods in final classes.
-* Intercepting an execution of methods in the traits.
-* Intercepting an access to the public/protected properties for objects.
-* Hooks for static class initialization (after class is loaded into PHP memory).
-* Hooks for object initialization (intercepting `new` keywords).
-* Intercepting an invocation of system PHP functions.
-* Ability to change the return value of any methods/functions via `Around` type of advice.
-* Rich pointcut grammar syntax for defining pointcuts in the source code.
-* Native debugging for AOP with XDebug. The code with weaved aspects is fully readable and native. You can put a breakpoint in the original class or in the aspect and it will work (for debug mode)!
-* Can be integrated with any existing PHP frameworks and libraries (with or without additional configuration).
-* Highly optimized for production use: support of opcode cachers, lazy loading of advices and aspects, joinpoints caching, no runtime checks of pointcuts, no runtime annotations parsing, no evals and `__call` methods, no slow proxies and `call_user_func_array()`. Fast bootstraping process (2-20ms) and advice invocation.
+## ✨ Features
+
+### 🔌 Zero Dependencies, Pure PHP
+
+ - **No PECL/PIE extensions required** — Forget about `php-aop`, `runkit`, `uopz`, or any other low-level extensions. Go! AOP is written in **100% pure PHP** — just `composer require` and you're ready. No compilation, no system dependencies, no deployment headaches.
+
+ - **Zero `eval()` calls** — Your architecture team will love this. Framework never uses `eval()`, `create_function()` constructions for dynamic code execution. All transformations produce **static PHP files** that can be reviewed, scanned by security tools, and audited. No hidden code generation at runtime.
+
+ - **PHPStan Level 10** — The entire codebase passes **PHPStan's strictest analysis level** — maximum type safety, no mixed types escaping, full type-aware support. This means fewer bugs, better IDE autocompletion, and confidence that the framework won't introduce type errors into your application.
+
+### 🎯 Powerful Core Interception Capabilities
+
+The framework provides powerful core interception capabilities that can be used to hook into any method in your application:
+
+| Feature                                    | Support |
+|--------------------------------------------|:-------:|
+| Interception of public & protected methods |    ✅    |
+| Interception of static and final methods   |    ✅    |
+| Interception of methods in `final` classes |    ✅    |
+| Interception of trait methods              |    ✅    |
+| Before, After and Around type of hooks     |    ✅    |
+
+### 🛠️ Developer Experience
+
+ - **Rich pointcut syntax** — Express complex matching rules with an intuitive, readable grammar. Target methods by visibility, name patterns, annotations, class hierarchy, and more — all in a single expression like `execution(public **->save*(*))`.
+
+ - **Full XDebug support** — Unlike other AOP solutions that generate unreadable proxy code, the framework produces clean, debuggable PHP. Set breakpoints directly in your aspects or original classes — step through code naturally, inspect variables, and debug as if AOP wasn't there.
+
+ - **Readable weaved code** — No magic methods, no `__call()` indirection or runtime proxies. The transformed source is plain PHP that you can read, understand, and audit. What you see in the cache is what gets executed.
+
+ - **Framework-agnostic** — integrates with popular frameworks and vanilla PHP. Works equally well in legacy applications or greenfield projects — no architectural changes required.
+
+### ⚡ Production Ready
+
+ - **Lightning fast** — Quick start in just **few ms**. Aspects are initialized once and cached, so subsequent requests have virtually zero initialization overhead.
+
+ - **Opcode cache friendly** — First-class support for **OPcache**. Transformed files and classes are stored as plain PHP files, fully optimized by your opcode cache just like regular code.
+
+ - **Smart caching** — Lazy loading of advice and aspects — only what's needed gets loaded. Joinpoints are resolved at compile-time and cached, eliminating runtime reflection costs.
+
+ - **No runtime overhead** — Zero runtime annotation parsing, no slow `__call` methods, no proxy objects wrapping your instances. Method interception happens through direct, inlined PHP code — as fast as handwritten cross-cutting code. **Zero** overhead for non-intercepted methods.
 
 
 What is AOP?
 ------------
 
-[AOP (Aspect-Oriented Programming)](http://en.wikipedia.org/wiki/Aspect-oriented_programming) is an approach to cross-cutting concerns, where these concerns are designed and implemented 
-in a "modular" way (that is, with appropriate encapsulation, lack of duplication, etc.), then integrated into all the relevant
-execution points in a succinct and robust way, e.g. through declarative or programmatic means.
+[Aspect-Oriented Programming (AOP)](http://en.wikipedia.org/wiki/Aspect-oriented_programming) is a programming paradigm that complements Object-Oriented Programming by solving a fundamental problem: **cross-cutting concerns**.
 
-In AOP terms, the execution points are called join points. A set of those points is called a pointcut and the new
-behavior that is executed before, after, or "around" a join point is called advice. You can read more about AOP in
-[Introduction](http://go.aopphp.com/docs/introduction/) section.
+### The Problem with Traditional OOP
 
+In OOP, we organize code into classes with clear responsibilities. But some behaviors refuse to fit neatly into this model — they cut *across* many classes:
+
+- **Logging** — you need it in dozens of methods across your application
+- **Caching** — scattered throughout services and repositories
+- **Security checks** — repeated before every sensitive operation
+- **Transaction management** — wrapping multiple database operations
+- **Performance monitoring** — measuring execution time everywhere
+
+With pure OOP, you end up copying the same code into hundreds of places. When requirements change, you hunt through the entire codebase. This is called **code scattering** and **code tangling** — and it violates the DRY and DDD principle at scale.
+
+### The AOP Solution
+
+AOP introduces a simple but powerful idea: **define cross-cutting behavior once, apply it automatically wherever needed**.
+
+Think of it like life advice. Your mentor doesn't follow you around repeating "check your inputs before every decision." Instead, they give you one piece of advice that you apply in many situations. AOP works the same way — you write the advice once, and the framework applies it at the right moments.
+
+### Core Concepts
+
+| Concept        | What It Means                                                                       | Real-World Analogy                                                    |
+|----------------|-------------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| **Aspect**     | A module containing cross-cutting logic (logging, caching, etc.)                    | A chapter in a guidebook covering the document signing process        |
+| **Join Point** | A specific moment in code execution — method call, property access, object creation | A decision point in your day where advice could apply                 |
+| **Advice**     | The actual code that runs at a join point                                           | The specific guidance: "Before signing the document, read everything" |
+| **Pointcut**   | A pattern that selects which join points to target                                  | The rule for *when* advice applies: "Before signing *any* contract"   |
+| **Weaving**    | The process of applying aspects to your code                                        | The mentor's words becoming part of your thinking                     |
+
+### Types of Advice
+
+Just like life advice can be applied at different moments, AOP advice has different timing:
+
+| Advice Type         | When It Runs                     | Example Use Case                   |
+|---------------------|----------------------------------|------------------------------------|
+| **Before**          | Right before the method executes | Validate input, check permissions  |
+| **After (Finally)** | Always, regardless of outcome    | Release resources, stop timers     |
+| **Around**          | Wraps the entire execution       | Caching, transactions, retry logic |
+| **After Throwing**  | When an exception is thrown      | Log errors, send alerts            |
+
+**Around advice** is the most powerful — it controls **whether the original method runs at all**, can modify arguments, change return values, or handle exceptions.
+
+### Advanced: Introductions
+
+Go! AOP can do more than intercept behavior — it can **add entirely new capabilities** to existing classes. This is called an **Introduction** (or inter-type declaration).
+
+Want all your DTOs to implement `Serializable`? Instead of modifying every class, declare it once in an aspect — Go! AOP adds the interface and implementation automatically. No inheritance hierarchies, no code duplication.
+
+### How Go! AOP Works
+
+Unlike frameworks requiring special compilation steps, Go! AOP performs **runtime weaving** — it transforms your classes when they're loaded into PHP. No build process, no generated files to commit. Your original source code stays untouched, and the framework handles everything transparently.
 
 Installation
 ------------
@@ -55,12 +125,12 @@ Go! AOP framework can be installed with composer. Installation is quite easy:
 
 ### Step 0 (optional): Try demo examples in the framework
 
-Ask composer to create new project in empty directory:
+Ask composer to create a new project in empty directory:
 
 ```bash
 composer create-project goaop/framework
 ```
-After that just configure your web server to `demos/` folder and open it in your browser. Then you can look at some demo examples before going deeper into installing it in your project.
+After that configure your web server to `demos/` folder and open it in your browser. Then you can look at some demo examples before going deeper into installing it in your project.
 
 ### Step 1: Download the library using composer
 
@@ -130,7 +200,7 @@ $applicationAspectKernel->init([
 ### 4. Create an aspect
 
 Aspect is the key element of AOP philosophy. Go! AOP framework just uses simple PHP classes for declaring aspects, which makes it possible to use all features of OOP for aspect classes.
-As an example let's intercept all the methods and display their names:
+As an example, let's intercept all the methods and display their names:
 
 ```php
 <?php
@@ -193,10 +263,10 @@ use Aspect\MonitorAspect;
 
 #### 6.1 Support for weaving Doctrine entities (experimental, alpha)
 
-Weaving Doctrine entities can not be supported out of the box due to the fact
-that Go! AOP generates two sets of classes for each weaved entity, a concrete class and
+Weaving Doctrine entities cannot be supported out of the box due to the fact
+that Go! AOP generates two sets of classes for each woven entity, a concrete class and
 proxy with pointcuts. Doctrine will interpret both of those classes as concrete entities
-and assign for both of them same metadata, which would mess up the database and relations
+and assign for both of them the same metadata, which would mess up the database and relations
 (see [https://github.com/goaop/framework/issues/327](https://github.com/goaop/framework/issues/327)).
 
 Therefore, a workaround is provided with this library which will sort out
@@ -211,12 +281,4 @@ weaving Doctrine entities.
 
 ### 7. Contribution
 
-To contribute changes see the [Contribute Readme](CONTRIBUTE.md)
-
-Documentation
--------------
-
-Documentation about Go! library can be found at [official site][1].
-If you like this project, you could support it via <a href="https://flattr.com/submit/auto?fid=83r77w&url=https%3A%2F%2Fgithub.com%2Fgoaop%2Fframework" target="_blank"><img src="https://button.flattr.com/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0"></a>
-
-[1]: http://go.aopphp.com
+To contribute changes, see the [Contribute Readme](CONTRIBUTE.md)
