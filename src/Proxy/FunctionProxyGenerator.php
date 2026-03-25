@@ -93,9 +93,10 @@ class FunctionProxyGenerator
         $filledAdvices = [];
         foreach ($adviceNames as $advisorName) {
             $advice = self::$accessor->$advisorName;
-            if ($advice instanceof Interceptor) {
-                $filledAdvices[] = $advice;
+            if (!$advice instanceof Interceptor) {
+                throw new \RuntimeException("Advice '$advisorName' must implement Interceptor, got " . get_debug_type($advice));
             }
+            $filledAdvices[] = $advice;
         }
 
         return new ReflectionFunctionInvocation($filledAdvices, $functionName);
