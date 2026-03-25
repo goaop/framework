@@ -160,6 +160,33 @@ class ClassProxyGeneratorTest extends TestCase
     }
 
     /**
+     * Regression test: when an aspect only introduces interfaces/traits (no method advices),
+     * the original class body trait must still be included in the proxy's use block.
+     * Without this, all original class methods are invisible on the proxy instance.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateWithIntroductionOnlyAlwaysIncludesOriginalTrait(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        // Only interface/trait introductions — no method, static, or property advices
+        $classAdvices = [
+            'interface' => ['root' => ['\\Stringable']],
+            'trait'     => ['root' => ['\\SomeTrait']],
+        ];
+
+        $traitName        = 'OriginalBodyTrait';
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, $traitName, $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString(
+            $traitName,
+            $proxyFileContent,
+            'Proxy must use the original class body trait even when no methods are intercepted'
+        );
+    }
+
+    /**
      * Provides list of methods with expected attributes
      *
      * @return array
