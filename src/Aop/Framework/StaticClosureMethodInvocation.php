@@ -55,7 +55,12 @@ final class StaticClosureMethodInvocation extends AbstractMethodInvocation
             return $currentInterceptor->invoke($this);
         }
 
-        // Rebind the closure if scope (class name) was changed since last time
+        // Trait-alias approach: pre-bound closure receives (scope-class-string, args) — zero per-call reflection
+        if ($this->proceedFn !== null) {
+            return ($this->proceedFn)($this->scope, $this->arguments);
+        }
+
+        // Legacy approach: rebind the closure if scope (class name) was changed since last time
         if ($this->previousScope !== $this->scope) {
             if (!isset($this->closureToCall)) {
                 $this->closureToCall = self::getStaticInvoker(

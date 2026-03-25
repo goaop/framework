@@ -55,7 +55,12 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
             return $currentInterceptor->invoke($this);
         }
 
-        // Fill the closure only once if it's empty
+        // Trait-alias approach: pre-bound closure created once at injectJoinPoints() — zero per-call reflection
+        if ($this->proceedFn !== null) {
+            return ($this->proceedFn)($this->instance, $this->arguments);
+        }
+
+        // Legacy approach: fill the closure only once if it's empty
         if (!isset($this->closureToCall)) {
             $this->closureToCall   = $this->reflectionMethod->getClosure($this->instance);
             $this->closureInstance = $this->instance;
