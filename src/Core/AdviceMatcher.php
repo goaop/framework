@@ -29,19 +29,14 @@ use function count;
  */
 class AdviceMatcher implements AdviceMatcherInterface
 {
-    /**
-     * Flag to enable/disable support of global function interception
-     */
-    private bool $isInterceptFunctions = false;
 
     /**
      * Constructor
      *
      * @param bool $isInterceptFunctions Optional flag to enable function interception
      */
-    public function __construct(bool $isInterceptFunctions = false)
+    public function __construct(private readonly bool $isInterceptFunctions = false)
     {
-        $this->isInterceptFunctions = $isInterceptFunctions;
     }
 
     /**
@@ -49,7 +44,7 @@ class AdviceMatcher implements AdviceMatcherInterface
      *
      * @param Aop\Advisor[] $advisors List of advisor to match
      *
-     * @return Aop\Advice[][][] List of advices for function
+     * @return array<string, array<string, array<string, Aop\Advice>>> List of advices for function
      */
     public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors): array
     {
@@ -64,13 +59,15 @@ class AdviceMatcher implements AdviceMatcherInterface
                 $pointcut = $advisor->getPointcut();
                 $isFunctionAdvisor = $pointcut->getKind() & Pointcut::KIND_FUNCTION;
                 if ($isFunctionAdvisor && $pointcut->matches($namespace)) {
-                    $advices[] = $this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $advisorId, $pointcut);
+                    foreach ($this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
+                        foreach ($prefixAdvices as $name => $nameAdvices) {
+                            foreach ($nameAdvices as $advisorKey => $advice) {
+                                $advices[$prefix][$name][$advisorKey] = $advice;
+                            }
+                        }
+                    }
                 }
             }
-        }
-
-        if (count($advices) > 0) {
-            $advices = array_merge_recursive(...$advices);
         }
 
         return $advices;
@@ -82,7 +79,7 @@ class AdviceMatcher implements AdviceMatcherInterface
      * @param ReflectionClass<object> $class
      * @param Aop\Advisor[] $advisors List of advisor to match
      *
-     * @return Aop\Advice[][][] List of advices for class
+     * @return array<string, array<string, array<string, Aop\Advice>>> List of advices for class
      */
     public function getAdvicesForClass(ReflectionClass $class, array $advisors): array
     {
@@ -98,16 +95,25 @@ class AdviceMatcher implements AdviceMatcherInterface
             if ($advisor instanceof PointcutAdvisor) {
                 $pointcut = $advisor->getPointcut();
                 if (($pointcut->getKind() & Pointcut::KIND_CLASS) && $pointcut->matches($class)) {
-                    $classAdvices[] = $this->getClassAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut);
+                    foreach ($this->getClassAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
+                        foreach ($prefixAdvices as $name => $nameAdvices) {
+                            foreach ($nameAdvices as $advisorKey => $advice) {
+                                $classAdvices[$prefix][$name][$advisorKey] = $advice;
+                            }
+                        }
+                    }
                 }
 
                 if ($pointcut->matches($class)) {
-                    $classAdvices[] = $this->getClassLevelAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut);
+                    foreach ($this->getClassLevelAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
+                        foreach ($prefixAdvices as $name => $nameAdvices) {
+                            foreach ($nameAdvices as $advisorKey => $advice) {
+                                $classAdvices[$prefix][$name][$advisorKey] = $advice;
+                            }
+                        }
+                    }
                 }
             }
-        }
-        if (count($classAdvices) > 0) {
-            $classAdvices = array_merge_recursive(...$classAdvices);
         }
 
         return $classAdvices;
@@ -117,7 +123,7 @@ class AdviceMatcher implements AdviceMatcherInterface
      * Returns list of class advices from advisor and point filter
      *
      * @param ReflectionClass<object> $class
-     * @return Aop\Advice[][][]
+     * @return array<string, array<string, array<string, Aop\Advice>>>
      */
     private function getClassAdvicesFromAdvisor(
         ReflectionClass $class,
@@ -131,11 +137,11 @@ class AdviceMatcher implements AdviceMatcherInterface
 
         // Dynamic initialization (creation of instance with new)
         if (($pointcutKind & Pointcut::KIND_INIT) !== 0) {
-            $classAdvices[AspectContainer::INIT_PREFIX]['root'][$advisorId] = $advice;
+            $classAdvices[AspectContainer::INIT_PREFIX] = ['root' => [$advisorId => $advice]];
         }
         // Static initalization (when class just loaded)
         if (($pointcutKind & Pointcut::KIND_STATIC_INIT) !== 0) {
-            $classAdvices[AspectContainer::STATIC_INIT_PREFIX]['root'][$advisorId] = $advice;
+            $classAdvices[AspectContainer::STATIC_INIT_PREFIX] = ['root' => [$advisorId => $advice]];
         }
         // Introduction which can add interfaces or traits
         if (($pointcutKind & Pointcut::KIND_INTRODUCTION) !== 0 && $advice instanceof IntroductionInfo && !$class->isTrait()) {
@@ -149,7 +155,7 @@ class AdviceMatcher implements AdviceMatcherInterface
      * Returns list of advices from advisor and point filter
      *
      * @param ReflectionClass<object> $class
-     * @return Aop\Advice[][][]
+     * @return array<string, array<string, array<string, Aop\Advice>>>
      */
     private function getClassLevelAdvicesFromAdvisor(
         ReflectionClass $class,
@@ -193,7 +199,7 @@ class AdviceMatcher implements AdviceMatcherInterface
     /**
      * Returns list of introduction advices from advisor
      *
-     * @return IntroductionInfo[][][]
+     * @return array<string, array<string, array<string, IntroductionInfo>>>
      */
     private function getIntroductionAdvices(IntroductionInfo $introduction): array {
         $classAdvices = [];
@@ -202,13 +208,13 @@ class AdviceMatcher implements AdviceMatcherInterface
         if (!empty($introducedTrait)) {
             $introducedTrait = '\\' . ltrim($introducedTrait, '\\');
 
-            $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'][$introducedTrait] = $introduction;
+            $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX] = ['root' => [$introducedTrait => $introduction]];
         }
         $introducedInterface = $introduction->getInterface();
         if (!empty($introducedInterface)) {
             $introducedInterface = '\\' . ltrim($introducedInterface, '\\');
 
-            $classAdvices[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'][$introducedInterface] = $introduction;
+            $classAdvices[AspectContainer::INTRODUCTION_INTERFACE_PREFIX] = ['root' => [$introducedInterface => $introduction]];
         }
 
         return $classAdvices;
@@ -217,7 +223,7 @@ class AdviceMatcher implements AdviceMatcherInterface
     /**
      * Returns list of function advices for specific namespace
      *
-     * @return Aop\Advice[][][]
+     * @return array<string, array<string, array<string, Aop\Advice>>>
      */
     private function getFunctionAdvicesFromAdvisor(
         ReflectionFileNamespace $namespace,

@@ -27,8 +27,8 @@ final class DeclareErrorInterceptor extends AbstractInterceptor
     /**
      * Default constructor for interceptor
      *
-     * @param (string&non-empty-string) $message Error message to show for this interceptor
-     * @param int&(E_USER_NOTICE|E_USER_WARNING|E_USER_ERROR|E_USER_DEPRECATED) $level Default level of error, only E_USER_* constants
+     * @param non-empty-string $message Error message to show for this interceptor
+     * @param positive-int $level Default level of error, only E_USER_* constants
      */
     public function __construct(
         protected string $message,
@@ -39,16 +39,16 @@ final class DeclareErrorInterceptor extends AbstractInterceptor
         parent::__construct($adviceMethod, -256, $pointcutExpression);
     }
 
-    public static function unserializeAdvice(array $adviceData): Closure
-    {
-        return self::declareErrorAdvice(...);
-    }
-
     public function invoke(Joinpoint $joinpoint): mixed
     {
         ($this->adviceMethod)($joinpoint, $this->message, $this->level);
 
         return $joinpoint->proceed();
+    }
+
+    protected static function unserializeAdvice(array $adviceData): Closure
+    {
+        return self::declareErrorAdvice(...);
     }
 
     /**

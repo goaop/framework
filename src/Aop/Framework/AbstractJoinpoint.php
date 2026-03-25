@@ -76,9 +76,9 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * Replace concrete advices with list of ids
      *
-     * @param array<array<array<string, Advice|Interceptor>>> $advices List of advices
+     * @param array<string, array<string, array<string, Advice|Interceptor>>> $advices List of advices
      *
-     * @return array<array<array<string>>> Sorted identifier of advices/interceptors
+     * @return array<string, array<string, array<string>>> Sorted identifier of advices/interceptors
      */
     public static function flatAndSortAdvices(array $advices): array
     {

@@ -41,6 +41,13 @@ class SourceTransformingLoader extends PhpStreamFilter
     protected string $data = '';
 
     /**
+     * Resource stream (overrides parent's untyped property)
+     *
+     * @var resource
+     */
+    public $stream;
+
+    /**
      * List of transformers
      *
      * @var SourceTransformer[]

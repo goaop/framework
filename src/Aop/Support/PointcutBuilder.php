@@ -24,12 +24,17 @@ use Go\Core\AspectContainer;
 /**
  * Pointcut builder provides simple DSL for declaring pointcuts in plain PHP code
  */
-final readonly class PointcutBuilder
+final class PointcutBuilder
 {
+    /**
+     * Auto-incrementing index for generating unique pointcut IDs
+     */
+    private static int $index = 0;
+
     /**
      * Default constructor for the builder
      */
-    public function __construct(private AspectContainer $container) {}
+    public function __construct(private readonly AspectContainer $container) {}
 
     /**
      * Declares the "Before" hook for specific pointcut expression
@@ -70,8 +75,8 @@ final readonly class PointcutBuilder
     /**
      * Declares the error message for specific pointcut expression with concrete error level
      *
-     * @param (string&non-empty-string) $message Error message to show for this intercepton
-     * @param int&(E_USER_NOTICE|E_USER_WARNING|E_USER_ERROR|E_USER_DEPRECATED) $errorLevel Default level of error, only E_USER_* constants
+     * @param non-empty-string  $message Error message to show for this intercepton
+     * @param positive-int      $errorLevel Default level of error, only E_USER_* constants
      */
     public function declareError(string $pointcutExpression, string $message, int $errorLevel = E_USER_ERROR): void
     {
@@ -95,8 +100,6 @@ final readonly class PointcutBuilder
      */
     private function getPointcutId(string $pointcutExpression): string
     {
-        static $index = 0;
-
-        return preg_replace('/\W+/', '_', $pointcutExpression) . '.' . $index++;
+        return (preg_replace('/\W+/', '_', $pointcutExpression) ?? '') . '.' . self::$index++;
     }
 }

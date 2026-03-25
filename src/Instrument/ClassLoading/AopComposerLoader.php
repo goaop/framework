@@ -12,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Closure;
 use SplFileInfo;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -37,16 +38,7 @@ class AopComposerLoader
      *
      * @phpstan-var KernelOptions
      */
-    protected array $options = [
-        'debug'          => false,
-        'appDir'         => '',
-        'cacheDir'       => null,
-        'cacheFileMode'  => 0,
-        'features'       => 0,
-        'includePaths'   => [],
-        'excludePaths'   => [],
-        'containerClass' => AspectKernel::class,
-    ];
+    protected array $options;
 
     /**
      * File enumerator
@@ -64,6 +56,16 @@ class AopComposerLoader
      * Was initialization successful or not
      */
     private static bool $wasInitialized = false;
+
+    /**
+     * Lazy-initialized filter for allowed files
+     */
+    private ?Closure $isAllowedFilter = null;
+
+    /**
+     * Whether the kernel is in production (non-debug) mode
+     */
+    private bool $isProduction = false;
 
     /**
      * Constructs an wrapper for the composer loader
@@ -103,9 +105,12 @@ class AopComposerLoader
 
         foreach ($loaders as &$loader) {
             $loaderToUnregister = $loader;
-            if (is_array($loader) && ($loader[0] instanceof ClassLoader)) {
-                $loader[0] = new AopComposerLoader($loader[0], $container, $options);
-                self::$wasInitialized = true;
+            if (is_array($loader)) {
+                $originalLoader = $loader[0] ?? null;
+                if ($originalLoader instanceof ClassLoader) {
+                    $loader[0] = new AopComposerLoader($originalLoader, $container, $options);
+                    self::$wasInitialized = true;
+                }
             }
             spl_autoload_unregister($loaderToUnregister);
         }
@@ -136,12 +141,11 @@ class AopComposerLoader
      *
      * @return string|false The path/resource if found, false otherwise.
      */
-    public function findFile(string $class)
+    public function findFile(string $class): false|string
     {
-        static $isAllowedFilter = null, $isProduction = false;
-        if (!$isAllowedFilter) {
-            $isAllowedFilter = $this->fileEnumerator->getFilter();
-            $isProduction    = !$this->options['debug'];
+        if ($this->isAllowedFilter === null) {
+            $this->isAllowedFilter = $this->fileEnumerator->getFilter();
+            $this->isProduction    = !$this->options['debug'];
         }
 
         $file = $this->original->findFile($class);
@@ -152,10 +156,10 @@ class AopComposerLoader
                 $file = $resolved;
             }
             $cacheState = $this->cacheState[$file] ?? null;
-            if ($cacheState && $isProduction) {
+            if ($cacheState && $this->isProduction) {
                 $cacheUri = is_array($cacheState) && is_string($cacheState['cacheUri'] ?? null) ? $cacheState['cacheUri'] : null;
                 $file     = $cacheUri ?: $file;
-            } elseif ($isAllowedFilter(new SplFileInfo($file))) {
+            } elseif (($this->isAllowedFilter)(new SplFileInfo($file))) {
                 // can be optimized here with $cacheState even for debug mode, but no needed right now
                 $file = FilterInjectorTransformer::rewrite($file);
             }

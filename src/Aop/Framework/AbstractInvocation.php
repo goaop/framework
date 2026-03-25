@@ -20,7 +20,7 @@ use Go\Aop\Intercept\Invocation;
 abstract class AbstractInvocation extends AbstractJoinpoint implements Invocation
 {
     /**
-     * @var array<mixed> Arguments for invocation, can be mutated by the {@see setArguments()} method
+     * @var list<mixed> Arguments for invocation, can be mutated by the {@see setArguments()} method
      */
     protected array $arguments = [];
 

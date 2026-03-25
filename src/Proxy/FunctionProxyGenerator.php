@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Aop\Framework\ReflectionFunctionInvocation;
+use Go\Aop\Intercept\Interceptor;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\LazyAdvisorAccessor;
@@ -30,6 +31,11 @@ use ReflectionNamedType;
  */
 class FunctionProxyGenerator
 {
+    /**
+     * Cached accessor for lazy advisor resolution
+     */
+    private static ?LazyAdvisorAccessor $accessor = null;
+
     /**
      * List of advices that are used for generation of child
      *
@@ -80,15 +86,16 @@ class FunctionProxyGenerator
      */
     public static function getJoinPoint(string $functionName, array $adviceNames): ReflectionFunctionInvocation
     {
-        static $accessor;
-
-        if ($accessor === null) {
-            $accessor = AspectKernel::getInstance()->getContainer()->getService(LazyAdvisorAccessor::class);
+        if (self::$accessor === null) {
+            self::$accessor = AspectKernel::getInstance()->getContainer()->getService(LazyAdvisorAccessor::class);
         }
 
         $filledAdvices = [];
         foreach ($adviceNames as $advisorName) {
-            $filledAdvices[] = $accessor->$advisorName;
+            $advice = self::$accessor->$advisorName;
+            if ($advice instanceof Interceptor) {
+                $filledAdvices[] = $advice;
+            }
         }
 
         return new ReflectionFunctionInvocation($filledAdvices, $functionName);

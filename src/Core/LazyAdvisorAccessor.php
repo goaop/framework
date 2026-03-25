@@ -23,14 +23,14 @@ use InvalidArgumentException;
  * Provides an interface for loading of advisors from the container
  */
 #[AllowDynamicProperties]
-class LazyAdvisorAccessor
+final class LazyAdvisorAccessor
 {
     /**
      * Accessor constructor
      */
     public function __construct(
-        protected AspectContainer $container,
-        protected AspectLoader $loader
+        protected readonly AspectContainer $container,
+        protected readonly AspectLoader $loader
     ) {}
 
     /**

@@ -27,16 +27,7 @@ abstract class BaseSourceTransformer implements SourceTransformer
      *
      * @phpstan-var KernelOptions
      */
-    protected array $options = [
-        'debug'          => false,
-        'appDir'         => '',
-        'cacheDir'       => null,
-        'cacheFileMode'  => 0,
-        'features'       => 0,
-        'includePaths'   => [],
-        'excludePaths'   => [],
-        'containerClass' => AspectKernel::class,
-    ];
+    protected array $options;
 
     /**
      * Aspect kernel instance

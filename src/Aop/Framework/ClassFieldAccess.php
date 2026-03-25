@@ -26,7 +26,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Stack frames to work with recursive calls or with cross-calls inside object
      *
-     * @phpstan-var array<int, array{object, FieldAccessType, mixed, mixed}>
+     * @var array<int, array{object, FieldAccessType, mixed, mixed}>
      */
     private array $stackFrames = [];
 
@@ -59,7 +59,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Constructor for field access
      *
      * @param array<Interceptor> $advices List of advices for this invocation
-     * @param (string&class-string) $className
+     * @param class-string $className
      */
     public function __construct(array $advices, string $className, string $fieldName)
     {
@@ -179,8 +179,6 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     }
 
     /**
-     * @inheritdoc
-     *
      * @return object Covariant, always instance of object, can not be null
      */
     final public function getThis(): object

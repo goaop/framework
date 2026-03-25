@@ -21,6 +21,8 @@ use function count;
 
 /**
  * Abstract method invocation implementation
+ *
+ * @phpstan-type MethodInvocationFrame array{list<mixed>, mixed, int}
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
@@ -36,16 +38,16 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Stack frames to work with recursive calls or with cross-calls inside object
      *
-     * @var (array&array<int, array{array<mixed>, object|class-string, int}>)
+     * @var array<int, MethodInvocationFrame>
      */
     private array $stackFrames = [];
 
     /**
      * Constructor for method invocation
      *
-     * @param array<Interceptor>        $advices List of advices for this invocation
-     * @param (string&class-string)     $className Class, containing method to invoke
-     * @param (string&non-empty-string) $methodName Name of the method to invoke
+     * @param array<Interceptor> $advices List of advices for this invocation
+     * @param class-string       $className Class, containing method to invoke
+     * @param non-empty-string   $methodName Name of the method to invoke
      */
     public function __construct(array $advices, string $className, string $methodName)
     {
