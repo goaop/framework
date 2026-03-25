@@ -174,7 +174,12 @@ class ClassProxyGenerator
             $classGenerator->addAttributeGroups($classAttrGroups);
         }
 
-        // Use the trait (original class body) and alias each intercepted method as private __aop__<name>
+        // Always include the original class body trait — even when no methods are intercepted
+        // (e.g. introduction-only aspects). addTraitAlias also registers the trait, so this
+        // explicit addTraits call only matters when $interceptedMethods is empty.
+        $classGenerator->addTraits([$traitName]);
+
+        // Alias each intercepted method as private __aop__<name>
         foreach ($interceptedMethods as $methodName) {
             $classGenerator->addTraitAlias($traitName, $methodName, '__aop__' . $methodName, ReflectionMethod::IS_PRIVATE);
         }
