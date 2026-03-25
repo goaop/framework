@@ -36,6 +36,13 @@ use ReflectionUnionType;
  */
 final class TypeGenerator
 {
+    /** @var list<string> */
+    private const BUILTIN_TYPES = [
+        'int', 'float', 'string', 'bool', 'array', 'callable', 'object',
+        'iterable', 'void', 'null', 'never', 'mixed', 'false', 'true', 'self',
+        'static', 'parent',
+    ];
+
     private static ?Standard $printer = null;
 
     private Identifier|Name|NullableType|UnionType|IntersectionType $typeNode;
@@ -204,13 +211,7 @@ final class TypeGenerator
      */
     private static function buildNamedOrClassNode(string $name): Identifier|Name
     {
-        static $builtins = [
-            'int', 'float', 'string', 'bool', 'array', 'callable', 'object',
-            'iterable', 'void', 'null', 'never', 'mixed', 'false', 'true', 'self',
-            'static', 'parent',
-        ];
-
-        return in_array(strtolower($name), $builtins, true)
+        return in_array(strtolower($name), self::BUILTIN_TYPES, true)
             ? new Identifier(strtolower($name))
             : new Name\FullyQualified(ltrim($name, '\\'));
     }

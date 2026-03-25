@@ -27,7 +27,7 @@ final readonly class ClassInheritancePointcut implements Pointcut
 {
     /**
      * Inheritance class matcher constructor
-     * @param (string&class-string) $parentClassOrInterfaceName Parent class or interface name to match in hierarchy
+     * @param string $parentClassOrInterfaceName Parent class or interface name to match in hierarchy
      */
     public function __construct(private string $parentClassOrInterfaceName) {}
 
@@ -43,7 +43,7 @@ final readonly class ClassInheritancePointcut implements Pointcut
         }
 
         // Otherwise, we match only if given context is child of given previously class name (either interface or class)
-        return $context->isSubclassOf($this->parentClassOrInterfaceName) || in_array($this->parentClassOrInterfaceName, $context->getInterfaceNames());
+        return $context->isSubclassOf($this->parentClassOrInterfaceName) || in_array($this->parentClassOrInterfaceName, (array) $context->getInterfaceNames());
     }
 
     public function getKind(): int

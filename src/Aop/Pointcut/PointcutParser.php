@@ -24,6 +24,9 @@ final class PointcutParser extends Parser
     public function __construct(PointcutGrammar $grammar)
     {
         $parseTable = include __DIR__ . '/PointcutParseTable.php';
+        if (!is_array($parseTable)) {
+            throw new \RuntimeException('Invalid PointcutParseTable format');
+        }
         parent::__construct($grammar, $parseTable);
     }
 

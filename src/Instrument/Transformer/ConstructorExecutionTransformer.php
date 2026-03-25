@@ -38,16 +38,20 @@ final class ConstructorExecutionTransformer implements SourceTransformer
     private static array $constructorInvocationsCache = [];
 
     /**
+     * Singleton instance
+     */
+    private static ?self $instance = null;
+
+    /**
      * Singletone
      */
     public static function getInstance(): self
     {
-        static $instance;
-        if ($instance === null) {
-            $instance = new self();
+        if (self::$instance === null) {
+            self::$instance = new self();
         }
 
-        return $instance;
+        return self::$instance;
     }
 
     /**
@@ -102,7 +106,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
      * Magic interceptor for instance creation
      *
      * @param string  $className Name of the class to construct
-     * @param mixed[] $args      Arguments for the constructor
+     * @param list<mixed> $args  Arguments for the constructor
      */
     public function __call(string $className, array $args): object
     {
@@ -112,7 +116,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
     /**
      * Default implementation for accessing joinpoint or creating a new one on-fly
      *
-     * @param mixed[] $arguments
+     * @param list<mixed> $arguments
      */
     protected static function construct(string $fullClassName, array $arguments = []): object
     {

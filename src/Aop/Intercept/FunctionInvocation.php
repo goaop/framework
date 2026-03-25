@@ -29,8 +29,8 @@ interface FunctionInvocation extends Invocation
     /**
      * Invokes current function invocation with all interceptors
      *
-     * @param array<mixed> $arguments         List of arguments for function invocation
-     * @param array<mixed> $variadicArguments Additional list of variadic arguments
+     * @param list<mixed> $arguments         List of arguments for function invocation
+     * @param list<mixed> $variadicArguments Additional list of variadic arguments
      */
     public function __invoke(array $arguments = [], array $variadicArguments = []): mixed;
 }

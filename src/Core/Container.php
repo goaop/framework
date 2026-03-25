@@ -31,12 +31,12 @@ use ReflectionObject;
 class Container implements AspectContainer
 {
     /**
-     * @var (array&array<string,mixed>) Hashmap of items/services in the container
+     * @var array<string, mixed> Hashmap of items/services in the container
      */
     private array $values = [];
 
     /**
-     * @var (array&array<class-string, list<string>>) Holds information about mapping of interface tags into identifiers
+     * @var array<class-string, list<string>> Holds information about mapping of interface tags into identifiers
      */
     private array $tags = [];
 
@@ -46,14 +46,14 @@ class Container implements AspectContainer
     private int $cachedMaxTimestamp;
 
     /**
-     * @var (array&array<string, string>) Hashmap of resources for application
+     * @var array<string, string> Hashmap of resources for application
      */
     private array $resources;
 
     /**
      * Constructor for container
      *
-     * @param array<string> $resources [Optional] List of additional resources to track for container invalidation
+     * @param list<string> $resources [Optional] List of additional resources to track for container invalidation
      */
     public function __construct(array $resources = [])
     {
@@ -124,7 +124,7 @@ class Container implements AspectContainer
                 // If it is our lazy Closure, we look at internal closure return type to check if it is a class
                 $reflectionClosure     = new ReflectionFunction($value);
                 $lazyDefinitionClosure = $reflectionClosure->getStaticVariables()['lazyInitializationClosure'] ?? null;
-                $lazyReturnType        = $lazyDefinitionClosure
+                $lazyReturnType        = $lazyDefinitionClosure instanceof Closure
                     ? (new ReflectionFunction($lazyDefinitionClosure))->getReturnType()
                     : null;
 

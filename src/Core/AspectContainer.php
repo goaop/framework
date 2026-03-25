@@ -72,7 +72,7 @@ interface AspectContainer
      * Supports lazy-initialization if value is defined as a closure, it will be invoked once to perform initialization.
      *
      * @param class-string<T> $className Class-name of service to retrieve from the container
-     * @return object&T
+     * @return T
      *
      * @template T of object
      *

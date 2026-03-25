@@ -50,7 +50,7 @@ use ReflectionMethod;
 abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
 {
     /**
-     * @var (array&array<string, Closure>) Local hashmap of advices for faster unserialization
+     * @var array<string, Closure> Local hashmap of advices for faster unserialization
      */
     private static array $localAdvicesCache = [];
 
@@ -62,50 +62,6 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
         private readonly int $adviceOrder = 0,
         protected readonly string $pointcutExpression = ''
     ) {}
-
-    /**
-     * Serializes advice closure into array
-     *
-     * @return array{name: string, class?: string}
-     */
-    public static function serializeAdvice(Closure $adviceMethod): array
-    {
-        $reflectionAdvice     = new ReflectionFunction($adviceMethod);
-        $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
-
-        $packedAdvice = ['name' => $reflectionAdvice->name];
-        if (!isset($scopeReflectionClass)) {
-            throw new AspectException('Could not pack an interceptor without aspect name');
-        }
-        $packedAdvice['class'] = $scopeReflectionClass->name;
-
-        return $packedAdvice;
-    }
-
-    /**
-     * Unserialize an advice
-     *
-     * @param array{name: string, class?: string} $adviceData Information about advice
-     */
-    public static function unserializeAdvice(array $adviceData): Closure
-    {
-        // General unpacking supports only aspect's advices
-        if (!isset($adviceData['class']) || !is_subclass_of($adviceData['class'], Aspect::class)) {
-            throw new AspectException('Could not unpack an interceptor without aspect name');
-        }
-        $aspectName = $adviceData['class'];
-        $methodName = $adviceData['name'];
-
-        // With aspect name and method name, we can restore back a closure for it
-        if (!isset(self::$localAdvicesCache["$aspectName->$methodName"])) {
-            $aspect = AspectKernel::getInstance()->getContainer()->getService($aspectName);
-            $advice = (new ReflectionMethod($aspectName, $methodName))->getClosure($aspect);
-
-            self::$localAdvicesCache["$aspectName->$methodName"] = $advice;
-        }
-
-        return self::$localAdvicesCache["$aspectName->$methodName"];
-    }
 
     public function getAdviceOrder(): int
     {
@@ -125,12 +81,12 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     /**
      * Serializes an interceptor into it's array shape representation
      *
-     * @return non-empty-array<string, mixed>
+     * @return array<mixed>
      */
     final public function __serialize(): array
     {
         // Compressing state representation to avoid default values, eg pointcutExpression = '' or adviceOrder = 0
-        $state = array_filter(get_object_vars($this));
+        $state = array_filter(get_object_vars($this), fn(mixed $value): bool => !empty($value));
 
         // Override closure with array representation to enable serialization
         $state['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
@@ -141,7 +97,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     /**
      * Un-serializes an interceptor from it's stored state
      *
-     * @param array{adviceMethod: array{name: string, class?: string}} $state The stored representation of the interceptor.
+     * @param array{adviceMethod: array{name: string, class: string}} $state The stored representation of the interceptor.
      */
     final public function __unserialize(array $state): void
     {
@@ -149,5 +105,49 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
         foreach ($state as $key => $value) {
             $this->$key = $value;
         }
+    }
+
+    /**
+     * Serializes advice closure into array
+     *
+     * @return array{name: string, class: string}
+     */
+    protected static function serializeAdvice(Closure $adviceMethod): array
+    {
+        $reflectionAdvice     = new ReflectionFunction($adviceMethod);
+        $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
+        if (!isset($scopeReflectionClass)) {
+            throw new AspectException('Could not pack an interceptor without aspect name');
+        }
+
+        return [
+            'name'  => $reflectionAdvice->name,
+            'class' => $scopeReflectionClass->name,
+        ];
+    }
+
+    /**
+     * Unserialize an advice
+     *
+     * @param array{name: string, class: string} $adviceData Information about advice
+     */
+    protected static function unserializeAdvice(array $adviceData): Closure
+    {
+        // General unpacking supports only aspect's advices
+        if (!is_subclass_of($adviceData['class'], Aspect::class)) {
+            throw new AspectException('Could not unpack an interceptor without aspect name');
+        }
+        $aspectName = $adviceData['class'];
+        $methodName = $adviceData['name'];
+
+        // With aspect name and method name, we can restore back a closure for it
+        if (!isset(self::$localAdvicesCache["$aspectName->$methodName"])) {
+            $aspect = AspectKernel::getInstance()->getContainer()->getService($aspectName);
+            $advice = new ReflectionMethod($aspectName, $methodName)->getClosure($aspect);
+
+            self::$localAdvicesCache["$aspectName->$methodName"] = $advice;
+        }
+
+        return self::$localAdvicesCache["$aspectName->$methodName"];
     }
 }

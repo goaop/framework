@@ -22,6 +22,8 @@ use RuntimeException;
 
 /**
  * Transformer that injects source filter for "require" and "include" operations
+ *
+ * @phpstan-import-type KernelOptions from AspectKernel
  */
 class FilterInjectorTransformer implements SourceTransformer
 {
@@ -38,9 +40,9 @@ class FilterInjectorTransformer implements SourceTransformer
     /**
      * Kernel options
      *
-     * @var array<string, mixed>
+     * @phpstan-var KernelOptions
      */
-    protected static array $options = [];
+    protected static array $options;
 
     protected static ?AspectKernel $kernel = null;
 

@@ -17,13 +17,11 @@ use Go\Aop\Advice;
 /**
  * This interface represents a generic interceptor.
  *
- * A generic interceptor can intercept runtime events that occur
- * within a base program. Those events are materialized by (reified
- * in) joinpoints. Runtime joinpoints can be invocations, field
+ * A generic interceptor can intercept runtime events that occur within a base program.
+ * Those events are materialized by (reified in) joinpoints. Runtime joinpoints can be invocations, field
  * access, exceptions...
  *
- * This interface is not used directly. Use the the sub-interfaces
- * to intercept specific events.
+ * This interface is not used directly. Use the the sub-interfaces to intercept specific events.
  *
  * @see Joinpoint
  * @api

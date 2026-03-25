@@ -103,7 +103,7 @@ abstract class AspectKernel
     /**
      * Init the kernel and make adjustments
      *
-     * @param array{
+     * @phpstan-param array{
      *   debug?: bool,
      *   appDir?: literal-string&non-falsy-string,
      *   cacheDir?: string|null,

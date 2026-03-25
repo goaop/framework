@@ -36,9 +36,9 @@ interface MethodInvocation extends Invocation, ClassJoinpoint
     /**
      * Invokes current method invocation with all interceptors
      *
-     * @phpstan-param object|class-string $instanceOrScope    Invocation instance (or class name for static methods)
-     * @phpstan-param list<mixed>         $arguments          List of arguments for method invocation
-     * @phpstan-param list<mixed>         $variadicArguments  Additional list of variadic arguments
+     * @param object|class-string $instanceOrScope    Invocation instance (or class name for static methods)
+     * @param list<mixed>         $arguments          List of arguments for method invocation
+     * @param list<mixed>         $variadicArguments  Additional list of variadic arguments
      */
     public function __invoke(object|string $instanceOrScope, array $arguments = [], array $variadicArguments = []): mixed;
 }

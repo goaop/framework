@@ -43,7 +43,7 @@ final readonly class ReturnTypePointcut implements Pointcut
     /**
      * Return type name matcher constructor accepts name or glob pattern of the type to match
      *
-     * @param (string&non-empty-string) $returnTypeName
+     * @param string $returnTypeName
      */
     public function __construct(string $returnTypeName)
     {

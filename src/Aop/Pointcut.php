@@ -74,7 +74,7 @@ interface Pointcut
      *
      * @param ReflectionClass<T>|ReflectionFileNamespace $context                    Related context, can be class or file namespace
      * @param ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector Specific part of code, can be any Reflection class
-     * @param null|(string&class-string<T>)|(object&T) $instanceOrScope              Invocation instance or string for static calls
+     * @param null|class-string<T>|T $instanceOrScope                                Invocation instance or string for static calls
      * @param null|array<mixed>  $arguments                                          Dynamic arguments for method
      *
      * @template T of object

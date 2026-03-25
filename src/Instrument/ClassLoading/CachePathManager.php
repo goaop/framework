@@ -21,6 +21,8 @@ use function function_exists;
 /**
  * Class that manages real-code to cached-code paths mapping.
  * Can be extended to get a more sophisticated real-to-cached code mapping
+ *
+ * @phpstan-import-type KernelOptions from AspectKernel
  */
 class CachePathManager
 {
@@ -29,8 +31,8 @@ class CachePathManager
      */
     private const CACHE_FILE_NAME = '/_transformation.cache';
 
-    /** @var array<string, mixed> */
-    protected array $options = [];
+    /** @phpstan-var KernelOptions */
+    protected array $options;
 
     /**
      * Aspect kernel instance
@@ -85,7 +87,10 @@ class CachePathManager
             }
 
             if (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
-                $this->cacheState = include $this->cacheDir . self::CACHE_FILE_NAME;
+                $cacheData = include $this->cacheDir . self::CACHE_FILE_NAME;
+                if (is_array($cacheData)) {
+                    $this->cacheState = $cacheData;
+                }
             }
         }
     }
@@ -127,7 +132,7 @@ class CachePathManager
      *
      * @param string|null $resource Name of the file or null to get all information
      *
-     * @return array<mixed, mixed>|null Information or null if no record in the cache
+     * @return array<string, mixed>|null Information or null if no record in the cache
      */
     public function queryCacheState(?string $resource = null): ?array
     {

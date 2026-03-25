@@ -30,7 +30,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     private readonly ReflectionClass $class;
 
     /**
-     * @var null|(object&T) Instance of created class, can be used for Around or After types of advices.
+     * @var null|T Instance of created class, can be used for Around or After types of advices.
      */
     private ?object $instance = null;
 
@@ -42,8 +42,8 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Constructor for constructor invocation :)
      *
-     * @param array<Interceptor>      $advices List of advices for this invocation
-     * @phpstan-param class-string<T> $className Name of the class
+     * @param array<Interceptor>    $advices List of advices for this invocation
+     * @param class-string<T>       $className Name of the class
      */
     public function __construct(array $advices, string $className)
     {
@@ -56,7 +56,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * @inheritdoc
      *
-     * @return (mixed|T) Covariant, always new object.
+     * @return mixed|T Covariant, always new object.
      * @throws \ReflectionException If class is internal and cannot be created without constructor
      */
     final public function proceed(): mixed
@@ -84,7 +84,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Returns the object for which current joinpoint is invoked
      *
-     * @return (object&T)|null Instance of object or null if object hasn't been created yet (Before)
+     * @return T|null Instance of object or null if object hasn't been created yet (Before)
      */
     public function getThis(): ?object
     {
@@ -94,8 +94,8 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Invokes current constructor invocation with all interceptors
      *
-     * @param array<mixed> $arguments Arguments for constructor invocation
-     * @return (mixed|T) Instance of object or anything else from interceptors, eg Around type can replace object
+     * @param list<mixed> $arguments Arguments for constructor invocation
+     * @return mixed|T Instance of object or anything else from interceptors, eg Around type can replace object
      */
     final public function __invoke(array $arguments = []): mixed
     {

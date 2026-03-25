@@ -26,7 +26,7 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
     /**
      * Stack frames to work with recursive calls or with cross-calls inside object
      *
-     * @phpstan-var array<int, array{array<mixed>, int}>
+     * @var array<int, array{list<mixed>, int}>
      */
     private array $stackFrames = [];
 
@@ -71,8 +71,8 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
     /**
      * Invokes current function invocation with all interceptors
      *
-     * @param array<mixed> $arguments         List of arguments for function invocation
-     * @param array<mixed> $variadicArguments Additional list of variadic arguments
+     * @param list<mixed> $arguments         List of arguments for function invocation
+     * @param list<mixed> $variadicArguments Additional list of variadic arguments
      */
     final public function __invoke(array $arguments = [], array $variadicArguments = []): mixed
     {

@@ -22,6 +22,8 @@ use function strlen;
 
 /**
  * Php class loader filter for processing php code
+ *
+ * @phpstan-property resource $stream Inherited from php_user_filter; typed here for static analysis
  */
 class SourceTransformingLoader extends PhpStreamFilter
 {

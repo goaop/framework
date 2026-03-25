@@ -40,7 +40,7 @@ interface ClassJoinpoint extends Joinpoint
     /**
      * Returns the static scope name (class name) of this joinpoint.
      *
-     * @return (string&class-string)
+     * @return class-string
      *
      * @api
      */

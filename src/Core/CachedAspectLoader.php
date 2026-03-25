@@ -59,9 +59,6 @@ class CachedAspectLoader extends AspectLoader
         $this->container     = $container;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function load(Aspect $aspect): array
     {
         $refAspect = new ReflectionClass($aspect);
@@ -79,10 +76,7 @@ class CachedAspectLoader extends AspectLoader
         return $loadedItems;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function __get(string $name): mixed
+    public function __get(string $name): AspectLoader
     {
         if ($name === 'loader') {
             $this->loader = $this->container->getService($this->loaderId);
@@ -96,7 +90,7 @@ class CachedAspectLoader extends AspectLoader
     /**
      * Loads pointcuts and advisors from the file
      *
-     * @return Pointcut[]|Advisor[]
+     * @return array<string, Pointcut|Advisor>
      */
     protected function loadFromCache(string $fileName): array
     {
@@ -118,7 +112,7 @@ class CachedAspectLoader extends AspectLoader
     /**
      * Save pointcuts and advisors to the file
      *
-     * @param Pointcut[]|Advisor[] $items List of items to store
+     * @param array<string, Pointcut|Advisor> $items Array of items to store
      */
     protected function saveToCache(array $items, string $fileName): void
     {

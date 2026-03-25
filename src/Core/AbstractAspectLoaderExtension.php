@@ -75,11 +75,11 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             $message = sprintf(
                 $message,
                 $pointcutExpression,
-                (isset($reflection->class) ? $reflection->class . '->' : '') . $reflection->name,
+                (($reflection instanceof ReflectionMethod || $reflection instanceof ReflectionProperty) ? $reflection->class . '->' : '') . $reflection->name,
                 $reflection instanceof ReflectionProperty
-                    ? (string) $reflection->getDeclaringClass()->getFileName()
-                    : (string) $reflection->getFileName(),
-                $reflection instanceof ReflectionProperty ? 0 : (int) $reflection->getStartLine()
+                    ? $reflection->getDeclaringClass()->getFileName()
+                    : $reflection->getFileName(),
+                $reflection instanceof ReflectionProperty ? 0 : $reflection->getStartLine()
             );
             throw new UnexpectedValueException($message, 0, $e);
         }
@@ -110,11 +110,11 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                 $message,
                 $token->getValue(),
                 $pointcutExpression,
-                (isset($reflection->class) ? $reflection->class . '->' : '') . $reflection->name,
+                (($reflection instanceof ReflectionMethod || $reflection instanceof ReflectionProperty) ? $reflection->class . '->' : '') . $reflection->name,
                 $reflection instanceof ReflectionProperty
-                    ? (string) $reflection->getDeclaringClass()->getFileName()
-                    : (string) $reflection->getFileName(),
-                $reflection instanceof ReflectionProperty ? 0 : (int) $reflection->getStartLine(),
+                    ? $reflection->getDeclaringClass()->getFileName()
+                    : $reflection->getFileName(),
+                $reflection instanceof ReflectionProperty ? 0 : $reflection->getStartLine(),
                 implode(', ', $e->getExpected())
             );
             throw new UnexpectedValueException($message, 0, $e);

@@ -47,7 +47,7 @@ class AspectLoader
      *
      * @see loadAndRegister() method for registration
      *
-     * @return Pointcut[]|Advisor[]
+     * @return array<string, Pointcut|Advisor>
      */
     public function load(Aspect $aspect): array
     {
@@ -76,7 +76,7 @@ class AspectLoader
     /**
      * Returns list of unloaded aspects in the container
      *
-     * @return Aspect[]
+     * @return list<Aspect>
      */
     public function getUnloadedAspects(): array
     {

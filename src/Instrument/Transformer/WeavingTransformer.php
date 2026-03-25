@@ -35,6 +35,9 @@ use Go\Proxy\TraitProxyGenerator;
  */
 class WeavingTransformer extends BaseSourceTransformer
 {
+    private const FUNCTIONS_CACHE_SUFFIX = '/_functions/';
+    private const PROXIES_CACHE_SUFFIX   = '/_proxies/';
+
     /**
      * Advice matcher for class
      */
@@ -190,7 +193,7 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Adjust definition of original class source to enable extending
      *
-     * @param array<string, array<string, array<string, mixed>>> $advices List of class advices
+     * @param array<string, array<string, array<string>>> $advices List of class advices (sorted advice IDs)
      */
     private function adjustOriginalClass(
         ReflectionClass $class,
@@ -261,13 +264,11 @@ class WeavingTransformer extends BaseSourceTransformer
         StreamMetaData $metadata,
         ReflectionFileNamespace $namespace
     ): bool {
-        static $cacheDirSuffix = '/_functions/';
-
         $wasProcessedFunctions = false;
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace, $advisors);
         $cacheDir        = $this->cachePathManager->getCacheDir();
-        if (!empty($functionAdvices)) {
-            $cacheDir .= $cacheDirSuffix;
+        if (!empty($functionAdvices) && $cacheDir !== null) {
+            $cacheDir .= self::FUNCTIONS_CACHE_SUFFIX;
             $fileName = str_replace('\\', '/', $namespace->getName()) . '.php';
 
             $functionFileName = $cacheDir . $fileName;
@@ -283,7 +284,7 @@ class WeavingTransformer extends BaseSourceTransformer
                 // For cache files we don't want executable bits by default
                 chmod($functionFileName, $this->options['cacheFileMode'] & (~0111));
             }
-            $content = 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $fileName, true) . ';';
+            $content = 'include_once AOP_CACHE_DIR . ' . var_export(self::FUNCTIONS_CACHE_SUFFIX . $fileName, true) . ';';
 
             $lastTokenPosition = $namespace->getLastTokenPosition();
             $metadata->tokenStream[$lastTokenPosition]->text .= PHP_EOL . $content;
@@ -298,9 +299,11 @@ class WeavingTransformer extends BaseSourceTransformer
      */
     private function saveProxyToCache(ReflectionClass $class, string $childCode): string
     {
-        static $cacheDirSuffix = '/_proxies/';
-
-        $cacheDir          = $this->cachePathManager->getCacheDir() . $cacheDirSuffix;
+        $cacheRootDir      = $this->cachePathManager->getCacheDir();
+        if ($cacheRootDir === null) {
+            return '';
+        }
+        $cacheDir          = $cacheRootDir . self::PROXIES_CACHE_SUFFIX;
         $classFileName     = $class->getFileName();
         if ($classFileName === false) {
             return '';
@@ -320,7 +323,7 @@ class WeavingTransformer extends BaseSourceTransformer
         // For cache files we don't want executable bits by default
         chmod($proxyFileName, $this->options['cacheFileMode'] & (~0111));
 
-        return 'include_once AOP_CACHE_DIR . ' . var_export($cacheDirSuffix . $proxyRelativePath, true) . ';';
+        return 'include_once AOP_CACHE_DIR . ' . var_export(self::PROXIES_CACHE_SUFFIX . $proxyRelativePath, true) . ';';
     }
 
     /**
