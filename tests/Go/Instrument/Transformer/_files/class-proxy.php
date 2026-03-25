@@ -48,11 +48,7 @@ class TestClass implements \Go\Aop\Proxy
     {
         return self::$__joinPoints['method:publicMethodFixedArguments']->__invoke($this, \array_slice([$a, $b, $c], 0, \func_num_args()));
     }
-    /**
-     * `self` value is handled on AST level via SelfValueTransformer class
-     * @see \Go\Instrument\Transformer\SelfValueTransformer
-     */
-    public function methodWithSpecialTypeArguments($instance)
+    public function methodWithSpecialTypeArguments(self $instance)
     {
         return self::$__joinPoints['method:methodWithSpecialTypeArguments']->__invoke($this, [$instance]);
     }

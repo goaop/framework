@@ -98,11 +98,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
     {
         return self::$__joinPoints['method:noRth']->__invoke($this, [$exception]);
     }
-    /**
-     * `self` value is handled on AST level via SelfValueTransformer class
-     * @see \Go\Instrument\Transformer\SelfValueTransformer
-     */
-    public function returnSelf()
+    public function returnSelf(): self
     {
         return self::$__joinPoints['method:returnSelf']->__invoke($this);
     }
