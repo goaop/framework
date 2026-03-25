@@ -115,13 +115,23 @@ class ClassProxyGenerator
         $introducedInterfaces[] = '\\' . Proxy::class;
 
         if (!empty($interceptedProperties)) {
+            $constructor = $originalClass->getConstructor();
+            // Constructor is "in the trait" when it is defined in the class itself (not inherited from a parent).
+            // In that case, the WeavingTransformer has placed it inside the trait body, so we must alias it as
+            // __aop____construct and call $this->__aop____construct() rather than parent::__construct().
+            $constructorIsInTrait = $constructor !== null
+                && $constructor->class === $originalClass->getName()
+                && !isset($dynamicMethodAdvices['__construct']); // not already aliased as an intercepted method
             $generatedMethods['__construct'] = new InterceptedConstructorGenerator(
                 $interceptedProperties,
-                $originalClass->getConstructor(),
+                $constructor,
                 $generatedMethods['__construct'] ?? null,
-                $useParameterWidening
+                $useParameterWidening,
+                $constructorIsInTrait
             );
             $introducedTraits[] = '\\' . PropertyInterceptionTrait::class;
+        } else {
+            $constructorIsInTrait = false;
         }
 
         // Extract underlying MethodGenerator instances for ClassGenerator
@@ -167,6 +177,11 @@ class ClassProxyGenerator
         // Use the trait (original class body) and alias each intercepted method as private __aop__<name>
         foreach ($interceptedMethods as $methodName) {
             $classGenerator->addTraitAlias($traitName, $methodName, '__aop__' . $methodName, ReflectionMethod::IS_PRIVATE);
+        }
+        // When property interception is active and the class defines its own constructor, alias __construct
+        // so InterceptedConstructorGenerator can call $this->__aop____construct() to invoke the original body.
+        if ($constructorIsInTrait) {
+            $classGenerator->addTraitAlias($traitName, '__construct', '__aop____construct', ReflectionMethod::IS_PRIVATE);
         }
 
         // Add any AOP-introduced traits (e.g. PropertyInterceptionTrait)

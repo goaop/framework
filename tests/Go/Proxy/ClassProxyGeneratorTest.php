@@ -72,6 +72,94 @@ class ClassProxyGeneratorTest extends TestCase
     }
 
     /**
+     * Tests that a proxy with property interception uses PropertyInterceptionTrait and generates the
+     * correct constructor setup: bindTo with self::class scope and the property accessor closure.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateWithPropertyInterception(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $classAdvices    = [
+            'prop' => [
+                'public'    => ['test'],
+                'protected' => ['test'],
+            ]
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString(
+            'PropertyInterceptionTrait',
+            $proxyFileContent,
+            'Proxy with property advices must use PropertyInterceptionTrait'
+        );
+        $this->assertStringContainsString(
+            'self::class',
+            $proxyFileContent,
+            'Property accessor closure must be bound with self::class scope (not parent::class)'
+        );
+        $this->assertStringNotContainsString(
+            'parent::class',
+            $proxyFileContent,
+            'Generated proxy must not reference parent::class — the new trait engine has no parent'
+        );
+        $this->assertStringContainsString(
+            '__properties',
+            $proxyFileContent,
+            'Generated proxy must initialise $__properties via the accessor'
+        );
+    }
+
+    /**
+     * Tests that a proxy for a class that defines its own constructor AND has intercepted properties
+     * generates a __aop____construct alias and calls it via $this->__aop____construct() instead of
+     * parent::__construct(), which would fail because the new trait-based proxy has no parent class.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateWithPropertyInterceptionAndConstructor(): void
+    {
+        // Use a stub class that has both intercepted properties and its own __construct
+        $target          = new class(42) {
+            public int $value;
+            protected string $name = 'test';
+
+            public function __construct(int $initial)
+            {
+                $this->value = $initial;
+            }
+        };
+        $reflectionClass = new ReflectionClass($target);
+        $classAdvices    = [
+            'prop' => [
+                'value' => ['test'],
+                'name'  => ['test'],
+            ]
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString(
+            '__aop____construct',
+            $proxyFileContent,
+            'Proxy must alias the original __construct as __aop____construct in the trait-use block'
+        );
+        $this->assertStringContainsString(
+            '$this->__aop____construct(',
+            $proxyFileContent,
+            'Proxy constructor must call $this->__aop____construct() to invoke the original constructor body'
+        );
+        $this->assertStringNotContainsString(
+            'parent::__construct',
+            $proxyFileContent,
+            'Proxy must not use parent::__construct — there is no parent class in the trait-based engine'
+        );
+    }
+
+    /**
      * Provides list of methods with expected attributes
      *
      * @return array
