@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
+use Closure;
 use Go\Aop\Advice;
 use Go\Aop\Framework\ClassFieldAccess;
 use Go\Aop\Framework\DynamicClosureMethodInvocation;
@@ -76,16 +77,21 @@ class ClassProxyGenerator
     protected bool $useParameterWidening;
 
     /**
-     * Generates an child code by original class reflection and joinpoints for it
+     * Generates a proxy class that wraps the original class body (now a trait) via trait-use.
      *
-     * @param ReflectionClass<object> $originalClass        Original class reflection
-     * @param string                  $parentClassName      Parent class name to use
+     * The original class has been converted to a trait named $traitName by WeavingTransformer.
+     * The proxy class re-exposes the same name, parent, and interfaces as the original, uses
+     * that trait, and aliases each intercepted method as `private __aop__<method>` so the
+     * overriding method body can delegate to the original via a Closure::bind proceed closure.
+     *
+     * @param ReflectionClass<object> $originalClass        Original class reflection (before transformation)
+     * @param string                  $traitName            FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
      * @param string[][][]            $classAdviceNames     List of advices for class
      * @param bool                    $useParameterWidening Enables usage of parameter widening feature
      */
     public function __construct(
         ReflectionClass $originalClass,
-        string $parentClassName,
+        string $traitName,
         array $classAdviceNames,
         bool $useParameterWidening
     ) {
@@ -103,6 +109,9 @@ class ClassProxyGenerator
         $generatedProperties = [new JoinPointPropertyGenerator()];
         $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
 
+        // Proxy implements the same interfaces as the original class (no longer inherited)
+        $originalInterfaces    = array_map(static fn(string $i) => '\\' . $i, $originalClass->getInterfaceNames());
+        $introducedInterfaces  = array_merge($originalInterfaces, $introducedInterfaces);
         $introducedInterfaces[] = '\\' . Proxy::class;
 
         if (!empty($interceptedProperties)) {
@@ -121,10 +130,23 @@ class ClassProxyGenerator
             array_values($generatedMethods)
         );
 
+        // Proxy parent = original class parent (not the trait — there is no inheritance layer)
+        $parentClass     = $originalClass->getParentClass();
+        $parentClassName = $parentClass !== false ? $parentClass->getName() : null;
+
+        // Proxy flags: preserve final/abstract from original class
+        $flags = 0;
+        if ($originalClass->isFinal()) {
+            $flags |= ClassGenerator::FLAG_FINAL;
+        }
+        if ($originalClass->isAbstract()) {
+            $flags |= ClassGenerator::FLAG_ABSTRACT;
+        }
+
         $classGenerator = new ClassGenerator(
             $originalClass->getShortName(),
             !empty($originalClass->getNamespaceName()) ? $originalClass->getNamespaceName() : null,
-            $originalClass->isFinal() ? ClassGenerator::FLAG_FINAL : null,
+            $flags !== 0 ? $flags : null,
             $parentClassName,
             $introducedInterfaces,
             $generatedProperties,
@@ -142,6 +164,12 @@ class ClassProxyGenerator
             $classGenerator->addAttributeGroups($classAttrGroups);
         }
 
+        // Use the trait (original class body) and alias each intercepted method as private __aop__<name>
+        foreach ($interceptedMethods as $methodName) {
+            $classGenerator->addTraitAlias($traitName, $methodName, '__aop__' . $methodName, ReflectionMethod::IS_PRIVATE);
+        }
+
+        // Add any AOP-introduced traits (e.g. PropertyInterceptionTrait)
         $classGenerator->addTraits(array_values($introducedTraits));
         $this->generator = $classGenerator;
     }
@@ -198,11 +226,17 @@ class ClassProxyGenerator
     /**
      * Wrap advices with joinpoint object
      *
+     * For the trait-alias engine (when the proxy has __aop__<method> aliases), a pre-bound
+     * Closure::bind closure is created once per join point and stored in the invocation object,
+     * replacing the legacy per-call ReflectionMethod::getClosure() + rebind pattern.
+     *
      * @param string[][][] $classAdvices Advisor name strings indexed by join point type and name
      *
      * @throws UnexpectedValueException If joinPoint type is unknown
      *
      * NB: Extension should be responsible for wrapping advice with join point.
+     *
+     * @param class-string $className Proxy class name
      *
      * @return Joinpoint[] returns list of joinpoint ready to use
      */
@@ -228,7 +262,35 @@ class ClassProxyGenerator
                     $filledAdvices[] = $accessor->$advisorName;
                 }
 
-                $joinpoint = new self::$invocationClassMap[$joinPointType]($filledAdvices, $className, $joinPointName);
+                // Trait-alias engine: if __aop__<method> exists, create a pre-bound Closure::bind closure.
+                // The closure captures the alias name and is bound to the proxy class scope so it can call
+                // the private alias on any instance without per-call reflection.
+                $proceedFn  = null;
+                $aliasName  = '__aop__' . $joinPointName;
+                $isMethod   = $joinPointType === AspectContainer::METHOD_PREFIX;
+                $isStatic   = $joinPointType === AspectContainer::STATIC_METHOD_PREFIX;
+
+                if (($isMethod || $isStatic) && method_exists($className, $aliasName)) {
+                    if ($isStatic) {
+                        $proceedFn = Closure::bind(
+                            static function (string $class, array $a) use ($aliasName): mixed {
+                                return $class::$aliasName(...$a);
+                            },
+                            null,
+                            $className
+                        );
+                    } else {
+                        $proceedFn = Closure::bind(
+                            static function (object $i, array $a) use ($aliasName): mixed {
+                                return $i->$aliasName(...$a);
+                            },
+                            null,
+                            $className
+                        );
+                    }
+                }
+
+                $joinpoint = new self::$invocationClassMap[$joinPointType]($filledAdvices, $className, $joinPointName, $proceedFn);
                 $joinPoints["$joinPointType:$joinPointName"] = $joinpoint;
             }
         }

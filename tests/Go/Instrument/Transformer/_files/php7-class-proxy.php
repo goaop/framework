@@ -1,8 +1,27 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-class TestPhp7Class extends \Test\ns1\TestPhp7Class__AopProxied implements \Go\Aop\Proxy
+class TestPhp7Class implements \Go\Aop\Proxy
 {
+    use \Test\ns1\TestPhp7Class__AopProxied {
+        \Test\ns1\TestPhp7Class__AopProxied::stringSth as private __aop__stringSth;
+        \Test\ns1\TestPhp7Class__AopProxied::floatSth as private __aop__floatSth;
+        \Test\ns1\TestPhp7Class__AopProxied::boolSth as private __aop__boolSth;
+        \Test\ns1\TestPhp7Class__AopProxied::intSth as private __aop__intSth;
+        \Test\ns1\TestPhp7Class__AopProxied::callableSth as private __aop__callableSth;
+        \Test\ns1\TestPhp7Class__AopProxied::arraySth as private __aop__arraySth;
+        \Test\ns1\TestPhp7Class__AopProxied::variadicStringSthByRef as private __aop__variadicStringSthByRef;
+        \Test\ns1\TestPhp7Class__AopProxied::exceptionArg as private __aop__exceptionArg;
+        \Test\ns1\TestPhp7Class__AopProxied::stringRth as private __aop__stringRth;
+        \Test\ns1\TestPhp7Class__AopProxied::floatRth as private __aop__floatRth;
+        \Test\ns1\TestPhp7Class__AopProxied::boolRth as private __aop__boolRth;
+        \Test\ns1\TestPhp7Class__AopProxied::intRth as private __aop__intRth;
+        \Test\ns1\TestPhp7Class__AopProxied::callableRth as private __aop__callableRth;
+        \Test\ns1\TestPhp7Class__AopProxied::arrayRth as private __aop__arrayRth;
+        \Test\ns1\TestPhp7Class__AopProxied::exceptionRth as private __aop__exceptionRth;
+        \Test\ns1\TestPhp7Class__AopProxied::noRth as private __aop__noRth;
+        \Test\ns1\TestPhp7Class__AopProxied::returnSelf as private __aop__returnSelf;
+    }
     /**
      * List of applied advices per class
      *

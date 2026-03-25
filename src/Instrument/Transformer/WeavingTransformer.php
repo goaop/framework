@@ -143,15 +143,17 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Prepare new class name
         $newClassName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
+        $newFqcn      = ($class->getNamespaceName() !== '' ? $class->getNamespaceName() . '\\' : '') . $newClassName;
 
-        // Replace original class name with new
-        $this->adjustOriginalClass($class, $advices, $metadata, $newClassName);
-        $newParentName = $class->getNamespaceName() . '\\' . $newClassName;
-
-        // Prepare child Aop proxy
-        $childProxyGenerator = $class->isTrait()
-            ? new TraitProxyGenerator($class, $newParentName, $advices, $this->useParameterWidening)
-            : new ClassProxyGenerator($class, $newParentName, $advices, $this->useParameterWidening);
+        // For traits: rename the trait (legacy approach, TraitProxyGenerator generates a child trait).
+        // For classes: convert the class body to a trait (new trait-based engine).
+        if ($class->isTrait()) {
+            $this->adjustOriginalClass($class, $advices, $metadata, $newClassName);
+            $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
+        } else {
+            $this->convertClassToTrait($class, $advices, $metadata, $newClassName);
+            $childProxyGenerator = new ClassProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
+        }
 
         $classFileName = $class->getFileName();
         if ($classFileName === false) {
@@ -246,6 +248,111 @@ class WeavingTransformer extends BaseSourceTransformer
                     // Remove final and following whitespace from the method, child will be final instead
                     if ($token->id === T_FINAL) {
                         unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position+1]);
+                        break;
+                    }
+                }
+                ++$position;
+            } while (true);
+        }
+    }
+
+    /**
+     * Convert a regular class declaration into a trait for the trait-based AOP engine.
+     *
+     * Performs the following token-stream modifications in-place:
+     *  - Removes 'final' and 'abstract' modifiers from the class keyword
+     *  - Changes 'class' keyword text to 'trait'
+     *  - Renames the class to $newClassName (__AopProxied suffix)
+     *  - Removes the 'extends X' and 'implements Y, Z' clauses (moved to the proxy class)
+     *  - Removes 'final' from any intercepted methods (traits cannot have final methods)
+     *
+     * @param array<string, array<string, array<string>>> $advices List of class advices (sorted advice IDs)
+     */
+    private function convertClassToTrait(
+        ReflectionClass $class,
+        array $advices,
+        StreamMetaData $streamMetaData,
+        string $newClassName
+    ): void {
+        $classNode = $class->getNode();
+        if ($classNode === null) {
+            return;
+        }
+        $position = $classNode->getAttribute('startTokenPos');
+        if (!is_int($position)) {
+            return;
+        }
+
+        $classNameFound = false;
+
+        do {
+            if (!isset($streamMetaData->tokenStream[$position])) {
+                ++$position;
+                continue;
+            }
+
+            $token = $streamMetaData->tokenStream[$position];
+
+            if (!$classNameFound) {
+                // Remove 'final' modifier (and trailing whitespace) — traits cannot be final
+                if ($token->id === T_FINAL) {
+                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                    ++$position;
+                    continue;
+                }
+                // Remove 'abstract' modifier (and trailing whitespace) — trait keyword itself has no modifier
+                if ($token->id === T_ABSTRACT) {
+                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                    ++$position;
+                    continue;
+                }
+                // Rewrite 'class' keyword to 'trait'
+                if ($token->id === T_CLASS) {
+                    $streamMetaData->tokenStream[$position]->text = 'trait';
+                    ++$position;
+                    continue;
+                }
+                // First T_STRING after the keyword is the class name — rename it
+                if ($token->id === T_STRING) {
+                    $streamMetaData->tokenStream[$position]->text = $newClassName;
+                    $classNameFound = true;
+                    ++$position;
+                    continue;
+                }
+            } else {
+                // After the class name: strip 'extends X implements Y, Z' up to the opening '{'
+                if ($token->text === '{') {
+                    break;
+                }
+                // Keep whitespace tokens to preserve original brace placement (same line or next line)
+                if ($token->id !== T_WHITESPACE) {
+                    unset($streamMetaData->tokenStream[$position]);
+                }
+            }
+
+            ++$position;
+        } while (true);
+
+        // Remove 'final' from all intercepted methods — final methods are not allowed in traits
+        foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
+            if ($finalMethod->getDeclaringClass()->name !== $class->name) {
+                continue;
+            }
+            $hasDynamicAdvice = isset($advices[AspectContainer::METHOD_PREFIX][$finalMethod->name]);
+            $hasStaticAdvice  = isset($advices[AspectContainer::STATIC_METHOD_PREFIX][$finalMethod->name]);
+            if (!$hasDynamicAdvice && !$hasStaticAdvice) {
+                continue;
+            }
+            $methodNode = $finalMethod->getNode();
+            $position   = $methodNode->getAttribute('startTokenPos');
+            if (!is_int($position)) {
+                continue;
+            }
+            do {
+                if (isset($streamMetaData->tokenStream[$position])) {
+                    $token = $streamMetaData->tokenStream[$position];
+                    if ($token->id === T_FINAL) {
+                        unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
                         break;
                     }
                 }

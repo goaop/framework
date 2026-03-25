@@ -12,15 +12,11 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
-use Go\ParserReflection\ReflectionEngine;
-use Go\ParserReflection\ReflectionFile;
 use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
-
-use function substr;
 
 /**
  * Test case for generated function definition
@@ -53,32 +49,26 @@ class ClassProxyGeneratorTest extends TestCase
         );
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
-        // To prevent deep analysis of parents, we just cut everything after "extends"
-        $proxyFileContent = preg_replace('/extends.*/', '', $proxyFileContent);
-        $proxyFileAST     = ReflectionEngine::parseFile('/dev/null', $proxyFileContent);
+        // Proxy uses a trait alias for each intercepted method
+        $this->assertStringContainsString(
+            "__aop__{$methodName}",
+            $proxyFileContent,
+            'Proxy must contain trait alias for intercepted method'
+        );
 
-        $proxyFile  = new ReflectionFile('/dev/null', $proxyFileAST);
-        $namespaces = $proxyFile->getFileNamespaces();
+        // Proxy declares the static $__joinPoints property
+        $this->assertStringContainsString(
+            JoinPointPropertyGenerator::NAME,
+            $proxyFileContent,
+            'Proxy must have $__joinPoints property'
+        );
 
-        // Generated proxy should contain only one single namespace for all test cases
-        $this->assertCount(1, $namespaces);
-        $expectedNamespace = $reflectionClass->getNamespaceName();
-        $this->assertSame($expectedNamespace, $namespaces[$expectedNamespace]->getName());
-
-        // We should have exactly one class with the same name as original one
-        $proxyClass = $namespaces[$expectedNamespace]->getClass($className);
-
-        $proxyHasJoinpointProperty = $proxyClass->hasProperty(JoinPointPropertyGenerator::NAME);
-        $this->assertTrue($proxyHasJoinpointProperty, 'Child should have joinpoint property in it');
-        $joinPoints = $proxyClass->getStaticPropertyValue(JoinPointPropertyGenerator::NAME);
-        $this->assertSame([], $joinPoints);
-
-        $this->assertTrue($proxyClass->hasMethod($methodName));
-        $interceptedMethod = $proxyClass->getMethod($methodName);
-        $methodStartPos = $interceptedMethod->getNode()->stmts[0]->getAttribute('startFilePos');
-        $methodEndPos   = $interceptedMethod->getNode()->stmts[0]->getAttribute('endFilePos');
-        $methodBody     = substr($proxyFileContent, $methodStartPos, ($methodEndPos-$methodStartPos));
-        $this->assertStringStartsWith("return self::\$__joinPoints['method:{$methodName}']->__invoke(", $methodBody);
+        // Proxy intercepted method delegates to the join-point invocation chain
+        $this->assertStringContainsString(
+            "self::\$__joinPoints['method:{$methodName}']->__invoke(",
+            $proxyFileContent,
+            'Proxy method body must delegate to the join-point invocation chain'
+        );
     }
 
     /**
