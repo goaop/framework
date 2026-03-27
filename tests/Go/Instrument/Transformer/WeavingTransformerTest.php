@@ -216,6 +216,41 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * PHP 8.1 enums must be skipped — they cannot be converted to traits or extended.
+     */
+    public function testEnumIsSkipped(): void
+    {
+        $metadata = $this->loadTestMetadata('php81-enum');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum')->source);
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * PHP 8.3 #[\Override] attribute must be stripped from intercepted methods.
+     *
+     * When a method is aliased in the proxy's trait-use block (e.g. __aop__overriddenMethod),
+     * PHP copies attributes to the alias. Since __aop__overriddenMethod has no matching parent
+     * method, #[\Override] would cause a fatal error — so WeavingTransformer must remove it.
+     */
+    public function testWeaverStripsOverrideAttributeFromInterceptedMethods(): void
+    {
+        $metadata = $this->loadTestMetadata('php83-override');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-woven')->source);
+        $this->assertEquals($expected, $actual);
+        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
+            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-proxy')->source);
+            $this->assertEquals($expectedProxyContent, $actualProxyContent);
+        }
+    }
+
+    /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
      */
     public function testMultipleClasses(): void

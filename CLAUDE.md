@@ -129,6 +129,30 @@ Key properties of this engine:
 
 `src/Bridge/Doctrine/MetadataLoadInterceptor.php` — workaround for Doctrine ORM entity weaving (Doctrine loads metadata before the kernel can intercept classes).
 
+## PHP version support and known limitations
+
+The framework supports PHP 8.4+ and handles most modern PHP syntax transparently. The following constructs have documented limitations or are intentionally excluded:
+
+### Enums (PHP 8.1+) — not woven
+
+Enums are **silently skipped** by `WeavingTransformer`. They cannot be converted to traits (PHP does not allow traits to become enums), and they cannot be extended. Aspects targeting enum methods will have no effect.
+
+### Readonly classes (PHP 8.2+) — proxy is not readonly
+
+When a `readonly class` is woven, the generated trait drops the `readonly` modifier (traits cannot be readonly). The proxy class is also **not** readonly, because it requires the `private static array $__joinPoints` property, which PHP forbids in readonly classes. The proxy class therefore relaxes the readonly constraint. Readonly *properties* inside the class continue to work correctly.
+
+### `#[\Override]` on intercepted methods (PHP 8.3+) — attribute stripped from trait
+
+When a method marked `#[\Override]` is intercepted (i.e., aliased as `__aop__methodName` in the proxy's trait-use block), PHP would copy the `#[\Override]` attribute to the alias. Since the alias name has no parent method to override, PHP would raise a fatal error. `WeavingTransformer::convertClassToTrait()` therefore strips `#[\Override]` from the method body in the generated trait for every intercepted method. The attribute is **preserved on the proxy's override method**, where it is valid (the proxy extends the same parent).
+
+### PHP 8.4 property hooks — pass-through only
+
+Property hooks are included verbatim in the generated trait body; they are not a separate join-point type. You can intercept the owning method (if any) but you cannot write a pointcut that targets a hook `get`/`set` clause directly. `ClassFieldAccess` property interception and hooked properties on the same property are not supported simultaneously.
+
+### Aspects themselves — never woven
+
+Classes that implement `\Go\Aop\Aspect` are unconditionally skipped by `WeavingTransformer`. Aspects cannot weave themselves.
+
 ## Test conventions
 
 - Tests mirror the `src/` structure under `tests/Go/`

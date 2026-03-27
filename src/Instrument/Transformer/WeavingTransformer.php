@@ -95,8 +95,8 @@ class WeavingTransformer extends BaseSourceTransformer
         foreach ($namespaces as $namespace) {
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
-                // Skip interfaces and aspects
-                if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames(), true)) {
+                // Skip interfaces, enums, and aspects — these cannot be proxied as traits
+                if ($class->isInterface() || $class->isEnum() || in_array(Aspect::class, $class->getInterfaceNames(), true)) {
                     continue;
                 }
                 $wasClassProcessed = $this->processSingleClass(
@@ -364,6 +364,105 @@ class WeavingTransformer extends BaseSourceTransformer
                 }
                 ++$position;
             } while (true);
+        }
+
+        // Strip #[\Override] from intercepted methods.
+        // PHP copies attributes to alias names (e.g. __aop__foo). Since __aop__foo has no parent
+        // match, PHP would raise a fatal error if #[\Override] were present on the alias.
+        $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
+    }
+
+    /**
+     * Removes #[\Override] attribute groups from all intercepted methods in the token stream.
+     *
+     * When a class method is aliased in the proxy trait-use block (e.g.
+     * `SomeTrait::method as private __aop__method`), PHP copies the method's attributes to
+     * the alias. If the original method had `#[\Override]`, the alias name has no matching
+     * parent method → fatal error. We strip the attribute only from methods that will be aliased
+     * (those with dynamic or static method advices).
+     *
+     * @param array<string, array<string, array<string>>> $advices
+     */
+    private function stripOverrideAttributeFromInterceptedMethods(
+        ReflectionClass $class,
+        array $advices,
+        StreamMetaData $streamMetaData
+    ): void {
+        $interceptedNames = array_merge(
+            array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []),
+            array_keys($advices[AspectContainer::STATIC_METHOD_PREFIX] ?? [])
+        );
+
+        foreach ($interceptedNames as $methodName) {
+            if (!$class->hasMethod($methodName)) {
+                continue;
+            }
+            $method = $class->getMethod($methodName);
+            if ($method->getDeclaringClass()->name !== $class->name) {
+                continue;
+            }
+            $methodNode = $method->getNode();
+            $start = $methodNode->getAttribute('startTokenPos');
+            $end   = $methodNode->getAttribute('endTokenPos');
+            if (!is_int($start) || !is_int($end)) {
+                continue;
+            }
+
+            // Scan from method start for #[\Override] attribute groups, stopping at
+            // the first modifier keyword or 'function'.
+            $pos = $start;
+            while ($pos <= $end) {
+                if (!isset($streamMetaData->tokenStream[$pos])) {
+                    $pos++;
+                    continue;
+                }
+                $tok = $streamMetaData->tokenStream[$pos];
+                // Stop at any method modifier or 'function' keyword
+                if (in_array($tok->id, [T_FUNCTION, T_PUBLIC, T_PROTECTED, T_PRIVATE, T_STATIC, T_ABSTRACT, T_FINAL, T_READONLY], true)) {
+                    break;
+                }
+                if ($tok->id !== T_ATTRIBUTE) {
+                    $pos++;
+                    continue;
+                }
+                // Collect all positions in this attribute group from '#[' to the closing ']'
+                $groupPositions = [$pos];
+                $isOverride     = false;
+                $scanPos        = $pos + 1;
+                while ($scanPos <= $end) {
+                    if (!isset($streamMetaData->tokenStream[$scanPos])) {
+                        $scanPos++;
+                        continue;
+                    }
+                    $t = $streamMetaData->tokenStream[$scanPos];
+                    $groupPositions[] = $scanPos;
+                    // #[Override] → T_STRING 'Override'
+                    // #[\Override] → T_NAME_FULLY_QUALIFIED '\Override'
+                    if (($t->id === T_STRING && $t->text === 'Override')
+                        || ($t->id === T_NAME_FULLY_QUALIFIED && str_ends_with($t->text, 'Override'))) {
+                        $isOverride = true;
+                    }
+                    if ($t->text === ']') {
+                        break;
+                    }
+                    $scanPos++;
+                }
+                $groupEnd = end($groupPositions);
+                if ($isOverride) {
+                    foreach ($groupPositions as $gPos) {
+                        unset($streamMetaData->tokenStream[$gPos]);
+                    }
+                    // Remove trailing whitespace/newline after ']'
+                    $afterPos = $groupEnd + 1;
+                    if (isset($streamMetaData->tokenStream[$afterPos])
+                        && $streamMetaData->tokenStream[$afterPos]->id === T_WHITESPACE) {
+                        unset($streamMetaData->tokenStream[$afterPos]);
+                    }
+                    $pos = $afterPos + 1;
+                } else {
+                    $pos = $groupEnd + 1;
+                }
+            }
         }
     }
 
