@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Proxy\Part\JoinPointPropertyGenerator;
+use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -223,6 +224,41 @@ class ClassProxyGeneratorTest extends TestCase
             $proxyFileContent,
             'Proxy must use the original class body trait even when no methods are intercepted'
         );
+    }
+
+    /**
+     * Verifies that a class which uses a trait has both its trait-defined methods AND its own
+     * methods correctly intercepted in the generated proxy.
+     *
+     * When WeavingTransformer converts a class to a trait, the `use SomeTrait` statement moves
+     * into the `__AopProxied` trait body. The proxy class itself only uses `__AopProxied`, so
+     * it is unaware of the original trait — but it must still alias and override every method
+     * regardless of whether it came from a used trait or was directly declared.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateProxyForClassUsingTraitMethods(): void
+    {
+        $reflectionClass = new ReflectionClass(ClassWithMixedSources::class);
+        // ClassWithMixedSources uses TraitAliasProxied (publicMethod, protectedMethod, …)
+        // and also declares ownPublicMethod directly.
+        $classAdvices = [
+            'method' => [
+                'publicMethod'    => ['test'], // defined in TraitAliasProxied
+                'ownPublicMethod' => ['test'], // defined directly in ClassWithMixedSources
+            ],
+        ];
+
+        $generator        = new ClassProxyGenerator($reflectionClass, 'ClassWithMixedSources__AopProxied', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
+
+        // Both trait-defined and own methods must have trait aliases
+        $this->assertStringContainsString('__aop__publicMethod', $proxyFileContent);
+        $this->assertStringContainsString('__aop__ownPublicMethod', $proxyFileContent);
+
+        // Both must delegate to the join-point chain
+        $this->assertStringContainsString("self::\$__joinPoints['method:publicMethod']->__invoke(", $proxyFileContent);
+        $this->assertStringContainsString("self::\$__joinPoints['method:ownPublicMethod']->__invoke(", $proxyFileContent);
     }
 
     /**
