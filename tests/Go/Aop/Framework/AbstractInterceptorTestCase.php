@@ -13,12 +13,13 @@ declare(strict_types = 1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Aop\Aspect;
 use Go\Aop\Intercept\Invocation;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-abstract class AbstractInterceptorTestCase extends TestCase
+abstract class AbstractInterceptorTestCase extends TestCase implements Aspect
 {
     /**
      * Concrete class name for mock, should be redefined with LSB

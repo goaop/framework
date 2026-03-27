@@ -23,8 +23,8 @@ composer install
 # Run a single test method
 ./vendor/bin/phpunit --filter testMethodName tests/Go/Core/ContainerTest.php
 
-# Static analysis (level 4, src/ only)
-./vendor/bin/phpstan analyze
+# Static analysis (PHPStan level 10, src/ only)
+./vendor/bin/phpstan analyze --memory-limit=512M
 
 # CLI debugging tools
 ./bin/aspect debug:advisors [class]
@@ -47,23 +47,76 @@ The framework works by intercepting PHP's class loading pipeline. When a class i
 Applied in order for each loaded file:
 - `ConstructorExecutionTransformer` — transforms `new` expressions (when `INTERCEPT_INITIALIZATIONS` feature enabled)
 - `FilterInjectorTransformer` — wraps `include`/`require` (when `INTERCEPT_INCLUDES` enabled)
-- `SelfValueTransformer` — rewrites `self::` to use the concrete proxy class
 - `WeavingTransformer` — main transformer; uses `AdviceMatcher` to find applicable advices and `CachedAspectLoader` for aspect metadata, then delegates to proxy generators
 - `MagicConstantTransformer` — rewrites `__FILE__`/`__DIR__` so they resolve to the original file, not the cached proxy
 
+> **Note:** `SelfValueTransformer` was removed in 4.0 — `self::` in traits resolves to the using class naturally.
+
 Each transformer returns `TransformerResultEnum`: `RESULT_TRANSFORMED`, `RESULT_ABSTAIN`, or `RESULT_ABORTED`.
+
+### Trait-based proxy engine (4.0)
+
+`WeavingTransformer` converts the original class to a **PHP trait** and writes a proxy class that uses it. The two generated files for a class `Ns\Foo` are:
+
+**Woven file** (replaces the original in the load stream):
+```php
+// Original class body converted to a trait; final/abstract/extends/implements stripped
+trait Foo__AopProxied { /* original methods verbatim */ }
+include_once AOP_CACHE_DIR . '/_proxies/.../Foo.php';
+```
+
+**Proxy file** (loaded by the `include_once` above):
+```php
+class Foo extends OriginalParent implements OriginalInterfaces, \Go\Aop\Proxy
+{
+    use \Ns\Foo__AopProxied {
+        \Ns\Foo__AopProxied::interceptedMethod as private __aop__interceptedMethod;
+        // ... one alias per intercepted method (including private ones)
+    }
+    private static array $__joinPoints = [];
+
+    public function interceptedMethod(...) {
+        return self::$__joinPoints['method:interceptedMethod']->__invoke($this, [...]);
+    }
+    // ... one override per intercepted method
+}
+\Go\Proxy\ClassProxyGenerator::injectJoinPoints(Foo::class, [...]);
+```
+
+Key properties of this engine:
+- The proxy class **re-inherits** the original parent and interfaces (read from reflection, not from the woven source).
+- `self::` in the trait body resolves to `Foo` (the proxy class) — no rewriting needed.
+- **Private methods can be intercepted** (impossible with the old extend-based engine).
+- Proceed path uses a pre-bound `Closure::bind($fn, null, Foo::class)` stored once per join point — zero per-call reflection.
 
 ### Proxy generation (`src/Proxy/`)
 
-- `ClassProxyGenerator` — generates a proxy subclass with overridden interceptable methods
+- `ClassProxyGenerator` — generates the trait-based proxy class for a regular class
+  - Takes `$traitName` (the `Foo__AopProxied` FQCN) as second constructor arg
+  - Always emits `use $traitName` even when no methods are intercepted (introduction-only aspects)
+  - Adds `__construct as private __aop____construct` alias when the class defines its own constructor and properties are intercepted
 - `FunctionProxyGenerator` — generates function wrappers
-- `TraitProxyGenerator` — generates trait proxies
-- `src/Proxy/Part/` — individual code-generation components (method lists, parameter lists, joinpoint property injection)
+- `TraitProxyGenerator` — generates trait proxies (uses old `adjustOriginalClass` path)
+- `src/Proxy/Part/` — individual code-generation components:
+  - `InterceptedMethodGenerator` — wraps a single method with join-point delegation
+  - `InterceptedConstructorGenerator` — wraps constructor; uses `self::class` (not `parent::class`) for `Closure::bindTo` scope; calls `$this->__aop____construct()` when constructor is in the trait
+  - `JoinPointPropertyGenerator` — the `private static array $__joinPoints` property
+  - `PropertyInterceptionTrait` — `__get`/`__set`/`__isset`/`__unset` magic that routes through `ClassFieldAccess` join points
+- `src/Proxy/Generator/` — low-level AST generators:
+  - `ClassGenerator` — builds the proxy class AST node; `addTraitAlias()` registers both the trait and an alias in a single `use { ... }` block; deduplicates traits
+  - `AttributeGroupsGenerator` — copies PHP 8 attributes from reflection to proxy AST, preserving named arguments
 
 ### AOP core (`src/Aop/`)
 
 - `src/Aop/Intercept/` — interfaces: `Joinpoint`, `Invocation`, `MethodInvocation`, `ConstructorInvocation`, `FunctionInvocation`, `FieldAccess`
-- `src/Aop/Framework/` — concrete invocation implementations used at runtime by proxies; `AbstractMethodInvocation`, `DynamicClosureMethodInvocation`, `StaticClosureMethodInvocation`, `ClassFieldAccess`, etc.
+- `src/Aop/Framework/` — concrete invocation implementations:
+  - `AbstractMethodInvocation` — base class; holds `protected Closure $closureToCall` (set in each subclass constructor via `Closure::bind`); `TRAIT_ALIAS_PREFIX = '__aop__'` constant; manages recursive/cross-call stack frames
+  - `DynamicTraitAliasMethodInvocation` — instance-method invocation; builds `Closure::bind(fn($i, $a) => $i->__aop__method(...$a), null, $class)` once at construction; `proceed()` calls `($this->closureToCall)($this->instance, $this->arguments)`
+  - `StaticTraitAliasMethodInvocation` — static-method invocation; builds `Closure::bind(fn($c, $a) => $c::__aop__method(...$a), null, $class)` once at construction; `proceed()` calls `($this->closureToCall)($this->scope, $this->arguments)`
+  - `ReflectionConstructorInvocation` — constructor interception (used with `INTERCEPT_INITIALIZATIONS`); creates instance via `ReflectionClass::newInstanceWithoutConstructor()` then calls constructor
+  - `ReflectionFunctionInvocation` — function interception; `proceed()` calls `$this->reflectionFunction->invokeArgs($this->arguments)`
+  - `ClassFieldAccess` — property interception join point; used via `PropertyInterceptionTrait`
+  - `StaticInitializationJoinpoint` — fired once after proxy class is loaded via `injectJoinPoints()`
 - `src/Aop/Pointcut/` — LALR pointcut grammar (`PointcutGrammar`, `PointcutParser`, `PointcutLexer`, `PointcutParseTable`) and pointcut combinators (`AndPointcut`, `OrPointcut`, `NotPointcut`, `NamePointcut`, `AttributePointcut`, etc.)
 - `src/Lang/Attribute/` — PHP 8 attributes for declaring aspects and advice: `#[Aspect]`, `#[Before]`, `#[After]`, `#[Around]`, `#[AfterThrowing]`, `#[Pointcut]`, `#[DeclareError]`, `#[DeclareParents]`
 - `src/Aop/Features.php` — bitmask enum for optional features (`INTERCEPT_FUNCTIONS`, `INTERCEPT_INITIALIZATIONS`, `INTERCEPT_INCLUDES`)
@@ -73,16 +126,41 @@ Each transformer returns `TransformerResultEnum`: `RESULT_TRANSFORMED`, `RESULT_
 - `Container.php` — DI container with `add()` (by class-string or key), `getService()`, `addLazyService()` (Closure), and automatic tagging by interface
 - `AspectLoader` / `CachedAspectLoader` — scan aspect classes for pointcut/advice attributes and produce `Advisor` instances
 - `AttributeAspectLoaderExtension` — handles PHP 8 attribute-based aspect definitions
-- `AdviceMatcher` — given a class reflector, returns the set of applicable advisors keyed by join point
+- `AdviceMatcher` — given a class reflector, returns the set of applicable advisors keyed by join point; scans `IS_PUBLIC | IS_PROTECTED | IS_PRIVATE` methods (private methods from parent classes are excluded)
 
 ### Bridge
 
 `src/Bridge/Doctrine/MetadataLoadInterceptor.php` — workaround for Doctrine ORM entity weaving (Doctrine loads metadata before the kernel can intercept classes).
+
+## PHP version support and known limitations
+
+The framework supports PHP 8.4+ and handles most modern PHP syntax transparently. The following constructs have documented limitations or are intentionally excluded:
+
+### Enums (PHP 8.1+) — not woven
+
+Enums are **silently skipped** by `WeavingTransformer`. They cannot be converted to traits (PHP does not allow traits to become enums), and they cannot be extended. Aspects targeting enum methods will have no effect.
+
+### Readonly classes (PHP 8.2+) — proxy is not readonly
+
+When a `readonly class` is woven, the generated trait drops the `readonly` modifier (traits cannot be readonly). The proxy class is also **not** readonly, because it requires the `private static array $__joinPoints` property, which PHP forbids in readonly classes. The proxy class therefore relaxes the readonly constraint. Readonly *properties* inside the class continue to work correctly.
+
+### `#[\Override]` on intercepted methods (PHP 8.3+) — attribute stripped from trait
+
+When a method marked `#[\Override]` is intercepted (i.e., aliased as `__aop__methodName` in the proxy's trait-use block), PHP would copy the `#[\Override]` attribute to the alias. Since the alias name has no parent method to override, PHP would raise a fatal error. `WeavingTransformer::convertClassToTrait()` therefore strips `#[\Override]` from the method body in the generated trait for every intercepted method. The attribute is **preserved on the proxy's override method**, where it is valid (the proxy extends the same parent).
+
+### PHP 8.4 property hooks — pass-through only
+
+Property hooks are included verbatim in the generated trait body; they are not a separate join-point type. You can intercept the owning method (if any) but you cannot write a pointcut that targets a hook `get`/`set` clause directly. `ClassFieldAccess` property interception and hooked properties on the same property are not supported simultaneously.
+
+### Aspects themselves — never woven
+
+Classes that implement `\Go\Aop\Aspect` are unconditionally skipped by `WeavingTransformer`. Aspects cannot weave themselves.
 
 ## Test conventions
 
 - Tests mirror the `src/` structure under `tests/Go/`
 - Functional/integration tests live in `tests/Go/Functional/`
 - Test fixtures (stub classes for weaving) live in `tests/Go/Stubs/` and `tests/Fixtures/project/src/` (autoloaded as `Go\Tests\TestProject\`)
-- PHPUnit 11, bootstrap is `vendor/autoload.php` (no separate test bootstrap)
-- PHPStan baseline is `phpstan-baseline.php` — add new accepted errors there rather than inline suppression when appropriate
+- Snapshot fixtures for `WeavingTransformerTest` live in `tests/Go/Instrument/Transformer/_files/`; `*-woven.php` is the transformed source (class→trait), `*-proxy.php` is the generated proxy
+- PHPUnit 13+, bootstrap is `vendor/autoload.php` (no separate test bootstrap)
+- PHPStan level 10 is a mandatory gate — run `./vendor/bin/phpstan analyze --memory-limit=512M` before every commit

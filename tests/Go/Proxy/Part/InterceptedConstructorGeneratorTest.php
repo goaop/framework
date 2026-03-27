@@ -97,10 +97,46 @@ class InterceptedConstructorGeneratorTest extends TestCase
                     $propertyStorage = [\'foo\' => &$target->foo, \'bar\' => &$target->bar];
                     unset($target->foo, $target->bar);
                 };
-                $accessor->bindTo($this, parent::class)($this->__properties, $this);
+                $accessor->bindTo($this, self::class)($this->__properties, $this);
             }'
         );
         $this->assertSame($expectedCode, $generatedCode);
+    }
+
+    /**
+     * When the constructor belongs to the class being proxied (trait-based engine), it is placed in the
+     * trait body and aliased as __aop____construct. The generated constructor must call
+     * $this->__aop____construct() rather than parent::__construct(), which would fail because the new
+     * proxy class has no parent.
+     */
+    public function testGenerateWithPropertiesAndConstructorInTrait(): void
+    {
+        $reflectionConstructor = (new ReflectionClass(ClassWithOptionalArgsConstructor::class))->getConstructor();
+        $generator             = new InterceptedConstructorGenerator(
+            ['foo', 'bar'],
+            $reflectionConstructor,
+            null,
+            false,
+            true // $constructorIsInTrait
+        );
+
+        $generatedCode = $generator->generate();
+
+        $this->assertStringContainsString(
+            '$this->__aop____construct(',
+            $generatedCode,
+            'When constructorIsInTrait=true, must call $this->__aop____construct() instead of parent::__construct()'
+        );
+        $this->assertStringNotContainsString(
+            'parent::__construct',
+            $generatedCode,
+            'When constructorIsInTrait=true, must NOT use parent::__construct'
+        );
+        $this->assertStringContainsString(
+            'self::class',
+            $generatedCode,
+            'Property accessor bindTo must use self::class scope, not parent::class'
+        );
     }
 
     public function testThrowsExceptionForPrivateConstructor(): void

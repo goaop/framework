@@ -135,11 +135,11 @@ class FunctionProxyGenerator
         $advicesCode = $advicesArray->generate();
 
         return <<<BODY
-static \$__joinPoint;
-if (\$__joinPoint === null) {
-    \$__joinPoint = {$class}::getJoinPoint('{$function->name}', {$advicesCode});
-}
-{$return}\$__joinPoint->__invoke($argumentCode);
-BODY;
+        static \$__joinPoint;
+        if (\$__joinPoint === null) {
+            \$__joinPoint = {$class}::getJoinPoint('{$function->name}', {$advicesCode});
+        }
+        {$return}\$__joinPoint->__invoke($argumentCode);
+        BODY;
     }
 }

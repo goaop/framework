@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -29,6 +30,8 @@ use ReflectionNamedType;
  */
 class TraitProxyGenerator extends ClassProxyGenerator
 {
+    private static ?LazyAdvisorAccessor $cachedAccessor = null;
+
     /**
      * Generates an child code by original class reflection and joinpoints for it
      *
@@ -72,7 +75,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         foreach ($interceptedMethods as $methodName) {
             $fullName = $parentNormalizedName . '::' . $methodName;
-            $traitGenerator->addTraitAlias($fullName, $methodName . '➩', ReflectionMethod::IS_PROTECTED);
+            $traitGenerator->addTraitAlias($fullName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
         }
 
         // Store generator instance for compatibility with parent generate() call
@@ -82,7 +85,9 @@ class TraitProxyGenerator extends ClassProxyGenerator
     /**
      * Returns a method invocation for the specific trait method
      *
-     * @param string[] $adviceNames List of advices for this trait method
+     * @param class-string     $className
+     * @param non-empty-string $methodName
+     * @param list<string>     $adviceNames List of advisor names to fill from the container
      */
     public static function getJoinPoint(
         string $className,
@@ -90,21 +95,18 @@ class TraitProxyGenerator extends ClassProxyGenerator
         string $methodName,
         array $adviceNames
     ): Joinpoint {
-        static $accessor;
-
-        if ($accessor === null) {
-            $aspectKernel = AspectKernel::getInstance();
-            $accessor     = $aspectKernel->getContainer()->getService(LazyAdvisorAccessor::class);
+        if (self::$cachedAccessor === null) {
+            self::$cachedAccessor = AspectKernel::getInstance()->getContainer()->getService(LazyAdvisorAccessor::class);
         }
 
         $filledAdvices = [];
         foreach ($adviceNames as $advisorName) {
-            $filledAdvices[] = $accessor->$advisorName;
+            $filledAdvices[] = self::$cachedAccessor->getInterceptor($advisorName);
         }
 
-        $joinPoint = new self::$invocationClassMap[$joinPointType]($className, $methodName . '➩', $filledAdvices);
+        $invocationClass = self::$invocationClassMap[$joinPointType];
 
-        return $joinPoint;
+        return new $invocationClass($filledAdvices, $className, $methodName);
     }
 
     /**
@@ -137,12 +139,12 @@ class TraitProxyGenerator extends ClassProxyGenerator
         $advicesCode = $advicesArrayValue->generate();
 
         return <<<BODY
-static \$__joinPoint;
-if (\$__joinPoint === null) {
-    \$__joinPoint = {$class}::getJoinPoint(__CLASS__, '{$prefix}', '{$method->name}', {$advicesCode});
-}
-{$return}\$__joinPoint->__invoke($argumentCode);
-BODY;
+        static \$__joinPoint;
+        if (\$__joinPoint === null) {
+            \$__joinPoint = {$class}::getJoinPoint(__CLASS__, '{$prefix}', '{$method->name}', {$advicesCode});
+        }
+        {$return}\$__joinPoint->__invoke($argumentCode);
+        BODY;
     }
 
     /**

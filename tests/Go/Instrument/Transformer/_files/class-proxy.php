@@ -1,8 +1,17 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-class TestClass extends \Test\ns1\TestClass__AopProxied implements \Go\Aop\Proxy
+class TestClass implements \Go\Aop\Proxy
 {
+    use \Test\ns1\TestClass__AopProxied {
+        \Test\ns1\TestClass__AopProxied::publicMethod as private __aop__publicMethod;
+        \Test\ns1\TestClass__AopProxied::protectedMethod as private __aop__protectedMethod;
+        \Test\ns1\TestClass__AopProxied::publicStaticMethod as private __aop__publicStaticMethod;
+        \Test\ns1\TestClass__AopProxied::protectedStaticMethod as private __aop__protectedStaticMethod;
+        \Test\ns1\TestClass__AopProxied::publicMethodDynamicArguments as private __aop__publicMethodDynamicArguments;
+        \Test\ns1\TestClass__AopProxied::publicMethodFixedArguments as private __aop__publicMethodFixedArguments;
+        \Test\ns1\TestClass__AopProxied::methodWithSpecialTypeArguments as private __aop__methodWithSpecialTypeArguments;
+    }
     /**
      * List of applied advices per class
      *
@@ -39,11 +48,7 @@ class TestClass extends \Test\ns1\TestClass__AopProxied implements \Go\Aop\Proxy
     {
         return self::$__joinPoints['method:publicMethodFixedArguments']->__invoke($this, \array_slice([$a, $b, $c], 0, \func_num_args()));
     }
-    /**
-     * `self` value is handled on AST level via SelfValueTransformer class
-     * @see \Go\Instrument\Transformer\SelfValueTransformer
-     */
-    public function methodWithSpecialTypeArguments($instance)
+    public function methodWithSpecialTypeArguments(self $instance)
     {
         return self::$__joinPoints['method:methodWithSpecialTypeArguments']->__invoke($this, [$instance]);
     }

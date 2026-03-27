@@ -13,20 +13,23 @@ declare(strict_types=1);
 namespace Demo\Example;
 
 use ReflectionObject;
-use Serializable;
+use Stringable;
 
 /**
  * Example class to show how to dynamically add new interfaces and traits to the class
  */
 class IntroductionDemo
 {
+    public string $name = 'AOP';
+
     /**
-     * Method that checks if the current instance implementing Serializable interface
+     * Method that checks if the current instance implements Stringable interface
      */
-    public function testSerializable(): void
+    public function testStringable(): void
     {
-        if ($this instanceof Serializable) {
-            echo get_class($this), ' implements `Serializable` interface now!', PHP_EOL;
+        if ($this instanceof Stringable) {
+            echo get_class($this), ' implements `Stringable` interface now!', PHP_EOL;
+            echo 'String representation: ', $this, PHP_EOL;
             $reflection = new ReflectionObject($this);
             echo "List of interfaces:", PHP_EOL;
             foreach ($reflection->getInterfaceNames() as $interfaceName) {
@@ -37,7 +40,7 @@ class IntroductionDemo
                 echo '-> ', $traitName, PHP_EOL;
             }
         } else {
-            echo get_class($this), ' does not implement `Serializable` interface', PHP_EOL;
+            echo get_class($this), ' does not implement `Stringable` interface', PHP_EOL;
         }
     }
 }

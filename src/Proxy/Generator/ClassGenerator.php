@@ -14,12 +14,15 @@ namespace Go\Proxy\Generator;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Comment\Doc;
+use PhpParser\Modifiers;
 use PhpParser\Node\AttributeGroup;
+use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_ as ClassNode;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Node\Stmt\TraitUseAdaptation;
 use PhpParser\PrettyPrinter\Standard;
+use ReflectionMethod;
 
 /**
  * Generates a PHP class declaration as an AST node or full PHP source string.
@@ -31,8 +34,9 @@ use PhpParser\PrettyPrinter\Standard;
  */
 final class ClassGenerator implements GeneratorInterface
 {
-    public const FLAG_FINAL    = 0b01;
-    public const FLAG_ABSTRACT = 0b10;
+    public const FLAG_FINAL     = 0b001;
+    public const FLAG_ABSTRACT  = 0b010;
+    public const FLAG_READONLY  = 0b100;
 
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
@@ -56,6 +60,9 @@ final class ClassGenerator implements GeneratorInterface
 
     /** @var string[] trait FQCNs */
     private array $traits = [];
+
+    /** @var array{trait: string, method: string, alias: string, visibility: int}[] */
+    private array $traitAliases = [];
 
     private ?DocBlockGenerator $docBlock = null;
 
@@ -107,6 +114,25 @@ final class ClassGenerator implements GeneratorInterface
         }
     }
 
+    /**
+     * Adds a trait with method aliases (e.g. `use FooTrait { greet as private __aop__greet; }`).
+     *
+     * @param string $traitFqcn  Fully-qualified trait name (leading backslash ok)
+     * @param string $methodName Original method name in the trait
+     * @param string $alias      New alias (e.g. '__aop__greet')
+     * @param int    $visibility ReflectionMethod::IS_PUBLIC|IS_PROTECTED|IS_PRIVATE
+     */
+    public function addTraitAlias(string $traitFqcn, string $methodName, string $alias, int $visibility): void
+    {
+        $this->traits[]       = $traitFqcn;
+        $this->traitAliases[] = [
+            'trait'      => ltrim($traitFqcn, '\\'),
+            'method'     => $methodName,
+            'alias'      => $alias,
+            'visibility' => $visibility,
+        ];
+    }
+
     public function setDocBlock(DocBlockGenerator $docBlock): void
     {
         $this->docBlock = $docBlock;
@@ -141,6 +167,9 @@ final class ClassGenerator implements GeneratorInterface
         if (($this->flags ?? 0) & self::FLAG_ABSTRACT) {
             $builder->makeAbstract();
         }
+        if (($this->flags ?? 0) & self::FLAG_READONLY) {
+            $builder->makeReadonly();
+        }
 
         foreach ($this->attrGroups as $attrGroup) {
             $builder->addAttribute($attrGroup);
@@ -168,14 +197,38 @@ final class ClassGenerator implements GeneratorInterface
 
         // Traits (always use FQN to avoid namespace ambiguity)
         if (!empty($this->traits)) {
-            $traitNames = [];
+            // Collect unique trait names (preserving order of first occurrence)
+            $seen       = [];
+            $traitFqcns = [];
             foreach ($this->traits as $trait) {
-                $traitName    = ltrim($trait, '\\');
-                $traitNames[] = str_contains($traitName, '\\')
-                    ? new Name\FullyQualified($traitName)
-                    : new Name($traitName);
+                $normalized = ltrim($trait, '\\');
+                if (!isset($seen[$normalized])) {
+                    $seen[$normalized] = true;
+                    $traitFqcns[]      = $normalized;
+                }
             }
-            $builder->addStmt(new TraitUse($traitNames));
+
+            // Build adaptations for all aliases
+            $adaptations = [];
+            foreach ($this->traitAliases as $info) {
+                $traitNameNode   = str_contains($info['trait'], '\\')
+                    ? new Name\FullyQualified($info['trait'])
+                    : new Name($info['trait']);
+                $adaptations[] = new TraitUseAdaptation\Alias(
+                    $traitNameNode,
+                    new Identifier($info['method']),
+                    $this->mapVisibility($info['visibility']),
+                    new Identifier($info['alias'])
+                );
+            }
+
+            $traitNames = array_map(
+                static fn(string $t) => str_contains($t, '\\')
+                    ? new Name\FullyQualified($t)
+                    : new Name($t),
+                $traitFqcns
+            );
+            $builder->addStmt(new TraitUse($traitNames, $adaptations));
         }
 
         foreach ($this->properties as $property) {
@@ -217,6 +270,19 @@ final class ClassGenerator implements GeneratorInterface
         $stmts[] = $this->getNode();
 
         return self::getPrinter()->prettyPrint($stmts);
+    }
+
+    /**
+     * Maps ReflectionMethod visibility flag to PhpParser Modifiers constant.
+     * ReflectionMethod::IS_PUBLIC = 1, IS_PROTECTED = 2, IS_PRIVATE = 4 match Modifiers directly.
+     */
+    private function mapVisibility(int $visibility): int
+    {
+        return match (true) {
+            (bool) ($visibility & ReflectionMethod::IS_PRIVATE)   => Modifiers::PRIVATE,
+            (bool) ($visibility & ReflectionMethod::IS_PROTECTED) => Modifiers::PROTECTED,
+            default                                                 => Modifiers::PUBLIC,
+        };
     }
 
     private static function getPrinter(): Standard

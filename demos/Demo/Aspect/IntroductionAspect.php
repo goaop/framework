@@ -12,10 +12,10 @@ declare(strict_types=1);
 
 namespace Demo\Aspect;
 
-use Demo\Aspect\Introduce\SerializableImpl;
+use Demo\Aspect\Introduce\StringableImpl;
 use Go\Aop\Aspect;
 use Go\Lang\Attribute\DeclareParents;
-use Serializable;
+use Stringable;
 
 /**
  * Introduction aspect can dynamically add new interfaces and traits to the class
@@ -27,8 +27,8 @@ class IntroductionAspect implements Aspect
      */
     #[DeclareParents(
         'within(Demo\Example\IntroductionDemo)',
-        interface: Serializable::class,
-        trait: SerializableImpl::class
+        interface: Stringable::class,
+        trait: StringableImpl::class
     )]
     protected null $introduction;
 }

@@ -41,8 +41,8 @@ class CachingAspect implements Aspect
         $class = is_object($obj) ? get_class($obj) : $obj;
         $key   = $class . ':' . $invocation->getMethod()->name;
         if (!isset($memoryCache[$key])) {
-            $attributeArgs = $invocation->getMethod()->getAttributes(Cacheable::class)[0]->getArguments();
-            echo "Ttl is: ", $attributeArgs['time'], PHP_EOL;
+            $cacheable = $invocation->getMethod()->getAttributes(Cacheable::class)[0]->newInstance();
+            echo "Ttl is: ", $cacheable->time, PHP_EOL;
 
             $memoryCache[$key] = $invocation->proceed();
         }

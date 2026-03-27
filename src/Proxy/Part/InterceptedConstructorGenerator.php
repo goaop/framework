@@ -32,12 +32,17 @@ final class InterceptedConstructorGenerator
      * @param ReflectionMethod|null           $constructor           Instance of original constructor or null
      * @param InterceptedMethodGenerator|null $constructorGenerator  Constructor body generator (if present)
      * @param bool                            $useTypeWidening       Should generator use parameter widening for PHP>=7.2
+     * @param bool                            $constructorIsInTrait  True when the original constructor is in the trait
+     *                                                               (i.e. defined in the class itself, not inherited);
+     *                                                               in that case the alias __aop____construct is used
+     *                                                               instead of parent::__construct
      */
     public function __construct(
         array $interceptedProperties,
         ?ReflectionMethod $constructor = null,
         ?InterceptedMethodGenerator $constructorGenerator = null,
-        bool $useTypeWidening = false
+        bool $useTypeWidening = false,
+        bool $constructorIsInTrait = false
     ) {
         $constructorBody = count($interceptedProperties) > 0 ? $this->getConstructorBody($interceptedProperties) : '';
         if ($constructor !== null && $constructor->isPrivate()) {
@@ -48,11 +53,15 @@ final class InterceptedConstructorGenerator
         }
         if ($constructor !== null) {
             if ($constructorGenerator === null) {
-                $callArguments  = new FunctionCallArgumentListGenerator($constructor);
-                $splatPrefix    = $constructor->getNumberOfParameters() > 0 ? '...' : '';
-                $parentCallBody = 'parent::__construct(' . $splatPrefix . $callArguments->generate() . ');';
-                $generator      = MethodGenerator::fromReflection($constructor, $useTypeWidening);
-                $generator->setBody($parentCallBody);
+                $callArguments = new FunctionCallArgumentListGenerator($constructor);
+                $splatPrefix   = $constructor->getNumberOfParameters() > 0 ? '...' : '';
+                if ($constructorIsInTrait) {
+                    $constructorCallBody = '$this->__aop____construct(' . $splatPrefix . $callArguments->generate() . ');';
+                } else {
+                    $constructorCallBody = 'parent::__construct(' . $splatPrefix . $callArguments->generate() . ');';
+                }
+                $generator = MethodGenerator::fromReflection($constructor, $useTypeWidening);
+                $generator->setBody($constructorCallBody);
             } else {
                 $generator = $constructorGenerator->getGenerator();
             }
@@ -122,7 +131,7 @@ final class InterceptedConstructorGenerator
             implode(',' . PHP_EOL, $listProperties),
             '    );',
             '};',
-            '($accessor->bindTo($this, parent::class))($this->__properties, $this);'
+            '($accessor->bindTo($this, self::class))($this->__properties, $this);'
         ];
 
         return implode(PHP_EOL, $lines);

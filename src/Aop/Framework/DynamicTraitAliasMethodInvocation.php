@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2015, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2026, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -15,9 +15,12 @@ namespace Go\Aop\Framework;
 use Closure;
 
 /**
- * Dynamic closure method invocation is responsible to call dynamic methods via closure
+ * Dynamic trait-alias method invocation calls instance methods via a pre-bound Closure::bind closure
+ * targeting the private __aop__<method> alias created in the proxy's trait-use block.
+ *
+ * The closure is built once at construction time so that every invocation needs zero reflection.
  */
-final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
+final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation
 {
     /**
      * For dynamic calls we store given argument as 'instance' property
@@ -33,18 +36,18 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
      */
     protected object $instance;
 
-    /**
-     * Closure to use
-     */
-    private ?Closure $closureToCall;
+    public function __construct(array $advices, string $className, string $methodName)
+    {
+        parent::__construct($advices, $className, $methodName);
+        $aliasName           = self::TRAIT_ALIAS_PREFIX . $methodName;
+        $this->closureToCall = Closure::bind(
+            static fn(object $instanceToCall, array $argumentsToCall): mixed => $instanceToCall->$aliasName(...$argumentsToCall),
+            null,
+            $className
+        );
+    }
 
     /**
-     * @var object Previous instance of invocation
-     */
-    private object $closureInstance;
-
-    /**
-     * @inheritdoc
      * @return mixed Covariant, always mixed
      */
     public function proceed(): mixed
@@ -55,25 +58,10 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
             return $currentInterceptor->invoke($this);
         }
 
-        // Fill the closure only once if it's empty
-        if (!isset($this->closureToCall)) {
-            $this->closureToCall   = $this->reflectionMethod->getClosure($this->instance);
-            $this->closureInstance = $this->instance;
-        }
-
-        // Rebind the closure if instance was changed since last time
-        // This code won't work with {@see Closure::call()} as it fails to rebind closure created from method
-        if ($this->closureInstance !== $this->instance) {
-            $this->closureToCall   = $this->closureToCall->bindTo($this->instance, $this->reflectionMethod->class);
-            $this->closureInstance = $this->instance;
-        }
-
-        return ($this->closureToCall)?->__invoke(...$this->arguments);
+        return ($this->closureToCall)($this->instance, $this->arguments);
     }
 
     /**
-     * @inheritdoc
-     *
      * @return object Covariance, always instance of object
      */
     final public function getThis(): object
@@ -91,8 +79,6 @@ final class DynamicClosureMethodInvocation extends AbstractMethodInvocation
 
     final public function getScope(): string
     {
-        // Due to optimization $this->scope won't be filled for each invocation
-        // However, $this->instance always contains an object, so we can take it's name as a scope name
         return $this->instance::class;
     }
 }

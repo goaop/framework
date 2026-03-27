@@ -22,7 +22,6 @@ use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
-use Go\Instrument\Transformer\SelfValueTransformer;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use RuntimeException;
@@ -287,7 +286,6 @@ abstract class AspectKernel
             if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
                 $transformers[] = $filterInjector;
             }
-            $transformers[]  = new SelfValueTransformer($this);
             $transformers[]  = new WeavingTransformer(
                 $this,
                 $this->container->getService(AdviceMatcher::class),

@@ -213,8 +213,8 @@ switch ($showCase) {
     case 'dynamic-traits':
         $aspectName = 'Demo\Aspect\IntroductionAspect';
 
-        $example = new IntroductionDemo(); // Original class doesn't implement Serializable
-        $example->testSerializable();
+        $example = new IntroductionDemo(); // Original class doesn't implement Stringable
+        $example->testStringable();
         break;
 
     case 'declare-errors':

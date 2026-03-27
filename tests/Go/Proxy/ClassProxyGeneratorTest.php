@@ -12,15 +12,12 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
-use Go\ParserReflection\ReflectionEngine;
-use Go\ParserReflection\ReflectionFile;
 use Go\Proxy\Part\JoinPointPropertyGenerator;
+use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
-
-use function substr;
 
 /**
  * Test case for generated function definition
@@ -53,32 +50,215 @@ class ClassProxyGeneratorTest extends TestCase
         );
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
-        // To prevent deep analysis of parents, we just cut everything after "extends"
-        $proxyFileContent = preg_replace('/extends.*/', '', $proxyFileContent);
-        $proxyFileAST     = ReflectionEngine::parseFile('/dev/null', $proxyFileContent);
+        // Proxy uses a trait alias for each intercepted method
+        $this->assertStringContainsString(
+            "__aop__{$methodName}",
+            $proxyFileContent,
+            'Proxy must contain trait alias for intercepted method'
+        );
 
-        $proxyFile  = new ReflectionFile('/dev/null', $proxyFileAST);
-        $namespaces = $proxyFile->getFileNamespaces();
+        // Proxy declares the static $__joinPoints property
+        $this->assertStringContainsString(
+            JoinPointPropertyGenerator::NAME,
+            $proxyFileContent,
+            'Proxy must have $__joinPoints property'
+        );
 
-        // Generated proxy should contain only one single namespace for all test cases
-        $this->assertCount(1, $namespaces);
-        $expectedNamespace = $reflectionClass->getNamespaceName();
-        $this->assertSame($expectedNamespace, $namespaces[$expectedNamespace]->getName());
+        // Proxy intercepted method delegates to the join-point invocation chain
+        $this->assertStringContainsString(
+            "self::\$__joinPoints['method:{$methodName}']->__invoke(",
+            $proxyFileContent,
+            'Proxy method body must delegate to the join-point invocation chain'
+        );
+    }
 
-        // We should have exactly one class with the same name as original one
-        $proxyClass = $namespaces[$expectedNamespace]->getClass($className);
+    /**
+     * Tests that a proxy with property interception uses PropertyInterceptionTrait and generates the
+     * correct constructor setup: bindTo with self::class scope and the property accessor closure.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateWithPropertyInterception(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $classAdvices    = [
+            'prop' => [
+                'public'    => ['test'],
+                'protected' => ['test'],
+            ]
+        ];
 
-        $proxyHasJoinpointProperty = $proxyClass->hasProperty(JoinPointPropertyGenerator::NAME);
-        $this->assertTrue($proxyHasJoinpointProperty, 'Child should have joinpoint property in it');
-        $joinPoints = $proxyClass->getStaticPropertyValue(JoinPointPropertyGenerator::NAME);
-        $this->assertSame([], $joinPoints);
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
-        $this->assertTrue($proxyClass->hasMethod($methodName));
-        $interceptedMethod = $proxyClass->getMethod($methodName);
-        $methodStartPos = $interceptedMethod->getNode()->stmts[0]->getAttribute('startFilePos');
-        $methodEndPos   = $interceptedMethod->getNode()->stmts[0]->getAttribute('endFilePos');
-        $methodBody     = substr($proxyFileContent, $methodStartPos, ($methodEndPos-$methodStartPos));
-        $this->assertStringStartsWith("return self::\$__joinPoints['method:{$methodName}']->__invoke(", $methodBody);
+        $this->assertStringContainsString(
+            'PropertyInterceptionTrait',
+            $proxyFileContent,
+            'Proxy with property advices must use PropertyInterceptionTrait'
+        );
+        $this->assertStringContainsString(
+            'self::class',
+            $proxyFileContent,
+            'Property accessor closure must be bound with self::class scope (not parent::class)'
+        );
+        $this->assertStringNotContainsString(
+            'parent::class',
+            $proxyFileContent,
+            'Generated proxy must not reference parent::class — the new trait engine has no parent'
+        );
+        $this->assertStringContainsString(
+            '__properties',
+            $proxyFileContent,
+            'Generated proxy must initialise $__properties via the accessor'
+        );
+    }
+
+    /**
+     * Tests that a proxy for a class that defines its own constructor AND has intercepted properties
+     * generates a __aop____construct alias and calls it via $this->__aop____construct() instead of
+     * parent::__construct(), which would fail because the new trait-based proxy has no parent class.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateWithPropertyInterceptionAndConstructor(): void
+    {
+        // Use a stub class that has both intercepted properties and its own __construct
+        $target          = new class(42) {
+            public int $value;
+            protected string $name = 'test';
+
+            public function __construct(int $initial)
+            {
+                $this->value = $initial;
+            }
+        };
+        $reflectionClass = new ReflectionClass($target);
+        $classAdvices    = [
+            'prop' => [
+                'value' => ['test'],
+                'name'  => ['test'],
+            ]
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString(
+            '__aop____construct',
+            $proxyFileContent,
+            'Proxy must alias the original __construct as __aop____construct in the trait-use block'
+        );
+        $this->assertStringContainsString(
+            '$this->__aop____construct(',
+            $proxyFileContent,
+            'Proxy constructor must call $this->__aop____construct() to invoke the original constructor body'
+        );
+        $this->assertStringNotContainsString(
+            'parent::__construct',
+            $proxyFileContent,
+            'Proxy must not use parent::__construct — there is no parent class in the trait-based engine'
+        );
+    }
+
+    /**
+     * Tests that private instance and static methods are intercepted correctly:
+     * - The proxy overrides them with the same `private` visibility
+     * - The trait-use block aliases each as `private __aop__<method>`
+     * - The method body delegates to the join-point chain
+     *
+     * This is a new capability in the trait-based engine; the old extend-based engine
+     * could not intercept private methods because PHP disallows overriding them in subclasses.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateInterceptsPrivateMethods(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $classAdvices    = [
+            'method' => [
+                'privateMethod'      => ['test'], // private function
+            ],
+            'static' => [
+                'staticSelfPrivate'  => ['test'], // private static function
+            ],
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'OriginalBodyTrait', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        // Trait alias must exist for each private method
+        $this->assertStringContainsString('__aop__privateMethod', $proxyFileContent);
+        $this->assertStringContainsString('__aop__staticSelfPrivate', $proxyFileContent);
+
+        // Proxy methods must keep private visibility
+        $this->assertStringContainsString('private function privateMethod(', $proxyFileContent);
+        $this->assertStringContainsString('private static function staticSelfPrivate(', $proxyFileContent);
+
+        // Method bodies must call the join-point chain
+        $this->assertStringContainsString("self::\$__joinPoints['method:privateMethod']->__invoke(", $proxyFileContent);
+        $this->assertStringContainsString("self::\$__joinPoints['static:staticSelfPrivate']->__invoke(", $proxyFileContent);
+    }
+
+    /**
+     * Regression test: when an aspect only introduces interfaces/traits (no method advices),
+     * the original class body trait must still be included in the proxy's use block.
+     * Without this, all original class methods are invisible on the proxy instance.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateWithIntroductionOnlyAlwaysIncludesOriginalTrait(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        // Only interface/trait introductions — no method, static, or property advices
+        $classAdvices = [
+            'interface' => ['root' => ['\\Stringable']],
+            'trait'     => ['root' => ['\\SomeTrait']],
+        ];
+
+        $traitName        = 'OriginalBodyTrait';
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, $traitName, $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString(
+            $traitName,
+            $proxyFileContent,
+            'Proxy must use the original class body trait even when no methods are intercepted'
+        );
+    }
+
+    /**
+     * Verifies that a class which uses a trait has both its trait-defined methods AND its own
+     * methods correctly intercepted in the generated proxy.
+     *
+     * When WeavingTransformer converts a class to a trait, the `use SomeTrait` statement moves
+     * into the `__AopProxied` trait body. The proxy class itself only uses `__AopProxied`, so
+     * it is unaware of the original trait — but it must still alias and override every method
+     * regardless of whether it came from a used trait or was directly declared.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateProxyForClassUsingTraitMethods(): void
+    {
+        $reflectionClass = new ReflectionClass(ClassWithMixedSources::class);
+        // ClassWithMixedSources uses TraitAliasProxied (publicMethod, protectedMethod, …)
+        // and also declares ownPublicMethod directly.
+        $classAdvices = [
+            'method' => [
+                'publicMethod'    => ['test'], // defined in TraitAliasProxied
+                'ownPublicMethod' => ['test'], // defined directly in ClassWithMixedSources
+            ],
+        ];
+
+        $generator        = new ClassProxyGenerator($reflectionClass, 'ClassWithMixedSources__AopProxied', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
+
+        // Both trait-defined and own methods must have trait aliases
+        $this->assertStringContainsString('__aop__publicMethod', $proxyFileContent);
+        $this->assertStringContainsString('__aop__ownPublicMethod', $proxyFileContent);
+
+        // Both must delegate to the join-point chain
+        $this->assertStringContainsString("self::\$__joinPoints['method:publicMethod']->__invoke(", $proxyFileContent);
+        $this->assertStringContainsString("self::\$__joinPoints['method:ownPublicMethod']->__invoke(", $proxyFileContent);
     }
 
     /**

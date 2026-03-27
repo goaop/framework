@@ -95,8 +95,8 @@ class WeavingTransformer extends BaseSourceTransformer
         foreach ($namespaces as $namespace) {
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
-                // Skip interfaces and aspects
-                if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames(), true)) {
+                // Skip interfaces, enums, and aspects — these cannot be proxied as traits
+                if ($class->isInterface() || $class->isEnum() || in_array(Aspect::class, $class->getInterfaceNames(), true)) {
                     continue;
                 }
                 $wasClassProcessed = $this->processSingleClass(
@@ -143,15 +143,17 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Prepare new class name
         $newClassName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
+        $newFqcn      = ($class->getNamespaceName() !== '' ? $class->getNamespaceName() . '\\' : '') . $newClassName;
 
-        // Replace original class name with new
-        $this->adjustOriginalClass($class, $advices, $metadata, $newClassName);
-        $newParentName = $class->getNamespaceName() . '\\' . $newClassName;
-
-        // Prepare child Aop proxy
-        $childProxyGenerator = $class->isTrait()
-            ? new TraitProxyGenerator($class, $newParentName, $advices, $this->useParameterWidening)
-            : new ClassProxyGenerator($class, $newParentName, $advices, $this->useParameterWidening);
+        // For traits: rename the trait (legacy approach, TraitProxyGenerator generates a child trait).
+        // For classes: convert the class body to a trait (new trait-based engine).
+        if ($class->isTrait()) {
+            $this->adjustOriginalClass($class, $advices, $metadata, $newClassName);
+            $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
+        } else {
+            $this->convertClassToTrait($class, $advices, $metadata, $newClassName);
+            $childProxyGenerator = new ClassProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
+        }
 
         $classFileName = $class->getFileName();
         if ($classFileName === false) {
@@ -251,6 +253,262 @@ class WeavingTransformer extends BaseSourceTransformer
                 }
                 ++$position;
             } while (true);
+        }
+    }
+
+    /**
+     * Convert a regular class declaration into a trait for the trait-based AOP engine.
+     *
+     * Performs the following token-stream modifications in-place:
+     *  - Removes 'final' and 'abstract' modifiers from the class keyword
+     *  - Changes 'class' keyword text to 'trait'
+     *  - Renames the class to $newClassName (__AopProxied suffix)
+     *  - Removes the 'extends X' and 'implements Y, Z' clauses (moved to the proxy class)
+     *  - Removes 'final' from any intercepted methods (traits cannot have final methods)
+     *
+     * @param array<string, array<string, array<string>>> $advices List of class advices (sorted advice IDs)
+     */
+    private function convertClassToTrait(
+        ReflectionClass $class,
+        array $advices,
+        StreamMetaData $streamMetaData,
+        string $newClassName
+    ): void {
+        $classNode = $class->getNode();
+        if ($classNode === null) {
+            return;
+        }
+        $position = $classNode->getAttribute('startTokenPos');
+        if (!is_int($position)) {
+            return;
+        }
+
+        $classNameFound = false;
+
+        do {
+            if (!isset($streamMetaData->tokenStream[$position])) {
+                ++$position;
+                continue;
+            }
+
+            $token = $streamMetaData->tokenStream[$position];
+
+            if (!$classNameFound) {
+                // Remove 'final' modifier (and trailing whitespace) — traits cannot be final
+                if ($token->id === T_FINAL) {
+                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                    ++$position;
+                    continue;
+                }
+                // Remove 'abstract' modifier (and trailing whitespace) — trait keyword itself has no modifier
+                if ($token->id === T_ABSTRACT) {
+                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                    ++$position;
+                    continue;
+                }
+                // Remove 'readonly' modifier — traits cannot be readonly
+                if ($token->id === T_READONLY) {
+                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                    ++$position;
+                    continue;
+                }
+                // Rewrite 'class' keyword to 'trait'
+                if ($token->id === T_CLASS) {
+                    $streamMetaData->tokenStream[$position]->text = 'trait';
+                    ++$position;
+                    continue;
+                }
+                // First T_STRING after the keyword is the class name — rename it
+                if ($token->id === T_STRING) {
+                    $streamMetaData->tokenStream[$position]->text = $newClassName;
+                    $classNameFound = true;
+                    ++$position;
+                    continue;
+                }
+            } else {
+                // After the class name: strip 'extends X implements Y, Z' up to the opening '{'
+                if ($token->text === '{') {
+                    break;
+                }
+                // Keep whitespace tokens to preserve original brace placement (same line or next line)
+                if ($token->id !== T_WHITESPACE) {
+                    unset($streamMetaData->tokenStream[$position]);
+                }
+            }
+
+            ++$position;
+        } while (true);
+
+        // Remove 'final' from all intercepted methods — final methods are not allowed in traits
+        foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
+            if ($finalMethod->getDeclaringClass()->name !== $class->name) {
+                continue;
+            }
+            $hasDynamicAdvice = isset($advices[AspectContainer::METHOD_PREFIX][$finalMethod->name]);
+            $hasStaticAdvice  = isset($advices[AspectContainer::STATIC_METHOD_PREFIX][$finalMethod->name]);
+            if (!$hasDynamicAdvice && !$hasStaticAdvice) {
+                continue;
+            }
+            $methodNode = $finalMethod->getNode();
+            $position   = $methodNode->getAttribute('startTokenPos');
+            if (!is_int($position)) {
+                continue;
+            }
+            do {
+                if (isset($streamMetaData->tokenStream[$position])) {
+                    $token = $streamMetaData->tokenStream[$position];
+                    if ($token->id === T_FINAL) {
+                        unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                        break;
+                    }
+                }
+                ++$position;
+            } while (true);
+        }
+
+        // Strip #[\Override] from intercepted methods.
+        // PHP copies attributes to alias names (e.g. __aop__foo). Since __aop__foo has no parent
+        // match, PHP would raise a fatal error if #[\Override] were present on the alias.
+        $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
+    }
+
+    /**
+     * Removes #[\Override] attribute groups from all intercepted methods in the token stream.
+     *
+     * When a class method is aliased in the proxy trait-use block (e.g.
+     * `SomeTrait::method as private __aop__method`), PHP copies the method's attributes to
+     * the alias. If the original method had `#[\Override]`, the alias name has no matching
+     * parent method → fatal error. We strip the attribute only from methods that will be aliased
+     * (those with dynamic or static method advices).
+     *
+     * @param array<string, array<string, array<string>>> $advices
+     */
+    private function stripOverrideAttributeFromInterceptedMethods(
+        ReflectionClass $class,
+        array $advices,
+        StreamMetaData $streamMetaData
+    ): void {
+        $interceptedNames = array_merge(
+            array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []),
+            array_keys($advices[AspectContainer::STATIC_METHOD_PREFIX] ?? [])
+        );
+
+        foreach ($interceptedNames as $methodName) {
+            if (!$class->hasMethod($methodName)) {
+                continue;
+            }
+            $method = $class->getMethod($methodName);
+            if ($method->getDeclaringClass()->name !== $class->name) {
+                continue;
+            }
+            $methodNode = $method->getNode();
+            $start = $methodNode->getAttribute('startTokenPos');
+            $end   = $methodNode->getAttribute('endTokenPos');
+            if (!is_int($start) || !is_int($end)) {
+                continue;
+            }
+
+            // Scan from method start for #[\Override] attribute groups, stopping at
+            // the first modifier keyword or 'function'.
+            $pos = $start;
+            while ($pos <= $end) {
+                if (!isset($streamMetaData->tokenStream[$pos])) {
+                    $pos++;
+                    continue;
+                }
+                $tok = $streamMetaData->tokenStream[$pos];
+                // Stop at any method modifier or 'function' keyword
+                if (in_array($tok->id, [T_FUNCTION, T_PUBLIC, T_PROTECTED, T_PRIVATE, T_STATIC, T_ABSTRACT, T_FINAL, T_READONLY], true)) {
+                    break;
+                }
+                if ($tok->id !== T_ATTRIBUTE) {
+                    $pos++;
+                    continue;
+                }
+                // Scan from '#[' to the closing ']', tracking:
+                //   $topLevelCommas  — positions of ',' at argument depth 0 (not inside nested parens)
+                //   $overridePos     — position of the Override token at depth 0, if present
+                $groupPositions = [$pos];
+                $topLevelCommas = [];
+                $overridePos    = null;
+                $depth          = 0;
+                $scanPos        = $pos + 1;
+                while ($scanPos <= $end) {
+                    if (!isset($streamMetaData->tokenStream[$scanPos])) {
+                        $scanPos++;
+                        continue;
+                    }
+                    $t = $streamMetaData->tokenStream[$scanPos];
+                    $groupPositions[] = $scanPos;
+                    if ($t->text === '(') {
+                        $depth++;
+                    } elseif ($t->text === ')') {
+                        $depth--;
+                    } elseif ($t->text === ',' && $depth === 0) {
+                        $topLevelCommas[] = $scanPos;
+                    }
+                    // Match Override only at depth 0 so that SomeAttr(name: 'Override') is not affected
+                    // #[Override]  → T_STRING 'Override'
+                    // #[\Override] → T_NAME_FULLY_QUALIFIED '\Override'
+                    if ($depth === 0 && (
+                        ($t->id === T_STRING && $t->text === 'Override')
+                        || ($t->id === T_NAME_FULLY_QUALIFIED && str_ends_with($t->text, 'Override'))
+                    )) {
+                        $overridePos = $scanPos;
+                    }
+                    if ($t->text === ']') {
+                        break;
+                    }
+                    $scanPos++;
+                }
+                /** @var int $groupEnd */
+                $groupEnd = end($groupPositions);
+                if ($overridePos === null) {
+                    // No Override attribute in this group — advance past it
+                    $pos = $groupEnd + 1;
+                } elseif (empty($topLevelCommas)) {
+                    // #[Override] is the only attribute — remove the entire group + trailing whitespace
+                    foreach ($groupPositions as $gPos) {
+                        unset($streamMetaData->tokenStream[$gPos]);
+                    }
+                    $afterPos = $groupEnd + 1;
+                    if (isset($streamMetaData->tokenStream[$afterPos])
+                        && $streamMetaData->tokenStream[$afterPos]->id === T_WHITESPACE) {
+                        unset($streamMetaData->tokenStream[$afterPos]);
+                    }
+                    $pos = $afterPos + 1;
+                } else {
+                    // Multi-attribute group: remove only the Override token and one adjacent comma+whitespace,
+                    // keeping '#[' and the remaining attribute entries intact.
+                    unset($streamMetaData->tokenStream[$overridePos]);
+                    // Prefer removing a trailing comma (first ',' after Override),
+                    // fall back to the leading comma (last ',' before Override).
+                    $commaToRemove = null;
+                    foreach ($topLevelCommas as $commaPos) {
+                        if ($commaPos > $overridePos) {
+                            $commaToRemove = $commaPos;
+                            break;
+                        }
+                    }
+                    if ($commaToRemove === null) {
+                        foreach (array_reverse($topLevelCommas) as $commaPos) {
+                            if ($commaPos < $overridePos) {
+                                $commaToRemove = $commaPos;
+                                break;
+                            }
+                        }
+                    }
+                    if ($commaToRemove !== null) {
+                        unset($streamMetaData->tokenStream[$commaToRemove]);
+                        $nextPos = $commaToRemove + 1;
+                        if (isset($streamMetaData->tokenStream[$nextPos])
+                            && $streamMetaData->tokenStream[$nextPos]->id === T_WHITESPACE) {
+                            unset($streamMetaData->tokenStream[$nextPos]);
+                        }
+                    }
+                    $pos = $groupEnd + 1;
+                }
+            }
         }
     }
 

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-class TestPhp7Class__AopProxied
+trait TestPhp7Class__AopProxied
 {
     public function stringSth(string $arg) {}
     public function floatSth(float $arg) {}
@@ -19,10 +19,6 @@ class TestPhp7Class__AopProxied
     public function arrayRth(array $arg) : array {}
     public function exceptionRth(\Exception $exception) : \Exception {}
     public function noRth(LocalException $exception) {}
-    /**
-     * `self` value is handled on AST level via SelfValueTransformer class
-     * @see \Go\Instrument\Transformer\SelfValueTransformer
-     */
-    public function returnSelf()/*: self */ {}
+    public function returnSelf(): self {}
 }
 include_once AOP_CACHE_DIR . '/_proxies/Transformer/_files/php7-class.php/Test/ns1/TestPhp7Class.php';

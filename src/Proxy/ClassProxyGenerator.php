@@ -13,11 +13,12 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Aop\Advice;
+use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Aop\Framework\ClassFieldAccess;
-use Go\Aop\Framework\DynamicClosureMethodInvocation;
+use Go\Aop\Framework\DynamicTraitAliasMethodInvocation;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
-use Go\Aop\Framework\StaticClosureMethodInvocation;
 use Go\Aop\Framework\StaticInitializationJoinpoint;
+use Go\Aop\Framework\StaticTraitAliasMethodInvocation;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
@@ -50,8 +51,8 @@ class ClassProxyGenerator
      */
     protected static array $invocationClassMap = [
         // MethodInvocation subtypes — directly invoked via self::$__joinPoints[key]->__invoke() in generated method bodies
-        AspectContainer::METHOD_PREFIX        => DynamicClosureMethodInvocation::class,
-        AspectContainer::STATIC_METHOD_PREFIX => StaticClosureMethodInvocation::class,
+        AspectContainer::METHOD_PREFIX        => DynamicTraitAliasMethodInvocation::class,
+        AspectContainer::STATIC_METHOD_PREFIX => StaticTraitAliasMethodInvocation::class,
         // Non-MethodInvocation types — accessed through explicit casts or instanceof checks, not from generated method bodies
         AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,              // cast in PropertyInterceptionTrait
         AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class, // instanceof check in injectJoinPoints()
@@ -76,16 +77,21 @@ class ClassProxyGenerator
     protected bool $useParameterWidening;
 
     /**
-     * Generates an child code by original class reflection and joinpoints for it
+     * Generates a proxy class that wraps the original class body (now a trait) via trait-use.
      *
-     * @param ReflectionClass<object> $originalClass        Original class reflection
-     * @param string                  $parentClassName      Parent class name to use
+     * The original class has been converted to a trait named $traitName by WeavingTransformer.
+     * The proxy class re-exposes the same name, parent, and interfaces as the original, uses
+     * that trait, and aliases each intercepted method as `private __aop__<method>` so the
+     * overriding method body can delegate to the original via a Closure::bind proceed closure.
+     *
+     * @param ReflectionClass<object> $originalClass        Original class reflection (before transformation)
+     * @param string                  $traitName            FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
      * @param string[][][]            $classAdviceNames     List of advices for class
      * @param bool                    $useParameterWidening Enables usage of parameter widening feature
      */
     public function __construct(
         ReflectionClass $originalClass,
-        string $parentClassName,
+        string $traitName,
         array $classAdviceNames,
         bool $useParameterWidening
     ) {
@@ -103,16 +109,30 @@ class ClassProxyGenerator
         $generatedProperties = [new JoinPointPropertyGenerator()];
         $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
 
+        // Proxy implements the same interfaces as the original class (no longer inherited)
+        $originalInterfaces    = array_map(static fn(string $i) => '\\' . $i, $originalClass->getInterfaceNames());
+        $introducedInterfaces  = array_merge($originalInterfaces, $introducedInterfaces);
         $introducedInterfaces[] = '\\' . Proxy::class;
+        $introducedInterfaces   = array_values(array_unique($introducedInterfaces));
 
         if (!empty($interceptedProperties)) {
+            $constructor = $originalClass->getConstructor();
+            // Constructor is "in the trait" when it is defined in the class itself (not inherited from a parent).
+            // In that case, the WeavingTransformer has placed it inside the trait body, so we must alias it as
+            // __aop____construct and call $this->__aop____construct() rather than parent::__construct().
+            $constructorIsInTrait = $constructor !== null
+                && $constructor->class === $originalClass->getName()
+                && !isset($dynamicMethodAdvices['__construct']); // not already aliased as an intercepted method
             $generatedMethods['__construct'] = new InterceptedConstructorGenerator(
                 $interceptedProperties,
-                $originalClass->getConstructor(),
+                $constructor,
                 $generatedMethods['__construct'] ?? null,
-                $useParameterWidening
+                $useParameterWidening,
+                $constructorIsInTrait
             );
             $introducedTraits[] = '\\' . PropertyInterceptionTrait::class;
+        } else {
+            $constructorIsInTrait = false;
         }
 
         // Extract underlying MethodGenerator instances for ClassGenerator
@@ -121,10 +141,25 @@ class ClassProxyGenerator
             array_values($generatedMethods)
         );
 
+        // Proxy parent = original class parent (not the trait — there is no inheritance layer)
+        $parentClass     = $originalClass->getParentClass();
+        $parentClassName = $parentClass !== false ? $parentClass->getName() : null;
+
+        // Proxy flags: preserve final/abstract from original class.
+        // Note: readonly is intentionally NOT preserved — the proxy requires a private static
+        // $__joinPoints property, which PHP prohibits in readonly classes.
+        $flags = 0;
+        if ($originalClass->isFinal()) {
+            $flags |= ClassGenerator::FLAG_FINAL;
+        }
+        if ($originalClass->isAbstract()) {
+            $flags |= ClassGenerator::FLAG_ABSTRACT;
+        }
+
         $classGenerator = new ClassGenerator(
             $originalClass->getShortName(),
             !empty($originalClass->getNamespaceName()) ? $originalClass->getNamespaceName() : null,
-            $originalClass->isFinal() ? ClassGenerator::FLAG_FINAL : null,
+            $flags !== 0 ? $flags : null,
             $parentClassName,
             $introducedInterfaces,
             $generatedProperties,
@@ -142,6 +177,22 @@ class ClassProxyGenerator
             $classGenerator->addAttributeGroups($classAttrGroups);
         }
 
+        // Always include the original class body trait — even when no methods are intercepted
+        // (e.g. introduction-only aspects). addTraitAlias also registers the trait, so this
+        // explicit addTraits call only matters when $interceptedMethods is empty.
+        $classGenerator->addTraits([$traitName]);
+
+        // Alias each intercepted method as private __aop__<name>
+        foreach ($interceptedMethods as $methodName) {
+            $classGenerator->addTraitAlias($traitName, $methodName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
+        }
+        // When property interception is active and the class defines its own constructor, alias __construct
+        // so InterceptedConstructorGenerator can call $this->__aop____construct() to invoke the original body.
+        if ($constructorIsInTrait) {
+            $classGenerator->addTraitAlias($traitName, '__construct', AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . '__construct', ReflectionMethod::IS_PRIVATE);
+        }
+
+        // Add any AOP-introduced traits (e.g. PropertyInterceptionTrait)
         $classGenerator->addTraits(array_values($introducedTraits));
         $this->generator = $classGenerator;
     }
@@ -199,10 +250,9 @@ class ClassProxyGenerator
      * Wrap advices with joinpoint object
      *
      * @param string[][][] $classAdvices Advisor name strings indexed by join point type and name
+     * @param class-string $className    Proxy class name
      *
      * @throws UnexpectedValueException If joinPoint type is unknown
-     *
-     * NB: Extension should be responsible for wrapping advice with join point.
      *
      * @return Joinpoint[] returns list of joinpoint ready to use
      */

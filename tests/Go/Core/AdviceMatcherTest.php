@@ -19,6 +19,7 @@ use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\ParserReflection\Locator\ComposerLocator;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
+use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -89,6 +90,82 @@ class AdviceMatcherTest extends TestCase
         $this->assertArrayHasKey(AspectContainer::METHOD_PREFIX, $advices);
         $this->assertArrayHasKey($methodName, $advices[AspectContainer::METHOD_PREFIX]);
         $this->assertCount(1, $advices[AspectContainer::METHOD_PREFIX]);
+    }
+
+    /**
+     * Verifies that private instance methods are now matched by AdviceMatcher.
+     * Previously private methods were silently excluded (IS_PUBLIC|IS_PROTECTED mask).
+     * With the trait-based proxy engine they can be intercepted, so the mask now includes IS_PRIVATE.
+     */
+    public function testPrivateMethodIsMatchedByAdviceMatcher(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $methodName      = 'privateMethod'; // private function privateMethod(): int
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method('matches')->willReturnCallback(
+            static fn(ReflectionClass $c, ?ReflectionMethod $m = null): bool =>
+                $m === null || $m->name === $methodName
+        );
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+
+        $this->assertArrayHasKey(AspectContainer::METHOD_PREFIX, $advices);
+        $this->assertArrayHasKey($methodName, $advices[AspectContainer::METHOD_PREFIX]);
+    }
+
+    /**
+     * Verifies that private static methods are also matched by AdviceMatcher.
+     */
+    public function testPrivateStaticMethodIsMatchedByAdviceMatcher(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $methodName      = 'staticSelfPrivate'; // private static function staticSelfPrivate(): int
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method('matches')->willReturnCallback(
+            static fn(ReflectionClass $c, ?ReflectionMethod $m = null): bool =>
+                $m === null || $m->name === $methodName
+        );
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+
+        $this->assertArrayHasKey(AspectContainer::STATIC_METHOD_PREFIX, $advices);
+        $this->assertArrayHasKey($methodName, $advices[AspectContainer::STATIC_METHOD_PREFIX]);
+    }
+
+    /**
+     * Verifies that private methods inherited from a parent class are NOT matched —
+     * they cannot be intercepted because they live in the parent's scope, not the trait.
+     */
+    public function testPrivateMethodFromParentClassIsNotMatched(): void
+    {
+        // Create an anonymous class that extends First — First::privateMethod is inherited but not overridable
+        $child           = new class extends First {};
+        $reflectionClass = new ReflectionClass($child);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method('matches')->willReturn(true); // match everything
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+
+        // privateMethod and staticSelfPrivate live in First, not in the anonymous child — must not appear
+        $methodAdvices = $advices[AspectContainer::METHOD_PREFIX] ?? [];
+        $this->assertArrayNotHasKey('privateMethod', $methodAdvices);
+        $staticAdvices = $advices[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
+        $this->assertArrayNotHasKey('staticSelfPrivate', $staticAdvices);
     }
 
     /**

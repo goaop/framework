@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
 use ReflectionMethod;
@@ -26,7 +27,19 @@ use function count;
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
+    /**
+     * Prefix used for trait method aliases that back the original method body.
+     * The proxy class aliases each intercepted method as `private __aop__<method>` in the trait-use block.
+     */
+    public const string TRAIT_ALIAS_PREFIX = '__aop__';
+
     protected readonly ReflectionMethod $reflectionMethod;
+
+    /**
+     * Pre-bound closure that calls the private __aop__<method> alias on any instance of the proxy class.
+     * Created once in the constructor via Closure::bind bound to the proxy class scope.
+     */
+    protected Closure $closureToCall;
 
     /**
      * This static string variable holds the name of field to use to avoid extra "if" section in the __invoke method
@@ -45,20 +58,14 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Constructor for method invocation
      *
-     * @param array<Interceptor> $advices List of advices for this invocation
-     * @param class-string       $className Class, containing method to invoke
+     * @param array<Interceptor> $advices    List of advices for this invocation
+     * @param class-string       $className  Class, containing method to invoke
      * @param non-empty-string   $methodName Name of the method to invoke
      */
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices);
-        $reflectionMethod = new ReflectionMethod($className, $methodName);
-
-        // If we have method inside AOP proxy class, we would like to use prototype instead
-        if ($reflectionMethod->hasPrototype()) {
-            $reflectionMethod = $reflectionMethod->getPrototype();
-        }
-        $this->reflectionMethod = $reflectionMethod;
+        $this->reflectionMethod = new ReflectionMethod($className, $methodName);
     }
 
     final public function __invoke(object|string $instanceOrScope, array $arguments = [], array $variadicArguments = []): mixed

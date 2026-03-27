@@ -193,6 +193,84 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * Regression test: final readonly class must be proxied without a parse error.
+     *
+     * WeavingTransformer::convertClassToTrait() must strip T_FINAL, T_ABSTRACT, and T_READONLY
+     * before the class keyword because PHP traits do not support these modifiers.
+     * The proxy class is intentionally non-readonly because it requires a private static
+     * $__joinPoints property, which PHP forbids in readonly classes.
+     */
+    public function testWeaverForFinalReadonlyClass(): void
+    {
+        $metadata = $this->loadTestMetadata('final-readonly-class');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-woven')->source);
+        $this->assertEquals($expected, $actual);
+        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
+            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-proxy')->source);
+            $this->assertEquals($expectedProxyContent, $actualProxyContent);
+        }
+    }
+
+    /**
+     * PHP 8.1 enums must be skipped — they cannot be converted to traits or extended.
+     */
+    public function testEnumIsSkipped(): void
+    {
+        $metadata = $this->loadTestMetadata('php81-enum');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum')->source);
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * PHP 8.3 #[\Override] attribute must be stripped from intercepted methods.
+     *
+     * When a method is aliased in the proxy's trait-use block (e.g. __aop__overriddenMethod),
+     * PHP copies attributes to the alias. Since __aop__overriddenMethod has no matching parent
+     * method, #[\Override] would cause a fatal error — so WeavingTransformer must remove it.
+     */
+    public function testWeaverStripsOverrideAttributeFromInterceptedMethods(): void
+    {
+        $metadata = $this->loadTestMetadata('php83-override');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-woven')->source);
+        $this->assertEquals($expected, $actual);
+        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
+            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-proxy')->source);
+            $this->assertEquals($expectedProxyContent, $actualProxyContent);
+        }
+    }
+
+    /**
+     * PHP 8.3 #[\Override] combined with other attributes in the same group: only #[\Override]
+     * must be stripped from the woven trait — the other attributes must be preserved.
+     */
+    public function testWeaverStripsOnlyOverrideFromMultiAttributeGroup(): void
+    {
+        $metadata = $this->loadTestMetadata('php83-override-multiattr');
+        $this->transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+
+        // #[\Override] must be gone from the trait body (alone or as part of a group)
+        $this->assertStringNotContainsString('#[\Override]', $actual);
+        $this->assertStringNotContainsString('#[\Override,', $actual);
+        $this->assertStringNotContainsString(', \Override]', $actual);
+
+        // The non-Override companion attribute must survive in the woven trait
+        $this->assertStringContainsString('#[\FakeAttr]', $actual);
+    }
+
+    /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
      */
     public function testMultipleClasses(): void
