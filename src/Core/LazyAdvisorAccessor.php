@@ -17,6 +17,7 @@ use Go\Aop\Advice;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
+use Go\Aop\Intercept\Interceptor;
 use InvalidArgumentException;
 
 /**
@@ -34,11 +35,24 @@ final class LazyAdvisorAccessor
     ) {}
 
     /**
+     * Returns the Interceptor for the given advisor name, loading and caching it on first access.
+     *
+     * Prefer this over the magic property accessor when the name is a variable — PHP's `__get()` is
+     * identical in behaviour, but static-analysis tools cannot track its return type for variable keys.
+     *
+     * @throws InvalidArgumentException if referenced value is not an advisor or its advice is not an Interceptor
+     */
+    public function getInterceptor(string $name): Interceptor
+    {
+        return $this->__get($name);
+    }
+
+    /**
      * Magic advice accessor
      *
-     * @throws InvalidArgumentException if referenced value is not an advisor
+     * @throws InvalidArgumentException if referenced value is not an advisor or its advice is not an Interceptor
      */
-    public function __get(string $name): Advice
+    public function __get(string $name): Interceptor
     {
         if (!$this->container->has($name)) {
             [$aspectName] = explode('->', $name, 2);
@@ -53,7 +67,11 @@ final class LazyAdvisorAccessor
         if (!$advisor instanceof Advisor) {
             throw new InvalidArgumentException("Reference {$name} is not an advisor");
         }
-        $this->$name = $advisor->getAdvice();
+        $advice = $advisor->getAdvice();
+        if (!$advice instanceof Interceptor) {
+            throw new InvalidArgumentException("Advice {$name} is not an Interceptor");
+        }
+        $this->$name = $advice;
 
         return $this->$name;
     }
