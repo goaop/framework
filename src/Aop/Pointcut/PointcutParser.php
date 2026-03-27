@@ -27,6 +27,7 @@ final class PointcutParser extends Parser
         if (!is_array($parseTable)) {
             throw new \RuntimeException('Invalid PointcutParseTable format');
         }
+        /** @var array{action: array<int, array<string, int>>, goto: array<int, array<string, int>>} $parseTable */
         parent::__construct($grammar, $parseTable);
     }
 
