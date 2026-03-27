@@ -12,13 +12,13 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
-use Closure;
 use Go\Aop\Advice;
+use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Aop\Framework\ClassFieldAccess;
-use Go\Aop\Framework\DynamicClosureMethodInvocation;
+use Go\Aop\Framework\DynamicTraitAliasMethodInvocation;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
-use Go\Aop\Framework\StaticClosureMethodInvocation;
 use Go\Aop\Framework\StaticInitializationJoinpoint;
+use Go\Aop\Framework\StaticTraitAliasMethodInvocation;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
@@ -51,8 +51,8 @@ class ClassProxyGenerator
      */
     protected static array $invocationClassMap = [
         // MethodInvocation subtypes — directly invoked via self::$__joinPoints[key]->__invoke() in generated method bodies
-        AspectContainer::METHOD_PREFIX        => DynamicClosureMethodInvocation::class,
-        AspectContainer::STATIC_METHOD_PREFIX => StaticClosureMethodInvocation::class,
+        AspectContainer::METHOD_PREFIX        => DynamicTraitAliasMethodInvocation::class,
+        AspectContainer::STATIC_METHOD_PREFIX => StaticTraitAliasMethodInvocation::class,
         // Non-MethodInvocation types — accessed through explicit casts or instanceof checks, not from generated method bodies
         AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,              // cast in PropertyInterceptionTrait
         AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class, // instanceof check in injectJoinPoints()
@@ -183,12 +183,12 @@ class ClassProxyGenerator
 
         // Alias each intercepted method as private __aop__<name>
         foreach ($interceptedMethods as $methodName) {
-            $classGenerator->addTraitAlias($traitName, $methodName, '__aop__' . $methodName, ReflectionMethod::IS_PRIVATE);
+            $classGenerator->addTraitAlias($traitName, $methodName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
         }
         // When property interception is active and the class defines its own constructor, alias __construct
         // so InterceptedConstructorGenerator can call $this->__aop____construct() to invoke the original body.
         if ($constructorIsInTrait) {
-            $classGenerator->addTraitAlias($traitName, '__construct', '__aop____construct', ReflectionMethod::IS_PRIVATE);
+            $classGenerator->addTraitAlias($traitName, '__construct', AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . '__construct', ReflectionMethod::IS_PRIVATE);
         }
 
         // Add any AOP-introduced traits (e.g. PropertyInterceptionTrait)
@@ -248,17 +248,10 @@ class ClassProxyGenerator
     /**
      * Wrap advices with joinpoint object
      *
-     * For the trait-alias engine (when the proxy has __aop__<method> aliases), a pre-bound
-     * Closure::bind closure is created once per join point and stored in the invocation object,
-     * replacing the legacy per-call ReflectionMethod::getClosure() + rebind pattern.
-     *
      * @param string[][][] $classAdvices Advisor name strings indexed by join point type and name
+     * @param class-string $className    Proxy class name
      *
      * @throws UnexpectedValueException If joinPoint type is unknown
-     *
-     * NB: Extension should be responsible for wrapping advice with join point.
-     *
-     * @param class-string $className Proxy class name
      *
      * @return Joinpoint[] returns list of joinpoint ready to use
      */
@@ -284,35 +277,7 @@ class ClassProxyGenerator
                     $filledAdvices[] = $accessor->$advisorName;
                 }
 
-                // Trait-alias engine: if __aop__<method> exists, create a pre-bound Closure::bind closure.
-                // The closure captures the alias name and is bound to the proxy class scope so it can call
-                // the private alias on any instance without per-call reflection.
-                $proceedFn  = null;
-                $aliasName  = '__aop__' . $joinPointName;
-                $isMethod   = $joinPointType === AspectContainer::METHOD_PREFIX;
-                $isStatic   = $joinPointType === AspectContainer::STATIC_METHOD_PREFIX;
-
-                if (($isMethod || $isStatic) && method_exists($className, $aliasName)) {
-                    if ($isStatic) {
-                        $proceedFn = Closure::bind(
-                            static function (string $class, array $a) use ($aliasName): mixed {
-                                return $class::$aliasName(...$a);
-                            },
-                            null,
-                            $className
-                        );
-                    } else {
-                        $proceedFn = Closure::bind(
-                            static function (object $i, array $a) use ($aliasName): mixed {
-                                return $i->$aliasName(...$a);
-                            },
-                            null,
-                            $className
-                        );
-                    }
-                }
-
-                $joinpoint = new self::$invocationClassMap[$joinPointType]($filledAdvices, $className, $joinPointName, $proceedFn);
+                $joinpoint = new self::$invocationClassMap[$joinPointType]($filledAdvices, $className, $joinPointName);
                 $joinPoints["$joinPointType:$joinPointName"] = $joinpoint;
             }
         }

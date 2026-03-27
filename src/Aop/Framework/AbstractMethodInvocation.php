@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Closure;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
 use ReflectionMethod;
@@ -27,16 +26,13 @@ use function count;
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
-    protected readonly ReflectionMethod $reflectionMethod;
-
     /**
-     * Pre-bound closure that calls the aliased original method body (trait alias approach).
-     *
-     * Created once at injectJoinPoints() time via Closure::bind() bound to the proxy class scope,
-     * replacing the per-call ReflectionMethod::getClosure() + rebind pattern.
-     * Null when the legacy __AopProxied rename+extend approach is used.
+     * Prefix used for trait method aliases that back the original method body.
+     * The proxy class aliases each intercepted method as `private __aop__<method>` in the trait-use block.
      */
-    protected readonly ?Closure $proceedFn;
+    public const string TRAIT_ALIAS_PREFIX = '__aop__';
+
+    protected readonly ReflectionMethod $reflectionMethod;
 
     /**
      * This static string variable holds the name of field to use to avoid extra "if" section in the __invoke method
@@ -58,19 +54,11 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      * @param array<Interceptor> $advices    List of advices for this invocation
      * @param class-string       $className  Class, containing method to invoke
      * @param non-empty-string   $methodName Name of the method to invoke
-     * @param Closure|null       $proceedFn  Pre-bound closure for the trait alias approach; null for legacy approach
      */
-    public function __construct(array $advices, string $className, string $methodName, ?Closure $proceedFn = null)
+    public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices);
-        $reflectionMethod = new ReflectionMethod($className, $methodName);
-
-        // If we have method inside AOP proxy class, we would like to use prototype instead
-        if ($reflectionMethod->hasPrototype()) {
-            $reflectionMethod = $reflectionMethod->getPrototype();
-        }
-        $this->reflectionMethod = $reflectionMethod;
-        $this->proceedFn        = $proceedFn;
+        $this->reflectionMethod = new ReflectionMethod($className, $methodName);
     }
 
     final public function __invoke(object|string $instanceOrScope, array $arguments = [], array $variadicArguments = []): mixed
