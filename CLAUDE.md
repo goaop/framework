@@ -135,5 +135,5 @@ Key properties of this engine:
 - Functional/integration tests live in `tests/Go/Functional/`
 - Test fixtures (stub classes for weaving) live in `tests/Go/Stubs/` and `tests/Fixtures/project/src/` (autoloaded as `Go\Tests\TestProject\`)
 - Snapshot fixtures for `WeavingTransformerTest` live in `tests/Go/Instrument/Transformer/_files/`; `*-woven.php` is the transformed source (class→trait), `*-proxy.php` is the generated proxy
-- PHPUnit 11+, bootstrap is `vendor/autoload.php` (no separate test bootstrap)
+- PHPUnit 13+, bootstrap is `vendor/autoload.php` (no separate test bootstrap)
 - PHPStan level 10 is a mandatory gate — run `./vendor/bin/phpstan analyze --memory-limit=512M` before every commit

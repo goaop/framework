@@ -113,6 +113,7 @@ class ClassProxyGenerator
         $originalInterfaces    = array_map(static fn(string $i) => '\\' . $i, $originalClass->getInterfaceNames());
         $introducedInterfaces  = array_merge($originalInterfaces, $introducedInterfaces);
         $introducedInterfaces[] = '\\' . Proxy::class;
+        $introducedInterfaces   = array_values(array_unique($introducedInterfaces));
 
         if (!empty($interceptedProperties)) {
             $constructor = $originalClass->getConstructor();

@@ -197,12 +197,6 @@ final class ClassGenerator implements GeneratorInterface
 
         // Traits (always use FQN to avoid namespace ambiguity)
         if (!empty($this->traits)) {
-            // Group aliases by trait so we emit one TraitUse per trait
-            $aliasByTrait = [];
-            foreach ($this->traitAliases as $info) {
-                $aliasByTrait[$info['trait']][] = $info;
-            }
-
             // Collect unique trait names (preserving order of first occurrence)
             $seen       = [];
             $traitFqcns = [];
