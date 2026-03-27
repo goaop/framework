@@ -34,8 +34,9 @@ use ReflectionMethod;
  */
 final class ClassGenerator implements GeneratorInterface
 {
-    public const FLAG_FINAL    = 0b01;
-    public const FLAG_ABSTRACT = 0b10;
+    public const FLAG_FINAL     = 0b001;
+    public const FLAG_ABSTRACT  = 0b010;
+    public const FLAG_READONLY  = 0b100;
 
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
@@ -165,6 +166,9 @@ final class ClassGenerator implements GeneratorInterface
         }
         if (($this->flags ?? 0) & self::FLAG_ABSTRACT) {
             $builder->makeAbstract();
+        }
+        if (($this->flags ?? 0) & self::FLAG_READONLY) {
+            $builder->makeReadonly();
         }
 
         foreach ($this->attrGroups as $attrGroup) {

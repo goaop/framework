@@ -193,6 +193,29 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * Regression test: final readonly class must be proxied without a parse error.
+     *
+     * WeavingTransformer::convertClassToTrait() must strip T_FINAL, T_ABSTRACT, and T_READONLY
+     * before the class keyword because PHP traits do not support these modifiers.
+     * The proxy class is intentionally non-readonly because it requires a private static
+     * $__joinPoints property, which PHP forbids in readonly classes.
+     */
+    public function testWeaverForFinalReadonlyClass(): void
+    {
+        $metadata = $this->loadTestMetadata('final-readonly-class');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-woven')->source);
+        $this->assertEquals($expected, $actual);
+        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
+            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-proxy')->source);
+            $this->assertEquals($expectedProxyContent, $actualProxyContent);
+        }
+    }
+
+    /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
      */
     public function testMultipleClasses(): void

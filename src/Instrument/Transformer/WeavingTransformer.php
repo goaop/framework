@@ -306,6 +306,12 @@ class WeavingTransformer extends BaseSourceTransformer
                     ++$position;
                     continue;
                 }
+                // Remove 'readonly' modifier — traits cannot be readonly
+                if ($token->id === T_READONLY) {
+                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                    ++$position;
+                    continue;
+                }
                 // Rewrite 'class' keyword to 'trait'
                 if ($token->id === T_CLASS) {
                     $streamMetaData->tokenStream[$position]->text = 'trait';

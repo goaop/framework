@@ -144,7 +144,9 @@ class ClassProxyGenerator
         $parentClass     = $originalClass->getParentClass();
         $parentClassName = $parentClass !== false ? $parentClass->getName() : null;
 
-        // Proxy flags: preserve final/abstract from original class
+        // Proxy flags: preserve final/abstract from original class.
+        // Note: readonly is intentionally NOT preserved — the proxy requires a private static
+        // $__joinPoints property, which PHP prohibits in readonly classes.
         $flags = 0;
         if ($originalClass->isFinal()) {
             $flags |= ClassGenerator::FLAG_FINAL;
