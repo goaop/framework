@@ -110,7 +110,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     /**
      * Serializes advice closure into array
      *
-     * @return array{class: class-string<Aspect>, name: string}
+     * @return array<string, mixed>
      */
     protected static function serializeAdvice(Closure $adviceMethod): array
     {
@@ -129,16 +129,16 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     /**
      * Unserialize an advice
      *
-     * @param array{class: class-string<Aspect>, name: string} $adviceData Information about advice
+     * @param array<string, mixed> $adviceData Information about advice
      */
     protected static function unserializeAdvice(array $adviceData): Closure
     {
+        $aspectName = $adviceData['class'] ?? null;
+        $methodName = $adviceData['name'] ?? null;
         // General unpacking supports only aspect's advices
-        if (!is_subclass_of($adviceData['class'], Aspect::class)) {
+        if (!is_string($aspectName) || !is_string($methodName) || !is_subclass_of($aspectName, Aspect::class)) {
             throw new AspectException('Could not unpack an interceptor without aspect name');
         }
-        $aspectName = $adviceData['class'];
-        $methodName = $adviceData['name'];
 
         // With aspect name and method name, we can restore back a closure for it
         if (!isset(self::$localAdvicesCache["$aspectName->$methodName"])) {

@@ -46,6 +46,11 @@ final class DeclareErrorInterceptor extends AbstractInterceptor
         return $joinpoint->proceed();
     }
 
+    protected static function serializeAdvice(Closure $adviceMethod): array
+    {
+        return []; // DeclareErrorInterceptor always reconstructs its advice via self::declareErrorAdvice
+    }
+
     protected static function unserializeAdvice(array $adviceData): Closure
     {
         return self::declareErrorAdvice(...);
