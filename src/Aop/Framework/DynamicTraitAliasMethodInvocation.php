@@ -36,12 +36,6 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation
      */
     protected object $instance;
 
-    /**
-     * Pre-bound closure that calls the private __aop__<method> alias on any instance of the proxy class.
-     * Created once in the constructor via Closure::bind bound to the proxy class scope.
-     */
-    private readonly Closure $closureToCall;
-
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices, $className, $methodName);

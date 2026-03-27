@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
 use ReflectionMethod;
@@ -33,6 +34,12 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     public const string TRAIT_ALIAS_PREFIX = '__aop__';
 
     protected readonly ReflectionMethod $reflectionMethod;
+
+    /**
+     * Pre-bound closure that calls the private __aop__<method> alias on any instance of the proxy class.
+     * Created once in the constructor via Closure::bind bound to the proxy class scope.
+     */
+    protected Closure $closureToCall;
 
     /**
      * This static string variable holds the name of field to use to avoid extra "if" section in the __invoke method

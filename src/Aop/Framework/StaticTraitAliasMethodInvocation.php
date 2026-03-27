@@ -35,12 +35,6 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation
      */
     protected string $scope;
 
-    /**
-     * Pre-bound closure that calls the private __aop__<method> static alias in the proxy class scope.
-     * Created once in the constructor via Closure::bind bound to the proxy class scope.
-     */
-    private readonly Closure $closureToCall;
-
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices, $className, $methodName);
