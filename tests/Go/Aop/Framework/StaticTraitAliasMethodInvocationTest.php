@@ -15,6 +15,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Stubs\TraitAliasProxy;
+use Go\Stubs\TraitAliasProxyChild;
 use PHPUnit\Framework\TestCase;
 
 class StaticTraitAliasMethodInvocationTest extends TestCase
@@ -98,5 +99,35 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
 
         $invocation = new StaticTraitAliasMethodInvocation([$advice], TraitAliasProxy::class, 'staticPublicMethod');
         $invocation(TraitAliasProxy::class);
+    }
+
+    /**
+     * Regression: when a subclass of the proxy is used as the static scope (LSB — e.g. via
+     * static::class in the generated override method), the joinpoint must still route through
+     * the private __aop__ alias defined on the parent proxy class and execute the original
+     * method body correctly.
+     */
+    public function testLateStaticBindingWithSubclassScope(): void
+    {
+        $invocation = new StaticTraitAliasMethodInvocation([], TraitAliasProxy::class, 'staticPublicMethod');
+
+        // Passing the subclass as scope simulates `static::class` returning a child class
+        $result = $invocation(TraitAliasProxyChild::class);
+        $this->assertSame(T_PUBLIC, $result);
+    }
+
+    public function testGetScopeReturnsSubclassWhenCalledWithSubclassScope(): void
+    {
+        $advice = $this->createMock(Interceptor::class);
+        $advice->expects($this->once())
+            ->method('invoke')
+            ->willReturnCallback(function (MethodInvocation $inv): mixed {
+                $this->assertSame(TraitAliasProxyChild::class, $inv->getScope());
+
+                return $inv->proceed();
+            });
+
+        $invocation = new StaticTraitAliasMethodInvocation([$advice], TraitAliasProxy::class, 'staticPublicMethod');
+        $invocation(TraitAliasProxyChild::class);
     }
 }

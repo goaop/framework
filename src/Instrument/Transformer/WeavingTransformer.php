@@ -425,9 +425,13 @@ class WeavingTransformer extends BaseSourceTransformer
                     $pos++;
                     continue;
                 }
-                // Collect all positions in this attribute group from '#[' to the closing ']'
+                // Scan from '#[' to the closing ']', tracking:
+                //   $topLevelCommas  — positions of ',' at argument depth 0 (not inside nested parens)
+                //   $overridePos     — position of the Override token at depth 0, if present
                 $groupPositions = [$pos];
-                $isOverride     = false;
+                $topLevelCommas = [];
+                $overridePos    = null;
+                $depth          = 0;
                 $scanPos        = $pos + 1;
                 while ($scanPos <= $end) {
                     if (!isset($streamMetaData->tokenStream[$scanPos])) {
@@ -436,23 +440,37 @@ class WeavingTransformer extends BaseSourceTransformer
                     }
                     $t = $streamMetaData->tokenStream[$scanPos];
                     $groupPositions[] = $scanPos;
-                    // #[Override] → T_STRING 'Override'
+                    if ($t->text === '(') {
+                        $depth++;
+                    } elseif ($t->text === ')') {
+                        $depth--;
+                    } elseif ($t->text === ',' && $depth === 0) {
+                        $topLevelCommas[] = $scanPos;
+                    }
+                    // Match Override only at depth 0 so that SomeAttr(name: 'Override') is not affected
+                    // #[Override]  → T_STRING 'Override'
                     // #[\Override] → T_NAME_FULLY_QUALIFIED '\Override'
-                    if (($t->id === T_STRING && $t->text === 'Override')
-                        || ($t->id === T_NAME_FULLY_QUALIFIED && str_ends_with($t->text, 'Override'))) {
-                        $isOverride = true;
+                    if ($depth === 0 && (
+                        ($t->id === T_STRING && $t->text === 'Override')
+                        || ($t->id === T_NAME_FULLY_QUALIFIED && str_ends_with($t->text, 'Override'))
+                    )) {
+                        $overridePos = $scanPos;
                     }
                     if ($t->text === ']') {
                         break;
                     }
                     $scanPos++;
                 }
+                /** @var int $groupEnd */
                 $groupEnd = end($groupPositions);
-                if ($isOverride) {
+                if ($overridePos === null) {
+                    // No Override attribute in this group — advance past it
+                    $pos = $groupEnd + 1;
+                } elseif (empty($topLevelCommas)) {
+                    // #[Override] is the only attribute — remove the entire group + trailing whitespace
                     foreach ($groupPositions as $gPos) {
                         unset($streamMetaData->tokenStream[$gPos]);
                     }
-                    // Remove trailing whitespace/newline after ']'
                     $afterPos = $groupEnd + 1;
                     if (isset($streamMetaData->tokenStream[$afterPos])
                         && $streamMetaData->tokenStream[$afterPos]->id === T_WHITESPACE) {
@@ -460,6 +478,34 @@ class WeavingTransformer extends BaseSourceTransformer
                     }
                     $pos = $afterPos + 1;
                 } else {
+                    // Multi-attribute group: remove only the Override token and one adjacent comma+whitespace,
+                    // keeping '#[' and the remaining attribute entries intact.
+                    unset($streamMetaData->tokenStream[$overridePos]);
+                    // Prefer removing a trailing comma (first ',' after Override),
+                    // fall back to the leading comma (last ',' before Override).
+                    $commaToRemove = null;
+                    foreach ($topLevelCommas as $commaPos) {
+                        if ($commaPos > $overridePos) {
+                            $commaToRemove = $commaPos;
+                            break;
+                        }
+                    }
+                    if ($commaToRemove === null) {
+                        foreach (array_reverse($topLevelCommas) as $commaPos) {
+                            if ($commaPos < $overridePos) {
+                                $commaToRemove = $commaPos;
+                                break;
+                            }
+                        }
+                    }
+                    if ($commaToRemove !== null) {
+                        unset($streamMetaData->tokenStream[$commaToRemove]);
+                        $nextPos = $commaToRemove + 1;
+                        if (isset($streamMetaData->tokenStream[$nextPos])
+                            && $streamMetaData->tokenStream[$nextPos]->id === T_WHITESPACE) {
+                            unset($streamMetaData->tokenStream[$nextPos]);
+                        }
+                    }
                     $pos = $groupEnd + 1;
                 }
             }

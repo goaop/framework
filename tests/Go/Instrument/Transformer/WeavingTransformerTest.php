@@ -251,6 +251,26 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * PHP 8.3 #[\Override] combined with other attributes in the same group: only #[\Override]
+     * must be stripped from the woven trait — the other attributes must be preserved.
+     */
+    public function testWeaverStripsOnlyOverrideFromMultiAttributeGroup(): void
+    {
+        $metadata = $this->loadTestMetadata('php83-override-multiattr');
+        $this->transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+
+        // #[\Override] must be gone from the trait body (alone or as part of a group)
+        $this->assertStringNotContainsString('#[\Override]', $actual);
+        $this->assertStringNotContainsString('#[\Override,', $actual);
+        $this->assertStringNotContainsString(', \Override]', $actual);
+
+        // The non-Override companion attribute must survive in the woven trait
+        $this->assertStringContainsString('#[\FakeAttr]', $actual);
+    }
+
+    /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
      */
     public function testMultipleClasses(): void

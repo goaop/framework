@@ -13,7 +13,6 @@ declare(strict_types = 1);
 namespace Go\Core;
 
 use AllowDynamicProperties;
-use Go\Aop\Advice;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
