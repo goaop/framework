@@ -110,10 +110,13 @@ Key properties of this engine:
 
 - `src/Aop/Intercept/` — interfaces: `Joinpoint`, `Invocation`, `MethodInvocation`, `ConstructorInvocation`, `FunctionInvocation`, `FieldAccess`
 - `src/Aop/Framework/` — concrete invocation implementations:
-  - `AbstractMethodInvocation` — base class; holds `protected readonly ?Closure $proceedFn` set once at `injectJoinPoints` time
-  - `DynamicClosureMethodInvocation` — `proceed()` calls `($this->proceedFn)($instance, $args)` when set; falls back to `ReflectionMethod::getClosure` for non-trait-engine proxies
-  - `StaticClosureMethodInvocation` — same pattern for static methods
-  - `ClassFieldAccess` — property interception join point
+  - `AbstractMethodInvocation` — base class; holds `protected Closure $closureToCall` (set in each subclass constructor via `Closure::bind`); `TRAIT_ALIAS_PREFIX = '__aop__'` constant; manages recursive/cross-call stack frames
+  - `DynamicTraitAliasMethodInvocation` — instance-method invocation; builds `Closure::bind(fn($i, $a) => $i->__aop__method(...$a), null, $class)` once at construction; `proceed()` calls `($this->closureToCall)($this->instance, $this->arguments)`
+  - `StaticTraitAliasMethodInvocation` — static-method invocation; builds `Closure::bind(fn($c, $a) => $c::__aop__method(...$a), null, $class)` once at construction; `proceed()` calls `($this->closureToCall)($this->scope, $this->arguments)`
+  - `ReflectionConstructorInvocation` — constructor interception (used with `INTERCEPT_INITIALIZATIONS`); creates instance via `ReflectionClass::newInstanceWithoutConstructor()` then calls constructor
+  - `ReflectionFunctionInvocation` — function interception; `proceed()` calls `$this->reflectionFunction->invokeArgs($this->arguments)`
+  - `ClassFieldAccess` — property interception join point; used via `PropertyInterceptionTrait`
+  - `StaticInitializationJoinpoint` — fired once after proxy class is loaded via `injectJoinPoints()`
 - `src/Aop/Pointcut/` — LALR pointcut grammar (`PointcutGrammar`, `PointcutParser`, `PointcutLexer`, `PointcutParseTable`) and pointcut combinators (`AndPointcut`, `OrPointcut`, `NotPointcut`, `NamePointcut`, `AttributePointcut`, etc.)
 - `src/Lang/Attribute/` — PHP 8 attributes for declaring aspects and advice: `#[Aspect]`, `#[Before]`, `#[After]`, `#[Around]`, `#[AfterThrowing]`, `#[Pointcut]`, `#[DeclareError]`, `#[DeclareParents]`
 - `src/Aop/Features.php` — bitmask enum for optional features (`INTERCEPT_FUNCTIONS`, `INTERCEPT_INITIALIZATIONS`, `INTERCEPT_INCLUDES`)
