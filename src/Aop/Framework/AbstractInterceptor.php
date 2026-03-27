@@ -97,7 +97,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     /**
      * Un-serializes an interceptor from it's stored state
      *
-     * @param array{adviceMethod: array{name: string, class: string}} $state The stored representation of the interceptor.
+     * @param array{adviceMethod: array{class: class-string<Aspect>, name: string}} $state The stored representation of the interceptor.
      */
     final public function __unserialize(array $state): void
     {
@@ -110,14 +110,14 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     /**
      * Serializes advice closure into array
      *
-     * @return array{name: string, class: string}
+     * @return array{class: class-string<Aspect>, name: string}
      */
     protected static function serializeAdvice(Closure $adviceMethod): array
     {
         $reflectionAdvice     = new ReflectionFunction($adviceMethod);
         $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
-        if (!isset($scopeReflectionClass)) {
-            throw new AspectException('Could not pack an interceptor without aspect name');
+        if (!isset($scopeReflectionClass) || !is_subclass_of($scopeReflectionClass->name, Aspect::class)) {
+            throw new AspectException('Could not pack an interceptor without valid aspect');
         }
 
         return [
@@ -129,7 +129,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     /**
      * Unserialize an advice
      *
-     * @param array{name: string, class: string} $adviceData Information about advice
+     * @param array{class: class-string<Aspect>, name: string} $adviceData Information about advice
      */
     protected static function unserializeAdvice(array $adviceData): Closure
     {
