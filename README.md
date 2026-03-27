@@ -31,6 +31,7 @@ The framework provides powerful core interception capabilities that can be used 
 |--------------------------------------------|:-------:|
 | Interception of public & protected methods |    ✅    |
 | Interception of static and final methods   |    ✅    |
+| Interception of private methods            |    ✅    |
 | Interception of methods in `final` classes |    ✅    |
 | Interception of trait methods              |    ✅    |
 | Before, After and Around type of hooks     |    ✅    |
