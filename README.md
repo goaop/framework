@@ -34,7 +34,7 @@ The framework provides powerful core interception capabilities that can be used 
 | Interception of private methods            |    ✅    |
 | Interception of methods in `final` classes |    ✅    |
 | Interception of trait methods              |    ✅    |
-| Interception of enum methods (PHP 8.1+)   |    ✅    |
+| Interception of enum methods (PHP 8.1+)    |    ✅    |
 | Before, After and Around type of hooks     |    ✅    |
 
 ### 🛠️ Developer Experience
