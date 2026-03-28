@@ -6,6 +6,7 @@ namespace Go\Tests\TestProject\Kernel;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
+use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use Go\Tests\TestProject\Aspect\InitializationAspect;
 use Go\Tests\TestProject\Aspect\Issue293Aspect;
 use Go\Tests\TestProject\Aspect\LoggingAspect;
@@ -28,5 +29,6 @@ class DefaultAspectKernel extends AspectKernel
         $container->registerAspect(new InitializationAspect());
         $container->registerAspect(new WeavingAspect());
         $container->registerAspect(new TraitCompositionAspect());
+        $container->registerAspect(new EnumMethodAspect());
     }
 }
