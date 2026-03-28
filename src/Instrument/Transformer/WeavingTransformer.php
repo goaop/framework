@@ -27,8 +27,10 @@ use Go\ParserReflection\ReflectionFile;
 use Go\ParserReflection\ReflectionFileNamespace;
 use Go\ParserReflection\ReflectionMethod;
 use Go\Proxy\ClassProxyGenerator;
+use Go\Proxy\EnumProxyGenerator;
 use Go\Proxy\FunctionProxyGenerator;
 use Go\Proxy\TraitProxyGenerator;
+use PhpParser\Node\Stmt\EnumCase;
 
 /**
  * Main transformer that performs weaving of aspects into the source code
@@ -95,8 +97,8 @@ class WeavingTransformer extends BaseSourceTransformer
         foreach ($namespaces as $namespace) {
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
-                // Skip interfaces, enums, and aspects — these cannot be proxied as traits
-                if ($class->isInterface() || $class->isEnum() || in_array(Aspect::class, $class->getInterfaceNames(), true)) {
+                // Skip interfaces and aspects — enums are now supported via EnumProxyGenerator
+                if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames(), true)) {
                     continue;
                 }
                 $wasClassProcessed = $this->processSingleClass(
@@ -146,10 +148,14 @@ class WeavingTransformer extends BaseSourceTransformer
         $newFqcn      = ($class->getNamespaceName() !== '' ? $class->getNamespaceName() . '\\' : '') . $newClassName;
 
         // For traits: rename the trait (legacy approach, TraitProxyGenerator generates a child trait).
+        // For enums: convert the enum body to a trait (cases extracted to proxy enum by EnumProxyGenerator).
         // For classes: convert the class body to a trait (new trait-based engine).
         if ($class->isTrait()) {
             $this->adjustOriginalClass($class, $advices, $metadata, $newClassName);
             $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
+        } elseif ($class->isEnum()) {
+            $this->convertEnumToTrait($class, $advices, $metadata, $newClassName);
+            $childProxyGenerator = new EnumProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
         } else {
             $this->convertClassToTrait($class, $advices, $metadata, $newClassName);
             $childProxyGenerator = new ClassProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
@@ -370,6 +376,93 @@ class WeavingTransformer extends BaseSourceTransformer
         // PHP copies attributes to alias names (e.g. __aop__foo). Since __aop__foo has no parent
         // match, PHP would raise a fatal error if #[\Override] were present on the alias.
         $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
+    }
+
+    /**
+     * Convert an enum declaration into a trait for the trait-based AOP engine.
+     *
+     * Performs the following token-stream modifications in-place:
+     *  - Changes 'enum' keyword text to 'trait'
+     *  - Renames the enum to $newClassName (__AopProxied suffix)
+     *  - Removes the backed type (': string' / ': int') and any 'implements ...' clause
+     *  - Removes all enum case declarations from the body (cases live in the proxy enum instead)
+     *
+     * @param array<string, array<string, array<string>>> $advices List of class advices (sorted advice IDs)
+     */
+    private function convertEnumToTrait(
+        ReflectionClass $class,
+        array $advices,
+        StreamMetaData $streamMetaData,
+        string $newClassName
+    ): void {
+        $classNode = $class->getNode();
+        if ($classNode === null) {
+            return;
+        }
+        $position = $classNode->getAttribute('startTokenPos');
+        if (!is_int($position)) {
+            return;
+        }
+
+        $classNameFound = false;
+
+        do {
+            if (!isset($streamMetaData->tokenStream[$position])) {
+                ++$position;
+                continue;
+            }
+
+            $token = $streamMetaData->tokenStream[$position];
+
+            if (!$classNameFound) {
+                // Rewrite 'enum' keyword to 'trait'
+                if ($token->id === T_ENUM) {
+                    $streamMetaData->tokenStream[$position]->text = 'trait';
+                    ++$position;
+                    continue;
+                }
+                // First T_STRING after the keyword is the enum name — rename it
+                if ($token->id === T_STRING) {
+                    $streamMetaData->tokenStream[$position]->text = $newClassName;
+                    $classNameFound = true;
+                    ++$position;
+                    continue;
+                }
+            } else {
+                // After the enum name: strip backed type (': string/int') and 'implements ...' up to '{'
+                if ($token->text === '{') {
+                    break;
+                }
+                // Keep whitespace tokens to preserve original brace placement
+                if ($token->id !== T_WHITESPACE) {
+                    unset($streamMetaData->tokenStream[$position]);
+                }
+            }
+
+            ++$position;
+        } while (true);
+
+        // Remove all enum case declarations from the trait body.
+        // Cases cannot exist in traits; they are re-declared in the proxy enum by EnumProxyGenerator.
+        // The trailing whitespace token (newline + indent) after each case is intentionally kept so
+        // that subsequent methods remain at their original line numbers in the woven file, which is
+        // required for XDebug breakpoints to map correctly (see CLAUDE.md).
+        foreach ($classNode->stmts as $stmt) {
+            if (!($stmt instanceof EnumCase)) {
+                continue;
+            }
+            $start = $stmt->getAttribute('startTokenPos');
+            $end   = $stmt->getAttribute('endTokenPos');
+            if (!is_int($start) || !is_int($end)) {
+                continue;
+            }
+            // Remove the case tokens only (not the trailing whitespace/newline).
+            // Keeping the trailing whitespace preserves blank lines in place of the removed case,
+            // so the line numbers of all following methods are unchanged.
+            for ($pos = $start; $pos <= $end; $pos++) {
+                unset($streamMetaData->tokenStream[$pos]);
+            }
+        }
     }
 
     /**
