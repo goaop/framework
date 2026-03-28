@@ -30,6 +30,7 @@ class LoggingDemo
     {
         $this->perform($task, 'first');
         $this->perform($task, 'second');
+        var_dump(LoggingEnum::values());
     }
 
     /**
