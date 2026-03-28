@@ -5,10 +5,10 @@ namespace Test\ns1;
 /**
  * PHP 8.1 backed enum — woven by extracting methods into a trait and re-declaring cases in the proxy enum.
  */
-enum TestStatus: string
+trait TestStatus__AopProxied
 {
-    case Active   = 'active';
-    case Inactive = 'inactive';
+
+
 
     public function label(): string
     {
@@ -18,3 +18,4 @@ enum TestStatus: string
         };
     }
 }
+include_once AOP_CACHE_DIR . '/_proxies/Transformer/_files/php81-enum.php/Test/ns1/TestStatus.php';
