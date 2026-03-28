@@ -98,6 +98,15 @@ class EnumProxyGenerator extends ClassProxyGenerator
         array $classAdviceNames,
         bool $useParameterWidening
     ) {
+        // Enums cannot be instantiated (no `new EnumClass()`) and cannot have properties, so
+        // initialization and property-access join points must never be woven for enums.
+        // Filtering them here prevents "Cannot instantiate enum" errors that would occur if
+        // an initialization pointcut (e.g. initialization(*)) matches an enum class.
+        $classAdviceNames = array_intersect_key($classAdviceNames, [
+            AspectContainer::METHOD_PREFIX        => true,
+            AspectContainer::STATIC_METHOD_PREFIX => true,
+        ]);
+
         $this->adviceNames          = $classAdviceNames;
         $this->useParameterWidening = $useParameterWidening;
 

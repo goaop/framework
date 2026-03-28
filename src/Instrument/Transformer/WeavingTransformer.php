@@ -463,6 +463,40 @@ class WeavingTransformer extends BaseSourceTransformer
                 unset($streamMetaData->tokenStream[$pos]);
             }
         }
+
+        // Remove 'final' from all intercepted enum methods — final methods cannot be overridden in
+        // the proxy enum. Only intercepted methods need stripping; unintercepted final methods are
+        // not overridden by the proxy and can safely remain final in the trait.
+        foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
+            if ($finalMethod->getDeclaringClass()->name !== $class->name) {
+                continue;
+            }
+            $hasDynamicAdvice = isset($advices[AspectContainer::METHOD_PREFIX][$finalMethod->name]);
+            $hasStaticAdvice  = isset($advices[AspectContainer::STATIC_METHOD_PREFIX][$finalMethod->name]);
+            if (!$hasDynamicAdvice && !$hasStaticAdvice) {
+                continue;
+            }
+            $methodNode = $finalMethod->getNode();
+            $position   = $methodNode->getAttribute('startTokenPos');
+            if (!is_int($position)) {
+                continue;
+            }
+            do {
+                if (isset($streamMetaData->tokenStream[$position])) {
+                    $token = $streamMetaData->tokenStream[$position];
+                    if ($token->id === T_FINAL) {
+                        unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                        break;
+                    }
+                }
+                ++$position;
+            } while (true);
+        }
+
+        // Strip #[\Override] from intercepted methods to prevent fatal errors on the alias.
+        // PHP copies attributes to alias names (e.g. __aop__label), and since __aop__label has
+        // no matching parent method, #[\Override] on the alias would be a fatal error.
+        $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
     }
 
     /**
