@@ -17,9 +17,12 @@ use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
 use PhpParser\ConstExprEvaluator;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
+use PhpParser\Node\Scalar\String_;
 use PhpParser\NodeFinder;
 
 /**
@@ -66,14 +69,65 @@ final class ProxyClassReflectionHelper
                 && str_ends_with($node->class->toString(), 'ClassProxyGenerator');
         });
 
-        if ($injectCall === null || count($injectCall->args) < 2) {
+        if ($injectCall !== null && count($injectCall->args) >= 2) {
+            $advicesNode = $injectCall->args[1]->value;
+            $result      = (new ConstExprEvaluator())->evaluateSilently($advicesNode);
+
+            return is_array($result) ? $result : [];
+        }
+
+        // Enum proxies do not use injectJoinPoints() — they use per-method static joinpoints via
+        // EnumProxyGenerator::getJoinPoint(__CLASS__, 'method'|'static', 'methodName', [...advices...]).
+        // Parse all getJoinPoint() calls and reconstruct the same array structure.
+        /** @var StaticCall[] $getJoinPointCalls */
+        $getJoinPointCalls = (new NodeFinder())->find($ast, static function ($node): bool {
+            return $node instanceof StaticCall
+                && $node->name instanceof Identifier
+                && $node->name->toString() === 'getJoinPoint'
+                && $node->class instanceof Name
+                && str_ends_with($node->class->toString(), 'EnumProxyGenerator');
+        });
+
+        if (empty($getJoinPointCalls)) {
             return [];
         }
 
-        $advicesNode = $injectCall->args[1]->value;
-        $result      = (new ConstExprEvaluator())->evaluateSilently($advicesNode);
+        $evaluator = new ConstExprEvaluator();
+        $result    = [];
+        foreach ($getJoinPointCalls as $call) {
+            if (count($call->args) < 4) {
+                continue;
+            }
+            $arg1 = $call->args[1];
+            $arg2 = $call->args[2];
+            $arg3 = $call->args[3];
+            if (!($arg1 instanceof Arg) || !($arg2 instanceof Arg) || !($arg3 instanceof Arg)) {
+                continue;
+            }
+            // arg[1] = join-point type string ('method' or 'static')
+            $typeNode = $arg1->value;
+            // arg[2] = method name string
+            $nameNode = $arg2->value;
+            // arg[3] = advice names array
+            $advicesNode = $arg3->value;
 
-        return is_array($result) ? $result : [];
+            if (!($typeNode instanceof String_) || !($nameNode instanceof String_) || !($advicesNode instanceof Array_)) {
+                continue;
+            }
+
+            $prefix      = $typeNode->value;
+            $methodName  = $nameNode->value;
+            $adviceNames = $evaluator->evaluateSilently($advicesNode);
+
+            if (!is_array($adviceNames)) {
+                continue;
+            }
+
+            /** @var string[] $adviceNames */
+            $result[$prefix][$methodName] = array_values($adviceNames);
+        }
+
+        return $result;
     }
 
     /**

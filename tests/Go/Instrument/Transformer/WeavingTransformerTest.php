@@ -216,16 +216,58 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
-     * PHP 8.1 enums must be skipped — they cannot be converted to traits or extended.
+     * PHP 8.1 backed enums must be woven: methods go into a trait, cases are re-declared in the proxy enum.
      */
-    public function testEnumIsSkipped(): void
+    public function testWeaverForEnum(): void
     {
         $metadata = $this->loadTestMetadata('php81-enum');
         $this->transformer->transform($metadata);
 
         $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum')->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-woven')->source);
         $this->assertEquals($expected, $actual);
+        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
+            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-proxy')->source);
+            $this->assertEquals($expectedProxyContent, $actualProxyContent);
+        }
+    }
+
+    /**
+     * Enum case declarations are removed from the woven trait, but the blank lines they occupied
+     * must be preserved so that subsequent method declarations remain on the same line numbers as
+     * in the original source file. This is required for XDebug breakpoints to map correctly.
+     */
+    public function testWeaverForEnumPreservesMethodLineNumbers(): void
+    {
+        $originalSource  = $this->loadTestMetadata('php81-enum')->source;
+        $originalLines   = explode("\n", $originalSource);
+        $labelLineInOrig = null;
+        foreach ($originalLines as $i => $line) {
+            if (preg_match('/public function label\s*\(/', $line)) {
+                $labelLineInOrig = $i + 1; // 1-based
+                break;
+            }
+        }
+        $this->assertNotNull($labelLineInOrig, 'label() not found in original source');
+
+        $metadata = $this->loadTestMetadata('php81-enum');
+        $this->transformer->transform($metadata);
+
+        $wovenLines    = explode("\n", $metadata->source);
+        $labelLineWoven = null;
+        foreach ($wovenLines as $i => $line) {
+            if (preg_match('/public function label\s*\(/', $line)) {
+                $labelLineWoven = $i + 1;
+                break;
+            }
+        }
+
+        $this->assertSame(
+            $labelLineInOrig,
+            $labelLineWoven,
+            'label() must appear at the same line number in the woven trait as in the original enum source'
+        );
     }
 
     /**
