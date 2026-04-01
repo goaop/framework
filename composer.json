@@ -10,7 +10,7 @@
     "require": {
         "php": "^8.2.0",
         "ext-tokenizer": "*",
-        "goaop/parser-reflection": "4.x-dev",
+        "goaop/parser-reflection": "^3.0 || ^4.0",
         "goaop/dissect": "^3.0",
         "laminas/laminas-code": "^4.13",
         "symfony/finder": "^5.4 || ^6.4 || ^7.0"
