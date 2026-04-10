@@ -63,7 +63,7 @@ final class ParameterGenerator
         if (!$useWidening && $param->hasType()) {
             $reflectionType = $param->getType();
             if ($reflectionType instanceof ReflectionNamedType) {
-                $typeName = $reflectionType->getName();
+                $typeName = TypeGenerator::resolveReflectionNamedTypeName($reflectionType);
                 $nullable = $reflectionType->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null';
                 $type     = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName);
             } else {
