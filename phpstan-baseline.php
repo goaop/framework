@@ -30,15 +30,4 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/src/Instrument/ClassLoading/CachePathManager.php',
 ];
 
-// WeavingTransformer: ReflectionFileNamespace::getNamespaceAliases() in the vendor library
-// (goaop/parser-reflection) has no return type annotation — it returns array<string, string|null>
-// in practice (alias name or null for unaliased imports), but PHPStan infers array<mixed>.
-// The cast (string) $alias is safe since values are always string|null from the implementation.
-$ignoreErrors[] = [
-	'message' => '#^Cannot cast mixed to string\\.$#',
-	'identifier' => 'cast.string',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Instrument/Transformer/WeavingTransformer.php',
-];
-
 return ['parameters' => ['ignoreErrors' => $ignoreErrors]];

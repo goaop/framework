@@ -167,12 +167,7 @@ class WeavingTransformer extends BaseSourceTransformer
         }
         $refNamespace = new ReflectionFileNamespace($classFileName, $class->getNamespaceName());
         foreach ($refNamespace->getNamespaceAliases() as $fqdn => $alias) {
-            // Either we have a string or Identifier node
-            if ($alias !== null) {
-                $childProxyGenerator->addUse($fqdn, (string) $alias);
-            } else {
-                $childProxyGenerator->addUse($fqdn);
-            }
+            $childProxyGenerator->addUse($fqdn, $alias);
         }
 
         $childCode = $childProxyGenerator->generate();
@@ -185,9 +180,6 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Get last token for this class
         $classNode = $class->getNode();
-        if ($classNode === null) {
-            return false;
-        }
         $lastClassToken = $classNode->getAttribute('endTokenPos');
         if (!is_int($lastClassToken)) {
             return false;
@@ -210,9 +202,6 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
-        if ($classNode === null) {
-            return;
-        }
         $position = $classNode->getAttribute('startTokenPos');
         if (!is_int($position)) {
             return;
@@ -234,6 +223,7 @@ class WeavingTransformer extends BaseSourceTransformer
             ++$position;
         } while (true);
 
+        /** @var ReflectionMethod $finalMethod */
         foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
             if ($finalMethod->getDeclaringClass()->name !== $class->name) {
                 continue;
@@ -281,9 +271,6 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
-        if ($classNode === null) {
-            return;
-        }
         $position = $classNode->getAttribute('startTokenPos');
         if (!is_int($position)) {
             return;
@@ -346,6 +333,7 @@ class WeavingTransformer extends BaseSourceTransformer
         } while (true);
 
         // Remove 'final' from all intercepted methods — final methods are not allowed in traits
+        /** @var ReflectionMethod $finalMethod */
         foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
             if ($finalMethod->getDeclaringClass()->name !== $class->name) {
                 continue;
@@ -396,9 +384,6 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
-        if ($classNode === null) {
-            return;
-        }
         $position = $classNode->getAttribute('startTokenPos');
         if (!is_int($position)) {
             return;
@@ -467,6 +452,7 @@ class WeavingTransformer extends BaseSourceTransformer
         // Remove 'final' from all intercepted enum methods — final methods cannot be overridden in
         // the proxy enum. Only intercepted methods need stripping; unintercepted final methods are
         // not overridden by the proxy and can safely remain final in the trait.
+        /** @var ReflectionMethod $finalMethod */
         foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
             if ($finalMethod->getDeclaringClass()->name !== $class->name) {
                 continue;
@@ -524,6 +510,7 @@ class WeavingTransformer extends BaseSourceTransformer
             if (!$class->hasMethod($methodName)) {
                 continue;
             }
+            /** @var ReflectionMethod $method */
             $method = $class->getMethod($methodName);
             if ($method->getDeclaringClass()->name !== $class->name) {
                 continue;

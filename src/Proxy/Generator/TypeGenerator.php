@@ -71,6 +71,18 @@ final class TypeGenerator
     }
 
     /**
+     * Creates a TypeGenerator from a raw PHP-Parser AST type node.
+     *
+     * Use this when you have direct access to the AST (e.g. from parser-reflection's getNode()),
+     * which preserves keyword type hints such as 'self', 'parent', and 'static' exactly as
+     * declared in the source — without PHP 8.5+ name resolution applied by reflection APIs.
+     */
+    public static function fromAstNode(Identifier|Name|NullableType|UnionType|IntersectionType $node): self
+    {
+        return new self($node);
+    }
+
+    /**
      * Returns the underlying AST node, ready for injection into a parent node.
      */
     public function getNode(): Identifier|Name|NullableType|UnionType|IntersectionType

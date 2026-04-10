@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
+use Go\ParserReflection\Resolver\TypeExpressionResolver;
 use PhpParser\BuilderFactory;
 use PhpParser\Modifiers;
 use PhpParser\Node\Stmt;
@@ -91,13 +92,31 @@ final class MethodGenerator
 
         // Return type
         if ($method->hasReturnType()) {
-            $reflectionReturnType = $method->getReturnType();
-            if ($reflectionReturnType instanceof ReflectionNamedType) {
-                $typeName = TypeGenerator::resolveReflectionNamedTypeName($reflectionReturnType);
-                $nullable = $reflectionReturnType->allowsNull() && !in_array($typeName, ['mixed', 'null'], true);
-                $generator->setReturnType(TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName));
+            // If the method exposes its AST node (Go\ParserReflection\ReflectionMethod),
+            // re-process the raw type node with TypeExpressionResolver(null, null) so that
+            // 'self' and 'parent' keywords are preserved without PHP 8.5+ name resolution,
+            // while regular class names are still fully qualified via resolvedName attributes.
+            if (method_exists($method, 'getNode')) {
+                /** @var ClassMethod $astMethod */
+                $astMethod = $method->getNode();
+                $returnTypeNode = $astMethod->returnType;
+                if ($returnTypeNode !== null) {
+                    $typeResolver = new TypeExpressionResolver();
+                    $typeResolver->process($returnTypeNode, false);
+                    $resolvedType = $typeResolver->getType();
+                    if ($resolvedType !== null) {
+                        $generator->setReturnType(TypeGenerator::fromReflectionType($resolvedType));
+                    }
+                }
             } else {
-                $generator->setReturnType(TypeGenerator::fromReflectionType($reflectionReturnType));
+                $reflectionReturnType = $method->getReturnType();
+                if ($reflectionReturnType instanceof ReflectionNamedType) {
+                    $typeName = TypeGenerator::resolveReflectionNamedTypeName($reflectionReturnType);
+                    $nullable = $reflectionReturnType->allowsNull() && !in_array($typeName, ['mixed', 'null'], true);
+                    $generator->setReturnType(TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName));
+                } else {
+                    $generator->setReturnType(TypeGenerator::fromReflectionType($reflectionReturnType));
+                }
             }
         }
 
