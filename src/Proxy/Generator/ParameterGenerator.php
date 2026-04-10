@@ -71,7 +71,7 @@ final class ParameterGenerator
                 $astParam = $param->getNode();
                 $typeNode  = $astParam->type;
                 if ($typeNode !== null) {
-                    $typeResolver = new TypeExpressionResolver();
+                    $typeResolver = new TypeExpressionResolver(null, null);
                     $typeResolver->process($typeNode, false);
                     $resolvedType = $typeResolver->getType();
                     if ($resolvedType !== null) {

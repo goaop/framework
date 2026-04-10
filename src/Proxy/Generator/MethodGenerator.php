@@ -101,7 +101,7 @@ final class MethodGenerator
                 $astMethod = $method->getNode();
                 $returnTypeNode = $astMethod->returnType;
                 if ($returnTypeNode !== null) {
-                    $typeResolver = new TypeExpressionResolver();
+                    $typeResolver = new TypeExpressionResolver(null, null);
                     $typeResolver->process($returnTypeNode, false);
                     $resolvedType = $typeResolver->getType();
                     if ($resolvedType !== null) {
