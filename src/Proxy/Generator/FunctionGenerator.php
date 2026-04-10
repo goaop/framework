@@ -70,7 +70,7 @@ final class FunctionGenerator
         if ($function->hasReturnType()) {
             $reflectionReturnType = $function->getReturnType();
             if ($reflectionReturnType instanceof ReflectionNamedType) {
-                $typeName = $reflectionReturnType->getName();
+                $typeName = TypeGenerator::resolveReflectionNamedTypeName($reflectionReturnType);
                 $nullable = $reflectionReturnType->allowsNull() && !in_array($typeName, ['mixed', 'null'], true);
                 $generator->setReturnType(TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName));
             } else {

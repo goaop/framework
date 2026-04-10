@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
+use Go\ParserReflection\Resolver\TypeExpressionResolver;
 use PhpParser\BuilderFactory;
 use PhpParser\Node;
 use PhpParser\PrettyPrinter\Standard;
@@ -61,13 +62,31 @@ final class ParameterGenerator
         $defaultValue = null;
 
         if (!$useWidening && $param->hasType()) {
-            $reflectionType = $param->getType();
-            if ($reflectionType instanceof ReflectionNamedType) {
-                $typeName = $reflectionType->getName();
-                $nullable = $reflectionType->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null';
-                $type     = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName);
+            // If the parameter exposes its AST node (Go\ParserReflection\ReflectionParameter),
+            // re-process the raw type node with TypeExpressionResolver(null, null) so that
+            // 'self' and 'parent' keywords are preserved without PHP 8.5+ name resolution,
+            // while regular class names are still fully qualified via resolvedName attributes.
+            if (method_exists($param, 'getNode')) {
+                /** @var Node\Param $astParam */
+                $astParam = $param->getNode();
+                $typeNode  = $astParam->type;
+                if ($typeNode !== null) {
+                    $typeResolver = new TypeExpressionResolver(null, null);
+                    $typeResolver->process($typeNode, false);
+                    $resolvedType = $typeResolver->getType();
+                    if ($resolvedType !== null) {
+                        $type = TypeGenerator::fromReflectionType($resolvedType);
+                    }
+                }
             } else {
-                $type = TypeGenerator::fromReflectionType($reflectionType);
+                $reflectionType = $param->getType();
+                if ($reflectionType instanceof ReflectionNamedType) {
+                    $typeName = TypeGenerator::resolveReflectionNamedTypeName($reflectionType);
+                    $nullable = $reflectionType->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null';
+                    $type     = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName);
+                } else {
+                    $type = TypeGenerator::fromReflectionType($reflectionType);
+                }
             }
         }
 

@@ -71,6 +71,18 @@ final class TypeGenerator
     }
 
     /**
+     * Creates a TypeGenerator from a raw PHP-Parser AST type node.
+     *
+     * Use this when you have direct access to the AST (e.g. from parser-reflection's getNode()),
+     * which preserves keyword type hints such as 'self', 'parent', and 'static' exactly as
+     * declared in the source — without PHP 8.5+ name resolution applied by reflection APIs.
+     */
+    public static function fromAstNode(Identifier|Name|NullableType|UnionType|IntersectionType $node): self
+    {
+        return new self($node);
+    }
+
+    /**
      * Returns the underlying AST node, ready for injection into a parent node.
      */
     public function getNode(): Identifier|Name|NullableType|UnionType|IntersectionType
@@ -90,10 +102,29 @@ final class TypeGenerator
     // Internal helpers
     // ------------------------------------------------------------------
 
+    /**
+     * Returns the original type hint name from a ReflectionNamedType, preserving 'self', 'parent', and 'static'
+     * even on PHP 8.5+ where ReflectionNamedType::getName() resolves them to the actual class name.
+     */
+    public static function resolveReflectionNamedTypeName(ReflectionNamedType $type): string
+    {
+        // PHP 8.5 added isSelf()/isParent() and changed getName() to return the resolved class name.
+        if (method_exists($type, 'isSelf') && $type->isSelf()) {
+            return 'self';
+        }
+        if (method_exists($type, 'isParent') && $type->isParent()) {
+            return 'parent';
+        }
+
+        return $type->getName();
+    }
+
     private static function buildNodeFromReflection(ReflectionType $type): Identifier|Name|NullableType|UnionType|IntersectionType
     {
         if ($type instanceof ReflectionNamedType) {
-            return self::buildNamedTypeNode($type->getName(), $type->allowsNull() && $type->getName() !== 'null' && $type->getName() !== 'mixed');
+            $name = self::resolveReflectionNamedTypeName($type);
+
+            return self::buildNamedTypeNode($name, $type->allowsNull() && $name !== 'null' && $name !== 'mixed');
         }
 
         if ($type instanceof ReflectionUnionType) {
