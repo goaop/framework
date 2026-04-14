@@ -52,7 +52,7 @@ final readonly class DeclareErrorInterceptor implements Interceptor
     }
 
     /**
-     * Serializes an interceptor into it's array shape representation
+     * Serializes an interceptor into its array shape representation
      *
      * @phpstan-return InterceptorState
      */
@@ -67,7 +67,7 @@ final readonly class DeclareErrorInterceptor implements Interceptor
 
 
     /**
-     * Un-serializes an interceptor from it's stored state
+     * Un-serializes an interceptor from its stored state
      *
      * @phpstan-param InterceptorState $state The stored representation of the interceptor.
      */
