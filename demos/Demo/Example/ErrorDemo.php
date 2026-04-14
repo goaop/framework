@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Demo\Example;
 
-use Demo\Attribute\Deprecated;
+use Deprecated;
 
 /**
  * In this class we use system functions that will be intercepted by aspect

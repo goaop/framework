@@ -21,12 +21,6 @@ use Go\Lang\Attribute\DeclareError;
 class DeclareErrorAspect implements Aspect
 {
     /**
-     * Message to show when calling the method
-     */
-    #[DeclareError('@execution(Demo\Attribute\Deprecated)', level: E_USER_DEPRECATED)]
-    protected string $message = 'Method is deprecated and should not be called in debug mode';
-
-    /**
      * Prevent developers from using this method by always generating a warning
      */
     #[DeclareError('execution(public Demo\Example\ErrorDemo->notSoGoodMethod(*))', level: E_USER_WARNING)]

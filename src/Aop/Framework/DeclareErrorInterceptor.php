@@ -13,30 +13,35 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
 use Stringable;
 
 /**
- * Interceptor to dynamically trigger an user notice/warning/error on method call
+ * Interceptor to dynamically trigger a user notice/warning/error on method call
  *
  * This interceptor can be used as active replacement for the "deprecated" tag or to notify about
  * probable issues with specific method.
+ *
+ * @phpstan-type InterceptorState array{message: non-empty-string, level: positive-int, pointcutExpression: string}
  */
-final class DeclareErrorInterceptor extends AbstractInterceptor
+final readonly class DeclareErrorInterceptor implements Interceptor
 {
+    private Closure $adviceMethod;
+
     /**
      * Default constructor for interceptor
      *
      * @param non-empty-string $message Error message to show for this interceptor
      * @param positive-int $level Default level of error, only E_USER_* constants
+     * @param string $pointcutExpression Pointcut expression used
      */
     public function __construct(
-        protected string $message,
-        protected int $level,
-        string $pointcutExpression
+        private string $message,
+        private int $level,
+        private string $pointcutExpression
     ) {
-        $adviceMethod = self::declareErrorAdvice(...);
-        parent::__construct($adviceMethod, -256, $pointcutExpression);
+        $this->adviceMethod = self::declareErrorAdvice(...);
     }
 
     public function invoke(Joinpoint $joinpoint): mixed
@@ -46,14 +51,34 @@ final class DeclareErrorInterceptor extends AbstractInterceptor
         return $joinpoint->proceed();
     }
 
-    protected static function serializeAdvice(Closure $adviceMethod): array
+    /**
+     * Serializes an interceptor into its array shape representation
+     *
+     * @phpstan-return InterceptorState
+     */
+    final public function __serialize(): array
     {
-        return []; // DeclareErrorInterceptor always reconstructs its advice via self::declareErrorAdvice
+        return [
+            'message'            => $this->message,
+            'level'              => $this->level,
+            'pointcutExpression' => $this->pointcutExpression,
+        ];
     }
 
-    protected static function unserializeAdvice(array $adviceData): Closure
+
+    /**
+     * Un-serializes an interceptor from its stored state
+     *
+     * @phpstan-param InterceptorState $state The stored representation of the interceptor.
+     */
+    final public function __unserialize(array $state): void
     {
-        return self::declareErrorAdvice(...);
+        [
+            'message'            => $this->message,
+            'level'              => $this->level,
+            'pointcutExpression' => $this->pointcutExpression
+        ] = $state;
+        $this->adviceMethod = self::declareErrorAdvice(...);
     }
 
     /**
