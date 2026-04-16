@@ -79,7 +79,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
             $interceptorAttribute instanceof DeclareError =>
                 $this->createDeclareErrorAdvice($aspectProperty, $interceptorAttribute),
             $interceptorAttribute instanceof DeclareParents =>
-                new TraitIntroductionInfo($interceptorAttribute->trait, $interceptorAttribute->interface),
+                new TraitIntroductionInfo($interceptorAttribute->traitName, $interceptorAttribute->interfaceName),
             default =>
                 throw new UnexpectedValueException('Unsupported attribute class: ' . get_class($interceptorAttribute)),
         };

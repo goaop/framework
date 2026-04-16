@@ -19,7 +19,8 @@ use ReflectionClass;
 /**
  * Static initialization joinpoint is invoked after class is loaded into memory
  *
- * @template T of object
+ * @template T of object = object
+ * @implements ClassJoinpoint<T>
  */
 class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJoinpoint
 {
@@ -32,7 +33,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
      * Constructor for the class static initialization joinpoint
      *
      * @param array<Interceptor> $advices List of advices for this invocation
-     * @phpstan-param class-string<T> $className Name of the class
+     * @param class-string<T> $className Name of the class
      */
     public function __construct(array $advices, string $className)
     {
@@ -41,7 +42,6 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
     }
 
     /**
-     * @inheritdoc
      * @return void Covariant, as static initializtion could not return anything
      */
     public function proceed(): void
@@ -62,8 +62,6 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
     }
 
     /**
-     * @inheritdoc
-     *
      * @return null Covariance, always null for static initialization
      */
     public function getThis(): null

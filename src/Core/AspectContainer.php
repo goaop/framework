@@ -95,8 +95,10 @@ interface AspectContainer
      *
      * @param string $key Given key
      *
-     * @return mixed
+     * @return ($key is class-string<T> ? T : mixed)
      * @throws OutOfBoundsException if key was not found
+     *
+     * @template T
      */
     public function getValue(string $key): mixed;
 
@@ -128,8 +130,10 @@ interface AspectContainer
     /**
      * Adds a lazy service in the container, uses lazy-initialization Closure to optimize init time
      *
-     * @param class-string $id Identifier of value to store, must be equal to the class-name
-     * @param Closure(AspectContainer $container): object $lazyInitializationClosure
+     * @param class-string<T> $id Identifier of value to store, must be equal to the class-name
+     * @param Closure(AspectContainer $container): T $lazyInitializationClosure
+     *
+     * @template T of object
      */
     public function addLazyService(string $id, Closure $lazyInitializationClosure): void;
 }

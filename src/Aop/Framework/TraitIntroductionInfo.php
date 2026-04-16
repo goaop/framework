@@ -17,10 +17,13 @@ use Go\Aop\IntroductionInfo;
 /**
  * Advice for introduction that holds trait and interface for the concrete class
  */
-readonly class TraitIntroductionInfo implements IntroductionInfo
+final readonly class TraitIntroductionInfo implements IntroductionInfo
 {
     /**
      * Creates a TraitIntroductionInfo with given trait name and interface name.
+     *
+     * @param trait-string $introducedTrait     Trait name
+     * @param class-string $introducedInterface Interface name
      */
     public function __construct(
         private string $introducedTrait,

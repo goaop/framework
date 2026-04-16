@@ -17,12 +17,25 @@ use ReflectionMethod;
 /**
  * MethodInvocation interface represents an invocation of given method in the program.
  *
- * A method invocation is a joinpoint and can be intercepted by a method interceptor.
+ * Detailed information about the method can be obtained via {@see self::getMethod()} method which
+ * returns {@see ReflectionMethod} instance of relevant method.
  *
- * Interceptor can read or modify invocation arguments via {@see Invocation} interface or
- * receive full information about invoked method via {@see self::getMethod()} method.
+ * Interceptor can read or modify invocation arguments via {@see Invocation} interface:
+ *  - {@see Invocation::getArguments()} to read arguments
+ *  - {@see Invocation::setArguments()} to modify arguments
+ *
+ * This interface is declared as generic. To get better code type completion, specify concrete generic type for
+ * your parameter as `MethodInvocation<SomeConcreteType>` in your aspects to make {@see self::getThis()} method
+ * returning proper type for instance `SomeConcreteType`. Same applied to the {@see self::getScope()} method -
+ * it will return proper type for instance `SomeConcreteType`.
+ *
+ * If your pointcut targets only dynamic method calls, you can use {@see DynamicMethodInvocation} interface instead
+ * to give IDE and static analysis tools information about non-static context of the method call.
  *
  * @api
+ *
+ * @template T of object = object
+ * @extends ClassJoinpoint<T>
  */
 interface MethodInvocation extends Invocation, ClassJoinpoint
 {
@@ -36,7 +49,7 @@ interface MethodInvocation extends Invocation, ClassJoinpoint
     /**
      * Invokes current method invocation with all interceptors
      *
-     * @param object|class-string $instanceOrScope    Invocation instance (or class name for static methods)
+     * @phpstan-param T|class-string<T> $instanceOrScope Invocation instance (or class name for static methods)
      * @param list<mixed>         $arguments          List of arguments for method invocation
      * @param list<mixed>         $variadicArguments  Additional list of variadic arguments
      */

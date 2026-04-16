@@ -16,6 +16,8 @@ namespace Go\Aop\Intercept;
  * This interface represents a class joinpoint that can have $this variable and defined scope
  *
  * @api
+ *
+ * @template T of object = object
  */
 interface ClassJoinpoint extends Joinpoint
 {
@@ -34,13 +36,14 @@ interface ClassJoinpoint extends Joinpoint
      * Returns the object for which current joinpoint is invoked or null for static calls
      *
      * @api
+     * @phpstan-return T|null
      */
     public function getThis(): ?object;
 
     /**
      * Returns the static scope name (class name) of this joinpoint.
      *
-     * @return class-string
+     * @return class-string<T>
      *
      * @api
      */

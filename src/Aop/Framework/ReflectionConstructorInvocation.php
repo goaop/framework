@@ -20,9 +20,10 @@ use ReflectionMethod;
 /**
  * Reflection constructor invocation implementation
  *
- * @template T of object
+ * @template T of object = object
+ * @implements ConstructorInvocation<T>
  */
-class ReflectionConstructorInvocation extends AbstractInvocation implements ConstructorInvocation
+final class ReflectionConstructorInvocation extends AbstractInvocation implements ConstructorInvocation
 {
     /**
      * @var ReflectionClass<T> Reflection of given class
@@ -30,7 +31,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     private readonly ReflectionClass $class;
 
     /**
-     * @var null|T Instance of created class, can be used for Around or After types of advices.
+     * @phpstan-var null|T Instance of created class, can be used for Around or After types of advices.
      */
     private ?object $instance = null;
 
@@ -54,8 +55,6 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     }
 
     /**
-     * @inheritdoc
-     *
      * @return mixed|T Covariant, always new object.
      * @throws \ReflectionException If class is internal and cannot be created without constructor
      */
@@ -84,7 +83,7 @@ class ReflectionConstructorInvocation extends AbstractInvocation implements Cons
     /**
      * Returns the object for which current joinpoint is invoked
      *
-     * @return T|null Instance of object or null if object hasn't been created yet (Before)
+     * @phpstan-return T|null Instance of object or null if object hasn't been created yet (Before)
      */
     public function getThis(): ?object
     {

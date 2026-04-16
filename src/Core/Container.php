@@ -115,7 +115,7 @@ class Container implements AspectContainer
     {
         $this->values[$id] = $value;
 
-        // For objects we would like to use interface names as tags, eg Pointcut, Advisor, Aspect, etc
+        // For objects, we would like to use interface names as tags, eg Pointcut, Advisor, Aspect, etc
         if (is_object($value)) {
             // If it is real object (not a lazy closure), then we use it directly
             if (!$value instanceof Closure) {

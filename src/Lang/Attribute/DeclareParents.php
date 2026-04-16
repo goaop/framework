@@ -21,14 +21,13 @@ use Attribute;
 class DeclareParents extends AbstractAttribute
 {
     /**
-     * @inheritdoc
-     * @param string $trait Default implementation (trait name)
-     * @param string $interface Interface name to add
+     * @param trait-string $traitName     Default implementation (trait name)
+     * @param class-string $interfaceName Interface name to add
      */
     public function __construct(
         string                 $expression,
-        readonly public string $interface,
-        readonly public string $trait,
+        readonly public string $interfaceName,
+        readonly public string $traitName,
         int                    $order = 0,
     )
     {

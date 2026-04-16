@@ -39,7 +39,7 @@ use function define;
  *   features: int,
  *   includePaths: string[],
  *   excludePaths: string[],
- *   containerClass: class-string
+ *   containerClass: class-string<AspectContainer>
  * }
  */
 abstract class AspectKernel
@@ -67,7 +67,7 @@ abstract class AspectKernel
 
     /**
      * Default class name for container, can be redefined in children
-     * @var class-string
+     * @var class-string<AspectContainer>
      */
     protected static string $containerClass = Container::class;
 
@@ -82,7 +82,7 @@ abstract class AspectKernel
     protected AspectContainer $container;
 
     /**
-     * Protected constructor is used to prevent direct creation, but allows customization if needed
+     * Protected constructor is used to prevent direct creation of kernel
      */
     final protected function __construct() {}
 
@@ -110,7 +110,7 @@ abstract class AspectKernel
      *   features?: int,
      *   includePaths?: array{},
      *   excludePaths?: array{},
-     *   containerClass?: class-string
+     *   containerClass?: class-string<AspectContainer>
      * } $options Additional kernel options
      */
     public function init(array $options = []): void
@@ -236,7 +236,7 @@ abstract class AspectKernel
 
         $containerClass       = static::$containerClass;
         $containerClassOption = $merged['containerClass'] ?? null;
-        if (is_string($containerClassOption) && class_exists($containerClassOption)) {
+        if (is_string($containerClassOption) && class_exists($containerClassOption) && is_a($containerClassOption, AspectContainer::class, true)) {
             $containerClass = $containerClassOption;
         }
 

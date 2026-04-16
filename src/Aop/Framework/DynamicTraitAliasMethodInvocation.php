@@ -13,14 +13,19 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Aop\Intercept\DynamicMethodInvocation;
 
 /**
  * Dynamic trait-alias method invocation calls instance methods via a pre-bound Closure::bind closure
  * targeting the private __aop__<method> alias created in the proxy's trait-use block.
  *
  * The closure is built once at construction time so that every invocation needs zero reflection.
+ *
+ * @template T of object
+ * @extends AbstractMethodInvocation<T>
+ * @implements DynamicMethodInvocation<T>
  */
-final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation
+final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation implements DynamicMethodInvocation
 {
     /**
      * For dynamic calls we store given argument as 'instance' property
@@ -31,11 +36,16 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation
     protected static string $propertyName = 'instance';
 
     /**
-     * @var object Instance of object for invoking, should be protected as it's read in parent class
+     * @phpstan-var T Instance of object for invoking, should be protected as it's read in parent class
      * @see parent::__invoke() where this variable is accessed via {@see $propertyName} value
      */
     protected object $instance;
 
+    /**
+     * Constructor for method invocation
+     *
+     * @param class-string<T> $className  Class, containing method to invoke
+     */
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices, $className, $methodName);
@@ -62,7 +72,7 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation
     }
 
     /**
-     * @return object Covariance, always instance of object
+     * @phpstan-return T Covariance, always instance of object
      */
     final public function getThis(): object
     {

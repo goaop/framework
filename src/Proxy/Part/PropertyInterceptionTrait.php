@@ -21,6 +21,8 @@ use function method_exists;
 
 /**
  * Trait that holds all general logic for working with intercepted properties
+ *
+ * @template T of object
  */
 trait PropertyInterceptionTrait
 {
@@ -36,7 +38,7 @@ trait PropertyInterceptionTrait
     {
         if (array_key_exists($name, $this->__properties)) {
             // prop:* entries are ClassFieldAccess, not MethodInvocation — explicit cast required
-            /** @var ClassFieldAccess $fieldAccess */
+            /** @var ClassFieldAccess<T> $fieldAccess */
             $fieldAccess = self::$__joinPoints["prop:$name"];
             $fieldAccess->ensureScopeRule();
 
@@ -59,7 +61,7 @@ trait PropertyInterceptionTrait
     {
         if (array_key_exists($name, $this->__properties)) {
             // prop:* entries are ClassFieldAccess, not MethodInvocation — explicit cast required
-            /** @var ClassFieldAccess $fieldAccess */
+            /** @var ClassFieldAccess<T> $fieldAccess */
             $fieldAccess = self::$__joinPoints["prop:$name"];
             $fieldAccess->ensureScopeRule();
 

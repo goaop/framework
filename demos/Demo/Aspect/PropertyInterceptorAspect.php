@@ -12,20 +12,21 @@ declare(strict_types=1);
 
 namespace Demo\Aspect;
 
+use Demo\Example\PropertyDemo;
 use Go\Aop\Aspect;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldAccessType;
 use Go\Lang\Attribute\Around;
 
 /**
- * Property interceptor can intercept an access to the public and protected properties
- *
- * Be aware, it's very tricky and will not work for indirect modification, such as array_pop($this->property);
+ * Property interceptor can intercept access to class properties
  */
 class PropertyInterceptorAspect implements Aspect
 {
     /**
-     * Advice that controls an access to the properties
+     * Advice that controls access to the properties
+     *
+     * @param FieldAccess<PropertyDemo> $fieldAccess
      */
     #[Around("access(public|protected|private Demo\Example\PropertyDemo->*)")]
     public function aroundFieldAccess(FieldAccess $fieldAccess): void

@@ -13,14 +13,19 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Aop\Intercept\StaticMethodInvocation;
 
 /**
  * Static trait-alias method invocation calls static methods via a pre-bound Closure::bind closure
  * targeting the private __aop__<method> alias created in the proxy's trait-use block.
  *
  * The closure is built once at construction time so that every invocation needs zero reflection.
+ *
+ * @template T of object = object
+ * @extends AbstractMethodInvocation<T>
+ * @implements StaticMethodInvocation<T>
  */
-final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation
+final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation implements StaticMethodInvocation
 {
     /**
      * For static calls we store given argument as 'scope' property
@@ -31,10 +36,15 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation
     protected static string $propertyName = 'scope';
 
     /**
-     * @var class-string Class name scope for static invocation
+     * @var class-string<T> Class name scope for static invocation
      */
     protected string $scope;
 
+    /**
+     * Constructor for method invocation
+     *
+     * @param class-string<T> $className  Class, containing method to invoke
+     */
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices, $className, $methodName);
