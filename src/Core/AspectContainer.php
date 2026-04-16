@@ -95,10 +95,10 @@ interface AspectContainer
      *
      * @param string $key Given key
      *
-     * @return ($key is class-string<T> ? T : mixed)
+     * @return ($key is class-string<T> ? (T|Closure(AspectContainer):void) : mixed)
      * @throws OutOfBoundsException if key was not found
      *
-     * @template T
+     * @template T of object
      */
     public function getValue(string $key): mixed;
 
