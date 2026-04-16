@@ -26,7 +26,7 @@ use ReflectionMethod;
  *
  * This interface is declared as generic. To get better code type completion, specify concrete generic type for
  * your parameter as `MethodInvocation<SomeConcreteType>` in your aspects to make {@see self::getThis()} method
- * returning proper type for instance `SomeConcreteType`. Same applied to the {@see self::getScope()} method -
+ * returning proper type for instance `SomeConcreteType`. Same applies to the {@see self::getScope()} method -
  * it will return proper type for instance `SomeConcreteType`.
  *
  * If your pointcut targets only dynamic method calls, you can use {@see DynamicMethodInvocation} interface instead

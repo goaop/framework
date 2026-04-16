@@ -42,7 +42,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
     }
 
     /**
-     * @return void Covariant, as static initializtion could not return anything
+     * @return void Covariant, as static initialization could not return anything
      */
     public function proceed(): void
     {

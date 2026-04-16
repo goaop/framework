@@ -22,8 +22,8 @@ use ReflectionProperty;
  *
  * This interface is declared as generic, to get better code completion, specify concrete generic type for
  * your parameter as `FieldAccess<SomeConcreteType>` in your aspects to make {@see self::getThis()} method
- * returning proper type for instance `SomeConcreteType`. Same applied to the {@see self::getScope()} method -
- * it will return proper type for instance `SomeConcreteType`.
+ * returning proper type for instance `SomeConcreteType`. The same applies to the {@see self::getScope()} method -
+ * it will return the proper type for an instance of `SomeConcreteType`.
  *
  * Interface overrides the return type of {@see ClassJoinpoint::getThis()} method and narrows its return type to
  * the generic object for all field accesses, removing the nullability of the return type.

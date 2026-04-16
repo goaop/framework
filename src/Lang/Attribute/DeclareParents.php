@@ -21,8 +21,8 @@ use Attribute;
 class DeclareParents extends AbstractAttribute
 {
     /**
-     * @param trait-string $traitName     Default implementation (trait name)
      * @param class-string $interfaceName Interface name to add
+     * @param trait-string $traitName     Default implementation (trait name)
      */
     public function __construct(
         string                 $expression,

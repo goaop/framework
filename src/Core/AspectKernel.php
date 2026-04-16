@@ -236,7 +236,14 @@ abstract class AspectKernel
 
         $containerClass       = static::$containerClass;
         $containerClassOption = $merged['containerClass'] ?? null;
-        if (is_string($containerClassOption) && class_exists($containerClassOption) && is_a($containerClassOption, AspectContainer::class, true)) {
+        if (is_string($containerClassOption) && class_exists($containerClassOption)) {
+            if (!is_a($containerClassOption, AspectContainer::class, true)) {
+                throw new RuntimeException(sprintf(
+                    'Container class "%s" must extend %s.',
+                    $containerClassOption,
+                    AspectContainer::class
+                ));
+            }
             $containerClass = $containerClassOption;
         }
 
