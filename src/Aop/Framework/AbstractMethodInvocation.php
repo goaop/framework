@@ -24,6 +24,9 @@ use function count;
  * Abstract method invocation implementation
  *
  * @phpstan-type MethodInvocationFrame array{list<mixed>, mixed, int}
+ *
+ * @template T of object = object
+ * @implements MethodInvocation<T>
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
@@ -59,7 +62,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      * Constructor for method invocation
      *
      * @param array<Interceptor> $advices    List of advices for this invocation
-     * @param class-string       $className  Class, containing method to invoke
+     * @param class-string<T>    $className  Class, containing method to invoke
      * @param non-empty-string   $methodName Name of the method to invoke
      */
     public function __construct(array $advices, string $className, string $methodName)

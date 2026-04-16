@@ -20,18 +20,22 @@ use ReflectionProperty;
 
 /**
  * Represents a field access joinpoint
+ *
+ * @template T of object = object
+ * @implements FieldAccess<T>
  */
 final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 {
     /**
      * Stack frames to work with recursive calls or with cross-calls inside object
      *
-     * @var array<int, array{object, FieldAccessType, mixed, mixed}>
+     * @var array<int, array{T, FieldAccessType, mixed, mixed}>
      */
     private array $stackFrames = [];
 
     /**
      * Instance of object for accessing
+     * @phpstan-var T Instance of object for accessing
      */
     private object $instance;
 
@@ -59,7 +63,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Constructor for field access
      *
      * @param array<Interceptor> $advices List of advices for this invocation
-     * @param class-string $className
+     * @param class-string<T> $className
      */
     public function __construct(array $advices, string $className, string $fieldName)
     {
@@ -125,8 +129,6 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     }
 
     /**
-     * @inheritdoc
-     *
      * @return void Covariant, as for field interceptor there is no return value
      */
     final public function proceed(): void
@@ -141,7 +143,8 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Invokes current field access with all interceptors
      *
-     * @param mixed $originalValue Original value of property, passed by reference
+     * @phpstan-param T $instance Instance of object for accessing
+     * @param FieldAccessType $accessType Access type for field access
      *
      * @return mixed
      */
@@ -178,17 +181,11 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         }
     }
 
-    /**
-     * @return object Covariant, always instance of object, can not be null
-     */
     final public function getThis(): object
     {
         return $this->instance;
     }
 
-    /**
-     * @return true Covariance, always true for class properties
-     */
     final public function isDynamic(): true
     {
         return true;

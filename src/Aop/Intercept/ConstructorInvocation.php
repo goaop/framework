@@ -20,6 +20,9 @@ use ReflectionMethod;
  * A constructor invocation is a joinpoint and can be intercepted by a constructor interceptor.
  *
  * @api
+ *
+ * @template T of object = object
+ * @extends ClassJoinpoint<T>
  */
 interface ConstructorInvocation extends Invocation, ClassJoinpoint
 {

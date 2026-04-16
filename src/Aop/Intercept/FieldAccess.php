@@ -17,9 +17,21 @@ use ReflectionProperty;
 /**
  * This interface represents a field access in the program.
  *
- * A field access is a joinpoint and can be intercepted by a field interceptor.
+ * Detailed information about the intercepted field access can be obtained via {@see self::getField()} method which
+ * returns {@see ReflectionProperty} instance of relevant field.
+ *
+ * This interface is declared as generic, to get better code completion, specify concrete generic type for
+ * your parameter as `FieldAccess<SomeConcreteType>` in your aspects to make {@see self::getThis()} method
+ * returning proper type for instance `SomeConcreteType`. The same applies to the {@see self::getScope()} method -
+ * it will return the proper type for an instance of `SomeConcreteType`.
+ *
+ * Interface overrides the return type of {@see ClassJoinpoint::getThis()} method and narrows its return type to
+ * the generic object for all field accesses, removing the nullability of the return type.
  *
  * @api
+ *
+ * @template T of object = object
+ * @extends ClassJoinpoint<T>
  */
 interface FieldAccess extends ClassJoinpoint
 {
@@ -50,4 +62,14 @@ interface FieldAccess extends ClassJoinpoint
      * @api
      */
     public function getAccessType(): FieldAccessType;
+
+    /**
+     * @phpstan-return T Covariant, always instance of object, can not be null
+     */
+    public function getThis(): object;
+
+    /**
+     * @return true Covariance, always true for class properties
+     */
+    public function isDynamic(): true;
 }

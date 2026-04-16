@@ -15,7 +15,7 @@ namespace Go\Aop;
 /**
  * Interface supplying the information necessary to describe an introduction of trait.
  *
- * If an Advice implements this, it may be used as an introduction without an IntroductionAdvisor.
+ * If Advice implements this, it may be used as an introduction without an IntroductionAdvisor.
  * In this case, the advice is self-describing, providing not only the necessary behavior,
  * but describing the interfaces it introduces.
  */
@@ -23,11 +23,15 @@ interface IntroductionInfo extends Advice
 {
     /**
      * Returns the additional interface introduced by this Advisor or Advice.
+     *
+     * @return class-string
      */
     public function getInterface(): string;
 
     /**
      * Return the additional trait with realization of introduced interface
+     *
+     * @return trait-string
      */
     public function getTrait(): string;
 }

@@ -29,9 +29,7 @@ class LoggingAspect implements Aspect
      * We use "Before" type of advice to log only class name, method name and arguments before
      * method execution.
      * You can choose your own logger, for example, monolog or log4php.
-     * Also you can choose "After" or "Around" advice to access an return value from method.
-     *
-     * To inject logger into this aspect you can look at Warlock framework with DI+AOP
+     * Also, you can choose "After" or "Around" advice to access a return value from method.
      */
     #[Before("@execution(Demo\Attribute\Loggable)")]
     public function beforeMethodExecution(MethodInvocation $invocation): void

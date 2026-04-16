@@ -14,7 +14,7 @@ namespace Demo\Aspect;
 
 use Demo\Example\HumanDemo;
 use Go\Aop\Aspect;
-use Go\Aop\Intercept\MethodInvocation;
+use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Lang\Attribute\After;
 use Go\Lang\Attribute\Before;
 use Go\Lang\Attribute\Pointcut;
@@ -34,33 +34,36 @@ class HealthyLiveAspect implements Aspect
 
     /**
      * Washing hands before eating
+     *
+     * @param DynamicMethodInvocation<HumanDemo> $invocation
      */
     #[Before('$this->humanEat')]
-    protected function washUpBeforeEat(MethodInvocation $invocation): void
+    protected function washUpBeforeEat(DynamicMethodInvocation $invocation): void
     {
-        /** @var $person HumanDemo */
         $person = $invocation->getThis();
         $person->washUp();
     }
 
     /**
      * Method that advices to clean the teeth after eating
+     *
+     * @param DynamicMethodInvocation<HumanDemo> $invocation
      */
     #[After('$this->humanEat')]
-    protected function cleanTeethAfterEat(MethodInvocation $invocation): void
+    protected function cleanTeethAfterEat(DynamicMethodInvocation $invocation): void
     {
-        /** @var $person HumanDemo */
         $person = $invocation->getThis();
         $person->cleanTeeth();
     }
 
     /**
      * Method that advice to clean the teeth before going to sleep
+     *
+     * @param DynamicMethodInvocation<HumanDemo> $invocation
      */
     #[Before('execution(public Demo\Example\HumanDemo->sleep(*))')]
-    protected function cleanTeethBeforeSleep(MethodInvocation $invocation): void
+    protected function cleanTeethBeforeSleep(DynamicMethodInvocation $invocation): void
     {
-        /** @var $person HumanDemo */
         $person = $invocation->getThis();
         $person->cleanTeeth();
     }
