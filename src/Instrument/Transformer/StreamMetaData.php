@@ -16,8 +16,8 @@ use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
 use PhpParser\Node;
-use PhpParser\PrettyPrinter\Standard;
 use PhpParser\Token;
+use PhpParser\PrettyPrinter\Standard;
 use PhpToken;
 use function is_resource;
 
