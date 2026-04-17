@@ -14,6 +14,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
+use Go\Stubs\InheritedMethodProxy;
 use Go\Stubs\TraitAliasProxy;
 use Go\Stubs\TraitAliasProxyChild;
 use PHPUnit\Framework\TestCase;
@@ -129,5 +130,21 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
 
         $invocation = new StaticTraitAliasMethodInvocation([$advice], TraitAliasProxy::class, 'staticPublicMethod');
         $invocation(TraitAliasProxyChild::class);
+    }
+
+    public function testInheritedStaticMethodInvocationWithoutTraitAliasUsesParentMethod(): void
+    {
+        $invocation = new StaticTraitAliasMethodInvocation([], InheritedMethodProxy::class, 'inheritedStaticMethod');
+
+        $result = $invocation(InheritedMethodProxy::class);
+        $this->assertSame(T_PUBLIC, $result);
+    }
+
+    public function testInheritedStaticMethodInvocationWithLsbUsesChildClassScope(): void
+    {
+        $invocation = new StaticTraitAliasMethodInvocation([], InheritedMethodProxy::class, 'inheritedStaticLsbMethod');
+
+        $result = $invocation(InheritedMethodProxy::class);
+        $this->assertSame([InheritedMethodProxy::class, InheritedMethodProxy::class], $result);
     }
 }

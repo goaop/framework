@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Closure;
 use Go\Aop\Intercept\DynamicMethodInvocation;
+use ReflectionMethod;
 
 /**
  * Dynamic trait-alias method invocation calls instance methods via a pre-bound Closure::bind closure
@@ -42,6 +42,12 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     protected object $instance;
 
     /**
+     * We may have either original method in the same class via trait alias or prototype method
+     * from one of our parents.
+     */
+    private ReflectionMethod $originalMethodToCall;
+
+    /**
      * Constructor for method invocation
      *
      * @param class-string<T> $className  Class, containing method to invoke
@@ -49,12 +55,16 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices, $className, $methodName);
-        $aliasName           = self::TRAIT_ALIAS_PREFIX . $methodName;
-        $this->closureToCall = Closure::bind(
-            static fn(object $instanceToCall, array $argumentsToCall): mixed => $instanceToCall->$aliasName(...$argumentsToCall),
-            null,
-            $className
-        );
+        $aliasName = self::TRAIT_ALIAS_PREFIX . $methodName;
+        if (method_exists($className, $aliasName)) {
+            $methodToCall = new ReflectionMethod($className, $aliasName);
+        } elseif ($this->reflectionMethod->hasPrototype()) {
+            $methodToCall = $this->reflectionMethod->getPrototype();
+        } else {
+            throw new \LogicException("Cannot proceed with method invocation for {$methodName}: no trait alias and no method prototype found for {$className}");
+        }
+        $this->originalMethodToCall = $methodToCall;
+        $this->closureToCall = static fn(object $instanceToCall, array $argumentsToCall): mixed => $methodToCall->invokeArgs($instanceToCall, $argumentsToCall);
     }
 
     /**
@@ -68,7 +78,8 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
             return $currentInterceptor->invoke($this);
         }
 
-        return ($this->closureToCall)($this->instance, $this->arguments);
+        // Bypassing ($this->closureToCall)($this->instance, $this->arguments) for performance reasons
+        return $this->originalMethodToCall->invokeArgs($this->instance, $this->arguments);
     }
 
     /**

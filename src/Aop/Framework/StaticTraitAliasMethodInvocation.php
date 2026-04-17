@@ -48,9 +48,19 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices, $className, $methodName);
-        $aliasName           = self::TRAIT_ALIAS_PREFIX . $methodName;
+        $aliasName = self::TRAIT_ALIAS_PREFIX . $methodName;
+        if (method_exists($className, $aliasName)) {
+            $scopeToCall  = $className;
+            $methodToCall = $aliasName;
+        } elseif ($this->reflectionMethod->hasPrototype()) {
+            $scopeToCall  = $this->reflectionMethod->getPrototype()->getDeclaringClass()->getName();
+            $methodToCall = $methodName;
+        } else {
+            throw new \LogicException("Cannot proceed with method invocation for {$methodName}: no trait alias and no method prototype found for {$className}");
+        }
+
         $this->closureToCall = Closure::bind(
-            static fn(string $classToCall, array $argumentsToCall): mixed => $classToCall::$aliasName(...$argumentsToCall),
+            static fn(string $classToCall, array $argumentsToCall): mixed => forward_static_call_array($scopeToCall::$methodToCall(...), $argumentsToCall),
             null,
             $className
         );

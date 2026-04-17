@@ -184,6 +184,11 @@ class ClassProxyGenerator
 
         // Alias each intercepted method as private __aop__<name>
         foreach ($interceptedMethods as $methodName) {
+            $reflectionMethod = $originalClass->getMethod($methodName);
+            if ($reflectionMethod->class !== $originalClass->name) {
+                continue;
+            }
+
             $classGenerator->addTraitAlias($traitName, $methodName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
         }
         // When property interception is active and the class defines its own constructor, alias __construct
