@@ -39,7 +39,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     protected readonly ReflectionMethod $reflectionMethod;
 
     /**
-     * Pre-bound closure that calls the private __aop__<method> alias on any instance of the proxy class.
+     * Pre-bound closure that calls the private `__aop__<method>` alias on any instance of the proxy class.
      * Created once in the constructor via Closure::bind bound to the proxy class scope.
      */
     protected Closure $closureToCall;

@@ -14,7 +14,6 @@ namespace Go\Aop\Framework;
 
 use Closure;
 use Go\Aop\Intercept\StaticMethodInvocation;
-use ReflectionClass;
 
 /**
  * Static trait-alias method invocation calls static methods via a pre-bound Closure::bind closure
@@ -49,24 +48,22 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     public function __construct(array $advices, string $className, string $methodName)
     {
         parent::__construct($advices, $className, $methodName);
-        $aliasName           = self::TRAIT_ALIAS_PREFIX . $methodName;
+        $aliasName = self::TRAIT_ALIAS_PREFIX . $methodName;
         if (method_exists($className, $aliasName)) {
-            $this->closureToCall = Closure::bind(
-                static fn(string $classToCall, array $argumentsToCall): mixed => $classToCall::$aliasName(...$argumentsToCall),
-                null,
-                $className
-            );
-
-            return;
+            $scopeToCall  = $className;
+            $methodToCall = $aliasName;
+        } elseif ($this->reflectionMethod->hasPrototype()) {
+            $scopeToCall  = $this->reflectionMethod->getPrototype()->getDeclaringClass()->getName();
+            $methodToCall = $methodName;
+        } else {
+            throw new \LogicException("Cannot proceed with method invocation for {$methodName}: no trait alias and no method prototype found for {$className}");
         }
 
-        $parentClass = (new ReflectionClass($className))->getParentClass();
-        if ($parentClass === false) {
-            throw new \LogicException("Cannot proceed with method invocation for {$methodName}: no trait alias and no parent class found for {$className}");
-        }
-
-        $parentMethod        = $parentClass->getMethod($methodName);
-        $this->closureToCall = static fn(string $classToCall, array $argumentsToCall): mixed => $parentMethod->invokeArgs(null, $argumentsToCall);
+        $this->closureToCall = Closure::bind(
+            static fn(string $classToCall, array $argumentsToCall): mixed => forward_static_call_array($scopeToCall::$methodToCall(...), $argumentsToCall),
+            null,
+            $className
+        );
     }
 
     /**
