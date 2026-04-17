@@ -21,6 +21,7 @@ use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Scalar\MagicConst\Dir;
 use PhpParser\Node\Scalar\MagicConst\File;
+use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeVisitor;
 
 /**
@@ -40,6 +41,7 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
      */
     protected static string $rewriteToPath = '';
     private TransformerResultEnum $nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
+    private string $currentFileName = '';
 
     /**
      * Class constructor
@@ -54,12 +56,17 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
     public function beforeTraverse(array $nodes): ?array
     {
         $this->nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
+        $this->currentFileName       = '';
 
         return null;
     }
 
     public function enterNode(Node $node): int|Node|null
     {
+        if ($node instanceof Namespace_) {
+            $this->currentFileName = (string) $node->getAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, '');
+        }
+
         return null;
     }
 
@@ -67,16 +74,14 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
     {
         if ($node instanceof Dir) {
             $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
-            $fileName = (string) $node->getAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, '');
 
-            return new String_(dirname($fileName));
+            return new String_(dirname($this->currentFileName));
         }
 
         if ($node instanceof File) {
             $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
-            $fileName = (string) $node->getAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, '');
 
-            return new String_($fileName);
+            return new String_($this->currentFileName);
         }
 
         if ($node instanceof Node\Expr\MethodCall
@@ -93,6 +98,9 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
                 'resolveFileName',
                 [new Arg($methodCall)]
             );
+        }
+        if ($node instanceof Namespace_) {
+            $this->currentFileName = '';
         }
 
         return null;

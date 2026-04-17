@@ -15,4 +15,5 @@ namespace Go\Instrument\Transformer;
 final class NodeTransformerAttribute
 {
     public const ORIGINAL_FILE_NAME = 'goaop.original.file_name';
+    public const STREAM_METADATA    = 'goaop.stream.metadata';
 }

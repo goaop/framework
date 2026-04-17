@@ -22,7 +22,6 @@ use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\NodeTransformerResultReporter;
-use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use PhpParser\NodeVisitor;
 use RuntimeException;
@@ -145,9 +144,6 @@ abstract class AspectKernel
             $this->options['cacheFileMode']
         );
 
-        foreach ($this->registerTransformers() as $sourceTransformer) {
-            SourceTransformingLoader::addTransformer($sourceTransformer);
-        }
         foreach ($this->registerNodeVisitors() as $nodeVisitor) {
             SourceTransformingLoader::addNodeVisitor($nodeVisitor);
         }
@@ -283,26 +279,6 @@ abstract class AspectKernel
     abstract protected function configureAop(AspectContainer $container): void;
 
     /**
-     * Returns list of source transformers, that will be applied to the PHP source
-     *
-     * @return SourceTransformer[]
-     * @internal This method is internal and should not be used outside this project
-     */
-    protected function registerTransformers(): array
-    {
-        $cacheManager     = $this->getContainer()->getService(CachePathManager::class);
-
-        return [
-            new WeavingTransformer(
-                $this,
-                $this->container->getService(AdviceMatcher::class),
-                $cacheManager,
-                $this->container->getService(CachedAspectLoader::class)
-            )
-        ];
-    }
-
-    /**
      * Returns list of AST node visitors used for format-preserving rewrites.
      *
      * @return array<int, NodeVisitor&NodeTransformerResultReporter>
@@ -312,8 +288,14 @@ abstract class AspectKernel
         $cacheManager   = $this->getContainer()->getService(CachePathManager::class);
         $filterInjector = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
         $magicTransformer = new MagicConstantTransformer($this);
+        $weavingTransformer = new WeavingTransformer(
+            $this,
+            $this->container->getService(AdviceMatcher::class),
+            $cacheManager,
+            $this->container->getService(CachedAspectLoader::class)
+        );
 
-        $visitors = [];
+        $visitors = [$weavingTransformer];
         if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
             $visitors[] = new ConstructorExecutionTransformer();
         }

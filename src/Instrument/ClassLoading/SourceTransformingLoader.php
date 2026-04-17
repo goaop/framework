@@ -14,15 +14,13 @@ namespace Go\Instrument\ClassLoading;
 
 use Go\Core\AspectContainer;
 use Go\Instrument\PathResolver;
-use Go\Instrument\Transformer\NodeTransformerAttribute;
+use Go\Instrument\Transformer\FileNameInjectorNodeVisitor;
 use Go\Instrument\Transformer\NodeTransformerResultReporter;
-use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResultEnum;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor;
-use PhpParser\NodeVisitorAbstract;
 use PhpParser\PrettyPrinter\Standard;
 use php_user_filter as PhpStreamFilter;
 use RuntimeException;
@@ -51,12 +49,6 @@ class SourceTransformingLoader extends PhpStreamFilter
      */
     protected string $data = '';
 
-    /**
-     * List of transformers
-     *
-     * @var SourceTransformer[]
-     */
-    protected static array $transformers = [];
     /**
      * List of node visitors
      *
@@ -136,27 +128,8 @@ class SourceTransformingLoader extends PhpStreamFilter
             $prettyPrinter = new Standard();
             $resultSource = $prettyPrinter->printFormatPreserving($newSyntaxTree, $metadata->syntaxTree, $metadata->tokenStream);
 
-            foreach (self::$transformers as $transformer) {
-                $sourceTransformerMetadata = new StreamMetaData($this->stream, $resultSource);
-                $transformerResult         = $transformer->transform($sourceTransformerMetadata);
-                if ($overallResult === TransformerResultEnum::RESULT_ABSTAIN && $transformerResult === TransformerResultEnum::RESULT_TRANSFORMED) {
-                    $overallResult = TransformerResultEnum::RESULT_TRANSFORMED;
-                }
-                if ($transformerResult === TransformerResultEnum::RESULT_ABORTED) {
-                    $overallResult = TransformerResultEnum::RESULT_ABORTED;
-                    break;
-                }
-
-                $resultSource = '';
-                foreach ($sourceTransformerMetadata->tokenStream as $token) {
-                    if ($token->id !== 0) {
-                        $resultSource .= $token->text;
-                    }
-                }
-            }
-
             $wasTransformed = $overallResult === TransformerResultEnum::RESULT_TRANSFORMED;
-            self::writeCache($metadata->uri, $resultSource, $wasTransformed);
+            self::writeCache($metadata, $resultSource, $wasTransformed);
 
             $bucket = stream_bucket_new($this->stream, $resultSource);
             stream_bucket_append($out, $bucket);
@@ -165,14 +138,6 @@ class SourceTransformingLoader extends PhpStreamFilter
         }
 
         return PSFS_FEED_ME;
-    }
-
-    /**
-     * Adds a SourceTransformer to be applied by this LoadTimeWeaver.
-     */
-    public static function addTransformer(SourceTransformer $transformer): void
-    {
-        self::$transformers[] = $transformer;
     }
 
     /**
@@ -194,25 +159,19 @@ class SourceTransformingLoader extends PhpStreamFilter
     }
 
     /**
-     * Transforms source code by passing it through all node visitors and returns transformed AST.
+     * Transforms source code by applying all registered node visitors in one traversal pass.
+     *
+     * The traversal starts with FileNameInjectorNodeVisitor, which injects the original file name
+     * and StreamMetaData DTO into top-level namespace nodes. Other visitors read this contextual
+     * metadata from namespace attributes and report transformation status through
+     * NodeTransformerResultReporter.
      *
      * @return Node[]
      */
     public static function transformCode(StreamMetaData $metadata): array
     {
         $traverser = new NodeTraverser();
-        $traverser->addVisitor(new class ($metadata->uri) extends NodeVisitorAbstract {
-            public function __construct(private readonly string $fileName)
-            {
-            }
-
-            public function enterNode(Node $node): ?Node
-            {
-                $node->setAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, $this->fileName);
-
-                return null;
-            }
-        });
+        $traverser->addVisitor(new FileNameInjectorNodeVisitor($metadata));
         foreach (self::$nodeVisitors as $visitor) {
             $traverser->addVisitor($visitor);
         }
@@ -221,6 +180,13 @@ class SourceTransformingLoader extends PhpStreamFilter
         return $newSyntaxTree;
     }
 
+    /**
+     * Returns cached transformed source when cache entry is fresh for the supplied stream.
+     *
+     * This check runs before AST/token parsing to preserve fast-path performance.
+     *
+     * @param resource|mixed $stream
+     */
     private static function getFreshCachedSource(mixed $stream): ?string
     {
         if (self::$cachePathManager === null || self::$container === null) {
@@ -272,11 +238,15 @@ class SourceTransformingLoader extends PhpStreamFilter
         return $cachedSource;
     }
 
-    private static function writeCache(string $originalUri, string $source, bool $wasTransformed): void
+    /**
+     * Persists transformed source and cache metadata for the current stream metadata DTO.
+     */
+    private static function writeCache(StreamMetaData $metadata, string $source, bool $wasTransformed): void
     {
         if (self::$cachePathManager === null || self::$container === null) {
             return;
         }
+        $originalUri = $metadata->uri;
         $cacheUri = self::$cachePathManager->getCachePathForResource($originalUri);
         if ($cacheUri === false || $cacheUri === $originalUri) {
             return;
