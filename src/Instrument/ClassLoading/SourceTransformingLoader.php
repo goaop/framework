@@ -102,7 +102,7 @@ class SourceTransformingLoader extends PhpStreamFilter
             $metadata = new StreamMetaData($this->stream, $this->data);
             self::transformCode($metadata);
 
-            $bucket = stream_bucket_new($this->stream, $metadata->source);
+            $bucket = stream_bucket_new($this->stream, $metadata->getTransformedSource());
             stream_bucket_append($out, $bucket);
 
             return PSFS_PASS_ON;

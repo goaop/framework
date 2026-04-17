@@ -70,17 +70,17 @@ class FilterInjectorTransformerTest extends TestCase
     public function testCanTransformWithoutInclusion(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, include" . $include; ?>');
-        $output   = $metadata->source;
+        $output   = $metadata->getTransformedSource();
         self::$transformer->transform($metadata);
-        $this->assertEquals($output, $metadata->source);
+        $this->assertEquals($output, $metadata->getTransformedSource());
     }
 
     public function testSkipTransformationQuickly(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, no key words" ?>');
-        $output = $metadata->source;
+        $output = $metadata->getTransformedSource();
         self::$transformer->transform($metadata);
-        $this->assertEquals($output, $metadata->source);
+        $this->assertEquals($output, $metadata->getTransformedSource());
     }
 
     public function testCanTransformInclude(): void
@@ -88,7 +88,7 @@ class FilterInjectorTransformerTest extends TestCase
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php include $class; ?>');
         self::$transformer->transform($metadata);
         $output = '<?php include \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
-        $this->assertEquals($output, $metadata->source);
+        $this->assertEquals($output, $metadata->getTransformedSource());
     }
 
     public function testCanTransformIncludeOnce(): void
@@ -96,7 +96,7 @@ class FilterInjectorTransformerTest extends TestCase
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php include_once $class; ?>');
         self::$transformer->transform($metadata);
         $output = '<?php include_once \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
-        $this->assertEquals($output, $metadata->source);
+        $this->assertEquals($output, $metadata->getTransformedSource());
     }
 
     public function testCanTransformRequire(): void
@@ -104,7 +104,7 @@ class FilterInjectorTransformerTest extends TestCase
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php require $class; ?>');
         self::$transformer->transform($metadata);
         $output = '<?php require \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
-        $this->assertEquals($output, $metadata->source);
+        $this->assertEquals($output, $metadata->getTransformedSource());
     }
 
     public function testCanTransformRequireOnce(): void
@@ -112,7 +112,7 @@ class FilterInjectorTransformerTest extends TestCase
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php require_once $class; ?>');
         self::$transformer->transform($metadata);
         $output = '<?php require_once \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
-        $this->assertEquals($output, $metadata->source);
+        $this->assertEquals($output, $metadata->getTransformedSource());
     }
 
     public function testCanRewriteWithFilter(): void
@@ -145,7 +145,7 @@ class FilterInjectorTransformerTest extends TestCase
         $metadata    = new StreamMetaData(fopen(__DIR__ . '/_files/yii_style.php', 'r'), $fileContent);
         self::$transformer->transform($metadata);
         $expectedOutput = file_get_contents(__DIR__ . '/_files/yii_style_output.php');
-        $this->assertEquals($expectedOutput, $metadata->source);
+        $this->assertEquals($expectedOutput, $metadata->getTransformedSource());
     }
 
 }

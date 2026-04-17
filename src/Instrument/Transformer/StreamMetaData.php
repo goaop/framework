@@ -16,13 +16,13 @@ use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
 use PhpParser\Node;
+use PhpParser\PrettyPrinter\Standard;
+use PhpParser\Token;
 use PhpToken;
-use function is_array, is_resource;
+use function is_resource;
 
 /**
  * Stream metadata object
- *
- * @property-read string $source
  */
 class StreamMetaData
 {
@@ -76,7 +76,7 @@ class StreamMetaData
     /**
      * List of source tokens
      *
-     * @var PhpToken[]
+     * @var array<int, PhpToken|Token>
      */
     public array $tokenStream = [];
 
@@ -103,37 +103,40 @@ class StreamMetaData
             $mappedKey = self::$propertyMap[$key];
             $this->$mappedKey = $value;
         }
+        $this->reloadFromSource($source);
+    }
+
+    /**
+     * Reload metadata syntax tree and tokens from source code.
+     */
+    public function reloadFromSource(?string $source = null): void
+    {
         $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
         $this->setTokenStreamFromRawTokens(...ReflectionEngine::getParser()->getTokens());
     }
 
     /**
-     * @inheritDoc
+     * Rebuild syntax tree from the current token stream contents.
      */
-    public function __get(string $name): mixed
+    public function refreshSyntaxTreeFromTokenStream(): void
     {
-        if ($name === 'source') {
-            return $this->getSource();
-        }
-
-        return null;
+        $this->reloadFromSource($this->getTransformedSource());
     }
 
     /**
-     * @inheritDoc
+     * Applies updated syntax tree and rebuilds tokens using format-preserving pretty printer.
      */
-    public function __set(string $name, mixed $value): void
+    public function applySyntaxTree(array $newSyntaxTree): void
     {
-        if ($name === 'source' && is_string($value)) {
-            trigger_error('Setting StreamMetaData->source is deprecated, use tokenStream instead', E_USER_DEPRECATED);
-            $this->setSource($value);
-        }
+        $prettyPrinter      = new Standard();
+        $transformedSource  = $prettyPrinter->printFormatPreserving($newSyntaxTree, $this->syntaxTree, $this->tokenStream);
+        $this->reloadFromSource($transformedSource);
     }
 
     /**
-     * Returns source code directly from tokens
+     * Returns transformed source code directly from tokens.
      */
-    private function getSource(): string
+    public function getTransformedSource(): string
     {
         $transformedSource = '';
         foreach ($this->tokenStream as $token) {
@@ -146,22 +149,9 @@ class StreamMetaData
     }
 
     /**
-     * Sets the new source for this file
-     *
-     * @TODO: Unfortunately, AST won't be changed, so please be accurate during transformation
-     *
-     * @param string $newSource
-     */
-    private function setSource(string $newSource): void
-    {
-        $rawTokens = PhpToken::tokenize($newSource);
-        $this->setTokenStreamFromRawTokens(...$rawTokens);
-    }
-
-    /**
      * Sets an array of token identifiers for this file
      */
-    public function setTokenStreamFromRawTokens(PhpToken ...$rawTokens): void
+    public function setTokenStreamFromRawTokens(PhpToken|Token ...$rawTokens): void
     {
         $this->tokenStream = $rawTokens;
     }

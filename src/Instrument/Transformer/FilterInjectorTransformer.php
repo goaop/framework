@@ -14,10 +14,15 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
+use PhpParser\Node\Arg;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Include_;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\MagicConst\Dir;
 use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\FindingVisitor;
+use PhpParser\NodeVisitor\CloningVisitor;
+use PhpParser\NodeVisitorAbstract;
 use RuntimeException;
 
 /**
@@ -110,34 +115,43 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
-        $includeExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof Include_);
+        $metadata->refreshSyntaxTreeFromTokenStream();
+        $cloningTraverser = new NodeTraverser();
+        $cloningTraverser->addVisitor(new CloningVisitor());
+        $newSyntaxTree = $cloningTraverser->traverse($metadata->syntaxTree);
 
-        // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($includeExpressionFinder);
-        $traverser->traverse($metadata->syntaxTree);
+        $visitor = new class extends NodeVisitorAbstract {
+            public bool $hasChanges = false;
 
-        /** @var Include_[] $includeExpressions */
-        $includeExpressions = $includeExpressionFinder->getFoundNodes();
+            public function leaveNode(Node $node): ?Node
+            {
+                if (!$node instanceof Include_) {
+                    return null;
+                }
 
-        if (empty($includeExpressions)) {
+                $this->hasChanges = true;
+                $node->expr       = new StaticCall(
+                    new FullyQualified(FilterInjectorTransformer::class),
+                    'rewrite',
+                    [
+                        new Arg($node->expr),
+                        new Arg(new Dir()),
+                    ]
+                );
+
+                return $node;
+            }
+        };
+
+        $rewritingTraverser = new NodeTraverser();
+        $rewritingTraverser->addVisitor($visitor);
+        $newSyntaxTree = $rewritingTraverser->traverse($newSyntaxTree);
+
+        if (!$visitor->hasChanges) {
             return TransformerResultEnum::RESULT_ABSTAIN;
         }
 
-        foreach ($includeExpressions as $includeExpression) {
-            $startPosition = $includeExpression->getAttribute('startTokenPos');
-            $endPosition   = $includeExpression->getAttribute('endTokenPos');
-            if (!is_int($startPosition) || !is_int($endPosition)) {
-                continue;
-            }
-
-            $metadata->tokenStream[$startPosition]->text .= ' \\' . self::class . '::rewrite(';
-            if ($metadata->tokenStream[$startPosition+1]->id === T_WHITESPACE) {
-                unset($metadata->tokenStream[$startPosition+1]);
-            }
-
-            $metadata->tokenStream[$endPosition]->text .= ', __DIR__)';
-        }
+        $metadata->applySyntaxTree($newSyntaxTree);
 
         return TransformerResultEnum::RESULT_TRANSFORMED;
     }

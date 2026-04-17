@@ -15,7 +15,6 @@ namespace Go\Instrument\Transformer;
 use Closure;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
-use Go\ParserReflection\ReflectionEngine;
 
 use function dirname;
 
@@ -81,7 +80,7 @@ class CachingTransformer extends BaseSourceTransformer
                 if (!is_dir($parentCacheDir)) {
                     mkdir($parentCacheDir, $this->cacheFileMode, true);
                 }
-                file_put_contents($cacheUri, $metadata->source, LOCK_EX);
+                file_put_contents($cacheUri, $metadata->getTransformedSource(), LOCK_EX);
                 // For cache files we don't want executable bits by default
                 chmod($cacheUri, $this->cacheFileMode & (~0111));
             }
@@ -100,11 +99,10 @@ class CachingTransformer extends BaseSourceTransformer
             $processingResult = isset($cacheState['cacheUri']) ? TransformerResultEnum::RESULT_TRANSFORMED : TransformerResultEnum::RESULT_ABORTED;
         }
         if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
-            // Just replace all tokens in the stream
-            ReflectionEngine::parseFile($cacheUri);
-            $metadata->setTokenStreamFromRawTokens(
-                ...ReflectionEngine::getParser()->getTokens()
-            );
+            $cacheSource = file_get_contents($cacheUri);
+            if ($cacheSource !== false) {
+                $metadata->reloadFromSource($cacheSource);
+            }
         }
 
         return $processingResult;

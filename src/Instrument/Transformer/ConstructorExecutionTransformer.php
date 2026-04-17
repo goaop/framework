@@ -15,10 +15,15 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Core\AspectContainer;
 use PhpParser\Node;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Name;
+use PhpParser\Node\Name\FullyQualified;
 use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\FindingVisitor;
+use PhpParser\NodeVisitor\CloningVisitor;
+use PhpParser\NodeVisitorAbstract;
 use ReflectionException;
 use ReflectionProperty;
 
@@ -59,35 +64,46 @@ final class ConstructorExecutionTransformer implements SourceTransformer
      */
     public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
-        $newExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof New_);
+        $metadata->refreshSyntaxTreeFromTokenStream();
+        $cloningTraverser = new NodeTraverser();
+        $cloningTraverser->addVisitor(new CloningVisitor());
+        $newSyntaxTree = $cloningTraverser->traverse($metadata->syntaxTree);
 
-        // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($newExpressionFinder);
-        $traverser->traverse($metadata->syntaxTree);
+        $visitor = new class extends NodeVisitorAbstract {
+            public bool $hasChanges = false;
 
-        /** @var Node\Expr\New_[] $newExpressions */
-        $newExpressions = $newExpressionFinder->getFoundNodes();
+            public function leaveNode(Node $node): ?Node
+            {
+                if (!$node instanceof New_) {
+                    return null;
+                }
 
-        if (empty($newExpressions)) {
+                $this->hasChanges = true;
+                $classReference   = $node->class instanceof Name
+                    ? new ClassConstFetch($node->class, 'class')
+                    : $node->class;
+                $transformerInstance = new Node\Expr\StaticCall(
+                    new FullyQualified(ConstructorExecutionTransformer::class),
+                    'getInstance'
+                );
+
+                if ($node->args === []) {
+                    return new PropertyFetch($transformerInstance, $classReference);
+                }
+
+                return new MethodCall($transformerInstance, $classReference, $node->args);
+            }
+        };
+
+        $rewritingTraverser = new NodeTraverser();
+        $rewritingTraverser->addVisitor($visitor);
+        $newSyntaxTree = $rewritingTraverser->traverse($newSyntaxTree);
+
+        if (!$visitor->hasChanges) {
             return TransformerResultEnum::RESULT_ABSTAIN;
         }
 
-        foreach ($newExpressions as $newExpressionNode) {
-            $startPosition = $newExpressionNode->getAttribute('startTokenPos');
-            $endClassNamePos = $newExpressionNode->class->getAttribute('endTokenPos');
-            if (!is_int($startPosition) || !is_int($endClassNamePos)) {
-                continue;
-            }
-
-            $isExplicitClass = $newExpressionNode->class instanceof Name;
-            $metadata->tokenStream[$startPosition]->text = '\\' . self::class . '::getInstance()->{';
-            if ($metadata->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
-                unset($metadata->tokenStream[$startPosition + 1]);
-            }
-            $expressionSuffix                           = $isExplicitClass ? '::class}' : '}';
-            $metadata->tokenStream[$endClassNamePos]->text .= $expressionSuffix;
-        }
+        $metadata->applySyntaxTree($newSyntaxTree);
 
         return TransformerResultEnum::RESULT_TRANSFORMED;
     }

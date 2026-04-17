@@ -34,7 +34,7 @@ class ConstructorExecutionTransformerTest extends TestCase
 
         self::$transformer->transform($metadata);
         $output = "<?php $expected; ?>";
-        $this->assertEquals($output, $metadata->source);
+        $this->assertEquals($output, $metadata->getTransformedSource());
         fclose($stream);
     }
 

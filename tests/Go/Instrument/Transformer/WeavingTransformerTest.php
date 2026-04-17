@@ -84,8 +84,8 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('multiple-ns');
         $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-ns-woven')->source);
+        $actual   = $this->normalizeWhitespaces($metadata->getTransformedSource());
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-ns-woven')->getTransformedSource());
         $this->assertEquals($expected, $actual);
     }
 
@@ -97,8 +97,8 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('empty-classes');
         $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('empty-classes')->source);
+        $actual   = $this->normalizeWhitespaces($metadata->getTransformedSource());
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('empty-classes')->getTransformedSource());
         $this->assertEquals($expected, $actual);
     }
 
@@ -110,8 +110,8 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('aspect');
         $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('aspect')->source);
+        $actual   = $this->normalizeWhitespaces($metadata->getTransformedSource());
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('aspect')->getTransformedSource());
         $this->assertEquals($expected, $actual);
     }
 
@@ -123,8 +123,8 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('class-typehint');
         $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-typehint-woven')->source);
+        $actual   = $this->normalizeWhitespaces($metadata->getTransformedSource());
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-typehint-woven')->getTransformedSource());
         $this->assertEquals($expected, $actual);
 
         $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '_proxies/Transformer/_files/class-typehint.php/TestClassTypehint.php');
@@ -139,12 +139,12 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('php7-class');
         $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-woven')->source);
+        $actual   = $this->normalizeWhitespaces($metadata->getTransformedSource());
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-woven')->getTransformedSource());
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-proxy')->getTransformedSource());
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -182,12 +182,12 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('class');
         $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-woven')->source);
+        $actual   = $this->normalizeWhitespaces($metadata->getTransformedSource());
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-woven')->getTransformedSource());
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('class-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('class-proxy')->getTransformedSource());
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -205,12 +205,12 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('final-readonly-class');
         $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-woven')->source);
+        $actual   = $this->normalizeWhitespaces($metadata->getTransformedSource());
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-woven')->getTransformedSource());
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-proxy')->getTransformedSource());
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -223,12 +223,12 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('php81-enum');
         $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-woven')->source);
+        $actual   = $this->normalizeWhitespaces($metadata->getTransformedSource());
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-woven')->getTransformedSource());
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-proxy')->getTransformedSource());
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -240,7 +240,7 @@ class WeavingTransformerTest extends TestCase
      */
     public function testWeaverForEnumPreservesMethodLineNumbers(): void
     {
-        $originalSource  = $this->loadTestMetadata('php81-enum')->source;
+        $originalSource  = $this->loadTestMetadata('php81-enum')->getTransformedSource();
         $originalLines   = explode("\n", $originalSource);
         $labelLineInOrig = null;
         foreach ($originalLines as $i => $line) {
@@ -254,7 +254,7 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('php81-enum');
         $this->transformer->transform($metadata);
 
-        $wovenLines    = explode("\n", $metadata->source);
+        $wovenLines    = explode("\n", $metadata->getTransformedSource());
         $labelLineWoven = null;
         foreach ($wovenLines as $i => $line) {
             if (preg_match('/public function label\s*\(/', $line)) {
@@ -282,12 +282,12 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('php83-override');
         $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-woven')->source);
+        $actual   = $this->normalizeWhitespaces($metadata->getTransformedSource());
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-woven')->getTransformedSource());
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-proxy')->getTransformedSource());
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -301,7 +301,7 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('php83-override-multiattr');
         $this->transformer->transform($metadata);
 
-        $actual = $this->normalizeWhitespaces($metadata->source);
+        $actual = $this->normalizeWhitespaces($metadata->getTransformedSource());
 
         // #[\Override] must be gone from the trait body (alone or as part of a group)
         $this->assertStringNotContainsString('#[\Override]', $actual);
@@ -320,8 +320,8 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('multiple-classes');
         $this->transformer->transform($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-classes-woven')->source);
+        $actual   = $this->normalizeWhitespaces($metadata->getTransformedSource());
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-classes-woven')->getTransformedSource());
         $this->assertEquals($expected, $actual);
     }
 
