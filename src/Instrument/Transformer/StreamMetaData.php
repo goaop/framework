@@ -110,7 +110,7 @@ class StreamMetaData
     }
 
     /**
-     * Sets an array of token identifiers for this file
+     * Constructor-only helper for storing parser tokens as-is from parser-reflection.
      */
     private function setTokenStreamFromRawTokens(PhpToken|Token ...$rawTokens): void
     {
