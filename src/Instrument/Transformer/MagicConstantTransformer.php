@@ -28,7 +28,7 @@ use PhpParser\NodeVisitor;
  *
  * Additionally, ReflectionClass->getFileName() is also wrapped into normalizer method call
  */
-class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisitor
+class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisitor, NodeTransformerResultReporter
 {
     /**
      * Root path of application
@@ -39,8 +39,7 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
      * Path to rewrite to (cache directory)
      */
     protected static string $rewriteToPath = '';
-    private bool $hasChanges = false;
-    private string $currentFileName = '';
+    private TransformerResultEnum $nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
     /**
      * Class constructor
@@ -54,7 +53,7 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
 
     public function beforeTraverse(array $nodes): ?array
     {
-        $this->hasChanges = false;
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
         return null;
     }
@@ -67,15 +66,17 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
     public function leaveNode(Node $node): int|Node|null
     {
         if ($node instanceof Dir) {
-            $this->hasChanges = true;
+            $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
+            $fileName = (string) $node->getAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, '');
 
-            return new String_(dirname($this->currentFileName));
+            return new String_(dirname($fileName));
         }
 
         if ($node instanceof File) {
-            $this->hasChanges = true;
+            $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
+            $fileName = (string) $node->getAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, '');
 
-            return new String_($this->currentFileName);
+            return new String_($fileName);
         }
 
         if ($node instanceof Node\Expr\MethodCall
@@ -83,7 +84,7 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
             && $node->name->toString() === 'getFileName'
             && !$node->getAttribute('goaop_wrapped_get_file_name')
         ) {
-            $this->hasChanges = true;
+            $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
             $methodCall = clone $node;
             $methodCall->setAttribute('goaop_wrapped_get_file_name', true);
 
@@ -102,14 +103,9 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
         return null;
     }
 
-    public function hasChanges(): bool
+    public function getNodeTransformerResult(): TransformerResultEnum
     {
-        return $this->hasChanges;
-    }
-
-    public function setCurrentFileName(string $fileName): void
-    {
-        $this->currentFileName = $fileName;
+        return $this->nodeTransformerResult;
     }
 
     /**

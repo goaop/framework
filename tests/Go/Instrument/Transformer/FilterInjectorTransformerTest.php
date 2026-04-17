@@ -17,7 +17,6 @@ use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
 use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\CloningVisitor;
 use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\TestCase;
 use TypeError;
@@ -152,7 +151,6 @@ class FilterInjectorTransformerTest extends TestCase
     private function applyVisitor(StreamMetaData $metadata): string
     {
         $traverser = new NodeTraverser();
-        $traverser->addVisitor(new CloningVisitor());
         $traverser->addVisitor(self::$transformer);
         $newAst = $traverser->traverse($metadata->syntaxTree);
 

@@ -28,7 +28,7 @@ use RuntimeException;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-class FilterInjectorTransformer extends NodeVisitorAbstract
+class FilterInjectorTransformer extends NodeVisitorAbstract implements NodeTransformerResultReporter
 {
     /**
      * Php filter definition
@@ -50,7 +50,7 @@ class FilterInjectorTransformer extends NodeVisitorAbstract
     protected static ?AspectKernel $kernel = null;
 
     protected static ?CachePathManager $cachePathManager = null;
-    private bool $hasChanges = false;
+    private TransformerResultEnum $nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
     /**
      * Class constructor
@@ -111,7 +111,7 @@ class FilterInjectorTransformer extends NodeVisitorAbstract
 
     public function beforeTraverse(array $nodes): ?array
     {
-        $this->hasChanges = false;
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
         return null;
     }
@@ -125,7 +125,7 @@ class FilterInjectorTransformer extends NodeVisitorAbstract
             return null;
         }
 
-        $this->hasChanges = true;
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
         $node->expr       = new StaticCall(
             new FullyQualified(self::class),
             'rewrite',
@@ -138,8 +138,8 @@ class FilterInjectorTransformer extends NodeVisitorAbstract
         return $node;
     }
 
-    public function hasChanges(): bool
+    public function getNodeTransformerResult(): TransformerResultEnum
     {
-        return $this->hasChanges;
+        return $this->nodeTransformerResult;
     }
 }

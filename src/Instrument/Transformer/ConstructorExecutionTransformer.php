@@ -31,7 +31,7 @@ use ReflectionProperty;
  * @see https://github.com/php/php-src/blob/master/Zend/zend_language_parser.y
  *
  */
-final class ConstructorExecutionTransformer extends NodeVisitorAbstract
+final class ConstructorExecutionTransformer extends NodeVisitorAbstract implements NodeTransformerResultReporter
 {
     /**
      * List of constructor invocations per class
@@ -44,7 +44,7 @@ final class ConstructorExecutionTransformer extends NodeVisitorAbstract
      * Singleton instance
      */
     private static ?self $instance = null;
-    private bool $hasChanges = false;
+    private TransformerResultEnum $nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
     /**
      * Singletone
@@ -60,7 +60,7 @@ final class ConstructorExecutionTransformer extends NodeVisitorAbstract
 
     public function beforeTraverse(array $nodes): ?array
     {
-        $this->hasChanges = false;
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
         return null;
     }
@@ -74,7 +74,7 @@ final class ConstructorExecutionTransformer extends NodeVisitorAbstract
             return null;
         }
 
-        $this->hasChanges = true;
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
         $classReference   = $node->class instanceof Name
             ? new ClassConstFetch($node->class, 'class')
             : $node->class;
@@ -90,9 +90,9 @@ final class ConstructorExecutionTransformer extends NodeVisitorAbstract
         return new MethodCall($getInstanceCall, $classReference, $node->args);
     }
 
-    public function hasChanges(): bool
+    public function getNodeTransformerResult(): TransformerResultEnum
     {
-        return $this->hasChanges;
+        return $this->nodeTransformerResult;
     }
 
     /**

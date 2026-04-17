@@ -14,8 +14,9 @@ namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use PhpParser\Node;
 use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\CloningVisitor;
+use PhpParser\NodeVisitorAbstract;
 use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -108,9 +109,19 @@ class MagicConstantTransformerTest extends TestCase
 
     private function applyVisitor(StreamMetaData $metadata): string
     {
-        $this->transformer->setCurrentFileName($metadata->uri);
         $traverser = new NodeTraverser();
-        $traverser->addVisitor(new CloningVisitor());
+        $traverser->addVisitor(new class ($metadata->uri) extends NodeVisitorAbstract {
+            public function __construct(private readonly string $fileName)
+            {
+            }
+
+            public function enterNode(Node $node): ?Node
+            {
+                $node->setAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, $this->fileName);
+
+                return null;
+            }
+        });
         $traverser->addVisitor($this->transformer);
         $newAst = $traverser->traverse($metadata->syntaxTree);
 

@@ -21,6 +21,7 @@ use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
+use Go\Instrument\Transformer\NodeTransformerResultReporter;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use PhpParser\NodeVisitor;
@@ -304,7 +305,7 @@ abstract class AspectKernel
     /**
      * Returns list of AST node visitors used for format-preserving rewrites.
      *
-     * @return NodeVisitor[]
+     * @return array<int, NodeVisitor&NodeTransformerResultReporter>
      */
     protected function registerNodeVisitors(): array
     {

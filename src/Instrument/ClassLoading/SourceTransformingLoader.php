@@ -14,13 +14,15 @@ namespace Go\Instrument\ClassLoading;
 
 use Go\Core\AspectContainer;
 use Go\Instrument\PathResolver;
+use Go\Instrument\Transformer\NodeTransformerAttribute;
+use Go\Instrument\Transformer\NodeTransformerResultReporter;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResultEnum;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor;
-use PhpParser\NodeVisitor\CloningVisitor;
+use PhpParser\NodeVisitorAbstract;
 use PhpParser\PrettyPrinter\Standard;
 use php_user_filter as PhpStreamFilter;
 use RuntimeException;
@@ -58,7 +60,7 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * List of node visitors
      *
-     * @var NodeVisitor[]
+     * @var array<int, NodeVisitor&NodeTransformerResultReporter>
      */
     protected static array $nodeVisitors = [];
 
@@ -69,7 +71,6 @@ class SourceTransformingLoader extends PhpStreamFilter
     private static ?CachePathManager $cachePathManager = null;
     private static ?AspectContainer $container = null;
     private static int $cacheFileMode = 0770;
-    private static bool $lastAstTransformed = false;
 
     /**
      * Register current loader as stream filter in PHP
@@ -125,15 +126,35 @@ class SourceTransformingLoader extends PhpStreamFilter
 
             $metadata = new StreamMetaData($this->stream, $this->data);
             $newSyntaxTree = self::transformCode($metadata);
-
+            $overallResult = TransformerResultEnum::RESULT_ABSTAIN;
+            foreach (self::$nodeVisitors as $visitor) {
+                $visitorResult = $visitor->getNodeTransformerResult();
+                if ($overallResult === TransformerResultEnum::RESULT_ABSTAIN && $visitorResult === TransformerResultEnum::RESULT_TRANSFORMED) {
+                    $overallResult = TransformerResultEnum::RESULT_TRANSFORMED;
+                }
+            }
             $prettyPrinter = new Standard();
-            $astSource = $prettyPrinter->printFormatPreserving($newSyntaxTree, $metadata->syntaxTree, $metadata->tokenStream);
+            $resultSource = $prettyPrinter->printFormatPreserving($newSyntaxTree, $metadata->syntaxTree, $metadata->tokenStream);
 
-            $legacyMetadata = new StreamMetaData($this->stream, $astSource);
-            $legacyResult   = self::applyLegacyTransformers($legacyMetadata);
-            $resultSource   = self::stringifyTokens($legacyMetadata->tokenStream);
+            foreach (self::$transformers as $transformer) {
+                $sourceTransformerMetadata = new StreamMetaData($this->stream, $resultSource);
+                $transformerResult         = $transformer->transform($sourceTransformerMetadata);
+                if ($overallResult === TransformerResultEnum::RESULT_ABSTAIN && $transformerResult === TransformerResultEnum::RESULT_TRANSFORMED) {
+                    $overallResult = TransformerResultEnum::RESULT_TRANSFORMED;
+                }
+                if ($transformerResult === TransformerResultEnum::RESULT_ABORTED) {
+                    $overallResult = TransformerResultEnum::RESULT_ABORTED;
+                    break;
+                }
 
-            $wasTransformed = self::$lastAstTransformed || $legacyResult === TransformerResultEnum::RESULT_TRANSFORMED;
+                $resultSource = $prettyPrinter->printFormatPreserving(
+                    $sourceTransformerMetadata->syntaxTree,
+                    $sourceTransformerMetadata->syntaxTree,
+                    $sourceTransformerMetadata->tokenStream
+                );
+            }
+
+            $wasTransformed = $overallResult === TransformerResultEnum::RESULT_TRANSFORMED;
             self::writeCache($metadata->uri, $resultSource, $wasTransformed);
 
             $bucket = stream_bucket_new($this->stream, $resultSource);
@@ -156,7 +177,7 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Adds a NodeVisitor to be applied by traverser.
      */
-    public static function addNodeVisitor(NodeVisitor $visitor): void
+    public static function addNodeVisitor(NodeVisitor&NodeTransformerResultReporter $visitor): void
     {
         self::$nodeVisitors[] = $visitor;
     }
@@ -178,52 +199,25 @@ class SourceTransformingLoader extends PhpStreamFilter
      */
     public static function transformCode(StreamMetaData $metadata): array
     {
-        self::$lastAstTransformed = false;
         $traverser = new NodeTraverser();
-        $traverser->addVisitor(new CloningVisitor());
-        foreach (self::$nodeVisitors as $visitor) {
-            if (method_exists($visitor, 'setCurrentFileName')) {
-                $visitor->setCurrentFileName($metadata->uri);
+        $traverser->addVisitor(new class ($metadata->uri) extends NodeVisitorAbstract {
+            public function __construct(private readonly string $fileName)
+            {
             }
+
+            public function enterNode(Node $node): ?Node
+            {
+                $node->setAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, $this->fileName);
+
+                return null;
+            }
+        });
+        foreach (self::$nodeVisitors as $visitor) {
             $traverser->addVisitor($visitor);
         }
         $newSyntaxTree = $traverser->traverse($metadata->syntaxTree);
-        foreach (self::$nodeVisitors as $visitor) {
-            if (method_exists($visitor, 'hasChanges') && $visitor->hasChanges()) {
-                self::$lastAstTransformed = true;
-                break;
-            }
-        }
 
         return $newSyntaxTree;
-    }
-
-    private static function applyLegacyTransformers(StreamMetaData $metadata): TransformerResultEnum
-    {
-        $overallResult = TransformerResultEnum::RESULT_ABSTAIN;
-        foreach (self::$transformers as $transformer) {
-            $result = $transformer->transform($metadata);
-            if ($overallResult === TransformerResultEnum::RESULT_ABSTAIN && $result === TransformerResultEnum::RESULT_TRANSFORMED) {
-                $overallResult = TransformerResultEnum::RESULT_TRANSFORMED;
-            }
-            if ($result === TransformerResultEnum::RESULT_ABORTED) {
-                break;
-            }
-        }
-
-        return $overallResult;
-    }
-
-    private static function stringifyTokens(array $tokens): string
-    {
-        $result = '';
-        foreach ($tokens as $token) {
-            if ($token->id !== 0) {
-                $result .= $token->text;
-            }
-        }
-
-        return $result;
     }
 
     private static function getFreshCachedSource(mixed $stream): ?string
