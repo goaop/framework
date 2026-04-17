@@ -93,11 +93,8 @@ class InterceptedConstructorGeneratorTest extends TestCase
             '
             public function __construct()
             {
-                $accessor = function (array &$propertyStorage, object $target) {
-                    $propertyStorage = [\'foo\' => &$target->foo, \'bar\' => &$target->bar];
-                    unset($target->foo, $target->bar);
-                };
-                $accessor->bindTo($this, self::class)($this->__properties, $this);
+                $this->__properties = [\'foo\' => &$this->foo, \'bar\' => &$this->bar];
+                unset($this->foo, $this->bar);
             }'
         );
         $this->assertSame($expectedCode, $generatedCode);
@@ -132,18 +129,22 @@ class InterceptedConstructorGeneratorTest extends TestCase
             $generatedCode,
             'When constructorIsInTrait=true, must NOT use parent::__construct'
         );
-        $this->assertStringContainsString(
-            'self::class',
+        $this->assertStringNotContainsString(
+            'bindTo',
             $generatedCode,
-            'Property accessor bindTo must use self::class scope, not parent::class'
+            'Property accessor must not use bindTo and closures at all'
         );
     }
 
-    public function testThrowsExceptionForPrivateConstructor(): void
+    public function testNotThrowsExceptionForPrivateConstructor(): void
     {
-        $this->expectException(\LogicException::class);
-
         $reflectionConstructor = (new ReflectionClass(ClassWithPrivateConstructor::class))->getConstructor();
-        new InterceptedConstructorGenerator(['foo', 'bar'], $reflectionConstructor);
+        $generator     = new InterceptedConstructorGenerator(['foo', 'bar'], $reflectionConstructor);
+        $generatedCode = $generator->generate();
+        $this->assertStringContainsString(
+            'private function __construct',
+            $generatedCode,
+            'When constructor is private, must not throw exception'
+        );
     }
 }

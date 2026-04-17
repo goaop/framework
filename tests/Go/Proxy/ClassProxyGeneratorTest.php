@@ -97,16 +97,6 @@ class ClassProxyGeneratorTest extends TestCase
             'Proxy with property advices must use PropertyInterceptionTrait'
         );
         $this->assertStringContainsString(
-            'self::class',
-            $proxyFileContent,
-            'Property accessor closure must be bound with self::class scope (not parent::class)'
-        );
-        $this->assertStringNotContainsString(
-            'parent::class',
-            $proxyFileContent,
-            'Generated proxy must not reference parent::class — the new trait engine has no parent'
-        );
-        $this->assertStringContainsString(
             '__properties',
             $proxyFileContent,
             'Generated proxy must initialise $__properties via the accessor'

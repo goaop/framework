@@ -45,12 +45,6 @@ final class InterceptedConstructorGenerator
         bool $constructorIsInTrait = false
     ) {
         $constructorBody = count($interceptedProperties) > 0 ? $this->getConstructorBody($interceptedProperties) : '';
-        if ($constructor !== null && $constructor->isPrivate()) {
-            throw new LogicException(
-                "Constructor in the class {$constructor->class} is declared as private. " .
-                'Properties could not be intercepted.'
-            );
-        }
         if ($constructor !== null) {
             if ($constructorGenerator === null) {
                 $callArguments = new FunctionCallArgumentListGenerator($constructor);
@@ -119,19 +113,16 @@ final class InterceptedConstructorGenerator
         $assocProperties = [];
         $listProperties  = [];
         foreach ($interceptedProperties as $propertyName) {
-            $assocProperties[] = "        '{$propertyName}' => &\$target->{$propertyName}";
-            $listProperties[]  = "        \$target->{$propertyName}";
+            $assocProperties[] = "    '{$propertyName}' => &\$this->{$propertyName}";
+            $listProperties[]  = "    \$this->{$propertyName}";
         }
         $lines = [
-            '$accessor = function(array &$propertyStorage, object $target) {',
-            '    $propertyStorage = [',
+            '$this->__properties = [',
             implode(',' . PHP_EOL, $assocProperties),
-            '    ];',
-            '    unset(',
+            '];',
+            'unset(',
             implode(',' . PHP_EOL, $listProperties),
-            '    );',
-            '};',
-            '($accessor->bindTo($this, self::class))($this->__properties, $this);'
+            ');'
         ];
 
         return implode(PHP_EOL, $lines);
