@@ -77,7 +77,7 @@ class StreamMetaData
      * List of source tokens
      *
      * Parser-reflection may expose tokens either as native PhpToken instances
-     * or php-parser Token objects (php-parser v5+).
+     * or php-parser Token objects, depending on the underlying parser version.
      *
      * @var array<int, PhpToken|Token>
      */

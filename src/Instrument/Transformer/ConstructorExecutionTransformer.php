@@ -18,7 +18,6 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
-use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\NodeTraverser;
@@ -86,10 +85,6 @@ final class ConstructorExecutionTransformer implements SourceTransformer
                     new FullyQualified(ConstructorExecutionTransformer::class),
                     'getInstance'
                 );
-
-                if ($node->args === []) {
-                    return new PropertyFetch($getInstanceCall, $classReference);
-                }
 
                 return new MethodCall($getInstanceCall, $classReference, $node->args);
             }

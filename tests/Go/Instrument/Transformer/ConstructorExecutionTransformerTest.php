@@ -43,7 +43,7 @@ class ConstructorExecutionTransformerTest extends TestCase
         return [
             [
                 '$a = new stdClass',
-                '$a = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}'
+                '$a = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}()'
             ],
             [
                 '$b = new stdClass()',
@@ -51,7 +51,7 @@ class ConstructorExecutionTransformerTest extends TestCase
             ],
             [
                 '$stdClass = "stdClass"; $c = new $stdClass',
-                '$stdClass = "stdClass"; $c = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{$stdClass}'
+                '$stdClass = "stdClass"; $c = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{$stdClass}()'
             ],
             [
                 '$stdClass = "stdClass"; $d = new $stdClass()',
@@ -59,7 +59,7 @@ class ConstructorExecutionTransformerTest extends TestCase
             ],
             [
                 '$e = new \Exception',
-                '$e = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{\Exception::class}'
+                '$e = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{\Exception::class}()'
             ],
             [
                 '$f = new \Exception("Test")',
@@ -67,7 +67,7 @@ class ConstructorExecutionTransformerTest extends TestCase
             ],
             [
                 '$g = new self',
-                '$g = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{self::class}',
+                '$g = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{self::class}()',
             ],
             [
                 '$h = new static()',
@@ -87,11 +87,11 @@ class ConstructorExecutionTransformerTest extends TestCase
             ],
             [
                 '$m = new static::$object[0]->name',
-                '$m = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{static::$object[0]->name}'
+                '$m = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{static::$object[0]->name}()'
             ],
             [
                 '$n = new stdClass(new static::$object[0]->name)',
-                '$n = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}(\Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{static::$object[0]->name})'
+                '$n = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}(\Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{static::$object[0]->name}())'
             ]
         ];
     }
