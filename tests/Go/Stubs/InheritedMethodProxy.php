@@ -21,16 +21,13 @@ class InheritedMethodProxy extends InheritedMethodParent
         return self::OVERRIDDEN_SENTINEL;
     }
 
-    public static function inheritedStaticMethod(): int
+    public static function inheritedStaticMethod(): never
     {
-        return self::OVERRIDDEN_SENTINEL;
+        throw new \RuntimeException('This method should not be called. Engine should call parent method.');
     }
 
-    /**
-     * @return array{class-string, class-string}
-     */
-    public static function inheritedStaticLsbMethod(): array
+    public static function inheritedStaticLsbMethod(): never
     {
-        return [self::class, self::class];
+        throw new \RuntimeException('This method should not be called. Engine should call parent method.');
     }
 }
