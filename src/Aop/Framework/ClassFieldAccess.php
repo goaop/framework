@@ -68,11 +68,6 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function __construct(array $advices, string $className, string $fieldName)
     {
         parent::__construct($advices);
-        // We should bind our interceptor to the parent class where property is usually declared
-        $parentClass = get_parent_class($className);
-        if ($parentClass !== false && property_exists($parentClass, $fieldName)) {
-            $className = $parentClass;
-        }
         $this->reflectionProperty = new ReflectionProperty($className, $fieldName);
     }
 
