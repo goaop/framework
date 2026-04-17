@@ -82,16 +82,16 @@ final class ConstructorExecutionTransformer implements SourceTransformer
                 $classReference   = $node->class instanceof Name
                     ? new ClassConstFetch($node->class, 'class')
                     : $node->class;
-                $transformerInstance = new Node\Expr\StaticCall(
+                $getInstanceCall = new Node\Expr\StaticCall(
                     new FullyQualified(ConstructorExecutionTransformer::class),
                     'getInstance'
                 );
 
                 if ($node->args === []) {
-                    return new PropertyFetch($transformerInstance, $classReference);
+                    return new PropertyFetch($getInstanceCall, $classReference);
                 }
 
-                return new MethodCall($transformerInstance, $classReference, $node->args);
+                return new MethodCall($getInstanceCall, $classReference, $node->args);
             }
         };
 
