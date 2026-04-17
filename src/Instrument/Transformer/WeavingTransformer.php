@@ -151,7 +151,7 @@ class WeavingTransformer extends BaseSourceTransformer
         // For enums: convert the enum body to a trait (cases extracted to proxy enum by EnumProxyGenerator).
         // For classes: convert the class body to a trait (new trait-based engine).
         if ($class->isTrait()) {
-            $this->adjustOriginalClass($class, $advices, $metadata, $newClassName);
+            $this->adjustOriginalTrait($class, $metadata, $newClassName);
             $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
         } elseif ($class->isEnum()) {
             $this->convertEnumToTrait($class, $advices, $metadata, $newClassName);
@@ -191,13 +191,10 @@ class WeavingTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Adjust definition of original class source to enable extending
-     *
-     * @param array<string, array<string, array<string>>> $advices List of class advices (sorted advice IDs)
+     * Adjust definition of original trait source to enable extending
      */
-    private function adjustOriginalClass(
+    private function adjustOriginalTrait(
         ReflectionClass $class,
-        array $advices,
         StreamMetaData $streamMetaData,
         string $newClassName
     ): void {
@@ -209,10 +206,6 @@ class WeavingTransformer extends BaseSourceTransformer
         do {
             if (isset($streamMetaData->tokenStream[$position])) {
                 $token = $streamMetaData->tokenStream[$position];
-                // Remove final and following whitespace from the class, child will be final instead
-                if ($token->id === T_FINAL) {
-                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position+1]);
-                }
                 // First string is class/trait name
                 if ($token->id === T_STRING) {
                     $streamMetaData->tokenStream[$position]->text = $newClassName;
@@ -222,34 +215,6 @@ class WeavingTransformer extends BaseSourceTransformer
             }
             ++$position;
         } while (true);
-
-        /** @var ReflectionMethod $finalMethod */
-        foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
-            if ($finalMethod->getDeclaringClass()->name !== $class->name) {
-                continue;
-            }
-            $hasDynamicAdvice = isset($advices[AspectContainer::METHOD_PREFIX][$finalMethod->name]);
-            $hasStaticAdvice  = isset($advices[AspectContainer::STATIC_METHOD_PREFIX][$finalMethod->name]);
-            if (!$hasDynamicAdvice && !$hasStaticAdvice) {
-                continue;
-            }
-            $methodNode = $finalMethod->getNode();
-            $position   = $methodNode->getAttribute('startTokenPos');
-            if (!is_int($position)) {
-                continue;
-            }
-            do {
-                if (isset($streamMetaData->tokenStream[$position])) {
-                    $token = $streamMetaData->tokenStream[$position];
-                    // Remove final and following whitespace from the method, child will be final instead
-                    if ($token->id === T_FINAL) {
-                        unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position+1]);
-                        break;
-                    }
-                }
-                ++$position;
-            } while (true);
-        }
     }
 
     /**
@@ -260,7 +225,6 @@ class WeavingTransformer extends BaseSourceTransformer
      *  - Changes 'class' keyword text to 'trait'
      *  - Renames the class to $newClassName (__AopProxied suffix)
      *  - Removes the 'extends X' and 'implements Y, Z' clauses (moved to the proxy class)
-     *  - Removes 'final' from any intercepted methods (traits cannot have final methods)
      *
      * @param array<string, array<string, array<string>>> $advices List of class advices (sorted advice IDs)
      */
@@ -331,34 +295,6 @@ class WeavingTransformer extends BaseSourceTransformer
 
             ++$position;
         } while (true);
-
-        // Remove 'final' from all intercepted methods — final methods are not allowed in traits
-        /** @var ReflectionMethod $finalMethod */
-        foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
-            if ($finalMethod->getDeclaringClass()->name !== $class->name) {
-                continue;
-            }
-            $hasDynamicAdvice = isset($advices[AspectContainer::METHOD_PREFIX][$finalMethod->name]);
-            $hasStaticAdvice  = isset($advices[AspectContainer::STATIC_METHOD_PREFIX][$finalMethod->name]);
-            if (!$hasDynamicAdvice && !$hasStaticAdvice) {
-                continue;
-            }
-            $methodNode = $finalMethod->getNode();
-            $position   = $methodNode->getAttribute('startTokenPos');
-            if (!is_int($position)) {
-                continue;
-            }
-            do {
-                if (isset($streamMetaData->tokenStream[$position])) {
-                    $token = $streamMetaData->tokenStream[$position];
-                    if ($token->id === T_FINAL) {
-                        unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
-                        break;
-                    }
-                }
-                ++$position;
-            } while (true);
-        }
 
         // Strip #[\Override] from intercepted methods.
         // PHP copies attributes to alias names (e.g. __aop__foo). Since __aop__foo has no parent
@@ -447,36 +383,6 @@ class WeavingTransformer extends BaseSourceTransformer
             for ($pos = $start; $pos <= $end; $pos++) {
                 unset($streamMetaData->tokenStream[$pos]);
             }
-        }
-
-        // Remove 'final' from all intercepted enum methods — final methods cannot be overridden in
-        // the proxy enum. Only intercepted methods need stripping; unintercepted final methods are
-        // not overridden by the proxy and can safely remain final in the trait.
-        /** @var ReflectionMethod $finalMethod */
-        foreach ($class->getMethods(ReflectionMethod::IS_FINAL) as $finalMethod) {
-            if ($finalMethod->getDeclaringClass()->name !== $class->name) {
-                continue;
-            }
-            $hasDynamicAdvice = isset($advices[AspectContainer::METHOD_PREFIX][$finalMethod->name]);
-            $hasStaticAdvice  = isset($advices[AspectContainer::STATIC_METHOD_PREFIX][$finalMethod->name]);
-            if (!$hasDynamicAdvice && !$hasStaticAdvice) {
-                continue;
-            }
-            $methodNode = $finalMethod->getNode();
-            $position   = $methodNode->getAttribute('startTokenPos');
-            if (!is_int($position)) {
-                continue;
-            }
-            do {
-                if (isset($streamMetaData->tokenStream[$position])) {
-                    $token = $streamMetaData->tokenStream[$position];
-                    if ($token->id === T_FINAL) {
-                        unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
-                        break;
-                    }
-                }
-                ++$position;
-            } while (true);
         }
 
         // Strip #[\Override] from intercepted methods to prevent fatal errors on the alias.
