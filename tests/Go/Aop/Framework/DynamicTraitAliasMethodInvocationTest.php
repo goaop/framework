@@ -14,6 +14,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
+use Go\Stubs\InheritedMethodProxy;
 use Go\Stubs\TraitAliasProxy;
 use PHPUnit\Framework\TestCase;
 
@@ -140,5 +141,14 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
             ['publicMethod',    T_PUBLIC],
             ['protectedMethod', T_PROTECTED],
         ];
+    }
+
+    public function testInheritedMethodInvocationWithoutTraitAliasUsesParentMethod(): void
+    {
+        $instance   = new InheritedMethodProxy();
+        $invocation = new DynamicTraitAliasMethodInvocation([], InheritedMethodProxy::class, 'inheritedPublicMethod');
+
+        $result = $invocation($instance);
+        $this->assertSame(T_PUBLIC, $result);
     }
 }

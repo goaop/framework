@@ -14,6 +14,7 @@ namespace Go\Aop\Framework;
 
 use Closure;
 use Go\Aop\Intercept\DynamicMethodInvocation;
+use ReflectionClass;
 
 /**
  * Dynamic trait-alias method invocation calls instance methods via a pre-bound Closure::bind closure
@@ -50,11 +51,23 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     {
         parent::__construct($advices, $className, $methodName);
         $aliasName           = self::TRAIT_ALIAS_PREFIX . $methodName;
-        $this->closureToCall = Closure::bind(
-            static fn(object $instanceToCall, array $argumentsToCall): mixed => $instanceToCall->$aliasName(...$argumentsToCall),
-            null,
-            $className
-        );
+        if (method_exists($className, $aliasName)) {
+            $this->closureToCall = Closure::bind(
+                static fn(object $instanceToCall, array $argumentsToCall): mixed => $instanceToCall->$aliasName(...$argumentsToCall),
+                null,
+                $className
+            );
+
+            return;
+        }
+
+        $parentClass = (new ReflectionClass($className))->getParentClass();
+        if ($parentClass === false) {
+            throw new \LogicException("Cannot proceed method {$methodName}: no trait alias and no parent class found for {$className}");
+        }
+
+        $parentMethod        = $parentClass->getMethod($methodName);
+        $this->closureToCall = static fn(object $instanceToCall, array $argumentsToCall): mixed => $parentMethod->invokeArgs($instanceToCall, $argumentsToCall);
     }
 
     /**

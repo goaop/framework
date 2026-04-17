@@ -15,6 +15,7 @@ namespace Go\Proxy;
 use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
+use Go\Stubs\FirstStatic;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
@@ -249,6 +250,34 @@ class ClassProxyGeneratorTest extends TestCase
         // Both must delegate to the join-point chain
         $this->assertStringContainsString("self::\$__joinPoints['method:publicMethod']->__invoke(", $proxyFileContent);
         $this->assertStringContainsString("self::\$__joinPoints['method:ownPublicMethod']->__invoke(", $proxyFileContent);
+    }
+
+    /**
+     * Regression: inherited methods should still be intercepted, but must not be aliased from the
+     * woven trait because the trait only contains methods declared directly in the target class.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateProxyForInheritedMethodDoesNotCreateTraitAlias(): void
+    {
+        $reflectionClass = new ReflectionClass(FirstStatic::class);
+        $classAdvices    = [
+            'method' => [
+                'publicMethod' => ['test'],
+            ],
+        ];
+
+        $generator        = new ClassProxyGenerator($reflectionClass, 'FirstStatic__AopProxied', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
+
+        $this->assertStringNotContainsString(
+            'FirstStatic__AopProxied::publicMethod as private __aop__publicMethod',
+            $proxyFileContent
+        );
+        $this->assertStringContainsString(
+            "self::\$__joinPoints['method:publicMethod']->__invoke(",
+            $proxyFileContent
+        );
     }
 
     /**
