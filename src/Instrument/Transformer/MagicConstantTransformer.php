@@ -21,16 +21,14 @@ use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Scalar\MagicConst\Dir;
 use PhpParser\Node\Scalar\MagicConst\File;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\CloningVisitor;
-use PhpParser\NodeVisitorAbstract;
+use PhpParser\NodeVisitor;
 
 /**
  * Transformer that replaces magic __DIR__ and __FILE__ constants in the source code
  *
  * Additionally, ReflectionClass->getFileName() is also wrapped into normalizer method call
  */
-class MagicConstantTransformer extends BaseSourceTransformer
+class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisitor
 {
     /**
      * Root path of application
@@ -41,6 +39,8 @@ class MagicConstantTransformer extends BaseSourceTransformer
      * Path to rewrite to (cache directory)
      */
     protected static string $rewriteToPath = '';
+    private bool $hasChanges = false;
+    private string $currentFileName = '';
 
     /**
      * Class constructor
@@ -52,71 +52,64 @@ class MagicConstantTransformer extends BaseSourceTransformer
         self::$rewriteToPath = $this->options['cacheDir'] ?? '';
     }
 
-    /**
-     * This method may transform the supplied source and return a new replacement for it
-     */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function beforeTraverse(array $nodes): ?array
     {
-        $metadata->refreshSyntaxTreeFromTokenStream();
-        $cloningTraverser = new NodeTraverser();
-        $cloningTraverser->addVisitor(new CloningVisitor());
-        $newSyntaxTree = $cloningTraverser->traverse($metadata->syntaxTree);
+        $this->hasChanges = false;
 
-        $magicFileValue = $metadata->uri;
-        $magicDirValue  = dirname($magicFileValue);
-        $visitor = new class ($magicDirValue, $magicFileValue) extends NodeVisitorAbstract {
-            public bool $hasChanges = false;
+        return null;
+    }
 
-            public function __construct(
-                private readonly string $magicDirValue,
-                private readonly string $magicFileValue
-            ) {
-            }
+    public function enterNode(Node $node): int|Node|null
+    {
+        return null;
+    }
 
-            public function leaveNode(Node $node): ?Node
-            {
-                if ($node instanceof Dir) {
-                    $this->hasChanges = true;
+    public function leaveNode(Node $node): int|Node|null
+    {
+        if ($node instanceof Dir) {
+            $this->hasChanges = true;
 
-                    return new String_($this->magicDirValue);
-                }
-
-                if ($node instanceof File) {
-                    $this->hasChanges = true;
-
-                    return new String_($this->magicFileValue);
-                }
-
-                if ($node instanceof Node\Expr\MethodCall
-                    && $node->name instanceof Identifier
-                    && $node->name->toString() === 'getFileName'
-                    && !$node->getAttribute('goaop_wrapped_get_file_name')
-                ) {
-                    $this->hasChanges = true;
-                    $methodCall = clone $node;
-                    $methodCall->setAttribute('goaop_wrapped_get_file_name', true);
-
-                    return new StaticCall(
-                        new FullyQualified(MagicConstantTransformer::class),
-                        'resolveFileName',
-                        [new Arg($methodCall)]
-                    );
-                }
-
-                return null;
-            }
-        };
-
-        $rewritingTraverser = new NodeTraverser();
-        $rewritingTraverser->addVisitor($visitor);
-        $newSyntaxTree = $rewritingTraverser->traverse($newSyntaxTree);
-
-        if ($visitor->hasChanges) {
-            $metadata->applySyntaxTree($newSyntaxTree);
+            return new String_(dirname($this->currentFileName));
         }
 
-        // We should always vote abstain, because if there is only changes for magic constants, we can drop them
-        return TransformerResultEnum::RESULT_ABSTAIN;
+        if ($node instanceof File) {
+            $this->hasChanges = true;
+
+            return new String_($this->currentFileName);
+        }
+
+        if ($node instanceof Node\Expr\MethodCall
+            && $node->name instanceof Identifier
+            && $node->name->toString() === 'getFileName'
+            && !$node->getAttribute('goaop_wrapped_get_file_name')
+        ) {
+            $this->hasChanges = true;
+            $methodCall = clone $node;
+            $methodCall->setAttribute('goaop_wrapped_get_file_name', true);
+
+            return new StaticCall(
+                new FullyQualified(self::class),
+                'resolveFileName',
+                [new Arg($methodCall)]
+            );
+        }
+
+        return null;
+    }
+
+    public function afterTraverse(array $nodes): ?array
+    {
+        return null;
+    }
+
+    public function hasChanges(): bool
+    {
+        return $this->hasChanges;
+    }
+
+    public function setCurrentFileName(string $fileName): void
+    {
+        $this->currentFileName = $fileName;
     }
 
     /**

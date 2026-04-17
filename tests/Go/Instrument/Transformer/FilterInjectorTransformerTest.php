@@ -16,6 +16,9 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\CloningVisitor;
+use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
@@ -70,49 +73,47 @@ class FilterInjectorTransformerTest extends TestCase
     public function testCanTransformWithoutInclusion(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, include" . $include; ?>');
-        $output   = $metadata->getTransformedSource();
-        self::$transformer->transform($metadata);
-        $this->assertEquals($output, $metadata->getTransformedSource());
+        $output   = $this->applyVisitor($metadata);
+        $this->assertEquals('<?php echo "simple test, include" . $include; ?>', $output);
     }
 
     public function testSkipTransformationQuickly(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, no key words" ?>');
-        $output = $metadata->getTransformedSource();
-        self::$transformer->transform($metadata);
-        $this->assertEquals($output, $metadata->getTransformedSource());
+        $output = $this->applyVisitor($metadata);
+        $this->assertEquals('<?php echo "simple test, no key words" ?>', $output);
     }
 
     public function testCanTransformInclude(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php include $class; ?>');
-        self::$transformer->transform($metadata);
+        $actual = $this->applyVisitor($metadata);
         $output = '<?php include \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
-        $this->assertEquals($output, $metadata->getTransformedSource());
+        $this->assertEquals($output, $actual);
     }
 
     public function testCanTransformIncludeOnce(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php include_once $class; ?>');
-        self::$transformer->transform($metadata);
+        $actual = $this->applyVisitor($metadata);
         $output = '<?php include_once \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
-        $this->assertEquals($output, $metadata->getTransformedSource());
+        $this->assertEquals($output, $actual);
     }
 
     public function testCanTransformRequire(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php require $class; ?>');
-        self::$transformer->transform($metadata);
+        $actual = $this->applyVisitor($metadata);
         $output = '<?php require \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
-        $this->assertEquals($output, $metadata->getTransformedSource());
+        $this->assertEquals($output, $actual);
     }
 
     public function testCanTransformRequireOnce(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php require_once $class; ?>');
-        self::$transformer->transform($metadata);
+        $actual = $this->applyVisitor($metadata);
         $output = '<?php require_once \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
-        $this->assertEquals($output, $metadata->getTransformedSource());
+        $this->assertEquals($output, $actual);
     }
 
     public function testCanRewriteWithFilter(): void
@@ -143,9 +144,20 @@ class FilterInjectorTransformerTest extends TestCase
     {
         $fileContent = file_get_contents(__DIR__ . '/_files/yii_style.php');
         $metadata    = new StreamMetaData(fopen(__DIR__ . '/_files/yii_style.php', 'r'), $fileContent);
-        self::$transformer->transform($metadata);
+        $actual = $this->applyVisitor($metadata);
         $expectedOutput = file_get_contents(__DIR__ . '/_files/yii_style_output.php');
-        $this->assertEquals($expectedOutput, $metadata->getTransformedSource());
+        $this->assertEquals($expectedOutput, $actual);
     }
 
+    private function applyVisitor(StreamMetaData $metadata): string
+    {
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor(new CloningVisitor());
+        $traverser->addVisitor(self::$transformer);
+        $newAst = $traverser->traverse($metadata->syntaxTree);
+
+        $printer = new Standard();
+
+        return $printer->printFormatPreserving($newAst, $metadata->syntaxTree, $metadata->tokenStream);
+    }
 }

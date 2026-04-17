@@ -18,10 +18,9 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\CloningVisitor;
 use PhpParser\NodeVisitorAbstract;
 use ReflectionException;
 use ReflectionProperty;
@@ -32,7 +31,7 @@ use ReflectionProperty;
  * @see https://github.com/php/php-src/blob/master/Zend/zend_language_parser.y
  *
  */
-final class ConstructorExecutionTransformer implements SourceTransformer
+final class ConstructorExecutionTransformer extends NodeVisitorAbstract
 {
     /**
      * List of constructor invocations per class
@@ -45,6 +44,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
      * Singleton instance
      */
     private static ?self $instance = null;
+    private bool $hasChanges = false;
 
     /**
      * Singletone
@@ -58,49 +58,41 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         return self::$instance;
     }
 
-    /**
-     * Rewrites all "new" expressions with our implementation
-     */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function beforeTraverse(array $nodes): ?array
     {
-        $metadata->refreshSyntaxTreeFromTokenStream();
-        $cloningTraverser = new NodeTraverser();
-        $cloningTraverser->addVisitor(new CloningVisitor());
-        $newSyntaxTree = $cloningTraverser->traverse($metadata->syntaxTree);
+        $this->hasChanges = false;
 
-        $visitor = new class extends NodeVisitorAbstract {
-            public bool $hasChanges = false;
+        return null;
+    }
 
-            public function leaveNode(Node $node): ?Node
-            {
-                if (!$node instanceof New_) {
-                    return null;
-                }
-
-                $this->hasChanges = true;
-                $classReference   = $node->class instanceof Name
-                    ? new ClassConstFetch($node->class, 'class')
-                    : $node->class;
-                $getInstanceCall = new Node\Expr\StaticCall(
-                    new FullyQualified(ConstructorExecutionTransformer::class),
-                    'getInstance'
-                );
-
-                return new MethodCall($getInstanceCall, $classReference, $node->args);
-            }
-        };
-
-        $rewritingTraverser = new NodeTraverser();
-        $rewritingTraverser->addVisitor($visitor);
-        $newSyntaxTree = $rewritingTraverser->traverse($newSyntaxTree);
-
-        if (!$visitor->hasChanges) {
-            return TransformerResultEnum::RESULT_ABSTAIN;
+    /**
+     * Rewrites all "new" expressions with our implementation.
+     */
+    public function leaveNode(Node $node): ?Node
+    {
+        if (!$node instanceof New_) {
+            return null;
         }
 
-        $metadata->applySyntaxTree($newSyntaxTree);
+        $this->hasChanges = true;
+        $classReference   = $node->class instanceof Name
+            ? new ClassConstFetch($node->class, 'class')
+            : $node->class;
+        $getInstanceCall = new Node\Expr\StaticCall(
+            new FullyQualified(self::class),
+            'getInstance'
+        );
 
-        return TransformerResultEnum::RESULT_TRANSFORMED;
+        if ($node->args === []) {
+            return new PropertyFetch($getInstanceCall, $classReference);
+        }
+
+        return new MethodCall($getInstanceCall, $classReference, $node->args);
+    }
+
+    public function hasChanges(): bool
+    {
+        return $this->hasChanges;
     }
 
     /**

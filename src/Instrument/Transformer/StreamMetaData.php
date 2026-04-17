@@ -17,7 +17,6 @@ use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
 use PhpParser\Node;
 use PhpParser\Token;
-use PhpParser\PrettyPrinter\Standard;
 use PhpToken;
 use function is_resource;
 
@@ -106,55 +105,14 @@ class StreamMetaData
             $mappedKey = self::$propertyMap[$key];
             $this->$mappedKey = $value;
         }
-        $this->reloadFromSource($source);
-    }
-
-    /**
-     * Reload metadata syntax tree and tokens from source code.
-     */
-    public function reloadFromSource(?string $source = null): void
-    {
         $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
         $this->setTokenStreamFromRawTokens(...ReflectionEngine::getParser()->getTokens());
     }
 
     /**
-     * Rebuild syntax tree from the current token stream contents.
-     */
-    public function refreshSyntaxTreeFromTokenStream(): void
-    {
-        $this->reloadFromSource($this->getTransformedSource());
-    }
-
-    /**
-     * Applies updated syntax tree and rebuilds tokens using format-preserving pretty printer.
-     */
-    public function applySyntaxTree(array $newSyntaxTree): void
-    {
-        $prettyPrinter      = new Standard();
-        $transformedSource  = $prettyPrinter->printFormatPreserving($newSyntaxTree, $this->syntaxTree, $this->tokenStream);
-        $this->reloadFromSource($transformedSource);
-    }
-
-    /**
-     * Returns transformed source code directly from tokens.
-     */
-    public function getTransformedSource(): string
-    {
-        $transformedSource = '';
-        foreach ($this->tokenStream as $token) {
-            if ($token->id !== 0) {
-                $transformedSource .= $token->text;
-            }
-        }
-
-        return $transformedSource;
-    }
-
-    /**
      * Sets an array of token identifiers for this file
      */
-    public function setTokenStreamFromRawTokens(PhpToken|Token ...$rawTokens): void
+    private function setTokenStreamFromRawTokens(PhpToken|Token ...$rawTokens): void
     {
         $this->tokenStream = $rawTokens;
     }

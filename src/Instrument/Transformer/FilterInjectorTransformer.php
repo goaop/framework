@@ -20,8 +20,6 @@ use PhpParser\Node\Expr\Include_;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\MagicConst\Dir;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\CloningVisitor;
 use PhpParser\NodeVisitorAbstract;
 use RuntimeException;
 
@@ -30,7 +28,7 @@ use RuntimeException;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-class FilterInjectorTransformer implements SourceTransformer
+class FilterInjectorTransformer extends NodeVisitorAbstract
 {
     /**
      * Php filter definition
@@ -52,6 +50,7 @@ class FilterInjectorTransformer implements SourceTransformer
     protected static ?AspectKernel $kernel = null;
 
     protected static ?CachePathManager $cachePathManager = null;
+    private bool $hasChanges = false;
 
     /**
      * Class constructor
@@ -110,49 +109,37 @@ class FilterInjectorTransformer implements SourceTransformer
         return $cachedResource;
     }
 
-    /**
-     * Wrap all includes into rewrite filter
-     */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function beforeTraverse(array $nodes): ?array
     {
-        $metadata->refreshSyntaxTreeFromTokenStream();
-        $cloningTraverser = new NodeTraverser();
-        $cloningTraverser->addVisitor(new CloningVisitor());
-        $newSyntaxTree = $cloningTraverser->traverse($metadata->syntaxTree);
+        $this->hasChanges = false;
 
-        $visitor = new class extends NodeVisitorAbstract {
-            public bool $hasChanges = false;
+        return null;
+    }
 
-            public function leaveNode(Node $node): ?Node
-            {
-                if (!$node instanceof Include_) {
-                    return null;
-                }
-
-                $this->hasChanges = true;
-                $node->expr       = new StaticCall(
-                    new FullyQualified(FilterInjectorTransformer::class),
-                    'rewrite',
-                    [
-                        new Arg($node->expr),
-                        new Arg(new Dir()),
-                    ]
-                );
-
-                return $node;
-            }
-        };
-
-        $rewritingTraverser = new NodeTraverser();
-        $rewritingTraverser->addVisitor($visitor);
-        $newSyntaxTree = $rewritingTraverser->traverse($newSyntaxTree);
-
-        if (!$visitor->hasChanges) {
-            return TransformerResultEnum::RESULT_ABSTAIN;
+    /**
+     * Wrap all includes into rewrite filter.
+     */
+    public function leaveNode(Node $node): ?Node
+    {
+        if (!$node instanceof Include_) {
+            return null;
         }
 
-        $metadata->applySyntaxTree($newSyntaxTree);
+        $this->hasChanges = true;
+        $node->expr       = new StaticCall(
+            new FullyQualified(self::class),
+            'rewrite',
+            [
+                new Arg($node->expr),
+                new Arg(new Dir()),
+            ]
+        );
 
-        return TransformerResultEnum::RESULT_TRANSFORMED;
+        return $node;
+    }
+
+    public function hasChanges(): bool
+    {
+        return $this->hasChanges;
     }
 }
