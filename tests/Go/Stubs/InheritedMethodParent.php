@@ -23,4 +23,12 @@ class InheritedMethodParent
     {
         return T_PUBLIC;
     }
+
+    /**
+     * @return array{class-string, class-string}
+     */
+    public static function inheritedStaticLsbMethod(): array
+    {
+        return [static::class, get_called_class()];
+    }
 }

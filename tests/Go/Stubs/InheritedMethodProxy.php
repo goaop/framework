@@ -25,4 +25,12 @@ class InheritedMethodProxy extends InheritedMethodParent
     {
         return self::OVERRIDDEN_SENTINEL;
     }
+
+    /**
+     * @return array{class-string, class-string}
+     */
+    public static function inheritedStaticLsbMethod(): array
+    {
+        return [self::class, self::class];
+    }
 }
