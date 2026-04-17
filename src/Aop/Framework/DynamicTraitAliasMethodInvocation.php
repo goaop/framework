@@ -63,7 +63,7 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
 
         $parentClass = (new ReflectionClass($className))->getParentClass();
         if ($parentClass === false) {
-            throw new \LogicException("Cannot proceed method {$methodName}: no trait alias and no parent class found for {$className}");
+            throw new \LogicException("Cannot proceed with method invocation for {$methodName}: no trait alias and no parent class found for {$className}");
         }
 
         $parentMethod        = $parentClass->getMethod($methodName);
