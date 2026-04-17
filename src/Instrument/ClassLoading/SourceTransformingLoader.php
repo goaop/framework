@@ -147,11 +147,12 @@ class SourceTransformingLoader extends PhpStreamFilter
                     break;
                 }
 
-                $resultSource = $prettyPrinter->printFormatPreserving(
-                    $sourceTransformerMetadata->syntaxTree,
-                    $sourceTransformerMetadata->syntaxTree,
-                    $sourceTransformerMetadata->tokenStream
-                );
+                $resultSource = '';
+                foreach ($sourceTransformerMetadata->tokenStream as $token) {
+                    if ($token->id !== 0) {
+                        $resultSource .= $token->text;
+                    }
+                }
             }
 
             $wasTransformed = $overallResult === TransformerResultEnum::RESULT_TRANSFORMED;

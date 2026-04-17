@@ -16,4 +16,3 @@ final class NodeTransformerAttribute
 {
     public const ORIGINAL_FILE_NAME = 'goaop.original.file_name';
 }
-

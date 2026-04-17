@@ -19,4 +19,3 @@ interface NodeTransformerResultReporter
 {
     public function getNodeTransformerResult(): TransformerResultEnum;
 }
-
