@@ -14,13 +14,15 @@ namespace Go\Stubs;
 
 class InheritedMethodProxy extends InheritedMethodParent
 {
+    private const int OVERRIDDEN_SENTINEL = -1;
+
     public function inheritedPublicMethod(): int
     {
-        return -1;
+        return self::OVERRIDDEN_SENTINEL;
     }
 
     public static function inheritedStaticMethod(): int
     {
-        return -1;
+        return self::OVERRIDDEN_SENTINEL;
     }
 }
