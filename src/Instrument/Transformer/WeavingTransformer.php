@@ -62,7 +62,6 @@ class WeavingTransformer extends BaseSourceTransformer implements NodeVisitor, N
      */
     protected AspectLoader $aspectLoader;
     private TransformerResultEnum $nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
-    private bool $hasProcessedCurrentTree = false;
 
     /**
      * Constructs a weaving transformer
@@ -83,26 +82,25 @@ class WeavingTransformer extends BaseSourceTransformer implements NodeVisitor, N
 
     public function beforeTraverse(array $nodes): ?array
     {
-        $this->nodeTransformerResult  = TransformerResultEnum::RESULT_ABSTAIN;
-        $this->hasProcessedCurrentTree = false;
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
+        foreach ($nodes as $node) {
+            if (!$node instanceof Namespace_) {
+                continue;
+            }
+            $metadata = $node->getAttribute(NodeTransformerAttribute::STREAM_METADATA);
+            if (!$metadata instanceof StreamMetaData) {
+                continue;
+            }
+
+            $this->nodeTransformerResult = $this->weaveStreamMetadata($metadata);
+            break;
+        }
 
         return null;
     }
 
     public function enterNode(Node $node): int|Node|null
     {
-        if (!$node instanceof Namespace_ || $this->hasProcessedCurrentTree) {
-            return null;
-        }
-
-        $metadata = $node->getAttribute(NodeTransformerAttribute::STREAM_METADATA);
-        if (!$metadata instanceof StreamMetaData) {
-            return null;
-        }
-
-        $this->hasProcessedCurrentTree = true;
-        $this->nodeTransformerResult   = $this->weaveStreamMetadata($metadata);
-
         return null;
     }
 

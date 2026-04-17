@@ -99,10 +99,6 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
                 [new Arg($methodCall)]
             );
         }
-        if ($node instanceof Namespace_) {
-            $this->currentFileName = '';
-        }
-
         return null;
     }
 

@@ -12,7 +12,6 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
-use PhpParser\Node;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeVisitorAbstract;
 
@@ -25,14 +24,16 @@ final class FileNameInjectorNodeVisitor extends NodeVisitorAbstract implements N
     {
     }
 
-    public function enterNode(Node $node): ?Node
+    public function beforeTraverse(array $nodes): ?array
     {
-        if (!$node instanceof Namespace_) {
-            return null;
-        }
+        foreach ($nodes as $node) {
+            if (!$node instanceof Namespace_) {
+                continue;
+            }
 
-        $node->setAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, $this->streamMetaData->uri);
-        $node->setAttribute(NodeTransformerAttribute::STREAM_METADATA, $this->streamMetaData);
+            $node->setAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, $this->streamMetaData->uri);
+            $node->setAttribute(NodeTransformerAttribute::STREAM_METADATA, $this->streamMetaData);
+        }
 
         return null;
     }

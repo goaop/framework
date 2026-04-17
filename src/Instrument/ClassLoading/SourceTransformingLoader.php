@@ -241,12 +241,12 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Persists transformed source and cache metadata for the current stream metadata DTO.
      */
-    private static function writeCache(StreamMetaData $metadata, string $source, bool $wasTransformed): void
+    private static function writeCache(StreamMetaData $streamMetadata, string $source, bool $wasTransformed): void
     {
         if (self::$cachePathManager === null || self::$container === null) {
             return;
         }
-        $originalUri = $metadata->uri;
+        $originalUri = $streamMetadata->uri;
         $cacheUri = self::$cachePathManager->getCachePathForResource($originalUri);
         if ($cacheUri === false || $cacheUri === $originalUri) {
             return;
