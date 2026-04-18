@@ -102,12 +102,9 @@ class StreamMetaData
             $mappedKey = self::$propertyMap[$key];
             $this->$mappedKey = $value;
         }
-        $sourceCode = $source;
-        if ($sourceCode === null) {
-            $sourceCode = file_get_contents($this->uri);
-            if ($sourceCode === false) {
-                throw new InvalidArgumentException(sprintf('Unable to read source code from "%s"', $this->uri));
-            }
+        $sourceCode = $source ?? file_get_contents($this->uri);
+        if ($sourceCode === false) {
+            throw new InvalidArgumentException(sprintf('Unable to read source code from "%s"', $this->uri));
         }
 
         $this->syntaxTree  = ReflectionEngine::parseFile($this->uri, $sourceCode);
