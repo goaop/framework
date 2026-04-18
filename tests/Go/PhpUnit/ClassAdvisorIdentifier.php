@@ -31,8 +31,8 @@ final class ClassAdvisorIdentifier
         $class,
         string $subject,
         string $target,
-        string $advisorIdentifier = null,
-        int $index = null
+        ?string $advisorIdentifier = null,
+        ?int $index = null
     ) {
         $this->class             = is_object($class) ? get_class($class) : $class;
         $this->subject           = $subject;

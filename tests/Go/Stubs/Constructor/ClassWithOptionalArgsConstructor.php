@@ -16,7 +16,7 @@ use stdClass;
 
 class ClassWithOptionalArgsConstructor
 {
-    public function __construct(int $foo = 42, bool $bar = false, stdClass $instance = null)
+    public function __construct(int $foo = 42, bool $bar = false, ?stdClass $instance = null)
     {
     }
 }

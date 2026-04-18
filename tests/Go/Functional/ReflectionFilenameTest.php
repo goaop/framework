@@ -13,9 +13,9 @@ declare(strict_types = 1);
 namespace Go\Functional;
 
 use Go\Core\AspectKernel;
-use Go\ParserReflection\ReflectionClass;
 use Go\Tests\TestProject\Application\Main;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
+use Go\ParserReflection\ReflectionClass as ParserReflectionClass;
 use InvalidArgumentException;
 
 class ReflectionFilenameTest extends BaseFunctionalTestCase
@@ -44,15 +44,14 @@ class ReflectionFilenameTest extends BaseFunctionalTestCase
     public function tearDown(): void
     {
         parent::tearDown();
-        $reflectedClass    = new ReflectionClass(FilterInjectorTransformer::class);
+        $reflectedClass    = new \ReflectionClass(FilterInjectorTransformer::class);
         $reflectedProperty = $reflectedClass->getProperty('kernel');
-        $reflectedProperty->setAccessible(true);
         $reflectedProperty->setValue(null);
     }
 
     public function testReflectionFilenameIsCorrect()
     {
-        $filename = (new ReflectionClass(Main::class))->getFileName();
+        $filename = (new ParserReflectionClass(Main::class))->getFileName();
         $main     = new Main();
         $this->assertEquals($filename, $main->getFilename());
     }

@@ -18,6 +18,7 @@ use Go\Bridge\Doctrine\MetadataLoadInterceptor;
 use Go\Core\AspectContainer;
 use PHPUnit\Framework\TestCase;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class MetadataLoadInterceptorTest extends TestCase
 {
     public function testItWillNotModifyClassMetadataForNonProxiedClasses(): void

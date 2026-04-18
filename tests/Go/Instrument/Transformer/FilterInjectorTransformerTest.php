@@ -19,6 +19,7 @@ use Go\Instrument\PathResolver;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class FilterInjectorTransformerTest extends TestCase
 {
     protected static ?FilterInjectorTransformer $transformer = null;

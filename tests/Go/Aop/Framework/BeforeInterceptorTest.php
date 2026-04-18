@@ -12,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class BeforeInterceptorTest extends AbstractInterceptorTestCase
 {
     public function testAdviceIsCalledBeforeInvocation()

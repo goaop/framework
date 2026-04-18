@@ -14,6 +14,7 @@ namespace Go\Aop\Framework;
 
 use RuntimeException;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class AfterInterceptorTest extends AbstractInterceptorTestCase
 {
     public function testAdviceIsCalledAfterInvocation()

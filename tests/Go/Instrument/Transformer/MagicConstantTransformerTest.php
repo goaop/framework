@@ -17,6 +17,7 @@ use Go\Core\AspectKernel;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class MagicConstantTransformerTest extends TestCase
 {
     protected MagicConstantTransformer $transformer;
@@ -47,11 +48,9 @@ class MagicConstantTransformerTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods(['configureAop', 'getOptions', 'getContainer'])
             ->getMock();
-        $mock->expects($this->any())
-            ->method('getOptions')
+        $mock->method('getOptions')
             ->willReturn($options);
-        $mock->expects($this->any())
-            ->method('getContainer')
+        $mock->method('getContainer')
             ->willReturn($this->createMock(AspectContainer::class));
 
         return $mock;

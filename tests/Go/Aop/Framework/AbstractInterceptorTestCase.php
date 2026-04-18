@@ -50,7 +50,6 @@ abstract class AbstractInterceptorTestCase extends TestCase implements Aspect
     {
         $invocation = $this->createMock(static::INVOCATION_CLASS);
         $invocation
-            ->expects($this->any())
             ->method('proceed')
             ->willReturnCallback(
                 function () use (&$sequenceRecorder, $throwException) {
