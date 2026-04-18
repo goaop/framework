@@ -13,6 +13,7 @@ declare(strict_types = 1);
 namespace Go\Instrument\Transformer;
 
 use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\CloningVisitor;
 use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\TestCase;
 
@@ -35,6 +36,7 @@ class ConstructorExecutionTransformerTest extends TestCase
         $metadata = new StreamMetaData($stream, "<?php $source; ?>");
 
         $traverser = new NodeTraverser();
+        $traverser->addVisitor(new CloningVisitor());
         $traverser->addVisitor(self::$transformer);
         $newAst = $traverser->traverse($metadata->syntaxTree);
 
