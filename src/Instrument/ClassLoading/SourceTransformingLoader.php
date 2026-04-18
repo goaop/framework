@@ -196,12 +196,11 @@ class SourceTransformingLoader extends PhpStreamFilter
             return null;
         }
 
-        $streamMeta = stream_get_meta_data($stream);
-        if (!isset($streamMeta['uri']) || !is_string($streamMeta['uri'])) {
+        $streamMeta  = stream_get_meta_data($stream);
+        $originalUri = $streamMeta['uri'];
+        if ($originalUri === '') {
             return null;
         }
-
-        $originalUri = $streamMeta['uri'];
         if (preg_match('/resource=(.+)$/', $originalUri, $matches)) {
             $resolvedUri = PathResolver::realpath($matches[1]);
             if ($resolvedUri === false) {
@@ -229,7 +228,7 @@ class SourceTransformingLoader extends PhpStreamFilter
         $lastModified      = is_int($originalFilemtime) ? $originalFilemtime : 0;
         $isFresh = $cacheModified >= $lastModified
             && (($cacheState['cacheUri'] ?? null) === $cacheUri)
-            && self::$container->hasAnyResourceChangedSince($cacheModified);
+            && !self::$container->hasAnyResourceChangedSince($cacheModified);
         if (!$isFresh) {
             return null;
         }

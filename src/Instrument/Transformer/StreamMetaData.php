@@ -17,7 +17,7 @@ use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
 use PhpParser\Node;
 use PhpParser\Token;
-use PhpToken;
+use function file_get_contents;
 use function is_resource;
 
 /**
@@ -102,31 +102,15 @@ class StreamMetaData
             $mappedKey = self::$propertyMap[$key];
             $this->$mappedKey = $value;
         }
-        $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
-        $rawTokens = ReflectionEngine::getParser()->getTokens();
-        $this->setTokenStreamFromRawTokens(...$rawTokens);
-    }
-
-    /**
-     * Constructor-only helper for normalizing parser-reflection tokens to php-parser Token objects.
-     */
-    private function setTokenStreamFromRawTokens(PhpToken|Token ...$tokensToNormalize): void
-    {
-        $normalizedTokens = [];
-        foreach ($tokensToNormalize as $rawToken) {
-            if ($rawToken instanceof Token) {
-                $normalizedTokens[] = $rawToken;
-                continue;
+        $sourceCode = $source;
+        if ($sourceCode === null) {
+            $sourceCode = file_get_contents($this->uri);
+            if ($sourceCode === false) {
+                throw new InvalidArgumentException(sprintf('Unable to read source code from "%s"', $this->uri));
             }
-
-            $normalizedTokens[] = new Token(
-                $rawToken->id,
-                $rawToken->text,
-                $rawToken->line,
-                $rawToken->pos
-            );
         }
 
-        $this->tokenStream = $normalizedTokens;
+        $this->syntaxTree  = ReflectionEngine::parseFile($this->uri, $sourceCode);
+        $this->tokenStream = Token::tokenize($sourceCode);
     }
 }
