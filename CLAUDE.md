@@ -8,6 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Package: `goaop/framework` | Namespace root: `Go\` | PHP: `^8.4.0`
 
+## Agent runtime requirement
+
+- Agents must run on PHP **8.4 or higher**.
+- If the runtime is PHP **8.3.x**, stop immediately and report that test/phpstan validation cannot be performed in that environment.
+
 ## Commands
 
 ```bash
