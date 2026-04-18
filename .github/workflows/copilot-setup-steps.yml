@@ -27,7 +27,7 @@ jobs:
     # If you do not check out your code, Copilot will do this for you.
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -35,6 +35,7 @@ jobs:
           php-version: '8.4'
           tools: composer:v2
           coverage: none
+          ini-values: memory_limit=-1
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
