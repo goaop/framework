@@ -33,13 +33,10 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          github-token: ${{ secrets.GH_PAT_TOKEN }}
           tools: composer:v2
           coverage: none
           ini-values: memory_limit=-1
-        env:
-          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
-        env:
-          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
