@@ -14,6 +14,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\Invocation;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class AroundInterceptorTest extends AbstractInterceptorTestCase
 {
     public function testInvocationIsNotCalledWithoutProceed()

@@ -19,6 +19,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Class PointcutParserTest defines common check for valid grammar parsing
  */
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class PointcutParserTest extends TestCase
 {
     protected Lexer $lexer;

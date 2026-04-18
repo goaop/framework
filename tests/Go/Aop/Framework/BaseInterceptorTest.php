@@ -15,6 +15,7 @@ namespace Go\Aop\Framework;
 use Go\Aop\Intercept\Invocation;
 use Go\Stubs\AbstractInterceptorMock;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class BaseInterceptorTest extends AbstractInterceptorTestCase
 {
     /**

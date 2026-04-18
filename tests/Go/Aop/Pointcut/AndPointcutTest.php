@@ -16,6 +16,7 @@ use Go\Aop\Pointcut;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class AndPointcutTest extends TestCase
 {
     /**

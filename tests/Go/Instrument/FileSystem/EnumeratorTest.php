@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use SplFileInfo;
 use Vfs\FileSystem;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class EnumeratorTest extends TestCase
 {
     protected static FileSystem $fileSystem;
@@ -110,8 +111,7 @@ class EnumeratorTest extends TestCase
 
         // Mock getFileRealPath method to provide a pathname
         // VFS does not support getRealPath()
-        $mock->expects($this->any())
-            ->method('getFileFullPath')
+        $mock->method('getFileFullPath')
             ->willReturnCallback(function (SplFileInfo $file) {
                 return $file->getPathname();
             });

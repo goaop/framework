@@ -22,6 +22,7 @@ use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class ContainerTest extends TestCase
 {
     protected AspectContainer $container;

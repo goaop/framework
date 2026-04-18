@@ -23,6 +23,7 @@ use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use Vfs\FileSystem;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class WeavingTransformerTest extends TestCase
 {
     protected static FileSystem $fileSystem;

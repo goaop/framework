@@ -6,6 +6,7 @@ namespace Go\Aop\Framework;
 
 use PHPUnit\Framework\TestCase;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class AbstractMethodInvocationTest extends TestCase
 {
     protected AbstractMethodInvocation $invocation;

@@ -25,6 +25,7 @@ use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class AdviceMatcherTest extends TestCase
 {
     protected AdviceMatcherInterface $adviceMatcher;
@@ -69,7 +70,6 @@ class AdviceMatcherTest extends TestCase
 
         $pointcut = $this->createMock(Pointcut::class);
         $pointcut
-            ->expects($this->any())
             ->method('matches')
             ->willReturnCallback(
                 function (ReflectionClass $class, ReflectionMethod|null $method) use ($methodName): bool {
@@ -78,7 +78,6 @@ class AdviceMatcherTest extends TestCase
             )
         ;
         $pointcut
-            ->expects($this->any())
             ->method('getKind')
             ->willReturn(Pointcut::KIND_METHOD)
         ;
@@ -177,7 +176,6 @@ class AdviceMatcherTest extends TestCase
 
         $pointcut = $this->createMock(Pointcut::class);
         $pointcut
-            ->expects($this->any())
             ->method('matches')
             ->willReturnCallback(
                 function (ReflectionClass $class, ReflectionProperty|null $property) use ($propertyName): bool {
@@ -186,7 +184,6 @@ class AdviceMatcherTest extends TestCase
             )
         ;
         $pointcut
-            ->expects($this->any())
             ->method('getKind')
             ->willReturn(Pointcut::KIND_PROPERTY)
         ;
