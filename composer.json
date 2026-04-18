@@ -50,16 +50,16 @@
             "Demo\\": "demos/"
         },
         "psr-4": {
-            "Go\\": "tests/Go/",
+            "Go\\": "tests/",
             "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
         },
         "files": [
             "tests/functions.php",
-            "tests/Go/Stubs/ClassWithoutNamespace.php",
-            "tests/Go/Proxy/Generator/Stubs/AttributeGroupsGeneratorStubs.php",
-            "tests/Go/Proxy/Generator/Stubs/FunctionGeneratorStubs.php",
-            "tests/Go/Proxy/Generator/Stubs/TypeGeneratorStubs.php",
-            "tests/Go/Proxy/Generator/Stubs/ParameterGeneratorStubs.php"
+            "tests/Stubs/ClassWithoutNamespace.php",
+            "tests/Proxy/Generator/Stubs/AttributeGroupsGeneratorStubs.php",
+            "tests/Proxy/Generator/Stubs/FunctionGeneratorStubs.php",
+            "tests/Proxy/Generator/Stubs/TypeGeneratorStubs.php",
+            "tests/Proxy/Generator/Stubs/ParameterGeneratorStubs.php"
         ]
     },
 

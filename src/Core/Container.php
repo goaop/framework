@@ -214,7 +214,7 @@ class Container implements AspectContainer
      */
     final protected function addResource(string $resource): void
     {
-        if (!isset($this->resources[$resource])) {
+        if (!isset($this->resources[$resource]) && is_readable($resource)) {
             $this->resources[$resource] = $resource;
 
             // Invalidation of calculated timestamp

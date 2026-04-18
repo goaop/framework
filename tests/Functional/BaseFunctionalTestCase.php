@@ -96,7 +96,7 @@ abstract class BaseFunctionalTestCase extends TestCase
     protected function loadConfiguration(): void
     {
         if (!$this->configuration) {
-            $configurations      = require __DIR__ . '/../../Fixtures/project/web/configuration.php';
+            $configurations      = require __DIR__ . '/../Fixtures/project/web/configuration.php';
             $this->configuration = $configurations[$this->getConfigurationName()];
         }
     }
