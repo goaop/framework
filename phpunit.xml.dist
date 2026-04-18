@@ -2,7 +2,7 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/13.0/phpunit.xsd" colors="true" bootstrap="./vendor/autoload.php">
   <testsuites>
     <testsuite name="Go! AOP Test Suite">
-      <directory>./tests/Go/</directory>
+      <directory>./tests/</directory>
     </testsuite>
   </testsuites>
   <logging>
