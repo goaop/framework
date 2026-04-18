@@ -15,7 +15,6 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Core\AspectContainer;
 use PhpParser\Node;
-use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
@@ -83,7 +82,6 @@ final class ConstructorExecutionTransformer extends NodeVisitorAbstract implemen
         if ($node->class instanceof Name) {
             $classReference = new ClassConstFetch($node->class, 'class');
         } else {
-            /** @var Expr $classReference */
             $classReference = $node->class;
         }
         $getInstanceCall = new Node\Expr\StaticCall(

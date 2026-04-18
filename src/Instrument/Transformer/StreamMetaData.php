@@ -75,7 +75,7 @@ class StreamMetaData
     /**
      * List of source tokens.
      *
-     * @var array<int, Token>
+     * @var array<int, \PhpParser\Token>
      */
     public array $tokenStream = [];
 
