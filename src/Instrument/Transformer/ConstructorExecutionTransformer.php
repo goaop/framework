@@ -80,10 +80,12 @@ final class ConstructorExecutionTransformer extends NodeVisitorAbstract implemen
         }
 
         $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
-        /** @var Expr $classReference */
-        $classReference = $node->class instanceof Name
-            ? new ClassConstFetch($node->class, 'class')
-            : $node->class;
+        if ($node->class instanceof Name) {
+            $classReference = new ClassConstFetch($node->class, 'class');
+        } else {
+            /** @var Expr $classReference */
+            $classReference = $node->class;
+        }
         $getInstanceCall = new Node\Expr\StaticCall(
             new FullyQualified(self::class),
             'getInstance'

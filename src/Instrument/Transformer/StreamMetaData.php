@@ -18,7 +18,6 @@ use InvalidArgumentException;
 use PhpParser\Node;
 use PhpParser\Token;
 use PhpToken;
-use function array_values;
 use function is_resource;
 
 /**
@@ -105,16 +104,16 @@ class StreamMetaData
         }
         $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
         $rawTokens = ReflectionEngine::getParser()->getTokens();
-        $this->setTokenStreamFromRawTokens(...array_values($rawTokens));
+        $this->setTokenStreamFromRawTokens(...$rawTokens);
     }
 
     /**
      * Constructor-only helper for normalizing parser-reflection tokens to php-parser Token objects.
      */
-    private function setTokenStreamFromRawTokens(PhpToken|Token ...$rawTokens): void
+    private function setTokenStreamFromRawTokens(PhpToken|Token ...$tokensToNormalize): void
     {
         $normalizedTokens = [];
-        foreach ($rawTokens as $rawToken) {
+        foreach ($tokensToNormalize as $rawToken) {
             if ($rawToken instanceof Token) {
                 $normalizedTokens[] = $rawToken;
                 continue;
