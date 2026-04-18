@@ -13,12 +13,9 @@ declare(strict_types = 1);
 namespace Go\Instrument\Transformer;
 
 /**
- * General source transformer interface
+ * Reports transformation result for node visitors.
  */
-interface SourceTransformer
+interface NodeTransformerResultReporter
 {
-    /**
-     * This method may transform the supplied source and return a new replacement for it
-     */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum;
+    public function getNodeTransformerResult(): TransformerResultEnum;
 }

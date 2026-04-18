@@ -12,6 +12,9 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\CloningVisitor;
+use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\TestCase;
 
 class ConstructorExecutionTransformerTest extends TestCase
@@ -32,9 +35,15 @@ class ConstructorExecutionTransformerTest extends TestCase
         $stream   = fopen('php://input', 'r');
         $metadata = new StreamMetaData($stream, "<?php $source; ?>");
 
-        self::$transformer->transform($metadata);
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor(new CloningVisitor());
+        $traverser->addVisitor(self::$transformer);
+        $newAst = $traverser->traverse($metadata->syntaxTree);
+
+        $printer = new Standard();
+        $actual = $printer->printFormatPreserving($newAst, $metadata->syntaxTree, $metadata->tokenStream);
         $output = "<?php $expected; ?>";
-        $this->assertEquals($output, $metadata->source);
+        $this->assertEquals($output, $actual);
         fclose($stream);
     }
 

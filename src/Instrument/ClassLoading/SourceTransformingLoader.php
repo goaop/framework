@@ -12,9 +12,16 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
-use Go\Instrument\Transformer\SourceTransformer;
+use Go\Core\AspectContainer;
+use Go\Instrument\PathResolver;
+use Go\Instrument\Transformer\FileNameInjectorNodeVisitor;
+use Go\Instrument\Transformer\NodeTransformerResultReporter;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResultEnum;
+use PhpParser\Node;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor;
+use PhpParser\PrettyPrinter\Standard;
 use php_user_filter as PhpStreamFilter;
 use RuntimeException;
 
@@ -43,16 +50,19 @@ class SourceTransformingLoader extends PhpStreamFilter
     protected string $data = '';
 
     /**
-     * List of transformers
+     * List of node visitors
      *
-     * @var SourceTransformer[]
+     * @var array<int, NodeVisitor&NodeTransformerResultReporter>
      */
-    protected static array $transformers = [];
+    protected static array $nodeVisitors = [];
 
     /**
      * Identifier of filter
      */
     protected static string $filterId;
+    private static ?CachePathManager $cachePathManager = null;
+    private static ?AspectContainer $container = null;
+    private static int $cacheFileMode = 0770;
 
     /**
      * Register current loader as stream filter in PHP
@@ -98,11 +108,30 @@ class SourceTransformingLoader extends PhpStreamFilter
         if ($closing || feof($this->stream)) {
             $consumed = strlen($this->data);
 
-            // $this->stream contains pointer to the source
-            $metadata = new StreamMetaData($this->stream, $this->data);
-            self::transformCode($metadata);
+            $cachedSource = self::getFreshCachedSource($this->stream);
+            if ($cachedSource !== null) {
+                $bucket = stream_bucket_new($this->stream, $cachedSource);
+                stream_bucket_append($out, $bucket);
 
-            $bucket = stream_bucket_new($this->stream, $metadata->source);
+                return PSFS_PASS_ON;
+            }
+
+            $metadata = new StreamMetaData($this->stream, $this->data);
+            $newSyntaxTree = self::transformCode($metadata);
+            $overallResult = TransformerResultEnum::RESULT_ABSTAIN;
+            foreach (self::$nodeVisitors as $visitor) {
+                $visitorResult = $visitor->getNodeTransformerResult();
+                if ($overallResult === TransformerResultEnum::RESULT_ABSTAIN && $visitorResult === TransformerResultEnum::RESULT_TRANSFORMED) {
+                    $overallResult = TransformerResultEnum::RESULT_TRANSFORMED;
+                }
+            }
+            $prettyPrinter = new Standard();
+            $resultSource = $prettyPrinter->printFormatPreserving($newSyntaxTree, $metadata->syntaxTree, $metadata->tokenStream);
+
+            $wasTransformed = $overallResult === TransformerResultEnum::RESULT_TRANSFORMED;
+            self::writeCache($metadata, $resultSource, $wasTransformed);
+
+            $bucket = stream_bucket_new($this->stream, $resultSource);
             stream_bucket_append($out, $bucket);
 
             return PSFS_PASS_ON;
@@ -112,23 +141,136 @@ class SourceTransformingLoader extends PhpStreamFilter
     }
 
     /**
-     * Adds a SourceTransformer to be applied by this LoadTimeWeaver.
+     * Adds a NodeVisitor to be applied by traverser.
      */
-    public static function addTransformer(SourceTransformer $transformer): void
+    public static function addNodeVisitor(NodeVisitor&NodeTransformerResultReporter $visitor): void
     {
-        self::$transformers[] = $transformer;
+        self::$nodeVisitors[] = $visitor;
     }
 
     /**
-     * Transforms source code by passing it through all transformers
+     * Configures cache support for stream loader.
      */
-    public static function transformCode(StreamMetaData $metadata): void
+    public static function configureCache(CachePathManager $cachePathManager, AspectContainer $container, int $cacheFileMode): void
     {
-        foreach (self::$transformers as $transformer) {
-            $result = $transformer->transform($metadata);
-            if ($result === TransformerResultEnum::RESULT_ABORTED) {
-                break;
-            }
+        self::$cachePathManager = $cachePathManager;
+        self::$container        = $container;
+        self::$cacheFileMode    = $cacheFileMode;
+    }
+
+    /**
+     * Transforms source code by applying all registered node visitors in one traversal pass.
+     *
+     * The traversal starts with FileNameInjectorNodeVisitor, which injects the original file name
+     * and StreamMetaData DTO into top-level namespace nodes. Other visitors read this contextual
+     * metadata from namespace attributes and report transformation status through
+     * NodeTransformerResultReporter.
+     *
+     * @return Node[]
+     */
+    public static function transformCode(StreamMetaData $metadata): array
+    {
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor(new FileNameInjectorNodeVisitor($metadata));
+        foreach (self::$nodeVisitors as $visitor) {
+            $traverser->addVisitor($visitor);
         }
+        $newSyntaxTree = $traverser->traverse($metadata->syntaxTree);
+
+        return $newSyntaxTree;
+    }
+
+    /**
+     * Returns cached transformed source when cache entry is fresh for the supplied stream.
+     *
+     * This check runs before AST/token parsing to preserve fast-path performance.
+     *
+     * @param resource|mixed $stream
+     */
+    private static function getFreshCachedSource(mixed $stream): ?string
+    {
+        if (self::$cachePathManager === null || self::$container === null) {
+            return null;
+        }
+        if (!is_resource($stream)) {
+            return null;
+        }
+
+        $streamMeta    = stream_get_meta_data($stream);
+        $uriFromStream = $streamMeta['uri'] ?? null;
+        if (!is_string($uriFromStream) || $uriFromStream === '') {
+            return null;
+        }
+        $originalUri = $uriFromStream;
+        if (preg_match('/resource=(.+)$/', $originalUri, $matches)) {
+            $resolvedUri = PathResolver::realpath($matches[1]);
+            if ($resolvedUri === false) {
+                return null;
+            }
+            $originalUri = $resolvedUri;
+        }
+        if ($originalUri === '' || !file_exists($originalUri)) {
+            return null;
+        }
+
+        $cacheUri = self::$cachePathManager->getCachePathForResource($originalUri);
+        if ($cacheUri === false || $cacheUri === $originalUri || !file_exists($cacheUri)) {
+            return null;
+        }
+
+        $cacheState = self::$cachePathManager->queryCacheState($originalUri);
+        if ($cacheState === null) {
+            return null;
+        }
+
+        $cacheFilemtime = $cacheState['filemtime'] ?? 0;
+        $cacheModified  = is_int($cacheFilemtime) ? $cacheFilemtime : 0;
+        $originalFilemtime = filemtime($originalUri);
+        $lastModified      = is_int($originalFilemtime) ? $originalFilemtime : 0;
+        $isFresh = $cacheModified >= $lastModified
+            && (($cacheState['cacheUri'] ?? null) === $cacheUri)
+            && !self::$container->hasAnyResourceChangedSince($cacheModified);
+        if (!$isFresh) {
+            return null;
+        }
+
+        $cachedSource = file_get_contents($cacheUri);
+        if ($cachedSource === false) {
+            return null;
+        }
+
+        return $cachedSource;
+    }
+
+    /**
+     * Persists transformed source and cache metadata for the current stream metadata DTO.
+     */
+    private static function writeCache(StreamMetaData $streamMetadata, string $source, bool $wasTransformed): void
+    {
+        if (self::$cachePathManager === null || self::$container === null) {
+            return;
+        }
+        $originalUri = $streamMetadata->uri;
+        $cacheUri = self::$cachePathManager->getCachePathForResource($originalUri);
+        if ($cacheUri === false || $cacheUri === $originalUri) {
+            return;
+        }
+
+        if ($wasTransformed) {
+            $parentCacheDir = dirname($cacheUri);
+            if (!is_dir($parentCacheDir)) {
+                mkdir($parentCacheDir, self::$cacheFileMode, true);
+            }
+            file_put_contents($cacheUri, $source, LOCK_EX);
+            chmod($cacheUri, self::$cacheFileMode & (~0111));
+        }
+
+        self::$cachePathManager->setCacheState(
+            $originalUri,
+            [
+                'filemtime' => $_SERVER['REQUEST_TIME'] ?? time(),
+                'cacheUri'  => $wasTransformed ? $cacheUri : null,
+            ]
+        );
     }
 }

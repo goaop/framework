@@ -15,10 +15,14 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Core\AspectContainer;
 use PhpParser\Node;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Name;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\FindingVisitor;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Stmt\Class_;
+use PhpParser\NodeVisitorAbstract;
 use ReflectionException;
 use ReflectionProperty;
 
@@ -28,7 +32,7 @@ use ReflectionProperty;
  * @see https://github.com/php/php-src/blob/master/Zend/zend_language_parser.y
  *
  */
-final class ConstructorExecutionTransformer implements SourceTransformer
+final class ConstructorExecutionTransformer extends NodeVisitorAbstract implements NodeTransformerResultReporter
 {
     /**
      * List of constructor invocations per class
@@ -41,6 +45,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
      * Singleton instance
      */
     private static ?self $instance = null;
+    private TransformerResultEnum $nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
     /**
      * Singletone
@@ -54,42 +59,46 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         return self::$instance;
     }
 
-    /**
-     * Rewrites all "new" expressions with our implementation
-     */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function beforeTraverse(array $nodes): ?array
     {
-        $newExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof New_);
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
-        // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($newExpressionFinder);
-        $traverser->traverse($metadata->syntaxTree);
+        return null;
+    }
 
-        /** @var Node\Expr\New_[] $newExpressions */
-        $newExpressions = $newExpressionFinder->getFoundNodes();
-
-        if (empty($newExpressions)) {
-            return TransformerResultEnum::RESULT_ABSTAIN;
+    /**
+     * Rewrites all "new" expressions with our implementation.
+     */
+    public function leaveNode(Node $node): ?Node
+    {
+        if (!$node instanceof New_) {
+            return null;
+        }
+        if ($node->class instanceof Class_) {
+            return null;
         }
 
-        foreach ($newExpressions as $newExpressionNode) {
-            $startPosition = $newExpressionNode->getAttribute('startTokenPos');
-            $endClassNamePos = $newExpressionNode->class->getAttribute('endTokenPos');
-            if (!is_int($startPosition) || !is_int($endClassNamePos)) {
-                continue;
-            }
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
+        if ($node->class instanceof Name) {
+            $classReference = new ClassConstFetch($node->class, 'class');
+        } else {
+            $classReference = $node->class;
+        }
+        $getInstanceCall = new Node\Expr\StaticCall(
+            new FullyQualified(self::class),
+            'getInstance'
+        );
 
-            $isExplicitClass = $newExpressionNode->class instanceof Name;
-            $metadata->tokenStream[$startPosition]->text = '\\' . self::class . '::getInstance()->{';
-            if ($metadata->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
-                unset($metadata->tokenStream[$startPosition + 1]);
-            }
-            $expressionSuffix                           = $isExplicitClass ? '::class}' : '}';
-            $metadata->tokenStream[$endClassNamePos]->text .= $expressionSuffix;
+        if ($node->args === []) {
+            return new PropertyFetch($getInstanceCall, $classReference);
         }
 
-        return TransformerResultEnum::RESULT_TRANSFORMED;
+        return new MethodCall($getInstanceCall, $classReference, $node->args);
+    }
+
+    public function getNodeTransformerResult(): TransformerResultEnum
+    {
+        return $this->nodeTransformerResult;
     }
 
     /**

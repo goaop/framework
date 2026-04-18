@@ -3,6 +3,7 @@ Changelog
 4.0.0 (unreleased)
 * [BC BREAK] Requires PHP 8.4+
 * [BC BREAK] Proxy engine switched from inheritance-based to **trait-based**: the original class body is converted to a PHP trait (`Foo__AopProxied`) and the proxy class uses it via `use` with private method aliases instead of extending the renamed class. This removes the `__AopProxied` parent from the inheritance chain.
+* [BC BREAK] Removed legacy `SourceTransformer` pipeline (`AspectKernel::registerTransformers()`, `SourceTransformingLoader::addTransformer()`, and transformer `transform(StreamMetaData)` execution path). Source rewriting now runs only through centralized AST `NodeVisitor` traversal with visitor result reporting.
 * [Feature] **Private method interception** — both dynamic (`private function foo()`) and static (`private static function bar()`) private methods can now be intercepted by aspects. This was impossible with the old extend-based engine because PHP does not allow overriding private methods in subclasses.
 * [Feature] **PHP 8.1+ enum interception** — instance and static methods on both unit (pure) and backed enums can now be intercepted by aspects. The enum body is extracted into a trait (`Foo__AopProxied`); a proxy enum re-declares the cases and dispatches intercepted methods via per-method `static $__joinPoint` caching. Built-in enum methods (`cases`, `from`, `tryFrom`) and initialization joinpoints are never woven.
 * [Feature] `self::` in proxied classes now resolves to the proxy class naturally (via PHP trait semantics), removing the need for `SelfValueTransformer`.

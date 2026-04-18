@@ -1,0 +1,19 @@
+<?php
+
+declare(strict_types = 1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2011, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
+namespace Go\Instrument\Transformer;
+
+final class NodeTransformerAttribute
+{
+    public const ORIGINAL_FILE_NAME = 'goaop.original.file_name';
+    public const STREAM_METADATA    = 'goaop.stream.metadata';
+}

@@ -13,21 +13,23 @@ declare(strict_types = 1);
 namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectKernel;
+use PhpParser\Node\Arg;
 use PhpParser\Node;
-use PhpParser\Node\Expr\MethodCall;
-use PhpParser\Node\Scalar\MagicConst;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Identifier;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Scalar\MagicConst\Dir;
 use PhpParser\Node\Scalar\MagicConst\File;
-use PhpParser\NodeTraverser;
-use PhpParser\Node\Identifier;
-use PhpParser\NodeVisitor\FindingVisitor;
+use PhpParser\Node\Stmt\Namespace_;
+use PhpParser\NodeVisitor;
 
 /**
  * Transformer that replaces magic __DIR__ and __FILE__ constants in the source code
  *
  * Additionally, ReflectionClass->getFileName() is also wrapped into normalizer method call
  */
-class MagicConstantTransformer extends BaseSourceTransformer
+class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisitor, NodeTransformerResultReporter
 {
     /**
      * Root path of application
@@ -38,6 +40,8 @@ class MagicConstantTransformer extends BaseSourceTransformer
      * Path to rewrite to (cache directory)
      */
     protected static string $rewriteToPath = '';
+    private TransformerResultEnum $nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
+    private string $currentFileName = '';
 
     /**
      * Class constructor
@@ -49,16 +53,64 @@ class MagicConstantTransformer extends BaseSourceTransformer
         self::$rewriteToPath = $this->options['cacheDir'] ?? '';
     }
 
-    /**
-     * This method may transform the supplied source and return a new replacement for it
-     */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function beforeTraverse(array $nodes): ?array
     {
-        $this->replaceMagicDirFileConstants($metadata);
-        $this->wrapReflectionGetFileName($metadata);
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
+        $this->currentFileName       = '';
 
-        // We should always vote abstain, because if there is only changes for magic constants, we can drop them
-        return TransformerResultEnum::RESULT_ABSTAIN;
+        return null;
+    }
+
+    public function enterNode(Node $node): int|Node|null
+    {
+        if ($node instanceof Namespace_) {
+            $fileName = $node->getAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, '');
+            $this->currentFileName = is_string($fileName) ? $fileName : '';
+        }
+
+        return null;
+    }
+
+    public function leaveNode(Node $node): int|Node|null
+    {
+        if ($node instanceof Dir) {
+            $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
+
+            return new String_(dirname($this->currentFileName));
+        }
+
+        if ($node instanceof File) {
+            $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
+
+            return new String_($this->currentFileName);
+        }
+
+        if ($node instanceof Node\Expr\MethodCall
+            && $node->name instanceof Identifier
+            && $node->name->toString() === 'getFileName'
+            && !$node->getAttribute('goaop_wrapped_get_file_name')
+        ) {
+            $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
+            $methodCall = clone $node;
+            $methodCall->setAttribute('goaop_wrapped_get_file_name', true);
+
+            return new StaticCall(
+                new FullyQualified(self::class),
+                'resolveFileName',
+                [new Arg($methodCall)]
+            );
+        }
+        return null;
+    }
+
+    public function afterTraverse(array $nodes): ?array
+    {
+        return null;
+    }
+
+    public function getNodeTransformerResult(): TransformerResultEnum
+    {
+        return $this->nodeTransformerResult;
     }
 
     /**
@@ -76,56 +128,4 @@ class MagicConstantTransformer extends BaseSourceTransformer
         return $pathParts[0] . $suffix;
     }
 
-    /**
-     * Wraps all possible getFileName() methods from ReflectionFile
-     */
-    private function wrapReflectionGetFileName(StreamMetaData $metadata): void
-    {
-        $methodCallFinder = new FindingVisitor(fn(Node $node) => $node instanceof MethodCall);
-        $traverser        = new NodeTraverser();
-        $traverser->addVisitor($methodCallFinder);
-        $traverser->traverse($metadata->syntaxTree);
-
-        /** @var MethodCall[] $methodCalls */
-        $methodCalls = $methodCallFinder->getFoundNodes();
-        foreach ($methodCalls as $methodCallNode) {
-            if (($methodCallNode->name instanceof Identifier) && ($methodCallNode->name->toString() === 'getFileName')) {
-                $startPosition    = $methodCallNode->getAttribute('startTokenPos');
-                $endPosition      = $methodCallNode->getAttribute('endTokenPos');
-                if (!is_int($startPosition) || !is_int($endPosition)) {
-                    continue;
-                }
-                $expressionPrefix = '\\' . self::class . '::resolveFileName(';
-
-                $metadata->tokenStream[$startPosition]->text = $expressionPrefix . $metadata->tokenStream[$startPosition]->text;
-                $metadata->tokenStream[$endPosition]->text .= ')';
-            }
-
-        }
-    }
-
-    /**
-     * Replaces all magic __DIR__ and __FILE__ constants in the file with calculated value
-     */
-    private function replaceMagicDirFileConstants(StreamMetaData $metadata): void
-    {
-        $magicConstFinder = new FindingVisitor(fn(Node $node) => $node instanceof Dir || $node instanceof File);
-        $traverser        = new NodeTraverser();
-        $traverser->addVisitor($magicConstFinder);
-        $traverser->traverse($metadata->syntaxTree);
-
-        /** @var MagicConst[] $magicConstants */
-        $magicConstants = $magicConstFinder->getFoundNodes();
-        $magicFileValue = $metadata->uri;
-        $magicDirValue  = dirname($magicFileValue);
-        foreach ($magicConstants as $magicConstantNode) {
-            $tokenPosition = $magicConstantNode->getAttribute('startTokenPos');
-            if (!is_int($tokenPosition)) {
-                continue;
-            }
-            $replacement = $magicConstantNode instanceof Dir ? $magicDirValue : $magicFileValue;
-
-            $metadata->tokenStream[$tokenPosition]->text = "'{$replacement}'";
-        }
-    }
 }

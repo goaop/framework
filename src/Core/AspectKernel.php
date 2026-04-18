@@ -18,12 +18,12 @@ use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\PathResolver;
-use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
-use Go\Instrument\Transformer\SourceTransformer;
+use Go\Instrument\Transformer\NodeTransformerResultReporter;
 use Go\Instrument\Transformer\WeavingTransformer;
+use PhpParser\NodeVisitor;
 use RuntimeException;
 
 use function define;
@@ -138,9 +138,14 @@ abstract class AspectKernel
         $container->add('kernel.options', $this->options);
 
         SourceTransformingLoader::register();
+        SourceTransformingLoader::configureCache(
+            $container->getService(CachePathManager::class),
+            $container,
+            $this->options['cacheFileMode']
+        );
 
-        foreach ($this->registerTransformers() as $sourceTransformer) {
-            SourceTransformingLoader::addTransformer($sourceTransformer);
+        foreach ($this->registerNodeVisitors() as $nodeVisitor) {
+            SourceTransformingLoader::addNodeVisitor($nodeVisitor);
         }
 
         AopComposerLoader::init($this->options, $container);
@@ -274,39 +279,32 @@ abstract class AspectKernel
     abstract protected function configureAop(AspectContainer $container): void;
 
     /**
-     * Returns list of source transformers, that will be applied to the PHP source
+     * Returns list of AST node visitors used for format-preserving rewrites.
      *
-     * @return SourceTransformer[]
-     * @internal This method is internal and should not be used outside this project
+     * @return array<int, NodeVisitor&NodeTransformerResultReporter>
      */
-    protected function registerTransformers(): array
+    protected function registerNodeVisitors(): array
     {
-        $cacheManager     = $this->getContainer()->getService(CachePathManager::class);
-        $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
+        $cacheManager   = $this->getContainer()->getService(CachePathManager::class);
+        $filterInjector = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
         $magicTransformer = new MagicConstantTransformer($this);
+        $weavingTransformer = new WeavingTransformer(
+            $this,
+            $this->container->getService(AdviceMatcher::class),
+            $cacheManager,
+            $this->container->getService(CachedAspectLoader::class)
+        );
 
-        $sourceTransformers = function () use ($filterInjector, $magicTransformer, $cacheManager) {
-            $transformers = [];
-            if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
-                $transformers[] = new ConstructorExecutionTransformer();
-            }
-            if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
-                $transformers[] = $filterInjector;
-            }
-            $transformers[]  = new WeavingTransformer(
-                $this,
-                $this->container->getService(AdviceMatcher::class),
-                $cacheManager,
-                $this->container->getService(CachedAspectLoader::class)
-            );
-            $transformers[] = $magicTransformer;
+        $visitors = [$weavingTransformer];
+        if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
+            $visitors[] = new ConstructorExecutionTransformer();
+        }
+        if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
+            $visitors[] = $filterInjector;
+        }
+        $visitors[] = $magicTransformer;
 
-            return $transformers;
-        };
-
-        return [
-            new CachingTransformer($this, $sourceTransformers, $cacheManager)
-        ];
+        return $visitors;
     }
 
     /**

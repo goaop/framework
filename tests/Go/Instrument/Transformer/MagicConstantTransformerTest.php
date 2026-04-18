@@ -14,6 +14,9 @@ namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\CloningVisitor;
+use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -60,41 +63,40 @@ class MagicConstantTransformerTest extends TestCase
     public function testTransformerReturnsWithoutMagicConsts(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, no magic constants" ?>');
-        $expected = $metadata->source;
-        $this->transformer->transform($metadata);
-        $this->assertSame($expected, $metadata->source);
+        $actual = $this->applyVisitor($metadata);
+        $this->assertSame('<?php echo "simple test, no magic constants" ?>', $actual);
     }
 
     public function testTransformerCanResolveDirMagicConst(): void
     {
         $metadata = new StreamMetaData(fopen(__FILE__, 'rb'), '<?php echo __DIR__; ?>');
         $expected = '<?php echo \''.__DIR__.'\'; ?>';
-        $this->transformer->transform($metadata);
-        $this->assertEquals($expected, $metadata->source);
+        $actual = $this->applyVisitor($metadata);
+        $this->assertEquals($expected, $actual);
     }
 
     public function testTransformerCanResolveFileMagicConst(): void
     {
         $metadata = new StreamMetaData(fopen(__FILE__, 'rb'), '<?php echo __FILE__; ?>');
         $expected = '<?php echo \''.__FILE__.'\'; ?>';
-        $this->transformer->transform($metadata);
-        $this->assertEquals($expected, $metadata->source);
+        $actual = $this->applyVisitor($metadata);
+        $this->assertEquals($expected, $actual);
     }
 
     public function testTransformerDoesNotReplaceStringWithConst(): void
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "__FILE__"; ?>');
         $expected = '<?php echo "__FILE__"; ?>';
-        $this->transformer->transform($metadata);
-        $this->assertEquals($expected, $metadata->source);
+        $actual = $this->applyVisitor($metadata);
+        $this->assertEquals($expected, $actual);
     }
 
     public function testTransformerWrapsReflectionFileName(): void
     {
         $source   = '<?php $class = new ReflectionClass("stdClass"); echo $class->getFileName(); ?>';
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), $source);
-        $this->transformer->transform($metadata);
-        $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $metadata->source);
+        $actual = $this->applyVisitor($metadata);
+        $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $actual);
     }
 
     public function testTransformerResolvesFileName(): void
@@ -102,5 +104,18 @@ class MagicConstantTransformerTest extends TestCase
         /** @var $class MagicConstantTransformer */
         $class = get_class($this->transformer);
         $this->assertStringStartsWith(dirname(__DIR__), $class::resolveFileName(__FILE__));
+    }
+
+    private function applyVisitor(StreamMetaData $metadata): string
+    {
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor(new CloningVisitor());
+        $traverser->addVisitor(new FileNameInjectorNodeVisitor($metadata));
+        $traverser->addVisitor($this->transformer);
+        $newAst = $traverser->traverse($metadata->syntaxTree);
+
+        $printer = new Standard();
+
+        return $printer->printFormatPreserving($newAst, $metadata->syntaxTree, $metadata->tokenStream);
     }
 }

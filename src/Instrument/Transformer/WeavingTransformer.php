@@ -16,7 +16,6 @@ use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Features;
 use Go\Aop\Framework\AbstractJoinpoint;
-use Go\Core\AdviceMatcher;
 use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -30,12 +29,15 @@ use Go\Proxy\ClassProxyGenerator;
 use Go\Proxy\EnumProxyGenerator;
 use Go\Proxy\FunctionProxyGenerator;
 use Go\Proxy\TraitProxyGenerator;
+use PhpParser\Node;
 use PhpParser\Node\Stmt\EnumCase;
+use PhpParser\Node\Stmt\Namespace_;
+use PhpParser\NodeVisitor;
 
 /**
  * Main transformer that performs weaving of aspects into the source code
  */
-class WeavingTransformer extends BaseSourceTransformer
+class WeavingTransformer extends BaseSourceTransformer implements NodeVisitor, NodeTransformerResultReporter
 {
     private const FUNCTIONS_CACHE_SUFFIX = '/_functions/';
     private const PROXIES_CACHE_SUFFIX   = '/_proxies/';
@@ -59,6 +61,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * Loader for aspects
      */
     protected AspectLoader $aspectLoader;
+    private TransformerResultEnum $nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
     /**
      * Constructs a weaving transformer
@@ -77,10 +80,49 @@ class WeavingTransformer extends BaseSourceTransformer
         $this->useParameterWidening = $kernel->hasFeature(Features::PARAMETER_WIDENING);
     }
 
+    public function beforeTraverse(array $nodes): ?array
+    {
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
+        foreach ($nodes as $node) {
+            if (!$node instanceof Namespace_) {
+                continue;
+            }
+            $metadata = $node->getAttribute(NodeTransformerAttribute::STREAM_METADATA);
+            if (!$metadata instanceof StreamMetaData) {
+                continue;
+            }
+
+            $this->nodeTransformerResult = $this->weaveStreamMetadata($metadata);
+            break;
+        }
+
+        return null;
+    }
+
+    public function enterNode(Node $node): int|Node|null
+    {
+        return null;
+    }
+
+    public function leaveNode(Node $node): int|Node|null
+    {
+        return null;
+    }
+
+    public function afterTraverse(array $nodes): ?array
+    {
+        return null;
+    }
+
+    public function getNodeTransformerResult(): TransformerResultEnum
+    {
+        return $this->nodeTransformerResult;
+    }
+
     /**
-     * This method may transform the supplied source and return a new replacement for it
+     * Performs weaving and mutates token stream metadata in-place.
      */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    private function weaveStreamMetadata(StreamMetaData $metadata): TransformerResultEnum
     {
         $totalTransformations = 0;
         $parsedSource         = new ReflectionFile($metadata->uri, $metadata->syntaxTree);

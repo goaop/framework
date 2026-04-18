@@ -18,6 +18,7 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
+use PhpParser\NodeTraverser;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -82,10 +83,10 @@ class WeavingTransformerTest extends TestCase
     public function testMultipleNamespacesInOneFile(): void
     {
         $metadata = $this->loadTestMetadata('multiple-ns');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-ns-woven')->source);
+        $actual   = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
+        $expected = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('multiple-ns-woven')));
         $this->assertEquals($expected, $actual);
     }
 
@@ -95,10 +96,10 @@ class WeavingTransformerTest extends TestCase
     public function testEmptyNamespaceInFile(): void
     {
         $metadata = $this->loadTestMetadata('empty-classes');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('empty-classes')->source);
+        $actual   = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
+        $expected = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('empty-classes')));
         $this->assertEquals($expected, $actual);
     }
 
@@ -108,10 +109,10 @@ class WeavingTransformerTest extends TestCase
     public function testAspectIsSkipped(): void
     {
         $metadata = $this->loadTestMetadata('aspect');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('aspect')->source);
+        $actual   = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
+        $expected = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('aspect')));
         $this->assertEquals($expected, $actual);
     }
 
@@ -121,10 +122,10 @@ class WeavingTransformerTest extends TestCase
     public function testWeaverForTypeHint(): void
     {
         $metadata = $this->loadTestMetadata('class-typehint');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-typehint-woven')->source);
+        $actual   = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
+        $expected = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('class-typehint-woven')));
         $this->assertEquals($expected, $actual);
 
         $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '_proxies/Transformer/_files/class-typehint.php/TestClassTypehint.php');
@@ -137,14 +138,14 @@ class WeavingTransformerTest extends TestCase
     public function testWeaverForPhp7Class(): void
     {
         $metadata = $this->loadTestMetadata('php7-class');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-woven')->source);
+        $actual   = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
+        $expected = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('php7-class-woven')));
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('php7-class-proxy')));
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -180,14 +181,14 @@ class WeavingTransformerTest extends TestCase
         );
 
         $metadata = $this->loadTestMetadata('class');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-woven')->source);
+        $actual   = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
+        $expected = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('class-woven')));
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('class-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('class-proxy')));
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -203,14 +204,14 @@ class WeavingTransformerTest extends TestCase
     public function testWeaverForFinalReadonlyClass(): void
     {
         $metadata = $this->loadTestMetadata('final-readonly-class');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-woven')->source);
+        $actual   = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
+        $expected = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('final-readonly-class-woven')));
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('final-readonly-class-proxy')));
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -221,14 +222,14 @@ class WeavingTransformerTest extends TestCase
     public function testWeaverForEnum(): void
     {
         $metadata = $this->loadTestMetadata('php81-enum');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-woven')->source);
+        $actual   = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
+        $expected = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('php81-enum-woven')));
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('php81-enum-proxy')));
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -240,7 +241,7 @@ class WeavingTransformerTest extends TestCase
      */
     public function testWeaverForEnumPreservesMethodLineNumbers(): void
     {
-        $originalSource  = $this->loadTestMetadata('php81-enum')->source;
+        $originalSource  = $this->sourceFromMetadata($this->loadTestMetadata('php81-enum'));
         $originalLines   = explode("\n", $originalSource);
         $labelLineInOrig = null;
         foreach ($originalLines as $i => $line) {
@@ -252,9 +253,9 @@ class WeavingTransformerTest extends TestCase
         $this->assertNotNull($labelLineInOrig, 'label() not found in original source');
 
         $metadata = $this->loadTestMetadata('php81-enum');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $wovenLines    = explode("\n", $metadata->source);
+        $wovenLines    = explode("\n", $this->sourceFromMetadata($metadata));
         $labelLineWoven = null;
         foreach ($wovenLines as $i => $line) {
             if (preg_match('/public function label\s*\(/', $line)) {
@@ -280,14 +281,14 @@ class WeavingTransformerTest extends TestCase
     public function testWeaverStripsOverrideAttributeFromInterceptedMethods(): void
     {
         $metadata = $this->loadTestMetadata('php83-override');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-woven')->source);
+        $actual   = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
+        $expected = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('php83-override-woven')));
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
-            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-proxy')->source);
+            $expectedProxyContent = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('php83-override-proxy')));
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
     }
@@ -299,9 +300,9 @@ class WeavingTransformerTest extends TestCase
     public function testWeaverStripsOnlyOverrideFromMultiAttributeGroup(): void
     {
         $metadata = $this->loadTestMetadata('php83-override-multiattr');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual = $this->normalizeWhitespaces($metadata->source);
+        $actual = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
 
         // #[\Override] must be gone from the trait body (alone or as part of a group)
         $this->assertStringNotContainsString('#[\Override]', $actual);
@@ -318,10 +319,10 @@ class WeavingTransformerTest extends TestCase
     public function testMultipleClasses(): void
     {
         $metadata = $this->loadTestMetadata('multiple-classes');
-        $this->transformer->transform($metadata);
+        $this->weaveMetadata($metadata);
 
-        $actual   = $this->normalizeWhitespaces($metadata->source);
-        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-classes-woven')->source);
+        $actual   = $this->normalizeWhitespaces($this->sourceFromMetadata($metadata));
+        $expected = $this->normalizeWhitespaces($this->sourceFromMetadata($this->loadTestMetadata('multiple-classes-woven')));
         $this->assertEquals($expected, $actual);
     }
 
@@ -397,6 +398,26 @@ class WeavingTransformerTest extends TestCase
         fclose($stream);
 
         return $metadata;
+    }
+
+    private function sourceFromMetadata(StreamMetaData $metadata): string
+    {
+        $source = '';
+        foreach ($metadata->tokenStream as $token) {
+            if ($token->id !== 0) {
+                $source .= $token->text;
+            }
+        }
+
+        return $source;
+    }
+
+    private function weaveMetadata(StreamMetaData $metadata): void
+    {
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor(new FileNameInjectorNodeVisitor($metadata));
+        $traverser->addVisitor($this->transformer);
+        $traverser->traverse($metadata->syntaxTree);
     }
 
     /**

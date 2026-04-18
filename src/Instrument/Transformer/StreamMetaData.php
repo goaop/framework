@@ -16,13 +16,12 @@ use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
 use PhpParser\Node;
-use PhpToken;
-use function is_array, is_resource;
+use PhpParser\Token;
+use function file_get_contents;
+use function is_resource;
 
 /**
  * Stream metadata object
- *
- * @property-read string $source
  */
 class StreamMetaData
 {
@@ -74,9 +73,9 @@ class StreamMetaData
     public array $syntaxTree;
 
     /**
-     * List of source tokens
+     * List of source tokens.
      *
-     * @var PhpToken[]
+     * @var array<int, \PhpParser\Token>
      */
     public array $tokenStream = [];
 
@@ -103,66 +102,12 @@ class StreamMetaData
             $mappedKey = self::$propertyMap[$key];
             $this->$mappedKey = $value;
         }
-        $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
-        $this->setTokenStreamFromRawTokens(...ReflectionEngine::getParser()->getTokens());
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function __get(string $name): mixed
-    {
-        if ($name === 'source') {
-            return $this->getSource();
+        $sourceCode = $source ?? file_get_contents($this->uri);
+        if ($sourceCode === false) {
+            throw new InvalidArgumentException(sprintf('Unable to read source code from "%s"', $this->uri));
         }
 
-        return null;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function __set(string $name, mixed $value): void
-    {
-        if ($name === 'source' && is_string($value)) {
-            trigger_error('Setting StreamMetaData->source is deprecated, use tokenStream instead', E_USER_DEPRECATED);
-            $this->setSource($value);
-        }
-    }
-
-    /**
-     * Returns source code directly from tokens
-     */
-    private function getSource(): string
-    {
-        $transformedSource = '';
-        foreach ($this->tokenStream as $token) {
-            if ($token->id !== 0) {
-                $transformedSource .= $token->text;
-            }
-        }
-
-        return $transformedSource;
-    }
-
-    /**
-     * Sets the new source for this file
-     *
-     * @TODO: Unfortunately, AST won't be changed, so please be accurate during transformation
-     *
-     * @param string $newSource
-     */
-    private function setSource(string $newSource): void
-    {
-        $rawTokens = PhpToken::tokenize($newSource);
-        $this->setTokenStreamFromRawTokens(...$rawTokens);
-    }
-
-    /**
-     * Sets an array of token identifiers for this file
-     */
-    public function setTokenStreamFromRawTokens(PhpToken ...$rawTokens): void
-    {
-        $this->tokenStream = $rawTokens;
+        $this->syntaxTree  = ReflectionEngine::parseFile($this->uri, $sourceCode);
+        $this->tokenStream = Token::tokenize($sourceCode);
     }
 }

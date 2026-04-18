@@ -14,10 +14,13 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
+use PhpParser\Node\Arg;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Include_;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\FindingVisitor;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\MagicConst\Dir;
+use PhpParser\NodeVisitorAbstract;
 use RuntimeException;
 
 /**
@@ -25,7 +28,7 @@ use RuntimeException;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-class FilterInjectorTransformer implements SourceTransformer
+class FilterInjectorTransformer extends NodeVisitorAbstract implements NodeTransformerResultReporter
 {
     /**
      * Php filter definition
@@ -47,6 +50,7 @@ class FilterInjectorTransformer implements SourceTransformer
     protected static ?AspectKernel $kernel = null;
 
     protected static ?CachePathManager $cachePathManager = null;
+    private TransformerResultEnum $nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
     /**
      * Class constructor
@@ -105,40 +109,37 @@ class FilterInjectorTransformer implements SourceTransformer
         return $cachedResource;
     }
 
-    /**
-     * Wrap all includes into rewrite filter
-     */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function beforeTraverse(array $nodes): ?array
     {
-        $includeExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof Include_);
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_ABSTAIN;
 
-        // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($includeExpressionFinder);
-        $traverser->traverse($metadata->syntaxTree);
+        return null;
+    }
 
-        /** @var Include_[] $includeExpressions */
-        $includeExpressions = $includeExpressionFinder->getFoundNodes();
-
-        if (empty($includeExpressions)) {
-            return TransformerResultEnum::RESULT_ABSTAIN;
+    /**
+     * Wrap all includes into rewrite filter.
+     */
+    public function leaveNode(Node $node): ?Node
+    {
+        if (!$node instanceof Include_) {
+            return null;
         }
 
-        foreach ($includeExpressions as $includeExpression) {
-            $startPosition = $includeExpression->getAttribute('startTokenPos');
-            $endPosition   = $includeExpression->getAttribute('endTokenPos');
-            if (!is_int($startPosition) || !is_int($endPosition)) {
-                continue;
-            }
+        $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
+        $node->expr       = new StaticCall(
+            new FullyQualified(self::class),
+            'rewrite',
+            [
+                new Arg($node->expr),
+                new Arg(new Dir()),
+            ]
+        );
 
-            $metadata->tokenStream[$startPosition]->text .= ' \\' . self::class . '::rewrite(';
-            if ($metadata->tokenStream[$startPosition+1]->id === T_WHITESPACE) {
-                unset($metadata->tokenStream[$startPosition+1]);
-            }
+        return $node;
+    }
 
-            $metadata->tokenStream[$endPosition]->text .= ', __DIR__)';
-        }
-
-        return TransformerResultEnum::RESULT_TRANSFORMED;
+    public function getNodeTransformerResult(): TransformerResultEnum
+    {
+        return $this->nodeTransformerResult;
     }
 }

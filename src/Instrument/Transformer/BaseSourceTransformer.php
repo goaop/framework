@@ -20,7 +20,7 @@ use Go\Core\AspectKernel;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-abstract class BaseSourceTransformer implements SourceTransformer
+abstract class BaseSourceTransformer
 {
     /**
      * Transformer options

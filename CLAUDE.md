@@ -8,6 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Package: `goaop/framework` | Namespace root: `Go\` | PHP: `^8.4.0`
 
+## Copilot cloud-agent requirements
+
+- Always use **PHP 8.4** for Copilot cloud-agent runs in this repository.
+- Run `composer install` before code review/testing steps.
+- If `composer install` fails, stop and report the setup failure before proceeding.
+
 ## Commands
 
 ```bash
