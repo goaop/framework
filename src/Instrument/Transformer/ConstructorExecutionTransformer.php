@@ -15,12 +15,14 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Core\AspectContainer;
 use PhpParser\Node;
+use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Stmt\Class_;
 use PhpParser\NodeVisitorAbstract;
 use ReflectionException;
 use ReflectionProperty;
@@ -73,9 +75,13 @@ final class ConstructorExecutionTransformer extends NodeVisitorAbstract implemen
         if (!$node instanceof New_) {
             return null;
         }
+        if ($node->class instanceof Class_) {
+            return null;
+        }
 
         $this->nodeTransformerResult = TransformerResultEnum::RESULT_TRANSFORMED;
-        $classReference   = $node->class instanceof Name
+        /** @var Expr $classReference */
+        $classReference = $node->class instanceof Name
             ? new ClassConstFetch($node->class, 'class')
             : $node->class;
         $getInstanceCall = new Node\Expr\StaticCall(

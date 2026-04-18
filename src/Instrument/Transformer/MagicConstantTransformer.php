@@ -64,7 +64,8 @@ class MagicConstantTransformer extends BaseSourceTransformer implements NodeVisi
     public function enterNode(Node $node): int|Node|null
     {
         if ($node instanceof Namespace_) {
-            $this->currentFileName = (string) $node->getAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, '');
+            $fileName = $node->getAttribute(NodeTransformerAttribute::ORIGINAL_FILE_NAME, '');
+            $this->currentFileName = is_string($fileName) ? $fileName : '';
         }
 
         return null;

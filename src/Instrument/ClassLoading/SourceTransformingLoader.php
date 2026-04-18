@@ -197,13 +197,17 @@ class SourceTransformingLoader extends PhpStreamFilter
         }
 
         $streamMeta = stream_get_meta_data($stream);
-        if (!is_array($streamMeta) || !isset($streamMeta['uri']) || !is_string($streamMeta['uri'])) {
+        if (!isset($streamMeta['uri']) || !is_string($streamMeta['uri'])) {
             return null;
         }
 
         $originalUri = $streamMeta['uri'];
         if (preg_match('/resource=(.+)$/', $originalUri, $matches)) {
-            $originalUri = PathResolver::realpath($matches[1]);
+            $resolvedUri = PathResolver::realpath($matches[1]);
+            if ($resolvedUri === false) {
+                return null;
+            }
+            $originalUri = $resolvedUri;
         }
         if ($originalUri === '' || !file_exists($originalUri)) {
             return null;

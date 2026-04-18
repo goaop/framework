@@ -18,6 +18,7 @@ use InvalidArgumentException;
 use PhpParser\Node;
 use PhpParser\Token;
 use PhpToken;
+use function array_values;
 use function is_resource;
 
 /**
@@ -73,12 +74,9 @@ class StreamMetaData
     public array $syntaxTree;
 
     /**
-     * List of source tokens
+     * List of source tokens.
      *
-     * Parser-reflection may expose tokens either as native PhpToken instances
-     * or php-parser Token objects, depending on the underlying parser version.
-     *
-     * @var array<int, PhpToken|Token>
+     * @var array<int, Token>
      */
     public array $tokenStream = [];
 
@@ -106,14 +104,30 @@ class StreamMetaData
             $this->$mappedKey = $value;
         }
         $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
-        $this->setTokenStreamFromRawTokens(...ReflectionEngine::getParser()->getTokens());
+        $rawTokens = ReflectionEngine::getParser()->getTokens();
+        $this->setTokenStreamFromRawTokens(...array_values($rawTokens));
     }
 
     /**
-     * Constructor-only helper for storing parser tokens as-is from parser-reflection.
+     * Constructor-only helper for normalizing parser-reflection tokens to php-parser Token objects.
      */
     private function setTokenStreamFromRawTokens(PhpToken|Token ...$rawTokens): void
     {
-        $this->tokenStream = $rawTokens;
+        $normalizedTokens = [];
+        foreach ($rawTokens as $rawToken) {
+            if ($rawToken instanceof Token) {
+                $normalizedTokens[] = $rawToken;
+                continue;
+            }
+
+            $normalizedTokens[] = new Token(
+                $rawToken->id,
+                $rawToken->text,
+                $rawToken->line,
+                $rawToken->pos
+            );
+        }
+
+        $this->tokenStream = $normalizedTokens;
     }
 }
