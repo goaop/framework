@@ -14,6 +14,7 @@ namespace Go\Proxy;
 
 use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\TraitAliasProxied;
+use Go\Stubs\TraitWithClassTypedProperty;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -192,5 +193,55 @@ class TraitProxyGeneratorTest extends TestCase
 
         // ClassProxyGenerator-style shared array must NOT appear
         $this->assertStringNotContainsString('$__joinPoints[', $output);
+    }
+
+    public function testGenerateTraitWithInterceptedProperty(): void
+    {
+        $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
+        $traitAdvices    = [
+            'prop' => [
+                'public' => ['advisor.TraitAliasProxied->public'],
+            ],
+        ];
+
+        $generator = new TraitProxyGenerator(
+            $reflectionTrait,
+            'Go\\Stubs\\TraitAliasProxied__AopProxied',
+            $traitAdvices,
+            false
+        );
+
+        $output = "<?php\n" . $generator->generate();
+
+        $this->assertStringContainsString('public int $public = 326 {', $output);
+        $this->assertStringContainsString('static $fieldAccess;', $output);
+        $this->assertStringContainsString("TraitProxyGenerator::getJoinPoint(__CLASS__, 'prop', 'public'", $output);
+        $this->assertStringContainsString('FieldAccessType::READ', $output);
+        $this->assertStringContainsString('FieldAccessType::WRITE', $output);
+        $this->assertStringNotContainsString('$__joinPoints[', $output);
+    }
+
+    public function testGenerateTraitWithClassTypedPropertyUsesFullyQualifiedTypeInFieldAccessPhpDoc(): void
+    {
+        $reflectionTrait = new ReflectionClass(TraitWithClassTypedProperty::class);
+        $traitAdvices    = [
+            'prop' => [
+                'privateProperty' => ['advisor.TraitWithClassTypedProperty->privateProperty'],
+            ],
+        ];
+
+        $generator = new TraitProxyGenerator(
+            $reflectionTrait,
+            'Go\\Stubs\\TraitWithClassTypedProperty__AopProxied',
+            $traitAdvices,
+            false
+        );
+
+        $output = "<?php\n" . $generator->generate();
+
+        $this->assertStringContainsString(
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception> \$fieldAccess */",
+            $output
+        );
     }
 }

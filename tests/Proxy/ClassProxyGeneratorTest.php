@@ -16,6 +16,8 @@ use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
+use Go\Stubs\PropertyInheritanceChild;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
@@ -74,9 +76,6 @@ class ClassProxyGeneratorTest extends TestCase
     }
 
     /**
-     * Tests that a proxy with property interception uses PropertyInterceptionTrait and generates the
-     * correct constructor setup: bindTo with self::class scope and the property accessor closure.
-     *
      * @throws ReflectionException
      */
     public function testGenerateWithPropertyInterception(): void
@@ -93,40 +92,33 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
-            'PropertyInterceptionTrait',
+            "public int \$public = ",
             $proxyFileContent,
-            'Proxy with property advices must use PropertyInterceptionTrait'
+            'Proxy with property advices must re-declare intercepted properties with native hooks'
+        );
+        $this->assertStringContainsString("self::\$__joinPoints['prop:public'];", $proxyFileContent);
+        $this->assertStringContainsString(
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$fieldAccess */",
+            $proxyFileContent,
+            'Proxy with property advices must route writes through join points in property hooks'
         );
         $this->assertStringContainsString(
-            '__properties',
-            $proxyFileContent,
-            'Generated proxy must initialise $__properties via the accessor'
+            "set {\n            /** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$fieldAccess */",
+            $proxyFileContent
         );
     }
 
     /**
-     * Tests that a proxy for a class that defines its own constructor AND has intercepted properties
-     * generates a __aop____construct alias and calls it via $this->__aop____construct() instead of
-     * parent::__construct(), which would fail because the new trait-based proxy has no parent class.
-     *
      * @throws ReflectionException
      */
-    public function testGenerateWithPropertyInterceptionAndConstructor(): void
+    public function testGenerateWithPropertyInterceptionPreservesAsymmetricVisibility(): void
     {
-        // Use a stub class that has both intercepted properties and its own __construct
-        $target          = new class(42) {
-            public int $value;
-            protected string $name = 'test';
-
-            public function __construct(int $initial)
-            {
-                $this->value = $initial;
-            }
+        $target          = new class {
+            public protected(set) string $name = 'test';
         };
         $reflectionClass = new ReflectionClass($target);
         $classAdvices    = [
             'prop' => [
-                'value' => ['test'],
                 'name'  => ['test'],
             ]
         ];
@@ -135,20 +127,181 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
-            '__aop____construct',
+            'public protected(set) string $name = \'test\' {',
             $proxyFileContent,
-            'Proxy must alias the original __construct as __aop____construct in the trait-use block'
+            'Proxy must preserve asymmetric visibility on intercepted properties'
+        );
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testGenerateWithClassTypedPropertyUsesFullyQualifiedTypeInFieldAccessPhpDoc(): void
+    {
+        $target = new class {
+            private \Exception $privateProperty;
+        };
+        $reflectionClass = new ReflectionClass($target);
+        $classAdvices = [
+            'prop' => [
+                'privateProperty' => ['test'],
+            ],
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString(
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception> \$fieldAccess */",
+            $proxyFileContent
+        );
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testGenerateWithPropertyInterceptionThrowsForReadonlyAndHookedProperties(): void
+    {
+        $target = new class {
+            public string $intercepted = 'intercepted';
+            public readonly string $readonly;
+            public string $alreadyHooked = 'hooked' {
+                get {
+                    return $this->alreadyHooked;
+                }
+                set {
+                    $this->alreadyHooked = $value;
+                }
+            }
+
+            public function __construct()
+            {
+                $this->readonly = 'readonly';
+            }
+        };
+        $reflectionClass = new ReflectionClass($target);
+        $classAdvices    = [
+            'prop' => [
+                'intercepted' => ['test'],
+                'readonly' => ['test'],
+                'alreadyHooked' => ['test'],
+            ]
+        ];
+
+        $this->expectException(InvalidArgumentException::class);
+        new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testGenerateWithFinalPropertyDeclaredInCurrentClass(): void
+    {
+        $target = new class {
+            final public string $final = 'final';
+        };
+        $reflectionClass = new ReflectionClass($target);
+        $classAdvices = [
+            'prop' => [
+                'final' => ['test'],
+            ],
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString("final public string \$final = 'final' {", $proxyFileContent);
+        $this->assertStringContainsString("self::\$__joinPoints['prop:final'];", $proxyFileContent);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testGenerateWithParentPropertyInterceptionIncludesPublicAndProtected(): void
+    {
+        $reflectionClass = new ReflectionClass(PropertyInheritanceChild::class);
+        $classAdvices = [
+            'prop' => [
+                'parentPublic' => ['test'],
+                'parentProtected' => ['test'],
+            ],
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString("public string \$parentPublic = 'parent-public' {", $proxyFileContent);
+        $this->assertStringContainsString("protected string \$parentProtected = 'parent-protected' {", $proxyFileContent);
+        $this->assertStringContainsString("self::\$__joinPoints['prop:parentPublic'];", $proxyFileContent);
+        $this->assertStringContainsString("self::\$__joinPoints['prop:parentProtected'];", $proxyFileContent);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testGenerateWithUninitializedTypedPropertyInterceptionAddsInitializationSafeguard(): void
+    {
+        $target = new class {
+            public string $uninitialized;
+        };
+        $reflectionClass = new ReflectionClass($target);
+        $classAdvices    = [
+            'prop' => [
+                'uninitialized' => ['test'],
+            ],
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString(
+            "if (\$fieldAccess->getField()->isInitialized(\$this)) {",
+            $proxyFileContent
         );
         $this->assertStringContainsString(
-            '$this->__aop____construct(',
-            $proxyFileContent,
-            'Proxy constructor must call $this->__aop____construct() to invoke the original constructor body'
+            "return \$fieldAccess->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::READ);",
+            $proxyFileContent
         );
-        $this->assertStringNotContainsString(
-            'parent::__construct',
-            $proxyFileContent,
-            'Proxy must not use parent::__construct — there is no parent class in the trait-based engine'
+        $this->assertStringContainsString(
+            "if (\$fieldAccess->getField()->isInitialized(\$this)) {",
+            $proxyFileContent
         );
+        $this->assertStringContainsString(
+            "if (\$fieldAccess->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$fieldAccess->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$value, \$this->uninitialized);",
+            $proxyFileContent
+        );
+        $this->assertStringContainsString(
+            "} else {\n                \$this->uninitialized = \$fieldAccess->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$value);",
+            $proxyFileContent
+        );
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testGenerateWithArrayPropertyInterceptionUsesGetHookOnly(): void
+    {
+        $target = new class {
+            public array $items = [1, 2, 3];
+
+            public function appendValue(int $value): void
+            {
+                array_push($this->items, $value);
+            }
+        };
+        $reflectionClass = new ReflectionClass($target);
+        $classAdvices    = [
+            'prop' => [
+                'items' => ['test'],
+            ],
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertMatchesRegularExpression('/&get\s*\\{/', $proxyFileContent);
+        $this->assertStringNotContainsString("self::\$__joinPoints['prop:items'];\n            \$this->items =", $proxyFileContent);
+        $this->assertStringNotContainsString("FieldAccessType::WRITE, \$this->items, \$value", $proxyFileContent);
     }
 
     /**

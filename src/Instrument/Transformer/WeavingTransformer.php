@@ -31,6 +31,8 @@ use Go\Proxy\EnumProxyGenerator;
 use Go\Proxy\FunctionProxyGenerator;
 use Go\Proxy\TraitProxyGenerator;
 use PhpParser\Node\Stmt\EnumCase;
+use PhpParser\Node\Stmt\Property;
+use ReflectionProperty;
 
 /**
  * Main transformer that performs weaving of aspects into the source code
@@ -151,6 +153,7 @@ class WeavingTransformer extends BaseSourceTransformer
         // For enums: convert the enum body to a trait (cases extracted to proxy enum by EnumProxyGenerator).
         // For classes: convert the class body to a trait (new trait-based engine).
         if ($class->isTrait()) {
+            $this->commentOutInterceptedPropertiesInTraitBody($class, $advices, $metadata);
             $this->adjustOriginalTrait($class, $metadata, $newClassName);
             $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
         } elseif ($class->isEnum()) {
@@ -299,6 +302,7 @@ class WeavingTransformer extends BaseSourceTransformer
         // Strip #[\Override] from intercepted methods.
         // PHP copies attributes to alias names (e.g. __aop__foo). Since __aop__foo has no parent
         // match, PHP would raise a fatal error if #[\Override] were present on the alias.
+        $this->commentOutInterceptedPropertiesInTraitBody($class, $advices, $streamMetaData);
         $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
     }
 
@@ -530,6 +534,133 @@ class WeavingTransformer extends BaseSourceTransformer
                 }
             }
         }
+    }
+
+    /**
+     * Removes intercepted property declarations from the woven trait body.
+     *
+     * The proxy class re-declares these properties with native PHP 8.4 hooks. Tokens are neutralised
+     * (not deleted) to preserve original line numbers for debugger mapping.
+     *
+     * @param array<string, array<string, array<string>>> $advices
+     */
+    private function commentOutInterceptedPropertiesInTraitBody(
+        ReflectionClass $class,
+        array $advices,
+        StreamMetaData $streamMetaData
+    ): void {
+        $interceptedProperties = array_keys($advices[AspectContainer::PROPERTY_PREFIX] ?? []);
+        if ($interceptedProperties === []) {
+            return;
+        }
+        $interceptedProperties = array_flip($interceptedProperties);
+
+        if ($class->isTrait()) {
+            $classNode = $class->getNode();
+            foreach ($classNode->stmts as $statement) {
+                if (!$statement instanceof Property) {
+                    continue;
+                }
+                $statementContainsInterceptedProperty = false;
+                foreach ($statement->props as $propertyNode) {
+                    if (isset($interceptedProperties[$propertyNode->name->name])) {
+                        $statementContainsInterceptedProperty = true;
+                        break;
+                    }
+                }
+                if (!$statementContainsInterceptedProperty) {
+                    continue;
+                }
+                $start = $statement->getAttribute('startTokenPos');
+                $end = $statement->getAttribute('endTokenPos');
+                if (!is_int($start) || !is_int($end)) {
+                    continue;
+                }
+                $this->commentOutMovedPropertyTokenRange($class->name, $statement->props[0]->name->name, $start, $end, $streamMetaData);
+            }
+
+            return;
+        }
+
+        $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
+        foreach ($class->getProperties($mask) as $property) {
+            if (!isset($interceptedProperties[$property->getName()])) {
+                continue;
+            }
+            if ($property->getDeclaringClass()->name !== $class->name || !method_exists($property, 'getTypeNode')) {
+                continue;
+            }
+
+            $propertyNode = $property->getTypeNode();
+            if (!is_object($propertyNode) || !method_exists($propertyNode, 'getAttribute')) {
+                continue;
+            }
+            $start = $propertyNode->getAttribute('startTokenPos');
+            $end   = $propertyNode->getAttribute('endTokenPos');
+            if (!is_int($start) || !is_int($end)) {
+                continue;
+            }
+            $this->commentOutMovedPropertyTokenRange($class->name, $property->getName(), $start, $end, $streamMetaData);
+        }
+    }
+
+    private function commentOutMovedPropertyTokenRange(
+        string $className,
+        string $propertyName,
+        int $start,
+        int $end,
+        StreamMetaData $streamMetaData
+    ): void {
+        $firstTokenPosition = $start;
+        while ($firstTokenPosition <= $end && !isset($streamMetaData->tokenStream[$firstTokenPosition])) {
+            ++$firstTokenPosition;
+        }
+        $lastTokenPosition = $end;
+        while ($lastTokenPosition >= $start && !isset($streamMetaData->tokenStream[$lastTokenPosition])) {
+            --$lastTokenPosition;
+        }
+        if (!isset($streamMetaData->tokenStream[$firstTokenPosition], $streamMetaData->tokenStream[$lastTokenPosition])) {
+            return;
+        }
+
+        $streamMetaData->tokenStream[$firstTokenPosition]->text = '// ' . $streamMetaData->tokenStream[$firstTokenPosition]->text;
+
+        $suffix = sprintf(
+            ' // Moved by weaving interceptor to the {@see %s->%s}',
+            $className,
+            $propertyName
+        );
+        $lastTokenText = $streamMetaData->tokenStream[$lastTokenPosition]->text;
+        $newLine = $this->findLastNewlinePosition($lastTokenText);
+        if ($newLine !== null) {
+            $streamMetaData->tokenStream[$lastTokenPosition]->text = substr($lastTokenText, 0, $newLine['position'])
+                . $suffix
+                . substr($lastTokenText, $newLine['position'], $newLine['length'])
+                . substr($lastTokenText, $newLine['position'] + $newLine['length']);
+        } else {
+            $streamMetaData->tokenStream[$lastTokenPosition]->text .= $suffix;
+        }
+    }
+
+    /**
+     * @return array{position: int, length: int}|null
+     */
+    private function findLastNewlinePosition(string $text): ?array
+    {
+        $position = strrpos($text, "\r\n");
+        if ($position !== false) {
+            return ['position' => $position, 'length' => 2];
+        }
+        $position = strrpos($text, "\n");
+        if ($position !== false) {
+            return ['position' => $position, 'length' => 1];
+        }
+        $position = strrpos($text, "\r");
+        if ($position !== false) {
+            return ['position' => $position, 'length' => 1];
+        }
+
+        return null;
     }
 
     /**

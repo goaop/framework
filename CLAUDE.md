@@ -106,7 +106,7 @@ Key properties of this engine:
   - `InterceptedMethodGenerator` — wraps a single method with join-point delegation
   - `InterceptedConstructorGenerator` — wraps constructor; uses `self::class` (not `parent::class`) for `Closure::bindTo` scope; calls `$this->__aop____construct()` when constructor is in the trait
   - `JoinPointPropertyGenerator` — the `private static array $__joinPoints` property
-  - `PropertyInterceptionTrait` — `__get`/`__set`/`__isset`/`__unset` magic that routes through `ClassFieldAccess` join points
+  - `InterceptedPropertyGenerator` — re-declares intercepted properties in the proxy with native PHP 8.4 `get`/`set` hooks that route through `ClassFieldAccess`
 - `src/Proxy/Generator/` — low-level AST generators:
   - `ClassGenerator` — builds the proxy class AST node; `addTraitAlias()` registers both the trait and an alias in a single `use { ... }` block; deduplicates traits
   - `AttributeGroupsGenerator` — copies PHP 8 attributes from reflection to proxy AST, preserving named arguments
@@ -120,7 +120,7 @@ Key properties of this engine:
   - `StaticTraitAliasMethodInvocation` — static-method invocation; builds `Closure::bind(fn($c, $a) => $c::__aop__method(...$a), null, $class)` once at construction; `proceed()` calls `($this->closureToCall)($this->scope, $this->arguments)`
   - `ReflectionConstructorInvocation` — constructor interception (used with `INTERCEPT_INITIALIZATIONS`); creates instance via `ReflectionClass::newInstanceWithoutConstructor()` then calls constructor
   - `ReflectionFunctionInvocation` — function interception; `proceed()` calls `$this->reflectionFunction->invokeArgs($this->arguments)`
-  - `ClassFieldAccess` — property interception join point; used via `PropertyInterceptionTrait`
+  - `ClassFieldAccess` — property interception join point; used via generated native property hooks on proxied properties
   - `StaticInitializationJoinpoint` — fired once after proxy class is loaded via `injectJoinPoints()`
 - `src/Aop/Pointcut/` — LALR pointcut grammar (`PointcutGrammar`, `PointcutParser`, `PointcutLexer`, `PointcutParseTable`) and pointcut combinators (`AndPointcut`, `OrPointcut`, `NotPointcut`, `NamePointcut`, `AttributePointcut`, etc.)
 - `src/Lang/Attribute/` — PHP 8 attributes for declaring aspects and advice: `#[Aspect]`, `#[Before]`, `#[After]`, `#[Around]`, `#[AfterThrowing]`, `#[Pointcut]`, `#[DeclareError]`, `#[DeclareParents]`
@@ -158,9 +158,11 @@ When a `readonly class` is woven, the generated trait drops the `readonly` modif
 
 When a method marked `#[\Override]` is intercepted (i.e., aliased as `__aop__methodName` in the proxy's trait-use block), PHP would copy the `#[\Override]` attribute to the alias. Since the alias name has no parent method to override, PHP would raise a fatal error. `WeavingTransformer::convertClassToTrait()` therefore strips `#[\Override]` from the method body in the generated trait for every intercepted method. The attribute is **preserved on the proxy's override method**, where it is valid (the proxy extends the same parent).
 
-### PHP 8.4 property hooks — pass-through only
+### PHP 8.4 property hooks — native property interception
 
-Property hooks are included verbatim in the generated trait body; they are not a separate join-point type. You can intercept the owning method (if any) but you cannot write a pointcut that targets a hook `get`/`set` clause directly. `ClassFieldAccess` property interception and hooked properties on the same property are not supported simultaneously.
+For intercepted class properties, the declaration is moved from the woven trait to the proxy class and emitted with native `get`/`set` hooks that dispatch through `ClassFieldAccess`. The woven trait has those intercepted property declarations neutralized to avoid property conflicts while preserving line numbers.
+
+Readonly properties and properties that already define hooks are intentionally skipped for `access(...)` interception.
 
 ### Woven trait file line numbers must match the original source (XDebug compatibility)
 

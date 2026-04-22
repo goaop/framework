@@ -5,6 +5,7 @@ namespace Go\Tests\TestProject\Kernel;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Tests\TestProject\Aspect\ArrayPropertyInterceptAspect;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use Go\Tests\TestProject\Aspect\InitializationAspect;
@@ -24,6 +25,7 @@ class DefaultAspectKernel extends AspectKernel
     {
         $container->registerAspect(new LoggingAspect(new NullLogger()));
         $container->registerAspect(new DoSomethingAspect());
+        $container->registerAspect(new ArrayPropertyInterceptAspect());
         $container->registerAspect(new PropertyInterceptAspect());
         $container->registerAspect(new Issue293Aspect());
         $container->registerAspect(new InitializationAspect());

@@ -49,6 +49,14 @@ class PropertyGeneratorTest extends TestCase
         $this->assertStringContainsString('private', $output);
     }
 
+    public function testFinalProperty(): void
+    {
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PUBLIC | PropertyGenerator::FLAG_FINAL);
+        $output = $gen->generate();
+        $this->assertStringContainsString('final', $output);
+        $this->assertStringContainsString('public', $output);
+    }
+
     public function testPropertyWithDefaultValue(): void
     {
         $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PRIVATE);

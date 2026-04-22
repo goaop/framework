@@ -7,12 +7,6 @@ $ignoreErrors[] = [
 	'count' => 1,
 	'path' => __DIR__ . '/src/Bridge/Doctrine/MetadataLoadInterceptor.php',
 ];
-$ignoreErrors[] = [
-	'message' => '#^Trait Go\\\\Proxy\\\\Part\\\\PropertyInterceptionTrait is used zero times and is not analysed\\.$#',
-	'identifier' => 'trait.unused',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Proxy/Part/PropertyInterceptionTrait.php',
-];
 
 // CachePathManager: the cache file loaded via `include` returns `mixed` at compile time.
 // After is_array() narrowing, PHPStan gives array<mixed, mixed> (losing the string key type).

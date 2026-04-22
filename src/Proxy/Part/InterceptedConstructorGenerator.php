@@ -14,6 +14,7 @@ namespace Go\Proxy\Part;
 
 use Go\Proxy\Generator\MethodGenerator;
 use LogicException;
+use PhpParser\Node\Stmt\ClassMethod;
 use ReflectionMethod;
 
 use function count;
@@ -28,7 +29,6 @@ final class InterceptedConstructorGenerator
     /**
      * InterceptedConstructor
      *
-     * @param string[]                        $interceptedProperties List of intercepted properties for the class
      * @param ReflectionMethod|null           $constructor           Instance of original constructor or null
      * @param InterceptedMethodGenerator|null $constructorGenerator  Constructor body generator (if present)
      * @param bool                            $useTypeWidening       Should generator use parameter widening for PHP>=7.2
@@ -38,13 +38,11 @@ final class InterceptedConstructorGenerator
      *                                                               instead of parent::__construct
      */
     public function __construct(
-        array $interceptedProperties,
         ?ReflectionMethod $constructor = null,
         ?InterceptedMethodGenerator $constructorGenerator = null,
         bool $useTypeWidening = false,
         bool $constructorIsInTrait = false
     ) {
-        $constructorBody = count($interceptedProperties) > 0 ? $this->getConstructorBody($interceptedProperties) : '';
         if ($constructor !== null) {
             if ($constructorGenerator === null) {
                 $callArguments = new FunctionCallArgumentListGenerator($constructor);
@@ -59,14 +57,12 @@ final class InterceptedConstructorGenerator
             } else {
                 $generator = $constructorGenerator->getGenerator();
             }
-            $existingBody           = $generator->getBody();
-            $combinedBody           = $constructorBody . ($existingBody !== '' ? "\n" . $existingBody : '');
+            $existingBody = $generator->getBody();
+            $combinedBody = ($existingBody !== '' ? "\n" . $existingBody : '');
             $generator->setBody($combinedBody);
             $this->constructorGenerator = $generator;
         } else {
-            $constructorGenerator = new MethodGenerator('__construct');
-            $constructorGenerator->setBody($constructorBody);
-            $this->constructorGenerator = $constructorGenerator;
+            $this->constructorGenerator = new MethodGenerator('__construct');
         }
     }
 
@@ -90,7 +86,7 @@ final class InterceptedConstructorGenerator
         return $this->constructorGenerator->getName();
     }
 
-    public function getNode(): \PhpParser\Node\Stmt\ClassMethod
+    public function getNode(): ClassMethod
     {
         return $this->constructorGenerator->getNode();
     }
@@ -101,30 +97,5 @@ final class InterceptedConstructorGenerator
     public function getGenerator(): MethodGenerator
     {
         return $this->constructorGenerator;
-    }
-
-    /**
-     * Returns constructor code
-     *
-     * @param string[] $interceptedProperties List of properties to intercept
-     */
-    private function getConstructorBody(array $interceptedProperties): string
-    {
-        $assocProperties = [];
-        $listProperties  = [];
-        foreach ($interceptedProperties as $propertyName) {
-            $assocProperties[] = "    '{$propertyName}' => &\$this->{$propertyName}";
-            $listProperties[]  = "    \$this->{$propertyName}";
-        }
-        $lines = [
-            '$this->__properties = [',
-            implode(',' . PHP_EOL, $assocProperties),
-            '];',
-            'unset(',
-            implode(',' . PHP_EOL, $listProperties),
-            ');'
-        ];
-
-        return implode(PHP_EOL, $lines);
     }
 }

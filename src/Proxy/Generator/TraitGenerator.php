@@ -16,6 +16,7 @@ use PhpParser\BuilderFactory;
 use PhpParser\Comment\Doc;
 use PhpParser\Modifiers;
 use PhpParser\Node\Name;
+use PhpParser\Node\Stmt\Property as PropertyNode;
 use PhpParser\Node\Stmt\Trait_ as TraitNode;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Node\Stmt\TraitUseAdaptation;
@@ -40,6 +41,9 @@ final class TraitGenerator implements GeneratorInterface
     /** @var MethodGenerator[] */
     private array $methods;
 
+    /** @var PropertyNode[] */
+    private array $properties;
+
     private ?DocBlockGenerator $docBlock = null;
 
     /** @var string[] used trait FQCNs */
@@ -50,17 +54,20 @@ final class TraitGenerator implements GeneratorInterface
 
     /**
      * @param MethodGenerator[] $methods
+     * @param PropertyNode[] $properties
      */
     public function __construct(
         string $name,
         ?string $namespace,
         array $methods = [],
         ?DocBlockGenerator $docBlock = null,
+        array $properties = [],
     ) {
         $this->name      = $name;
         $this->namespace = $namespace;
         $this->methods   = array_values($methods);
         $this->docBlock  = $docBlock;
+        $this->properties = array_values($properties);
     }
 
     /**
@@ -119,6 +126,10 @@ final class TraitGenerator implements GeneratorInterface
                 $this->usedTraits
             );
             $builder->addStmt(new TraitUse($traitNames, $traitUseAdaptations));
+        }
+
+        foreach ($this->properties as $property) {
+            $builder->addStmt($property);
         }
 
         foreach ($this->methods as $method) {

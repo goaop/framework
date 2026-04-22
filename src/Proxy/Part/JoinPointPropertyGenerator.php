@@ -46,7 +46,7 @@ final class JoinPointPropertyGenerator implements PropertyNodeProvider
             implode("\n", [
                 'Typed as MethodInvocation because generated method bodies (method:* and static:* keys)',
                 'call ->__invoke() directly. Other joinpoint types stored here use explicit casts:',
-                '  - prop:*        ClassFieldAccess — cast in PropertyInterceptionTrait',
+                '  - prop:*        ClassFieldAccess — used in generated native property hooks',
                 '  - staticinit:*  StaticInitializationJoinpoint — instanceof check in ClassProxyGenerator::injectJoinPoints()',
                 '  - init:*        ReflectionConstructorInvocation — accessed via ConstructorExecutionTransformer',
             ])

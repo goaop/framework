@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Intercept;
 
+use Go\Aop\AspectException;
 use ReflectionProperty;
 
 /**
@@ -20,17 +21,31 @@ use ReflectionProperty;
  * Detailed information about the intercepted field access can be obtained via {@see self::getField()} method which
  * returns {@see ReflectionProperty} instance of relevant field.
  *
- * This interface is declared as generic, to get better code completion, specify concrete generic type for
- * your parameter as `FieldAccess<SomeConcreteType>` in your aspects to make {@see self::getThis()} method
- * returning proper type for instance `SomeConcreteType`. The same applies to the {@see self::getScope()} method -
- * it will return the proper type for an instance of `SomeConcreteType`.
+ * This interface is declared as generic, to get better code completion, you can specify one or two extra template
+ * types for your parameter:
+ *
+ *  - First optional template parameter `<T>` is the class, which holds the property(field).
+ * You can use `FieldAccess<PropertyClass>` in your aspects to make {@see self::getThis()} method
+ * returning object with concrete `PropertyClass` type. The same applies to the {@see self::getScope()} method - it
+ * will return the proper type for an instance of `PropertyClass`.
+ *
+ *  - Second optional template parameter `<V>` is the type of property.
+ * You can use `FieldAccess<PropertyClass,PropertyType>` in your aspects to make {@see self::getValue()} method
+ * returning object with concrete `PropertyType` type. The same applies to the {@see self::getValueToSet()} method - it
+ * will return the proper type for an instance of `PropertyType`.
+ *
+ * If not specified, `<T>` is equal to general `object` and `<V>` is equal to general `mixed` property type.
+ *
+ * Native property weaving in PHP 8.4+ uses property hooks. Therefore, static properties, readonly properties and
+ * properties that already declare hooks are not eligible for field access interception.
  *
  * Interface overrides the return type of {@see ClassJoinpoint::getThis()} method and narrows its return type to
- * the generic object for all field accesses, removing the nullability of the return type.
+ * the generic object `<T>` for all field accesses, removing the nullability of the return type.
  *
  * @api
  *
- * @template T of object = object
+ * @template T of object = object Declares the class, which holds the property(field)
+ * @template V of mixed = mixed Declares the type of property
  * @extends ClassJoinpoint<T>
  */
 interface FieldAccess extends ClassJoinpoint
@@ -43,18 +58,22 @@ interface FieldAccess extends ClassJoinpoint
     public function getField(): ReflectionProperty;
 
     /**
-     * Gets the current value of property by reference
+     * Gets the current value of property
      *
+     * @throws AspectException if original property is not initialized yet
+     * @return V
      * @api
      */
-    public function &getValue(): mixed;
+    public function getValue(): mixed;
 
     /**
      * Gets the value that must be set to the field, applicable only for WRITE access type
      *
+     * @throws AspectException if called for READ access type, check {@see self::getAccessType()}
+     * @return V
      * @api
      */
-    public function &getValueToSet(): mixed;
+    public function getValueToSet(): mixed;
 
     /**
      * Returns the access type.
@@ -72,4 +91,15 @@ interface FieldAccess extends ClassJoinpoint
      * @return true Covariance, always true for class properties
      */
     public function isDynamic(): true;
+
+    /**
+     * Invokes current field access with all interceptors
+     *
+     * @phpstan-param T $instance Instance of object for accessing
+     * @param FieldAccessType $accessType Access type for field access
+     * @phpstan-param V ...$values Original value of property + new value by reference (for write operation)
+     *
+     * @phpstan-return V Templated return type of property
+     */
+    public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed;
 }

@@ -30,13 +30,13 @@ use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\GeneratorInterface;
 use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
-use Go\Proxy\Part\InterceptedConstructorGenerator;
 use Go\Proxy\Part\InterceptedMethodGenerator;
+use Go\Proxy\Part\InterceptedPropertyGenerator;
 use Go\Proxy\Part\JoinPointPropertyGenerator;
-use Go\Proxy\Part\PropertyInterceptionTrait;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
+use ReflectionProperty;
 use UnexpectedValueException;
 
 /**
@@ -54,7 +54,7 @@ class ClassProxyGenerator
         AspectContainer::METHOD_PREFIX        => DynamicTraitAliasMethodInvocation::class,
         AspectContainer::STATIC_METHOD_PREFIX => StaticTraitAliasMethodInvocation::class,
         // Non-MethodInvocation types — accessed through explicit casts or instanceof checks, not from generated method bodies
-        AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,              // cast in PropertyInterceptionTrait
+        AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,              // used in generated native property hooks
         AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class, // instanceof check in injectJoinPoints()
         AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class // accessed via ConstructorExecutionTransformer
     ];
@@ -108,32 +108,15 @@ class ClassProxyGenerator
 
         $generatedProperties = [new JoinPointPropertyGenerator()];
         $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
+        foreach ($this->interceptProperties($originalClass, $interceptedProperties) as $interceptedProperty) {
+            $generatedProperties[] = $interceptedProperty;
+        }
 
         // Proxy implements the same interfaces as the original class (no longer inherited)
         $originalInterfaces    = array_map(static fn(string $i) => '\\' . $i, $originalClass->getInterfaceNames());
         $introducedInterfaces  = array_merge($originalInterfaces, $introducedInterfaces);
         $introducedInterfaces[] = '\\' . Proxy::class;
         $introducedInterfaces   = array_values(array_unique($introducedInterfaces));
-
-        if (!empty($interceptedProperties)) {
-            $constructor = $originalClass->getConstructor();
-            // Constructor is "in the trait" when it is defined in the class itself (not inherited from a parent).
-            // In that case, the WeavingTransformer has placed it inside the trait body, so we must alias it as
-            // __aop____construct and call $this->__aop____construct() rather than parent::__construct().
-            $constructorIsInTrait = $constructor !== null
-                && $constructor->class === $originalClass->getName()
-                && !isset($dynamicMethodAdvices['__construct']); // not already aliased as an intercepted method
-            $generatedMethods['__construct'] = new InterceptedConstructorGenerator(
-                $interceptedProperties,
-                $constructor,
-                $generatedMethods['__construct'] ?? null,
-                $useParameterWidening,
-                $constructorIsInTrait
-            );
-            $introducedTraits[] = '\\' . PropertyInterceptionTrait::class;
-        } else {
-            $constructorIsInTrait = false;
-        }
 
         // Extract underlying MethodGenerator instances for ClassGenerator
         $methodGenerators = array_map(
@@ -191,13 +174,7 @@ class ClassProxyGenerator
 
             $classGenerator->addTraitAlias($traitName, $methodName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
         }
-        // When property interception is active and the class defines its own constructor, alias __construct
-        // so InterceptedConstructorGenerator can call $this->__aop____construct() to invoke the original body.
-        if ($constructorIsInTrait) {
-            $classGenerator->addTraitAlias($traitName, '__construct', AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . '__construct', ReflectionMethod::IS_PRIVATE);
-        }
-
-        // Add any AOP-introduced traits (e.g. PropertyInterceptionTrait)
+        // Add any AOP-introduced traits
         $classGenerator->addTraits(array_values($introducedTraits));
         $this->generator = $classGenerator;
     }
@@ -314,6 +291,30 @@ class ClassProxyGenerator
         }
 
         return $interceptedMethods;
+    }
+
+    /**
+     * @param ReflectionClass<object> $originalClass
+     * @param string[] $propertyNames Intercepted property names from advice map
+     *
+     * @return InterceptedPropertyGenerator[]
+     */
+    private function interceptProperties(ReflectionClass $originalClass, array $propertyNames): array
+    {
+        $interceptedProperties = [];
+        if ($propertyNames === []) {
+            return $interceptedProperties;
+        }
+        $targetProperties = array_fill_keys($propertyNames, true);
+        $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
+        foreach ($originalClass->getProperties($mask) as $property) {
+            if (!isset($targetProperties[$property->getName()])) {
+                continue;
+            }
+            $interceptedProperties[] = new InterceptedPropertyGenerator($property);
+        }
+
+        return $interceptedProperties;
     }
 
     /**

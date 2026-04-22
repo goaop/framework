@@ -36,7 +36,7 @@ class InterceptedConstructorGeneratorTest extends TestCase
     public function testGenerate(string $className, string $expectedSignature): void
     {
         $reflectionConstructor = (new ReflectionClass($className))->getConstructor();
-        $generator             = new InterceptedConstructorGenerator([], $reflectionConstructor);
+        $generator             = new InterceptedConstructorGenerator($reflectionConstructor);
 
         $generatedCode = $generator->generate();
         $generatedCode = preg_replace('/^\s+/m', '', $generatedCode);
@@ -80,37 +80,16 @@ class InterceptedConstructorGeneratorTest extends TestCase
         ];
     }
 
-    public function testGenerateWithProperties(): void
-    {
-        $reflectionConstructor = (new ReflectionClass(ClassWithoutConstructor::class))->getConstructor();
-        $generator             = new InterceptedConstructorGenerator(['foo', 'bar'], $reflectionConstructor);
-
-        $generatedCode = $generator->generate();
-        $generatedCode = preg_replace('/^\s+|\s+$/m', '', $generatedCode);
-        $expectedCode  = preg_replace(
-            '/^\s+|\s+$/m',
-            '',
-            '
-            public function __construct()
-            {
-                $this->__properties = [\'foo\' => &$this->foo, \'bar\' => &$this->bar];
-                unset($this->foo, $this->bar);
-            }'
-        );
-        $this->assertSame($expectedCode, $generatedCode);
-    }
-
     /**
      * When the constructor belongs to the class being proxied (trait-based engine), it is placed in the
      * trait body and aliased as __aop____construct. The generated constructor must call
      * $this->__aop____construct() rather than parent::__construct(), which would fail because the new
      * proxy class has no parent.
      */
-    public function testGenerateWithPropertiesAndConstructorInTrait(): void
+    public function testGenerateWithConstructorInTrait(): void
     {
         $reflectionConstructor = (new ReflectionClass(ClassWithOptionalArgsConstructor::class))->getConstructor();
         $generator             = new InterceptedConstructorGenerator(
-            ['foo', 'bar'],
             $reflectionConstructor,
             null,
             false,
@@ -139,7 +118,7 @@ class InterceptedConstructorGeneratorTest extends TestCase
     public function testNotThrowsExceptionForPrivateConstructor(): void
     {
         $reflectionConstructor = (new ReflectionClass(ClassWithPrivateConstructor::class))->getConstructor();
-        $generator     = new InterceptedConstructorGenerator(['foo', 'bar'], $reflectionConstructor);
+        $generator     = new InterceptedConstructorGenerator($reflectionConstructor);
         $generatedCode = $generator->generate();
         $this->assertStringContainsString(
             'private function __construct',

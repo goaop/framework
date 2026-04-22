@@ -21,6 +21,7 @@ use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\TraitGenerator;
 use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
+use Go\Proxy\Part\TraitInterceptedPropertyGenerator;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -52,6 +53,12 @@ class TraitProxyGenerator extends ClassProxyGenerator
         $staticMethodAdvices  = $traitAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
         $interceptedMethods   = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $generatedMethods     = $this->interceptMethods($originalTrait, $interceptedMethods);
+        $generatedProperties  = [];
+        foreach ($traitAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [] as $propertyName => $adviceNames) {
+            $property = $originalTrait->getProperty($propertyName);
+            $normalizedAdviceNames = array_is_list($adviceNames) ? $adviceNames : array_keys($adviceNames);
+            $generatedProperties[] = (new TraitInterceptedPropertyGenerator($property, $normalizedAdviceNames))->getNode();
+        }
 
         $docComment = $originalTrait->getDocComment();
         $docBlock   = $docComment !== false ? DocBlockGenerator::fromDocComment($docComment) : null;
@@ -60,12 +67,12 @@ class TraitProxyGenerator extends ClassProxyGenerator
             static fn($m) => $m->getGenerator(),
             array_values($generatedMethods)
         );
-
         $traitGenerator = new TraitGenerator(
             $originalTrait->getShortName(),
             $originalTrait->getNamespaceName(),
             $methodGenerators,
-            $docBlock
+            $docBlock,
+            $generatedProperties
         );
 
         // Normalize FQDN for the parent trait reference
@@ -86,14 +93,14 @@ class TraitProxyGenerator extends ClassProxyGenerator
      * Returns a method invocation for the specific trait method
      *
      * @param class-string     $className
-     * @param non-empty-string $methodName
+     * @param non-empty-string $joinPointName
      * @param list<string>     $adviceNames List of advisor names to fill from the container
      */
     public static function getJoinPoint(
         string $className,
         string $joinPointType,
-        string $methodName,
-        array $adviceNames
+        string $joinPointName,
+        array  $adviceNames
     ): Joinpoint {
         if (self::$cachedAccessor === null) {
             self::$cachedAccessor = AspectKernel::getInstance()->getContainer()->getService(LazyAdvisorAccessor::class);
@@ -106,7 +113,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         $invocationClass = self::$invocationClassMap[$joinPointType];
 
-        return new $invocationClass($filledAdvices, $className, $methodName);
+        return new $invocationClass($filledAdvices, $className, $joinPointName);
     }
 
     /**
