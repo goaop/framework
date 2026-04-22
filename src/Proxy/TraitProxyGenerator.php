@@ -21,6 +21,7 @@ use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\TraitGenerator;
 use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
+use Go\Proxy\Part\TraitInterceptedPropertyGenerator;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -52,6 +53,12 @@ class TraitProxyGenerator extends ClassProxyGenerator
         $staticMethodAdvices  = $traitAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
         $interceptedMethods   = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $generatedMethods     = $this->interceptMethods($originalTrait, $interceptedMethods);
+        $generatedProperties  = [];
+        foreach ($traitAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [] as $propertyName => $adviceNames) {
+            $property = $originalTrait->getProperty($propertyName);
+            $normalizedAdviceNames = array_is_list($adviceNames) ? $adviceNames : array_keys($adviceNames);
+            $generatedProperties[] = (new TraitInterceptedPropertyGenerator($property, $normalizedAdviceNames))->getNode();
+        }
 
         $docComment = $originalTrait->getDocComment();
         $docBlock   = $docComment !== false ? DocBlockGenerator::fromDocComment($docComment) : null;
@@ -60,12 +67,12 @@ class TraitProxyGenerator extends ClassProxyGenerator
             static fn($m) => $m->getGenerator(),
             array_values($generatedMethods)
         );
-
         $traitGenerator = new TraitGenerator(
             $originalTrait->getShortName(),
             $originalTrait->getNamespaceName(),
             $methodGenerators,
-            $docBlock
+            $docBlock,
+            $generatedProperties
         );
 
         // Normalize FQDN for the parent trait reference

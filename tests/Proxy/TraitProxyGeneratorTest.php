@@ -193,4 +193,30 @@ class TraitProxyGeneratorTest extends TestCase
         // ClassProxyGenerator-style shared array must NOT appear
         $this->assertStringNotContainsString('$__joinPoints[', $output);
     }
+
+    public function testGenerateTraitWithInterceptedProperty(): void
+    {
+        $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
+        $traitAdvices    = [
+            'prop' => [
+                'public' => ['advisor.TraitAliasProxied->public'],
+            ],
+        ];
+
+        $generator = new TraitProxyGenerator(
+            $reflectionTrait,
+            'Go\\Stubs\\TraitAliasProxied__AopProxied',
+            $traitAdvices,
+            false
+        );
+
+        $output = "<?php\n" . $generator->generate();
+
+        $this->assertStringContainsString('public int $public = 326 {', $output);
+        $this->assertStringContainsString('static $__joinPoint;', $output);
+        $this->assertStringContainsString("TraitProxyGenerator::getJoinPoint(__CLASS__, 'prop', 'public'", $output);
+        $this->assertStringContainsString('FieldAccessType::READ', $output);
+        $this->assertStringContainsString('FieldAccessType::WRITE', $output);
+        $this->assertStringNotContainsString('$__joinPoints[', $output);
+    }
 }
