@@ -14,16 +14,12 @@ namespace Go\Proxy\Part;
 
 use Go\Aop\Intercept\FieldAccessType;
 use Go\Core\AspectContainer;
-use Go\Proxy\Generator\AttributeGroupsGenerator;
-use Go\Proxy\Generator\PropertyGenerator;
 use Go\Proxy\Generator\PropertyNodeProvider;
-use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\TraitProxyGenerator;
-use InvalidArgumentException;
-use PhpParser\Comment\Doc;
+use PhpParser\Node;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\Array_;
-use PhpParser\Node\Expr\ArrayItem;
+use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\BinaryOp\Identical;
 use PhpParser\Node\Expr\ClassConstFetch;
@@ -42,10 +38,8 @@ use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Property as PropertyNode;
 use PhpParser\Node\Stmt\Return_;
 use PhpParser\Node\Stmt\Static_;
-use PhpParser\Node\Stmt\StaticVar;
-use ReflectionNamedType;
+use PhpParser\Node\StaticVar;
 use ReflectionProperty;
-use ReflectionUnionType;
 
 /**
  * Generates intercepted property hooks for trait proxies.
@@ -53,59 +47,25 @@ use ReflectionUnionType;
  * Unlike class proxies, trait proxies do not use a shared static $__joinPoints property.
  * Instead, each hook lazily creates and caches its own static $__joinPoint.
  */
-final class TraitInterceptedPropertyGenerator implements PropertyNodeProvider
+final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropertyGenerator implements PropertyNodeProvider
 {
     /**
      * @param list<string> $adviceNames
      */
     public function __construct(
-        private readonly ReflectionProperty $property,
+        ReflectionProperty $property,
         private readonly array $adviceNames
     ) {
-        if ($this->property->isStatic() || $this->property->isReadOnly() || $this->property->hasHooks()) {
-            throw new InvalidArgumentException(sprintf(
-                'Property %s::$%s cannot be intercepted with native hooks',
-                $this->property->getDeclaringClass()->getName(),
-                $this->property->getName()
-            ));
-        }
+        parent::__construct($property);
     }
 
     public function getNode(): PropertyNode
     {
-        $flags = 0;
-        if ($this->property->isPrivate()) {
-            $flags |= PropertyGenerator::FLAG_PRIVATE;
-        } elseif ($this->property->isProtected()) {
-            $flags |= PropertyGenerator::FLAG_PROTECTED;
-        } else {
-            $flags |= PropertyGenerator::FLAG_PUBLIC;
-        }
-        if ($this->property->isFinal()) {
-            $flags |= PropertyGenerator::FLAG_FINAL;
-        }
+        $generator = $this->createBasePropertyGenerator();
 
-        if ($this->property->isPrivateSet()) {
-            $flags |= PropertyGenerator::FLAG_PRIVATE_SET;
-        } elseif ($this->property->isProtectedSet()) {
-            $flags |= PropertyGenerator::FLAG_PROTECTED_SET;
-        }
-
-        $generator = new PropertyGenerator($this->property->getName(), $flags);
-        if ($this->property->hasType()) {
-            $generator->setType(TypeGenerator::fromReflectionType($this->property->getType()));
-        }
-        if ($this->property->hasDefaultValue()) {
-            $generator->setDefaultValue($this->property->getDefaultValue());
-        }
-
-        $attributeGroups = AttributeGroupsGenerator::fromReflectionAttributes($this->property->getAttributes());
-        if ($attributeGroups !== []) {
-            $generator->addAttributeGroups($attributeGroups);
-        }
-
-        $generator->addHook($this->createGetHook($this->isArrayTypedProperty()));
-        if (!$this->isArrayTypedProperty()) {
+        $isArrayProperty = $this->isArrayTypedProperty();
+        $generator->addHook($this->createGetHook($isArrayProperty));
+        if (!$isArrayProperty) {
             $generator->addHook($this->createSetHook());
         }
 
@@ -127,7 +87,7 @@ final class TraitInterceptedPropertyGenerator implements PropertyNodeProvider
 
         return new PropertyHook('get', [
             ...$this->getFieldAccessInitializationStatements(),
-            $this->property->hasType() && !$this->property->hasDefaultValue()
+            $this->hasPotentiallyUninitializedTypedProperty()
                 ? new If_(
                     new MethodCall(
                         new MethodCall(new Variable('fieldAccess'), 'getField'),
@@ -151,8 +111,8 @@ final class TraitInterceptedPropertyGenerator implements PropertyNodeProvider
         $writeInvokeWithBackedValue = new MethodCall(new Variable('fieldAccess'), '__invoke', [
             new Arg(new Variable('this')),
             new Arg(new ClassConstFetch(new Name\FullyQualified(FieldAccessType::class), 'WRITE')),
-            new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
             new Arg(new Variable('value')),
+            new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
         $writeInvokeWithoutBackedValue = new MethodCall(new Variable('fieldAccess'), '__invoke', [
             new Arg(new Variable('this')),
@@ -162,7 +122,7 @@ final class TraitInterceptedPropertyGenerator implements PropertyNodeProvider
 
         return new PropertyHook('set', [
             ...$this->getFieldAccessInitializationStatements(),
-            $this->property->hasType() && !$this->property->hasDefaultValue()
+            $this->hasPotentiallyUninitializedTypedProperty()
                 ? new If_(
                     new MethodCall(
                         new MethodCall(new Variable('fieldAccess'), 'getField'),
@@ -192,14 +152,14 @@ final class TraitInterceptedPropertyGenerator implements PropertyNodeProvider
     }
 
     /**
-     * @return array{0:Static_,1:If_,2:Expression}
+     * @return array<int, Node\Stmt>
      */
     private function getFieldAccessInitializationStatements(): array
     {
         $propertyName = $this->property->getName();
 
         $initializeJoinPoint = new Expression(new Assign(
-            new Variable('__joinPoint'),
+            new Variable('fieldAccess'),
             new StaticCall(
                 new Name\FullyQualified(TraitProxyGenerator::class),
                 'getJoinPoint',
@@ -215,38 +175,15 @@ final class TraitInterceptedPropertyGenerator implements PropertyNodeProvider
             )
         ));
 
-        $fieldAccessExpression = new Expression(new Assign(
-            new Variable('fieldAccess'),
-            new Variable('__joinPoint')
-        ));
-        $propertyType = (string) $this->property->getType();
-        $fieldAccessExpression->setDocComment(new Doc('/** @var \Go\Aop\Intercept\FieldAccess<self, ' . $propertyType . '> $fieldAccess */'));
+        $initializeJoinPoint->setDocComment($this->createFieldAccessDocComment());
 
         return [
-            new Static_([new StaticVar(new Variable('__joinPoint'))]),
+            new Static_([new StaticVar(new Variable('fieldAccess'))]),
             new If_(
-                new Identical(new Variable('__joinPoint'), new ConstFetch(new Name('null'))),
+                new Identical(new Variable('fieldAccess'), new ConstFetch(new Name('null'))),
                 ['stmts' => [$initializeJoinPoint]]
-            ),
-            $fieldAccessExpression
+            )
         ];
     }
 
-    private function isArrayTypedProperty(): bool
-    {
-        $type = $this->property->getType();
-
-        if ($type instanceof ReflectionNamedType) {
-            return $type->getName() === 'array';
-        }
-        if ($type instanceof ReflectionUnionType) {
-            foreach ($type->getTypes() as $unionType) {
-                if ($unionType instanceof ReflectionNamedType && $unionType->getName() === 'array') {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
 }

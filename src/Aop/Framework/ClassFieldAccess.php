@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\AspectException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldAccessType;
 use Go\Aop\Intercept\Interceptor;
@@ -27,11 +28,14 @@ use ReflectionProperty;
 final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 {
     /**
-     * Stack frames to work with recursive calls or with cross-calls inside object
+     * Mapping of access types to property names
      *
-     * @var list<array{T, FieldAccessType, V, V}>
+     * @var array<key-of<FieldAccessType>, string> $propertyMap
      */
-    private array $stackFrames = [];
+    private static array $propertyMap = [
+        FieldAccessType::READ->name => 'value',
+        FieldAccessType::WRITE->name => 'newValue',
+    ];
 
     /**
      * Instance of object for accessing
@@ -45,7 +49,18 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     private readonly ReflectionProperty $reflectionProperty;
 
     /**
+     * Reference to the original value of property
+     *
+     * Maybe uninitialized if the property itself is not initialized yet
+     *
+     * @phpstan-var V Templated type
+     */
+    private mixed $value;
+
+    /**
      * New value to set
+     *
+     * Maybe uninitialized if set hook has not called yet
      *
      * @phpstan-var V Templated type
      */
@@ -55,13 +70,6 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Access type for field access
      */
     private FieldAccessType $accessType;
-
-    /**
-     * Copy of the original value of property
-     *
-     * @phpstan-var V Templated type
-     */
-    private mixed $value;
 
     /**
      * Constructor for field access
@@ -86,12 +94,16 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     }
 
     /**
-     * Gets the current value of property by reference
+     * Gets the current value of property
      *
      * @return V
      */
-    public function &getValue(): mixed
+    public function getValue(): mixed
     {
+        if (!$this->reflectionProperty->isInitialized($this->instance)) {
+            throw new AspectException("Property {$this->reflectionProperty->name} is not initialized yet");
+        }
+        // We can not use ReflectionProperty->getValue() here, as it will call again the hook
         return $this->value;
     }
 
@@ -100,21 +112,25 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @return V
      */
-    public function &getValueToSet(): mixed
+    public function getValueToSet(): mixed
     {
+        if ($this->accessType === FieldAccessType::READ) {
+            throw new AspectException("Value to set is not available for READ access type");
+        }
         return $this->newValue;
     }
 
-    /**
-     * @return void Covariant, as for field interceptor there is no return value
-     */
-    final public function proceed(): void
+    final public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current++];
 
-            $currentInterceptor->invoke($this);
+            return $currentInterceptor->invoke($this);
         }
+
+        // Next line can cause an Error if the property is not initialized yet
+        // To prevent this error, use Around hook or ensure that underlying property is initialized
+        return $this->{self::$propertyMap[$this->accessType->name]};
     }
 
     /**
@@ -128,47 +144,26 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     final public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed
     {
-        if ($this->level > 0) {
-            $this->stackFrames[] = [$this->instance, $this->accessType, &$this->value, &$this->newValue];
+        $this->current    = 0;
+        $this->instance   = $instance;
+        $this->accessType = $accessType;
+        unset($this->value, $this->newValue);
+
+        // $values[0] - either we have a reference to the original property for READ
+        // OR reference to the new value for WRITE.
+        // Can be unset only for READ operation when property is not initialized yet
+        if (isset($values[0])) {
+            $this->{self::$propertyMap[$accessType->name]} = &$values[0];
+        }
+        // $values[1] - either we have a reference to the original property for WRITE
+        // OR can be unset for WRITE operation when property is not initialized yet
+        if (isset($values[1])) {
+            $this->value = &$values[1];
         }
 
-        try {
-            ++$this->level;
+        $this->{self::$propertyMap[$accessType->name]} = $this->proceed();
 
-            $this->current    = 0;
-            $this->instance   = $instance;
-            $this->accessType = $accessType;
-            if ($accessType === FieldAccessType::WRITE && !isset($values[1])) {
-                // Uninitialized backed typed property: no readable current value exists yet.
-                /** @var V $noBackedValue */
-                $noBackedValue = null;
-                $this->value = $noBackedValue;
-            } elseif (isset($values[0])) {
-                $this->value = &$values[0];
-            } else {
-                /** @var V $uninitializedValue */
-                $uninitializedValue = null;
-                $this->value = $uninitializedValue;
-            }
-
-            if ($accessType === FieldAccessType::READ) {
-                $result = &$this->value;
-            } else {
-                // When the current backed value is unavailable (branch above), new value is passed as index 0.
-                $newValueIndex = isset($values[1]) ? 1 : 0;
-                $this->newValue = &$values[$newValueIndex];
-                $result = &$this->newValue;
-            }
-            $this->proceed();
-
-            return $result;
-        } finally {
-            --$this->level;
-
-            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
-                [$this->instance, $this->accessType, $this->value, $this->newValue] = $stackFrame;
-            }
-        }
+        return $this->{self::$propertyMap[$accessType->name]};
     }
 
     final public function getThis(): object

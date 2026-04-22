@@ -13,12 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use Go\Aop\Intercept\FieldAccessType;
-use Go\Proxy\Generator\AttributeGroupsGenerator;
-use Go\Proxy\Generator\PropertyGenerator;
 use Go\Proxy\Generator\PropertyNodeProvider;
-use Go\Proxy\Generator\TypeGenerator;
-use InvalidArgumentException;
-use PhpParser\Comment\Doc;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\ArrayDimFetch;
 use PhpParser\Node\Expr\Assign;
@@ -35,9 +30,7 @@ use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Property as PropertyNode;
 use PhpParser\Node\Stmt\Return_;
-use ReflectionNamedType;
 use ReflectionProperty;
-use ReflectionUnionType;
 
 /**
  * Generates an intercepted class property using native PHP 8.4 property hooks.
@@ -45,25 +38,24 @@ use ReflectionUnionType;
  * For regular properties it generates both `get` and `set` hooks.
  *
  * Rendered output shape:
- * ```php
+ * <pre>
  * public string $name = 'value' {
  *     get {
  *         $fieldAccess = self::$__joinPoints['prop:name'];
- *         $value = &$fieldAccess->__invoke($this, FieldAccessType::READ, $this->name);
- *         return $value;
+ *         return $fieldAccess->__invoke($this, FieldAccessType::READ, $this->name);
  *     }
  *     set {
  *         $fieldAccess = self::$__joinPoints['prop:name'];
- *         $this->name = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $this->name, $value);
+ *         $this->name = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $value, $this->name);
  *     }
  * }
- * ```
+ * </pre>
  *
  * For `array` typed properties only a by-reference `&get` hook is generated to keep
  * indirect modifications (`array_push($this->items, ...)`) valid.
  *
  * Rendered output shape:
- * ```php
+ * <pre>
  * public array $items = [] {
  *     &get {
  *         $fieldAccess = self::$__joinPoints['prop:items'];
@@ -71,56 +63,16 @@ use ReflectionUnionType;
  *         return $value;
  *     }
  * }
- * ```
+ * </pre>
  */
-final class InterceptedPropertyGenerator implements PropertyNodeProvider
+final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGenerator implements PropertyNodeProvider
 {
-    public function __construct(private readonly ReflectionProperty $property)
-    {
-        if ($this->property->isStatic() || $this->property->isReadOnly() || $this->property->hasHooks()) {
-            throw new InvalidArgumentException(sprintf(
-                'Property %s::$%s cannot be intercepted with native hooks',
-                $this->property->getDeclaringClass()->getName(),
-                $this->property->getName()
-            ));
-        }
-    }
-
     public function getNode(): PropertyNode
     {
-        $flags = 0;
-        if ($this->property->isPrivate()) {
-            $flags |= PropertyGenerator::FLAG_PRIVATE;
-        } elseif ($this->property->isProtected()) {
-            $flags |= PropertyGenerator::FLAG_PROTECTED;
-        } else {
-            $flags |= PropertyGenerator::FLAG_PUBLIC;
-        }
-        if ($this->property->isFinal()) {
-            $flags |= PropertyGenerator::FLAG_FINAL;
-        }
-
-        if ($this->property->isPrivateSet()) {
-            $flags |= PropertyGenerator::FLAG_PRIVATE_SET;
-        } elseif ($this->property->isProtectedSet()) {
-            $flags |= PropertyGenerator::FLAG_PROTECTED_SET;
-        }
-
-        $generator = new PropertyGenerator($this->property->getName(), $flags);
-        if ($this->property->hasType()) {
-            $generator->setType(TypeGenerator::fromReflectionType($this->property->getType()));
-        }
-        if ($this->property->hasDefaultValue()) {
-            $generator->setDefaultValue($this->property->getDefaultValue());
-        }
-
-        $attributeGroups = AttributeGroupsGenerator::fromReflectionAttributes($this->property->getAttributes());
-        if ($attributeGroups !== []) {
-            $generator->addAttributeGroups($attributeGroups);
-        }
-
-        $generator->addHook($this->createGetHook($this->isArrayTypedProperty()));
-        if (!$this->isArrayTypedProperty()) {
+        $generator = $this->createBasePropertyGenerator();
+        $isArrayProperty = $this->isArrayTypedProperty();
+        $generator->addHook($this->createGetHook($isArrayProperty));
+        if (!$isArrayProperty) {
             $generator->addHook($this->createSetHook());
         }
 
@@ -179,12 +131,11 @@ final class InterceptedPropertyGenerator implements PropertyNodeProvider
                 new String_('prop:' . $propertyName)
             )
         ));
-        $propertyType = (string) $this->property->getType();
-        $fieldAccessExpression->setDocComment(new Doc('/** @var \Go\Aop\Intercept\FieldAccess<self,'. $propertyType . '> $fieldAccess */'));
+        $fieldAccessExpression->setDocComment($this->createFieldAccessDocComment());
 
         return new PropertyHook('get', [
             $fieldAccessExpression,
-            $this->property->hasType() && !$this->property->hasDefaultValue()
+            $this->hasPotentiallyUninitializedTypedProperty()
                 ? new If_(
                     new MethodCall(
                         new MethodCall(new Variable('fieldAccess'), 'getField'),
@@ -209,7 +160,7 @@ final class InterceptedPropertyGenerator implements PropertyNodeProvider
      * <pre>
      * set {
      *     $fieldAccess = self::$__joinPoints['prop:<propertyName>'];
-     *     $this-><propertyName> = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $this-><propertyName>, $value);
+     *     $this-><propertyName> = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $value, $this-><propertyName>);
      * }
      * </pre>
      *
@@ -218,7 +169,7 @@ final class InterceptedPropertyGenerator implements PropertyNodeProvider
      * set {
      *     $fieldAccess = self::$__joinPoints['prop:<propertyName>'];
      *     if ($fieldAccess->getField()->isInitialized($this)) {
-     *         $this-><propertyName> = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $this-><propertyName>, $value);
+     *         $this-><propertyName> = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $value, $this-><propertyName>);
      *     } else {
      *         $this-><propertyName> = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $value);
      *     }
@@ -235,14 +186,13 @@ final class InterceptedPropertyGenerator implements PropertyNodeProvider
                 new String_('prop:' . $propertyName)
             )
         ));
-        $propertyType = (string) $this->property->getType();
-        $fieldAccessExpression->setDocComment(new Doc('/** @var \Go\Aop\Intercept\FieldAccess<self,'. $propertyType . '> $fieldAccess */'));
+        $fieldAccessExpression->setDocComment($this->createFieldAccessDocComment());
 
         $writeInvokeWithBackedValue = new MethodCall(new Variable('fieldAccess'), '__invoke', [
             new Arg(new Variable('this')),
             new Arg(new ClassConstFetch(new Name\FullyQualified(FieldAccessType::class), 'WRITE')),
-            new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
             new Arg(new Variable('value')),
+            new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
         $writeInvokeWithoutBackedValue = new MethodCall(new Variable('fieldAccess'), '__invoke', [
             new Arg(new Variable('this')),
@@ -252,7 +202,7 @@ final class InterceptedPropertyGenerator implements PropertyNodeProvider
 
         return new PropertyHook('set', [
             $fieldAccessExpression,
-            $this->property->hasType() && !$this->property->hasDefaultValue()
+            $this->hasPotentiallyUninitializedTypedProperty()
                 ? new If_(
                     new MethodCall(
                         new MethodCall(new Variable('fieldAccess'), 'getField'),
@@ -281,21 +231,4 @@ final class InterceptedPropertyGenerator implements PropertyNodeProvider
         ]);
     }
 
-    private function isArrayTypedProperty(): bool
-    {
-        $type = $this->property->getType();
-
-        if ($type instanceof ReflectionNamedType) {
-            return $type->getName() === 'array';
-        }
-        if ($type instanceof ReflectionUnionType) {
-            foreach ($type->getTypes() as $unionType) {
-                if ($unionType instanceof ReflectionNamedType && $unionType->getName() === 'array') {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
 }

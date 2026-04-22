@@ -93,14 +93,14 @@ class TraitProxyGenerator extends ClassProxyGenerator
      * Returns a method invocation for the specific trait method
      *
      * @param class-string     $className
-     * @param non-empty-string $methodName
+     * @param non-empty-string $joinPointName
      * @param list<string>     $adviceNames List of advisor names to fill from the container
      */
     public static function getJoinPoint(
         string $className,
         string $joinPointType,
-        string $methodName,
-        array $adviceNames
+        string $joinPointName,
+        array  $adviceNames
     ): Joinpoint {
         if (self::$cachedAccessor === null) {
             self::$cachedAccessor = AspectKernel::getInstance()->getContainer()->getService(LazyAdvisorAccessor::class);
@@ -113,7 +113,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         $invocationClass = self::$invocationClassMap[$joinPointType];
 
-        return new $invocationClass($filledAdvices, $className, $methodName);
+        return new $invocationClass($filledAdvices, $className, $joinPointName);
     }
 
     /**

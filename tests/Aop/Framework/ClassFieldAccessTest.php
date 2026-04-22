@@ -22,11 +22,11 @@ class ClassFieldAccessTest extends TestCase
         $this->assertEquals('classField', $this->classField->getField()->name);
     }
 
-    public function testReadInvocationWithoutBackedValueDoesNotFail(): void
+    public function testReadInvocationWithoutBackedValueFail(): void
     {
-        $value = $this->classField->__invoke($this, FieldAccessType::READ);
-
-        $this->assertNull($value);
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('Typed property Go\Aop\Framework\ClassFieldAccess::$value must not be accessed before initialization');
+        $this->classField->__invoke($this, FieldAccessType::READ);
     }
 
     public function testWriteInvocationWithoutBackedValueDoesNotFail(): void

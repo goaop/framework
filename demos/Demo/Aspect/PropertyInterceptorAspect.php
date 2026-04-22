@@ -29,20 +29,20 @@ class PropertyInterceptorAspect implements Aspect
      * @param FieldAccess<PropertyDemo> $fieldAccess
      */
     #[Around("access(public|protected|private Demo\Example\PropertyDemo->*)")]
-    public function aroundFieldAccess(FieldAccess $fieldAccess): void
+    public function aroundFieldAccess(FieldAccess $fieldAccess): mixed
     {
-        $isRead = $fieldAccess->getAccessType() === FieldAccessType::READ;
-        // proceed all internal advices
-        $fieldAccess->proceed();
-
-        if ($isRead) {
-            // if you want to change original property value, then return it by reference
-            $value = /* & */$fieldAccess->getValue();
+        if ($fieldAccess->getField()->isInitialized($fieldAccess->getThis())) {
+            $value = match ($fieldAccess->getAccessType()) {
+                FieldAccessType::READ => $fieldAccess->getValue(),
+                FieldAccessType::WRITE => $fieldAccess->getValueToSet(),
+            };
         } else {
-            // if you want to change value to set, then return it by reference
-            $value = /* & */$fieldAccess->getValueToSet();
+            $value = '<uninitialized>';
         }
 
-        echo "Calling After Interceptor for ", $fieldAccess, ", value: ", json_encode($value), PHP_EOL;
+        echo "Calling Around Interceptor for ", $fieldAccess, ", value: ", json_encode($value), PHP_EOL;
+
+        // proceed all internal advices and return value for set/get property
+        return $fieldAccess->proceed();
     }
 }

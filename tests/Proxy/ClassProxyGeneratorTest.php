@@ -98,12 +98,12 @@ class ClassProxyGeneratorTest extends TestCase
         );
         $this->assertStringContainsString("self::\$__joinPoints['prop:public'];", $proxyFileContent);
         $this->assertStringContainsString(
-            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self,int> \$fieldAccess */",
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$fieldAccess */",
             $proxyFileContent,
             'Proxy with property advices must route writes through join points in property hooks'
         );
         $this->assertStringContainsString(
-            "set {\n            /** @var \\Go\\Aop\\Intercept\\FieldAccess<self,int> \$fieldAccess */",
+            "set {\n            /** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$fieldAccess */",
             $proxyFileContent
         );
         $this->assertStringNotContainsString('PropertyInterceptionTrait', $proxyFileContent);
@@ -132,6 +132,30 @@ class ClassProxyGeneratorTest extends TestCase
             'public protected(set) string $name = \'test\' {',
             $proxyFileContent,
             'Proxy must preserve asymmetric visibility on intercepted properties'
+        );
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function testGenerateWithClassTypedPropertyUsesFullyQualifiedTypeInFieldAccessPhpDoc(): void
+    {
+        $target = new class {
+            private \Exception $privateProperty;
+        };
+        $reflectionClass = new ReflectionClass($target);
+        $classAdvices = [
+            'prop' => [
+                'privateProperty' => ['test'],
+            ],
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString(
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception> \$fieldAccess */",
+            $proxyFileContent
         );
     }
 
@@ -245,7 +269,7 @@ class ClassProxyGeneratorTest extends TestCase
             $proxyFileContent
         );
         $this->assertStringContainsString(
-            "if (\$fieldAccess->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$fieldAccess->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$this->uninitialized, \$value);",
+            "if (\$fieldAccess->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$fieldAccess->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$value, \$this->uninitialized);",
             $proxyFileContent
         );
         $this->assertStringContainsString(
