@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\AspectException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldAccessType;
 use Go\Aop\Intercept\Interceptor;
@@ -22,20 +21,21 @@ use ReflectionProperty;
  * Represents a field access joinpoint
  *
  * @template T of object = object
- * @implements FieldAccess<T>
+ * @template V of mixed = mixed
+ * @implements FieldAccess<T,V>
  */
 final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 {
     /**
      * Stack frames to work with recursive calls or with cross-calls inside object
      *
-     * @var array<int, array{T, FieldAccessType, mixed, mixed}>
+     * @var list<array{T, FieldAccessType, V, V}>
      */
     private array $stackFrames = [];
 
     /**
      * Instance of object for accessing
-     * @phpstan-var T Instance of object for accessing
+     * @phpstan-var T
      */
     private object $instance;
 
@@ -46,6 +46,8 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * New value to set
+     *
+     * @phpstan-var V Templated type
      */
     private mixed $newValue;
 
@@ -56,6 +58,8 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     /**
      * Copy of the original value of property
+     *
+     * @phpstan-var V Templated type
      */
     private mixed $value;
 
@@ -81,46 +85,24 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         return $this->reflectionProperty;
     }
 
+    /**
+     * Gets the current value of property by reference
+     *
+     * @return V
+     */
     public function &getValue(): mixed
     {
-        $value = &$this->value;
-
-        return $value;
-    }
-
-    public function &getValueToSet(): mixed
-    {
-        $newValue = &$this->newValue;
-
-        return $newValue;
+        return $this->value;
     }
 
     /**
-     * Checks scope rules for accessing property
+     * Gets the value that must be set to the field, applicable only for WRITE access type
      *
-     * @internal
+     * @return V
      */
-    public function ensureScopeRule(int $stackLevel = 2): void
+    public function &getValueToSet(): mixed
     {
-        $property    = $this->reflectionProperty;
-        $isProtected = $property->isProtected();
-        $isPrivate   = $property->isPrivate();
-        if ($isProtected || $isPrivate) {
-            $backTrace     = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $stackLevel + 1);
-            $accessor      = $backTrace[$stackLevel] ?? [];
-            $propertyClass = $property->class;
-            if (isset($accessor['class'])) {
-                // For private and protected properties its ok to access from the same class
-                if ($accessor['class'] === $propertyClass) {
-                    return;
-                }
-                // For protected properties its ok to access from any subclass
-                if ($isProtected && is_subclass_of($accessor['class'], $propertyClass)) {
-                    return;
-                }
-            }
-            throw new AspectException("Cannot access property {$propertyClass}::{$property->name}");
-        }
+        return $this->newValue;
     }
 
     /**
@@ -140,10 +122,11 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @phpstan-param T $instance Instance of object for accessing
      * @param FieldAccessType $accessType Access type for field access
+     * @phpstan-param V ...$values Original value of property + new value (for write operation)
      *
-     * @return mixed
+     * @phpstan-return V Templated return type of property
      */
-    final public function &__invoke(object $instance, FieldAccessType $accessType, mixed &$originalValue, mixed $newValue = NAN): mixed
+    final public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->instance, $this->accessType, &$this->value, &$this->newValue];
@@ -155,16 +138,28 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
             $this->current    = 0;
             $this->instance   = $instance;
             $this->accessType = $accessType;
-            $this->value      = &$originalValue;
-            $this->newValue   = $newValue;
-
-            $this->proceed();
+            if ($accessType === FieldAccessType::WRITE && !isset($values[1])) {
+                // Uninitialized backed typed property: no readable current value exists yet.
+                /** @var V $noBackedValue */
+                $noBackedValue = null;
+                $this->value = $noBackedValue;
+            } elseif (isset($values[0])) {
+                $this->value = &$values[0];
+            } else {
+                /** @var V $uninitializedValue */
+                $uninitializedValue = null;
+                $this->value = $uninitializedValue;
+            }
 
             if ($accessType === FieldAccessType::READ) {
                 $result = &$this->value;
             } else {
+                // When the current backed value is unavailable (branch above), new value is passed as index 0.
+                $newValueIndex = isset($values[1]) ? 1 : 0;
+                $this->newValue = &$values[$newValueIndex];
                 $result = &$this->newValue;
             }
+            $this->proceed();
 
             return $result;
         } finally {

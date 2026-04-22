@@ -40,7 +40,6 @@ trait PropertyInterceptionTrait
             // prop:* entries are ClassFieldAccess, not MethodInvocation — explicit cast required
             /** @var ClassFieldAccess<T> $fieldAccess */
             $fieldAccess = self::$__joinPoints["prop:$name"];
-            $fieldAccess->ensureScopeRule();
 
             $value = &$fieldAccess->__invoke($this, FieldAccessType::READ, $this->__properties[$name]);
         } elseif (($parentClass = get_parent_class($this)) !== false && method_exists($parentClass, '__get')) {
@@ -63,7 +62,6 @@ trait PropertyInterceptionTrait
             // prop:* entries are ClassFieldAccess, not MethodInvocation — explicit cast required
             /** @var ClassFieldAccess<T> $fieldAccess */
             $fieldAccess = self::$__joinPoints["prop:$name"];
-            $fieldAccess->ensureScopeRule();
 
             $this->__properties[$name] = $fieldAccess->__invoke(
                 $this,

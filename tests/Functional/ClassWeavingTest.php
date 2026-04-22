@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Functional;
 
+use Go\Tests\TestProject\Application\ArrayPropertyDemo;
 use Go\Tests\TestProject\Application\AbstractBar;
 use Go\Tests\TestProject\Application\ClassWithComplexTypes;
 use Go\Tests\TestProject\Application\FinalClass;
@@ -84,5 +85,20 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(ClassWithComplexTypes::class, 'publicMethodWithUnionTypeReturn');
         $this->assertMethodWoven(ClassWithComplexTypes::class, 'publicMethodWithIntersectionTypeReturn');
         $this->assertMethodWoven(ClassWithComplexTypes::class, 'publicMethodWithDNFTypeReturn');
+    }
+
+    public function testArrayPropertyInterceptionAllowsIndirectModification(): void
+    {
+        $this->assertPropertyWoven(
+            ArrayPropertyDemo::class,
+            'indirectModificationCheck',
+            'Go\\Tests\\TestProject\\Aspect\\ArrayPropertyInterceptAspect->aroundArrayFieldAccess'
+        );
+
+        $demo = new ArrayPropertyDemo();
+
+        $this->assertSame(6, $demo->countItems());
+        $demo->appendValue(10);
+        $this->assertSame(7, $demo->countItems());
     }
 }

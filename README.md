@@ -37,6 +37,31 @@ The framework provides powerful core interception capabilities that can be used 
 | Interception of enum methods (PHP 8.1+)    |    ✅    |
 | Before, After and Around type of hooks     |    ✅    |
 
+### 🧷 Property interception (PHP 8.4+)
+
+Go! AOP intercepts field access via native PHP 8.4 property hooks on generated proxy classes.
+
+- Supported targets:
+  - properties declared in the woven class itself
+  - inherited **public/protected** properties from parent classes
+- Not supported (intentionally skipped):
+  - `static`, `readonly`, and already-hooked properties
+  - inherited `final` properties from parent classes
+  - inherited `private` properties
+
+For array-typed intercepted properties, the proxy emits only a by-reference `&get` hook (without `set`) to keep
+indirect modification operations like `array_push($this->items, ...)` valid.
+
+For typed properties without a default value, generated `get` hooks include an initialization guard:
+
+```php
+if ($fieldAccess->getField()->isInitialized($this)) {
+    $value = &$fieldAccess->__invoke($this, FieldAccessType::READ, $this->property);
+} else {
+    $value = $fieldAccess->__invoke($this, FieldAccessType::READ);
+}
+```
+
 ### 🛠️ Developer Experience
 
  - **Rich pointcut syntax** — Express complex matching rules with an intuitive, readable grammar. Target methods by visibility, name patterns, annotations, class hierarchy, and more — all in a single expression like `execution(public **->save*(*))`.

@@ -14,6 +14,7 @@ namespace Go\Proxy\Generator;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Node\AttributeGroup;
+use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt\Property as PropertyNode;
 use PhpParser\PrettyPrinter\Standard;
 
@@ -26,6 +27,10 @@ final class PropertyGenerator implements PropertyNodeProvider
     public const FLAG_PROTECTED = 0b0010;
     public const FLAG_PRIVATE   = 0b0100;
     public const FLAG_STATIC    = 0b1000;
+    public const FLAG_READONLY      = 0b0001_0000;
+    public const FLAG_PROTECTED_SET = 0b0010_0000;
+    public const FLAG_PRIVATE_SET   = 0b0100_0000;
+    public const FLAG_FINAL         = 0b1000_0000;
 
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
@@ -39,6 +44,8 @@ final class PropertyGenerator implements PropertyNodeProvider
 
     /** @var AttributeGroup[] */
     private array $attrGroups = [];
+    /** @var list<PropertyHook> */
+    private array $hooks = [];
 
     public function __construct(string $name, int $flags = self::FLAG_PUBLIC)
     {
@@ -72,6 +79,11 @@ final class PropertyGenerator implements PropertyNodeProvider
         $this->attrGroups = $attrGroups;
     }
 
+    public function addHook(PropertyHook $hook): void
+    {
+        $this->hooks[] = $hook;
+    }
+
     public function getName(): string
     {
         return $this->name;
@@ -96,6 +108,17 @@ final class PropertyGenerator implements PropertyNodeProvider
         if ($this->flags & self::FLAG_STATIC) {
             $builder->makeStatic();
         }
+        if ($this->flags & self::FLAG_FINAL) {
+            $builder->makeFinal();
+        }
+        if ($this->flags & self::FLAG_READONLY) {
+            $builder->makeReadonly();
+        }
+        if ($this->flags & self::FLAG_PRIVATE_SET) {
+            $builder->makePrivateSet();
+        } elseif ($this->flags & self::FLAG_PROTECTED_SET) {
+            $builder->makeProtectedSet();
+        }
 
         if ($this->type !== null) {
             $builder->setType($this->type->getNode());
@@ -111,6 +134,9 @@ final class PropertyGenerator implements PropertyNodeProvider
 
         foreach ($this->attrGroups as $attrGroup) {
             $builder->addAttribute($attrGroup);
+        }
+        foreach ($this->hooks as $hook) {
+            $builder->addHook($hook);
         }
 
         return $builder->getNode();

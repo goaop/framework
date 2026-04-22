@@ -20,6 +20,9 @@ use Go\ParserReflection\Locator\ComposerLocator;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
 use Go\Stubs\First;
+use Go\Stubs\PropertyHookSupport;
+use Go\Stubs\PropertyHookSupportPromoted;
+use Go\Stubs\PropertyInheritanceChild;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -195,5 +198,97 @@ class AdviceMatcherTest extends TestCase
         $this->assertArrayHasKey(AspectContainer::PROPERTY_PREFIX, $advices);
         $this->assertArrayHasKey($propertyName, $advices[AspectContainer::PROPERTY_PREFIX]);
         $this->assertCount(1, $advices[AspectContainer::PROPERTY_PREFIX]);
+    }
+
+    public function testReadonlyAndHookedPropertiesAreSkippedForInterception(): void
+    {
+        $reflectionClass = new ReflectionClass(PropertyHookSupport::class);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_PROPERTY);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+        $propertyAdvices = $advices[AspectContainer::PROPERTY_PREFIX] ?? [];
+
+        $this->assertArrayHasKey('intercepted', $propertyAdvices);
+        $this->assertArrayNotHasKey('readonly', $propertyAdvices);
+        $this->assertArrayNotHasKey('alreadyHooked', $propertyAdvices);
+    }
+
+    public function testPromotedReadonlyAndHookedPropertiesAreSkippedForInterception(): void
+    {
+        $reflectionClass = new ReflectionClass(PropertyHookSupportPromoted::class);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_PROPERTY);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+        $propertyAdvices = $advices[AspectContainer::PROPERTY_PREFIX] ?? [];
+
+        $this->assertArrayHasKey('promoted', $propertyAdvices);
+        $this->assertArrayNotHasKey('readonlyPromoted', $propertyAdvices);
+        $this->assertArrayNotHasKey('hookedPromoted', $propertyAdvices);
+    }
+
+    public function testParentPublicAndProtectedPropertiesAreMatchedForInterception(): void
+    {
+        $reflectionClass = new ReflectionClass(PropertyInheritanceChild::class);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_PROPERTY);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+        $propertyAdvices = $advices[AspectContainer::PROPERTY_PREFIX] ?? [];
+
+        $this->assertArrayHasKey('parentPublic', $propertyAdvices);
+        $this->assertArrayHasKey('parentProtected', $propertyAdvices);
+        $this->assertArrayHasKey('childPublic', $propertyAdvices);
+        $this->assertArrayHasKey('childFinal', $propertyAdvices);
+    }
+
+    public function testParentFinalPropertyIsSkippedForInterception(): void
+    {
+        $reflectionClass = new ReflectionClass(PropertyInheritanceChild::class);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_PROPERTY);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+        $propertyAdvices = $advices[AspectContainer::PROPERTY_PREFIX] ?? [];
+
+        $this->assertArrayNotHasKey('parentFinal', $propertyAdvices);
+    }
+
+    public function testFinalPropertyInCurrentClassIsMatchedForInterception(): void
+    {
+        $reflectionClass = new ReflectionClass(PropertyInheritanceChild::class);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_PROPERTY);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+        $propertyAdvices = $advices[AspectContainer::PROPERTY_PREFIX] ?? [];
+
+        $this->assertArrayHasKey('childFinal', $propertyAdvices);
     }
 }

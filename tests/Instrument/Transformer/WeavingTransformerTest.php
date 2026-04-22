@@ -313,6 +313,58 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringContainsString('#[\FakeAttr]', $actual);
     }
 
+    public function testWeaverMovesInterceptedPropertiesToProxyHooks(): void
+    {
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher
+            ->method('getAdvicesForClass')
+            ->willReturn([
+                AspectContainer::PROPERTY_PREFIX => [
+                    'value' => ['advisor.Go\Tests\TestProject\Application\Php84PropertyHooksClass->value' => true],
+                    'limited' => ['advisor.Go\Tests\TestProject\Application\Php84PropertyHooksClass->limited' => true],
+                ],
+            ]);
+        $adviceMatcher
+            ->method('getAdvicesForFunctions')
+            ->willReturn([]);
+
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$this->getContainerMock()])
+            ->getMock();
+        $transformer = new WeavingTransformer(
+            $this->kernel,
+            $adviceMatcher,
+            $this->cachePathManager,
+            $loader
+        );
+
+        $metadata = $this->loadTestMetadata('php84-property-hooks');
+        $transformer->transform($metadata);
+
+        $actualWoven = $this->normalizeWhitespaces($metadata->source);
+        $this->assertStringContainsString(
+            "// public string \$value = 'test'; // Moved by weaving interceptor to the {@see Go\\Tests\\TestProject\\Application\\Php84PropertyHooksClass->value}",
+            $actualWoven
+        );
+        $this->assertStringContainsString(
+            "// public protected(set) string \$limited = 'limited'; // Moved by weaving interceptor to the {@see Go\\Tests\\TestProject\\Application\\Php84PropertyHooksClass->limited}",
+            $actualWoven
+        );
+        $this->assertStringContainsString("public string \$plain = 'plain';", $actualWoven);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actualWoven, $matches));
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+
+        $this->assertStringContainsString("public string \$value = 'test' {", $proxyContent);
+        $this->assertStringContainsString("public protected(set) string \$limited = 'limited' {", $proxyContent);
+        $this->assertStringContainsString("self::\$__joinPoints['prop:value']", $proxyContent);
+        $this->assertStringContainsString("self::\$__joinPoints['prop:limited']", $proxyContent);
+        $this->assertStringNotContainsString('PropertyInterceptionTrait', $proxyContent);
+        $this->assertStringNotContainsString('__properties', $proxyContent);
+    }
+
     /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
      */

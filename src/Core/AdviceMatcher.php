@@ -195,7 +195,18 @@ class AdviceMatcher implements AdviceMatcherInterface
         if (($pointcutKind & Pointcut::KIND_PROPERTY) !== 0) {
             $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
             foreach ($class->getProperties($mask) as $property) {
-                if ($pointcut->matches($class, $property) && !$property->isStatic()) {
+                $isPropertyDeclaredInParent = $property->getDeclaringClass()->name !== $class->name;
+                if ($property->isStatic() || $property->isReadOnly()) {
+                    continue;
+                }
+                if ($isPropertyDeclaredInParent && $property->isFinal()) {
+                    continue;
+                }
+                // Hooked properties are out of scope for MVP native field-access weaving.
+                if ($property->hasHooks()) {
+                    continue;
+                }
+                if ($pointcut->matches($class, $property)) {
                     $classAdvices[AspectContainer::PROPERTY_PREFIX][$property->name][$advisorId] = $advisor->getAdvice();
                 }
             }
