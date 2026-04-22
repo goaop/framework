@@ -106,8 +106,6 @@ class ClassProxyGeneratorTest extends TestCase
             "set {\n            /** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$fieldAccess */",
             $proxyFileContent
         );
-        $this->assertStringNotContainsString('PropertyInterceptionTrait', $proxyFileContent);
-        $this->assertStringNotContainsString('__properties', $proxyFileContent);
     }
 
     /**

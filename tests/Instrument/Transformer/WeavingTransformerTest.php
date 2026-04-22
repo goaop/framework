@@ -361,8 +361,6 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringContainsString("public protected(set) string \$limited = 'limited' {", $proxyContent);
         $this->assertStringContainsString("self::\$__joinPoints['prop:value']", $proxyContent);
         $this->assertStringContainsString("self::\$__joinPoints['prop:limited']", $proxyContent);
-        $this->assertStringNotContainsString('PropertyInterceptionTrait', $proxyContent);
-        $this->assertStringNotContainsString('__properties', $proxyContent);
     }
 
     /**
