@@ -12,35 +12,23 @@ class TestClassWithOverride implements \Go\Aop\Proxy
         \Test\ns1\TestClassWithOverride__AopProxied::overriddenMethod as private __aop__overriddenMethod;
         \Test\ns1\TestClassWithOverride__AopProxied::normalMethod as private __aop__normalMethod;
     }
-    /**
-     * List of applied advices per class
-     *
-     * Typed as MethodInvocation because generated method bodies (method:* and static:* keys)
-     * call ->__invoke() directly. Other joinpoint types stored here use explicit casts:
-     *   - prop:*        ClassFieldAccess — used in generated native property hooks
-     *   - staticinit:*  StaticInitializationJoinpoint — instanceof check in ClassProxyGenerator::injectJoinPoints()
-     *   - init:*        ReflectionConstructorInvocation — accessed via ConstructorExecutionTransformer
-     *
-     * @var array<string, \Go\Aop\Intercept\MethodInvocation>
-     */
-    private static array $__joinPoints = [];
     #[\Override]
     public function overriddenMethod(): string
     {
-        return self::$__joinPoints['method:overriddenMethod']->__invoke($this);
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        static $__joinPoint;
+        if ($__joinPoint === null) {
+            $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'overriddenMethod', ['advisor.Test\ns1\TestClassWithOverride->overriddenMethod']);
+        }
+        return $__joinPoint->__invoke($this);
     }
     public function normalMethod(): int
     {
-        return self::$__joinPoints['method:normalMethod']->__invoke($this);
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        static $__joinPoint;
+        if ($__joinPoint === null) {
+            $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'normalMethod', ['advisor.Test\ns1\TestClassWithOverride->normalMethod']);
+        }
+        return $__joinPoint->__invoke($this);
     }
 }
-\Go\Proxy\ClassProxyGenerator::injectJoinPoints(TestClassWithOverride::class, [
-    'method' => [
-        'overriddenMethod' => [
-            'advisor.Test\ns1\TestClassWithOverride->overriddenMethod',
-        ],
-        'normalMethod' => [
-            'advisor.Test\ns1\TestClassWithOverride->normalMethod',
-        ],
-    ],
-]);

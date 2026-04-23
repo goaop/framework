@@ -76,9 +76,20 @@ final class ProxyClassReflectionHelper
             return is_array($result) ? $result : [];
         }
 
-        // Enum proxies do not use injectJoinPoints() — they use per-method static joinpoints via
-        // EnumProxyGenerator::getJoinPoint(__CLASS__, 'method'|'static', 'methodName', [...advices...]).
-        // Parse all getJoinPoint() calls and reconstruct the same array structure.
+        // New proxy generation path uses centralized InterceptorInjector calls.
+        /** @var StaticCall[] $injectorCalls */
+        $injectorCalls = (new NodeFinder())->find($ast, static function ($node): bool {
+            return $node instanceof StaticCall
+                && $node->name instanceof Identifier
+                && $node->class instanceof Name
+                && str_ends_with($node->class->toString(), 'InterceptorInjector');
+        });
+
+        if (!empty($injectorCalls)) {
+            return self::extractAdvicesFromInjectorCalls($injectorCalls);
+        }
+
+        // Legacy enum proxies use per-method static joinpoints via EnumProxyGenerator::getJoinPoint().
         /** @var StaticCall[] $getJoinPointCalls */
         $getJoinPointCalls = (new NodeFinder())->find($ast, static function ($node): bool {
             return $node instanceof StaticCall
@@ -125,6 +136,65 @@ final class ProxyClassReflectionHelper
 
             /** @var string[] $adviceNames */
             $result[$prefix][$methodName] = array_values($adviceNames);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param StaticCall[] $injectorCalls
+     * @return array<string, array<string, list<string>>>
+     */
+    private static function extractAdvicesFromInjectorCalls(array $injectorCalls): array
+    {
+        $evaluator = new ConstExprEvaluator();
+        $result    = [];
+
+        foreach ($injectorCalls as $call) {
+            $methodName = $call->name instanceof Identifier ? $call->name->toString() : null;
+            if ($methodName === null) {
+                continue;
+            }
+
+            $map = [
+                'forMethod'        => ['target' => 'method',       'nameArg' => 1, 'advicesArg' => 2],
+                'forStaticMethod'  => ['target' => 'static',       'nameArg' => 1, 'advicesArg' => 2],
+                'forProperty'      => ['target' => 'prop',         'nameArg' => 1, 'advicesArg' => 2],
+                'forInitialization'     => ['target' => 'init',       'nameArg' => null, 'advicesArg' => 1],
+                'forStaticInitialization' => ['target' => 'staticinit', 'nameArg' => null, 'advicesArg' => 1],
+            ];
+
+            if (!isset($map[$methodName])) {
+                continue;
+            }
+
+            $metadata = $map[$methodName];
+            $advicesIndex = $metadata['advicesArg'];
+            if (!isset($call->args[$advicesIndex]) || !($call->args[$advicesIndex] instanceof Arg)) {
+                continue;
+            }
+
+            $adviceNames = $evaluator->evaluateSilently($call->args[$advicesIndex]->value);
+            if (!is_array($adviceNames)) {
+                continue;
+            }
+
+            $subject = 'root';
+            $nameArg = $metadata['nameArg'];
+            if (is_int($nameArg)) {
+                if (!isset($call->args[$nameArg]) || !($call->args[$nameArg] instanceof Arg)) {
+                    continue;
+                }
+
+                $subjectNode = $call->args[$nameArg]->value;
+                if (!$subjectNode instanceof String_) {
+                    continue;
+                }
+                $subject = $subjectNode->value;
+            }
+
+            /** @var list<string> $adviceNames */
+            $result[$metadata['target']][$subject] = array_values($adviceNames);
         }
 
         return $result;

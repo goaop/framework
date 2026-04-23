@@ -30,4 +30,12 @@ interface ConstructorInvocation extends Invocation, ClassJoinpoint
      * Gets the constructor being called or null if it is absent.
      */
     public function getConstructor(): ?ReflectionMethod;
+
+    /**
+     * Invokes current constructor invocation with all interceptors.
+     *
+     * @param list<mixed> $arguments Arguments for constructor invocation
+     * @phpstan-return T
+     */
+    public function __invoke(array $arguments = []): object;
 }

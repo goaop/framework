@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
-use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
@@ -60,16 +59,9 @@ class ClassProxyGeneratorTest extends TestCase
             'Proxy must contain trait alias for intercepted method'
         );
 
-        // Proxy declares the static $__joinPoints property
-        $this->assertStringContainsString(
-            JoinPointPropertyGenerator::NAME,
-            $proxyFileContent,
-            'Proxy must have $__joinPoints property'
-        );
-
         // Proxy intercepted method delegates to the join-point invocation chain
         $this->assertStringContainsString(
-            "self::\$__joinPoints['method:{$methodName}']->__invoke(",
+            "\\Go\\Aop\\Framework\\InterceptorInjector::forMethod(self::class, '{$methodName}'",
             $proxyFileContent,
             'Proxy method body must delegate to the join-point invocation chain'
         );
@@ -96,14 +88,14 @@ class ClassProxyGeneratorTest extends TestCase
             $proxyFileContent,
             'Proxy with property advices must re-declare intercepted properties with native hooks'
         );
-        $this->assertStringContainsString("self::\$__joinPoints['prop:public'];", $proxyFileContent);
+        $this->assertStringContainsString("\\Go\\Aop\\Framework\\InterceptorInjector::forProperty(self::class, 'public'", $proxyFileContent);
         $this->assertStringContainsString(
-            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$fieldAccess */",
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int>|null \$__joinPoint */",
             $proxyFileContent,
             'Proxy with property advices must route writes through join points in property hooks'
         );
         $this->assertStringContainsString(
-            "set {\n            /** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$fieldAccess */",
+            "set {\n            /** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int>|null \$__joinPoint */\n            static \$__joinPoint;",
             $proxyFileContent
         );
     }
@@ -152,7 +144,7 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
-            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception> \$fieldAccess */",
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception>|null \$__joinPoint */",
             $proxyFileContent
         );
     }
@@ -211,7 +203,7 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString("final public string \$final = 'final' {", $proxyFileContent);
-        $this->assertStringContainsString("self::\$__joinPoints['prop:final'];", $proxyFileContent);
+        $this->assertStringContainsString("\\Go\\Aop\\Framework\\InterceptorInjector::forProperty(self::class, 'final'", $proxyFileContent);
     }
 
     /**
@@ -232,8 +224,8 @@ class ClassProxyGeneratorTest extends TestCase
 
         $this->assertStringContainsString("public string \$parentPublic = 'parent-public' {", $proxyFileContent);
         $this->assertStringContainsString("protected string \$parentProtected = 'parent-protected' {", $proxyFileContent);
-        $this->assertStringContainsString("self::\$__joinPoints['prop:parentPublic'];", $proxyFileContent);
-        $this->assertStringContainsString("self::\$__joinPoints['prop:parentProtected'];", $proxyFileContent);
+        $this->assertStringContainsString("\\Go\\Aop\\Framework\\InterceptorInjector::forProperty(self::class, 'parentPublic'", $proxyFileContent);
+        $this->assertStringContainsString("\\Go\\Aop\\Framework\\InterceptorInjector::forProperty(self::class, 'parentProtected'", $proxyFileContent);
     }
 
     /**
@@ -255,23 +247,23 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
-            "if (\$fieldAccess->getField()->isInitialized(\$this)) {",
+            "if (\$__joinPoint->getField()->isInitialized(\$this)) {",
             $proxyFileContent
         );
         $this->assertStringContainsString(
-            "return \$fieldAccess->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::READ);",
+            "return \$__joinPoint->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::READ);",
             $proxyFileContent
         );
         $this->assertStringContainsString(
-            "if (\$fieldAccess->getField()->isInitialized(\$this)) {",
+            "if (\$__joinPoint->getField()->isInitialized(\$this)) {",
             $proxyFileContent
         );
         $this->assertStringContainsString(
-            "if (\$fieldAccess->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$fieldAccess->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$value, \$this->uninitialized);",
+            "if (\$__joinPoint->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$value, \$this->uninitialized);",
             $proxyFileContent
         );
         $this->assertStringContainsString(
-            "} else {\n                \$this->uninitialized = \$fieldAccess->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$value);",
+            "} else {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$value);",
             $proxyFileContent
         );
     }
@@ -300,7 +292,6 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertMatchesRegularExpression('/&get\s*\\{/', $proxyFileContent);
-        $this->assertStringNotContainsString("self::\$__joinPoints['prop:items'];\n            \$this->items =", $proxyFileContent);
         $this->assertStringNotContainsString("FieldAccessType::WRITE, \$this->items, \$value", $proxyFileContent);
     }
 
@@ -339,8 +330,8 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('private static function staticSelfPrivate(', $proxyFileContent);
 
         // Method bodies must call the join-point chain
-        $this->assertStringContainsString("self::\$__joinPoints['method:privateMethod']->__invoke(", $proxyFileContent);
-        $this->assertStringContainsString("self::\$__joinPoints['static:staticSelfPrivate']->__invoke(", $proxyFileContent);
+        $this->assertStringContainsString("\\Go\\Aop\\Framework\\InterceptorInjector::forMethod(self::class, 'privateMethod'", $proxyFileContent);
+        $this->assertStringContainsString("\\Go\\Aop\\Framework\\InterceptorInjector::forStaticMethod(self::class, 'staticSelfPrivate'", $proxyFileContent);
     }
 
     /**
@@ -401,8 +392,8 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('__aop__ownPublicMethod', $proxyFileContent);
 
         // Both must delegate to the join-point chain
-        $this->assertStringContainsString("self::\$__joinPoints['method:publicMethod']->__invoke(", $proxyFileContent);
-        $this->assertStringContainsString("self::\$__joinPoints['method:ownPublicMethod']->__invoke(", $proxyFileContent);
+        $this->assertStringContainsString("\\Go\\Aop\\Framework\\InterceptorInjector::forMethod(self::class, 'publicMethod'", $proxyFileContent);
+        $this->assertStringContainsString("\\Go\\Aop\\Framework\\InterceptorInjector::forMethod(self::class, 'ownPublicMethod'", $proxyFileContent);
     }
 
     /**
@@ -428,7 +419,7 @@ class ClassProxyGeneratorTest extends TestCase
             $proxyFileContent
         );
         $this->assertStringContainsString(
-            "self::\$__joinPoints['method:publicMethod']->__invoke(",
+            "\\Go\\Aop\\Framework\\InterceptorInjector::forMethod(self::class, 'publicMethod'",
             $proxyFileContent
         );
     }

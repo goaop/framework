@@ -12,11 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
-use Go\Aop\Framework\ReflectionFunctionInvocation;
-use Go\Aop\Intercept\Interceptor;
 use Go\Core\AspectContainer;
-use Go\Core\AspectKernel;
-use Go\Core\LazyAdvisorAccessor;
 use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Proxy\Generator\FileGenerator;
 use Go\Proxy\Generator\FunctionGenerator;
@@ -31,11 +27,6 @@ use ReflectionNamedType;
  */
 class FunctionProxyGenerator
 {
-    /**
-     * Cached accessor for lazy advisor resolution
-     */
-    private static ?LazyAdvisorAccessor $accessor = null;
-
     /**
      * List of advices that are used for generation of child
      *
@@ -80,29 +71,6 @@ class FunctionProxyGenerator
     }
 
     /**
-     * Returns a joinpoint for specific function in the namespace
-     *
-     * @param string[] $adviceNames List of advices
-     */
-    public static function getJoinPoint(string $functionName, array $adviceNames): ReflectionFunctionInvocation
-    {
-        if (self::$accessor === null) {
-            self::$accessor = AspectKernel::getInstance()->getContainer()->getService(LazyAdvisorAccessor::class);
-        }
-
-        $filledAdvices = [];
-        foreach ($adviceNames as $advisorName) {
-            $advice = self::$accessor->$advisorName;
-            if (!$advice instanceof Interceptor) {
-                throw new \RuntimeException("Advice '$advisorName' must implement Interceptor, got " . get_debug_type($advice));
-            }
-            $filledAdvices[] = $advice;
-        }
-
-        return new ReflectionFunctionInvocation($filledAdvices, $functionName);
-    }
-
-    /**
      * Generates the source code of function proxies in given namespace
      */
     public function generate(): string
@@ -115,8 +83,6 @@ class FunctionProxyGenerator
      */
     protected function getJoinpointInvocationBody(ReflectionFunction $function): string
     {
-        $class = '\\' . self::class;
-
         $argumentList = new FunctionCallArgumentListGenerator($function);
         $argumentCode = $argumentList->generate();
 
@@ -135,9 +101,10 @@ class FunctionProxyGenerator
         $advicesCode = $advicesArray->generate();
 
         return <<<BODY
+        /** @var \\Go\\Aop\\Intercept\\FunctionInvocation|null \$__joinPoint */
         static \$__joinPoint;
         if (\$__joinPoint === null) {
-            \$__joinPoint = {$class}::getJoinPoint('{$function->name}', {$advicesCode});
+            \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forFunction('{$function->name}', {$advicesCode});
         }
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;

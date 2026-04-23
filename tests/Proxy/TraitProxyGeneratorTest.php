@@ -35,7 +35,7 @@ class TraitProxyGeneratorTest extends TestCase
      * - declare a trait (not a class)
      * - alias the intercepted method as private __aop__<method>
      * - override the method with a per-method static $__joinPoint body
-     * - call TraitProxyGenerator::getJoinPoint (not ClassProxyGenerator::injectJoinPoints)
+     * - call InterceptorInjector (not ClassProxyGenerator::injectJoinPoints)
      * - dispatch via __invoke($this, ...) for instance methods
      */
     public function testGenerateTraitWithInterceptedInstanceMethod(): void
@@ -66,10 +66,9 @@ class TraitProxyGeneratorTest extends TestCase
 
         // Method body must use per-method static joinpoint caching
         $this->assertStringContainsString('static $__joinPoint', $output);
-        $this->assertStringContainsString('TraitProxyGenerator::getJoinPoint', $output);
+        $this->assertStringContainsString('InterceptorInjector::forMethod', $output);
 
-        // Correct join point type and method name
-        $this->assertStringContainsString("'method'", $output);
+        // Correct method name
         $this->assertStringContainsString("'publicMethod'", $output);
 
         // Instance method dispatch: $this as the first argument
@@ -100,8 +99,6 @@ class TraitProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('trait TraitAliasProxied', $output);
         $this->assertStringContainsString('__aop__staticPublicMethod', $output);
 
-        // Static join point type
-        $this->assertStringContainsString("'static'", $output);
         $this->assertStringContainsString("'staticPublicMethod'", $output);
 
         // Static dispatch: static::class as the first argument
@@ -138,8 +135,12 @@ class TraitProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('__aop__protectedMethod', $output);
         $this->assertStringContainsString('__aop__staticPublicMethod', $output);
 
-        // Three separate getJoinPoint calls (one per intercepted method)
-        $this->assertSame(3, substr_count($output, 'TraitProxyGenerator::getJoinPoint'));
+        // Three separate injector calls (one per intercepted method)
+        $this->assertSame(2, substr_count($output, 'InterceptorInjector::forMethod'));
+        $this->assertSame(1, substr_count($output, 'InterceptorInjector::forStaticMethod'));
+        $this->assertStringContainsString("forMethod(self::class, 'publicMethod'", $output);
+        $this->assertStringContainsString("forMethod(self::class, 'protectedMethod'", $output);
+        $this->assertStringContainsString("forStaticMethod(self::class, 'staticPublicMethod'", $output);
     }
 
     /**
@@ -214,8 +215,8 @@ class TraitProxyGeneratorTest extends TestCase
         $output = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString('public int $public = 326 {', $output);
-        $this->assertStringContainsString('static $fieldAccess;', $output);
-        $this->assertStringContainsString("TraitProxyGenerator::getJoinPoint(__CLASS__, 'prop', 'public'", $output);
+        $this->assertStringContainsString('static $__joinPoint;', $output);
+        $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'public'", $output);
         $this->assertStringContainsString('FieldAccessType::READ', $output);
         $this->assertStringContainsString('FieldAccessType::WRITE', $output);
         $this->assertStringNotContainsString('$__joinPoints[', $output);
@@ -240,7 +241,7 @@ class TraitProxyGeneratorTest extends TestCase
         $output = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString(
-            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception> \$fieldAccess */",
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception>|null \$__joinPoint */",
             $output
         );
     }

@@ -198,8 +198,7 @@ class WeavingTransformerTest extends TestCase
      *
      * WeavingTransformer::convertClassToTrait() must strip T_FINAL, T_ABSTRACT, and T_READONLY
      * before the class keyword because PHP traits do not support these modifiers.
-     * The proxy class is intentionally non-readonly because it requires a private static
-     * $__joinPoints property, which PHP forbids in readonly classes.
+     * The proxy class is intentionally non-readonly.
      */
     public function testWeaverForFinalReadonlyClass(): void
     {
@@ -359,8 +358,8 @@ class WeavingTransformerTest extends TestCase
 
         $this->assertStringContainsString("public string \$value = 'test' {", $proxyContent);
         $this->assertStringContainsString("public protected(set) string \$limited = 'limited' {", $proxyContent);
-        $this->assertStringContainsString("self::\$__joinPoints['prop:value']", $proxyContent);
-        $this->assertStringContainsString("self::\$__joinPoints['prop:limited']", $proxyContent);
+        $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'value'", $proxyContent);
+        $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'limited'", $proxyContent);
     }
 
     /**
