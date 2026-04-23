@@ -23,7 +23,7 @@ use ReflectionClass;
  *
  * Like TraitProxyGenerator, EnumProxyGenerator does NOT use a class-level
  * $__joinPoints property (PHP enums cannot have properties). Instead it uses
- * per-method static $__joinPoint caching and calls EnumProxyGenerator::getJoinPoint().
+ * per-method static $__joinPoint caching and calls InterceptorInjector.
  * There is also no injectJoinPoints() tail call in the generated output.
  */
 class EnumProxyGeneratorTest extends TestCase
@@ -33,7 +33,7 @@ class EnumProxyGeneratorTest extends TestCase
      * - declare an enum (not a class or trait)
      * - alias the intercepted method as private __aop__<method>
      * - override the method with a per-method static joinpoint dispatch body
-     * - call EnumProxyGenerator::getJoinPoint (not ClassProxyGenerator::injectJoinPoints)
+     * - call InterceptorInjector (not ClassProxyGenerator::injectJoinPoints)
      * - dispatch via __invoke($this, ...) for instance methods
      */
     public function testGenerateProxyEnumMethod(): void
@@ -63,10 +63,9 @@ class EnumProxyGeneratorTest extends TestCase
 
         // Per-method static joinpoint caching
         $this->assertStringContainsString('static $__joinPoint', $output);
-        $this->assertStringContainsString('EnumProxyGenerator::getJoinPoint', $output);
+        $this->assertStringContainsString('InterceptorInjector::forMethod', $output);
 
-        // Correct join point type and method name
-        $this->assertStringContainsString("'method'", $output);
+        // Correct method name
         $this->assertStringContainsString("'label'", $output);
 
         // Instance method dispatch: $this as the first argument
@@ -90,7 +89,6 @@ class EnumProxyGeneratorTest extends TestCase
         $output    = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString('__aop__fromLabel', $output);
-        $this->assertStringContainsString("'static'", $output);
         $this->assertStringContainsString("'fromLabel'", $output);
 
         // Static dispatch: static::class as the first argument

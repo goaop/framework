@@ -12,53 +12,32 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
-use Go\Aop\Advice;
 use Go\Aop\Framework\AbstractMethodInvocation;
-use Go\Aop\Framework\ClassFieldAccess;
-use Go\Aop\Framework\DynamicTraitAliasMethodInvocation;
-use Go\Aop\Framework\ReflectionConstructorInvocation;
-use Go\Aop\Framework\StaticInitializationJoinpoint;
-use Go\Aop\Framework\StaticTraitAliasMethodInvocation;
-use Go\Aop\Intercept\Joinpoint;
+use Go\Aop\InitializationAware;
 use Go\Aop\Proxy;
+use Go\Aop\StaticInitializationAware;
 use Go\Core\AspectContainer;
-use Go\Core\AspectKernel;
-use Go\Core\LazyAdvisorAccessor;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\ClassGenerator;
 use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\GeneratorInterface;
+use Go\Proxy\Generator\MethodGenerator;
+use Go\Proxy\Generator\ParameterGenerator;
+use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use Go\Proxy\Part\InterceptedMethodGenerator;
 use Go\Proxy\Part\InterceptedPropertyGenerator;
-use Go\Proxy\Part\JoinPointPropertyGenerator;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionProperty;
-use UnexpectedValueException;
 
 /**
  * Class proxy builder that is used to generate a child class from the list of joinpoints
  */
 class ClassProxyGenerator
 {
-    /**
-     * Static mappings for class name for excluding if..else check
-     *
-     * @var array<string, class-string<Joinpoint>>
-     */
-    protected static array $invocationClassMap = [
-        // MethodInvocation subtypes — directly invoked via self::$__joinPoints[key]->__invoke() in generated method bodies
-        AspectContainer::METHOD_PREFIX        => DynamicTraitAliasMethodInvocation::class,
-        AspectContainer::STATIC_METHOD_PREFIX => StaticTraitAliasMethodInvocation::class,
-        // Non-MethodInvocation types — accessed through explicit casts or instanceof checks, not from generated method bodies
-        AspectContainer::PROPERTY_PREFIX      => ClassFieldAccess::class,              // used in generated native property hooks
-        AspectContainer::STATIC_INIT_PREFIX   => StaticInitializationJoinpoint::class, // instanceof check in injectJoinPoints()
-        AspectContainer::INIT_PREFIX          => ReflectionConstructorInvocation::class // accessed via ConstructorExecutionTransformer
-    ];
-
     /**
      * List of advices that are used for generation of child
      *
@@ -106,9 +85,12 @@ class ClassProxyGenerator
         $introducedInterfaces  = $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [];
         $introducedTraits      = $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [];
 
-        $generatedProperties = [new JoinPointPropertyGenerator()];
+        $staticInitializationAdvices = array_values($classAdviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? []);
+        $initializationAdvices       = array_values($classAdviceNames[AspectContainer::INIT_PREFIX]['root'] ?? []);
+
+        $generatedProperties = [];
         $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
-        foreach ($this->interceptProperties($originalClass, $interceptedProperties) as $interceptedProperty) {
+        foreach ($this->interceptProperties($originalClass, $propertyAdvices, $interceptedProperties) as $interceptedProperty) {
             $generatedProperties[] = $interceptedProperty;
         }
 
@@ -123,14 +105,24 @@ class ClassProxyGenerator
             static fn($m) => $m->getGenerator(),
             array_values($generatedMethods)
         );
+        foreach ([
+            [$staticInitializationAdvices, StaticInitializationAware::class, $this->createStaticInitializationMethod(...)],
+            [$initializationAdvices, InitializationAware::class, $this->createInitializationMethod(...)],
+        ] as [$advisorNames, $interfaceName, $methodFactory]) {
+            if ($advisorNames === []) {
+                continue;
+            }
+            $introducedInterfaces[] = '\\' . $interfaceName;
+            $methodGenerators[]     = $methodFactory($advisorNames);
+        }
+        $introducedInterfaces = array_values(array_unique($introducedInterfaces));
 
         // Proxy parent = original class parent (not the trait — there is no inheritance layer)
         $parentClass     = $originalClass->getParentClass();
         $parentClassName = $parentClass !== false ? $parentClass->getName() : null;
 
         // Proxy flags: preserve final/abstract from original class.
-        // Note: readonly is intentionally NOT preserved — the proxy requires a private static
-        // $__joinPoints property, which PHP prohibits in readonly classes.
+        // Note: readonly is intentionally NOT preserved.
         $flags = 0;
         if ($originalClass->isFinal()) {
             $flags |= ClassGenerator::FLAG_FINAL;
@@ -190,82 +182,18 @@ class ClassProxyGenerator
     }
 
     /**
-     * Inject advices into given class
-     *
-     * NB This method will be used as a callback during source code evaluation to inject joinpoints
-     *
-     * @param string[][][] $advices List of advices to inject
-     */
-    public static function injectJoinPoints(string $targetClassName, array $advices = []): void
-    {
-        if (!class_exists($targetClassName)) {
-            return;
-        }
-        $reflectionClass    = new ReflectionClass($targetClassName);
-        $joinPointsProperty = $reflectionClass->getProperty(JoinPointPropertyGenerator::NAME);
-
-        $joinPoints = static::wrapWithJoinPoints($advices, $reflectionClass->name);
-        $joinPointsProperty->setValue(null, $joinPoints);
-
-        // staticinit:root is a StaticInitializationJoinpoint, not a MethodInvocation.
-        // It is invoked here immediately after class load, not from generated method bodies.
-        $staticInit = AspectContainer::STATIC_INIT_PREFIX . ':root';
-        if (isset($joinPoints[$staticInit]) && $joinPoints[$staticInit] instanceof StaticInitializationJoinpoint) {
-            ($joinPoints[$staticInit])();
-        }
-    }
-
-    /**
      * Generates the source code of child class
      */
     public function generate(): string
     {
-        $classCode    = $this->generator->generate();
-        $advicesValue = new ValueGenerator($this->adviceNames);
+        $classCode = $this->generator->generate();
+        $staticInitializationAdvices = array_values($this->adviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? []);
 
-        return $classCode
-            // Inject advices on call
-            . "\n" . '\\' . self::class . '::injectJoinPoints(' . $this->generator->getName() . '::class, ' . $advicesValue->generate() . ');';
-    }
-
-    /**
-     * Wrap advices with joinpoint object
-     *
-     * @param string[][][] $classAdvices Advisor name strings indexed by join point type and name
-     * @param class-string $className    Proxy class name
-     *
-     * @throws UnexpectedValueException If joinPoint type is unknown
-     *
-     * @return Joinpoint[] returns list of joinpoint ready to use
-     */
-    protected static function wrapWithJoinPoints(array $classAdvices, string $className): array
-    {
-        static $accessor = null;
-
-        if (!isset($accessor)) {
-            $aspectKernel = AspectKernel::getInstance();
-            $accessor     = $aspectKernel->getContainer()->getService(LazyAdvisorAccessor::class);
+        if ($staticInitializationAdvices !== []) {
+            $classCode .= "\n" . $this->generator->getName() . '::__aop__staticInitialization();';
         }
 
-        $joinPoints = [];
-
-        foreach ($classAdvices as $joinPointType => $typedAdvices) {
-            // if not isset then we don't want to create such invocation for class
-            if (!isset(self::$invocationClassMap[$joinPointType])) {
-                continue;
-            }
-            foreach ($typedAdvices as $joinPointName => $advices) {
-                $filledAdvices = [];
-                foreach ($advices as $advisorName) {
-                    $filledAdvices[] = $accessor->$advisorName;
-                }
-
-                $joinpoint = new self::$invocationClassMap[$joinPointType]($filledAdvices, $className, $joinPointName);
-                $joinPoints["$joinPointType:$joinPointName"] = $joinpoint;
-            }
-        }
-
-        return $joinPoints;
+        return $classCode;
     }
 
     /**
@@ -295,11 +223,12 @@ class ClassProxyGenerator
 
     /**
      * @param ReflectionClass<object> $originalClass
+     * @param array<array-key, array<string>> $propertyAdvices
      * @param string[] $propertyNames Intercepted property names from advice map
      *
      * @return InterceptedPropertyGenerator[]
      */
-    private function interceptProperties(ReflectionClass $originalClass, array $propertyNames): array
+    private function interceptProperties(ReflectionClass $originalClass, array $propertyAdvices, array $propertyNames): array
     {
         $interceptedProperties = [];
         if ($propertyNames === []) {
@@ -311,7 +240,11 @@ class ClassProxyGenerator
             if (!isset($targetProperties[$property->getName()])) {
                 continue;
             }
-            $interceptedProperties[] = new InterceptedPropertyGenerator($property);
+            $adviceNames = array_values($propertyAdvices[$property->getName()] ?? []);
+            if ($adviceNames === []) {
+                continue;
+            }
+            $interceptedProperties[] = new InterceptedPropertyGenerator($property, $adviceNames);
         }
 
         return $interceptedProperties;
@@ -323,8 +256,9 @@ class ClassProxyGenerator
     protected function getJoinpointInvocationBody(ReflectionMethod $method): string
     {
         $isStatic = $method->isStatic();
-        $scope    = $isStatic ? 'static::class' : '$this';
+        $invocationArguments = $isStatic ? 'static::class' : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
+        $injectorMethod = $isStatic ? 'forStaticMethod' : 'forMethod';
 
         $argumentList = new FunctionCallArgumentListGenerator($method);
         $argumentCode = $argumentList->generate();
@@ -338,11 +272,84 @@ class ClassProxyGenerator
         }
 
         if (!empty($argumentCode)) {
-            $scope = "$scope, $argumentCode";
+            $invocationArguments .= ", $argumentCode";
         }
 
-        $body = "{$return}self::\$__joinPoints['{$prefix}:{$method->name}']->__invoke($scope);";
+        $adviceNames = $this->adviceNames[$prefix][$method->name]
+            ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
+        $advicesArrayValue = new ValueGenerator($adviceNames);
+        $advicesArrayValue->setArrayDepth(1);
+        $advicesCode = $advicesArrayValue->generate();
+        $joinPointType = $isStatic
+            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self>|null'
+            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self>|null';
+
+        $body = <<<BODY
+        /** @var {$joinPointType} \$__joinPoint */
+        static \$__joinPoint;
+        if (\$__joinPoint === null) {
+            \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
+        }
+        {$return}\$__joinPoint->__invoke($invocationArguments);
+        BODY;
 
         return $body;
     }
+
+    /**
+     * @param non-empty-list<string> $advisorNames
+     */
+    private function createStaticInitializationMethod(array $advisorNames): MethodGenerator
+    {
+        $advicesValue = new ValueGenerator($advisorNames);
+        $advicesValue->setArrayDepth(1);
+        $advicesCode = $advicesValue->generate();
+
+        $method = new MethodGenerator('__aop__staticInitialization');
+        $method->setStatic(true);
+        $method->setReturnType('void');
+        $method->setBody(<<<BODY
+        /** @var \\Go\\Aop\\Intercept\\ClassJoinpoint<self>|null \$__joinPoint */
+        static \$__joinPoint;
+        if (\$__joinPoint === null) {
+            \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forStaticInitialization(self::class, {$advicesCode});
+        }
+        \$__joinPoint(static::class);
+        BODY);
+
+        return $method;
+    }
+
+    /**
+     * @param non-empty-list<string> $advisorNames
+     */
+    private function createInitializationMethod(array $advisorNames): MethodGenerator
+    {
+        $advicesValue = new ValueGenerator($advisorNames);
+        $advicesValue->setArrayDepth(1);
+        $advicesCode = $advicesValue->generate();
+
+        $method = new MethodGenerator('__aop__initialization');
+        $method->setStatic(true);
+        $method->setReturnType('static');
+        $argumentsParameter = new ParameterGenerator(
+            'arguments',
+            TypeGenerator::fromTypeString('array'),
+            false,
+            false,
+            new ValueGenerator([])
+        );
+        $method->addParameter($argumentsParameter);
+        $method->setBody(<<<BODY
+        /** @var \\Go\\Aop\\Intercept\\ConstructorInvocation<self>|null \$__joinPoint */
+        static \$__joinPoint;
+        if (\$__joinPoint === null) {
+            \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forInitialization(self::class, {$advicesCode});
+        }
+        return \$__joinPoint->__invoke(\$arguments);
+        BODY);
+
+        return $method;
+    }
+
 }

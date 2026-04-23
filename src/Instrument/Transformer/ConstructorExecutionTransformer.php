@@ -13,14 +13,12 @@ declare(strict_types=1);
 namespace Go\Instrument\Transformer;
 
 use Go\Aop\Framework\ReflectionConstructorInvocation;
-use Go\Core\AspectContainer;
+use Go\Aop\InitializationAware;
 use PhpParser\Node;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\FindingVisitor;
-use ReflectionException;
-use ReflectionProperty;
 
 /**
  * Transforms the source code to add an ability to intercept new instances creation
@@ -123,25 +121,17 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         $fullClassName = ltrim($fullClassName, '\\');
         if (!isset(self::$constructorInvocationsCache[$fullClassName])) {
             $invocation  = null;
-            $dynamicInit = AspectContainer::INIT_PREFIX . ':root';
             if (class_exists($fullClassName)) {
-                try {
-                    $joinPointsRef = new ReflectionProperty($fullClassName, '__joinPoints');
-                    $joinPoints = $joinPointsRef->getValue();
-                    if (is_array($joinPoints) && isset($joinPoints[$dynamicInit])) {
-                        $jp = $joinPoints[$dynamicInit];
-                        if ($jp instanceof ReflectionConstructorInvocation) {
-                            $invocation = $jp;
-                        }
-                    }
-                } catch (ReflectionException $e) {
-                    $invocation = null;
-                }
-                if (!$invocation) {
+                if (!is_subclass_of($fullClassName, InitializationAware::class)) {
                     $invocation = new ReflectionConstructorInvocation([], $fullClassName);
                 }
             }
             self::$constructorInvocationsCache[$fullClassName] = $invocation;
+        }
+
+        if (is_subclass_of($fullClassName, InitializationAware::class)) {
+            /** @var class-string<InitializationAware<object>> $fullClassName */
+            return $fullClassName::__aop__initialization($arguments);
         }
 
         $cachedInvocation = self::$constructorInvocationsCache[$fullClassName];
@@ -149,11 +139,6 @@ final class ConstructorExecutionTransformer implements SourceTransformer
             throw new \LogicException("Cannot instantiate non-existent class: {$fullClassName}");
         }
 
-        $result = $cachedInvocation->__invoke($arguments);
-        if (!is_object($result)) {
-            throw new \LogicException('Constructor invocation did not return an object');
-        }
-
-        return $result;
+        return $cachedInvocation->__invoke($arguments);
     }
 }

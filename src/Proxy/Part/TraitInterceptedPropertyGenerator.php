@@ -12,10 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Intercept\FieldAccessType;
-use Go\Core\AspectContainer;
 use Go\Proxy\Generator\PropertyNodeProvider;
-use Go\Proxy\TraitProxyGenerator;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\Array_;
@@ -30,7 +29,6 @@ use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Name;
 use PhpParser\Node\PropertyHook;
-use PhpParser\Node\Scalar\MagicConst\Class_ as ClassMagicConst;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\Expression;
@@ -75,12 +73,12 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
     private function createGetHook(bool $returnsByReference): PropertyHook
     {
         $propertyName = $this->property->getName();
-        $readInvokeWithValue = new MethodCall(new Variable('fieldAccess'), '__invoke', [
+        $readInvokeWithValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
             new Arg(new ClassConstFetch(new Name\FullyQualified(FieldAccessType::class), 'READ')),
             new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
-        $readInvokeWithoutValue = new MethodCall(new Variable('fieldAccess'), '__invoke', [
+        $readInvokeWithoutValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
             new Arg(new ClassConstFetch(new Name\FullyQualified(FieldAccessType::class), 'READ')),
         ]);
@@ -90,7 +88,7 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
             $this->hasPotentiallyUninitializedTypedProperty()
                 ? new If_(
                     new MethodCall(
-                        new MethodCall(new Variable('fieldAccess'), 'getField'),
+                        new MethodCall(new Variable('__joinPoint'), 'getField'),
                         'isInitialized',
                         [new Arg(new Variable('this'))]
                     ),
@@ -108,13 +106,13 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
     private function createSetHook(): PropertyHook
     {
         $propertyName = $this->property->getName();
-        $writeInvokeWithBackedValue = new MethodCall(new Variable('fieldAccess'), '__invoke', [
+        $writeInvokeWithBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
             new Arg(new ClassConstFetch(new Name\FullyQualified(FieldAccessType::class), 'WRITE')),
             new Arg(new Variable('value')),
             new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
-        $writeInvokeWithoutBackedValue = new MethodCall(new Variable('fieldAccess'), '__invoke', [
+        $writeInvokeWithoutBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
             new Arg(new ClassConstFetch(new Name\FullyQualified(FieldAccessType::class), 'WRITE')),
             new Arg(new Variable('value')),
@@ -125,7 +123,7 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
             $this->hasPotentiallyUninitializedTypedProperty()
                 ? new If_(
                     new MethodCall(
-                        new MethodCall(new Variable('fieldAccess'), 'getField'),
+                        new MethodCall(new Variable('__joinPoint'), 'getField'),
                         'isInitialized',
                         [new Arg(new Variable('this'))]
                     ),
@@ -159,13 +157,12 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
         $propertyName = $this->property->getName();
 
         $initializeJoinPoint = new Expression(new Assign(
-            new Variable('fieldAccess'),
+            new Variable('__joinPoint'),
             new StaticCall(
-                new Name\FullyQualified(TraitProxyGenerator::class),
-                'getJoinPoint',
+                new Name\FullyQualified(InterceptorInjector::class),
+                'forProperty',
                 [
-                    new Arg(new ClassMagicConst()),
-                    new Arg(new String_(AspectContainer::PROPERTY_PREFIX)),
+                    new Arg(new ClassConstFetch(new Name('self'), 'class')),
                     new Arg(new String_($propertyName)),
                     new Arg(new Array_(array_map(
                         static fn (string $adviceName): ArrayItem => new ArrayItem(new String_($adviceName)),
@@ -175,12 +172,13 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
             )
         ));
 
-        $initializeJoinPoint->setDocComment($this->createFieldAccessDocComment());
+        $joinPointStaticVar = new Static_([new StaticVar(new Variable('__joinPoint'))]);
+        $joinPointStaticVar->setDocComment($this->createFieldAccessDocComment('__joinPoint', true));
 
         return [
-            new Static_([new StaticVar(new Variable('fieldAccess'))]),
+            $joinPointStaticVar,
             new If_(
-                new Identical(new Variable('fieldAccess'), new ConstFetch(new Name('null'))),
+                new Identical(new Variable('__joinPoint'), new ConstFetch(new Name('null'))),
                 ['stmts' => [$initializeJoinPoint]]
             )
         ];

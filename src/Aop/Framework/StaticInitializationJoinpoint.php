@@ -14,7 +14,6 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Intercept\ClassJoinpoint;
 use Go\Aop\Intercept\Interceptor;
-use ReflectionClass;
 
 /**
  * Static initialization joinpoint is invoked after class is loaded into memory
@@ -25,9 +24,9 @@ use ReflectionClass;
 class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJoinpoint
 {
     /**
-     * @var ReflectionClass<T> Reflection of given class
+     * @var class-string<T>
      */
-    private readonly ReflectionClass $reflectionClass;
+    private string $scope;
 
     /**
      * Constructor for the class static initialization joinpoint
@@ -37,7 +36,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
      */
     public function __construct(array $advices, string $className)
     {
-        $this->reflectionClass = new ReflectionClass($className);
+        $this->scope = $className;
         parent::__construct($advices);
     }
 
@@ -55,8 +54,14 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
     /**
      * Invokes current joinpoint with all interceptors
      */
-    final public function __invoke(): void
+    /**
+     * @param class-string<T>|null $scope Runtime static context, if available
+     */
+    final public function __invoke(?string $scope = null): void
     {
+        if ($scope !== null) {
+            $this->scope = $scope;
+        }
         $this->current = 0;
         $this->proceed();
     }
@@ -79,7 +84,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
 
     public function getScope(): string
     {
-        return $this->reflectionClass->getName();
+        return $this->scope;
     }
 
     /**

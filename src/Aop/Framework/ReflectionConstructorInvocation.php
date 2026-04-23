@@ -55,16 +55,18 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
     }
 
     /**
-     * @return mixed|T Covariant, always new object.
+     * @phpstan-return T
      * @throws \ReflectionException If class is internal and cannot be created without constructor
      */
-    final public function proceed(): mixed
+    final public function proceed(): object
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current];
             $this->current++;
+            /** @var T $result */
+            $result = $currentInterceptor->invoke($this);
 
-            return $currentInterceptor->invoke($this);
+            return $result;
         }
 
         $this->instance = $this->class->newInstanceWithoutConstructor();
@@ -94,9 +96,9 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      * Invokes current constructor invocation with all interceptors
      *
      * @param list<mixed> $arguments Arguments for constructor invocation
-     * @return mixed|T Instance of object or anything else from interceptors, eg Around type can replace object
+     * @phpstan-return T Instance of object
      */
-    final public function __invoke(array $arguments = []): mixed
+    final public function __invoke(array $arguments = []): object
     {
         $this->current   = 0;
         $this->arguments = $arguments;

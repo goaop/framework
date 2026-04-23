@@ -13,13 +13,8 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Aop\Framework\AbstractMethodInvocation;
-use Go\Aop\Framework\DynamicTraitAliasMethodInvocation;
-use Go\Aop\Framework\StaticTraitAliasMethodInvocation;
-use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
-use Go\Core\AspectKernel;
-use Go\Core\LazyAdvisorAccessor;
 use Go\Proxy\Generator\EnumGenerator;
 use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
@@ -52,17 +47,6 @@ use ReflectionNamedType;
  */
 class EnumProxyGenerator extends ClassProxyGenerator
 {
-    private static ?LazyAdvisorAccessor $cachedAccessor = null;
-
-    /**
-     * Joinpoint invocation class map for enums.
-     * Enums do not support property interception or constructor interception.
-     */
-    protected static array $invocationClassMap = [
-        AspectContainer::METHOD_PREFIX        => DynamicTraitAliasMethodInvocation::class,
-        AspectContainer::STATIC_METHOD_PREFIX => StaticTraitAliasMethodInvocation::class,
-    ];
-
     /**
      * Built-in enum methods that must never be intercepted.
      * These are synthesised by PHP and cannot be overridden via trait aliasing.
@@ -193,35 +177,6 @@ class EnumProxyGenerator extends ClassProxyGenerator
     }
 
     /**
-     * Returns a lazy-initialised joinpoint for the given enum method.
-     *
-     * Called from within each generated intercepted method body on first invocation.
-     *
-     * @param class-string     $className
-     * @param non-empty-string $methodName
-     * @param list<string>     $adviceNames List of advisor names to resolve from the container
-     */
-    public static function getJoinPoint(
-        string $className,
-        string $joinPointType,
-        string $methodName,
-        array $adviceNames
-    ): Joinpoint {
-        if (self::$cachedAccessor === null) {
-            self::$cachedAccessor = AspectKernel::getInstance()->getContainer()->getService(LazyAdvisorAccessor::class);
-        }
-
-        $filledAdvices = [];
-        foreach ($adviceNames as $advisorName) {
-            $filledAdvices[] = self::$cachedAccessor->getInterceptor($advisorName);
-        }
-
-        $invocationClass = self::$invocationClassMap[$joinPointType];
-
-        return new $invocationClass($filledAdvices, $className, $methodName);
-    }
-
-    /**
      * Creates the method body that lazily initialises a per-method static joinpoint.
      *
      * This mirrors TraitProxyGenerator::getJoinpointInvocationBody() because enums,
@@ -230,9 +185,9 @@ class EnumProxyGenerator extends ClassProxyGenerator
     protected function getJoinpointInvocationBody(ReflectionMethod $method): string
     {
         $isStatic = $method->isStatic();
-        $class    = '\\' . self::class;
         $scope    = $isStatic ? 'static::class' : '$this';
         $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
+        $injectorMethod = $isStatic ? 'forStaticMethod' : 'forMethod';
 
         $argumentList = new FunctionCallArgumentListGenerator($method);
         $argumentCode = $argumentList->generate();
@@ -246,14 +201,20 @@ class EnumProxyGenerator extends ClassProxyGenerator
             }
         }
 
-        $advicesArrayValue = new ValueGenerator($this->adviceNames[$prefix][$method->name]);
+        $adviceNames = $this->adviceNames[$prefix][$method->name]
+            ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
+        $advicesArrayValue = new ValueGenerator($adviceNames);
         $advicesArrayValue->setArrayDepth(1);
         $advicesCode = $advicesArrayValue->generate();
+        $joinPointType = $isStatic
+            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self>|null'
+            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self>|null';
 
         return <<<BODY
+        /** @var {$joinPointType} \$__joinPoint */
         static \$__joinPoint;
         if (\$__joinPoint === null) {
-            \$__joinPoint = {$class}::getJoinPoint(__CLASS__, '{$prefix}', '{$method->name}', {$advicesCode});
+            \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
         }
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
