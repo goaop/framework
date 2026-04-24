@@ -25,8 +25,9 @@ use function count;
  *
  * @phpstan-type MethodInvocationFrame array{list<mixed>, mixed, int}
  *
- * @template T of object = object
- * @implements MethodInvocation<T>
+ * @template T of object Declares the instance type of the method invocation.
+ * @template V Declares the generic return type of the method invocation.
+ * @implements MethodInvocation<T, V>
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {

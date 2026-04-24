@@ -10,7 +10,7 @@ enum TestStatus : string implements \Go\Aop\Proxy
     case Inactive = 'inactive';
     public function label(): string
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, string>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'label', ['advisor.Test\ns1\TestStatus->label']);

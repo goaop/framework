@@ -15,8 +15,11 @@ namespace Go\Aop\Intercept;
 /**
  * Static method invocation extends MethodInvocation with type information about static method calls.
  *
- * @template T of object = object
- * @extends MethodInvocation<T>
+ * @api
+ *
+ * @template T of object = object Declares the instance type of the method invocation.
+ * @template V = mixed Declares the generic return type of the method invocation.
+ * @extends MethodInvocation<T, V>
  */
 interface StaticMethodInvocation extends MethodInvocation
 {

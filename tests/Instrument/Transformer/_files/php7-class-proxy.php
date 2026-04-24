@@ -96,7 +96,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
     }
     public function stringRth(string $arg): string
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, string>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'stringRth', ['advisor.Test\ns1\TestPhp7Class->stringRth']);
@@ -105,7 +105,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
     }
     public function floatRth(float $arg): float
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, float>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'floatRth', ['advisor.Test\ns1\TestPhp7Class->floatRth']);
@@ -114,7 +114,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
     }
     public function boolRth(bool $arg): bool
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, bool>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'boolRth', ['advisor.Test\ns1\TestPhp7Class->boolRth']);
@@ -123,7 +123,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
     }
     public function intRth(int $arg): int
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, int>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'intRth', ['advisor.Test\ns1\TestPhp7Class->intRth']);
@@ -132,7 +132,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
     }
     public function callableRth(callable $arg): callable
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, callable>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'callableRth', ['advisor.Test\ns1\TestPhp7Class->callableRth']);
@@ -141,7 +141,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
     }
     public function arrayRth(array $arg): array
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, array>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'arrayRth', ['advisor.Test\ns1\TestPhp7Class->arrayRth']);
@@ -150,7 +150,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
     }
     public function exceptionRth(\Exception $exception): \Exception
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, \Exception>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'exceptionRth', ['advisor.Test\ns1\TestPhp7Class->exceptionRth']);
@@ -168,7 +168,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
     }
     public function returnSelf(): self
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, self>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'returnSelf', ['advisor.Test\ns1\TestPhp7Class->returnSelf']);

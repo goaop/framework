@@ -10,7 +10,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
     }
     public function publicMethod(): string
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, string>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'publicMethod', ['advisor.Test\ns1\TestReadonlyClass->publicMethod']);
@@ -19,7 +19,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
     }
     public function anotherMethod(int $x): int
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, int>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'anotherMethod', ['advisor.Test\ns1\TestReadonlyClass->anotherMethod']);
@@ -28,7 +28,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
     }
     public static function staticMethod(): string
     {
-        /** @var \Go\Aop\Intercept\StaticMethodInvocation<self>|null $__joinPoint */
+        /** @var \Go\Aop\Intercept\StaticMethodInvocation<self, string>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forStaticMethod(self::class, 'staticMethod', ['advisor.Test\ns1\TestReadonlyClass->staticMethod']);

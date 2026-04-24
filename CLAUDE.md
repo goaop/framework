@@ -79,13 +79,13 @@ class Foo extends OriginalParent implements OriginalInterfaces, \Go\Aop\Proxy
         // ... one alias per intercepted method (including private ones)
     }
 
-    public function interceptedMethod(...) {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+    public function interceptedMethod(ArgType $arg): ReturnType {
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, ReturnType>|null $__joinPoint */
         static $__joinPoint;
         if ($__joinPoint === null) {
             $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'interceptedMethod', [...]);
         }
-        return $__joinPoint->__invoke($this, [...]);
+        return $__joinPoint->__invoke($this, [$arg]);
     }
     // ... one override per intercepted method
 }
@@ -112,10 +112,17 @@ Key properties of this engine:
 - `src/Proxy/Generator/` — low-level AST generators:
   - `ClassGenerator` — builds the proxy class AST node; `addTraitAlias()` registers both the trait and an alias in a single `use { ... }` block; deduplicates traits
   - `AttributeGroupsGenerator` — copies PHP 8 attributes from reflection to proxy AST, preserving named arguments
+  - `TypeGenerator` — converts PHP types (string or `ReflectionType`) to AST nodes or phpDoc strings; `renderTypeForPhpDoc()` is used by all proxy generators to produce the second generic argument in `@var` annotations for `$__joinPoint`
 
 ### AOP core (`src/Aop/`)
 
 - `src/Aop/Intercept/` — interfaces: `Joinpoint`, `Invocation`, `MethodInvocation`, `ConstructorInvocation`, `FunctionInvocation`, `FieldAccess`
+  - **Generic template variables** — all callable join-point interfaces carry PHPStan generics to enable type-aware static analysis in aspect advice:
+    - `MethodInvocation<T of object, V = mixed>` — `T` is the class holding the method (narrows `getThis()`/`getScope()`); `V` is the method return type (narrows `__invoke()` return)
+    - `DynamicMethodInvocation<T, V>` and `StaticMethodInvocation<T, V>` — subtypes with covariant narrowing (`getThis()` always returns `T` / always `null` respectively)
+    - `FunctionInvocation<V = mixed>` — `V` is the function return type
+    - `FieldAccess<T of object, V = mixed>` — `T` is the declaring class; `V` is the property type (narrows `getValue()`, `getValueToSet()`, `__invoke()` return)
+  - The proxy generators (`ClassProxyGenerator`, `TraitProxyGenerator`, `EnumProxyGenerator`, `FunctionProxyGenerator`) use `TypeGenerator::renderTypeForPhpDoc()` to extract the return type from `ReflectionMethod`/`ReflectionFunction` and emit it as the second generic argument in the per-method `@var` annotation. This gives IDE and PHPStan full type-awareness on `$__joinPoint->__invoke(...)` calls.
 - `src/Aop/Framework/` — concrete invocation implementations:
   - `AbstractMethodInvocation` — base class; holds `protected Closure $closureToCall` (set in each subclass constructor via `Closure::bind`); `TRAIT_ALIAS_PREFIX = '__aop__'` constant; manages recursive/cross-call stack frames
   - `DynamicTraitAliasMethodInvocation` — instance-method invocation; builds `Closure::bind(fn($i, $a) => $i->__aop__method(...$a), null, $class)` once at construction; `proceed()` calls `($this->closureToCall)($this->instance, $this->arguments)`

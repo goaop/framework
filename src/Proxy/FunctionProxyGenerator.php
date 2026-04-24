@@ -16,6 +16,7 @@ use Go\Core\AspectContainer;
 use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Proxy\Generator\FileGenerator;
 use Go\Proxy\Generator\FunctionGenerator;
+use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use ReflectionException;
@@ -99,9 +100,10 @@ class FunctionProxyGenerator
         $advicesArray    = new ValueGenerator($functionAdvices);
         $advicesArray->setArrayDepth(1);
         $advicesCode = $advicesArray->generate();
+        $returnTypeString = $function->hasReturnType() ? '<' . TypeGenerator::renderTypeForPhpDoc($function->getReturnType()) . '>' : '';
 
         return <<<BODY
-        /** @var \\Go\\Aop\\Intercept\\FunctionInvocation|null \$__joinPoint */
+        /** @var \\Go\\Aop\\Intercept\\FunctionInvocation{$returnTypeString}|null \$__joinPoint */
         static \$__joinPoint;
         if (\$__joinPoint === null) {
             \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forFunction('{$function->name}', {$advicesCode});

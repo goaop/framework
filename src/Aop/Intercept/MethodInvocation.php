@@ -29,12 +29,16 @@ use ReflectionMethod;
  * returning proper type for instance `SomeConcreteType`. Same applies to the {@see self::getScope()} method -
  * it will return proper type for instance `SomeConcreteType`.
  *
+ * Second generic variable `<V>` declares the generic return type of the method invocation. Specify it to have better
+ * code type completion and validation of return types. Take original method return type and put it here.
+ *
  * If your pointcut targets only dynamic method calls, you can use {@see DynamicMethodInvocation} interface instead
  * to give IDE and static analysis tools information about non-static context of the method call.
  *
  * @api
  *
- * @template T of object = object
+ * @template T of object = object Declares the instance type of the method invocation.
+ * @template V = mixed Declares the generic return type of the method invocation.
  * @extends ClassJoinpoint<T>
  */
 interface MethodInvocation extends Invocation, ClassJoinpoint
@@ -52,6 +56,8 @@ interface MethodInvocation extends Invocation, ClassJoinpoint
      * @phpstan-param T|class-string<T> $instanceOrScope Invocation instance (or class name for static methods)
      * @param list<mixed>         $arguments          List of arguments for method invocation
      * @param list<mixed>         $variadicArguments  Additional list of variadic arguments
+     *
+     * @return V Templated return type (mixed by default)
      */
     public function __invoke(object|string $instanceOrScope, array $arguments = [], array $variadicArguments = []): mixed;
 }

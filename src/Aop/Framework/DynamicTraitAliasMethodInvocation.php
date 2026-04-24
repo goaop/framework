@@ -17,13 +17,14 @@ use ReflectionMethod;
 
 /**
  * Dynamic trait-alias method invocation calls instance methods via a pre-bound Closure::bind closure
- * targeting the private __aop__<method> alias created in the proxy's trait-use block.
+ * targeting the private `__aop__<method>` alias created in the proxy's trait-use block.
  *
  * The closure is built once at construction time so that every invocation needs zero reflection.
  *
- * @template T of object
- * @extends AbstractMethodInvocation<T>
- * @implements DynamicMethodInvocation<T>
+ * @template T of object = object Declares the instance type of the method invocation.
+ * @template V = mixed Declares the generic return type of the method invocation.
+ * @extends AbstractMethodInvocation<T, V>
+ * @implements DynamicMethodInvocation<T, V>
  */
 final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation implements DynamicMethodInvocation
 {
@@ -68,7 +69,7 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     }
 
     /**
-     * @return mixed Covariant, always mixed
+     * @return V Covariant, always mixed
      */
     public function proceed(): mixed
     {

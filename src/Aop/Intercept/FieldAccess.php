@@ -45,7 +45,7 @@ use ReflectionProperty;
  * @api
  *
  * @template T of object = object Declares the class, which holds the property(field)
- * @template V of mixed = mixed Declares the type of property
+ * @template V = mixed Declares the type of property
  * @extends ClassJoinpoint<T>
  */
 interface FieldAccess extends ClassJoinpoint

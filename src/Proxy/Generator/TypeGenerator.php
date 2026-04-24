@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use InvalidArgumentException;
+use PhpParser\Node\ComplexType;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\IntersectionType;
 use PhpParser\Node\Name;
@@ -117,6 +118,107 @@ final class TypeGenerator
         }
 
         return $type->getName();
+    }
+
+    /**
+     * Renders a PhpParser AST type node as a phpDoc type string.
+     *
+     * Use this instead of renderTypeForPhpDoc() whenever the raw AST node is available
+     * (e.g. via ReflectionMethod::getNode()->getReturnType()). This avoids the PHP 8.5+
+     * behaviour where ReflectionNamedType::getName() resolves 'self'/'parent' to the
+     * actual FQCN, and instead preserves the type exactly as declared in the source.
+     *
+     * The `ComplexType` parameter covers NullableType, UnionType, and IntersectionType —
+     * the three composite type node classes that PhpParser's ClassMethod/Property AST nodes
+     * report via their `returnType`/`type` properties.
+     *
+     * - Identifier nodes (int, string, void, etc.) are returned as-is.
+     * - Keyword Name nodes (self, parent, static) are returned as-is.
+     * - Other Name nodes are rendered as FQCN with a leading backslash, using the
+     *   'resolvedName' attribute set by PhpParser's NameResolver when available.
+     * - NullableType: `?InnerType`.
+     * - UnionType / IntersectionType: members joined with `|` / `&`.
+     * - null input returns `mixed`.
+     */
+    public static function renderAstTypeForPhpDoc(
+        Identifier|Name|ComplexType|null $node
+    ): string {
+        if ($node === null) {
+            return 'mixed';
+        }
+
+        if ($node instanceof Identifier) {
+            return $node->name;
+        }
+
+        if ($node instanceof Name) {
+            $name = $node->toString();
+            // Keyword types are preserved as-is (never resolved to FQCN)
+            if (in_array($name, ['self', 'parent', 'static'], true)) {
+                return $name;
+            }
+            // Use the resolved FQCN added by NameResolver when available
+            if ($node->hasAttribute('resolvedName') && ($resolved = $node->getAttribute('resolvedName')) instanceof Name) {
+                $name = $resolved->toString();
+            }
+
+            return '\\' . ltrim($name, '\\');
+        }
+
+        if ($node instanceof NullableType) {
+            return '?' . self::renderAstTypeForPhpDoc($node->type);
+        }
+
+        if ($node instanceof UnionType) {
+            return implode('|', array_map(self::renderAstTypeForPhpDoc(...), $node->types));
+        }
+
+        if ($node instanceof IntersectionType) {
+            return implode('&', array_map(self::renderAstTypeForPhpDoc(...), $node->types));
+        }
+
+        return 'mixed';
+    }
+
+    /**
+     * Renders a ReflectionType as a phpDoc type string suitable for use in @var or @template annotations.
+     *
+     * - Builtin types and keywords (self, static, parent) are returned as-is.
+     * - Class types are prefixed with a leading backslash (FQCN).
+     * - Nullable types are rendered as `?Type` (only for simple named types, not for union with null).
+     * - Union types are rendered as `Type1|Type2`.
+     * - Intersection types are rendered as `Type1&Type2`.
+     * - A null $type renders as `mixed`.
+     */
+    public static function renderTypeForPhpDoc(?ReflectionType $type): string
+    {
+        if ($type === null) {
+            return 'mixed';
+        }
+
+        if ($type instanceof ReflectionNamedType) {
+            $name = self::resolveReflectionNamedTypeName($type);
+
+            if (!$type->isBuiltin() && !in_array($name, ['self', 'static', 'parent'], true)) {
+                $name = str_starts_with($name, '\\') ? $name : '\\' . $name;
+            }
+
+            if ($type->allowsNull() && $name !== 'mixed' && $name !== 'null') {
+                return '?' . $name;
+            }
+
+            return $name;
+        }
+
+        if ($type instanceof ReflectionUnionType) {
+            return implode('|', array_map(self::renderTypeForPhpDoc(...), $type->getTypes()));
+        }
+
+        if ($type instanceof ReflectionIntersectionType) {
+            return implode('&', array_map(self::renderTypeForPhpDoc(...), $type->getTypes()));
+        }
+
+        return 'mixed';
     }
 
     private static function buildNodeFromReflection(ReflectionType $type): Identifier|Name|NullableType|UnionType|IntersectionType

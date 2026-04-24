@@ -16,10 +16,12 @@ use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
 use Go\Proxy\Generator\EnumGenerator;
+use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Enum_ as EnumNode;
 use ReflectionClass;
@@ -206,9 +208,19 @@ class EnumProxyGenerator extends ClassProxyGenerator
         $advicesArrayValue = new ValueGenerator($adviceNames);
         $advicesArrayValue->setArrayDepth(1);
         $advicesCode = $advicesArrayValue->generate();
+        $returnTypeString = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
+        // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
+        // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.
+        if ($method->hasReturnType() && method_exists($method, 'getNode')) {
+            $node = $method->getNode();
+            if ($node instanceof ClassMethod) {
+                $astReturnType = $node->getReturnType();
+                $returnTypeString = $astReturnType !== null ? ', ' . TypeGenerator::renderAstTypeForPhpDoc($astReturnType) : '';
+            }
+        }
         $joinPointType = $isStatic
-            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self>|null'
-            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self>|null';
+            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self' . $returnTypeString . '>|null'
+            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self' . $returnTypeString . '>|null';
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
