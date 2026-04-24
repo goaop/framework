@@ -18,7 +18,7 @@ use PhpParser\Node\Stmt\Property as PropertyNode;
  * Implemented by anything that can produce a PhpParser property node.
  *
  * Allows ClassGenerator to accept both PropertyGenerator instances and
- * specialised wrappers like JoinPointPropertyGenerator without coupling.
+ * specialised wrappers like InterceptedPropertyGenerator without coupling.
  */
 interface PropertyNodeProvider
 {

@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
-use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\StubBackedEnum;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -21,10 +20,9 @@ use ReflectionClass;
  * Unit tests for EnumProxyGenerator — the generator used when a PHP enum
  * has applicable AOP advices.
  *
- * Like TraitProxyGenerator, EnumProxyGenerator does NOT use a class-level
- * $__joinPoints property (PHP enums cannot have properties). Instead it uses
- * per-method static $__joinPoint caching and calls InterceptorInjector.
- * There is also no injectJoinPoints() tail call in the generated output.
+ * EnumProxyGenerator uses per-method static $__joinPoint caching and calls
+ * InterceptorInjector, the same pattern used by all proxy generators.
+ * PHP enums cannot have properties, so there is no class-level state.
  */
 class EnumProxyGeneratorTest extends TestCase
 {
@@ -33,7 +31,7 @@ class EnumProxyGeneratorTest extends TestCase
      * - declare an enum (not a class or trait)
      * - alias the intercepted method as private __aop__<method>
      * - override the method with a per-method static joinpoint dispatch body
-     * - call InterceptorInjector (not ClassProxyGenerator::injectJoinPoints)
+     * - call InterceptorInjector for per-method joinpoint resolution
      * - dispatch via __invoke($this, ...) for instance methods
      */
     public function testGenerateProxyEnumMethod(): void
@@ -132,10 +130,10 @@ class EnumProxyGeneratorTest extends TestCase
     }
 
     /**
-     * EnumProxyGenerator must NOT emit injectJoinPoints or $__joinPoints.
-     * PHP enums cannot have properties; the per-method static variable pattern is used instead.
+     * EnumProxyGenerator must NOT emit legacy injectJoinPoints or $__joinPoints patterns.
+     * All proxy generators now use per-method static $__joinPoint caching.
      */
-    public function testGenerateDoesNotEmitClassProxyMechanism(): void
+    public function testGenerateDoesNotEmitLegacyJoinPointMechanism(): void
     {
         $reflectionClass = new ReflectionClass(StubBackedEnum::class);
         $classAdvices    = [
@@ -146,7 +144,7 @@ class EnumProxyGeneratorTest extends TestCase
         $output    = $generator->generate();
 
         $this->assertStringNotContainsString('injectJoinPoints', $output);
-        $this->assertStringNotContainsString(JoinPointPropertyGenerator::NAME, $output);
+        $this->assertStringNotContainsString('__joinPoints', $output);
         $this->assertStringNotContainsString('$__joinPoints', $output);
     }
 

@@ -47,12 +47,18 @@ use ReflectionProperty;
  * <pre>
  * public string $name = 'value' {
  *     get {
- *         $fieldAccess = self::$__joinPoints['prop:name'];
- *         return $fieldAccess->__invoke($this, FieldAccessType::READ, $this->name);
+ *         static $__joinPoint;
+ *         if ($__joinPoint === null) {
+ *             $__joinPoint = InterceptorInjector::forProperty(self::class, 'name', [...]);
+ *         }
+ *         return $__joinPoint->__invoke($this, FieldAccessType::READ, $this->name);
  *     }
  *     set {
- *         $fieldAccess = self::$__joinPoints['prop:name'];
- *         $this->name = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $value, $this->name);
+ *         static $__joinPoint;
+ *         if ($__joinPoint === null) {
+ *             $__joinPoint = InterceptorInjector::forProperty(self::class, 'name', [...]);
+ *         }
+ *         $this->name = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this->name);
  *     }
  * }
  * </pre>
@@ -64,8 +70,11 @@ use ReflectionProperty;
  * <pre>
  * public array $items = [] {
  *     &get {
- *         $fieldAccess = self::$__joinPoints['prop:items'];
- *         $value = &$fieldAccess->__invoke($this, FieldAccessType::READ, $this->items);
+ *         static $__joinPoint;
+ *         if ($__joinPoint === null) {
+ *             $__joinPoint = InterceptorInjector::forProperty(self::class, 'items', [...]);
+ *         }
+ *         $value = &$__joinPoint->__invoke($this, FieldAccessType::READ, $this->items);
  *         return $value;
  *     }
  * }
@@ -101,30 +110,39 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
      * Rendered PHP template for initialized/backed properties:
      * <pre>
      * get {
-     *     $fieldAccess = self::$__joinPoints['prop:<propertyName>'];
-     *     return $fieldAccess->__invoke($this, FieldAccessType::READ, $this-><propertyName>);
+     *     static $__joinPoint;
+     *     if ($__joinPoint === null) {
+     *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
+     *     }
+     *     return $__joinPoint->__invoke($this, FieldAccessType::READ, $this-><propertyName>);
      * }
      * </pre>
      *
      * Rendered PHP template for potentially uninitialized typed properties:
      * <pre>
      * get {
-     *     $fieldAccess = self::$__joinPoints['prop:<propertyName>'];
-     *     if ($fieldAccess->getField()->isInitialized($this)) {
-     *         return $fieldAccess->__invoke($this, FieldAccessType::READ, $this-><propertyName>);
+     *     static $__joinPoint;
+     *     if ($__joinPoint === null) {
+     *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
      *     }
-     *     return $fieldAccess->__invoke($this, FieldAccessType::READ);
+     *     if ($__joinPoint->getField()->isInitialized($this)) {
+     *         return $__joinPoint->__invoke($this, FieldAccessType::READ, $this-><propertyName>);
+     *     }
+     *     return $__joinPoint->__invoke($this, FieldAccessType::READ);
      * }
      * </pre>
      *
      * For array typed properties this becomes `&get`:
      * <pre>
      * &get {
-     *     $fieldAccess = self::$__joinPoints['prop:<propertyName>'];
-     *     if ($fieldAccess->getField()->isInitialized($this)) {
-     *         return $fieldAccess->__invoke($this, FieldAccessType::READ, $this-><propertyName>);
+     *     static $__joinPoint;
+     *     if ($__joinPoint === null) {
+     *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
      *     }
-     *     return $fieldAccess->__invoke($this, FieldAccessType::READ);
+     *     if ($__joinPoint->getField()->isInitialized($this)) {
+     *         return $__joinPoint->__invoke($this, FieldAccessType::READ, $this-><propertyName>);
+     *     }
+     *     return $__joinPoint->__invoke($this, FieldAccessType::READ);
      * }
      * </pre>
      */
@@ -168,19 +186,25 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
      * Rendered PHP template for initialized/backed properties:
      * <pre>
      * set {
-     *     $fieldAccess = self::$__joinPoints['prop:<propertyName>'];
-     *     $this-><propertyName> = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $value, $this-><propertyName>);
+     *     static $__joinPoint;
+     *     if ($__joinPoint === null) {
+     *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
+     *     }
+     *     $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this-><propertyName>);
      * }
      * </pre>
      *
      * Rendered PHP template for potentially uninitialized typed properties:
      * <pre>
      * set {
-     *     $fieldAccess = self::$__joinPoints['prop:<propertyName>'];
-     *     if ($fieldAccess->getField()->isInitialized($this)) {
-     *         $this-><propertyName> = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $value, $this-><propertyName>);
+     *     static $__joinPoint;
+     *     if ($__joinPoint === null) {
+     *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
+     *     }
+     *     if ($__joinPoint->getField()->isInitialized($this)) {
+     *         $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this-><propertyName>);
      *     } else {
-     *         $this-><propertyName> = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $value);
+     *         $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value);
      *     }
      * }
      * </pre>

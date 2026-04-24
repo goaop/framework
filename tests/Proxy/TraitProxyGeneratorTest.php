@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
-use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\TraitAliasProxied;
 use Go\Stubs\TraitWithClassTypedProperty;
 use PHPUnit\Framework\TestCase;
@@ -144,10 +143,10 @@ class TraitProxyGeneratorTest extends TestCase
     }
 
     /**
-     * TraitProxyGenerator::generate() must NOT emit injectJoinPoints or $__joinPoints:
-     * those are ClassProxyGenerator concerns only. Traits use per-method static caching.
+     * TraitProxyGenerator::generate() must NOT emit legacy injectJoinPoints or $__joinPoints
+     * patterns. All proxy generators now use per-method static $__joinPoint caching.
      */
-    public function testGenerateDoesNotEmitClassProxyMechanism(): void
+    public function testGenerateDoesNotEmitLegacyJoinPointMechanism(): void
     {
         $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
         $traitAdvices    = [
@@ -164,13 +163,13 @@ class TraitProxyGeneratorTest extends TestCase
         $output = $generator->generate();
 
         $this->assertStringNotContainsString('injectJoinPoints', $output);
-        $this->assertStringNotContainsString(JoinPointPropertyGenerator::NAME, $output);
+        $this->assertStringNotContainsString('__joinPoints', $output);
         $this->assertStringNotContainsString('ClassProxyGenerator', $output);
     }
 
     /**
-     * TraitProxyGenerator uses per-method static $__joinPoint caching (not a shared array).
-     * This is the key structural difference from ClassProxyGenerator's $__joinPoints array.
+     * TraitProxyGenerator uses per-method static $__joinPoint caching via InterceptorInjector,
+     * the same pattern used by all proxy generators.
      */
     public function testMethodBodyUsesPerMethodStaticCaching(): void
     {
