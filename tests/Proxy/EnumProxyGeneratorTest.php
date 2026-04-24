@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
-use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\StubBackedEnum;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -146,7 +145,7 @@ class EnumProxyGeneratorTest extends TestCase
         $output    = $generator->generate();
 
         $this->assertStringNotContainsString('injectJoinPoints', $output);
-        $this->assertStringNotContainsString(JoinPointPropertyGenerator::NAME, $output);
+        $this->assertStringNotContainsString('__joinPoints', $output);
         $this->assertStringNotContainsString('$__joinPoints', $output);
     }
 

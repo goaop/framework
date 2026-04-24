@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-final class TestReadonlyClass implements \Go\Aop\Proxy
+final readonly class TestReadonlyClass implements \Go\Aop\Proxy
 {
     use \Test\ns1\TestReadonlyClass__AopProxied {
         \Test\ns1\TestReadonlyClass__AopProxied::publicMethod as private __aop__publicMethod;

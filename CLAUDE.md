@@ -78,14 +78,17 @@ class Foo extends OriginalParent implements OriginalInterfaces, \Go\Aop\Proxy
         \Ns\Foo__AopProxied::interceptedMethod as private __aop__interceptedMethod;
         // ... one alias per intercepted method (including private ones)
     }
-    private static array $__joinPoints = [];
 
     public function interceptedMethod(...) {
-        return self::$__joinPoints['method:interceptedMethod']->__invoke($this, [...]);
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self>|null $__joinPoint */
+        static $__joinPoint;
+        if ($__joinPoint === null) {
+            $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'interceptedMethod', [...]);
+        }
+        return $__joinPoint->__invoke($this, [...]);
     }
     // ... one override per intercepted method
 }
-\Go\Proxy\ClassProxyGenerator::injectJoinPoints(Foo::class, [...]);
 ```
 
 Key properties of this engine:
@@ -105,7 +108,6 @@ Key properties of this engine:
 - `src/Proxy/Part/` — individual code-generation components:
   - `InterceptedMethodGenerator` — wraps a single method with join-point delegation
   - `InterceptedConstructorGenerator` — wraps constructor; uses `self::class` (not `parent::class`) for `Closure::bindTo` scope; calls `$this->__aop____construct()` when constructor is in the trait
-  - `JoinPointPropertyGenerator` — the `private static array $__joinPoints` property
   - `InterceptedPropertyGenerator` — re-declares intercepted properties in the proxy with native PHP 8.4 `get`/`set` hooks that route through `ClassFieldAccess`
 - `src/Proxy/Generator/` — low-level AST generators:
   - `ClassGenerator` — builds the proxy class AST node; `addTraitAlias()` registers both the trait and an alias in a single `use { ... }` block; deduplicates traits
@@ -146,13 +148,13 @@ The framework supports PHP 8.4+ and handles most modern PHP syntax transparently
 Enums are supported by `WeavingTransformer` using the same trait-extraction approach as classes, with adjustments for enum constraints:
 - The original enum body is converted to a **trait** (cases stripped, backed type removed, `enum` → `trait`)
 - A proxy **enum** is generated that re-uses the trait, re-declares all cases, and adds per-method `static $__joinPoint` dispatch — using `EnumProxyGenerator`
-- Enums **cannot** have properties (static or instance), so the `$__joinPoints` class property pattern used by `ClassProxyGenerator` does not apply; per-method static variables are used instead (same as `TraitProxyGenerator`)
+- Enums **cannot** have properties (static or instance), so per-method `static $__joinPoint` variables are used (same pattern as `ClassProxyGenerator` and `TraitProxyGenerator`)
 - Built-in enum methods (`cases`, `from`, `tryFrom`) are **never** intercepted — they are synthesised by PHP and cannot be aliased via trait use
 - Built-in PHP enum interfaces (`UnitEnum`, `BackedEnum`) are **never** listed in the proxy's `implements` clause — PHP applies them automatically, and listing them explicitly in a namespaced file resolves them as `Ns\UnitEnum` instead of the global `\UnitEnum`, causing a fatal error
 
-### Readonly classes (PHP 8.2+) — proxy is not readonly
+### Readonly classes (PHP 8.2+) — fully supported
 
-When a `readonly class` is woven, the generated trait drops the `readonly` modifier (traits cannot be readonly). The proxy class is also **not** readonly, because it requires the `private static array $__joinPoints` property, which PHP forbids in readonly classes. The proxy class therefore relaxes the readonly constraint. Readonly *properties* inside the class continue to work correctly.
+When a `readonly class` is woven, the generated trait drops the `readonly` modifier (traits cannot be readonly in PHP). The proxy class **preserves** the `readonly` modifier. Method interception uses per-method function-scoped `static $__joinPoint` variables (not class properties), which are permitted in readonly classes. Properties from the original readonly class regain their implicit `readonly` status in the readonly proxy class. Readonly *properties* are excluded from `access(...)` property interception (they cannot have hooks).
 
 ### `#[\Override]` on intercepted methods (PHP 8.3+) — attribute stripped from trait
 

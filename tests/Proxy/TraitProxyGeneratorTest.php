@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
-use Go\Proxy\Part\JoinPointPropertyGenerator;
 use Go\Stubs\TraitAliasProxied;
 use Go\Stubs\TraitWithClassTypedProperty;
 use PHPUnit\Framework\TestCase;
@@ -164,7 +163,7 @@ class TraitProxyGeneratorTest extends TestCase
         $output = $generator->generate();
 
         $this->assertStringNotContainsString('injectJoinPoints', $output);
-        $this->assertStringNotContainsString(JoinPointPropertyGenerator::NAME, $output);
+        $this->assertStringNotContainsString('__joinPoints', $output);
         $this->assertStringNotContainsString('ClassProxyGenerator', $output);
     }
 

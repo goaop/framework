@@ -121,14 +121,16 @@ class ClassProxyGenerator
         $parentClass     = $originalClass->getParentClass();
         $parentClassName = $parentClass !== false ? $parentClass->getName() : null;
 
-        // Proxy flags: preserve final/abstract from original class.
-        // Note: readonly is intentionally NOT preserved.
+        // Proxy flags: preserve final/abstract/readonly from original class.
         $flags = 0;
         if ($originalClass->isFinal()) {
             $flags |= ClassGenerator::FLAG_FINAL;
         }
         if ($originalClass->isAbstract()) {
             $flags |= ClassGenerator::FLAG_ABSTRACT;
+        }
+        if ($originalClass->isReadOnly()) {
+            $flags |= ClassGenerator::FLAG_READONLY;
         }
 
         $classGenerator = new ClassGenerator(
