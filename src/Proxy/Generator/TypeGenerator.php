@@ -119,6 +119,47 @@ final class TypeGenerator
         return $type->getName();
     }
 
+    /**
+     * Renders a ReflectionType as a phpDoc type string suitable for use in @var or @template annotations.
+     *
+     * - Builtin types and keywords (self, static, parent) are returned as-is.
+     * - Class types are prefixed with a leading backslash (FQCN).
+     * - Nullable types are rendered as `?Type` (only for simple named types, not for union with null).
+     * - Union types are rendered as `Type1|Type2`.
+     * - Intersection types are rendered as `Type1&Type2`.
+     * - A null $type renders as `mixed`.
+     */
+    public static function renderTypeForPhpDoc(?ReflectionType $type): string
+    {
+        if ($type === null) {
+            return 'mixed';
+        }
+
+        if ($type instanceof ReflectionNamedType) {
+            $name = self::resolveReflectionNamedTypeName($type);
+
+            if (!$type->isBuiltin() && !in_array($name, ['self', 'static', 'parent'], true)) {
+                $name = str_starts_with($name, '\\') ? $name : '\\' . $name;
+            }
+
+            if ($type->allowsNull() && $name !== 'mixed' && $name !== 'null') {
+                return '?' . $name;
+            }
+
+            return $name;
+        }
+
+        if ($type instanceof ReflectionUnionType) {
+            return implode('|', array_map(self::renderTypeForPhpDoc(...), $type->getTypes()));
+        }
+
+        if ($type instanceof ReflectionIntersectionType) {
+            return implode('&', array_map(self::renderTypeForPhpDoc(...), $type->getTypes()));
+        }
+
+        return 'mixed';
+    }
+
     private static function buildNodeFromReflection(ReflectionType $type): Identifier|Name|NullableType|UnionType|IntersectionType
     {
         if ($type instanceof ReflectionNamedType) {

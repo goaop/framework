@@ -17,13 +17,14 @@ use Go\Aop\Intercept\StaticMethodInvocation;
 
 /**
  * Static trait-alias method invocation calls static methods via a pre-bound Closure::bind closure
- * targeting the private __aop__<method> alias created in the proxy's trait-use block.
+ * targeting the private `__aop__<method>` alias created in the proxy's trait-use block.
  *
  * The closure is built once at construction time so that every invocation needs zero reflection.
  *
- * @template T of object = object
- * @extends AbstractMethodInvocation<T>
- * @implements StaticMethodInvocation<T>
+ * @template T of object = object Declares the instance type of the method invocation.
+ * @template V = mixed Declares the generic return type of the method invocation.
+ * @extends AbstractMethodInvocation<T, V>
+ * @implements StaticMethodInvocation<T, V>
  */
 final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation implements StaticMethodInvocation
 {
@@ -67,7 +68,7 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     }
 
     /**
-     * @return mixed Covariant, always mixed
+     * @return V Covariant, always mixed
      */
     public function proceed(): mixed
     {

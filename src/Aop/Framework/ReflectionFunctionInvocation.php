@@ -20,6 +20,9 @@ use function array_pop;
 
 /**
  * Function invocation implementation
+ *
+ * @template V = mixed Declares the generic return type of the result.
+ * @implements FunctionInvocation<V>
  */
 final class ReflectionFunctionInvocation extends AbstractInvocation implements FunctionInvocation
 {
@@ -49,8 +52,7 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
     }
 
     /**
-     * @inheritdoc
-     * @return mixed Covariant, always mixed
+     * @return V Covariant, always mixed
      */
     public function proceed(): mixed
     {
@@ -73,6 +75,8 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
      *
      * @param list<mixed> $arguments         List of arguments for function invocation
      * @param list<mixed> $variadicArguments Additional list of variadic arguments
+     *
+     * @return V Templated return type (mixed by default)
      */
     final public function __invoke(array $arguments = [], array $variadicArguments = []): mixed
     {

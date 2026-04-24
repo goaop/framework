@@ -282,9 +282,10 @@ class ClassProxyGenerator
         $advicesArrayValue = new ValueGenerator($adviceNames);
         $advicesArrayValue->setArrayDepth(1);
         $advicesCode = $advicesArrayValue->generate();
+        $returnTypeString   = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
         $joinPointType = $isStatic
-            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self>|null'
-            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self>|null';
+            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self' . $returnTypeString . '>|null'
+            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self' . $returnTypeString . '>|null';
 
         $body = <<<BODY
         /** @var {$joinPointType} \$__joinPoint */

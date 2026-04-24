@@ -24,8 +24,11 @@ namespace Go\Aop\Intercept;
  * Without this interface, aspect advice should use the null-safe operator `$invocation->getThis()?->method()` to avoid
  * type errors.
  *
- * @template T of object = object
- * @extends MethodInvocation<T>
+ * @api
+ *
+ * @template T of object = object Declares the instance type of the method invocation.
+ * @template V = mixed Declares the generic return type of the method invocation.
+ * @extends MethodInvocation<T, V>
  *
  * @link https://wiki.php.net/rfc/nullsafe_operator
  */
