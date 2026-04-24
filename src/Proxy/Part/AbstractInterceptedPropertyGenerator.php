@@ -18,6 +18,8 @@ use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\TypeGenerator;
 use InvalidArgumentException;
 use PhpParser\Comment\Doc;
+use PhpParser\Node\Param;
+use PhpParser\Node\Stmt\Property;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
 use ReflectionProperty;
@@ -86,6 +88,16 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
 
     private function getPropertyTypeForPhpDoc(): string
     {
+        // Use the raw AST type node when available (goaop/parser-reflection) to preserve keyword
+        // types like 'self' and 'parent' as declared — bypassing PHP 8.5+ FQCN resolution.
+        if (method_exists($this->property, 'getTypeNode')) {
+            $typeNode = $this->property->getTypeNode();
+            // getTypeNode() returns Property for regular properties or Param for constructor-promoted ones.
+            if ($typeNode instanceof Property || $typeNode instanceof Param) {
+                return TypeGenerator::renderAstTypeForPhpDoc($typeNode->type);
+            }
+        }
+
         return $this->renderTypeForPhpDoc($this->property->getType());
     }
 

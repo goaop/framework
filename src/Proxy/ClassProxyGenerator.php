@@ -28,6 +28,7 @@ use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use Go\Proxy\Part\InterceptedMethodGenerator;
 use Go\Proxy\Part\InterceptedPropertyGenerator;
+use PhpParser\Node\Stmt\ClassMethod;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -283,6 +284,15 @@ class ClassProxyGenerator
         $advicesArrayValue->setArrayDepth(1);
         $advicesCode = $advicesArrayValue->generate();
         $returnTypeString   = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
+        // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
+        // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.
+        if ($method->hasReturnType() && method_exists($method, 'getNode')) {
+            $node = $method->getNode();
+            if ($node instanceof ClassMethod) {
+                $astReturnType = $node->getReturnType();
+                $returnTypeString = $astReturnType !== null ? ', ' . TypeGenerator::renderAstTypeForPhpDoc($astReturnType) : '';
+            }
+        }
         $joinPointType = $isStatic
             ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self' . $returnTypeString . '>|null'
             : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self' . $returnTypeString . '>|null';

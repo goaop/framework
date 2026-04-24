@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use InvalidArgumentException;
+use PhpParser\Node\ComplexType;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\IntersectionType;
 use PhpParser\Node\Name;
@@ -117,6 +118,66 @@ final class TypeGenerator
         }
 
         return $type->getName();
+    }
+
+    /**
+     * Renders a PhpParser AST type node as a phpDoc type string.
+     *
+     * Use this instead of renderTypeForPhpDoc() whenever the raw AST node is available
+     * (e.g. via ReflectionMethod::getNode()->getReturnType()). This avoids the PHP 8.5+
+     * behaviour where ReflectionNamedType::getName() resolves 'self'/'parent' to the
+     * actual FQCN, and instead preserves the type exactly as declared in the source.
+     *
+     * The `ComplexType` parameter covers NullableType, UnionType, and IntersectionType —
+     * the three composite type node classes that PhpParser's ClassMethod/Property AST nodes
+     * report via their `returnType`/`type` properties.
+     *
+     * - Identifier nodes (int, string, void, etc.) are returned as-is.
+     * - Keyword Name nodes (self, parent, static) are returned as-is.
+     * - Other Name nodes are rendered as FQCN with a leading backslash, using the
+     *   'resolvedName' attribute set by PhpParser's NameResolver when available.
+     * - NullableType: `?InnerType`.
+     * - UnionType / IntersectionType: members joined with `|` / `&`.
+     * - null input returns `mixed`.
+     */
+    public static function renderAstTypeForPhpDoc(
+        Identifier|Name|ComplexType|null $node
+    ): string {
+        if ($node === null) {
+            return 'mixed';
+        }
+
+        if ($node instanceof Identifier) {
+            return $node->name;
+        }
+
+        if ($node instanceof Name) {
+            $name = $node->toString();
+            // Keyword types are preserved as-is (never resolved to FQCN)
+            if (in_array($name, ['self', 'parent', 'static'], true)) {
+                return $name;
+            }
+            // Use the resolved FQCN added by NameResolver when available
+            if ($node->hasAttribute('resolvedName') && ($resolved = $node->getAttribute('resolvedName')) instanceof Name) {
+                $name = $resolved->toString();
+            }
+
+            return '\\' . ltrim($name, '\\');
+        }
+
+        if ($node instanceof NullableType) {
+            return '?' . self::renderAstTypeForPhpDoc($node->type);
+        }
+
+        if ($node instanceof UnionType) {
+            return implode('|', array_map(self::renderAstTypeForPhpDoc(...), $node->types));
+        }
+
+        if ($node instanceof IntersectionType) {
+            return implode('&', array_map(self::renderAstTypeForPhpDoc(...), $node->types));
+        }
+
+        return 'mixed';
     }
 
     /**
