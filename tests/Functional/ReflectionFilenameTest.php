@@ -14,7 +14,7 @@ namespace Go\Functional;
 
 use Go\Core\AspectKernel;
 use Go\Tests\TestProject\Application\Main;
-use Go\Instrument\Transformer\FilterInjectorTransformer;
+use Go\Instrument\ClassLoading\AopFileResolver;
 use Go\ParserReflection\ReflectionClass as ParserReflectionClass;
 use InvalidArgumentException;
 
@@ -44,8 +44,8 @@ class ReflectionFilenameTest extends BaseFunctionalTestCase
     public function tearDown(): void
     {
         parent::tearDown();
-        $reflectedClass    = new \ReflectionClass(FilterInjectorTransformer::class);
-        $reflectedProperty = $reflectedClass->getProperty('kernel');
+        $reflectedClass    = new \ReflectionClass(AopFileResolver::class);
+        $reflectedProperty = $reflectedClass->getProperty('filterName');
         $reflectedProperty->setValue(null);
     }
 

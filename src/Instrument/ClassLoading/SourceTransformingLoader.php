@@ -16,11 +16,9 @@ use Go\Core\AspectContainer;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResultEnum;
-use Go\ParserReflection\ReflectionEngine;
 use php_user_filter as PhpStreamFilter;
 use RuntimeException;
 
-use function dirname;
 use function strlen;
 
 /**
@@ -118,9 +116,9 @@ class SourceTransformingLoader extends PhpStreamFilter
 
             // $this->stream contains pointer to the source
             $metadata = new StreamMetaData($this->stream, $this->data);
-            self::transformCode($metadata);
+            $result   = self::transformCode($metadata);
 
-            $bucket = stream_bucket_new($this->stream, $metadata->source);
+            $bucket = stream_bucket_new($this->stream, $result ?? $metadata->source);
             stream_bucket_append($out, $bucket);
 
             return PSFS_PASS_ON;
@@ -132,19 +130,18 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Transforms source code by passing it through all registered transformers, with caching.
      *
-     * If a valid cached version exists for the given metadata URI, the cached source is loaded
-     * directly without invoking any transformers. Otherwise, transformers are fetched from the
-     * container via SourceTransformer interface tagging, executed in order, and the result is
-     * written to the cache.
+     * On cache hit, returns the cached source as a string (skipping tokenization entirely).
+     * On cache miss, runs the transformer chain, writes the result to cache, and returns null
+     * (the caller should read $metadata->source which reflects token-level changes).
      */
-    public static function transformCode(StreamMetaData $metadata): void
+    public static function transformCode(StreamMetaData $metadata): ?string
     {
         $originalUri = $metadata->uri;
         $cacheUri    = self::$cacheManager->getCachePathForResource($originalUri);
 
         // Guard to disable overwriting of original files or when cache is unavailable
         if ($cacheUri === false || $cacheUri === $originalUri) {
-            return;
+            return null;
         }
 
         $lastModified   = filemtime($originalUri);
@@ -175,20 +172,18 @@ class SourceTransformingLoader extends PhpStreamFilter
                 ]
             );
 
-            return;
+            return null;
         }
 
-        // Cache hit — load transformed source from cache if available
-        $processingResult = TransformerResultEnum::RESULT_ABSTAIN;
-        if ($cacheState) {
-            $processingResult = isset($cacheState['cacheUri']) ? TransformerResultEnum::RESULT_TRANSFORMED : TransformerResultEnum::RESULT_ABORTED;
+        // Cache hit — return cached source directly as string, avoiding re-tokenization
+        if ($cacheState && isset($cacheState['cacheUri']) && is_string($cacheState['cacheUri'])) {
+            $cachedSource = file_get_contents($cacheState['cacheUri']);
+            if (is_string($cachedSource)) {
+                return $cachedSource;
+            }
         }
-        if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
-            ReflectionEngine::parseFile($cacheUri);
-            $metadata->setTokenStreamFromRawTokens(
-                ...ReflectionEngine::getParser()->getTokens()
-            );
-        }
+
+        return null;
     }
 
     /**
@@ -197,7 +192,6 @@ class SourceTransformingLoader extends PhpStreamFilter
     private static function processTransformers(StreamMetaData $metadata): TransformerResultEnum
     {
         $overallResult = TransformerResultEnum::RESULT_ABSTAIN;
-        /** @var SourceTransformer[] $transformers */
         $transformers = self::$container->getServicesByInterface(SourceTransformer::class);
 
         foreach ($transformers as $transformer) {

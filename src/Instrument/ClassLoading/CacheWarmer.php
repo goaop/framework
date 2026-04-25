@@ -15,7 +15,7 @@ namespace Go\Instrument\ClassLoading;
 use ErrorException;
 use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
-use Go\Instrument\Transformer\FilterInjectorTransformer;
+
 use InvalidArgumentException;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -81,7 +81,7 @@ class CacheWarmer
 
             try {
                 // This will trigger creation of cache
-                file_get_contents(FilterInjectorTransformer::PHP_FILTER_READ .
+                file_get_contents(AopFileResolver::PHP_FILTER_READ .
                     SourceTransformingLoader::FILTER_IDENTIFIER .
                     '/resource=' . $path
                 );

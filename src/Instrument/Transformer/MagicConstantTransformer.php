@@ -12,7 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
-use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\AopFileResolver;
 use PhpParser\Node;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Scalar\MagicConst;
@@ -25,30 +25,10 @@ use PhpParser\NodeVisitor\FindingVisitor;
 /**
  * Transformer that replaces magic __DIR__ and __FILE__ constants in the source code
  *
- * Additionally, ReflectionClass->getFileName() is also wrapped into normalizer method call
+ * Additionally, ReflectionClass->getFileName() is also wrapped into AopFileResolver::resolveFileName()
  */
-class MagicConstantTransformer extends BaseSourceTransformer
+class MagicConstantTransformer implements SourceTransformer
 {
-    /**
-     * Root path of application
-     */
-    protected static string $rootPath = '';
-
-    /**
-     * Path to rewrite to (cache directory)
-     */
-    protected static string $rewriteToPath = '';
-
-    /**
-     * Class constructor
-     */
-    public function __construct(AspectKernel $kernel)
-    {
-        parent::__construct($kernel);
-        self::$rootPath      = $this->options['appDir'];
-        self::$rewriteToPath = $this->options['cacheDir'] ?? '';
-    }
-
     /**
      * This method may transform the supplied source and return a new replacement for it
      */
@@ -59,21 +39,6 @@ class MagicConstantTransformer extends BaseSourceTransformer
 
         // We should always vote abstain, because if there is only changes for magic constants, we can drop them
         return TransformerResultEnum::RESULT_ABSTAIN;
-    }
-
-    /**
-     * Resolves file name from the cache directory to the real application root dir
-     */
-    public static function resolveFileName(string $fileName): string
-    {
-        $suffix = '.php';
-        $pathParts = explode($suffix, str_replace(
-            [self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'],
-            [self::$rootPath, ''],
-            $fileName
-        ));
-        // throw away namespaced path from actual filename
-        return $pathParts[0] . $suffix;
     }
 
     /**
@@ -95,7 +60,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
                 if (!is_int($startPosition) || !is_int($endPosition)) {
                     continue;
                 }
-                $expressionPrefix = '\\' . self::class . '::resolveFileName(';
+                $expressionPrefix = '\\' . AopFileResolver::class . '::resolveFileName(';
 
                 $metadata->tokenStream[$startPosition]->text = $expressionPrefix . $metadata->tokenStream[$startPosition]->text;
                 $metadata->tokenStream[$endPosition]->text .= ')';

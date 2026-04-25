@@ -15,13 +15,12 @@ namespace Go\Core;
 use Go\Aop\AspectException;
 use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
+use Go\Instrument\ClassLoading\AopFileResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
-use Go\Instrument\Transformer\MagicConstantTransformer;
-use Go\Instrument\Transformer\WeavingTransformer;
 use RuntimeException;
 
 use function define;
@@ -139,7 +138,22 @@ abstract class AspectKernel
 
         SourceTransformingLoader::register($container, $cacheManager, $this->options['cacheFileMode']);
 
-        $this->registerTransformers($container, $cacheManager);
+        // Configure runtime file resolver used by woven code (include rewriting + getFileName resolution)
+        AopFileResolver::configure($this, SourceTransformingLoader::getId(), $cacheManager);
+
+        // Register feature-gated source transformers
+        if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
+            $container->addLazyService(
+                ConstructorExecutionTransformer::class,
+                fn(): ConstructorExecutionTransformer => new ConstructorExecutionTransformer(),
+            );
+        }
+        if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
+            $container->addLazyService(
+                FilterInjectorTransformer::class,
+                fn(): FilterInjectorTransformer => new FilterInjectorTransformer(),
+            );
+        }
 
         AopComposerLoader::init($this->options, $container);
 
@@ -270,46 +284,6 @@ abstract class AspectKernel
      * Configures an AspectContainer with advisors, aspects and pointcuts
      */
     abstract protected function configureAop(AspectContainer $container): void;
-
-    /**
-     * Registers source transformers as lazy services in the container.
-     *
-     * Transformers are tagged by the SourceTransformer interface automatically
-     * and will be retrieved via AspectContainer::getServicesByInterface().
-     *
-     * @internal This method is internal and should not be used outside this project
-     */
-    protected function registerTransformers(AspectContainer $container, CachePathManager $cacheManager): void
-    {
-        if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
-            $container->addLazyService(
-                ConstructorExecutionTransformer::class,
-                fn(): ConstructorExecutionTransformer => new ConstructorExecutionTransformer(),
-            );
-        }
-        // FilterInjectorTransformer must be constructed eagerly because its constructor
-        // configures static state required by FilterInjectorTransformer::rewrite(),
-        // which is called from AopComposerLoader::findFile() during class loading.
-        $filterInjector = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
-        if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
-            $container->add(FilterInjectorTransformer::class, $filterInjector);
-        }
-        $container->addLazyService(
-            WeavingTransformer::class,
-            fn(AspectContainer $c): WeavingTransformer => new WeavingTransformer(
-                $this,
-                $c->getService(AdviceMatcher::class),
-                $cacheManager,
-                $c->getService(CachedAspectLoader::class),
-            ),
-        );
-        // MagicConstantTransformer must be constructed eagerly because its constructor
-        // sets static properties (rootPath, rewriteToPath) used by the static
-        // resolveFileName() method, which is injected into woven source code.
-        // A lazy proxy would never trigger initialization since transform() does not
-        // access any instance properties.
-        $container->add(MagicConstantTransformer::class, new MagicConstantTransformer($this));
-    }
 
     /**
      * Returns a file name where kernel has been initialized

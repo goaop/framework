@@ -19,6 +19,8 @@ use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\Instrument\Transformer\MagicConstantTransformer;
+use Go\Instrument\Transformer\WeavingTransformer;
 use OutOfBoundsException;
 use ReflectionClass;
 use ReflectionObject;
@@ -97,6 +99,22 @@ class Container implements AspectContainer
         $this->addLazyService(CachePathManager::class, fn(AspectContainer $container): CachePathManager => new CachePathManager(
             $container->getService(AspectKernel::class)
         ));
+
+        // Source transformers — registered as lazy services, retrieved via getServicesByInterface()
+        $this->addLazyService(
+            WeavingTransformer::class,
+            fn(AspectContainer $c): WeavingTransformer => new WeavingTransformer(
+                $c->getService(AspectKernel::class),
+                $c->getService(AdviceMatcher::class),
+                $c->getService(CachePathManager::class),
+                $c->getService(CachedAspectLoader::class),
+            ),
+        );
+
+        $this->addLazyService(
+            MagicConstantTransformer::class,
+            fn(): MagicConstantTransformer => new MagicConstantTransformer(),
+        );
     }
 
     final public function registerAspect(Aspect $aspect): void
