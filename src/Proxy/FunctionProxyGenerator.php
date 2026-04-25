@@ -57,6 +57,8 @@ class FunctionProxyGenerator
         $this->adviceNames   = $adviceNames;
         $this->fileGenerator = new FileGenerator();
         $this->fileGenerator->setNamespace($namespace->getName());
+        $this->fileGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
+        $this->fileGenerator->addUse('Go\Aop\Intercept\FunctionInvocation');
 
         $functionsContent = [];
         $functionAdvices  = $adviceNames[AspectContainer::FUNCTION_PREFIX] ?? [];
@@ -103,8 +105,8 @@ class FunctionProxyGenerator
         $returnTypeString = $function->hasReturnType() ? '<' . TypeGenerator::renderTypeForPhpDoc($function->getReturnType()) . '>' : '';
 
         return <<<BODY
-        /** @var \\Go\\Aop\\Intercept\\FunctionInvocation{$returnTypeString} \$__joinPoint */
-        static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forFunction('{$function->name}', {$advicesCode});
+        /** @var FunctionInvocation{$returnTypeString} \$__joinPoint */
+        static \$__joinPoint = InterceptorInjector::forFunction('{$function->name}', {$advicesCode});
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
     }

@@ -49,6 +49,9 @@ final class TraitGenerator implements GeneratorInterface
     /** @var string[] used trait FQCNs */
     private array $usedTraits = [];
 
+    /** @var array<string, string|null> use => alias */
+    private array $uses = [];
+
     /** @var array{trait: string, method: string, alias: string, visibility: int}[] */
     private array $traitAliases = [];
 
@@ -68,6 +71,14 @@ final class TraitGenerator implements GeneratorInterface
         $this->methods   = array_values($methods);
         $this->docBlock  = $docBlock;
         $this->properties = array_values($properties);
+    }
+
+    /**
+     * Adds a `use` statement to the generated file.
+     */
+    public function addUse(string $use, ?string $alias = null): void
+    {
+        $this->uses[$use] = $alias;
     }
 
     /**
@@ -154,6 +165,14 @@ final class TraitGenerator implements GeneratorInterface
 
         if ($this->namespace !== null && $this->namespace !== '') {
             $stmts[] = self::getFactory()->namespace($this->namespace)->getNode();
+        }
+
+        foreach ($this->uses as $use => $alias) {
+            $useBuilder = self::getFactory()->use($use);
+            if ($alias !== null) {
+                $useBuilder->as($alias);
+            }
+            $stmts[] = $useBuilder->getNode();
         }
 
         $stmts[] = $this->getNode();

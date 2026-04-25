@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
+use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Intercept\DynamicMethodInvocation;
 /**
  * PHP 8.3 — class with #[\Override] on an intercepted method.
  * WeavingTransformer must strip the attribute from the generated trait so that
@@ -15,14 +17,14 @@ class TestClassWithOverride implements \Go\Aop\Proxy
     #[\Override]
     public function overriddenMethod(): string
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'overriddenMethod', ['advisor.Test\ns1\TestClassWithOverride->overriddenMethod']);
+        /** @var DynamicMethodInvocation<self, string> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'overriddenMethod', ['advisor.Test\ns1\TestClassWithOverride->overriddenMethod']);
         return $__joinPoint->__invoke($this);
     }
     public function normalMethod(): int
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, int> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'normalMethod', ['advisor.Test\ns1\TestClassWithOverride->normalMethod']);
+        /** @var DynamicMethodInvocation<self, int> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'normalMethod', ['advisor.Test\ns1\TestClassWithOverride->normalMethod']);
         return $__joinPoint->__invoke($this);
     }
 }

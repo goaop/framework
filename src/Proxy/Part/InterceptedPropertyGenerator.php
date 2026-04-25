@@ -149,12 +149,12 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
         $propertyName = $this->property->getName();
         $readInvokeWithValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name\FullyQualified(FieldAccessType::class), 'READ')),
+            new Arg(new ClassConstFetch(new Name('FieldAccessType'), 'READ')),
             new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
         $readInvokeWithoutValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name\FullyQualified(FieldAccessType::class), 'READ')),
+            new Arg(new ClassConstFetch(new Name('FieldAccessType'), 'READ')),
         ]);
         $fieldAccessExpression = $this->createFieldAccessInitializationExpression($propertyName);
 
@@ -214,13 +214,13 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
 
         $writeInvokeWithBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name\FullyQualified(FieldAccessType::class), 'WRITE')),
+            new Arg(new ClassConstFetch(new Name('FieldAccessType'), 'WRITE')),
             new Arg(new Variable('value')),
             new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
         $writeInvokeWithoutBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name\FullyQualified(FieldAccessType::class), 'WRITE')),
+            new Arg(new ClassConstFetch(new Name('FieldAccessType'), 'WRITE')),
             new Arg(new Variable('value')),
         ]);
 
@@ -275,7 +275,7 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
     private function createFieldAccessInitializationExpression(string $propertyName): StaticCall
     {
         return new StaticCall(
-            new Name\FullyQualified(InterceptorInjector::class),
+            new Name('InterceptorInjector'),
             'forProperty',
             [
                 new Arg(new ClassConstFetch(new Name('self'), 'class')),
