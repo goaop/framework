@@ -21,8 +21,6 @@ use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\ClassLoading\CachePathManager;
 use OutOfBoundsException;
 use ReflectionClass;
-use ReflectionFunction;
-use ReflectionNamedType;
 use ReflectionObject;
 
 /**
@@ -85,15 +83,10 @@ class Container implements AspectContainer
             $container->getService(IntroductionAspectExtension::class),
         ));
 
-        $this->addLazyService(CachedAspectLoader::class, function (AspectContainer $container) {
+        $this->addLazyService(CachedAspectLoader::class, function (AspectContainer $container): CachedAspectLoader {
             $options = $container->getService(AspectKernel::class)->getOptions();
-            if (!empty($options['cacheDir'])) {
-                $loader = new CachedAspectLoader($container, AspectLoader::class, $options);
-            } else {
-                $loader = $container->getService(AspectLoader::class);
-            }
 
-            return $loader;
+            return new CachedAspectLoader($container, AspectLoader::class, $options);
         });
 
         $this->addLazyService(LazyAdvisorAccessor::class, fn(AspectContainer $container): LazyAdvisorAccessor => new LazyAdvisorAccessor(
@@ -115,30 +108,11 @@ class Container implements AspectContainer
     {
         $this->values[$id] = $value;
 
-        // For objects, we would like to use interface names as tags, eg Pointcut, Advisor, Aspect, etc
-        if (is_object($value)) {
-            // If it is real object (not a lazy closure), then we use it directly
-            if (!$value instanceof Closure) {
-                $reflectionInstance = new ReflectionObject($value);
-            } else {
-                // If it is our lazy Closure, we look at internal closure return type to check if it is a class
-                $reflectionClosure     = new ReflectionFunction($value);
-                $lazyDefinitionClosure = $reflectionClosure->getStaticVariables()['lazyInitializationClosure'] ?? null;
-                $lazyReturnType        = $lazyDefinitionClosure instanceof Closure
-                    ? (new ReflectionFunction($lazyDefinitionClosure))->getReturnType()
-                    : null;
-
-                if ($lazyReturnType instanceof ReflectionNamedType && class_exists($lazyReturnType->getName())) {
-                    $reflectionInstance = new ReflectionClass($lazyReturnType->getName());
-                }
-            }
-        }
-
-        if (isset($reflectionInstance)) {
+        if (is_object($value) && !$value instanceof Closure) {
+            $reflectionInstance = new ReflectionObject($value);
             foreach ($reflectionInstance->getInterfaceNames() as $interfaceTagName) {
                 $this->tags[$interfaceTagName][] = $id;
             }
-            // Also register corresponding file names to track freshness of container
             $fileName = $reflectionInstance->getFileName();
             if (is_string($fileName)) {
                 $this->addResource($fileName);
@@ -148,22 +122,15 @@ class Container implements AspectContainer
 
     final public function addLazyService(string $id, Closure $lazyInitializationClosure): void
     {
-        $this->add($id, function (self $container) use ($id, $lazyInitializationClosure): void {
-
-            $evaluatedLazyValue = $lazyInitializationClosure($container);
-            // Here we just replace Closure with resolved value to optimize access
-            $container->values[$id] = $evaluatedLazyValue;
-        });
+        $reflectionClass = new ReflectionClass($id);
+        $proxy = $reflectionClass->newLazyProxy(fn (object $proxy): object => $lazyInitializationClosure($this));
+        $this->add($id, $proxy);
     }
 
     final public function getService(string $className): object
     {
         if (!isset($this->values[$className])) {
             throw new OutOfBoundsException("Value $className is not defined in the container");
-        }
-        // Support for lazy-evaluation and initialization
-        if ($this->values[$className] instanceof Closure) {
-            $this->values[$className]($this);
         }
         if (!$this->values[$className] instanceof $className) {
             throw new AspectException("Service $className is not properly registered");

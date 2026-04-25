@@ -173,4 +173,25 @@ class ContainerTest extends TestCase
         $this->container->add(First::class, new stdClass());
         $this->container->getService(First::class);
     }
+
+    public function testLazyServicePassesInstanceofWithoutInitialization(): void
+    {
+        $initialized = false;
+        $container = new Container();
+        $container->addLazyService(PointcutLexer::class, function () use (&$initialized): PointcutLexer {
+            $initialized = true;
+            return new PointcutLexer();
+        });
+
+        // Service should be available and pass instanceof without initialization
+        $value = $container->getValue(PointcutLexer::class);
+        $this->assertInstanceOf(PointcutLexer::class, $value);
+        $this->assertFalse($initialized, 'Factory should not have been called yet');
+    }
+
+    public function testLazyServiceIsTaggedByInterface(): void
+    {
+        $services = $this->container->getServicesByInterface(AspectLoaderExtension::class);
+        $this->assertNotEmpty($services);
+    }
 }

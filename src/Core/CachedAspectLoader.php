@@ -61,6 +61,10 @@ class CachedAspectLoader extends AspectLoader
 
     public function load(Aspect $aspect): array
     {
+        if ($this->cacheDir === null || $this->cacheDir === '') {
+            return $this->loader->load($aspect);
+        }
+
         $refAspect = new ReflectionClass($aspect);
         $fileName  = $this->cacheDir . '/_aspect/' . sha1($refAspect->getName());
 
