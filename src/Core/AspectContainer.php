@@ -69,7 +69,7 @@ interface AspectContainer
     /**
      * Returns a service from the container.
      *
-     * Supports lazy-initialization if value is defined as a closure, it will be invoked once to perform initialization.
+     * Services registered via addLazyService() are PHP 8.4 lazy proxies that initialize transparently on first access.
      *
      * @param class-string<T> $className Class-name of service to retrieve from the container
      * @return T
@@ -95,7 +95,7 @@ interface AspectContainer
      *
      * @param string $key Given key
      *
-     * @return ($key is class-string<T> ? (T|Closure(AspectContainer):void) : mixed)
+     * @return ($key is class-string<T> ? T : mixed)
      * @throws OutOfBoundsException if key was not found
      *
      * @template T of object
@@ -123,12 +123,15 @@ interface AspectContainer
      * Adds a new item into the container
      *
      * @param string|class-string $id Identifier of value to store, either string literal or class-name
-     * @param mixed $value Value to store, if it is a Closure, it MAY be lazily-evaluated during getService() call
+     * @param mixed $value Value to store
      */
     public function add(string $id, mixed $value): void;
 
     /**
-     * Adds a lazy service in the container, uses lazy-initialization Closure to optimize init time
+     * Adds a lazy service in the container using PHP 8.4 lazy proxy for deferred initialization.
+     *
+     * The service is immediately available as a real object instance (passes instanceof checks),
+     * but the factory closure is only invoked when a property or method is first accessed.
      *
      * @param class-string<T> $id Identifier of value to store, must be equal to the class-name
      * @param Closure(AspectContainer $container): T $lazyInitializationClosure
