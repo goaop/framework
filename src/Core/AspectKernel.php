@@ -18,11 +18,9 @@ use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\PathResolver;
-use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
-use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use RuntimeException;
 
@@ -137,11 +135,11 @@ abstract class AspectKernel
         $container->add('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
         $container->add('kernel.options', $this->options);
 
-        SourceTransformingLoader::register();
+        $cacheManager = $container->getService(CachePathManager::class);
 
-        foreach ($this->registerTransformers() as $sourceTransformer) {
-            SourceTransformingLoader::addTransformer($sourceTransformer);
-        }
+        SourceTransformingLoader::register($container, $cacheManager, $this->options['cacheFileMode']);
+
+        $this->registerTransformers($container, $cacheManager);
 
         AopComposerLoader::init($this->options, $container);
 
@@ -274,39 +272,43 @@ abstract class AspectKernel
     abstract protected function configureAop(AspectContainer $container): void;
 
     /**
-     * Returns list of source transformers, that will be applied to the PHP source
+     * Registers source transformers as lazy services in the container.
      *
-     * @return SourceTransformer[]
+     * Transformers are tagged by the SourceTransformer interface automatically
+     * and will be retrieved via AspectContainer::getServicesByInterface().
+     *
      * @internal This method is internal and should not be used outside this project
      */
-    protected function registerTransformers(): array
+    protected function registerTransformers(AspectContainer $container, CachePathManager $cacheManager): void
     {
-        $cacheManager     = $this->getContainer()->getService(CachePathManager::class);
-        $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
-        $magicTransformer = new MagicConstantTransformer($this);
-
-        $sourceTransformers = function () use ($filterInjector, $magicTransformer, $cacheManager) {
-            $transformers = [];
-            if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
-                $transformers[] = new ConstructorExecutionTransformer();
-            }
-            if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
-                $transformers[] = $filterInjector;
-            }
-            $transformers[]  = new WeavingTransformer(
-                $this,
-                $this->container->getService(AdviceMatcher::class),
-                $cacheManager,
-                $this->container->getService(CachedAspectLoader::class)
+        if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
+            $container->addLazyService(
+                ConstructorExecutionTransformer::class,
+                fn(): ConstructorExecutionTransformer => new ConstructorExecutionTransformer(),
             );
-            $transformers[] = $magicTransformer;
-
-            return $transformers;
-        };
-
-        return [
-            new CachingTransformer($this, $sourceTransformers, $cacheManager)
-        ];
+        }
+        // FilterInjectorTransformer must be constructed eagerly because its constructor
+        // configures static state required by FilterInjectorTransformer::rewrite(),
+        // which is called from AopComposerLoader::findFile() during class loading.
+        $filterInjector = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
+        if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
+            $container->add(FilterInjectorTransformer::class, $filterInjector);
+        }
+        $container->addLazyService(
+            WeavingTransformer::class,
+            fn(AspectContainer $c): WeavingTransformer => new WeavingTransformer(
+                $this,
+                $c->getService(AdviceMatcher::class),
+                $cacheManager,
+                $c->getService(CachedAspectLoader::class),
+            ),
+        );
+        // MagicConstantTransformer must be constructed eagerly because its constructor
+        // sets static properties (rootPath, rewriteToPath) used by the static
+        // resolveFileName() method, which is injected into woven source code.
+        // A lazy proxy would never trigger initialization since transform() does not
+        // access any instance properties.
+        $container->add(MagicConstantTransformer::class, new MagicConstantTransformer($this));
     }
 
     /**
