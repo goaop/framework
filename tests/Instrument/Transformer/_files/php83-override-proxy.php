@@ -15,20 +15,14 @@ class TestClassWithOverride implements \Go\Aop\Proxy
     #[\Override]
     public function overriddenMethod(): string
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, string>|null $__joinPoint */
-        static $__joinPoint;
-        if ($__joinPoint === null) {
-            $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'overriddenMethod', ['advisor.Test\ns1\TestClassWithOverride->overriddenMethod']);
-        }
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, string> $__joinPoint */
+        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'overriddenMethod', ['advisor.Test\ns1\TestClassWithOverride->overriddenMethod']);
         return $__joinPoint->__invoke($this);
     }
     public function normalMethod(): int
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, int>|null $__joinPoint */
-        static $__joinPoint;
-        if ($__joinPoint === null) {
-            $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'normalMethod', ['advisor.Test\ns1\TestClassWithOverride->normalMethod']);
-        }
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, int> $__joinPoint */
+        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'normalMethod', ['advisor.Test\ns1\TestClassWithOverride->normalMethod']);
         return $__joinPoint->__invoke($this);
     }
 }

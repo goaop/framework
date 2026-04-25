@@ -187,9 +187,9 @@ class TraitProxyGeneratorTest extends TestCase
 
         $output = $generator->generate();
 
-        // Lazy init pattern: check once, create once
+        // Direct static init pattern: no null check needed
         $this->assertStringContainsString('static $__joinPoint', $output);
-        $this->assertStringContainsString('if ($__joinPoint === null)', $output);
+        $this->assertStringNotContainsString('if ($__joinPoint === null)', $output);
 
         // ClassProxyGenerator-style shared array must NOT appear
         $this->assertStringNotContainsString('$__joinPoints[', $output);
@@ -214,7 +214,7 @@ class TraitProxyGeneratorTest extends TestCase
         $output = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString('public int $public = 326 {', $output);
-        $this->assertStringContainsString('static $__joinPoint;', $output);
+        $this->assertStringContainsString('static $__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forProperty', $output);
         $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'public'", $output);
         $this->assertStringContainsString('FieldAccessType::READ', $output);
         $this->assertStringContainsString('FieldAccessType::WRITE', $output);
@@ -240,7 +240,7 @@ class TraitProxyGeneratorTest extends TestCase
         $output = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString(
-            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception>|null \$__joinPoint */",
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception> \$__joinPoint */",
             $output
         );
     }

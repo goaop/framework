@@ -8,6 +8,7 @@ Changelog
 * [Feature] `self::` in proxied classes now resolves to the proxy class naturally (via PHP trait semantics), removing the need for `SelfValueTransformer`.
 * [Removed] `SelfValueTransformer` and `SelfValueVisitor` — no longer needed with the trait-based engine.
 * [Performance] Pre-bound `Closure::bind` closures replace per-call `ReflectionMethod::getClosure()` + rebind in the method invocation proceed path, eliminating reflection overhead on every intercepted call.
+* [Performance] **Direct static joinpoint initialization** — leveraging PHP 8.3+ support for dynamic expressions in static variable initializers, all generated proxy method bodies now initialize their static joinpoint variables directly.
 
 3.0.0 (December 4, 2019)
 * [BC BREAK] Switched to the PHP7.2 and upper, strict types, return type hints and new syntax
