@@ -20,9 +20,7 @@ use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Assign;
-use PhpParser\Node\Expr\BinaryOp\Identical;
 use PhpParser\Node\Expr\ClassConstFetch;
-use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticCall;
@@ -156,32 +154,23 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
     {
         $propertyName = $this->property->getName();
 
-        $initializeJoinPoint = new Expression(new Assign(
-            new Variable('__joinPoint'),
-            new StaticCall(
-                new Name\FullyQualified(InterceptorInjector::class),
-                'forProperty',
-                [
-                    new Arg(new ClassConstFetch(new Name('self'), 'class')),
-                    new Arg(new String_($propertyName)),
-                    new Arg(new Array_(array_map(
-                        static fn (string $adviceName): ArrayItem => new ArrayItem(new String_($adviceName)),
-                        $this->adviceNames
-                    ))),
-                ]
-            )
-        ));
+        $initExpression = new StaticCall(
+            new Name\FullyQualified(InterceptorInjector::class),
+            'forProperty',
+            [
+                new Arg(new ClassConstFetch(new Name('self'), 'class')),
+                new Arg(new String_($propertyName)),
+                new Arg(new Array_(array_map(
+                    static fn (string $adviceName): ArrayItem => new ArrayItem(new String_($adviceName)),
+                    $this->adviceNames
+                ))),
+            ]
+        );
 
-        $joinPointStaticVar = new Static_([new StaticVar(new Variable('__joinPoint'))]);
-        $joinPointStaticVar->setDocComment($this->createFieldAccessDocComment('__joinPoint', true));
+        $joinPointStaticVar = new Static_([new StaticVar(new Variable('__joinPoint'), $initExpression)]);
+        $joinPointStaticVar->setDocComment($this->createFieldAccessDocComment('__joinPoint', false));
 
-        return [
-            $joinPointStaticVar,
-            new If_(
-                new Identical(new Variable('__joinPoint'), new ConstFetch(new Name('null'))),
-                ['stmts' => [$initializeJoinPoint]]
-            )
-        ];
+        return [$joinPointStaticVar];
     }
 
 }

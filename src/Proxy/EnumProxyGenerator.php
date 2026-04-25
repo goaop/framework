@@ -219,15 +219,12 @@ class EnumProxyGenerator extends ClassProxyGenerator
             }
         }
         $joinPointType = $isStatic
-            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self' . $returnTypeString . '>|null'
-            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self' . $returnTypeString . '>|null';
+            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self' . $returnTypeString . '>'
+            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self' . $returnTypeString . '>';
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint;
-        if (\$__joinPoint === null) {
-            \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
-        }
+        static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
     }

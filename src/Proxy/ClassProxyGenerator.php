@@ -294,15 +294,12 @@ class ClassProxyGenerator
             }
         }
         $joinPointType = $isStatic
-            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self' . $returnTypeString . '>|null'
-            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self' . $returnTypeString . '>|null';
+            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self' . $returnTypeString . '>'
+            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self' . $returnTypeString . '>';
 
         $body = <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint;
-        if (\$__joinPoint === null) {
-            \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
-        }
+        static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
         {$return}\$__joinPoint->__invoke($invocationArguments);
         BODY;
 
@@ -322,11 +319,8 @@ class ClassProxyGenerator
         $method->setStatic(true);
         $method->setReturnType('void');
         $method->setBody(<<<BODY
-        /** @var \\Go\\Aop\\Intercept\\ClassJoinpoint<self>|null \$__joinPoint */
-        static \$__joinPoint;
-        if (\$__joinPoint === null) {
-            \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forStaticInitialization(self::class, {$advicesCode});
-        }
+        /** @var \\Go\\Aop\\Intercept\\ClassJoinpoint<self> \$__joinPoint */
+        static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forStaticInitialization(self::class, {$advicesCode});
         \$__joinPoint(static::class);
         BODY);
 
@@ -354,11 +348,8 @@ class ClassProxyGenerator
         );
         $method->addParameter($argumentsParameter);
         $method->setBody(<<<BODY
-        /** @var \\Go\\Aop\\Intercept\\ConstructorInvocation<self>|null \$__joinPoint */
-        static \$__joinPoint;
-        if (\$__joinPoint === null) {
-            \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forInitialization(self::class, {$advicesCode});
-        }
+        /** @var \\Go\\Aop\\Intercept\\ConstructorInvocation<self> \$__joinPoint */
+        static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forInitialization(self::class, {$advicesCode});
         return \$__joinPoint->__invoke(\$arguments);
         BODY);
 

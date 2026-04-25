@@ -103,11 +103,8 @@ class FunctionProxyGenerator
         $returnTypeString = $function->hasReturnType() ? '<' . TypeGenerator::renderTypeForPhpDoc($function->getReturnType()) . '>' : '';
 
         return <<<BODY
-        /** @var \\Go\\Aop\\Intercept\\FunctionInvocation{$returnTypeString}|null \$__joinPoint */
-        static \$__joinPoint;
-        if (\$__joinPoint === null) {
-            \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forFunction('{$function->name}', {$advicesCode});
-        }
+        /** @var \\Go\\Aop\\Intercept\\FunctionInvocation{$returnTypeString} \$__joinPoint */
+        static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forFunction('{$function->name}', {$advicesCode});
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
     }

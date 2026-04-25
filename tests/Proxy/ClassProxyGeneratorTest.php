@@ -90,12 +90,12 @@ class ClassProxyGeneratorTest extends TestCase
         );
         $this->assertStringContainsString("\\Go\\Aop\\Framework\\InterceptorInjector::forProperty(self::class, 'public'", $proxyFileContent);
         $this->assertStringContainsString(
-            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int>|null \$__joinPoint */",
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$__joinPoint */",
             $proxyFileContent,
             'Proxy with property advices must route writes through join points in property hooks'
         );
         $this->assertStringContainsString(
-            "set {\n            /** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int>|null \$__joinPoint */\n            static \$__joinPoint;",
+            "set {\n            /** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$__joinPoint */\n            static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forProperty(self::class",
             $proxyFileContent
         );
     }
@@ -144,7 +144,7 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
-            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception>|null \$__joinPoint */",
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception> \$__joinPoint */",
             $proxyFileContent
         );
     }
