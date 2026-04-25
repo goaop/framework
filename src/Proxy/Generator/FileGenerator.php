@@ -23,9 +23,20 @@ final class FileGenerator
     private ?string $namespace = null;
     private string $body       = '';
 
+    /** @var array<string, string|null> use => alias */
+    private array $uses = [];
+
     public function setNamespace(string $namespace): void
     {
         $this->namespace = $namespace;
+    }
+
+    /**
+     * Adds a `use` statement to the generated file.
+     */
+    public function addUse(string $use, ?string $alias = null): void
+    {
+        $this->uses[$use] = $alias;
     }
 
     /**
@@ -46,6 +57,14 @@ final class FileGenerator
         if ($this->namespace !== null && $this->namespace !== '') {
             $parts[] = '';
             $parts[] = 'namespace ' . $this->namespace . ';';
+        }
+
+        foreach ($this->uses as $use => $alias) {
+            $line = 'use ' . $use;
+            if ($alias !== null) {
+                $line .= ' as ' . $alias;
+            }
+            $parts[] = $line . ';';
         }
 
         if ($this->body !== '') {

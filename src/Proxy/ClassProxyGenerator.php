@@ -171,6 +171,29 @@ class ClassProxyGenerator
         }
         // Add any AOP-introduced traits
         $classGenerator->addTraits(array_values($introducedTraits));
+
+        // Register use-imports for AOP classes referenced in generated method bodies.
+        // Determine needed invocation types from actual method signatures, not advice
+        // category keys, because callers may place static-method advices under METHOD_PREFIX.
+        $classGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
+        foreach ($interceptedMethods as $methodName) {
+            if ($originalClass->hasMethod($methodName) && $originalClass->getMethod($methodName)->isStatic()) {
+                $classGenerator->addUse('Go\Aop\Intercept\StaticMethodInvocation');
+            } else {
+                $classGenerator->addUse('Go\Aop\Intercept\DynamicMethodInvocation');
+            }
+        }
+        if ($staticInitializationAdvices !== []) {
+            $classGenerator->addUse('Go\Aop\Intercept\ClassJoinpoint');
+        }
+        if ($initializationAdvices !== []) {
+            $classGenerator->addUse('Go\Aop\Intercept\ConstructorInvocation');
+        }
+        if (!empty($propertyAdvices)) {
+            $classGenerator->addUse('Go\Aop\Intercept\FieldAccess');
+            $classGenerator->addUse('Go\Aop\Intercept\FieldAccessType');
+        }
+
         $this->generator = $classGenerator;
     }
 
@@ -294,12 +317,12 @@ class ClassProxyGenerator
             }
         }
         $joinPointType = $isStatic
-            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self' . $returnTypeString . '>'
-            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self' . $returnTypeString . '>';
+            ? 'StaticMethodInvocation<self' . $returnTypeString . '>'
+            : 'DynamicMethodInvocation<self' . $returnTypeString . '>';
 
         $body = <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
+        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
         {$return}\$__joinPoint->__invoke($invocationArguments);
         BODY;
 
@@ -319,8 +342,8 @@ class ClassProxyGenerator
         $method->setStatic(true);
         $method->setReturnType('void');
         $method->setBody(<<<BODY
-        /** @var \\Go\\Aop\\Intercept\\ClassJoinpoint<self> \$__joinPoint */
-        static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forStaticInitialization(self::class, {$advicesCode});
+        /** @var ClassJoinpoint<self> \$__joinPoint */
+        static \$__joinPoint = InterceptorInjector::forStaticInitialization(self::class, {$advicesCode});
         \$__joinPoint(static::class);
         BODY);
 
@@ -348,8 +371,8 @@ class ClassProxyGenerator
         );
         $method->addParameter($argumentsParameter);
         $method->setBody(<<<BODY
-        /** @var \\Go\\Aop\\Intercept\\ConstructorInvocation<self> \$__joinPoint */
-        static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forInitialization(self::class, {$advicesCode});
+        /** @var ConstructorInvocation<self> \$__joinPoint */
+        static \$__joinPoint = InterceptorInjector::forInitialization(self::class, {$advicesCode});
         return \$__joinPoint->__invoke(\$arguments);
         BODY);
 

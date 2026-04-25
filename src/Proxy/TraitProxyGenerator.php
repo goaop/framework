@@ -82,6 +82,23 @@ class TraitProxyGenerator extends ClassProxyGenerator
             $traitGenerator->addTraitAlias($fullName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
         }
 
+        // Register use-imports for AOP classes referenced in generated method bodies.
+        // Determine needed invocation types from actual method signatures, not advice
+        // category keys, because callers may place static-method advices under METHOD_PREFIX.
+        $traitGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
+        foreach ($interceptedMethods as $methodName) {
+            if ($originalTrait->hasMethod($methodName) && $originalTrait->getMethod($methodName)->isStatic()) {
+                $traitGenerator->addUse('Go\Aop\Intercept\StaticMethodInvocation');
+            } else {
+                $traitGenerator->addUse('Go\Aop\Intercept\DynamicMethodInvocation');
+            }
+        }
+        $propertyAdvices = $traitAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
+        if (!empty($propertyAdvices)) {
+            $traitGenerator->addUse('Go\Aop\Intercept\FieldAccess');
+            $traitGenerator->addUse('Go\Aop\Intercept\FieldAccessType');
+        }
+
         // Store generator instance for compatibility with parent generate() call
         $this->generator = $traitGenerator;
     }
@@ -125,14 +142,24 @@ class TraitProxyGenerator extends ClassProxyGenerator
             }
         }
         $joinPointType = $isStatic
-            ? '\\Go\\Aop\\Intercept\\StaticMethodInvocation<self' . $returnTypeString . '>'
-            : '\\Go\\Aop\\Intercept\\DynamicMethodInvocation<self' . $returnTypeString . '>';
+            ? 'StaticMethodInvocation<self' . $returnTypeString . '>'
+            : 'DynamicMethodInvocation<self' . $returnTypeString . '>';
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
+        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function addUse(string $use, ?string $useAlias = null): void
+    {
+        if ($use !== '' && $this->generator instanceof TraitGenerator) {
+            $this->generator->addUse($use, $useAlias !== '' ? $useAlias : null);
+        }
     }
 
     /**

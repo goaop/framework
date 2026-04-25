@@ -83,7 +83,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     protected function createFieldAccessDocComment(string $variableName = 'fieldAccess', bool $isNullable = false): Doc
     {
         $nullableSuffix = $isNullable ? '|null' : '';
-        return new Doc('/** @var \Go\Aop\Intercept\FieldAccess<self, ' . $this->getPropertyTypeForPhpDoc() . '>' . $nullableSuffix . ' $' . $variableName . ' */');
+        return new Doc('/** @var FieldAccess<self, ' . $this->getPropertyTypeForPhpDoc() . '>' . $nullableSuffix . ' $' . $variableName . ' */');
     }
 
     private function getPropertyTypeForPhpDoc(): string
