@@ -21,12 +21,14 @@ use Go\Instrument\ClassLoading\CachePathManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use Vfs\FileSystem;
+use Symfony\Component\Filesystem\Filesystem;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class WeavingTransformerTest extends TestCase
 {
-    protected static FileSystem $fileSystem;
+    protected static string $tempCacheDir;
+
+    protected static Filesystem $filesystem;
 
     protected WeavingTransformer $transformer;
 
@@ -41,8 +43,17 @@ class WeavingTransformerTest extends TestCase
      */
     public static function setUpBeforeClass(): void
     {
-        static::$fileSystem = FileSystem::factory('vfs://');
-        static::$fileSystem->mount();
+        static::$filesystem = new Filesystem();
+        static::$tempCacheDir = sys_get_temp_dir() . '/go-aop-test-' . uniqid();
+        static::$filesystem->mkdir(static::$tempCacheDir);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public static function tearDownAfterClass(): void
+    {
+        static::$filesystem->remove(static::$tempCacheDir);
     }
 
     /**
@@ -60,20 +71,21 @@ class WeavingTransformerTest extends TestCase
         $this->kernel        = $this->getKernelMock(
             [
                 'appDir'        => dirname(__DIR__),
-                'cacheDir'      => 'vfs://',
+                'cacheDir'      => static::$tempCacheDir,
                 'cacheFileMode' => 0770,
                 'includePaths'  => [],
                 'excludePaths'  => []
             ],
             $container
         );
-        $this->cachePathManager = new CachePathManager($this->kernel);
+        $this->cachePathManager = new CachePathManager($this->kernel, static::$filesystem);
 
         $this->transformer = new WeavingTransformer(
             $this->kernel,
             $this->adviceMatcher,
             $this->cachePathManager,
-            $loader
+            $loader,
+            static::$filesystem,
         );
     }
 
@@ -128,7 +140,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-typehint-woven')->source);
         $this->assertEquals($expected, $actual);
 
-        $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '_proxies/Transformer/_files/class-typehint.php/TestClassTypehint.php');
+        $proxyContent = static::$filesystem->readFile($this->cachePathManager->getCacheDir() . '/_proxies/Transformer/_files/class-typehint.php/TestClassTypehint.php');
         $this->assertFalse(strpos($proxyContent, '\\\\Exception'));
     }
 
@@ -144,7 +156,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces(static::$filesystem->readFile(static::$tempCacheDir . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -164,20 +176,21 @@ class WeavingTransformerTest extends TestCase
         $kernel = $this->getKernelMock(
             [
                 'appDir'        => dirname(__DIR__),
-                'cacheDir'      => 'vfs://',
+                'cacheDir'      => static::$tempCacheDir,
                 'includePaths'  => [__DIR__],
                 'excludePaths'  => [],
                 'cacheFileMode' => 0770,
             ],
             $container
         );
-        $cachePathManager = new CachePathManager($kernel);
+        $cachePathManager = new CachePathManager($kernel, static::$filesystem);
 
         $this->transformer = new WeavingTransformer(
             $kernel,
             $this->adviceMatcher,
             $cachePathManager,
-            $loader
+            $loader,
+            static::$filesystem,
         );
 
         $metadata = $this->loadTestMetadata('class');
@@ -187,7 +200,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces(static::$filesystem->readFile(static::$tempCacheDir . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -209,7 +222,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces(static::$filesystem->readFile(static::$tempCacheDir . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -227,7 +240,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces(static::$filesystem->readFile(static::$tempCacheDir . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -286,7 +299,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces(static::$filesystem->readFile(static::$tempCacheDir . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -335,7 +348,8 @@ class WeavingTransformerTest extends TestCase
             $this->kernel,
             $adviceMatcher,
             $this->cachePathManager,
-            $loader
+            $loader,
+            static::$filesystem,
         );
 
         $metadata = $this->loadTestMetadata('php84-property-hooks');
@@ -354,7 +368,7 @@ class WeavingTransformerTest extends TestCase
 
         $matches = [];
         $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actualWoven, $matches));
-        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+        $proxyContent = $this->normalizeWhitespaces(static::$filesystem->readFile(static::$tempCacheDir . $matches[1]));
 
         $this->assertStringContainsString("public string \$value = 'test' {", $proxyContent);
         $this->assertStringContainsString("public protected(set) string \$limited = 'limited' {", $proxyContent);

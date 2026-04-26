@@ -4,7 +4,7 @@ declare(strict_types=1);
 /*
  * Go! AOP framework
  *
- * @copyright Copyright 2012, Lisachenko Alexander <lisachenko.it@gmail.com>
+ * @copyright Copyright 2025, Lisachenko Alexander <lisachenko.it@gmail.com>
  *
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
@@ -15,6 +15,7 @@ namespace Go\Instrument\ClassLoading;
 use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
 use RuntimeException;
+use Symfony\Component\Filesystem\Path;
 
 /**
  * Runtime file path resolver for AOP-transformed code.
@@ -113,13 +114,16 @@ class AopFileResolver
      */
     public static function resolveFileName(string $fileName): string
     {
-        $suffix = '.php';
-        $pathParts = explode($suffix, str_replace(
-            [self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'],
-            [self::$rootPath, ''],
-            $fileName
-        ));
-        // throw away namespaced path from actual filename
-        return $pathParts[0] . $suffix;
+        if (self::$rewriteToPath !== '' && Path::isBasePath(self::$rewriteToPath, $fileName)) {
+            $relativePath = Path::makeRelative($fileName, self::$rewriteToPath);
+            // Strip the _proxies/ prefix and the trailing namespace path after .php
+            $relativePath = str_replace('_proxies/', '', $relativePath);
+            $suffix       = '.php';
+            $pathParts    = explode($suffix, $relativePath);
+
+            return self::$rootPath . DIRECTORY_SEPARATOR . $pathParts[0] . $suffix;
+        }
+
+        return $fileName;
     }
 }

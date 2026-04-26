@@ -14,12 +14,14 @@ namespace Go\Instrument\FileSystem;
 
 use PHPUnit\Framework\TestCase;
 use SplFileInfo;
-use Vfs\FileSystem;
+use Symfony\Component\Filesystem\Filesystem;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class EnumeratorTest extends TestCase
 {
-    protected static FileSystem $fileSystem;
+    protected static Filesystem $filesystem;
+
+    protected static string $tempBaseDir;
 
     /**
      * Set up fixture test folders and files
@@ -28,8 +30,8 @@ class EnumeratorTest extends TestCase
      */
     public static function setUpBeforeClass(): void
     {
-        static::$fileSystem = FileSystem::factory('vfs://');
-        static::$fileSystem->mount();
+        static::$filesystem = new Filesystem();
+        static::$tempBaseDir = sys_get_temp_dir() . '/go-aop-enum-test-' . uniqid();
 
         $testPaths = [
             '/base/sub/test',
@@ -38,53 +40,55 @@ class EnumeratorTest extends TestCase
 
         // Setup some files we test against
         foreach ($testPaths as $path) {
-            mkdir('vfs://' . $path, 0777, true);
-            touch('vfs://' . $path . DIRECTORY_SEPARATOR . 'TestClass.php');
+            static::$filesystem->mkdir(static::$tempBaseDir . $path, 0777);
+            touch(static::$tempBaseDir . $path . DIRECTORY_SEPARATOR . 'TestClass.php');
         }
     }
 
     public static function tearDownAfterClass(): void
     {
-        static::$fileSystem->unmount();
+        static::$filesystem->remove(static::$tempBaseDir);
     }
 
     public static function pathsProvider(): array
     {
+        $base = sys_get_temp_dir() . '/go-aop-enum-test-';
+        // Paths use a placeholder that will be resolved at runtime via the test method
         return [
             [
                 // No include or exclude, every folder should be there
-                ['vfs://base/sub/test', 'vfs://base/sub/sub/test'],
+                ['{BASE}/base/sub/test', '{BASE}/base/sub/sub/test'],
                 [],
                 []
             ],
             [
                 // Exclude double sub folder
-                ['vfs://base/sub/test'],
+                ['{BASE}/base/sub/test'],
                 [],
-                ['vfs://base/sub/sub/test']
+                ['{BASE}/base/sub/sub/test']
             ],
             [
                 // Exclude double sub folder just by base path
-                ['vfs://base/sub/test'],
+                ['{BASE}/base/sub/test'],
                 [],
-                ['vfs://base/sub/sub']
+                ['{BASE}/base/sub/sub']
             ],
             [
                 // Exclude all, expected shout be empty
                 [],
                 [],
-                ['vfs://base/sub/test', 'vfs://base/sub/sub/test']
+                ['{BASE}/base/sub/test', '{BASE}/base/sub/sub/test']
             ],
             [
                 // Exclude all sub using wildcard
                 [],
                 [],
-                ['vfs://base/*/test']
+                ['{BASE}/base/*/test']
             ],
             [
                 // Includepath using wildcard should not break
-                ['vfs://base/sub/test', 'vfs://base/sub/sub/test'],
-                ['vfs://base/*'],
+                ['{BASE}/base/sub/test', '{BASE}/base/sub/sub/test'],
+                ['{BASE}/base/*'],
                 []
             ]
         ];
@@ -101,22 +105,20 @@ class EnumeratorTest extends TestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('pathsProvider')]
     public function testExclude(array $expectedPaths, array $includePaths, array $excludePaths): void
     {
+        $base = static::$tempBaseDir;
+        $resolve = static fn(array $paths): array => array_map(
+            static fn(string $p): string => str_replace('{BASE}', $base, $p),
+            $paths,
+        );
+
+        $expectedPaths = $resolve($expectedPaths);
+        $includePaths  = $resolve($includePaths);
+        $excludePaths  = $resolve($excludePaths);
+
         $testPaths = [];
 
-        /** @var Enumerator $mock */
-        $mock = $this->getMockBuilder(Enumerator::class)
-            ->setConstructorArgs(['vfs://base', $includePaths, $excludePaths])
-            ->onlyMethods(['getFileFullPath'])
-            ->getMock();
-
-        // Mock getFileRealPath method to provide a pathname
-        // VFS does not support getRealPath()
-        $mock->method('getFileFullPath')
-            ->willReturnCallback(function (SplFileInfo $file) {
-                return $file->getPathname();
-            });
-
-        $iterator = $mock->enumerate();
+        $enumerator = new Enumerator($base . '/base', $includePaths, $excludePaths);
+        $iterator   = $enumerator->enumerate();
 
         foreach ($iterator as $file) {
             $testPaths[] = str_replace(DIRECTORY_SEPARATOR, '/', $file->getPath());

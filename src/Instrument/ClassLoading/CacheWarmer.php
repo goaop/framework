@@ -19,6 +19,7 @@ use Go\Instrument\FileSystem\Enumerator;
 use InvalidArgumentException;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Filesystem\Filesystem;
 use Throwable;
 use function count;
 
@@ -80,8 +81,8 @@ class CacheWarmer
             $path = $file->getRealPath();
 
             try {
-                // This will trigger creation of cache
-                file_get_contents(AopFileResolver::PHP_FILTER_READ .
+                // This will trigger creation of cache via the stream filter
+                (new Filesystem())->readFile(AopFileResolver::PHP_FILTER_READ .
                     SourceTransformingLoader::FILTER_IDENTIFIER .
                     '/resource=' . $path
                 );

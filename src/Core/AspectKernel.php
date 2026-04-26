@@ -22,6 +22,7 @@ use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use RuntimeException;
+use Symfony\Component\Filesystem\Filesystem;
 
 use function define;
 
@@ -136,7 +137,9 @@ abstract class AspectKernel
 
         $cacheManager = $container->getService(CachePathManager::class);
 
-        SourceTransformingLoader::register($container, $cacheManager, $this->options['cacheFileMode']);
+        $filesystem = $container->getService(Filesystem::class);
+
+        SourceTransformingLoader::register($container, $cacheManager, $filesystem, $this->options['cacheFileMode']);
 
         // Configure runtime file resolver used by woven code (include rewriting + getFileName resolution)
         AopFileResolver::configure($this, SourceTransformingLoader::getId(), $cacheManager);

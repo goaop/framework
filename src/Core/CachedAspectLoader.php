@@ -18,6 +18,7 @@ use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use ReflectionClass;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Cached loader is responsible for faster initialization of pointcuts/advisors for concrete aspect
@@ -39,6 +40,11 @@ class CachedAspectLoader extends AspectLoader
     protected int $cacheFileMode;
 
     /**
+     * Symfony Filesystem instance for all file operations
+     */
+    protected Filesystem $filesystem;
+
+    /**
      * Identifier of original loader
      *
      * @var class-string<AspectLoader>
@@ -51,12 +57,13 @@ class CachedAspectLoader extends AspectLoader
      * @param class-string<AspectLoader> $loaderId
      * @phpstan-param KernelOptions $options List of kernel options
      */
-    public function __construct(AspectContainer $container, string $loaderId, array $options)
+    public function __construct(AspectContainer $container, string $loaderId, array $options, Filesystem $filesystem)
     {
         $this->cacheDir      = $options['cacheDir'];
         $this->cacheFileMode = $options['cacheFileMode'];
         $this->loaderId      = $loaderId;
         $this->container     = $container;
+        $this->filesystem    = $filesystem;
     }
 
     public function load(Aspect $aspect): array
@@ -70,7 +77,7 @@ class CachedAspectLoader extends AspectLoader
 
         // If cache is present and actual, then use it
         $aspectFileName = $refAspect->getFileName();
-        if ($aspectFileName !== false && file_exists($fileName) && filemtime($fileName) >= filemtime($aspectFileName)) {
+        if ($aspectFileName !== false && $this->filesystem->exists($fileName) && filemtime($fileName) >= filemtime($aspectFileName)) {
             $loadedItems = $this->loadFromCache($fileName);
         } else {
             $loadedItems = $this->loader->load($aspect);
@@ -98,10 +105,7 @@ class CachedAspectLoader extends AspectLoader
      */
     protected function loadFromCache(string $fileName): array
     {
-        $content = file_get_contents($fileName);
-        if ($content === false) {
-            return [];
-        }
+        $content = $this->filesystem->readFile($fileName);
         $loadedItems = unserialize($content);
 
         if (!is_array($loadedItems)) {
@@ -120,13 +124,9 @@ class CachedAspectLoader extends AspectLoader
      */
     protected function saveToCache(array $items, string $fileName): void
     {
-        $content       = serialize($items);
-        $directoryName = dirname($fileName);
-        if (!is_dir($directoryName)) {
-            mkdir($directoryName, $this->cacheFileMode, true);
-        }
-        file_put_contents($fileName, $content, LOCK_EX);
-        // For cache files we don't want executable bits by default
-        chmod($fileName, $this->cacheFileMode & (~0111));
+        $content = serialize($items);
+        $this->filesystem->mkdir(dirname($fileName), $this->cacheFileMode);
+        $this->filesystem->dumpFile($fileName, $content);
+        $this->filesystem->chmod($fileName, $this->cacheFileMode & (~0111));
     }
 }

@@ -24,6 +24,7 @@ use Go\Instrument\Transformer\WeavingTransformer;
 use OutOfBoundsException;
 use ReflectionClass;
 use ReflectionObject;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * DI-container
@@ -88,7 +89,7 @@ class Container implements AspectContainer
         $this->addLazyService(CachedAspectLoader::class, function (AspectContainer $container): CachedAspectLoader {
             $options = $container->getService(AspectKernel::class)->getOptions();
 
-            return new CachedAspectLoader($container, AspectLoader::class, $options);
+            return new CachedAspectLoader($container, AspectLoader::class, $options, $container->getService(Filesystem::class));
         });
 
         $this->addLazyService(LazyAdvisorAccessor::class, fn(AspectContainer $container): LazyAdvisorAccessor => new LazyAdvisorAccessor(
@@ -96,8 +97,11 @@ class Container implements AspectContainer
             $container->getService(CachedAspectLoader::class)
         ));
 
+        $this->addLazyService(Filesystem::class, fn(): Filesystem => new Filesystem());
+
         $this->addLazyService(CachePathManager::class, fn(AspectContainer $container): CachePathManager => new CachePathManager(
-            $container->getService(AspectKernel::class)
+            $container->getService(AspectKernel::class),
+            $container->getService(Filesystem::class),
         ));
 
         // Source transformers — registered as lazy services, retrieved via getServicesByInterface()
@@ -108,6 +112,7 @@ class Container implements AspectContainer
                 $c->getService(AdviceMatcher::class),
                 $c->getService(CachePathManager::class),
                 $c->getService(CachedAspectLoader::class),
+                $c->getService(Filesystem::class),
             ),
         );
 

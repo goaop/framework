@@ -18,6 +18,7 @@ use Go\Instrument\ClassLoading\AopFileResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Filesystem\Filesystem;
 use TypeError;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -43,7 +44,7 @@ class FilterInjectorTransformerTest extends TestCase
             );
             $cachePathManager = $this
                 ->getMockBuilder(CachePathManager::class)
-                ->setConstructorArgs([$kernelMock])
+                ->setConstructorArgs([$kernelMock, new Filesystem()])
                 ->getMock();
 
             // Configure AopFileResolver for rewrite() tests

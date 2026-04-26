@@ -33,6 +33,7 @@ use Go\Proxy\TraitProxyGenerator;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Property;
 use ReflectionProperty;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Main transformer that performs weaving of aspects into the source code
@@ -63,18 +64,25 @@ class WeavingTransformer extends BaseSourceTransformer
     protected AspectLoader $aspectLoader;
 
     /**
+     * Symfony Filesystem instance for all file operations
+     */
+    private Filesystem $filesystem;
+
+    /**
      * Constructs a weaving transformer
      */
     public function __construct(
         AspectKernel $kernel,
         AdviceMatcherInterface $adviceMatcher,
         CachePathManager $cachePathManager,
-        AspectLoader $loader
+        AspectLoader $loader,
+        Filesystem $filesystem,
     ) {
         parent::__construct($kernel);
         $this->adviceMatcher    = $adviceMatcher;
         $this->cachePathManager = $cachePathManager;
         $this->aspectLoader     = $loader;
+        $this->filesystem       = $filesystem;
 
         $this->useParameterWidening = $kernel->hasFeature(Features::PARAMETER_WIDENING);
     }
@@ -681,17 +689,13 @@ class WeavingTransformer extends BaseSourceTransformer
             $fileName = str_replace('\\', '/', $namespace->getName()) . '.php';
 
             $functionFileName = $cacheDir . $fileName;
-            $filemtime = file_exists($functionFileName) ? filemtime($functionFileName) : false;
+            $filemtime = $this->filesystem->exists($functionFileName) ? filemtime($functionFileName) : false;
             if ($filemtime === false || !$this->container->hasAnyResourceChangedSince($filemtime)) {
                 $functionAdvices = AbstractJoinpoint::flatAndSortAdvices($functionAdvices);
-                $dirname         = dirname($functionFileName);
-                if (!file_exists($dirname)) {
-                    mkdir($dirname, $this->options['cacheFileMode'], true);
-                }
                 $generator = new FunctionProxyGenerator($namespace, $functionAdvices, $this->useParameterWidening);
-                file_put_contents($functionFileName, $generator->generate(), LOCK_EX);
-                // For cache files we don't want executable bits by default
-                chmod($functionFileName, $this->options['cacheFileMode'] & (~0111));
+                $this->filesystem->mkdir(dirname($functionFileName), $this->options['cacheFileMode']);
+                $this->filesystem->dumpFile($functionFileName, $generator->generate());
+                $this->filesystem->chmod($functionFileName, $this->options['cacheFileMode'] & (~0111));
             }
             $content = 'include_once AOP_CACHE_DIR . ' . var_export(self::FUNCTIONS_CACHE_SUFFIX . $fileName, true) . ';';
 
@@ -720,17 +724,12 @@ class WeavingTransformer extends BaseSourceTransformer
         $relativePath      = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $classFileName);
         $proxyRelativePath = str_replace('\\', '/', $relativePath . '/' . $class->getName() . '.php');
         $proxyFileName     = $cacheDir . $proxyRelativePath;
-        $dirname           = dirname($proxyFileName);
-        if (!file_exists($dirname)) {
-            mkdir($dirname, $this->options['cacheFileMode'], true);
-        }
 
         $body = '<?php' . PHP_EOL . $childCode;
 
-        $isVirtualSystem = strpos($proxyFileName, 'vfs') === 0;
-        file_put_contents($proxyFileName, $body, $isVirtualSystem ? 0 : LOCK_EX);
-        // For cache files we don't want executable bits by default
-        chmod($proxyFileName, $this->options['cacheFileMode'] & (~0111));
+        $this->filesystem->mkdir(dirname($proxyFileName), $this->options['cacheFileMode']);
+        $this->filesystem->dumpFile($proxyFileName, $body);
+        $this->filesystem->chmod($proxyFileName, $this->options['cacheFileMode'] & (~0111));
 
         return 'include_once AOP_CACHE_DIR . ' . var_export(self::PROXIES_CACHE_SUFFIX . $proxyRelativePath, true) . ';';
     }

@@ -65,6 +65,11 @@ class SourceTransformingLoader extends PhpStreamFilter
     protected static int $cacheFileMode = 0770;
 
     /**
+     * Symfony Filesystem instance for all file operations
+     */
+    protected static Filesystem $filesystem;
+
+    /**
      * Register current loader as stream filter in PHP
      *
      * @throws RuntimeException If registration was failed
@@ -72,6 +77,7 @@ class SourceTransformingLoader extends PhpStreamFilter
     public static function register(
         AspectContainer $container,
         CachePathManager $cacheManager,
+        Filesystem $filesystem,
         int $cacheFileMode,
         string $filterId = self::FILTER_IDENTIFIER,
     ): void {
@@ -86,6 +92,7 @@ class SourceTransformingLoader extends PhpStreamFilter
         self::$filterId      = $filterId;
         self::$container     = $container;
         self::$cacheManager  = $cacheManager;
+        self::$filesystem    = $filesystem;
         self::$cacheFileMode = $cacheFileMode;
     }
 
@@ -169,9 +176,8 @@ class SourceTransformingLoader extends PhpStreamFilter
     {
         $cacheState = self::$cacheManager->queryCacheState($metadata->uri);
         if ($cacheState && isset($cacheState['cacheUri']) && is_string($cacheState['cacheUri'])) {
-            $filesystem = new Filesystem();
-            if ($filesystem->exists($cacheState['cacheUri'])) {
-                return $filesystem->readFile($cacheState['cacheUri']);
+            if (self::$filesystem->exists($cacheState['cacheUri'])) {
+                return self::$filesystem->readFile($cacheState['cacheUri']);
             }
         }
 
@@ -195,10 +201,9 @@ class SourceTransformingLoader extends PhpStreamFilter
 
         $processingResult = self::processTransformers($metadata);
         if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
-            $filesystem = new Filesystem();
-            $filesystem->mkdir(dirname($cacheUri), self::$cacheFileMode);
-            $filesystem->dumpFile($cacheUri, $metadata->source);
-            $filesystem->chmod($cacheUri, self::$cacheFileMode & (~0111));
+            self::$filesystem->mkdir(dirname($cacheUri), self::$cacheFileMode);
+            self::$filesystem->dumpFile($cacheUri, $metadata->source);
+            self::$filesystem->chmod($cacheUri, self::$cacheFileMode & (~0111));
         }
         self::$cacheManager->setCacheState(
             $originalUri,

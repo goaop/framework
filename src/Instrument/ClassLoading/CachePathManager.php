@@ -15,6 +15,7 @@ namespace Go\Instrument\ClassLoading;
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use InvalidArgumentException;
+use Symfony\Component\Filesystem\Filesystem;
 
 use function function_exists;
 
@@ -46,6 +47,11 @@ class CachePathManager
      */
     protected int $fileMode;
 
+    /**
+     * Symfony Filesystem instance for all file operations
+     */
+    protected Filesystem $filesystem;
+
     protected ?string $appDir = null;
 
     /**
@@ -62,32 +68,34 @@ class CachePathManager
      */
     protected array $newCacheState = [];
 
-    public function __construct(AspectKernel $kernel)
+    public function __construct(AspectKernel $kernel, Filesystem $filesystem)
     {
-        $this->kernel   = $kernel;
-        $options        = $kernel->getOptions();
-        $this->options  = $options;
-        $this->appDir   = $options['appDir'];
-        $this->cacheDir = $options['cacheDir'];
-        $this->fileMode = $options['cacheFileMode'];
+        $this->kernel     = $kernel;
+        $this->filesystem = $filesystem;
+        $options          = $kernel->getOptions();
+        $this->options    = $options;
+        $this->appDir     = $options['appDir'];
+        $this->cacheDir   = $options['cacheDir'];
+        $this->fileMode   = $options['cacheFileMode'];
 
         if ($this->cacheDir) {
-            if (!is_dir($this->cacheDir)) {
+            if (!$this->filesystem->exists($this->cacheDir)) {
                 $cacheRootDir = dirname($this->cacheDir);
-                if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
+                if (!is_writable($cacheRootDir) || !$this->filesystem->exists($cacheRootDir)) {
                     throw new InvalidArgumentException(
                         "Can not create a directory {$this->cacheDir} for the cache.
                         Parent directory {$cacheRootDir} is not writable or not exist."
                     );
                 }
-                mkdir($this->cacheDir, $this->fileMode, true);
+                $this->filesystem->mkdir($this->cacheDir, $this->fileMode);
             }
             if (!$this->kernel->hasFeature(Features::PREBUILT_CACHE) && !is_writable($this->cacheDir)) {
                 throw new InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
             }
 
-            if (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
-                $cacheData = include $this->cacheDir . self::CACHE_FILE_NAME;
+            $cacheFile = $this->cacheDir . self::CACHE_FILE_NAME;
+            if ($this->filesystem->exists($cacheFile)) {
+                $cacheData = include $cacheFile;
                 if (is_array($cacheData)) {
                     $this->cacheState = $cacheData;
                 }
@@ -193,9 +201,8 @@ class CachePathManager
                 ]
             );
             $fullCacheFileName = $this->cacheDir . self::CACHE_FILE_NAME;
-            file_put_contents($fullCacheFileName, $cacheData, LOCK_EX);
-            // For cache files we don't want executable bits by default
-            chmod($fullCacheFileName, $this->fileMode & (~0111));
+            $this->filesystem->dumpFile($fullCacheFileName, $cacheData);
+            $this->filesystem->chmod($fullCacheFileName, $this->fileMode & (~0111));
 
             if (function_exists('opcache_invalidate')) {
                 opcache_invalidate($fullCacheFileName, true);

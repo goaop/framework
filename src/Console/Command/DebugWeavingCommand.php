@@ -22,6 +22,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Console command for debugging weaving issues due to circular dependencies.
@@ -113,17 +114,13 @@ EOT
             RecursiveIteratorIterator::CHILD_FIRST
         );
 
-        $proxies = [];
+        $proxies    = [];
+        $filesystem = new Filesystem();
 
-        /**
-         * @var SplFileInfo $splFileInfo
-         */
+        /** @var SplFileInfo $splFileInfo */
         foreach ($iterator as $splFileInfo) {
             if ($splFileInfo->isFile()) {
-                $content = file_get_contents($splFileInfo->getPathname());
-                if ($content !== false) {
-                    $proxies[$splFileInfo->getPathname()] = $content;
-                }
+                $proxies[$splFileInfo->getPathname()] = $filesystem->readFile($splFileInfo->getPathname());
             }
         }
 
