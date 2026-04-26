@@ -15,16 +15,14 @@ namespace Go\Core;
 use Go\Aop\AspectException;
 use Go\Aop\Features;
 use Go\Instrument\ClassLoading\AopComposerLoader;
+use Go\Instrument\ClassLoading\AopFileResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\PathResolver;
-use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
-use Go\Instrument\Transformer\MagicConstantTransformer;
-use Go\Instrument\Transformer\SourceTransformer;
-use Go\Instrument\Transformer\WeavingTransformer;
 use RuntimeException;
+use Symfony\Component\Filesystem\Filesystem;
 
 use function define;
 
@@ -137,10 +135,27 @@ abstract class AspectKernel
         $container->add('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
         $container->add('kernel.options', $this->options);
 
-        SourceTransformingLoader::register();
+        $cacheManager = $container->getService(CachePathManager::class);
 
-        foreach ($this->registerTransformers() as $sourceTransformer) {
-            SourceTransformingLoader::addTransformer($sourceTransformer);
+        $filesystem = $container->getService(Filesystem::class);
+
+        SourceTransformingLoader::register($container, $cacheManager, $filesystem, $this->options['cacheFileMode']);
+
+        // Configure runtime file resolver used by woven code (include rewriting + getFileName resolution)
+        AopFileResolver::configure($this, SourceTransformingLoader::getId(), $cacheManager);
+
+        // Register feature-gated source transformers
+        if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
+            $container->addLazyService(
+                ConstructorExecutionTransformer::class,
+                fn(): ConstructorExecutionTransformer => new ConstructorExecutionTransformer(),
+            );
+        }
+        if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
+            $container->addLazyService(
+                FilterInjectorTransformer::class,
+                fn(): FilterInjectorTransformer => new FilterInjectorTransformer(),
+            );
         }
 
         AopComposerLoader::init($this->options, $container);
@@ -272,42 +287,6 @@ abstract class AspectKernel
      * Configures an AspectContainer with advisors, aspects and pointcuts
      */
     abstract protected function configureAop(AspectContainer $container): void;
-
-    /**
-     * Returns list of source transformers, that will be applied to the PHP source
-     *
-     * @return SourceTransformer[]
-     * @internal This method is internal and should not be used outside this project
-     */
-    protected function registerTransformers(): array
-    {
-        $cacheManager     = $this->getContainer()->getService(CachePathManager::class);
-        $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
-        $magicTransformer = new MagicConstantTransformer($this);
-
-        $sourceTransformers = function () use ($filterInjector, $magicTransformer, $cacheManager) {
-            $transformers = [];
-            if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
-                $transformers[] = new ConstructorExecutionTransformer();
-            }
-            if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
-                $transformers[] = $filterInjector;
-            }
-            $transformers[]  = new WeavingTransformer(
-                $this,
-                $this->container->getService(AdviceMatcher::class),
-                $cacheManager,
-                $this->container->getService(CachedAspectLoader::class)
-            );
-            $transformers[] = $magicTransformer;
-
-            return $transformers;
-        };
-
-        return [
-            new CachingTransformer($this, $sourceTransformers, $cacheManager)
-        ];
-    }
 
     /**
      * Returns a file name where kernel has been initialized

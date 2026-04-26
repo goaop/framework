@@ -14,6 +14,8 @@ namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\AopFileResolver;
+use Go\Instrument\ClassLoading\CachePathManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -29,31 +31,7 @@ class MagicConstantTransformerTest extends TestCase
      */
     public function setUp(): void
     {
-        $this->transformer = new MagicConstantTransformer(
-            $this->getKernelMock([
-                'cacheDir' => __DIR__,
-                'appDir'   => dirname(__DIR__),
-            ])
-        );
-    }
-
-    /**
-     * Returns a mock for kernel
-     *
-     * @return MockObject|AspectKernel
-     */
-    protected function getKernelMock(array $options): AspectKernel
-    {
-        $mock = $this->getMockBuilder(AspectKernel::class)
-            ->disableOriginalConstructor()
-            ->onlyMethods(['configureAop', 'getOptions', 'getContainer'])
-            ->getMock();
-        $mock->method('getOptions')
-            ->willReturn($options);
-        $mock->method('getContainer')
-            ->willReturn($this->createMock(AspectContainer::class));
-
-        return $mock;
+        $this->transformer = new MagicConstantTransformer();
     }
 
     public function testTransformerReturnsWithoutMagicConsts(): void
@@ -98,8 +76,6 @@ class MagicConstantTransformerTest extends TestCase
 
     public function testTransformerResolvesFileName(): void
     {
-        /** @var $class MagicConstantTransformer */
-        $class = get_class($this->transformer);
-        $this->assertStringStartsWith(dirname(__DIR__), $class::resolveFileName(__FILE__));
+        $this->assertStringStartsWith(dirname(__DIR__), AopFileResolver::resolveFileName(__FILE__));
     }
 }

@@ -128,7 +128,7 @@ use Demo\Example\LoggingDemo;
 use Demo\Example\PropertyDemo;
 use Demo\Example\UserFluentDemo;
 use Demo\Highlighter;
-use Go\Instrument\Transformer\MagicConstantTransformer;
+use Go\Instrument\ClassLoading\AopFileResolver;
 
 $isAOPDisabled = isset($_COOKIE['aop_on']) && $_COOKIE['aop_on'] == 'false';
 include __DIR__ . ($isAOPDisabled ? '/../vendor/autoload.php' : '/autoload_aspect.php');
@@ -243,7 +243,7 @@ if ($aspectName !== ''):
       <div class="panel-body well panel-collapse collapse out" id="collapseOne">
 <?php
 $refAspect = new ReflectionClass($aspectName);
-Highlighter::highlight(MagicConstantTransformer::resolveFileName($refAspect->getFileName()));
+Highlighter::highlight(AopFileResolver::resolveFileName($refAspect->getFileName()));
 ?>
       </div>
     </div>
@@ -271,7 +271,7 @@ $basename = basename($path);
 $explodedPath = explode($basename, $path);
 $path = array_shift($explodedPath) . $basename;
 
-Highlighter::highlight(MagicConstantTransformer::resolveFileName($path));
+Highlighter::highlight(AopFileResolver::resolveFileName($path));
 ?>
       </div>
     </div>

@@ -11,100 +11,20 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
-use Go\Core\AspectKernel;
-use Go\Instrument\PathResolver;
-use Go\Instrument\ClassLoading\CachePathManager;
+use Go\Instrument\ClassLoading\AopFileResolver;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Include_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\FindingVisitor;
-use RuntimeException;
 
 /**
  * Transformer that injects source filter for "require" and "include" operations
  *
- * @phpstan-import-type KernelOptions from AspectKernel
+ * Wraps include/require expressions with AopFileResolver::rewrite() calls so that
+ * included files are also loaded through the AOP transformation pipeline.
  */
 class FilterInjectorTransformer implements SourceTransformer
 {
-    /**
-     * Php filter definition
-     */
-    public const PHP_FILTER_READ = 'php://filter/read=';
-
-    /**
-     * Name of the filter to inject
-     */
-    protected static ?string $filterName = null;
-
-    /**
-     * Kernel options
-     *
-     * @phpstan-var KernelOptions
-     */
-    protected static array $options;
-
-    protected static ?AspectKernel $kernel = null;
-
-    protected static ?CachePathManager $cachePathManager = null;
-
-    /**
-     * Class constructor
-     */
-    public function __construct(AspectKernel $kernel, string $filterName, CachePathManager $cacheManager)
-    {
-        self::configure($kernel, $filterName, $cacheManager);
-    }
-
-    /**
-     * Static configurator for filter
-     */
-    protected static function configure(AspectKernel $kernel, string $filterName, CachePathManager $cacheManager): void
-    {
-        if (self::$kernel !== null) {
-            throw new RuntimeException('Filter injector can be configured only once.');
-        }
-        self::$kernel           = $kernel;
-        self::$options          = $kernel->getOptions();
-        self::$filterName       = $filterName;
-        self::$cachePathManager = $cacheManager;
-    }
-
-    /**
-     * Replace source path with correct one
-     *
-     * This operation can check for cache, can rewrite paths, add additional filters and much more
-     *
-     * @param string $originalResource Initial resource to include
-     * @param string $originalDir Path to the directory from where include was called for resolving relative resources
-     */
-    public static function rewrite(string $originalResource, string $originalDir = ''): string
-    {
-        static $appDir, $cacheDir, $debug;
-        if ($appDir === null) {
-            extract(self::$options, EXTR_IF_EXISTS);
-        }
-
-        $resource = $originalResource;
-        if ($resource[0] !== '/') {
-            $shouldCheckExistence = true;
-            $resource
-                =  PathResolver::realpath($resource, $shouldCheckExistence)
-                ?: PathResolver::realpath("{$originalDir}/{$resource}", $shouldCheckExistence)
-                ?: $originalResource;
-        }
-        $cachedResource = self::$cachePathManager !== null
-            ? self::$cachePathManager->getCachePathForResource($resource)
-            : false;
-
-        // If the cache is disabled, resource path not resolvable, or no cache yet, then use on-fly method
-        if ($cachedResource === false || !$cacheDir || $debug || !file_exists($cachedResource)) {
-            return self::PHP_FILTER_READ . self::$filterName . '/resource=' . $resource;
-        }
-
-        return $cachedResource;
-    }
-
     /**
      * Wrap all includes into rewrite filter
      */
@@ -131,7 +51,7 @@ class FilterInjectorTransformer implements SourceTransformer
                 continue;
             }
 
-            $metadata->tokenStream[$startPosition]->text .= ' \\' . self::class . '::rewrite(';
+            $metadata->tokenStream[$startPosition]->text .= ' \\' . AopFileResolver::class . '::rewrite(';
             if ($metadata->tokenStream[$startPosition+1]->id === T_WHITESPACE) {
                 unset($metadata->tokenStream[$startPosition+1]);
             }

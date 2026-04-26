@@ -18,7 +18,7 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\PathResolver;
-use Go\Instrument\Transformer\FilterInjectorTransformer;
+
 use Composer\Autoload\ClassLoader;
 
 /**
@@ -161,7 +161,7 @@ class AopComposerLoader
                 $file     = $cacheUri ?: $file;
             } elseif (($this->isAllowedFilter)(new SplFileInfo($file))) {
                 // can be optimized here with $cacheState even for debug mode, but no needed right now
-                $file = FilterInjectorTransformer::rewrite($file);
+                $file = AopFileResolver::rewrite($file);
             }
         }
 

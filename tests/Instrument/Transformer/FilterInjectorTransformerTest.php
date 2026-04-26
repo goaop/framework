@@ -14,9 +14,11 @@ namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\AopFileResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Filesystem\Filesystem;
 use TypeError;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -42,9 +44,13 @@ class FilterInjectorTransformerTest extends TestCase
             );
             $cachePathManager = $this
                 ->getMockBuilder(CachePathManager::class)
-                ->setConstructorArgs([$kernelMock])
+                ->setConstructorArgs([$kernelMock, new Filesystem()])
                 ->getMock();
-            self::$transformer = new FilterInjectorTransformer($kernelMock, 'unit.test', $cachePathManager);
+
+            // Configure AopFileResolver for rewrite() tests
+            AopFileResolver::configure($kernelMock, 'unit.test', $cachePathManager);
+
+            self::$transformer = new FilterInjectorTransformer();
         }
     }
 
@@ -88,7 +94,7 @@ class FilterInjectorTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php include $class; ?>');
         self::$transformer->transform($metadata);
-        $output = '<?php include \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
+        $output = '<?php include \\' . AopFileResolver::class . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
     }
 
@@ -96,7 +102,7 @@ class FilterInjectorTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php include_once $class; ?>');
         self::$transformer->transform($metadata);
-        $output = '<?php include_once \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
+        $output = '<?php include_once \\' . AopFileResolver::class . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
     }
 
@@ -104,7 +110,7 @@ class FilterInjectorTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php require $class; ?>');
         self::$transformer->transform($metadata);
-        $output = '<?php require \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
+        $output = '<?php require \\' . AopFileResolver::class . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
     }
 
@@ -112,21 +118,21 @@ class FilterInjectorTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php require_once $class; ?>');
         self::$transformer->transform($metadata);
-        $output = '<?php require_once \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
+        $output = '<?php require_once \\' . AopFileResolver::class . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
     }
 
     public function testCanRewriteWithFilter(): void
     {
-        $actualPath   = FilterInjectorTransformer::rewrite('/path/to/my/class.php');
-        $expectedPath = FilterInjectorTransformer::PHP_FILTER_READ . 'unit.test/resource=/path/to/my/class.php';
+        $actualPath   = AopFileResolver::rewrite('/path/to/my/class.php');
+        $expectedPath = AopFileResolver::PHP_FILTER_READ . 'unit.test/resource=/path/to/my/class.php';
         $this->assertEquals($expectedPath, $actualPath);
     }
 
     public function testCanRewriteRelativePathsWithFilter(): void
     {
-        $actualPath   = FilterInjectorTransformer::rewrite('_files/class.php', __DIR__);
-        $expectedPath = FilterInjectorTransformer::PHP_FILTER_READ
+        $actualPath   = AopFileResolver::rewrite('_files/class.php', __DIR__);
+        $expectedPath = AopFileResolver::PHP_FILTER_READ
                 . 'unit.test/resource='
                 . PathResolver::realpath(__DIR__ . '/_files/class.php');
         $this->assertEquals($expectedPath, $actualPath);
@@ -136,7 +142,7 @@ class FilterInjectorTransformerTest extends TestCase
     {
         $this->expectException(TypeError::class);
         $file   = new \SplFileInfo(__FILE__);
-        $actual = FilterInjectorTransformer::rewrite($file);
+        $actual = AopFileResolver::rewrite($file);
         $this->assertStringEndsWith(__FILE__, $actual);
     }
 

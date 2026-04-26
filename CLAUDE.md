@@ -42,12 +42,11 @@ The framework works by intercepting PHP's class loading pipeline. When a class i
 
 ### Initialization flow
 
-1. **`AspectKernel::init()`** (`src/Core/AspectKernel.php`) — singleton, registers stream wrapper, builds transformer chain, calls `configureAop()` where users register aspects
-2. **`SourceTransformingLoader::register()`** (`src/Instrument/ClassLoading/SourceTransformingLoader.php`) — PHP stream wrapper that intercepts `include`/`require` via the `go-aop-php://` protocol
+1. **`AspectKernel::init()`** (`src/Core/AspectKernel.php`) — singleton, configures `AopFileResolver` for runtime path resolution, registers feature-gated source transformers in the container, calls `configureAop()` where users register aspects
+2. **`SourceTransformingLoader::register()`** (`src/Instrument/ClassLoading/SourceTransformingLoader.php`) — PHP stream filter that intercepts `include`/`require` via `php://filter/read=go.source.transforming.loader/resource=` URIs; also manages the transformation cache (on cache hit, returns cached source without invoking transformers; on miss, runs the transformer chain and writes the result)
 3. **`AopComposerLoader::init()`** (`src/Instrument/ClassLoading/AopComposerLoader.php`) — hooks into Composer's autoloader to redirect loads through the stream wrapper
-4. **`CachingTransformer`** — outer transformer that manages cache; on cache miss, invokes the inner transformers and writes the result
 
-### Transformer chain (inner, registered in `AspectKernel::registerTransformers()`)
+### Transformer chain (registered as lazy services in `Container` and `AspectKernel::init()`)
 
 Applied in order for each loaded file:
 - `ConstructorExecutionTransformer` — transforms `new` expressions (when `INTERCEPT_INITIALIZATIONS` feature enabled)
