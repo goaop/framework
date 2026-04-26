@@ -18,6 +18,7 @@ use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResultEnum;
 use php_user_filter as PhpStreamFilter;
 use RuntimeException;
+use Symfony\Component\Filesystem\Filesystem;
 
 use function strlen;
 
@@ -168,9 +169,9 @@ class SourceTransformingLoader extends PhpStreamFilter
     {
         $cacheState = self::$cacheManager->queryCacheState($metadata->uri);
         if ($cacheState && isset($cacheState['cacheUri']) && is_string($cacheState['cacheUri'])) {
-            $cachedSource = file_get_contents($cacheState['cacheUri']);
-            if (is_string($cachedSource)) {
-                return $cachedSource;
+            $filesystem = new Filesystem();
+            if ($filesystem->exists($cacheState['cacheUri'])) {
+                return $filesystem->readFile($cacheState['cacheUri']);
             }
         }
 
@@ -194,13 +195,10 @@ class SourceTransformingLoader extends PhpStreamFilter
 
         $processingResult = self::processTransformers($metadata);
         if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
-            $parentCacheDir = dirname($cacheUri);
-            if (!is_dir($parentCacheDir)) {
-                mkdir($parentCacheDir, self::$cacheFileMode, true);
-            }
-            file_put_contents($cacheUri, $metadata->source, LOCK_EX);
-            // For cache files we don't want executable bits by default
-            chmod($cacheUri, self::$cacheFileMode & (~0111));
+            $filesystem = new Filesystem();
+            $filesystem->mkdir(dirname($cacheUri), self::$cacheFileMode);
+            $filesystem->dumpFile($cacheUri, $metadata->source);
+            $filesystem->chmod($cacheUri, self::$cacheFileMode & (~0111));
         }
         self::$cacheManager->setCacheState(
             $originalUri,
