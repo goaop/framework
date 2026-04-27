@@ -425,6 +425,52 @@ class ClassProxyGeneratorTest extends TestCase
     }
 
     /**
+     * Verifies that the #[\Deprecated] attribute on methods is correctly propagated
+     * to generated proxy methods.
+     *
+     * @throws ReflectionException
+     */
+    public function testGeneratePreservesDeprecatedAttribute(): void
+    {
+        $target = new class {
+            #[\Deprecated("use newMethod() instead")]
+            public function oldMethod(): void {}
+
+            public function normalMethod(): void {}
+        };
+        $reflectionClass = new ReflectionClass($target);
+        $classAdvices    = [
+            'method' => [
+                'oldMethod'    => ['test'],
+                'normalMethod' => ['test'],
+            ],
+        ];
+
+        $generator        = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
+
+        // Deprecated attribute must be present on the proxied oldMethod
+        $this->assertStringContainsString(
+            '#[\Deprecated(',
+            $proxyFileContent,
+            'Proxy must preserve #[\Deprecated] attribute on the proxied method'
+        );
+        $this->assertStringContainsString(
+            "'use newMethod() instead'",
+            $proxyFileContent,
+            'Proxy must preserve the deprecation message argument'
+        );
+
+        // Count occurrences — should appear exactly once (only on oldMethod, not normalMethod)
+        $deprecatedCount = substr_count($proxyFileContent, '#[\Deprecated(');
+        $this->assertSame(
+            1,
+            $deprecatedCount,
+            'Deprecated attribute should appear exactly once (only on oldMethod)'
+        );
+    }
+
+    /**
      * Provides list of methods with expected attributes
      *
      * @return array
