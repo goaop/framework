@@ -202,7 +202,7 @@ class AdviceMatcher implements AdviceMatcherInterface
                 if ($isPropertyDeclaredInParent && $property->isFinal()) {
                     continue;
                 }
-                // Hooked properties are out of scope for MVP native field-access weaving.
+                // Hooked properties cannot be intercepted — see #561 for investigation details.
                 if ($property->hasHooks()) {
                     continue;
                 }
