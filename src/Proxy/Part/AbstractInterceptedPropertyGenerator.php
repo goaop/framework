@@ -31,6 +31,15 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     public function __construct(protected readonly ReflectionProperty $property)
     {
         if ($this->property->isStatic() || $this->property->isReadOnly() || $this->property->hasHooks()) {
+            // Properties with existing hooks cannot be intercepted. The framework converts
+            // the original class to a trait and redeclares intercepted properties with
+            // get/set hooks in the proxy class. PHP 8.4 does not support conflict resolution
+            // for hooked properties in traits (Fatal error: "Conflict resolution between
+            // hooked properties is currently not supported"), so we cannot keep the original
+            // hooks in the trait and override them in the proxy. Extracting hook bodies into
+            // helper methods is theoretically possible but would break the woven-file line
+            // number invariant required for XDebug compatibility and adds disproportionate
+            // complexity for a niche use case. See https://github.com/goaop/framework/issues/561
             throw new InvalidArgumentException(sprintf(
                 'Property %s::$%s cannot be intercepted with native hooks',
                 $this->property->getDeclaringClass()->getName(),
