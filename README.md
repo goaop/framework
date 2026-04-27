@@ -62,6 +62,8 @@ if ($fieldAccess->getField()->isInitialized($this)) {
 }
 ```
 
+> **See also:** [PHP 8.4 Feature Support & Known Limitations](docs/php84-limitations.md) for detailed information about property hooks, readonly properties, lazy objects, and other PHP 8.4 features.
+
 ### 🛠️ Developer Experience
 
  - **Rich pointcut syntax** — Express complex matching rules with an intuitive, readable grammar. Target methods by visibility, name patterns, annotations, class hierarchy, and more — all in a single expression like `execution(public **->save*(*))`.
