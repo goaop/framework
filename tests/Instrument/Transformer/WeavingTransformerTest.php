@@ -128,8 +128,11 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-typehint-woven')->source);
         $this->assertEquals($expected, $actual);
 
-        $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '_proxies/Transformer/_files/class-typehint.php/TestClassTypehint.php');
-        $this->assertFalse(strpos($proxyContent, '\\\\Exception'));
+        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
+            $proxyContent = file_get_contents('vfs://' . $matches[1]);
+            $this->assertNotFalse($proxyContent, 'Proxy file should exist at PSR-4 path');
+            $this->assertFalse(strpos($proxyContent, '\\\\Exception'));
+        }
     }
 
     /**

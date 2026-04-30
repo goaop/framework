@@ -17,3 +17,4 @@ enum TestStatus : string implements \Go\Aop\Proxy
         return $__joinPoint->__invoke($this);
     }
 }
+\Go\Instrument\Transformer\MagicConstantTransformer::registerProxyFile(__FILE__, 'Transformer/_files/php81-enum.php');

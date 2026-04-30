@@ -37,7 +37,10 @@ final class ClassWovenConstraint extends Constraint
         $suffix   = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
 
         $transformedFileExists = file_exists($this->configuration['cacheDir'] . $suffix);
-        $proxyFileExists       = file_exists($this->configuration['cacheDir'] . '/_proxies' . $suffix);
+
+        // Proxy files use a PSR-4 layout: <cacheDir>/<Namespace/ClassName>.php
+        $proxyRelativePath = str_replace('\\', DIRECTORY_SEPARATOR, $other) . '.php';
+        $proxyFileExists   = file_exists($this->configuration['cacheDir'] . DIRECTORY_SEPARATOR . $proxyRelativePath);
 
         // if any of files is missing, assert has to fail
         return $transformedFileExists && $proxyFileExists;

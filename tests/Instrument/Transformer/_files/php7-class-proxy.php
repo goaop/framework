@@ -127,3 +127,4 @@ class TestPhp7Class implements \Go\Aop\Proxy
         return $__joinPoint->__invoke($this);
     }
 }
+\Go\Instrument\Transformer\MagicConstantTransformer::registerProxyFile(__FILE__, 'Transformer/_files/php7-class.php');

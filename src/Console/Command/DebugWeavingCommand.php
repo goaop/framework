@@ -99,15 +99,21 @@ EOT
 
     /**
      * Gets Go! AOP generated proxy classes (paths and their contents) from the cache.
+     * Proxy files are identified by the presence of `implements \Go\Aop\Proxy` in their content
+     * (covers both class and enum proxies). Woven trait files and function proxies are excluded.
      *
      * @return array<string, string>
      */
     private function getProxies(CachePathManager $cachePathManager): array
     {
-        $path     = $cachePathManager->getCacheDir() . '/_proxies';
+        $cacheDir = $cachePathManager->getCacheDir();
+        if ($cacheDir === null || !is_dir($cacheDir)) {
+            return [];
+        }
+
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator(
-                $path,
+                $cacheDir,
                 FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS
             ),
             RecursiveIteratorIterator::CHILD_FIRST
@@ -119,9 +125,14 @@ EOT
          * @var SplFileInfo $splFileInfo
          */
         foreach ($iterator as $splFileInfo) {
-            if ($splFileInfo->isFile()) {
+            if ($splFileInfo->isFile() && $splFileInfo->getExtension() === 'php') {
                 $content = file_get_contents($splFileInfo->getPathname());
-                if ($content !== false) {
+                // Only include files that implement \Go\Aop\Proxy (class/enum proxies).
+                // We look for the FQCN anywhere in the file to handle the case where the proxy
+                // class implements additional interfaces before \Go\Aop\Proxy in the list.
+                // Woven trait files, function proxies, and the transformation cache file never
+                // reference \Go\Aop\Proxy, so this filter is precise.
+                if ($content !== false && str_contains($content, '\Go\Aop\Proxy')) {
                     $proxies[$splFileInfo->getPathname()] = $content;
                 }
             }

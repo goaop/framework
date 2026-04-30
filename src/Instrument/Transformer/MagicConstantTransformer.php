@@ -40,6 +40,14 @@ class MagicConstantTransformer extends BaseSourceTransformer
     protected static string $rewriteToPath = '';
 
     /**
+     * Registry that maps PSR-4 proxy file paths to their original source file paths.
+     * Populated at runtime via registerProxyFile() calls embedded in each proxy file header.
+     *
+     * @var array<string, string>
+     */
+    private static array $proxyFileMap = [];
+
+    /**
      * Class constructor
      */
     public function __construct(AspectKernel $kernel)
@@ -47,6 +55,19 @@ class MagicConstantTransformer extends BaseSourceTransformer
         parent::__construct($kernel);
         self::$rootPath      = $this->options['appDir'];
         self::$rewriteToPath = $this->options['cacheDir'] ?? '';
+    }
+
+    /**
+     * Registers the mapping from a PSR-4 proxy file path to its original source file path
+     * (expressed as a path relative to the application root directory).
+     * This is called from the header of each generated proxy file when it is first included.
+     *
+     * @param string $proxyPath          Absolute path of the proxy file (provided via __FILE__)
+     * @param string $relativeSourcePath Path to the original source file relative to {@see $rootPath}
+     */
+    public static function registerProxyFile(string $proxyPath, string $relativeSourcePath): void
+    {
+        self::$proxyFileMap[$proxyPath] = $relativeSourcePath;
     }
 
     /**
@@ -62,17 +83,25 @@ class MagicConstantTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Resolves file name from the cache directory to the real application root dir
+     * Resolves file name from the cache directory to the real application root dir.
+     * For PSR-4 proxy files the mapping is looked up in the runtime registry populated
+     * by {@see registerProxyFile()} calls embedded in the generated proxy file headers.
      */
     public static function resolveFileName(string $fileName): string
     {
+        // Fast path: PSR-4 proxy files register themselves on first include.
+        // The map stores relative paths, so we reconstruct the absolute source path.
+        if (isset(self::$proxyFileMap[$fileName])) {
+            return rtrim(self::$rootPath, '/\\') . DIRECTORY_SEPARATOR . self::$proxyFileMap[$fileName];
+        }
+
         $suffix = '.php';
         $pathParts = explode($suffix, str_replace(
-            [self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'],
-            [self::$rootPath, ''],
+            self::$rewriteToPath,
+            self::$rootPath,
             $fileName
         ));
-        // throw away namespaced path from actual filename
+        // throw away any trailing path after the first .php suffix
         return $pathParts[0] . $suffix;
     }
 

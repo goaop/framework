@@ -22,4 +22,4 @@ trait TestClass__AopProxied {
 
     public function methodWithSpecialTypeArguments(self $instance) {}
 }
-include_once AOP_CACHE_DIR . '/_proxies/Transformer/_files/class.php/Test/ns1/TestClass.php';
+include_once AOP_CACHE_DIR . '/Test/ns1/TestClass.php';

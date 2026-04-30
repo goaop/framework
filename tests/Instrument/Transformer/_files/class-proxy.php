@@ -58,3 +58,4 @@ class TestClass implements \Go\Aop\Proxy
         return $__joinPoint->__invoke($this, [$instance]);
     }
 }
+\Go\Instrument\Transformer\MagicConstantTransformer::registerProxyFile(__FILE__, 'Transformer/_files/class.php');

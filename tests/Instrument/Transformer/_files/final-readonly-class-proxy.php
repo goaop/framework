@@ -30,3 +30,4 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
         return $__joinPoint->__invoke(static::class);
     }
 }
+\Go\Instrument\Transformer\MagicConstantTransformer::registerProxyFile(__FILE__, 'Transformer/_files/final-readonly-class.php');
