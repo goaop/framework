@@ -733,8 +733,10 @@ class WeavingTransformer extends BaseSourceTransformer
 
         // Compute the source file path relative to appDir so the registration call is portable
         // across different environments (avoids embedding absolute paths in the proxy file).
-        $appDir             = rtrim($this->options['appDir'], '/\\') . DIRECTORY_SEPARATOR;
-        $relativeSourcePath = str_replace($appDir, '', $classFileName);
+        // Normalize both paths to forward slashes before comparison so the result is correct
+        // on all platforms (Windows PHP may return backslash paths from getFileName()).
+        $appDirNormalized   = rtrim(str_replace('\\', '/', $this->options['appDir']), '/') . '/';
+        $relativeSourcePath = str_replace($appDirNormalized, '', str_replace('\\', '/', $classFileName));
 
         // Append the registerProxyFile() call at the END of the proxy file.
         // This is valid PHP regardless of namespace and ensures the proxy path → source path

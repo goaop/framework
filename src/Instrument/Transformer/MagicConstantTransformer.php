@@ -90,9 +90,10 @@ class MagicConstantTransformer extends BaseSourceTransformer
     public static function resolveFileName(string $fileName): string
     {
         // Fast path: PSR-4 proxy files register themselves on first include.
-        // The map stores relative paths, so we reconstruct the absolute source path.
+        // The map stores relative paths (always forward slashes). We normalize $rootPath to
+        // forward slashes too so the returned path is consistent on all platforms.
         if (isset(self::$proxyFileMap[$fileName])) {
-            return rtrim(self::$rootPath, '/\\') . DIRECTORY_SEPARATOR . self::$proxyFileMap[$fileName];
+            return rtrim(str_replace('\\', '/', self::$rootPath), '/') . '/' . self::$proxyFileMap[$fileName];
         }
 
         $suffix = '.php';
