@@ -30,4 +30,30 @@ class InheritedMethodProxy extends InheritedMethodParent
     {
         throw new \RuntimeException('This method should not be called. Engine should call parent method.');
     }
+
+    /**
+     * Returns a first-class callable to the given inherited instance method using parent:: syntax.
+     * This mirrors what ClassProxyGenerator generates for inherited dynamic methods.
+     */
+    public function getInheritedCallable(string $method): \Closure
+    {
+        return match ($method) {
+            'inheritedPublicMethod' => parent::inheritedPublicMethod(...),
+            default => throw new \InvalidArgumentException("No inherited instance method: '$method'"),
+        };
+    }
+
+    /**
+     * Returns a first-class callable to the given inherited static method.
+     * These are passed to StaticTraitAliasMethodInvocation which wraps them
+     * in a forward_static_call shim for proper late-static-binding support.
+     */
+    public static function getStaticInheritedCallable(string $method): \Closure
+    {
+        return match ($method) {
+            'inheritedStaticMethod'    => parent::inheritedStaticMethod(...),
+            'inheritedStaticLsbMethod' => parent::inheritedStaticLsbMethod(...),
+            default => throw new \InvalidArgumentException("No inherited static method: '$method'"),
+        };
+    }
 }

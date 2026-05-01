@@ -106,7 +106,7 @@ class AopComposerLoader
         foreach ($loaders as &$loader) {
             $loaderToUnregister = $loader;
             if (is_array($loader)) {
-                $originalLoader = $loader[0] ?? null;
+                $originalLoader = $loader[0];
                 if ($originalLoader instanceof ClassLoader) {
                     $loader[0] = new AopComposerLoader($originalLoader, $container, $options);
                     self::$wasInitialized = true;

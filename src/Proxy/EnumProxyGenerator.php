@@ -195,8 +195,10 @@ class EnumProxyGenerator extends ClassProxyGenerator
      *
      * This mirrors TraitProxyGenerator::getJoinpointInvocationBody() because enums,
      * like traits, cannot hold a class-level $__joinPoints property.
+     *
+     * All intercepted enum methods have __aop__ aliases from the enum's trait-use block.
      */
-    protected function getJoinpointInvocationBody(ReflectionMethod $method): string
+    protected function getJoinpointInvocationBody(ReflectionMethod $method, ?ReflectionClass $originalClass = null): string
     {
         $isStatic = $method->isStatic();
         $scope    = $isStatic ? 'static::class' : '$this';
@@ -234,9 +236,14 @@ class EnumProxyGenerator extends ClassProxyGenerator
             ? 'StaticMethodInvocation<self' . $returnTypeString . '>'
             : 'DynamicMethodInvocation<self' . $returnTypeString . '>';
 
+        // All intercepted enum methods have __aop__ aliases from the enum's trait-use block.
+        $callableExpression = $isStatic
+            ? 'self::' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)'
+            : '$this->' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)';
+
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
+        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode}, {$callableExpression});
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
     }

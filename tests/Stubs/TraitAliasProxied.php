@@ -25,6 +25,11 @@ trait TraitAliasProxied
         return $this->public;
     }
 
+    public function getObjectId(): int
+    {
+        return spl_object_id($this);
+    }
+
     protected function protectedMethod(): int
     {
         return T_PROTECTED;

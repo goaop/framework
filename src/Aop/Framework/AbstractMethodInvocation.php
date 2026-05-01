@@ -40,10 +40,12 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     protected readonly ReflectionMethod $reflectionMethod;
 
     /**
-     * Pre-bound closure that calls the private `__aop__<method>` alias on any instance of the proxy class.
-     * Created once in the constructor via Closure::bind bound to the proxy class scope.
+     * First-class callable pointing to the original method body.
+     * May be wrapped or rebound if needed in child classes or during the {@see proceed()} call.
+     *
+     * @link https://www.php.net/manual/en/functions.first_class_callable_syntax.php
      */
-    protected Closure $closureToCall;
+    protected readonly Closure $closureToCall;
 
     /**
      * This static string variable holds the name of field to use to avoid extra "if" section in the __invoke method
@@ -62,14 +64,16 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Constructor for method invocation
      *
-     * @param array<Interceptor> $advices    List of advices for this invocation
-     * @param class-string<T>    $className  Class, containing method to invoke
-     * @param non-empty-string   $methodName Name of the method to invoke
+     * @param array<Interceptor> $advices        List of advices for this invocation
+     * @param class-string<T>    $className      Class, containing method to invoke
+     * @param non-empty-string   $methodName     Name of the method to invoke
+     * @param Closure            $closureToCall  First-class callable to the original method body.
      */
-    public function __construct(array $advices, string $className, string $methodName)
+    public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)
     {
         parent::__construct($advices);
         $this->reflectionMethod = new ReflectionMethod($className, $methodName);
+        $this->closureToCall    = $closureToCall;
     }
 
     final public function __invoke(object|string $instanceOrScope, array $arguments = [], array $variadicArguments = []): mixed

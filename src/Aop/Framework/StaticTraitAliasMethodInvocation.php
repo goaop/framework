@@ -16,10 +16,17 @@ use Closure;
 use Go\Aop\Intercept\StaticMethodInvocation;
 
 /**
- * Static trait-alias method invocation calls static methods via a pre-bound Closure::bind closure
- * targeting the private `__aop__<method>` alias created in the proxy's trait-use block.
+ * Static trait-alias method invocation calls static methods via a first-class callable
+ * that is rebound to each caller's late-static-binding scope on every invocation.
  *
- * The closure is built once at construction time so that every invocation needs zero reflection.
+ * The callable is provided by the generated proxy code and points to the original method body:
+ *  - For methods declared in the proxied class: `self::__aop__<method>(...)` — the private
+ *    alias created in the proxy's trait-use block.
+ *  - For inherited methods (no trait alias): `parent::<method>(...)`.
+ *
+ * In both cases the callable is wrapped in a `static fn(array $args) => forward_static_call($callable, ...$args)`
+ * shim (see constructor).  This shim can be rebound via {@see Closure::bindTo()} on every call so that
+ * `static::class` (late-static-binding) inside the original method body resolves to the correct subclass.
  *
  * @template T of object = object Declares the instance type of the method invocation.
  * @template V = mixed Declares the generic return type of the method invocation.
@@ -42,29 +49,24 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     protected string $scope;
 
     /**
-     * Constructor for method invocation
+     * Constructor for static method invocation.
      *
-     * @param class-string<T> $className  Class, containing method to invoke
+     * Wraps the provided callable in a `static fn(array $args): mixed => forward_static_call($closureToCall, ...$args)`
+     * shim so that `Closure::bindTo(null, $scope)` can forward the correct late-static-binding class to the
+     * original method body without requiring the original closure to be rebindable.
+     *
+     * @param class-string<T> $className     Class, containing method to invoke
+     * @param Closure         $closureToCall First-class callable to the original static method body,
+     *                                       e.g. `self::__aop__method(...)` or `parent::method(...)`.
      */
-    public function __construct(array $advices, string $className, string $methodName)
+    public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)
     {
-        parent::__construct($advices, $className, $methodName);
-        $aliasName = self::TRAIT_ALIAS_PREFIX . $methodName;
-        if (method_exists($className, $aliasName)) {
-            $scopeToCall  = $className;
-            $methodToCall = $aliasName;
-        } elseif ($this->reflectionMethod->hasPrototype()) {
-            $scopeToCall  = $this->reflectionMethod->getPrototype()->getDeclaringClass()->getName();
-            $methodToCall = $methodName;
-        } else {
-            throw new \LogicException("Cannot proceed with method invocation for {$methodName}: no trait alias and no method prototype found for {$className}");
-        }
-
-        $this->closureToCall = Closure::bind(
-            static fn(string $classToCall, array $argumentsToCall): mixed => forward_static_call_array($scopeToCall::$methodToCall(...), $argumentsToCall),
-            null,
-            $className
-        );
+        // Wrap in a static closure so that when we bindTo(null, $scope) in proceed(),
+        // forward_static_call will use $scope as the late-static-binding class.
+        // We cannot rebind $closureToCall directly because first-class callables from static
+        // methods have a fixed scope.
+        $shim = static fn(array $argumentsToCall): mixed => forward_static_call($closureToCall, ...$argumentsToCall);
+        parent::__construct($advices, $className, $methodName, $shim);
     }
 
     /**
@@ -78,7 +80,9 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
             return $currentInterceptor->invoke($this);
         }
 
-        return ($this->closureToCall)($this->scope, $this->arguments);
+        // Bind the wrapper to the current scope so forward_static_call forwards the
+        // correct late-static-binding class (supports child-class static invocations).
+        return $this->closureToCall->bindTo(null, $this->scope)->__invoke($this->arguments);
     }
 
     /**

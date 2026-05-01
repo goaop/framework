@@ -235,7 +235,7 @@ class ClassProxyGenerator
         $interceptedMethods = [];
         foreach ($methodNames as $methodName) {
             $reflectionMethod = $originalClass->getMethod($methodName);
-            $methodBody       = $this->getJoinpointInvocationBody($reflectionMethod);
+            $methodBody       = $this->getJoinpointInvocationBody($reflectionMethod, $originalClass);
 
             $interceptedMethods[$methodName] = new InterceptedMethodGenerator(
                 $reflectionMethod,
@@ -278,8 +278,13 @@ class ClassProxyGenerator
 
     /**
      * Creates string definition for method body by method reflection
+     *
+     * @param ReflectionClass<object>|null $originalClass The original class being proxied. When provided,
+     *                                                    it is used to determine if the method has a trait alias
+     *                                                    (method declared in the class itself) or is inherited
+     *                                                    (uses parent:: callable wrapper).
      */
-    protected function getJoinpointInvocationBody(ReflectionMethod $method): string
+    protected function getJoinpointInvocationBody(ReflectionMethod $method, ?ReflectionClass $originalClass = null): string
     {
         $isStatic = $method->isStatic();
         $invocationArguments = $isStatic ? 'static::class' : '$this';
@@ -320,9 +325,32 @@ class ClassProxyGenerator
             ? 'StaticMethodInvocation<self' . $returnTypeString . '>'
             : 'DynamicMethodInvocation<self' . $returnTypeString . '>';
 
+        // Determine the first-class callable expression for the original method.
+        //
+        // Methods declared in the proxied class have a private `__aop__<method>` alias in the
+        // proxy's trait-use block.  These first-class callables are rebound per-call.
+        //
+        // Inherited methods have no such alias.  For static calls, `parent::method(...)` is used
+        // directly — StaticTraitAliasMethodInvocation wraps it in a forward_static_call shim anyway.
+        // For dynamic calls, raw `parent::method(...)` first-class callables CANNOT be rebound via
+        // Closure::call() (PHP limitation), so we wrap them in a \Closure::bind'd anonymous function
+        // that is rebindable and delegates to the parent method body.
+        $hasTraitAlias = $originalClass !== null && ($method->class === $originalClass->name);
+        if ($hasTraitAlias) {
+            $callableExpression = $isStatic
+                ? ', self::' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)'
+                : ', $this->' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)';
+        } else {
+            // Inherited method (no trait alias): use parent:: first-class callable for both static and dynamic.
+            // DynamicTraitAliasMethodInvocation uses ReflectionMethod internally, so the callable is stored
+            // but not used for the actual dispatch. StaticTraitAliasMethodInvocation wraps it in a
+            // forward_static_call shim to preserve late-static-binding.
+            $callableExpression = ', parent::' . $method->name . '(...)';
+        }
+
         $body = <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
+        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode}{$callableExpression});
         {$return}\$__joinPoint->__invoke($invocationArguments);
         BODY;
 
