@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\PhpUnit;
 
-use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
@@ -45,14 +44,10 @@ final class ProxyClassReflectionHelper
      */
     public static function extractAdvicesFromProxyFile(string $className, array $configuration): array
     {
-        $parsedReflectionClass = new ReflectionClass($className);
-        $originalClassFile     = $parsedReflectionClass->getFileName();
-
-        $appDir            = PathResolver::realpath($configuration['appDir']);
-        $relativePath      = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
-        $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
-        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
-        $proxyFileName     = $configuration['cacheDir'] . '/_proxies/' . $proxyRelativePath;
+        // Proxy files use a FQCN-based layout mirroring PSR-4/PSR-0 namespace structure:
+        // <cacheDir>/<Namespace/ClassName>.php
+        $classSuffix   = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
+        $proxyFileName = $configuration['cacheDir'] . DIRECTORY_SEPARATOR . $classSuffix;
 
         if (!file_exists($proxyFileName)) {
             return [];
@@ -209,14 +204,12 @@ final class ProxyClassReflectionHelper
     public static function createReflectionClass(string $className, array $configuration): ReflectionClass
     {
         $parsedReflectionClass = new ReflectionClass($className);
-        $originalClassFile     = $parsedReflectionClass->getFileName();
         $originalNamespace     = $parsedReflectionClass->getNamespaceName();
 
-        $appDir            = PathResolver::realpath($configuration['appDir']);
-        $relativePath      = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
+        // Proxy files use a FQCN-based layout mirroring PSR-4/PSR-0 namespace structure:
+        // <cacheDir>/<Namespace/ClassName>.php
         $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
-        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
-        $proxyFileName     = $configuration['cacheDir'] . '/_proxies/' . $proxyRelativePath;
+        $proxyFileName     = $configuration['cacheDir'] . DIRECTORY_SEPARATOR . $classSuffix;
         $proxyFileContent  = file_get_contents($proxyFileName);
 
         // To prevent deep analysis of parents, we just cut everything after "extends"

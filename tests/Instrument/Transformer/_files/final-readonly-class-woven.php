@@ -19,4 +19,4 @@ trait TestReadonlyClass__AopProxied
         return static::class;
     }
 }
-include_once AOP_CACHE_DIR . '/_proxies/Transformer/_files/final-readonly-class.php/Test/ns1/TestReadonlyClass.php';
+include_once AOP_CACHE_DIR . '/Test/ns1/TestReadonlyClass.php';

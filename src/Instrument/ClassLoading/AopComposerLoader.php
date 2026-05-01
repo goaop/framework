@@ -68,6 +68,21 @@ class AopComposerLoader
     private bool $isProduction = false;
 
     /**
+     * Returns the original (pre-AOP) Composer ClassLoader from the registered autoload stack,
+     * or null if AOP has not been initialised yet.
+     */
+    public static function getOriginalClassLoader(): ?ClassLoader
+    {
+        foreach (spl_autoload_functions() as $autoloader) {
+            if (is_array($autoloader) && isset($autoloader[0]) && $autoloader[0] instanceof self) {
+                return $autoloader[0]->original;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Constructs an wrapper for the composer loader
      *
      * @phpstan-param KernelOptions $options Configuration options

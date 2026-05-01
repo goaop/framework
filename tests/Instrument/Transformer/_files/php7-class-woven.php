@@ -21,4 +21,4 @@ trait TestPhp7Class__AopProxied
     public function noRth(LocalException $exception) {}
     public function returnSelf(): self {}
 }
-include_once AOP_CACHE_DIR . '/_proxies/Transformer/_files/php7-class.php/Test/ns1/TestPhp7Class.php';
+include_once AOP_CACHE_DIR . '/Test/ns1/TestPhp7Class.php';

@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\Transformer;
 
 use Closure;
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\ParserReflection\ReflectionEngine;
@@ -66,30 +67,34 @@ class CachingTransformer extends BaseSourceTransformer
             return TransformerResultEnum::RESULT_ABORTED;
         }
 
-        $lastModified  = filemtime($originalUri);
-        $cacheState    = $this->cacheManager->queryCacheState($originalUri);
+        // Woven (trait) file is stored with the __AopProxied suffix before .php,
+        // mirroring the original directory structure under cacheDir.
+        $wovenCacheUri = substr($cacheUri, 0, -4) . AspectContainer::AOP_PROXIED_SUFFIX . '.php';
+
+        $lastModified   = filemtime($originalUri);
+        $cacheState     = $this->cacheManager->queryCacheState($originalUri);
         $cacheFilemtime = $cacheState !== null ? ($cacheState['filemtime'] ?? 0) : 0;
         $cacheModified  = is_int($cacheFilemtime) ? $cacheFilemtime : 0;
 
         if ($cacheModified < $lastModified
-            || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)
+            || (isset($cacheState['cacheUri']) && !file_exists($wovenCacheUri))
             || !$this->container->hasAnyResourceChangedSince($cacheModified)
         ) {
             $processingResult = $this->processTransformers($metadata);
             if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
-                $parentCacheDir = dirname($cacheUri);
+                $parentCacheDir = dirname($wovenCacheUri);
                 if (!is_dir($parentCacheDir)) {
                     mkdir($parentCacheDir, $this->cacheFileMode, true);
                 }
-                file_put_contents($cacheUri, $metadata->source, LOCK_EX);
+                file_put_contents($wovenCacheUri, $metadata->source, LOCK_EX);
                 // For cache files we don't want executable bits by default
-                chmod($cacheUri, $this->cacheFileMode & (~0111));
+                chmod($wovenCacheUri, $this->cacheFileMode & (~0111));
             }
             $this->cacheManager->setCacheState(
                 $originalUri,
                 [
                     'filemtime' => $_SERVER['REQUEST_TIME'] ?? time(),
-                    'cacheUri'  => ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) ? $cacheUri : null
+                    'cacheUri'  => ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) ? $wovenCacheUri : null
                 ]
             );
 
@@ -100,8 +105,7 @@ class CachingTransformer extends BaseSourceTransformer
             $processingResult = isset($cacheState['cacheUri']) ? TransformerResultEnum::RESULT_TRANSFORMED : TransformerResultEnum::RESULT_ABORTED;
         }
         if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
-            // Just replace all tokens in the stream
-            ReflectionEngine::parseFile($cacheUri);
+            ReflectionEngine::parseFile($wovenCacheUri);
             $metadata->setTokenStreamFromRawTokens(
                 ...ReflectionEngine::getParser()->getTokens()
             );

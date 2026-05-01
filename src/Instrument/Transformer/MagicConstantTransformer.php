@@ -12,7 +12,10 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
+use Composer\Autoload\ClassLoader;
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\AopComposerLoader;
 use PhpParser\Node;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Scalar\MagicConst;
@@ -40,6 +43,11 @@ class MagicConstantTransformer extends BaseSourceTransformer
     protected static string $rewriteToPath = '';
 
     /**
+     * Cached Composer ClassLoader instance, used for resolving proxy file paths to original sources.
+     */
+    private static ?ClassLoader $composerLoader = null;
+
+    /**
      * Class constructor
      */
     public function __construct(AspectKernel $kernel)
@@ -62,18 +70,72 @@ class MagicConstantTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Resolves file name from the cache directory to the real application root dir
+     * Resolves file name from the cache directory to the real application root dir.
+     *
+     * Two cases are handled:
+     *  1. Woven (trait) cache files — identified by the {@see AspectContainer::AOP_PROXIED_SUFFIX}
+     *     in their name. The cache-to-app directory substitution plus suffix stripping recovers
+     *     the original source path.
+     *  2. Proxy class cache files — FQCN-based paths that may differ from the PSR-4 source path
+     *     when the application's PSR-4 namespace root is not the same as `appDir`. In this case
+     *     Composer's ClassLoader is used to resolve the original file.
      */
     public static function resolveFileName(string $fileName): string
     {
         $suffix = '.php';
         $pathParts = explode($suffix, str_replace(
-            [self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'],
-            [self::$rootPath, ''],
+            self::$rewriteToPath,
+            self::$rootPath,
             $fileName
         ));
-        // throw away namespaced path from actual filename
-        return $pathParts[0] . $suffix;
+        $baseName = $pathParts[0];
+
+        // Case 1: woven trait file — strip the __AopProxied suffix to get the original source path.
+        if (str_ends_with($baseName, AspectContainer::AOP_PROXIED_SUFFIX)) {
+            return substr($baseName, 0, -strlen(AspectContainer::AOP_PROXIED_SUFFIX)) . $suffix;
+        }
+
+        // Case 2: proxy class file (FQCN-based path in the cache directory).
+        // Derive the FQCN from the path and ask Composer for the canonical source file.
+        if (str_starts_with($fileName, self::$rewriteToPath)) {
+            $relPath = ltrim(substr($fileName, strlen(self::$rewriteToPath)), '/\\');
+            // Remove .php extension and convert path separators to namespace separators
+            $fqcn = str_replace('/', '\\', substr($relPath, 0, -strlen($suffix)));
+            $loader = self::getComposerLoader();
+            if ($loader !== null) {
+                $file = $loader->findFile($fqcn);
+                if ($file !== false) {
+                    return realpath($file) ?: $file;
+                }
+            }
+        }
+
+        return $baseName . $suffix;
+    }
+
+    /**
+     * Returns the Composer ClassLoader, cached after the first successful lookup.
+     * When AOP is active, the ClassLoader is wrapped by AopComposerLoader — in that case
+     * the original loader is accessed via {@see AopComposerLoader::getOriginalClassLoader()}.
+     */
+    private static function getComposerLoader(): ?ClassLoader
+    {
+        if (self::$composerLoader !== null) {
+            return self::$composerLoader;
+        }
+        // When AOP is active, the original ClassLoader is wrapped by AopComposerLoader
+        $loader = AopComposerLoader::getOriginalClassLoader();
+        if ($loader !== null) {
+            return self::$composerLoader = $loader;
+        }
+        // When AOP is not yet active, find the ClassLoader directly in the autoload stack
+        foreach (spl_autoload_functions() as $autoloader) {
+            if (is_array($autoloader) && isset($autoloader[0]) && $autoloader[0] instanceof ClassLoader) {
+                return self::$composerLoader = $autoloader[0];
+            }
+        }
+
+        return null;
     }
 
     /**

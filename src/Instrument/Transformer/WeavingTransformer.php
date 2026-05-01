@@ -40,7 +40,6 @@ use ReflectionProperty;
 class WeavingTransformer extends BaseSourceTransformer
 {
     private const FUNCTIONS_CACHE_SUFFIX = '/_functions/';
-    private const PROXIES_CACHE_SUFFIX   = '/_proxies/';
 
     /**
      * Advice matcher for class
@@ -704,35 +703,42 @@ class WeavingTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Save AOP proxy to the separate file anr returns the php source code for inclusion
+     * Save AOP proxy to the separate file and returns the php source code for inclusion.
+     * Proxy files are stored in a PSR-4 compatible layout under the cache root directory:
+     * <cacheDir>/<Namespace/ClassName>.php
+     *
+     * The woven (trait) file is written by CachingTransformer to a path derived from the
+     * original source URI with an {@see AspectContainer::AOP_PROXIED_SUFFIX} before .php,
+     * mirroring the original directory structure under cacheDir.
      */
     private function saveProxyToCache(ReflectionClass $class, string $childCode): string
     {
-        $cacheRootDir      = $this->cachePathManager->getCacheDir();
+        $cacheRootDir = $this->cachePathManager->getCacheDir();
         if ($cacheRootDir === null) {
             return '';
         }
-        $cacheDir          = $cacheRootDir . self::PROXIES_CACHE_SUFFIX;
-        $classFileName     = $class->getFileName();
+
+        $classFileName = $class->getFileName();
         if ($classFileName === false) {
             return '';
         }
-        $relativePath      = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $classFileName);
-        $proxyRelativePath = str_replace('\\', '/', $relativePath . '/' . $class->getName() . '.php');
-        $proxyFileName     = $cacheDir . $proxyRelativePath;
+
+        // Build a PSR-4 compatible relative path from the class FQCN, e.g. "Ns/Sub/ClassName.php"
+        $proxyRelativePath = str_replace('\\', '/', $class->getName()) . '.php';
+        $proxyFileName     = $cacheRootDir . '/' . $proxyRelativePath;
         $dirname           = dirname($proxyFileName);
         if (!file_exists($dirname)) {
             mkdir($dirname, $this->options['cacheFileMode'], true);
         }
 
-        $body = '<?php' . PHP_EOL . $childCode;
+        $body = '<?php' . PHP_EOL . $childCode . PHP_EOL;
 
         $isVirtualSystem = strpos($proxyFileName, 'vfs') === 0;
         file_put_contents($proxyFileName, $body, $isVirtualSystem ? 0 : LOCK_EX);
         // For cache files we don't want executable bits by default
         chmod($proxyFileName, $this->options['cacheFileMode'] & (~0111));
 
-        return 'include_once AOP_CACHE_DIR . ' . var_export(self::PROXIES_CACHE_SUFFIX . $proxyRelativePath, true) . ';';
+        return 'include_once AOP_CACHE_DIR . ' . var_export('/' . $proxyRelativePath, true) . ';';
     }
 
     /**

@@ -128,8 +128,11 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-typehint-woven')->source);
         $this->assertEquals($expected, $actual);
 
-        $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '_proxies/Transformer/_files/class-typehint.php/TestClassTypehint.php');
-        $this->assertFalse(strpos($proxyContent, '\\\\Exception'));
+        if (preg_match("/AOP_CACHE_DIR \. '(.+)';$/m", $actual, $matches)) {
+            $proxyContent = file_get_contents('vfs://' . $matches[1]);
+            $this->assertNotFalse($proxyContent, 'Proxy file should exist at PSR-4 path');
+            $this->assertFalse(strpos($proxyContent, '\\\\Exception'));
+        }
     }
 
     /**
@@ -143,7 +146,7 @@ class WeavingTransformerTest extends TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-woven')->source);
         $this->assertEquals($expected, $actual);
-        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
+        if (preg_match("/AOP_CACHE_DIR \. '(.+)';$/", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
@@ -186,7 +189,7 @@ class WeavingTransformerTest extends TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-woven')->source);
         $this->assertEquals($expected, $actual);
-        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
+        if (preg_match("/AOP_CACHE_DIR \. '(.+)';$/", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
@@ -208,7 +211,7 @@ class WeavingTransformerTest extends TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-woven')->source);
         $this->assertEquals($expected, $actual);
-        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
+        if (preg_match("/AOP_CACHE_DIR \. '(.+)';$/m", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
@@ -226,7 +229,7 @@ class WeavingTransformerTest extends TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-woven')->source);
         $this->assertEquals($expected, $actual);
-        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
+        if (preg_match("/AOP_CACHE_DIR \. '(.+)';$/m", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
@@ -285,7 +288,7 @@ class WeavingTransformerTest extends TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-woven')->source);
         $this->assertEquals($expected, $actual);
-        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
+        if (preg_match("/AOP_CACHE_DIR \. '(.+)';$/m", $actual, $matches)) {
             $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
@@ -353,7 +356,7 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringContainsString("public string \$plain = 'plain';", $actualWoven);
 
         $matches = [];
-        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actualWoven, $matches));
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR \. '(.+)';$/m", $actualWoven, $matches));
         $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
 
         $this->assertStringContainsString("public string \$value = 'test' {", $proxyContent);
