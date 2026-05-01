@@ -82,4 +82,21 @@ class ReflectionFunctionInvocationTest extends TestCase
 
         $this->assertSame('foobar', $result);
     }
+
+    /**
+     * Verifies that by-reference arguments are correctly forwarded through the invocation chain.
+     *
+     * The proxy passes arguments as `[&$var]`, so `$this->arguments[0]` is a PHP reference.
+     * Unpacking a reference-bearing array with `...$args` preserves the reference binding,
+     * meaning the callable can modify the original caller's variable.
+     */
+    public function testPassByReferenceIsForwarded(): void
+    {
+        $invocation = new ReflectionFunctionInvocation([], 'preg_match', \preg_match(...));
+
+        $matches = null;
+        $invocation(['/(\d+)/', 'abc123', &$matches]);
+
+        $this->assertSame(['123', '123'], $matches);
+    }
 }
