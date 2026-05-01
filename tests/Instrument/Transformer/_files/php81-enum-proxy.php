@@ -5,8 +5,8 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 enum TestStatus : string implements \Go\Aop\Proxy
 {
-    use \Test\ns1\TestStatus__AopProxied {
-        \Test\ns1\TestStatus__AopProxied::label as private __aop__label;
+    use TestStatus__AopProxied {
+        TestStatus__AopProxied::label as private __aop__label;
     }
     case Active = 'active';
     case Inactive = 'inactive';
@@ -17,4 +17,3 @@ enum TestStatus : string implements \Go\Aop\Proxy
         return $__joinPoint->__invoke($this);
     }
 }
-\Go\Instrument\Transformer\MagicConstantTransformer::registerProxyFile(__FILE__, 'Transformer/_files/php81-enum.php');

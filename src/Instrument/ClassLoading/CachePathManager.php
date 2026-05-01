@@ -62,16 +62,6 @@ class CachePathManager
      */
     protected array $newCacheState = [];
 
-    /**
-     * Per-request overrides for the woven (trait) file cache path, keyed by original source URI.
-     * Populated by WeavingTransformer so that the woven file is written to a PSR-4-compatible
-     * <cacheDir>/<Namespace/ClassName__AopProxied>.php path instead of the source-relative path,
-     * preventing collisions with the proxy class file when the namespace root equals appDir.
-     *
-     * @var array<string, string>
-     */
-    private array $wovenFilePathOverrides = [];
-
     public function __construct(AspectKernel $kernel)
     {
         $this->kernel   = $kernel;
@@ -173,28 +163,6 @@ class CachePathManager
     public function setCacheState(string $resource, array $metadata): void
     {
         $this->newCacheState[$resource] = $metadata;
-    }
-
-    /**
-     * Registers a PSR-4 woven file path for a given source URI.
-     *
-     * Called by {@see WeavingTransformer} after weaving a class so that
-     * {@see CachingTransformer} stores the trait (woven) file at the correct PSR-4
-     * location (<cacheDir>/<Namespace/ClassName__AopProxied>.php) rather than the
-     * source-relative path, which would collide with the proxy class file when the
-     * PSR-4 namespace root coincides with appDir.
-     */
-    public function registerWovenFilePath(string $originalUri, string $wovenPath): void
-    {
-        $this->wovenFilePathOverrides[$originalUri] = $wovenPath;
-    }
-
-    /**
-     * Returns the registered PSR-4 woven file path for the given source URI, or null if none was set.
-     */
-    public function getWovenFilePath(string $originalUri): ?string
-    {
-        return $this->wovenFilePathOverrides[$originalUri] ?? null;
     }
 
     /**

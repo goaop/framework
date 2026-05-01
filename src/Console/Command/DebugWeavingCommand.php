@@ -125,14 +125,11 @@ EOT
          * @var SplFileInfo $splFileInfo
          */
         foreach ($iterator as $splFileInfo) {
-            if ($splFileInfo->isFile() && $splFileInfo->getExtension() === 'php') {
+            if ($splFileInfo->isFile()) {
                 $content = file_get_contents($splFileInfo->getPathname());
-                // Only include files that implement \Go\Aop\Proxy (class/enum proxies).
-                // We look for the FQCN anywhere in the file to handle the case where the proxy
-                // class implements additional interfaces before \Go\Aop\Proxy in the list.
-                // Woven trait files, function proxies, and the transformation cache file never
-                // reference \Go\Aop\Proxy, so this filter is precise.
-                if ($content !== false && str_contains($content, '\Go\Aop\Proxy')) {
+                // Only include files that implement Go\Aop\Proxy (class/enum proxies).
+                // Woven trait files and function proxies never reference Go\Aop\Proxy.
+                if ($content !== false && str_contains($content, 'Go\Aop\Proxy')) {
                     $proxies[$splFileInfo->getPathname()] = $content;
                 }
             }

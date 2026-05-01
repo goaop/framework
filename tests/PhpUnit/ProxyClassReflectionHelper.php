@@ -44,7 +44,8 @@ final class ProxyClassReflectionHelper
      */
     public static function extractAdvicesFromProxyFile(string $className, array $configuration): array
     {
-        // Proxy files use a PSR-4 layout: <cacheDir>/<Namespace/ClassName>.php
+        // Proxy files use a FQCN-based layout mirroring PSR-4/PSR-0 namespace structure:
+        // <cacheDir>/<Namespace/ClassName>.php
         $classSuffix   = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
         $proxyFileName = $configuration['cacheDir'] . DIRECTORY_SEPARATOR . $classSuffix;
 
@@ -205,7 +206,8 @@ final class ProxyClassReflectionHelper
         $parsedReflectionClass = new ReflectionClass($className);
         $originalNamespace     = $parsedReflectionClass->getNamespaceName();
 
-        // Proxy files use a PSR-4 layout: <cacheDir>/<Namespace/ClassName>.php
+        // Proxy files use a FQCN-based layout mirroring PSR-4/PSR-0 namespace structure:
+        // <cacheDir>/<Namespace/ClassName>.php
         $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
         $proxyFileName     = $configuration['cacheDir'] . DIRECTORY_SEPARATOR . $classSuffix;
         $proxyFileContent  = file_get_contents($proxyFileName);

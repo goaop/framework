@@ -180,16 +180,6 @@ class WeavingTransformer extends BaseSourceTransformer
 
         $contentToInclude = $this->saveProxyToCache($class, $childCode);
 
-        // Register the PSR-4 woven (trait) file path so CachingTransformer stores the woven
-        // content at <cacheDir>/<Namespace/ClassName__AopProxied>.php. Without this, the woven
-        // file would be stored at the source-relative path, which collides with the proxy class
-        // file when the PSR-4 namespace root coincides with appDir (e.g. in the demos).
-        $cacheRootDir = $this->cachePathManager->getCacheDir();
-        if ($cacheRootDir !== null) {
-            $wovenRelPath = str_replace('\\', '/', $newFqcn) . '.php';
-            $this->cachePathManager->registerWovenFilePath($metadata->uri, $cacheRootDir . '/' . $wovenRelPath);
-        }
-
         // Get last token for this class
         $classNode = $class->getNode();
         $lastClassToken = $classNode->getAttribute('endTokenPos');
@@ -717,9 +707,9 @@ class WeavingTransformer extends BaseSourceTransformer
      * Proxy files are stored in a PSR-4 compatible layout under the cache root directory:
      * <cacheDir>/<Namespace/ClassName>.php
      *
-     * Each proxy file header contains a {@see MagicConstantTransformer::registerProxyFile()} call
-     * so that {@see MagicConstantTransformer::resolveFileName()} can map the PSR-4 proxy path back
-     * to the original source file at runtime (needed for wrapped ReflectionClass::getFileName() calls).
+     * The woven (trait) file is written by CachingTransformer to a path derived from the
+     * original source URI with an {@see AspectContainer::AOP_PROXIED_SUFFIX} before .php,
+     * mirroring the original directory structure under cacheDir.
      */
     private function saveProxyToCache(ReflectionClass $class, string $childCode): string
     {
@@ -741,19 +731,7 @@ class WeavingTransformer extends BaseSourceTransformer
             mkdir($dirname, $this->options['cacheFileMode'], true);
         }
 
-        // Compute the source file path relative to appDir so the registration call is portable
-        // across different environments (avoids embedding absolute paths in the proxy file).
-        // Normalize both paths to forward slashes before comparison so the result is correct
-        // on all platforms (Windows PHP may return backslash paths from getFileName()).
-        $appDirNormalized   = rtrim(str_replace('\\', '/', $this->options['appDir']), '/') . '/';
-        $relativeSourcePath = str_replace($appDirNormalized, '', str_replace('\\', '/', $classFileName));
-
-        // Append the registerProxyFile() call at the END of the proxy file.
-        // This is valid PHP regardless of namespace and ensures the proxy path → source path
-        // mapping is registered the moment the proxy file is first included, before control
-        // returns to the caller (the include_once statement in the woven file).
-        $registerCall = '\\' . MagicConstantTransformer::class . '::registerProxyFile(__FILE__, ' . var_export($relativeSourcePath, true) . ');';
-        $body         = '<?php' . PHP_EOL . $childCode . PHP_EOL . $registerCall . PHP_EOL;
+        $body = '<?php' . PHP_EOL . $childCode . PHP_EOL;
 
         $isVirtualSystem = strpos($proxyFileName, 'vfs') === 0;
         file_put_contents($proxyFileName, $body, $isVirtualSystem ? 0 : LOCK_EX);

@@ -211,9 +211,7 @@ final class ClassGenerator implements GeneratorInterface
             // Build adaptations for all aliases
             $adaptations = [];
             foreach ($this->traitAliases as $info) {
-                $traitNameNode   = str_contains($info['trait'], '\\')
-                    ? new Name\FullyQualified($info['trait'])
-                    : new Name($info['trait']);
+                $traitNameNode   = $this->resolveTraitName($info['trait']);
                 $adaptations[] = new TraitUseAdaptation\Alias(
                     $traitNameNode,
                     new Identifier($info['method']),
@@ -223,9 +221,7 @@ final class ClassGenerator implements GeneratorInterface
             }
 
             $traitNames = array_map(
-                static fn(string $t) => str_contains($t, '\\')
-                    ? new Name\FullyQualified($t)
-                    : new Name($t),
+                fn(string $t) => $this->resolveTraitName(ltrim($t, '\\')),
                 $traitFqcns
             );
             $builder->addStmt(new TraitUse($traitNames, $adaptations));
@@ -270,6 +266,24 @@ final class ClassGenerator implements GeneratorInterface
         $stmts[] = $this->getNode();
 
         return self::getPrinter()->prettyPrint($stmts);
+    }
+
+    /**
+     * Resolves a trait FQCN to a Name AST node, using a relative (unqualified) name when
+     * the trait resides in the same namespace as the proxy class. This keeps the generated
+     * code readable: `use FooTrait` instead of `use \Ns\FooTrait`.
+     */
+    private function resolveTraitName(string $traitFqcn): Name
+    {
+        $normalized = ltrim($traitFqcn, '\\');
+        if ($this->namespace !== null && $this->namespace !== '' && str_starts_with($normalized, $this->namespace . '\\')) {
+            // Trait is in the same namespace — use just the short name
+            return new Name(substr($normalized, strlen($this->namespace) + 1));
+        }
+
+        return str_contains($normalized, '\\')
+            ? new Name\FullyQualified($normalized)
+            : new Name($normalized);
     }
 
     /**

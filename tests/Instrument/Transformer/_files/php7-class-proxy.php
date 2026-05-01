@@ -5,24 +5,24 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 class TestPhp7Class implements \Go\Aop\Proxy
 {
-    use \Test\ns1\TestPhp7Class__AopProxied {
-        \Test\ns1\TestPhp7Class__AopProxied::stringSth as private __aop__stringSth;
-        \Test\ns1\TestPhp7Class__AopProxied::floatSth as private __aop__floatSth;
-        \Test\ns1\TestPhp7Class__AopProxied::boolSth as private __aop__boolSth;
-        \Test\ns1\TestPhp7Class__AopProxied::intSth as private __aop__intSth;
-        \Test\ns1\TestPhp7Class__AopProxied::callableSth as private __aop__callableSth;
-        \Test\ns1\TestPhp7Class__AopProxied::arraySth as private __aop__arraySth;
-        \Test\ns1\TestPhp7Class__AopProxied::variadicStringSthByRef as private __aop__variadicStringSthByRef;
-        \Test\ns1\TestPhp7Class__AopProxied::exceptionArg as private __aop__exceptionArg;
-        \Test\ns1\TestPhp7Class__AopProxied::stringRth as private __aop__stringRth;
-        \Test\ns1\TestPhp7Class__AopProxied::floatRth as private __aop__floatRth;
-        \Test\ns1\TestPhp7Class__AopProxied::boolRth as private __aop__boolRth;
-        \Test\ns1\TestPhp7Class__AopProxied::intRth as private __aop__intRth;
-        \Test\ns1\TestPhp7Class__AopProxied::callableRth as private __aop__callableRth;
-        \Test\ns1\TestPhp7Class__AopProxied::arrayRth as private __aop__arrayRth;
-        \Test\ns1\TestPhp7Class__AopProxied::exceptionRth as private __aop__exceptionRth;
-        \Test\ns1\TestPhp7Class__AopProxied::noRth as private __aop__noRth;
-        \Test\ns1\TestPhp7Class__AopProxied::returnSelf as private __aop__returnSelf;
+    use TestPhp7Class__AopProxied {
+        TestPhp7Class__AopProxied::stringSth as private __aop__stringSth;
+        TestPhp7Class__AopProxied::floatSth as private __aop__floatSth;
+        TestPhp7Class__AopProxied::boolSth as private __aop__boolSth;
+        TestPhp7Class__AopProxied::intSth as private __aop__intSth;
+        TestPhp7Class__AopProxied::callableSth as private __aop__callableSth;
+        TestPhp7Class__AopProxied::arraySth as private __aop__arraySth;
+        TestPhp7Class__AopProxied::variadicStringSthByRef as private __aop__variadicStringSthByRef;
+        TestPhp7Class__AopProxied::exceptionArg as private __aop__exceptionArg;
+        TestPhp7Class__AopProxied::stringRth as private __aop__stringRth;
+        TestPhp7Class__AopProxied::floatRth as private __aop__floatRth;
+        TestPhp7Class__AopProxied::boolRth as private __aop__boolRth;
+        TestPhp7Class__AopProxied::intRth as private __aop__intRth;
+        TestPhp7Class__AopProxied::callableRth as private __aop__callableRth;
+        TestPhp7Class__AopProxied::arrayRth as private __aop__arrayRth;
+        TestPhp7Class__AopProxied::exceptionRth as private __aop__exceptionRth;
+        TestPhp7Class__AopProxied::noRth as private __aop__noRth;
+        TestPhp7Class__AopProxied::returnSelf as private __aop__returnSelf;
     }
     public function stringSth(string $arg)
     {
@@ -127,4 +127,3 @@ class TestPhp7Class implements \Go\Aop\Proxy
         return $__joinPoint->__invoke($this);
     }
 }
-\Go\Instrument\Transformer\MagicConstantTransformer::registerProxyFile(__FILE__, 'Transformer/_files/php7-class.php');

@@ -6,10 +6,10 @@ use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\StaticMethodInvocation;
 final readonly class TestReadonlyClass implements \Go\Aop\Proxy
 {
-    use \Test\ns1\TestReadonlyClass__AopProxied {
-        \Test\ns1\TestReadonlyClass__AopProxied::publicMethod as private __aop__publicMethod;
-        \Test\ns1\TestReadonlyClass__AopProxied::anotherMethod as private __aop__anotherMethod;
-        \Test\ns1\TestReadonlyClass__AopProxied::staticMethod as private __aop__staticMethod;
+    use TestReadonlyClass__AopProxied {
+        TestReadonlyClass__AopProxied::publicMethod as private __aop__publicMethod;
+        TestReadonlyClass__AopProxied::anotherMethod as private __aop__anotherMethod;
+        TestReadonlyClass__AopProxied::staticMethod as private __aop__staticMethod;
     }
     public function publicMethod(): string
     {
@@ -30,4 +30,3 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
         return $__joinPoint->__invoke(static::class);
     }
 }
-\Go\Instrument\Transformer\MagicConstantTransformer::registerProxyFile(__FILE__, 'Transformer/_files/final-readonly-class.php');

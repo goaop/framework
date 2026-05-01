@@ -12,7 +12,10 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
+use Composer\Autoload\ClassLoader;
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\AopComposerLoader;
 use PhpParser\Node;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Scalar\MagicConst;
@@ -40,12 +43,9 @@ class MagicConstantTransformer extends BaseSourceTransformer
     protected static string $rewriteToPath = '';
 
     /**
-     * Registry that maps PSR-4 proxy file paths to their original source file paths.
-     * Populated at runtime via registerProxyFile() calls embedded in each proxy file header.
-     *
-     * @var array<string, string>
+     * Cached Composer ClassLoader instance, used for resolving proxy file paths to original sources.
      */
-    private static array $proxyFileMap = [];
+    private static ?ClassLoader $composerLoader = null;
 
     /**
      * Class constructor
@@ -55,19 +55,6 @@ class MagicConstantTransformer extends BaseSourceTransformer
         parent::__construct($kernel);
         self::$rootPath      = $this->options['appDir'];
         self::$rewriteToPath = $this->options['cacheDir'] ?? '';
-    }
-
-    /**
-     * Registers the mapping from a PSR-4 proxy file path to its original source file path
-     * (expressed as a path relative to the application root directory).
-     * This is called from the header of each generated proxy file when it is first included.
-     *
-     * @param string $proxyPath          Absolute path of the proxy file (provided via __FILE__)
-     * @param string $relativeSourcePath Path to the original source file relative to {@see $rootPath}
-     */
-    public static function registerProxyFile(string $proxyPath, string $relativeSourcePath): void
-    {
-        self::$proxyFileMap[$proxyPath] = $relativeSourcePath;
     }
 
     /**
@@ -84,26 +71,71 @@ class MagicConstantTransformer extends BaseSourceTransformer
 
     /**
      * Resolves file name from the cache directory to the real application root dir.
-     * For PSR-4 proxy files the mapping is looked up in the runtime registry populated
-     * by {@see registerProxyFile()} calls embedded in the generated proxy file headers.
+     *
+     * Two cases are handled:
+     *  1. Woven (trait) cache files — identified by the {@see AspectContainer::AOP_PROXIED_SUFFIX}
+     *     in their name. The cache-to-app directory substitution plus suffix stripping recovers
+     *     the original source path.
+     *  2. Proxy class cache files — FQCN-based paths that may differ from the PSR-4 source path
+     *     when the application's PSR-4 namespace root is not the same as `appDir`. In this case
+     *     Composer's ClassLoader is used to resolve the original file.
      */
     public static function resolveFileName(string $fileName): string
     {
-        // Fast path: PSR-4 proxy files register themselves on first include.
-        // The map stores relative paths (always forward slashes). We normalize $rootPath to
-        // forward slashes too so the returned path is consistent on all platforms.
-        if (isset(self::$proxyFileMap[$fileName])) {
-            return rtrim(str_replace('\\', '/', self::$rootPath), '/') . '/' . self::$proxyFileMap[$fileName];
-        }
-
         $suffix = '.php';
         $pathParts = explode($suffix, str_replace(
             self::$rewriteToPath,
             self::$rootPath,
             $fileName
         ));
-        // throw away any trailing path after the first .php suffix
-        return $pathParts[0] . $suffix;
+        $baseName = $pathParts[0];
+
+        // Case 1: woven trait file — strip the __AopProxied suffix to get the original source path.
+        if (str_ends_with($baseName, AspectContainer::AOP_PROXIED_SUFFIX)) {
+            return substr($baseName, 0, -strlen(AspectContainer::AOP_PROXIED_SUFFIX)) . $suffix;
+        }
+
+        // Case 2: proxy class file (FQCN-based path in the cache directory).
+        // Derive the FQCN from the path and ask Composer for the canonical source file.
+        if (str_starts_with($fileName, self::$rewriteToPath)) {
+            $relPath = ltrim(substr($fileName, strlen(self::$rewriteToPath)), '/\\');
+            // Remove .php extension and convert path separators to namespace separators
+            $fqcn = str_replace('/', '\\', substr($relPath, 0, -strlen($suffix)));
+            $loader = self::getComposerLoader();
+            if ($loader !== null) {
+                $file = $loader->findFile($fqcn);
+                if ($file !== false) {
+                    return realpath($file) ?: $file;
+                }
+            }
+        }
+
+        return $baseName . $suffix;
+    }
+
+    /**
+     * Returns the Composer ClassLoader, cached after the first successful lookup.
+     * When AOP is active, the ClassLoader is wrapped by AopComposerLoader — in that case
+     * the original loader is accessed via {@see AopComposerLoader::getOriginalClassLoader()}.
+     */
+    private static function getComposerLoader(): ?ClassLoader
+    {
+        if (self::$composerLoader !== null) {
+            return self::$composerLoader;
+        }
+        // When AOP is active, the original ClassLoader is wrapped by AopComposerLoader
+        $loader = AopComposerLoader::getOriginalClassLoader();
+        if ($loader !== null) {
+            return self::$composerLoader = $loader;
+        }
+        // When AOP is not yet active, find the ClassLoader directly in the autoload stack
+        foreach (spl_autoload_functions() as $autoloader) {
+            if (is_array($autoloader) && isset($autoloader[0]) && $autoloader[0] instanceof ClassLoader) {
+                return self::$composerLoader = $autoloader[0];
+            }
+        }
+
+        return null;
     }
 
     /**
