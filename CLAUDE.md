@@ -80,11 +80,8 @@ class Foo extends OriginalParent implements OriginalInterfaces, \Go\Aop\Proxy
     }
 
     public function interceptedMethod(ArgType $arg): ReturnType {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, ReturnType>|null $__joinPoint */
-        static $__joinPoint;
-        if ($__joinPoint === null) {
-            $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'interceptedMethod', [...]);
-        }
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, ReturnType> $__joinPoint */
+        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'interceptedMethod', [...]);
         return $__joinPoint->__invoke($this, [$arg]);
     }
     // ... one override per intercepted method

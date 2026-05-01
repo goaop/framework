@@ -31,7 +31,7 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
         $invocation = new StaticTraitAliasMethodInvocation([], TraitAliasProxy::class, 'staticPublicMethod', $callable);
 
         $result = $invocation(TraitAliasProxy::class);
-        $this->assertSame(T_PUBLIC, $result);
+        $this->assertSame(TraitAliasProxy::class, $result);
     }
 
     public function testAdviceIsCalledBeforeProceeding(): void
@@ -51,7 +51,7 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
 
         $result = $invocation(TraitAliasProxy::class);
         $this->assertTrue($called);
-        $this->assertSame(T_PUBLIC, $result);
+        $this->assertSame(TraitAliasProxy::class, $result);
     }
 
     public function testVariadicArgumentsAreForwarded(): void
@@ -121,7 +121,7 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
 
         // Passing the subclass as scope simulates `static::class` returning a child class
         $result = $invocation(TraitAliasProxyChild::class);
-        $this->assertSame(T_PUBLIC, $result);
+        $this->assertSame(TraitAliasProxyChild::class, $result);
     }
 
     public function testGetScopeReturnsSubclassWhenCalledWithSubclassScope(): void
@@ -158,8 +158,6 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
         $this->assertSame([InheritedMethodProxy::class, InheritedMethodProxy::class], $result);
     }
 
-    // --- First-class callable path ---
-
     /**
      * When a first-class callable is passed for a trait-aliased static method, the joinpoint
      * wraps it in a forward_static_call shim and must invoke the original method body.
@@ -170,7 +168,7 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
         $invocation = new StaticTraitAliasMethodInvocation([], TraitAliasProxy::class, 'staticPublicMethod', $callable);
 
         $result = $invocation(TraitAliasProxy::class);
-        $this->assertSame(T_PUBLIC, $result);
+        $this->assertSame(TraitAliasProxy::class, $result);
     }
 
     /**
@@ -184,6 +182,17 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
 
         // Passing the subclass as scope simulates `static::class` returning a child class.
         $result = $invocation(TraitAliasProxyChild::class);
-        $this->assertSame(T_PUBLIC, $result);
+        $this->assertSame(TraitAliasProxyChild::class, $result);
+    }
+
+    public function testPassByReferenceIsForwarded(): void
+    {
+        $instance   = new TraitAliasProxy();
+        $invocation = new StaticTraitAliasMethodInvocation([], TraitAliasProxy::class, 'staticPassByReference', $instance->getStaticCallableFor('staticPassByReference'));
+
+        $value  = 'original';
+        $result = $invocation(TraitAliasProxy::class, [&$value]);
+        $this->assertNull($result);
+        $this->assertNull($value);
     }
 }

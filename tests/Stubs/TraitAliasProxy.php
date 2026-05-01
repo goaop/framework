@@ -28,6 +28,7 @@ class TraitAliasProxy
         TraitAliasProxied::privateMethod          as private __aop__privateMethod;
         TraitAliasProxied::variadicArgsTest       as private __aop__variadicArgsTest;
         TraitAliasProxied::passByReference        as private __aop__passByReference;
+        TraitAliasProxied::staticPassByReference  as private __aop__staticPassByReference;
         TraitAliasProxied::staticPublicMethod     as private __aop__staticPublicMethod;
         TraitAliasProxied::staticVariadicArgsTest as private __aop__staticVariadicArgsTest;
     }
@@ -42,9 +43,9 @@ class TraitAliasProxy
     }
 
     /** @see publicMethod */
-    public static function staticPublicMethod(): int
+    public static function staticPublicMethod(): string
     {
-        return -1;
+        return self::__aop__staticPublicMethod();
     }
 
     /**
@@ -91,6 +92,7 @@ class TraitAliasProxy
     public static function getStaticCallableFor(string $method): \Closure
     {
         return match ($method) {
+            'staticPassByReference'  => self::__aop__staticPassByReference(...),
             'staticPublicMethod'     => self::__aop__staticPublicMethod(...),
             'staticVariadicArgsTest' => self::__aop__staticVariadicArgsTest(...),
             default                  => throw new \InvalidArgumentException("No static __aop__ alias for '$method'"),

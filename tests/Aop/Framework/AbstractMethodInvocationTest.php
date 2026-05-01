@@ -30,16 +30,7 @@ class AbstractMethodInvocationTest extends TestCase
      */
     public function testInstanceIsInitialized(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $o = new class extends AbstractMethodInvocation {
-
-            protected static string $propertyName = 'scope';
-
-            /**
-             * @var (string&class-string) Class name scope for static invocation
-             */
-            protected string $scope;
 
             public function __construct()
             {
@@ -61,14 +52,13 @@ class AbstractMethodInvocationTest extends TestCase
                 return self::class;
             }
 
-            public function proceed(): void
+            public function proceed(): string
             {
-                if ($this->level < 3) {
-                    $this->__invoke($this->scope);
-                }
+                return $this->reflectionMethod->getName();
             }
         };
 
-        $o->__invoke($o::class);
+        $result = $o->proceed();
+        $this->assertEquals('testInstanceIsInitialized', $result);
     }
 }

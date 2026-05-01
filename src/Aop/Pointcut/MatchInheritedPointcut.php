@@ -47,9 +47,10 @@ final class MatchInheritedPointcut implements Pointcut
             return false;
         }
 
-        $declaringClassName = $reflector->getDeclaringClass()->name;
+        $declaringClassName = $reflector->getDeclaringClass()->getName();
+        $contextTraits      = $context->getTraitNames();
 
-        return $context->name !== $declaringClassName && $context->isSubclassOf($declaringClassName);
+        return $context->getName() !== $declaringClassName && ($context->isSubclassOf($declaringClassName) || in_array($declaringClassName, $contextTraits));
     }
 
     public function getKind(): int

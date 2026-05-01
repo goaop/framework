@@ -16,14 +16,9 @@ use Closure;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
 use ReflectionMethod;
-use function array_merge;
-use function array_pop;
-use function count;
 
 /**
  * Abstract method invocation implementation
- *
- * @phpstan-type MethodInvocationFrame array{list<mixed>, mixed, int}
  *
  * @template T of object Declares the instance type of the method invocation.
  * @template V Declares the generic return type of the method invocation.
@@ -40,26 +35,12 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     protected readonly ReflectionMethod $reflectionMethod;
 
     /**
-     * First-class callable pointing to the original method body.
+     * First-class callable pointing to the original method.
      * May be wrapped or rebound if needed in child classes or during the {@see proceed()} call.
      *
      * @link https://www.php.net/manual/en/functions.first_class_callable_syntax.php
      */
     protected readonly Closure $closureToCall;
-
-    /**
-     * This static string variable holds the name of field to use to avoid extra "if" section in the __invoke method
-     *
-     * Overridden in children classes and initialized via LSB
-     */
-    protected static string $propertyName;
-
-    /**
-     * Stack frames to work with recursive calls or with cross-calls inside object
-     *
-     * @var array<int, MethodInvocationFrame>
-     */
-    private array $stackFrames = [];
 
     /**
      * Constructor for method invocation
@@ -72,42 +53,11 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)
     {
         parent::__construct($advices);
-        $this->reflectionMethod = new ReflectionMethod($className, $methodName);
         $this->closureToCall    = $closureToCall;
+        $this->reflectionMethod = new ReflectionMethod($className, $methodName);
     }
 
-    final public function __invoke(object|string $instanceOrScope, array $arguments = [], array $variadicArguments = []): mixed
-    {
-        if ($this->level > 0) {
-            $this->stackFrames[] = [$this->arguments, $this->{static::$propertyName}, $this->current];
-        }
-
-        if (count($variadicArguments) > 0) {
-            $arguments = array_merge($arguments, $variadicArguments);
-        }
-
-        try {
-            ++$this->level;
-
-            $this->current   = 0;
-            $this->arguments = $arguments;
-
-            $this->{static::$propertyName} = $instanceOrScope;
-
-            return $this->proceed();
-        } finally {
-            --$this->level;
-
-            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
-                [$this->arguments, $this->{static::$propertyName}, $this->current] = $stackFrame;
-            } else {
-                unset($this->{static::$propertyName});
-                $this->arguments = [];
-            }
-        }
-    }
-
-    public function getMethod(): ReflectionMethod
+    final public function getMethod(): ReflectionMethod
     {
         return $this->reflectionMethod;
     }

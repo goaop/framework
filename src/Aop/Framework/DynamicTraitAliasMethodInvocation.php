@@ -35,22 +35,22 @@ use ReflectionMethod;
  * @template V = mixed Declares the generic return type of the method invocation.
  * @extends AbstractMethodInvocation<T, V>
  * @implements DynamicMethodInvocation<T, V>
+ *
+ * @phpstan-type DynamicMethodInvocationFrame array{list<mixed>, T, int}
  */
 final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation implements DynamicMethodInvocation
 {
     /**
-     * For dynamic calls we store given argument as 'instance' property
+     * Stack frames to work with recursive calls or with cross-calls inside object
      *
-     * @see parent::__invoke() method to find out how this optimization works
-     * @see $instance Property, which is referenced by this static property
+     * @var array<int, DynamicMethodInvocationFrame>
      */
-    protected static string $propertyName = 'instance';
+    private array $stackFrames = [];
 
     /**
-     * @phpstan-var T Instance of object for invoking, should be protected as it's read in parent class
-     * @see parent::__invoke() where this variable is accessed via {@see $propertyName} value
+     * @phpstan-var T Instance of object for invoking
      */
-    protected object $instance;
+    private object $instance;
 
     /**
      * ReflectionMethod pointing to the original method body:
@@ -60,9 +60,9 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     private readonly ReflectionMethod $originalMethodToCall;
 
     /**
-     * @param array<Interceptor> $advices
-     * @param class-string<T>    $className
-     * @param non-empty-string   $methodName
+     * @param array<Interceptor> $advices       List of advices for this invocation
+     * @param class-string<T>    $className     Class, containing method to invoke
+     * @param non-empty-string   $methodName    Name of the method to invoke
      * @param Closure            $closureToCall First-class callable to the original method body,
      *                                          e.g. `$this->__aop__method(...)` for trait-aliased
      *                                          methods or `parent::method(...)` for inherited ones.
@@ -83,15 +83,38 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
         );
     }
 
+    final public function __invoke(object $instance, array $arguments = [], array $variadicArguments = []): mixed
+    {
+        if ($this->level > 0) {
+            $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
+        }
+        if ($variadicArguments !== []) {
+            $arguments = [...$arguments, ...$variadicArguments];
+        }
+        try {
+            ++$this->level;
+            $this->current   = 0;
+            $this->arguments = $arguments;
+            $this->instance  = $instance;
+            return $this->proceed();
+        } finally {
+            --$this->level;
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
+                [$this->arguments, $this->instance, $this->current] = $stackFrame;
+            } else {
+                unset($this->instance);
+                $this->arguments = [];
+            }
+        }
+    }
+
     /**
      * @return V Covariant, always mixed
      */
     public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
-            $currentInterceptor = $this->advices[$this->current++];
-
-            return $currentInterceptor->invoke($this);
+            return $this->advices[$this->current++]->invoke($this);
         }
 
         return $this->originalMethodToCall->invokeArgs($this->instance, $this->arguments);
