@@ -43,4 +43,15 @@ interface DynamicMethodInvocation extends MethodInvocation
      * @return true Covariance, always true for dynamic method calls
      */
     public function isDynamic(): true;
+
+    /**
+     * Invokes current method invocation with all interceptors
+     *
+     * @phpstan-param T           $instance          Invocation instance
+     * @param         list<mixed> $arguments         List of arguments for method invocation
+     * @param         list<mixed> $variadicArguments Additional list of variadic arguments
+     *
+     * @return V Templated return type (mixed by default)
+     */
+    public function __invoke(object $instance, array $arguments = [], array $variadicArguments = []): mixed;
 }

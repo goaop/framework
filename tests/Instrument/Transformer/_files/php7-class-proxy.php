@@ -27,103 +27,103 @@ class TestPhp7Class implements \Go\Aop\Proxy
     public function stringSth(string $arg)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'stringSth', ['advisor.Test\ns1\TestPhp7Class->stringSth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'stringSth', ['advisor.Test\ns1\TestPhp7Class->stringSth'], $this->__aop__stringSth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function floatSth(float $arg)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'floatSth', ['advisor.Test\ns1\TestPhp7Class->floatSth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'floatSth', ['advisor.Test\ns1\TestPhp7Class->floatSth'], $this->__aop__floatSth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function boolSth(bool $arg)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'boolSth', ['advisor.Test\ns1\TestPhp7Class->boolSth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'boolSth', ['advisor.Test\ns1\TestPhp7Class->boolSth'], $this->__aop__boolSth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function intSth(int $arg)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'intSth', ['advisor.Test\ns1\TestPhp7Class->intSth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'intSth', ['advisor.Test\ns1\TestPhp7Class->intSth'], $this->__aop__intSth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function callableSth(callable $arg)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'callableSth', ['advisor.Test\ns1\TestPhp7Class->callableSth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'callableSth', ['advisor.Test\ns1\TestPhp7Class->callableSth'], $this->__aop__callableSth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function arraySth(array $arg)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'arraySth', ['advisor.Test\ns1\TestPhp7Class->arraySth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'arraySth', ['advisor.Test\ns1\TestPhp7Class->arraySth'], $this->__aop__arraySth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function variadicStringSthByRef(string &...$args)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'variadicStringSthByRef', ['advisor.Test\ns1\TestPhp7Class->variadicStringSthByRef']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'variadicStringSthByRef', ['advisor.Test\ns1\TestPhp7Class->variadicStringSthByRef'], $this->__aop__variadicStringSthByRef(...));
         return $__joinPoint->__invoke($this, $args);
     }
     public function exceptionArg(\Exception $exception, \Test\ns1\Exception $localException)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'exceptionArg', ['advisor.Test\ns1\TestPhp7Class->exceptionArg']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'exceptionArg', ['advisor.Test\ns1\TestPhp7Class->exceptionArg'], $this->__aop__exceptionArg(...));
         return $__joinPoint->__invoke($this, [$exception, $localException]);
     }
     public function stringRth(string $arg): string
     {
         /** @var DynamicMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'stringRth', ['advisor.Test\ns1\TestPhp7Class->stringRth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'stringRth', ['advisor.Test\ns1\TestPhp7Class->stringRth'], $this->__aop__stringRth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function floatRth(float $arg): float
     {
         /** @var DynamicMethodInvocation<self, float> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'floatRth', ['advisor.Test\ns1\TestPhp7Class->floatRth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'floatRth', ['advisor.Test\ns1\TestPhp7Class->floatRth'], $this->__aop__floatRth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function boolRth(bool $arg): bool
     {
         /** @var DynamicMethodInvocation<self, bool> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'boolRth', ['advisor.Test\ns1\TestPhp7Class->boolRth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'boolRth', ['advisor.Test\ns1\TestPhp7Class->boolRth'], $this->__aop__boolRth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function intRth(int $arg): int
     {
         /** @var DynamicMethodInvocation<self, int> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'intRth', ['advisor.Test\ns1\TestPhp7Class->intRth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'intRth', ['advisor.Test\ns1\TestPhp7Class->intRth'], $this->__aop__intRth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function callableRth(callable $arg): callable
     {
         /** @var DynamicMethodInvocation<self, callable> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'callableRth', ['advisor.Test\ns1\TestPhp7Class->callableRth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'callableRth', ['advisor.Test\ns1\TestPhp7Class->callableRth'], $this->__aop__callableRth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function arrayRth(array $arg): array
     {
         /** @var DynamicMethodInvocation<self, array> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'arrayRth', ['advisor.Test\ns1\TestPhp7Class->arrayRth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'arrayRth', ['advisor.Test\ns1\TestPhp7Class->arrayRth'], $this->__aop__arrayRth(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     public function exceptionRth(\Exception $exception): \Exception
     {
         /** @var DynamicMethodInvocation<self, \Exception> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'exceptionRth', ['advisor.Test\ns1\TestPhp7Class->exceptionRth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'exceptionRth', ['advisor.Test\ns1\TestPhp7Class->exceptionRth'], $this->__aop__exceptionRth(...));
         return $__joinPoint->__invoke($this, [$exception]);
     }
     public function noRth(\Test\ns1\LocalException $exception)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'noRth', ['advisor.Test\ns1\TestPhp7Class->noRth']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'noRth', ['advisor.Test\ns1\TestPhp7Class->noRth'], $this->__aop__noRth(...));
         return $__joinPoint->__invoke($this, [$exception]);
     }
     public function returnSelf(): self
     {
         /** @var DynamicMethodInvocation<self, self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'returnSelf', ['advisor.Test\ns1\TestPhp7Class->returnSelf']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'returnSelf', ['advisor.Test\ns1\TestPhp7Class->returnSelf'], $this->__aop__returnSelf(...));
         return $__joinPoint->__invoke($this);
     }
 }

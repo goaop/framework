@@ -80,11 +80,8 @@ class Foo extends OriginalParent implements OriginalInterfaces, \Go\Aop\Proxy
     }
 
     public function interceptedMethod(ArgType $arg): ReturnType {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, ReturnType>|null $__joinPoint */
-        static $__joinPoint;
-        if ($__joinPoint === null) {
-            $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'interceptedMethod', [...]);
-        }
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, ReturnType> $__joinPoint */
+        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(self::class, 'interceptedMethod', [...], $this->__aop__interceptedMethod(...));
         return $__joinPoint->__invoke($this, [$arg]);
     }
     // ... one override per intercepted method
@@ -95,7 +92,7 @@ Key properties of this engine:
 - The proxy class **re-inherits** the original parent and interfaces (read from reflection, not from the woven source).
 - `self::` in the trait body resolves to `Foo` (the proxy class) — no rewriting needed.
 - **Private methods can be intercepted** (impossible with the old extend-based engine).
-- Proceed path uses a pre-bound `Closure::bind($fn, null, Foo::class)` stored once per join point — zero per-call reflection.
+- Each generated proxy method passes a **first-class callable** as the 4th arg to `InterceptorInjector`: `$this->__aop__method(...)` for own dynamic methods, `self::__aop__method(...)` for own static methods, `parent::method(...)` for inherited methods (no trait alias), and `\functionName(...)` for function proxies.
 
 ### Proxy generation (`src/Proxy/`)
 
@@ -124,11 +121,11 @@ Key properties of this engine:
     - `FieldAccess<T of object, V = mixed>` — `T` is the declaring class; `V` is the property type (narrows `getValue()`, `getValueToSet()`, `__invoke()` return)
   - The proxy generators (`ClassProxyGenerator`, `TraitProxyGenerator`, `EnumProxyGenerator`, `FunctionProxyGenerator`) use `TypeGenerator::renderTypeForPhpDoc()` to extract the return type from `ReflectionMethod`/`ReflectionFunction` and emit it as the second generic argument in the per-method `@var` annotation. This gives IDE and PHPStan full type-awareness on `$__joinPoint->__invoke(...)` calls.
 - `src/Aop/Framework/` — concrete invocation implementations:
-  - `AbstractMethodInvocation` — base class; holds `protected Closure $closureToCall` (set in each subclass constructor via `Closure::bind`); `TRAIT_ALIAS_PREFIX = '__aop__'` constant; manages recursive/cross-call stack frames
-  - `DynamicTraitAliasMethodInvocation` — instance-method invocation; builds `Closure::bind(fn($i, $a) => $i->__aop__method(...$a), null, $class)` once at construction; `proceed()` calls `($this->closureToCall)($this->instance, $this->arguments)`
-  - `StaticTraitAliasMethodInvocation` — static-method invocation; builds `Closure::bind(fn($c, $a) => $c::__aop__method(...$a), null, $class)` once at construction; `proceed()` calls `($this->closureToCall)($this->scope, $this->arguments)`
+  - `AbstractMethodInvocation` — base class; holds `protected readonly Closure $closureToCall` (required, 4th constructor argument) — a first-class callable to the original method body; `TRAIT_ALIAS_PREFIX = '__aop__'` constant; manages recursive/cross-call stack frames
+  - `DynamicTraitAliasMethodInvocation` — instance-method invocation; receives `$this->__aop__method(...)` (own methods) or `parent::method(...)` (inherited) as `$closureToCall`; resolves a `private ReflectionMethod $originalMethodToCall` from the `__aop__` alias or `getPrototype()` and calls `invokeArgs($this->instance, $this->arguments)` in `proceed()` — faster than `Closure::call()` and correctly handles pass-by-reference args
+  - `StaticTraitAliasMethodInvocation` — static-method invocation; wraps `$closureToCall` in a `static fn(array $args) => forward_static_call($callable, ...$args)` shim and stores it in `$closureToCall`; `bindTo(null, $scope)` forwards the correct LSB class per call; `proceed()` calls `($this->closureToCall)(...$this->arguments)`
   - `ReflectionConstructorInvocation` — constructor interception (used with `INTERCEPT_INITIALIZATIONS`); creates instance via `ReflectionClass::newInstanceWithoutConstructor()` then calls constructor
-  - `ReflectionFunctionInvocation` — function interception; `proceed()` calls `$this->reflectionFunction->invokeArgs($this->arguments)`
+  - `ReflectionFunctionInvocation` — function interception; receives a first-class callable to the original global function (e.g. `\strlen(...)` with leading `\` to avoid recursive proxy call); `proceed()` calls `($this->closureToCall)(...$this->arguments)` directly
   - `ClassFieldAccess` — property interception join point; used via generated native property hooks on proxied properties
   - `StaticInitializationJoinpoint` — fired once after proxy class is loaded via `injectJoinPoints()`
 - `src/Aop/Pointcut/` — LALR pointcut grammar (`PointcutGrammar`, `PointcutParser`, `PointcutLexer`, `PointcutParseTable`) and pointcut combinators (`AndPointcut`, `OrPointcut`, `NotPointcut`, `NamePointcut`, `AttributePointcut`, etc.)

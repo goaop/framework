@@ -400,6 +400,9 @@ class ClassProxyGeneratorTest extends TestCase
      * Regression: inherited methods should still be intercepted, but must not be aliased from the
      * woven trait because the trait only contains methods declared directly in the target class.
      *
+     * The generated proxy must use `parent::method(...)` as the first-class callable so that
+     * {@see DynamicTraitAliasMethodInvocation} can resolve the prototype via reflection.
+     *
      * @throws ReflectionException
      */
     public function testGenerateProxyForInheritedMethodDoesNotCreateTraitAlias(): void
@@ -421,6 +424,53 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString(
             "InterceptorInjector::forMethod(self::class, 'publicMethod'",
             $proxyFileContent
+        );
+        // Inherited instance method must use parent:: first-class callable (no __aop__ alias available)
+        $this->assertStringContainsString(
+            "parent::publicMethod(...)",
+            $proxyFileContent,
+            'Inherited instance method must use parent::method(...) as first-class callable'
+        );
+    }
+
+    /**
+     * Inherited static methods have no trait alias in the proxy (the woven trait only contains
+     * methods declared in the intercepted class itself).  The generated proxy must therefore use
+     * `parent::method(...)` as the callable so that {@see StaticTraitAliasMethodInvocation} can
+     * wrap it in a `forward_static_call` shim for correct late-static-binding support.
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateProxyForInheritedStaticMethodUsesParentCallable(): void
+    {
+        $reflectionClass = new ReflectionClass(FirstStatic::class);
+        $classAdvices    = [
+            'static' => [
+                'staticSelfPublic' => ['test'],
+            ],
+        ];
+
+        $generator        = new ClassProxyGenerator($reflectionClass, 'FirstStatic__AopProxied', $classAdvices, false);
+        $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
+
+        // No trait alias for inherited static method
+        $this->assertStringNotContainsString(
+            '__aop__staticSelfPublic',
+            $proxyFileContent,
+            'Inherited static method must not produce a trait alias'
+        );
+
+        // Must delegate to the join-point chain
+        $this->assertStringContainsString(
+            "InterceptorInjector::forStaticMethod(self::class, 'staticSelfPublic'",
+            $proxyFileContent
+        );
+
+        // Inherited static method must use parent:: first-class callable
+        $this->assertStringContainsString(
+            "parent::staticSelfPublic(...)",
+            $proxyFileContent,
+            'Inherited static method must use parent::method(...) as first-class callable'
         );
     }
 

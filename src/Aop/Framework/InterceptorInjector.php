@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Go\Aop\Intercept\ClassJoinpoint;
 use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\DynamicMethodInvocation;
@@ -34,14 +35,18 @@ final class InterceptorInjector
      * @param class-string<T> $className
      * @param non-empty-string $methodName
      * @param non-empty-list<string> $advisorNames
+     * @param Closure $closureToCall First-class callable to the original method body,
+     *                               e.g. `$this->__aop__method(...)` for trait-aliased methods or
+     *                               `parent::method(...)` for inherited methods.
      * @return DynamicMethodInvocation<T>
      */
-    public static function forMethod(string $className, string $methodName, array $advisorNames): DynamicMethodInvocation
+    public static function forMethod(string $className, string $methodName, array $advisorNames, Closure $closureToCall): DynamicMethodInvocation
     {
         return new DynamicTraitAliasMethodInvocation(
             self::fillInterceptors($advisorNames),
             $className,
-            $methodName
+            $methodName,
+            $closureToCall
         );
     }
 
@@ -50,14 +55,18 @@ final class InterceptorInjector
      * @param class-string<T> $className
      * @param non-empty-string $methodName
      * @param non-empty-list<string> $advisorNames
+     * @param Closure $closureToCall First-class callable to the original static method body,
+     *                               e.g. `self::__aop__method(...)` for trait-aliased methods or
+     *                               `parent::method(...)` for inherited methods.
      * @return StaticMethodInvocation<T>
      */
-    public static function forStaticMethod(string $className, string $methodName, array $advisorNames): StaticMethodInvocation
+    public static function forStaticMethod(string $className, string $methodName, array $advisorNames, Closure $closureToCall): StaticMethodInvocation
     {
         return new StaticTraitAliasMethodInvocation(
             self::fillInterceptors($advisorNames),
             $className,
-            $methodName
+            $methodName,
+            $closureToCall
         );
     }
 
@@ -80,12 +89,15 @@ final class InterceptorInjector
     /**
      * @param non-empty-string $functionName
      * @param non-empty-list<string> $advisorNames
+     * @param Closure $closureToCall First-class callable to the original global function
+     *                               (e.g. `\file_get_contents(...)`).
      */
-    public static function forFunction(string $functionName, array $advisorNames): FunctionInvocation
+    public static function forFunction(string $functionName, array $advisorNames, Closure $closureToCall): FunctionInvocation
     {
         return new ReflectionFunctionInvocation(
             self::fillInterceptors($advisorNames),
-            $functionName
+            $functionName,
+            $closureToCall
         );
     }
 

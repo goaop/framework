@@ -23,10 +23,12 @@ class TraitAliasProxy
 {
     use TraitAliasProxied {
         TraitAliasProxied::publicMethod           as private __aop__publicMethod;
+        TraitAliasProxied::getObjectId            as private __aop__getObjectId;
         TraitAliasProxied::protectedMethod        as private __aop__protectedMethod;
         TraitAliasProxied::privateMethod          as private __aop__privateMethod;
         TraitAliasProxied::variadicArgsTest       as private __aop__variadicArgsTest;
         TraitAliasProxied::passByReference        as private __aop__passByReference;
+        TraitAliasProxied::staticPassByReference  as private __aop__staticPassByReference;
         TraitAliasProxied::staticPublicMethod     as private __aop__staticPublicMethod;
         TraitAliasProxied::staticVariadicArgsTest as private __aop__staticVariadicArgsTest;
     }
@@ -41,8 +43,59 @@ class TraitAliasProxy
     }
 
     /** @see publicMethod */
-    public static function staticPublicMethod(): int
+    public static function staticPublicMethod(): string
     {
-        return -1;
+        return self::__aop__staticPublicMethod();
+    }
+
+    /**
+     * Creates a first-class callable to the private __aop__getObjectId alias.
+     * Used by tests to verify that the static singleton joinpoint correctly rebinds
+     * $this to each new caller instance via Closure::call().
+     */
+    public function createGetObjectIdCallable(): \Closure
+    {
+        return $this->__aop__getObjectId(...);
+    }
+
+    /**
+     * Creates a first-class callable to the private __aop__staticPublicMethod alias.
+     * Used by tests to verify that the static singleton joinpoint correctly handles LSB
+     * via forward_static_call().
+     */
+    public static function createStaticPublicMethodCallable(): \Closure
+    {
+        return self::__aop__staticPublicMethod(...);
+    }
+
+    /**
+     * Returns a first-class callable to the private __aop__ alias for the given instance method.
+     * Used by unit tests to provide the required callable argument to invocation constructors.
+     */
+    public function getCallableFor(string $method): \Closure
+    {
+        return match ($method) {
+            'publicMethod'      => $this->__aop__publicMethod(...),
+            'getObjectId'       => $this->__aop__getObjectId(...),
+            'protectedMethod'   => $this->__aop__protectedMethod(...),
+            'privateMethod'     => $this->__aop__privateMethod(...),
+            'variadicArgsTest'  => $this->__aop__variadicArgsTest(...),
+            'passByReference'   => $this->__aop__passByReference(...),
+            default             => throw new \InvalidArgumentException("No __aop__ alias for '$method'"),
+        };
+    }
+
+    /**
+     * Returns a first-class callable to the private __aop__ alias for the given static method.
+     * Used by unit tests to provide the required callable argument to invocation constructors.
+     */
+    public static function getStaticCallableFor(string $method): \Closure
+    {
+        return match ($method) {
+            'staticPassByReference'  => self::__aop__staticPassByReference(...),
+            'staticPublicMethod'     => self::__aop__staticPublicMethod(...),
+            'staticVariadicArgsTest' => self::__aop__staticVariadicArgsTest(...),
+            default                  => throw new \InvalidArgumentException("No static __aop__ alias for '$method'"),
+        };
     }
 }

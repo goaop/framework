@@ -12,60 +12,100 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Go\Aop\Intercept\DynamicMethodInvocation;
+use Go\Aop\Intercept\Interceptor;
+use ReflectionFunction;
 use ReflectionMethod;
 
 /**
- * Dynamic trait-alias method invocation calls instance methods via a pre-bound Closure::bind closure
- * targeting the private `__aop__<method>` alias created in the proxy's trait-use block.
+ * Dynamic trait-alias method invocation calls instance methods via reflection.
  *
- * The closure is built once at construction time so that every invocation needs zero reflection.
+ * The callable is provided by the generated proxy code and points to the original method body:
+ *  - For methods declared in the proxied class: `$this->__aop__<method>(...)` — the private
+ *    alias created in the proxy's trait-use block.
+ *  - For inherited methods (no trait alias): `parent::<method>(...)`.
+ *
+ * Note: `ReflectionMethod::invokeArgs()` is used in {@see proceed()} because it is faster than
+ * `Closure::call()` (see https://3v4l.org/DYj84) and reliably handles pass-by-reference
+ * parameters (unlike `Closure::call()` which has known issues with by-ref args, see
+ * https://bugs.php.net/bug.php?id=72326).
  *
  * @template T of object = object Declares the instance type of the method invocation.
  * @template V = mixed Declares the generic return type of the method invocation.
  * @extends AbstractMethodInvocation<T, V>
  * @implements DynamicMethodInvocation<T, V>
+ *
+ * @phpstan-type DynamicMethodInvocationFrame array{list<mixed>, T, int}
  */
 final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation implements DynamicMethodInvocation
 {
     /**
-     * For dynamic calls we store given argument as 'instance' property
+     * Stack frames to work with recursive calls or with cross-calls inside object
      *
-     * @see parent::__invoke() method to find out how this optimization works
-     * @see $instance Property, which is referenced by this static property
+     * @var array<int, DynamicMethodInvocationFrame>
      */
-    protected static string $propertyName = 'instance';
+    private array $stackFrames = [];
 
     /**
-     * @phpstan-var T Instance of object for invoking, should be protected as it's read in parent class
-     * @see parent::__invoke() where this variable is accessed via {@see $propertyName} value
+     * @phpstan-var T Instance of object for invoking
      */
-    protected object $instance;
+    private object $instance;
 
     /**
-     * We may have either original method in the same class via trait alias or prototype method
-     * from one of our parents.
+     * ReflectionMethod pointing to the original method body:
+     *  - For methods with a trait alias: the private `__aop__<method>` alias.
+     *  - For inherited methods without a trait alias: the prototype method from the parent class.
      */
-    private ReflectionMethod $originalMethodToCall;
+    private readonly ReflectionMethod $originalMethodToCall;
 
     /**
-     * Constructor for method invocation
-     *
-     * @param class-string<T> $className  Class, containing method to invoke
+     * @param array<Interceptor> $advices       List of advices for this invocation
+     * @param class-string<T>    $className     Class, containing method to invoke
+     * @param non-empty-string   $methodName    Name of the method to invoke
+     * @param Closure            $closureToCall First-class callable to the original method body,
+     *                                          e.g. `$this->__aop__method(...)` for trait-aliased
+     *                                          methods or `parent::method(...)` for inherited ones.
      */
-    public function __construct(array $advices, string $className, string $methodName)
+    public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)
     {
-        parent::__construct($advices, $className, $methodName);
-        $aliasName = self::TRAIT_ALIAS_PREFIX . $methodName;
-        if (method_exists($className, $aliasName)) {
-            $methodToCall = new ReflectionMethod($className, $aliasName);
-        } elseif ($this->reflectionMethod->hasPrototype()) {
-            $methodToCall = $this->reflectionMethod->getPrototype();
-        } else {
-            throw new \LogicException("Cannot proceed with method invocation for {$methodName}: no trait alias and no method prototype found for {$className}");
+        parent::__construct($advices, $className, $methodName, $closureToCall);
+
+        // Logic with reflection is used as workaround for PHP bug https://bugs.php.net/bug.php?id=72326
+        $reflectionClosure = new ReflectionFunction($closureToCall);
+        $closureScopeClass = $reflectionClosure->getClosureScopeClass();
+        if ($closureScopeClass === null) {
+            throw new \RuntimeException('Cannot determine the scope class of the closure');
         }
-        $this->originalMethodToCall = $methodToCall;
-        $this->closureToCall = static fn(object $instanceToCall, array $argumentsToCall): mixed => $methodToCall->invokeArgs($instanceToCall, $argumentsToCall);
+        $this->originalMethodToCall = new ReflectionMethod(
+            $closureScopeClass->getName(),
+            $reflectionClosure->getName()
+        );
+    }
+
+    final public function __invoke(object $instance, array $arguments = [], array $variadicArguments = []): mixed
+    {
+        if ($this->level > 0) {
+            $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
+        }
+        if ($variadicArguments !== []) {
+            $arguments = [...$arguments, ...$variadicArguments];
+        }
+        try {
+            ++$this->level;
+            $this->current   = 0;
+            $this->arguments = $arguments;
+            $this->instance  = $instance;
+            return $this->proceed();
+        } finally {
+            --$this->level;
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
+                [$this->arguments, $this->instance, $this->current] = $stackFrame;
+            } else {
+                unset($this->instance);
+                $this->arguments = [];
+            }
+        }
     }
 
     /**
@@ -74,12 +114,9 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
-            $currentInterceptor = $this->advices[$this->current++];
-
-            return $currentInterceptor->invoke($this);
+            return $this->advices[$this->current++]->invoke($this);
         }
 
-        // Bypassing ($this->closureToCall)($this->instance, $this->arguments) for performance reasons
         return $this->originalMethodToCall->invokeArgs($this->instance, $this->arguments);
     }
 

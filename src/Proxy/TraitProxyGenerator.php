@@ -105,8 +105,11 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
     /**
      * Creates string definition for trait method body by method reflection
+     *
+     * In a trait proxy, all intercepted methods always have a private __aop__ alias in the
+     * trait-use block (from the parent trait). So the callable always references the alias.
      */
-    protected function getJoinpointInvocationBody(ReflectionMethod $method): string
+    protected function getJoinpointInvocationBody(ReflectionMethod $method, ?ReflectionClass $originalClass = null): string
     {
         $isStatic = $method->isStatic();
         $scope    = $isStatic ? 'static::class' : '$this';
@@ -145,9 +148,14 @@ class TraitProxyGenerator extends ClassProxyGenerator
             ? 'StaticMethodInvocation<self' . $returnTypeString . '>'
             : 'DynamicMethodInvocation<self' . $returnTypeString . '>';
 
+        // All intercepted methods in a trait proxy have __aop__ aliases from the parent trait.
+        $callableExpression = $isStatic
+            ? 'self::' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)'
+            : '$this->' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)';
+
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode});
+        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode}, {$callableExpression});
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
     }

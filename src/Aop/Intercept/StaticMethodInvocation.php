@@ -32,4 +32,15 @@ interface StaticMethodInvocation extends MethodInvocation
      * @return false Covariance, always false for static method calls
      */
     public function isDynamic(): false;
+
+    /**
+     * Invokes current method invocation with all interceptors
+     *
+     * @phpstan-param class-string<T> $scope              Static scope class name
+     * @param list<mixed>             $arguments          List of arguments for method invocation
+     * @param list<mixed>             $variadicArguments  Additional list of variadic arguments
+     *
+     * @return V Templated return type (mixed by default)
+     */
+    public function __invoke(string $scope, array $arguments = [], array $variadicArguments = []): mixed;
 }

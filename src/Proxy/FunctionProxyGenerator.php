@@ -83,6 +83,10 @@ class FunctionProxyGenerator
 
     /**
      * Creates string definition for function method body by function reflection
+     *
+     * The callable expression uses a fully-qualified global function reference (leading backslash)
+     * to ensure that proceed() calls the original built-in function, not the proxy defined in
+     * the current namespace.
      */
     protected function getJoinpointInvocationBody(ReflectionFunction $function): string
     {
@@ -104,9 +108,13 @@ class FunctionProxyGenerator
         $advicesCode = $advicesArray->generate();
         $returnTypeString = $function->hasReturnType() ? '<' . TypeGenerator::renderTypeForPhpDoc($function->getReturnType()) . '>' : '';
 
+        // Use a fully-qualified (global) callable so proceed() calls the original built-in
+        // function rather than the proxy defined in this namespace.
+        $callableExpression = '\\' . $function->getName() . '(...)';
+
         return <<<BODY
         /** @var FunctionInvocation{$returnTypeString} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::forFunction('{$function->name}', {$advicesCode});
+        static \$__joinPoint = InterceptorInjector::forFunction('{$function->name}', {$advicesCode}, {$callableExpression});
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
     }

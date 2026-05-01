@@ -49,15 +49,4 @@ interface MethodInvocation extends Invocation, ClassJoinpoint
      * @api
      */
     public function getMethod(): ReflectionMethod;
-
-    /**
-     * Invokes current method invocation with all interceptors
-     *
-     * @phpstan-param T|class-string<T> $instanceOrScope Invocation instance (or class name for static methods)
-     * @param list<mixed>         $arguments          List of arguments for method invocation
-     * @param list<mixed>         $variadicArguments  Additional list of variadic arguments
-     *
-     * @return V Templated return type (mixed by default)
-     */
-    public function __invoke(object|string $instanceOrScope, array $arguments = [], array $variadicArguments = []): mixed;
 }

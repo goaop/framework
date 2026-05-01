@@ -25,6 +25,11 @@ trait TraitAliasProxied
         return $this->public;
     }
 
+    public function getObjectId(): int
+    {
+        return spl_object_id($this);
+    }
+
     protected function protectedMethod(): int
     {
         return T_PROTECTED;
@@ -47,9 +52,16 @@ trait TraitAliasProxied
         return null;
     }
 
-    public static function staticPublicMethod(): int
+    public static function staticPassByReference(mixed &$ref): mixed
     {
-        return T_PUBLIC;
+        $ref = null;
+
+        return null;
+    }
+
+    public static function staticPublicMethod(): string
+    {
+        return static::class;
     }
 
     public static function staticVariadicArgsTest(mixed ...$args): string

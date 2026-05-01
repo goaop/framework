@@ -14,7 +14,7 @@ class AbstractMethodInvocationTest extends TestCase
     public function setUp(): void
     {
         $this->invocation = $this->getMockBuilder(AbstractMethodInvocation::class)
-            ->setConstructorArgs([[], self::class, __FUNCTION__])
+            ->setConstructorArgs([[], self::class, __FUNCTION__, static fn() => null])
             ->onlyMethods(['proceed', 'isDynamic', 'getThis', 'getScope'])
             ->getMock();
     }
@@ -30,20 +30,11 @@ class AbstractMethodInvocationTest extends TestCase
      */
     public function testInstanceIsInitialized(): void
     {
-        $this->expectNotToPerformAssertions();
-
         $o = new class extends AbstractMethodInvocation {
-
-            protected static string $propertyName = 'scope';
-
-            /**
-             * @var (string&class-string) Class name scope for static invocation
-             */
-            protected string $scope;
 
             public function __construct()
             {
-                parent::__construct([new AroundInterceptor(function () {})], AbstractMethodInvocationTest::class, 'testInstanceIsInitialized');
+                parent::__construct([new AroundInterceptor(function () {})], AbstractMethodInvocationTest::class, 'testInstanceIsInitialized', static fn() => null);
             }
 
             public function isDynamic(): bool
@@ -61,14 +52,13 @@ class AbstractMethodInvocationTest extends TestCase
                 return self::class;
             }
 
-            public function proceed(): void
+            public function proceed(): string
             {
-                if ($this->level < 3) {
-                    $this->__invoke($this->scope);
-                }
+                return $this->reflectionMethod->getName();
             }
         };
 
-        $o->__invoke($o::class);
+        $result = $o->proceed();
+        $this->assertEquals('testInstanceIsInitialized', $result);
     }
 }

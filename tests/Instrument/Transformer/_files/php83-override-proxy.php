@@ -18,13 +18,13 @@ class TestClassWithOverride implements \Go\Aop\Proxy
     public function overriddenMethod(): string
     {
         /** @var DynamicMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'overriddenMethod', ['advisor.Test\ns1\TestClassWithOverride->overriddenMethod']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'overriddenMethod', ['advisor.Test\ns1\TestClassWithOverride->overriddenMethod'], $this->__aop__overriddenMethod(...));
         return $__joinPoint->__invoke($this);
     }
     public function normalMethod(): int
     {
         /** @var DynamicMethodInvocation<self, int> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'normalMethod', ['advisor.Test\ns1\TestClassWithOverride->normalMethod']);
+        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'normalMethod', ['advisor.Test\ns1\TestClassWithOverride->normalMethod'], $this->__aop__normalMethod(...));
         return $__joinPoint->__invoke($this);
     }
 }
