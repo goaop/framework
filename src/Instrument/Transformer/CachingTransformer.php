@@ -66,30 +66,46 @@ class CachingTransformer extends BaseSourceTransformer
             return TransformerResultEnum::RESULT_ABORTED;
         }
 
-        $lastModified  = filemtime($originalUri);
-        $cacheState    = $this->cacheManager->queryCacheState($originalUri);
+        $lastModified   = filemtime($originalUri);
+        $cacheState     = $this->cacheManager->queryCacheState($originalUri);
         $cacheFilemtime = $cacheState !== null ? ($cacheState['filemtime'] ?? 0) : 0;
         $cacheModified  = is_int($cacheFilemtime) ? $cacheFilemtime : 0;
 
+        // The stored cacheUri may be a PSR-4 __AopProxied path (set by WeavingTransformer).
+        // Consider the cache stale only when the stored cacheUri belongs to a different cache
+        // directory (i.e. cacheDir was moved), not merely because it has a different file name.
+        $cacheDir            = $this->cacheManager->getCacheDir() ?? '';
+        $storedCacheUri      = is_array($cacheState) && is_string($cacheState['cacheUri'] ?? null)
+            ? $cacheState['cacheUri']
+            : null;
+        $cacheUriOutOfDate   = $storedCacheUri !== null
+            && $cacheDir !== ''
+            && !str_starts_with($storedCacheUri, $cacheDir);
+
         if ($cacheModified < $lastModified
-            || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)
+            || $cacheUriOutOfDate
             || !$this->container->hasAnyResourceChangedSince($cacheModified)
         ) {
             $processingResult = $this->processTransformers($metadata);
             if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
-                $parentCacheDir = dirname($cacheUri);
+                // WeavingTransformer may have registered a PSR-4 path for the woven (trait) file.
+                // Use that when available to avoid collisions with the proxy class file.
+                $resolvedCacheUri = $this->cacheManager->getWovenFilePath($originalUri) ?? $cacheUri;
+                $parentCacheDir = dirname($resolvedCacheUri);
                 if (!is_dir($parentCacheDir)) {
                     mkdir($parentCacheDir, $this->cacheFileMode, true);
                 }
-                file_put_contents($cacheUri, $metadata->source, LOCK_EX);
+                file_put_contents($resolvedCacheUri, $metadata->source, LOCK_EX);
                 // For cache files we don't want executable bits by default
-                chmod($cacheUri, $this->cacheFileMode & (~0111));
+                chmod($resolvedCacheUri, $this->cacheFileMode & (~0111));
+            } else {
+                $resolvedCacheUri = $cacheUri;
             }
             $this->cacheManager->setCacheState(
                 $originalUri,
                 [
                     'filemtime' => $_SERVER['REQUEST_TIME'] ?? time(),
-                    'cacheUri'  => ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) ? $cacheUri : null
+                    'cacheUri'  => ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) ? $resolvedCacheUri : null
                 ]
             );
 
@@ -100,8 +116,9 @@ class CachingTransformer extends BaseSourceTransformer
             $processingResult = isset($cacheState['cacheUri']) ? TransformerResultEnum::RESULT_TRANSFORMED : TransformerResultEnum::RESULT_ABORTED;
         }
         if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
-            // Just replace all tokens in the stream
-            ReflectionEngine::parseFile($cacheUri);
+            // Use the stored cache URI — it may be a PSR-4 __AopProxied path from a previous run.
+            $readUri = $storedCacheUri ?? $cacheUri;
+            ReflectionEngine::parseFile($readUri);
             $metadata->setTokenStreamFromRawTokens(
                 ...ReflectionEngine::getParser()->getTokens()
             );

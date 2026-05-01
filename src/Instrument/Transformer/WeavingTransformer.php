@@ -180,6 +180,16 @@ class WeavingTransformer extends BaseSourceTransformer
 
         $contentToInclude = $this->saveProxyToCache($class, $childCode);
 
+        // Register the PSR-4 woven (trait) file path so CachingTransformer stores the woven
+        // content at <cacheDir>/<Namespace/ClassName__AopProxied>.php. Without this, the woven
+        // file would be stored at the source-relative path, which collides with the proxy class
+        // file when the PSR-4 namespace root coincides with appDir (e.g. in the demos).
+        $cacheRootDir = $this->cachePathManager->getCacheDir();
+        if ($cacheRootDir !== null) {
+            $wovenRelPath = str_replace('\\', '/', $newFqcn) . '.php';
+            $this->cachePathManager->registerWovenFilePath($metadata->uri, $cacheRootDir . '/' . $wovenRelPath);
+        }
+
         // Get last token for this class
         $classNode = $class->getNode();
         $lastClassToken = $classNode->getAttribute('endTokenPos');

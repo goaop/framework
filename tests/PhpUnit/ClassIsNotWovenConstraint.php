@@ -12,8 +12,6 @@ declare(strict_types=1);
 
 namespace Go\PhpUnit;
 
-use Go\Instrument\PathResolver;
-use Go\ParserReflection\ReflectionClass;
 use PHPUnit\Framework\Constraint\Constraint;
 
 /**
@@ -33,10 +31,9 @@ final class ClassIsNotWovenConstraint extends Constraint
      */
     public function matches($other): bool
     {
-        $filename = (new ReflectionClass($other))->getFileName();
-        $suffix   = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
-
-        $transformedFileExists = file_exists($this->configuration['cacheDir'] . $suffix);
+        // Woven trait file uses a PSR-4 layout: <cacheDir>/<Namespace/ClassName__AopProxied>.php
+        $wovenRelativePath = str_replace('\\', DIRECTORY_SEPARATOR, $other) . '__AopProxied.php';
+        $transformedFileExists = file_exists($this->configuration['cacheDir'] . DIRECTORY_SEPARATOR . $wovenRelativePath);
 
         // Proxy files use a PSR-4 layout: <cacheDir>/<Namespace/ClassName>.php
         $proxyRelativePath = str_replace('\\', DIRECTORY_SEPARATOR, $other) . '.php';
