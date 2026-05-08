@@ -30,9 +30,26 @@ final class ValueGenerator
     private mixed $value;
     private int $arrayDepth = 0;
 
+    /** Pre-built AST expression node for defaults that can't be represented as PHP scalars. */
+    private ?Expr $astNode = null;
+
     public function __construct(mixed $value)
     {
         $this->value = $value;
+    }
+
+    /**
+     * Creates a ValueGenerator from an existing AST expression node.
+     *
+     * Used for PHP 8.5+ default values (first-class callables, closures, arrow functions)
+     * that cannot be represented as PHP scalar values.
+     */
+    public static function fromExprNode(Expr $node): self
+    {
+        $instance          = new self(null);
+        $instance->astNode = $node;
+
+        return $instance;
     }
 
     /**
@@ -49,6 +66,10 @@ final class ValueGenerator
      */
     public function getNode(): Expr
     {
+        if ($this->astNode !== null) {
+            return $this->astNode;
+        }
+
         return $this->buildExprNode($this->value, 0);
     }
 

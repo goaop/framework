@@ -14,6 +14,7 @@ namespace Go\Proxy\Generator;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Node\AttributeGroup;
+use PhpParser\Node\Expr;
 use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt\Property as PropertyNode;
 use PhpParser\PrettyPrinter\Standard;
@@ -39,6 +40,10 @@ final class PropertyGenerator implements PropertyNodeProvider
     private int $flags;
     private mixed $defaultValue;
     private bool $hasDefault    = false;
+
+    /** Pre-built AST expression node for defaults that can't be represented as PHP scalars. */
+    private ?Expr $defaultExpressionNode = null;
+
     private ?TypeGenerator $type      = null;
     private ?DocBlockGenerator $docBlock = null;
 
@@ -57,6 +62,18 @@ final class PropertyGenerator implements PropertyNodeProvider
     {
         $this->defaultValue = $defaultValue;
         $this->hasDefault   = true;
+    }
+
+    /**
+     * Sets the default value from an existing AST expression node.
+     *
+     * Used for PHP 8.5+ defaults (first-class callables, closures, arrow functions)
+     * that cannot be represented as PHP scalars.
+     */
+    public function setDefaultExpressionNode(Expr $expression): void
+    {
+        $this->defaultExpressionNode = $expression;
+        $this->hasDefault            = true;
     }
 
     public function setType(TypeGenerator $type): void
@@ -125,7 +142,13 @@ final class PropertyGenerator implements PropertyNodeProvider
         }
 
         if ($this->hasDefault) {
-            $builder->setDefault($this->defaultValue);
+            if ($this->defaultExpressionNode !== null) {
+                // Pass the Expr node directly; BuilderHelpers::normalizeValue()
+                // returns Expr nodes unchanged.
+                $builder->setDefault($this->defaultExpressionNode);
+            } else {
+                $builder->setDefault($this->defaultValue);
+            }
         }
 
         if ($this->docBlock !== null) {

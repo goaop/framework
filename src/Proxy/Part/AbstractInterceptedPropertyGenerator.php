@@ -12,13 +12,16 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Closure;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\PropertyGenerator;
 use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\TypeGenerator;
 use InvalidArgumentException;
+use LogicException;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Param;
+use PhpParser\Node\PropertyItem;
 use PhpParser\Node\Stmt\Property;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
@@ -55,7 +58,30 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             $generator->setType(TypeGenerator::fromReflectionType($this->property->getType()));
         }
         if ($this->property->hasDefaultValue()) {
-            $generator->setDefaultValue($this->property->getDefaultValue());
+            // When parser-reflection is loaded, prefer the raw AST default node over
+            // getDefaultValue(). This avoids parser-reflection bugs where getDefaultValue()
+            // crashes (uninitialized typed property for FCC) or returns null (Closure defaults),
+            // and correctly handles scalars, arrays, and FCC expressions uniformly.
+            if (method_exists($this->property, 'getNode')) {
+                $astNode = $this->property->getNode();
+                $astDefault = ($astNode instanceof PropertyItem || $astNode instanceof Param)
+                    ? $astNode->default
+                    : null;
+                if ($astDefault !== null) {
+                    $generator->setDefaultExpressionNode($astDefault);
+                }
+            } else {
+                $rawDefault = $this->property->getDefaultValue();
+                if ($rawDefault instanceof \Closure) {
+                    throw new \LogicException(sprintf(
+                        'Cannot generate proxy for property %s::$%s: PHP 8.5 Closure default values '
+                        . 'require goaop/parser-reflection for AST access.',
+                        $this->property->getDeclaringClass()->getName(),
+                        $this->property->getName()
+                    ));
+                }
+                $generator->setDefaultValue($rawDefault);
+            }
         }
 
         $attributeGroups = AttributeGroupsGenerator::fromReflectionAttributes($this->property->getAttributes());
