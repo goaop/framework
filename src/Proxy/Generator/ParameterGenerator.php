@@ -92,7 +92,29 @@ final class ParameterGenerator
 
         if (!$param->isVariadic()) {
             if ($param->isDefaultValueAvailable()) {
-                $defaultValue = new ValueGenerator($param->getDefaultValue());
+                // When parser-reflection is loaded, prefer the raw AST default node over
+                // getDefaultValue(). This avoids parser-reflection bugs where getDefaultValue()
+                // crashes (uninitialized typed property for FCC) or returns null (Closure defaults),
+                // and correctly handles scalars, arrays, and FCC expressions uniformly.
+                if (method_exists($param, 'getNode')) {
+                    $astNode = $param->getNode();
+                    $astDefault = $astNode instanceof Node\Param ? $astNode->default : null;
+                    if ($astDefault !== null) {
+                        $defaultValue = ValueGenerator::fromExprNode($astDefault);
+                    }
+                }
+
+                if (!isset($defaultValue)) {
+                    $rawDefault = $param->getDefaultValue();
+                    if ($rawDefault instanceof \Closure) {
+                        throw new \LogicException(sprintf(
+                            'Cannot generate proxy for parameter $%s: PHP 8.5 Closure default values '
+                            . 'require goaop/parser-reflection for AST access.',
+                            $param->getName()
+                        ));
+                    }
+                    $defaultValue = new ValueGenerator($rawDefault);
+                }
             } elseif ($param->isOptional()) {
                 $defaultValue = new ValueGenerator(null);
             }
