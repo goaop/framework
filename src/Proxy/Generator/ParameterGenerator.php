@@ -12,9 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Closure;
 use Go\ParserReflection\Resolver\TypeExpressionResolver;
-use LogicException;
 use PhpParser\BuilderFactory;
 use PhpParser\Node;
 use PhpParser\PrettyPrinter\Standard;

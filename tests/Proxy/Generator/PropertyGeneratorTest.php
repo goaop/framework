@@ -15,8 +15,10 @@ namespace Go\Proxy\Generator;
 use PHPUnit\Framework\TestCase;
 use PhpParser\BuilderFactory;
 use PhpParser\Node\AttributeGroup;
+use PhpParser\Node\Expr;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Property;
+use PhpParser\ParserFactory;
 
 class PropertyGeneratorTest extends TestCase
 {
@@ -136,5 +138,22 @@ class PropertyGeneratorTest extends TestCase
         $gen->addAttributeGroups([]);
         $output = $gen->generate();
         $this->assertStringNotContainsString('#[', $output);
+    }
+
+    public function testSetDefaultExpressionNode(): void
+    {
+        // Parse `\strlen(...);` to get a correctly-structured FCC FuncCall node
+        $parser = (new ParserFactory())->createForHostVersion();
+        $stmts  = $parser->parse('<?php \strlen(...);');
+        $this->assertNotNull($stmts, 'Failed to parse PHP snippet');
+        $exprNode = $stmts[0]->expr;
+        $this->assertInstanceOf(Expr::class, $exprNode);
+
+        $gen = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PUBLIC);
+        $gen->setDefaultExpressionNode($exprNode);
+        $gen->setType(TypeGenerator::fromTypeString('callable'));
+        $output = $gen->generate();
+        $this->assertStringContainsString('callable', $output);
+        $this->assertStringContainsString('= \strlen(...)', $output);
     }
 }

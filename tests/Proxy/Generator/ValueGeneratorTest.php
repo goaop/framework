@@ -137,4 +137,22 @@ class ValueGeneratorTest extends TestCase
         // Closing bracket on its own line
         $this->assertStringEndsWith(']', trim($output));
     }
+
+    public function testFromExprNode(): void
+    {
+        // Parse `\strlen(...);` to get a correctly-structured FCC FuncCall node
+        $parser = (new \PhpParser\ParserFactory())->createForHostVersion();
+        $stmts  = $parser->parse('<?php \strlen(...);');
+        $this->assertNotNull($stmts, 'Failed to parse PHP snippet');
+        $exprNode = $stmts[0]->expr;
+        $this->assertInstanceOf(Expr::class, $exprNode);
+
+        $gen = ValueGenerator::fromExprNode($exprNode);
+
+        $node = $gen->getNode();
+        $this->assertSame($exprNode, $node, 'getNode() returns the original Expr node');
+
+        $output = $gen->generate();
+        $this->assertStringContainsString('strlen(...)', $output);
+    }
 }

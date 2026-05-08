@@ -12,13 +12,11 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Closure;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\PropertyGenerator;
 use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\TypeGenerator;
 use InvalidArgumentException;
-use LogicException;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Param;
 use PhpParser\Node\PropertyItem;
