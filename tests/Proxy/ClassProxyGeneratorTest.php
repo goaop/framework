@@ -521,6 +521,58 @@ class ClassProxyGeneratorTest extends TestCase
     }
 
     /**
+     * When the trait and the proxy share the same namespace, the generated use-block
+     * must reference the trait by its short (unqualified) name, not the FQCN.
+     *
+     * @throws ReflectionException
+     */
+    public function testTraitAdoptionUsesShortNameWhenSameNamespace(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $classAdvices    = [
+            'method' => [
+                'publicMethod' => ['test'],
+            ],
+        ];
+
+        // Trait in the same namespace as the proxy (Go\Stubs)
+        $traitFqcn = 'Go\\Stubs\\First__AopProxied';
+        $generator = new ClassProxyGenerator($reflectionClass, $traitFqcn, $classAdvices, false);
+        $output    = "<?php\n" . $generator->generate();
+
+        // Must use the short (unqualified) trait name
+        $this->assertStringContainsString('use First__AopProxied {', $output);
+        $this->assertStringContainsString('First__AopProxied::publicMethod as private __aop__publicMethod', $output);
+        $this->assertStringNotContainsString('\\Go\\Stubs\\First__AopProxied', $output);
+    }
+
+    /**
+     * When the trait is in a different namespace from the proxy, the generated use-block
+     * must keep the FQCN so PHP can resolve the trait correctly.
+     *
+     * @throws ReflectionException
+     */
+    public function testTraitAdoptionUsesFqcnWhenDifferentNamespace(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $classAdvices    = [
+            'method' => [
+                'publicMethod' => ['test'],
+            ],
+        ];
+
+        // Trait in a different namespace from the proxy (proxy is in Go\Stubs)
+        $traitFqcn = 'Other\\Namespace\\First__AopProxied';
+        $generator = new ClassProxyGenerator($reflectionClass, $traitFqcn, $classAdvices, false);
+        $output    = "<?php\n" . $generator->generate();
+
+        // Must use the FQCN for the trait name
+        $this->assertStringContainsString('use \\Other\\Namespace\\First__AopProxied {', $output);
+        $this->assertStringContainsString('\\Other\\Namespace\\First__AopProxied::publicMethod as private __aop__publicMethod', $output);
+        $this->assertStringNotContainsString('use First__AopProxied {', $output);
+    }
+
+    /**
      * Provides list of methods with expected attributes
      *
      * @return array

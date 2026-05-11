@@ -10,9 +10,9 @@ use Go\Aop\Intercept\DynamicMethodInvocation;
  */
 class TestClassWithOverride implements \Go\Aop\Proxy
 {
-    use \Test\ns1\TestClassWithOverride__AopProxied {
-        \Test\ns1\TestClassWithOverride__AopProxied::overriddenMethod as private __aop__overriddenMethod;
-        \Test\ns1\TestClassWithOverride__AopProxied::normalMethod as private __aop__normalMethod;
+    use TestClassWithOverride__AopProxied {
+        TestClassWithOverride__AopProxied::overriddenMethod as private __aop__overriddenMethod;
+        TestClassWithOverride__AopProxied::normalMethod as private __aop__normalMethod;
     }
     #[\Override]
     public function overriddenMethod(): string

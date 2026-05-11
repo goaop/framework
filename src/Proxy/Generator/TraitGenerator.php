@@ -16,6 +16,7 @@ use PhpParser\BuilderFactory;
 use PhpParser\Comment\Doc;
 use PhpParser\Modifiers;
 use PhpParser\Node\Name;
+use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Property as PropertyNode;
 use PhpParser\Node\Stmt\Trait_ as TraitNode;
 use PhpParser\Node\Stmt\TraitUse;
@@ -124,7 +125,9 @@ final class TraitGenerator implements GeneratorInterface
         $traitUseAdaptations = [];
         foreach ($this->traitAliases as $aliasInfo) {
             $traitUseAdaptations[] = new TraitUseAdaptation\Alias(
-                new Name($aliasInfo['trait']),
+                str_contains($aliasInfo['trait'], '\\')
+                    ? new FullyQualified($aliasInfo['trait'])
+                    : new Name($aliasInfo['trait']),
                 new \PhpParser\Node\Identifier($aliasInfo['method']),
                 $this->mapVisibility($aliasInfo['visibility']),
                 new \PhpParser\Node\Identifier($aliasInfo['alias'])
@@ -133,7 +136,9 @@ final class TraitGenerator implements GeneratorInterface
 
         if (!empty($this->usedTraits)) {
             $traitNames = array_map(
-                static fn(string $t) => new Name($t),
+                static fn(string $t) => str_contains($t, '\\')
+                    ? new FullyQualified($t)
+                    : new Name($t),
                 $this->usedTraits
             );
             $builder->addStmt(new TraitUse($traitNames, $traitUseAdaptations));

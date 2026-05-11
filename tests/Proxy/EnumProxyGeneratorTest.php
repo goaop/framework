@@ -178,6 +178,54 @@ class EnumProxyGeneratorTest extends TestCase
     }
 
     /**
+     * When the trait and the proxy enum share the same namespace, the generated use-block
+     * must reference the trait by its short (unqualified) name, not the FQCN.
+     */
+    public function testTraitAdoptionUsesShortNameWhenSameNamespace(): void
+    {
+        $reflectionClass = new ReflectionClass(StubBackedEnum::class);
+        $classAdvices    = [
+            'method' => [
+                'label' => ['advisor'],
+            ],
+        ];
+
+        // Trait in the same namespace as the proxy enum (Go\Stubs)
+        $traitFqcn = 'Go\\Stubs\\StubBackedEnum__AopProxied';
+        $generator = new EnumProxyGenerator($reflectionClass, $traitFqcn, $classAdvices, false);
+        $output    = "<?php\n" . $generator->generate();
+
+        // Must use the short (unqualified) trait name
+        $this->assertStringContainsString('use StubBackedEnum__AopProxied {', $output);
+        $this->assertStringContainsString('StubBackedEnum__AopProxied::label as private __aop__label', $output);
+        $this->assertStringNotContainsString('\\Go\\Stubs\\StubBackedEnum__AopProxied', $output);
+    }
+
+    /**
+     * When the trait is in a different namespace from the proxy enum, the generated use-block
+     * must keep the FQCN so PHP can resolve the trait correctly.
+     */
+    public function testTraitAdoptionUsesFqcnWhenDifferentNamespace(): void
+    {
+        $reflectionClass = new ReflectionClass(StubBackedEnum::class);
+        $classAdvices    = [
+            'method' => [
+                'label' => ['advisor'],
+            ],
+        ];
+
+        // Trait in a different namespace from the proxy enum (proxy is in Go\Stubs)
+        $traitFqcn = 'Other\\Namespace\\StubBackedEnum__AopProxied';
+        $generator = new EnumProxyGenerator($reflectionClass, $traitFqcn, $classAdvices, false);
+        $output    = "<?php\n" . $generator->generate();
+
+        // Must use the FQCN for the trait name
+        $this->assertStringContainsString('use \\Other\\Namespace\\StubBackedEnum__AopProxied {', $output);
+        $this->assertStringContainsString('\\Other\\Namespace\\StubBackedEnum__AopProxied::label as private __aop__label', $output);
+        $this->assertStringNotContainsString('use StubBackedEnum__AopProxied {', $output);
+    }
+
+    /**
      * Built-in enum methods (cases, from, tryFrom) must be filtered out and never intercepted.
      * They are synthesised by PHP and cannot be aliased via trait use blocks.
      */
