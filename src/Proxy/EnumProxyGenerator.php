@@ -141,13 +141,20 @@ class EnumProxyGenerator extends ClassProxyGenerator
             $enumGenerator->addEnumCase($caseName, $caseValue);
         }
 
+        // Use the short (unqualified) trait name only when the trait and proxy
+        // share the same namespace; otherwise keep the FQCN
+        $lastBackslash      = strrpos($traitName, '\\');
+        $traitNamespace     = $lastBackslash !== false ? substr($traitName, 0, $lastBackslash) : '';
+        $sameNamespace      = $traitNamespace === $originalClass->getNamespaceName();
+        $effectiveTraitName = ($sameNamespace && $lastBackslash !== false) ? substr($traitName, $lastBackslash + 1) : $traitName;
+
         // Always include the original enum body trait
-        $enumGenerator->addTraits([$traitName]);
+        $enumGenerator->addTraits([$effectiveTraitName]);
 
         // Alias each intercepted method as private __aop__<name>
         foreach ($interceptedMethods as $methodName) {
             $enumGenerator->addTraitAlias(
-                $traitName,
+                $effectiveTraitName,
                 $methodName,
                 AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName,
                 ReflectionMethod::IS_PRIVATE

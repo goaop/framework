@@ -244,4 +244,52 @@ class TraitProxyGeneratorTest extends TestCase
             $output
         );
     }
+
+    /**
+     * When the parent trait and the proxy trait share the same namespace, the generated use-block
+     * must reference the parent trait by its short (unqualified) name, not the FQCN.
+     */
+    public function testTraitAdoptionUsesShortNameWhenSameNamespace(): void
+    {
+        $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
+        $traitAdvices    = [
+            'method' => [
+                'publicMethod' => ['advisor'],
+            ],
+        ];
+
+        // Parent trait in the same namespace as the proxy trait (Go\Stubs)
+        $parentTraitFqcn = 'Go\\Stubs\\TraitAliasProxied__AopProxied';
+        $generator       = new TraitProxyGenerator($reflectionTrait, $parentTraitFqcn, $traitAdvices, false);
+        $output          = "<?php\n" . $generator->generate();
+
+        // Must use the short (unqualified) parent trait name
+        $this->assertStringContainsString('use TraitAliasProxied__AopProxied {', $output);
+        $this->assertStringContainsString('TraitAliasProxied__AopProxied::publicMethod as private __aop__publicMethod', $output);
+        $this->assertStringNotContainsString('\\Go\\Stubs\\TraitAliasProxied__AopProxied', $output);
+    }
+
+    /**
+     * When the parent trait is in a different namespace from the proxy trait, the generated
+     * use-block must keep the FQCN so PHP can resolve the trait correctly.
+     */
+    public function testTraitAdoptionUsesFqcnWhenDifferentNamespace(): void
+    {
+        $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
+        $traitAdvices    = [
+            'method' => [
+                'publicMethod' => ['advisor'],
+            ],
+        ];
+
+        // Parent trait in a different namespace from the proxy trait (proxy is in Go\Stubs)
+        $parentTraitFqcn = 'Other\\Namespace\\TraitAliasProxied__AopProxied';
+        $generator       = new TraitProxyGenerator($reflectionTrait, $parentTraitFqcn, $traitAdvices, false);
+        $output          = "<?php\n" . $generator->generate();
+
+        // Must use the FQCN for the parent trait name
+        $this->assertStringContainsString('use \\Other\\Namespace\\TraitAliasProxied__AopProxied {', $output);
+        $this->assertStringContainsString('\\Other\\Namespace\\TraitAliasProxied__AopProxied::publicMethod as private __aop__publicMethod', $output);
+        $this->assertStringNotContainsString('use TraitAliasProxied__AopProxied {', $output);
+    }
 }

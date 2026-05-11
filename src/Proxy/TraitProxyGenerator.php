@@ -72,9 +72,12 @@ class TraitProxyGenerator extends ClassProxyGenerator
             $generatedProperties
         );
 
-        // Normalize FQDN for the parent trait reference
-        $namespaceParts       = explode('\\', $parentTraitName);
-        $parentNormalizedName = end($namespaceParts);
+        // Use the short (unqualified) trait name only when the parent trait and proxy
+        // trait share the same namespace; otherwise keep the FQCN
+        $lastBackslash     = strrpos($parentTraitName, '\\');
+        $traitNamespace    = $lastBackslash !== false ? substr($parentTraitName, 0, $lastBackslash) : '';
+        $sameNamespace     = $traitNamespace === $originalTrait->getNamespaceName();
+        $parentNormalizedName = ($sameNamespace && $lastBackslash !== false) ? substr($parentTraitName, $lastBackslash + 1) : $parentTraitName;
         $traitGenerator->addTrait($parentNormalizedName);
 
         foreach ($interceptedMethods as $methodName) {

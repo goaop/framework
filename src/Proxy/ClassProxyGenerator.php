@@ -155,10 +155,17 @@ class ClassProxyGenerator
             $classGenerator->addAttributeGroups($classAttrGroups);
         }
 
+        // Use the short (unqualified) trait name only when the trait and proxy
+        // share the same namespace; otherwise keep the FQCN
+        $lastBackslash     = strrpos($traitName, '\\');
+        $traitNamespace    = $lastBackslash !== false ? substr($traitName, 0, $lastBackslash) : '';
+        $sameNamespace     = $traitNamespace === $originalClass->getNamespaceName();
+        $effectiveTraitName = ($sameNamespace && $lastBackslash !== false) ? substr($traitName, $lastBackslash + 1) : $traitName;
+
         // Always include the original class body trait — even when no methods are intercepted
         // (e.g. introduction-only aspects). addTraitAlias also registers the trait, so this
         // explicit addTraits call only matters when $interceptedMethods is empty.
-        $classGenerator->addTraits([$traitName]);
+        $classGenerator->addTraits([$effectiveTraitName]);
 
         // Alias each intercepted method as private __aop__<name>
         foreach ($interceptedMethods as $methodName) {
@@ -167,7 +174,7 @@ class ClassProxyGenerator
                 continue;
             }
 
-            $classGenerator->addTraitAlias($traitName, $methodName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
+            $classGenerator->addTraitAlias($effectiveTraitName, $methodName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
         }
         // Add any AOP-introduced traits
         $classGenerator->addTraits(array_values($introducedTraits));
