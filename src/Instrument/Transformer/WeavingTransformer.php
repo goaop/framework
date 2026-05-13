@@ -40,7 +40,6 @@ use ReflectionProperty;
 class WeavingTransformer extends BaseSourceTransformer
 {
     private const FUNCTIONS_CACHE_SUFFIX = '/_functions/';
-    private const PROXIES_CACHE_SUFFIX   = '/_proxies/';
 
     /**
      * Advice matcher for class
@@ -708,18 +707,17 @@ class WeavingTransformer extends BaseSourceTransformer
      */
     private function saveProxyToCache(ReflectionClass $class, string $childCode): string
     {
-        $cacheRootDir      = $this->cachePathManager->getCacheDir();
+        $cacheRootDir = $this->cachePathManager->getCacheDir();
         if ($cacheRootDir === null) {
             return '';
         }
-        $cacheDir          = $cacheRootDir . self::PROXIES_CACHE_SUFFIX;
-        $classFileName     = $class->getFileName();
+        $classFileName = $class->getFileName();
         if ($classFileName === false) {
             return '';
         }
         $relativePath      = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $classFileName);
-        $proxyRelativePath = str_replace('\\', '/', $relativePath . '/' . $class->getName() . '.php');
-        $proxyFileName     = $cacheDir . $proxyRelativePath;
+        $proxyRelativePath = str_replace('\\', '/', $relativePath);
+        $proxyFileName     = $cacheRootDir . '/' . $proxyRelativePath;
         $dirname           = dirname($proxyFileName);
         if (!file_exists($dirname)) {
             mkdir($dirname, $this->options['cacheFileMode'], true);
@@ -732,7 +730,7 @@ class WeavingTransformer extends BaseSourceTransformer
         // For cache files we don't want executable bits by default
         chmod($proxyFileName, $this->options['cacheFileMode'] & (~0111));
 
-        return 'include_once AOP_CACHE_DIR . ' . var_export(self::PROXIES_CACHE_SUFFIX . $proxyRelativePath, true) . ';';
+        return 'include_once AOP_CACHE_DIR . ' . var_export('/' . $proxyRelativePath, true) . ';';
     }
 
     /**

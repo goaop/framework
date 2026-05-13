@@ -12,6 +12,7 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\Transformer;
 
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use PhpParser\Node;
 use PhpParser\Node\Expr\MethodCall;
@@ -66,14 +67,12 @@ class MagicConstantTransformer extends BaseSourceTransformer
      */
     public static function resolveFileName(string $fileName): string
     {
-        $suffix = '.php';
-        $pathParts = explode($suffix, str_replace(
-            [self::$rewriteToPath, DIRECTORY_SEPARATOR . '_proxies'],
-            [self::$rootPath, ''],
-            $fileName
-        ));
-        // throw away namespaced path from actual filename
-        return $pathParts[0] . $suffix;
+        if (self::$rewriteToPath !== '' && str_starts_with($fileName, self::$rewriteToPath)) {
+            $fileName = str_replace(self::$rewriteToPath, self::$rootPath, $fileName);
+            $fileName = str_replace(AspectContainer::AOP_PROXIED_SUFFIX . '.php', '.php', $fileName);
+        }
+
+        return $fileName;
     }
 
     /**

@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Console\Command;
 
 use FilesystemIterator;
+use Go\Core\AspectContainer;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\CacheWarmer;
 use RecursiveDirectoryIterator;
@@ -104,7 +105,10 @@ EOT
      */
     private function getProxies(CachePathManager $cachePathManager): array
     {
-        $path     = $cachePathManager->getCacheDir() . '/_proxies';
+        $path = $cachePathManager->getCacheDir();
+        if ($path === null) {
+            return [];
+        }
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator(
                 $path,
@@ -119,11 +123,21 @@ EOT
          * @var SplFileInfo $splFileInfo
          */
         foreach ($iterator as $splFileInfo) {
-            if ($splFileInfo->isFile()) {
-                $content = file_get_contents($splFileInfo->getPathname());
-                if ($content !== false) {
-                    $proxies[$splFileInfo->getPathname()] = $content;
-                }
+            if (!$splFileInfo->isFile() || $splFileInfo->getExtension() !== 'php') {
+                continue;
+            }
+            $pathname = $splFileInfo->getPathname();
+            if (str_contains($pathname, AspectContainer::AOP_PROXIED_SUFFIX)) {
+                continue;
+            }
+            // Only collect proxy files: they have a sibling __AopProxied trait file
+            $traitSibling = str_replace('.php', AspectContainer::AOP_PROXIED_SUFFIX . '.php', $pathname);
+            if (!file_exists($traitSibling)) {
+                continue;
+            }
+            $content = file_get_contents($pathname);
+            if ($content !== false) {
+                $proxies[$pathname] = $content;
             }
         }
 
