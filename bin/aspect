@@ -40,8 +40,10 @@ if (!class_exists(Application::class)) {
 }
 
 $app = new Application('Go! AOP', InstalledVersions::getVersion('goaop/framework'));
-$app->add(new CacheWarmupCommand());
-$app->add(new DebugAspectCommand());
-$app->add(new DebugAdvisorCommand());
-$app->add(new DebugWeavingCommand());
+$app->addCommands([
+    new CacheWarmupCommand(),
+    new DebugAspectCommand(),
+    new DebugAdvisorCommand(),
+    new DebugWeavingCommand(),
+]);
 $app->run();
