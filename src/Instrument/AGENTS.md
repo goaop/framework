@@ -20,7 +20,7 @@ WeavingTransformer converts original class to trait + proxy class. Two generated
 ### Woven file (replaces original in php stream filtering)
 ```php
 trait Foo__AopProxied { /* original methods verbatim */ }
-include_once AOP_CACHE_DIR . '/_proxies/.../Foo.php';
+include_once AOP_CACHE_DIR . '/Foo.php';
 ```
 
 ### Proxy file (loaded by include_once)
