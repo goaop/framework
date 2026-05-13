@@ -18,4 +18,4 @@ trait TestStatus__AopProxied
         };
     }
 }
-include_once AOP_CACHE_DIR . '/_proxies/Transformer/_files/php81-enum.php/Test/ns1/TestStatus.php';
+include_once AOP_CACHE_DIR . '/Transformer/_files/php81-enum.php';

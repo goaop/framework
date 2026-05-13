@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\Transformer;
 
 use Closure;
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\ParserReflection\ReflectionEngine;
@@ -77,6 +78,11 @@ class CachingTransformer extends BaseSourceTransformer
         ) {
             $processingResult = $this->processTransformers($metadata);
             if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
+                if (!str_contains($cacheUri, AspectContainer::AOP_PROXIED_SUFFIX)
+                    && str_contains($metadata->source, AspectContainer::AOP_PROXIED_SUFFIX)
+                ) {
+                    $cacheUri = str_replace('.php', AspectContainer::AOP_PROXIED_SUFFIX . '.php', $cacheUri);
+                }
                 $parentCacheDir = dirname($cacheUri);
                 if (!is_dir($parentCacheDir)) {
                     mkdir($parentCacheDir, $this->cacheFileMode, true);

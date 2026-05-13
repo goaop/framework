@@ -48,11 +48,9 @@ final class ProxyClassReflectionHelper
         $parsedReflectionClass = new ReflectionClass($className);
         $originalClassFile     = $parsedReflectionClass->getFileName();
 
-        $appDir            = PathResolver::realpath($configuration['appDir']);
-        $relativePath      = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
-        $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
-        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
-        $proxyFileName     = $configuration['cacheDir'] . '/_proxies/' . $proxyRelativePath;
+        $appDir       = PathResolver::realpath($configuration['appDir']);
+        $relativePath = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
+        $proxyFileName = $configuration['cacheDir'] . '/' . str_replace('\\', '/', $relativePath);
 
         if (!file_exists($proxyFileName)) {
             return [];
@@ -212,11 +210,9 @@ final class ProxyClassReflectionHelper
         $originalClassFile     = $parsedReflectionClass->getFileName();
         $originalNamespace     = $parsedReflectionClass->getNamespaceName();
 
-        $appDir            = PathResolver::realpath($configuration['appDir']);
-        $relativePath      = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
-        $classSuffix       = str_replace('\\', DIRECTORY_SEPARATOR, $className) . '.php';
-        $proxyRelativePath = $relativePath . DIRECTORY_SEPARATOR . $classSuffix;
-        $proxyFileName     = $configuration['cacheDir'] . '/_proxies/' . $proxyRelativePath;
+        $appDir         = PathResolver::realpath($configuration['appDir']);
+        $relativePath   = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
+        $proxyFileName  = $configuration['cacheDir'] . '/' . str_replace('\\', '/', $relativePath);
         $proxyFileContent  = file_get_contents($proxyFileName);
 
         // To prevent deep analysis of parents, we just cut everything after "extends"

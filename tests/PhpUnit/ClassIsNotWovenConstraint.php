@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\PhpUnit;
 
+use Go\Core\AspectContainer;
 use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionClass;
 use PHPUnit\Framework\Constraint\Constraint;
@@ -36,8 +37,8 @@ final class ClassIsNotWovenConstraint extends Constraint
         $filename = (new ReflectionClass($other))->getFileName();
         $suffix   = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
 
-        $transformedFileExists = file_exists($this->configuration['cacheDir'] . $suffix);
-        $proxyFileExists       = file_exists($this->configuration['cacheDir'] . '/_proxies' . $suffix);
+        $proxyFileExists       = file_exists($this->configuration['cacheDir'] . $suffix);
+        $transformedFileExists = file_exists($this->configuration['cacheDir'] . str_replace('.php', AspectContainer::AOP_PROXIED_SUFFIX . '.php', $suffix));
 
         // if any of files exists, assert has to fail
         return !$transformedFileExists && !$proxyFileExists;

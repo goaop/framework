@@ -19,4 +19,4 @@ trait TestClassWithOverride__AopProxied
         return 42;
     }
 }
-include_once AOP_CACHE_DIR . '/_proxies/Transformer/_files/php83-override.php/Test/ns1/TestClassWithOverride.php';
+include_once AOP_CACHE_DIR . '/Transformer/_files/php83-override.php';

@@ -122,6 +122,11 @@ class CachePathManager
             return false;
         }
 
+        $cacheState = $this->queryCacheState($resource);
+        if ($cacheState !== null && isset($cacheState['cacheUri']) && is_string($cacheState['cacheUri'])) {
+            return $cacheState['cacheUri'];
+        }
+
         return $this->appDir !== null
             ? str_replace($this->appDir, $this->cacheDir, $resource)
             : $resource;

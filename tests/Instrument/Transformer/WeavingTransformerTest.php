@@ -128,7 +128,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-typehint-woven')->source);
         $this->assertEquals($expected, $actual);
 
-        $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '_proxies/Transformer/_files/class-typehint.php/TestClassTypehint.php');
+        $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '/Transformer/_files/class-typehint.php');
         $this->assertFalse(strpos($proxyContent, '\\\\Exception'));
     }
 

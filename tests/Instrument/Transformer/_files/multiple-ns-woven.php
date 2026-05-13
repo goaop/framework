@@ -4,11 +4,11 @@ namespace Test\ns1 {
     trait TestClass1__AopProxied {
         public static function test() {}
     }
-include_once AOP_CACHE_DIR . '/_proxies/Transformer/_files/multiple-ns.php/Test/ns1/TestClass1.php';
+include_once AOP_CACHE_DIR . '/Transformer/_files/multiple-ns.php';
 }
 namespace Test\ns2 {
     trait TestClass2__AopProxied {
         public static function test() {}
     }
-include_once AOP_CACHE_DIR . '/_proxies/Transformer/_files/multiple-ns.php/Test/ns2/TestClass2.php';
+include_once AOP_CACHE_DIR . '/Transformer/_files/multiple-ns.php';
 }
