@@ -52,7 +52,6 @@ use Go\Aop\Proxy;
                   <li><a href="?showcase=fluent-interface">Fluent Interface</a></li>
                   <li><a href="?showcase=human-advices">Human live advices</a></li>
                   <li><a href="?showcase=dynamic-traits">Dynamic traits and interfaces</a></li>
-                  <li><a href="?showcase=declare-errors">Declare runtime errors</a></li>
                 </ul>
               </li>
               <li><a href="http://go.aopphp.com/docs/" target="_blank">Documentation</a></li>
@@ -120,7 +119,6 @@ use Go\Aop\Proxy;
 
 use Demo\Example\CacheableDemo;
 use Demo\Example\DynamicMethodsDemo;
-use Demo\Example\ErrorDemo;
 use Demo\Example\FunctionDemo;
 use Demo\Example\HumanDemo;
 use Demo\Example\IntroductionDemo;
@@ -215,14 +213,6 @@ switch ($showCase) {
 
         $example = new IntroductionDemo(); // Original class doesn't implement Stringable
         $example->testStringable();
-        break;
-
-    case 'declare-errors':
-        $aspectName = 'Demo\Aspect\DeclareErrorAspect';
-
-        $example = new ErrorDemo();
-        $example->oldMethod();
-        $example->notSoGoodMethod();
         break;
 
     default:

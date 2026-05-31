@@ -18,7 +18,6 @@ use Go\Aop\Framework\AfterInterceptor;
 use Go\Aop\Framework\AfterThrowingInterceptor;
 use Go\Aop\Framework\AroundInterceptor;
 use Go\Aop\Framework\BeforeInterceptor;
-use Go\Aop\Framework\DeclareErrorInterceptor;
 use Go\Core\AspectContainer;
 
 /**
@@ -69,18 +68,6 @@ final class PointcutBuilder
     public function around(string $pointcutExpression, Closure $adviceToInvoke): void
     {
         $interceptor = new AroundInterceptor($adviceToInvoke, 0, $pointcutExpression);
-        $this->registerAdviceInContainer($pointcutExpression, $interceptor);
-    }
-
-    /**
-     * Declares the error message for specific pointcut expression with concrete error level
-     *
-     * @param non-empty-string  $message Error message to show for this intercepton
-     * @param positive-int      $errorLevel Default level of error, only E_USER_* constants
-     */
-    public function declareError(string $pointcutExpression, string $message, int $errorLevel = E_USER_ERROR): void
-    {
-        $interceptor = new DeclareErrorInterceptor($message, $errorLevel, $pointcutExpression);
         $this->registerAdviceInContainer($pointcutExpression, $interceptor);
     }
 
