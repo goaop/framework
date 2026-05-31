@@ -42,7 +42,7 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 
 ## Attributes (src/Lang/Attribute/)
 - Advice: #[Before], #[After], #[Around], #[AfterThrowing]
-- Declaration: #[Aspect], #[Pointcut], #[DeclareError], #[DeclareParents]
+- Declaration: #[Aspect], #[Pointcut], #[DeclareParents]
 - Base: AbstractAttribute, AbstractInterceptor, Interceptor (interface)
 
 ## Features (src/Aop/Features.php)

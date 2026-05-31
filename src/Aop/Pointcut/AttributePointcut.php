@@ -59,7 +59,7 @@ final readonly class AttributePointcut implements Pointcut
             $instanceToCheck = $reflector;
         }
 
-        if (!isset($instanceToCheck) || $instanceToCheck instanceof ReflectionFileNamespace) {
+        if ($instanceToCheck instanceof ReflectionFileNamespace) {
             return false;
         }
 

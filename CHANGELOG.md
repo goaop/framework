@@ -9,6 +9,7 @@ Changelog
 * [Feature] **PHP 8.1+ enum interception** — instance and static methods on both unit (pure) and backed enums can now be intercepted by aspects. The enum body is extracted into a trait (`Foo__AopProxied`); a proxy enum re-declares the cases and dispatches intercepted methods via per-method `static $__joinPoint` caching. Built-in enum methods (`cases`, `from`, `tryFrom`) and initialization joinpoints are never woven.
 * [Feature] `self::` in proxied classes now resolves to the proxy class naturally (via PHP trait semantics), removing the need for `SelfValueTransformer`.
 * [Feature] **First-class callable syntax** — generated proxy code and invocation constructors use PHP 8.1+ first-class callable syntax (`$this->__aop__method(...)`, `parent::method(...)`, `\func(...)`) to reference original method and function bodies, eliminating the need for `Closure::bind` at construction time.
+* [BC BREAK] Removed DeclareError support, including the `DeclareError` attribute, `DeclareErrorInterceptor`, and `PointcutBuilder::declareError()`. Use `Before` or `Around` interceptors to emit user warnings or throw exceptions instead.
 * [Removed] `SelfValueTransformer` and `SelfValueVisitor` — no longer needed with the trait-based engine.
 * [Performance] **Direct static joinpoint initialization** — leveraging PHP 8.3+ support for dynamic expressions in static variable initializers, all generated proxy method bodies now initialize their static joinpoint variables directly.
 
