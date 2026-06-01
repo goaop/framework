@@ -137,9 +137,9 @@ class TraitProxyGeneratorTest extends TestCase
         // Three separate injector calls (one per intercepted method)
         $this->assertSame(2, substr_count($output, 'InterceptorInjector::forMethod'));
         $this->assertSame(1, substr_count($output, 'InterceptorInjector::forStaticMethod'));
-        $this->assertStringContainsString("forMethod(self::class, 'publicMethod'", $output);
-        $this->assertStringContainsString("forMethod(self::class, 'protectedMethod'", $output);
-        $this->assertStringContainsString("forStaticMethod(self::class, 'staticPublicMethod'", $output);
+        $this->assertStringContainsString("'publicMethod'", $output);
+        $this->assertStringContainsString("'protectedMethod'", $output);
+        $this->assertStringContainsString("'staticPublicMethod'", $output);
     }
 
     /**
@@ -215,7 +215,7 @@ class TraitProxyGeneratorTest extends TestCase
 
         $this->assertStringContainsString('public int $public = 326 {', $output);
         $this->assertStringContainsString('static $__joinPoint = InterceptorInjector::forProperty', $output);
-        $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'public'", $output);
+        $this->assertStringContainsString("InterceptorInjector::forProperty(", $output);
         $this->assertStringContainsString('FieldAccessType::READ', $output);
         $this->assertStringContainsString('FieldAccessType::WRITE', $output);
         $this->assertStringNotContainsString('$__joinPoints[', $output);

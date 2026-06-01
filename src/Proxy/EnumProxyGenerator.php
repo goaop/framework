@@ -13,11 +13,12 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Aop\Framework\AbstractMethodInvocation;
+use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
 use Go\Proxy\Generator\EnumGenerator;
+use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\TypeGenerator;
-use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -74,7 +75,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
      *
      * @param ReflectionClass<object> $originalClass        Original enum reflection (before transformation)
      * @param string                  $traitName            FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
-     * @param string[][][]            $classAdviceNames     List of advices for enum
+     * @param array<string, array<string, list<string|GeneratedInterceptor>>> $classAdviceNames List of advices for enum
      */
     public function __construct(
         ReflectionClass $originalClass,
@@ -161,6 +162,13 @@ class EnumProxyGenerator extends ClassProxyGenerator
         // Determine needed invocation types from actual method signatures, not advice
         // category keys, because callers may place static-method advices under METHOD_PREFIX.
         $enumGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
+        $enumGenerator->addUse('Go\Aop\Framework\Interceptor');
+        $enumGenerator->addUse('Go\Aop\Framework\The');
+        foreach ($this->collectAspectClasses($classAdviceNames) as $aspectClass) {
+            if (str_contains($aspectClass, '\\')) {
+                $enumGenerator->addUse($aspectClass);
+            }
+        }
         foreach ($interceptedMethods as $methodName) {
             if ($originalClass->hasMethod($methodName) && $originalClass->getMethod($methodName)->isStatic()) {
                 $enumGenerator->addUse('Go\Aop\Intercept\StaticMethodInvocation');
@@ -222,9 +230,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
 
         $adviceNames = $this->adviceNames[$prefix][$method->name]
             ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
-        $advicesArrayValue = new ValueGenerator($adviceNames);
-        $advicesArrayValue->setArrayDepth(1);
-        $advicesCode = $advicesArrayValue->generate();
+        $advicesCode = (new InterceptorListGenerator($adviceNames))->generate('            ');
         $returnTypeString = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
         // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
         // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.
@@ -246,7 +252,12 @@ class EnumProxyGenerator extends ClassProxyGenerator
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode}, {$callableExpression});
+        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(
+            self::class,
+            '{$method->name}',
+            {$advicesCode},
+            {$callableExpression},
+        );
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
     }

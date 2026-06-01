@@ -16,6 +16,7 @@ use Go\Aop\Advice;
 use Go\Aop\AdviceAfter;
 use Go\Aop\AdviceAround;
 use Go\Aop\AdviceBefore;
+use Go\Aop\IntroductionInfo;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\OrderedAdvice;
@@ -52,16 +53,16 @@ abstract class AbstractJoinpoint implements Joinpoint
     /**
      * Sorts advices by priority
      *
-     * @param array<Advice|Interceptor> $advices
+     * @param array<mixed> $advices
      *
-     * @return array<Advice|Interceptor> Sorted list of advices
+     * @return array<mixed> Sorted list of advices
      */
     public static function sortAdvices(array $advices): array
     {
         $sortedAdvices = $advices;
         uasort(
             $sortedAdvices,
-            fn(Advice $first, Advice $second) => match (true) {
+            fn(mixed $first, mixed $second) => match (true) {
                 $first instanceof AdviceBefore && !($second instanceof AdviceBefore) => -1,
                 $first instanceof AdviceAround && !($second instanceof AdviceAround) => 1,
                 $first instanceof AdviceAfter && !($second instanceof AdviceAfter) => $second instanceof AdviceBefore ? 1 : -1,
@@ -74,18 +75,27 @@ abstract class AbstractJoinpoint implements Joinpoint
     }
 
     /**
-     * Replace concrete advices with list of ids
+     * Replace concrete advices with generated-code descriptors or introduction ids.
      *
-     * @param array<string, array<string, array<string, Advice|Interceptor>>> $advices List of advices
+     * @param array<string, array<string, array<string, mixed>>> $advices List of advices
      *
-     * @return array<string, array<string, array<string>>> Sorted identifier of advices/interceptors
+     * @return array<string, array<string, list<string|GeneratedInterceptor>>> Sorted advices/interceptors
      */
     public static function flatAndSortAdvices(array $advices): array
     {
         $flattenAdvices = [];
         foreach ($advices as $type => $typedAdvices) {
             foreach ($typedAdvices as $name => $concreteAdvices) {
-                $flattenAdvices[$type][$name] = array_keys(self::sortAdvices($concreteAdvices));
+                foreach (self::sortAdvices($concreteAdvices) as $advisorId => $advice) {
+                    if ($advice instanceof IntroductionInfo) {
+                        $flattenAdvices[$type][$name][] = (string) $advisorId;
+
+                        continue;
+                    }
+                    $flattenAdvices[$type][$name][] = $advice instanceof Advice
+                        ? GeneratedInterceptor::fromAdvice((string) $advisorId, $advice)
+                        : GeneratedInterceptor::fromAdvisorId((string) $advisorId);
+                }
             }
         }
 

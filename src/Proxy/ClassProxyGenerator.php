@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Aop\Framework\AbstractMethodInvocation;
+use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Aop\InitializationAware;
 use Go\Aop\Proxy;
 use Go\Aop\StaticInitializationAware;
@@ -21,6 +22,7 @@ use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\ClassGenerator;
 use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\GeneratorInterface;
+use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\MethodGenerator;
 use Go\Proxy\Generator\ParameterGenerator;
 use Go\Proxy\Generator\TypeGenerator;
@@ -42,7 +44,7 @@ class ClassProxyGenerator
     /**
      * List of advices that are used for generation of child
      *
-     * @var string[][][]
+     * @var array<string, array<string, list<string|GeneratedInterceptor>>>
      */
     protected array $adviceNames = [];
 
@@ -61,7 +63,7 @@ class ClassProxyGenerator
      *
      * @param ReflectionClass<object> $originalClass    Original class reflection (before transformation)
      * @param string                  $traitName        FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
-     * @param string[][][]            $classAdviceNames List of advices for class
+     * @param array<string, array<string, list<string|GeneratedInterceptor>>> $classAdviceNames List of advices for class
      */
     public function __construct(
         ReflectionClass $originalClass,
@@ -75,11 +77,17 @@ class ClassProxyGenerator
         $propertyAdvices       = $classAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
         $interceptedMethods    = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $interceptedProperties = array_keys($propertyAdvices);
-        $introducedInterfaces  = $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [];
-        $introducedTraits      = $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [];
+        $introducedInterfaces  = array_values(array_filter(
+            $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [],
+            is_string(...)
+        ));
+        $introducedTraits      = array_values(array_filter(
+            $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [],
+            is_string(...)
+        ));
 
-        $staticInitializationAdvices = array_values($classAdviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? []);
-        $initializationAdvices       = array_values($classAdviceNames[AspectContainer::INIT_PREFIX]['root'] ?? []);
+        $staticInitializationAdvices = $classAdviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? [];
+        $initializationAdvices       = $classAdviceNames[AspectContainer::INIT_PREFIX]['root'] ?? [];
 
         $generatedProperties = [];
         $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
@@ -169,12 +177,19 @@ class ClassProxyGenerator
             $classGenerator->addTraitAlias($effectiveTraitName, $methodName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
         }
         // Add any AOP-introduced traits
-        $classGenerator->addTraits(array_values($introducedTraits));
+        $classGenerator->addTraits($introducedTraits);
 
         // Register use-imports for AOP classes referenced in generated method bodies.
         // Determine needed invocation types from actual method signatures, not advice
         // category keys, because callers may place static-method advices under METHOD_PREFIX.
         $classGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
+        $classGenerator->addUse('Go\Aop\Framework\Interceptor');
+        $classGenerator->addUse('Go\Aop\Framework\The');
+        foreach ($this->collectAspectClasses($classAdviceNames) as $aspectClass) {
+            if (str_contains($aspectClass, '\\')) {
+                $classGenerator->addUse($aspectClass);
+            }
+        }
         foreach ($interceptedMethods as $methodName) {
             if ($originalClass->hasMethod($methodName) && $originalClass->getMethod($methodName)->isStatic()) {
                 $classGenerator->addUse('Go\Aop\Intercept\StaticMethodInvocation');
@@ -212,7 +227,7 @@ class ClassProxyGenerator
     public function generate(): string
     {
         $classCode = $this->generator->generate();
-        $staticInitializationAdvices = array_values($this->adviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? []);
+        $staticInitializationAdvices = $this->adviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? [];
 
         if ($staticInitializationAdvices !== []) {
             $classCode .= "\n" . $this->generator->getName() . '::__aop__staticInitialization();';
@@ -244,7 +259,7 @@ class ClassProxyGenerator
 
     /**
      * @param ReflectionClass<object> $originalClass
-     * @param array<array-key, array<string>> $propertyAdvices
+     * @param array<array-key, list<string|GeneratedInterceptor>> $propertyAdvices
      * @param string[] $propertyNames Intercepted property names from advice map
      *
      * @return InterceptedPropertyGenerator[]
@@ -261,7 +276,7 @@ class ClassProxyGenerator
             if (!isset($targetProperties[$property->getName()])) {
                 continue;
             }
-            $adviceNames = array_values($propertyAdvices[$property->getName()] ?? []);
+            $adviceNames = $propertyAdvices[$property->getName()] ?? [];
             if ($adviceNames === []) {
                 continue;
             }
@@ -303,9 +318,7 @@ class ClassProxyGenerator
 
         $adviceNames = $this->adviceNames[$prefix][$method->name]
             ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
-        $advicesArrayValue = new ValueGenerator($adviceNames);
-        $advicesArrayValue->setArrayDepth(1);
-        $advicesCode = $advicesArrayValue->generate();
+        $advicesCode = (new InterceptorListGenerator($adviceNames))->generate('            ');
         $returnTypeString   = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
         // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
         // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.
@@ -333,19 +346,24 @@ class ClassProxyGenerator
         $hasTraitAlias = $originalClass !== null && ($method->class === $originalClass->name);
         if ($hasTraitAlias) {
             $callableExpression = $isStatic
-                ? ', self::' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)'
-                : ', $this->' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)';
+                ? 'self::' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)'
+                : '$this->' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)';
         } else {
             // Inherited method (no trait alias): use parent:: first-class callable for both static and dynamic.
             // DynamicTraitAliasMethodInvocation uses ReflectionMethod internally, so the callable is stored
             // but not used for the actual dispatch. StaticTraitAliasMethodInvocation wraps it in a
             // forward_static_call shim to preserve late-static-binding.
-            $callableExpression = ', parent::' . $method->name . '(...)';
+            $callableExpression = 'parent::' . $method->name . '(...)';
         }
 
         $body = <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode}{$callableExpression});
+        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(
+            self::class,
+            '{$method->name}',
+            {$advicesCode},
+            {$callableExpression},
+        );
         {$return}\$__joinPoint->__invoke($invocationArguments);
         BODY;
 
@@ -353,20 +371,21 @@ class ClassProxyGenerator
     }
 
     /**
-     * @param non-empty-list<string> $advisorNames
+     * @param non-empty-list<GeneratedInterceptor|string> $advisorNames
      */
     private function createStaticInitializationMethod(array $advisorNames): MethodGenerator
     {
-        $advicesValue = new ValueGenerator($advisorNames);
-        $advicesValue->setArrayDepth(1);
-        $advicesCode = $advicesValue->generate();
+        $advicesCode = (new InterceptorListGenerator($advisorNames))->generate('            ');
 
         $method = new MethodGenerator('__aop__staticInitialization');
         $method->setStatic(true);
         $method->setReturnType('void');
         $method->setBody(<<<BODY
         /** @var ClassJoinpoint<self> \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::forStaticInitialization(self::class, {$advicesCode});
+        static \$__joinPoint = InterceptorInjector::forStaticInitialization(
+            self::class,
+            {$advicesCode},
+        );
         \$__joinPoint(static::class);
         BODY);
 
@@ -374,13 +393,11 @@ class ClassProxyGenerator
     }
 
     /**
-     * @param non-empty-list<string> $advisorNames
+     * @param non-empty-list<GeneratedInterceptor|string> $advisorNames
      */
     private function createInitializationMethod(array $advisorNames): MethodGenerator
     {
-        $advicesValue = new ValueGenerator($advisorNames);
-        $advicesValue->setArrayDepth(1);
-        $advicesCode = $advicesValue->generate();
+        $advicesCode = (new InterceptorListGenerator($advisorNames))->generate('            ');
 
         $method = new MethodGenerator('__aop__initialization');
         $method->setStatic(true);
@@ -395,11 +412,34 @@ class ClassProxyGenerator
         $method->addParameter($argumentsParameter);
         $method->setBody(<<<BODY
         /** @var ConstructorInvocation<self> \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::forInitialization(self::class, {$advicesCode});
+        static \$__joinPoint = InterceptorInjector::forInitialization(
+            self::class,
+            {$advicesCode},
+        );
         return \$__joinPoint->__invoke(\$arguments);
         BODY);
 
         return $method;
+    }
+
+    /**
+     * @param array<string, array<string, list<string|GeneratedInterceptor>>> $adviceNames
+     * @return list<string>
+     */
+    protected function collectAspectClasses(array $adviceNames): array
+    {
+        $interceptors = [];
+        foreach ($adviceNames as $typedAdvices) {
+            foreach ($typedAdvices as $concreteAdvices) {
+                foreach ($concreteAdvices as $advice) {
+                    if ($advice instanceof GeneratedInterceptor) {
+                        $interceptors[] = $advice;
+                    }
+                }
+            }
+        }
+
+        return InterceptorListGenerator::aspectClasses($interceptors);
     }
 
 }

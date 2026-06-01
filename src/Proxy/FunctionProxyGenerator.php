@@ -12,12 +12,13 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Core\AspectContainer;
 use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Proxy\Generator\FileGenerator;
 use Go\Proxy\Generator\FunctionGenerator;
+use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\TypeGenerator;
-use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use ReflectionException;
 use ReflectionFunction;
@@ -31,7 +32,7 @@ class FunctionProxyGenerator
     /**
      * List of advices that are used for generation of child
      *
-     * @var string[][][]
+     * @var array<string, array<string, array<GeneratedInterceptor|string>>>
      */
     protected array $adviceNames = [];
 
@@ -44,7 +45,7 @@ class FunctionProxyGenerator
      * Constructs functions stub class from namespace Reflection
      *
      * @param ReflectionFileNamespace $namespace   Reflection of namespace
-     * @param string[][][]            $adviceNames List of function advices
+     * @param array<string, array<string, array<GeneratedInterceptor|string>>> $adviceNames List of function advices
      *
      * @throws ReflectionException If there is an advice for unknown function
      */
@@ -56,7 +57,14 @@ class FunctionProxyGenerator
         $this->fileGenerator = new FileGenerator();
         $this->fileGenerator->setNamespace($namespace->getName());
         $this->fileGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
+        $this->fileGenerator->addUse('Go\Aop\Framework\Interceptor');
+        $this->fileGenerator->addUse('Go\Aop\Framework\The');
         $this->fileGenerator->addUse('Go\Aop\Intercept\FunctionInvocation');
+        foreach ($this->collectAspectClasses($adviceNames) as $aspectClass) {
+            if (str_contains($aspectClass, '\\')) {
+                $this->fileGenerator->addUse($aspectClass);
+            }
+        }
 
         $functionsContent = [];
         $functionAdvices  = $adviceNames[AspectContainer::FUNCTION_PREFIX] ?? [];
@@ -101,9 +109,7 @@ class FunctionProxyGenerator
         }
 
         $functionAdvices = $this->adviceNames[AspectContainer::FUNCTION_PREFIX][$function->name];
-        $advicesArray    = new ValueGenerator($functionAdvices);
-        $advicesArray->setArrayDepth(1);
-        $advicesCode = $advicesArray->generate();
+        $advicesCode = (new InterceptorListGenerator(array_values($functionAdvices)))->generate('            ');
         $returnTypeString = $function->hasReturnType() ? '<' . TypeGenerator::renderTypeForPhpDoc($function->getReturnType()) . '>' : '';
 
         // Use a fully-qualified (global) callable so proceed() calls the original built-in
@@ -112,8 +118,30 @@ class FunctionProxyGenerator
 
         return <<<BODY
         /** @var FunctionInvocation{$returnTypeString} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::forFunction('{$function->name}', {$advicesCode}, {$callableExpression});
+        static \$__joinPoint = InterceptorInjector::forFunction(
+            '{$function->name}',
+            {$advicesCode},
+            {$callableExpression},
+        );
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
+    }
+
+    /**
+     * @param array<string, array<string, array<GeneratedInterceptor|string>>> $adviceNames
+     * @return list<string>
+     */
+    private function collectAspectClasses(array $adviceNames): array
+    {
+        $interceptors = [];
+        foreach ($adviceNames as $typedAdvices) {
+            foreach ($typedAdvices as $concreteAdvices) {
+                foreach ($concreteAdvices as $advice) {
+                    $interceptors[] = $advice;
+                }
+            }
+        }
+
+        return InterceptorListGenerator::aspectClasses($interceptors);
     }
 }

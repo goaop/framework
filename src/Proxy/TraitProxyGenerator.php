@@ -13,11 +13,12 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Aop\Framework\AbstractMethodInvocation;
+use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Core\AspectContainer;
 use Go\Proxy\Generator\DocBlockGenerator;
+use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\TraitGenerator;
 use Go\Proxy\Generator\TypeGenerator;
-use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use Go\Proxy\Part\TraitInterceptedPropertyGenerator;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -35,7 +36,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
      *
      * @param ReflectionClass<object> $originalTrait    Original class reflection
      * @param string                  $parentTraitName  Parent trait name to use
-     * @param string[][][]            $traitAdviceNames List of advices for class
+     * @param array<string, array<string, list<string|GeneratedInterceptor>>> $traitAdviceNames List of advices for class
      */
     public function __construct(
         ReflectionClass $originalTrait,
@@ -51,8 +52,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
         $generatedProperties  = [];
         foreach ($traitAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [] as $propertyName => $adviceNames) {
             $property = $originalTrait->getProperty($propertyName);
-            $normalizedAdviceNames = array_is_list($adviceNames) ? $adviceNames : array_keys($adviceNames);
-            $generatedProperties[] = (new TraitInterceptedPropertyGenerator($property, $normalizedAdviceNames))->getNode();
+            $generatedProperties[] = (new TraitInterceptedPropertyGenerator($property, $adviceNames))->getNode();
         }
 
         $docComment = $originalTrait->getDocComment();
@@ -87,6 +87,13 @@ class TraitProxyGenerator extends ClassProxyGenerator
         // Determine needed invocation types from actual method signatures, not advice
         // category keys, because callers may place static-method advices under METHOD_PREFIX.
         $traitGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
+        $traitGenerator->addUse('Go\Aop\Framework\Interceptor');
+        $traitGenerator->addUse('Go\Aop\Framework\The');
+        foreach ($this->collectAspectClasses($traitAdviceNames) as $aspectClass) {
+            if (str_contains($aspectClass, '\\')) {
+                $traitGenerator->addUse($aspectClass);
+            }
+        }
         foreach ($interceptedMethods as $methodName) {
             if ($originalTrait->hasMethod($methodName) && $originalTrait->getMethod($methodName)->isStatic()) {
                 $traitGenerator->addUse('Go\Aop\Intercept\StaticMethodInvocation');
@@ -132,9 +139,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         $adviceNames = $this->adviceNames[$prefix][$method->name]
             ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
-        $advicesArrayValue = new ValueGenerator($adviceNames);
-        $advicesArrayValue->setArrayDepth(1);
-        $advicesCode = $advicesArrayValue->generate();
+        $advicesCode = (new InterceptorListGenerator($adviceNames))->generate('            ');
         $returnTypeString = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
         // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
         // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.
@@ -156,7 +161,12 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(self::class, '{$method->name}', {$advicesCode}, {$callableExpression});
+        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(
+            self::class,
+            '{$method->name}',
+            {$advicesCode},
+            {$callableExpression},
+        );
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
     }

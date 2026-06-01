@@ -31,7 +31,7 @@ class FluentInterfaceAspect implements Aspect
      * Fluent interface advice
      */
     #[Around('within(Demo\Aspect\FluentInterface+) && execution(public **->set*(*))')]
-    protected function aroundMethodExecution(MethodInvocation $invocation): mixed
+    public function aroundMethodExecution(MethodInvocation $invocation): mixed
     {
         $result = $invocation->proceed();
 

@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-
 use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\The;
+use Test\ns1\TestAttributeArgsClass;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 class TestAttributeArgsClass implements \Go\Aop\Proxy
 {
@@ -17,14 +19,28 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
     ): int
     {
         /** @var DynamicMethodInvocation<self, int> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'tagged', ['advisor.Test\ns1\TestAttributeArgsClass->tagged'], $this->__aop__tagged(...));
+        static $__joinPoint = InterceptorInjector::forMethod(
+            self::class,
+            'tagged',
+            [
+                Interceptor::before(The::aspect(TestAttributeArgsClass::class)->tagged(...)),
+            ],
+            $this->__aop__tagged(...),
+        );
         return $__joinPoint->__invoke($this, \array_slice([$x], 0, \func_num_args()));
     }
     #[\Test\ns1\RichValueAttr(\Test\ns1\AttrStatus::Active, new \ArrayObject([1, 2]))]
     public function collected(): array
     {
         /** @var DynamicMethodInvocation<self, array> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'collected', ['advisor.Test\ns1\TestAttributeArgsClass->collected'], $this->__aop__collected(...));
+        static $__joinPoint = InterceptorInjector::forMethod(
+            self::class,
+            'collected',
+            [
+                Interceptor::before(The::aspect(TestAttributeArgsClass::class)->collected(...)),
+            ],
+            $this->__aop__collected(...),
+        );
         return $__joinPoint->__invoke($this);
     }
 }

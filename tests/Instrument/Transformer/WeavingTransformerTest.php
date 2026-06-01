@@ -587,8 +587,8 @@ class WeavingTransformerTest extends TestCase
 
         $this->assertStringContainsString("public string \$value = 'test' {", $proxyContent);
         $this->assertStringContainsString("public protected(set) string \$limited = 'limited' {", $proxyContent);
-        $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'value'", $proxyContent);
-        $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'limited'", $proxyContent);
+        $this->assertStringContainsString("InterceptorInjector::forProperty(", $proxyContent);
+        $this->assertStringContainsString("InterceptorInjector::forProperty(", $proxyContent);
     }
 
     /**

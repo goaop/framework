@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-
 use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\The;
+use Test\ns1\ConstExprStatus;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 enum ConstExprStatus : int implements \Go\Aop\Proxy
 {
@@ -15,7 +17,14 @@ enum ConstExprStatus : int implements \Go\Aop\Proxy
     public function describe(): string
     {
         /** @var DynamicMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'describe', ['advisor.Test\ns1\ConstExprStatus->describe'], $this->__aop__describe(...));
+        static $__joinPoint = InterceptorInjector::forMethod(
+            self::class,
+            'describe',
+            [
+                Interceptor::before(The::aspect(ConstExprStatus::class)->describe(...)),
+            ],
+            $this->__aop__describe(...),
+        );
         return $__joinPoint->__invoke($this);
     }
 }

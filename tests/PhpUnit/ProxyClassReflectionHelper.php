@@ -19,10 +19,13 @@ use Go\ParserReflection\ReflectionFile;
 use PhpParser\ConstExprEvaluator;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeFinder;
 
 /**
@@ -84,7 +87,7 @@ final class ProxyClassReflectionHelper
         });
 
         if (!empty($injectorCalls)) {
-            return self::extractAdvicesFromInjectorCalls($injectorCalls);
+            return self::extractAdvicesFromInjectorCalls($injectorCalls, self::extractUseAliases($ast));
         }
 
         // Legacy enum proxies use per-method static joinpoints via EnumProxyGenerator::getJoinPoint().
@@ -141,9 +144,10 @@ final class ProxyClassReflectionHelper
 
     /**
      * @param StaticCall[] $injectorCalls
+     * @param array<string, string> $useAliases
      * @return array<string, array<string, list<string>>>
      */
-    private static function extractAdvicesFromInjectorCalls(array $injectorCalls): array
+    private static function extractAdvicesFromInjectorCalls(array $injectorCalls, array $useAliases): array
     {
         $evaluator = new ConstExprEvaluator();
         $result    = [];
@@ -172,8 +176,12 @@ final class ProxyClassReflectionHelper
                 continue;
             }
 
-            $adviceNames = $evaluator->evaluateSilently($call->args[$advicesIndex]->value);
-            if (!is_array($adviceNames)) {
+            $advicesNode = $call->args[$advicesIndex]->value;
+            $adviceNames = self::extractAdviceNamesFromGeneratedFactories($advicesNode, $useAliases);
+            if ($adviceNames === []) {
+                $adviceNames = $evaluator->evaluateSilently($advicesNode);
+            }
+            if (!is_array($adviceNames) || $adviceNames === []) {
                 continue;
             }
 
@@ -196,6 +204,65 @@ final class ProxyClassReflectionHelper
         }
 
         return $result;
+    }
+
+    /**
+     * @param array<mixed> $ast
+     * @return array<string, string>
+     */
+    private static function extractUseAliases(array $ast): array
+    {
+        $uses = [];
+        /** @var Use_[] $useNodes */
+        $useNodes = (new NodeFinder())->findInstanceOf($ast, Use_::class);
+        foreach ($useNodes as $useNode) {
+            foreach ($useNode->uses as $useUse) {
+                $fqcn = $useUse->name->toString();
+                $alias = $useUse->alias?->toString() ?? substr($fqcn, (int) strrpos($fqcn, '\\') + 1);
+                $uses[$alias] = $fqcn;
+            }
+        }
+
+        return $uses;
+    }
+
+    /**
+     * @param array<string, string> $useAliases
+     * @return list<string>
+     */
+    private static function extractAdviceNamesFromGeneratedFactories(mixed $advicesNode, array $useAliases): array
+    {
+        if (!$advicesNode instanceof Array_) {
+            return [];
+        }
+
+        $advisorNames = [];
+        foreach ($advicesNode->items as $item) {
+            $factoryCall = $item?->value;
+            if (!$factoryCall instanceof StaticCall || !$factoryCall->class instanceof Name || !$factoryCall->name instanceof Identifier) {
+                continue;
+            }
+            if (!str_ends_with($factoryCall->class->toString(), 'Interceptor') || !isset($factoryCall->args[0])) {
+                continue;
+            }
+            $adviceCall = $factoryCall->args[0]->value;
+            if (!$adviceCall instanceof MethodCall || !$adviceCall->name instanceof Identifier) {
+                continue;
+            }
+            $aspectCall = $adviceCall->var;
+            if (!$aspectCall instanceof StaticCall || !$aspectCall->class instanceof Name || !str_ends_with($aspectCall->class->toString(), 'The') || !isset($aspectCall->args[0])) {
+                continue;
+            }
+            $aspectClassConst = $aspectCall->args[0]->value;
+            if (!$aspectClassConst instanceof ClassConstFetch || !$aspectClassConst->class instanceof Name) {
+                continue;
+            }
+
+            $aspectName = $aspectClassConst->class->toString();
+            $advisorNames[] = ($useAliases[$aspectName] ?? $aspectName) . '->' . $adviceCall->name->toString();
+        }
+
+        return $advisorNames;
     }
 
     /**
