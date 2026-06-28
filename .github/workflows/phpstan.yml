@@ -23,7 +23,7 @@ jobs:
           ini-values: memory_limit=-1
           tools: composer:v2
       - name: "Cache dependencies"
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             ~/.composer/cache
