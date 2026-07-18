@@ -54,9 +54,7 @@ final class ModifierPointcut implements Pointcut
      */
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
-        null|object|string                                     $instanceOrScope = null,
-        ?array                                                 $arguments = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
     ): bool {
         // With context only we always match, as we don't know about modifiers of given reflector
         if (!isset($reflector)) {

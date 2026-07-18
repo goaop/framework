@@ -17,21 +17,27 @@ use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Attribute\Before;
 
 /**
- * Aspect that intercepts specific magic methods, declared with __call and __callStatic
+ * Aspect that intercepts magic methods, declared with __call and __callStatic
+ *
+ * Traditional "execution" pointcuts match the magic method itself, so the real method name
+ * should be extracted from the invocation arguments and filtered inside the advice.
  */
 class DynamicMethodsAspect implements Aspect
 {
     /**
-     * This advice intercepts an execution of __call methods
+     * This advice intercepts an execution of __call method
      *
-     * Unlike traditional "execution" pointcut, "dynamic" is checking the name of method in
-     * the runtime, allowing to write interceptors for __call more transparently.
+     * The name of the invoked method is the first invocation argument,
+     * so we filter interesting methods (save*) right inside the advice.
      */
-    #[Before('dynamic(public Demo\Example\DynamicMethodsDemo->save*(*))')]
+    #[Before('execution(public Demo\Example\DynamicMethodsDemo->__call(*))')]
     public function beforeMagicMethodExecution(MethodInvocation $invocation): void
     {
         // we need to unpack args from invocation args
         [$methodName, $args] = $invocation->getArguments();
+        if (!str_starts_with($methodName, 'save')) {
+            return;
+        }
         echo 'Calling Magic Interceptor for method: ',
             $invocation->getScope(),
             '->',
@@ -45,11 +51,14 @@ class DynamicMethodsAspect implements Aspect
     /**
      * This advice intercepts an execution of methods via __callStatic
      */
-    #[Before('dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))')]
+    #[Before('execution(public Demo\Example\DynamicMethodsDemo::__callStatic(*))')]
     public function beforeMagicStaticMethodExecution(MethodInvocation $invocation): void
     {
         // we need to unpack args from invocation args
         [$methodName, $args] = $invocation->getArguments();
+        if (!str_starts_with($methodName, 'find')) {
+            return;
+        }
         echo 'Calling Static Magic Interceptor for method: ',
             $invocation->getScope(),
             '::',

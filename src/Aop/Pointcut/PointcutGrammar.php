@@ -68,7 +68,6 @@ final class PointcutGrammar extends Grammar
             ->is('annotatedWithinPointcut')
             ->is('initializationPointcut')
             ->is('staticInitializationPointcut')
-            ->is('dynamicExecutionPointcut')
             ->is('matchInheritedPointcut')
             ->is('pointcutReference')
         ;
@@ -151,24 +150,6 @@ final class PointcutGrammar extends Grammar
         $this('matchInheritedPointcut')
             ->is('matchInherited', '(', ')')
             ->call(fn(mixed ...$_) => new MatchInheritedPointcut())
-        ;
-
-        $this('dynamicExecutionPointcut')
-            // ideally, this should be 'dynamic', 'methodExecutionReference'
-            ->is('dynamic', '(', 'memberReference', '(', 'argumentList', ')', ')')
-            ->call(
-                function ($_0, $_1, ClassMemberReference $reference) {
-                    $pointcut = new AndPointcut(
-                        Pointcut::KIND_METHOD | Pointcut::KIND_DYNAMIC,
-                        $reference->classFilter,
-                        $reference->visibilityFilter,
-                        $reference->accessTypeFilter,
-                        new MagicMethodDynamicPointcut($reference->memberNamePattern)
-                    );
-
-                    return $pointcut;
-                }
-            )
         ;
 
         $this('pointcutReference')

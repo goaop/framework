@@ -13,8 +13,6 @@ declare(strict_types = 1);
 namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
-use Go\Aop\Framework\DynamicInvocationMatcherInterceptor;
-use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Pointcut;
 use Go\Aop\PointcutAdvisor;
 
@@ -30,18 +28,7 @@ final readonly class GenericPointcutAdvisor implements PointcutAdvisor
 
     public function getAdvice(): Advice
     {
-        // For dynamic pointcuts, we use special dynamic invocation matcher interceptor
-        // This part can't be moved to the constructor, as it breaks lazy-evaluation for PointcutReference
-        if (($this->advice instanceof Interceptor) && ($this->pointcut->getKind() & Pointcut::KIND_DYNAMIC)) {
-            $advice = new DynamicInvocationMatcherInterceptor(
-                $this->pointcut,
-                $this->advice
-            );
-        } else {
-            $advice = $this->advice;
-        }
-
-        return $advice;
+        return $this->advice;
     }
 
     public function getPointcut(): Pointcut

@@ -170,7 +170,7 @@ switch ($showCase) {
 
         $example = new DynamicMethodsDemo();
         $example->saveById(123); // intercept magic dynamic method
-        $example->load(456); // notice, that advice for this magic method is not called
+        $example->load(456); // notice, that advice filters out this method by name
         DynamicMethodsDemo::find(['id' =>124]); //intercept magic static method
         break;
 

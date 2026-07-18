@@ -49,9 +49,9 @@ class TruePointcutTest extends TestCase
         $this->assertTrue((bool)($kind & Pointcut::KIND_STATIC_INIT));
     }
 
-    public function testItDoesNotMatchWithDynamicKindByDefault(): void
+    public function testItDoesNotMatchWithIntroductionKindByDefault(): void
     {
         $kind = $this->pointcut->getKind();
-        $this->assertFalse((bool)($kind & Pointcut::KIND_DYNAMIC));
+        $this->assertFalse((bool)($kind & Pointcut::KIND_INTRODUCTION));
     }
 }

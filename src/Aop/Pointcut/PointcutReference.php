@@ -41,11 +41,9 @@ final class PointcutReference implements Pointcut
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
-        null|object|string                                     $instanceOrScope = null,
-        ?array                                                 $arguments = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
     ): bool {
-        return $this->getPointcut()->matches($context, $reflector, $instanceOrScope, $arguments);
+        return $this->getPointcut()->matches($context, $reflector);
     }
 
     public function getKind(): int

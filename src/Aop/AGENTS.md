@@ -37,7 +37,7 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 
 ## Pointcuts (src/Aop/Pointcut/)
 - LALR grammar: PointcutGrammar, PointcutParser, PointcutLexer, PointcutParseTable
-- Combinators: AndPointcut, OrPointcut, NotPointcut, NamePointcut, AttributePointcut, ClassInheritancePointcut, MatchInheritedPointcut, ModifierPointcut, ReturnTypePointcut, MagicMethodDynamicPointcut, TruePointcut
+- Combinators: AndPointcut, OrPointcut, NotPointcut, NamePointcut, AttributePointcut, ClassInheritancePointcut, MatchInheritedPointcut, ModifierPointcut, ReturnTypePointcut, TruePointcut
 - PointcutReference, ClassMemberReference
 
 ## Attributes (src/Lang/Attribute/)
