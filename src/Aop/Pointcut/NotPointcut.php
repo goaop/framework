@@ -34,17 +34,15 @@ final readonly class NotPointcut implements Pointcut
      */
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
-        null|object|string                                     $instanceOrScope = null,
-        ?array                                                 $arguments = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
     ): bool {
         // For Logical "not" expression without reflector, we should match statically for any context
         if (!isset($reflector)) {
             return true;
         }
 
-        // Otherwise we return inverted result from static/dynamic matching
-        return !$this->pointcut->matches($context, $reflector, $instanceOrScope, $arguments);
+        // Otherwise we return inverted result from static matching
+        return !$this->pointcut->matches($context, $reflector);
     }
 
     public function getKind(): int

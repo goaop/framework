@@ -96,11 +96,6 @@ class PointcutParserTest extends TestCase
             // Function with return-type
             ['execution(Demo\*\Test\**\*(*): bool)'],
 
-
-            // Dynamic pointcut for methods via __callStatic and __call
-            ['dynamic(public Demo\Example\DynamicMethodsDemo::find*(*))'],
-            ['dynamic(public Demo\Example\DynamicMethodsDemo->save*(*))'],
-
             // This will match static initialization pointcut
             ['staticinitialization(Some\Specific\Class\**)'],
 

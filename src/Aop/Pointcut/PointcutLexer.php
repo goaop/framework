@@ -26,7 +26,6 @@ final class PointcutLexer extends SimpleLexer
     {
         // General tokens
         $this->token('execution');
-        $this->token('dynamic');
         $this->token('within');
         $this->token('access');
         $this->token('initialization');
