@@ -176,10 +176,11 @@ final class ClassGenerator implements GeneratorInterface
         }
 
         if ($this->parentClass !== null && $this->parentClass !== '') {
-            // Use FullyQualified when the name contains a namespace separator to avoid
-            // ambiguity in the generated file's namespace context.
+            // Use FullyQualified when the name is explicitly rooted ("\Exception") or
+            // contains a namespace separator; a bare short name stays relative so
+            // same-namespace parents keep resolving in the generated file's context.
             $parentName = ltrim($this->parentClass, '\\');
-            $parentNode = str_contains($parentName, '\\')
+            $parentNode = str_starts_with($this->parentClass, '\\') || str_contains($parentName, '\\')
                 ? new Name\FullyQualified($parentName)
                 : $parentName;
             $builder->extend($parentNode);
@@ -187,24 +188,27 @@ final class ClassGenerator implements GeneratorInterface
 
         foreach ($this->interfaces as $interface) {
             if ($interface !== '') {
-                $ifaceName = ltrim($interface, '\\');
-                $ifaceNode = str_contains($ifaceName, '\\')
-                    ? new Name\FullyQualified($ifaceName)
-                    : $ifaceName;
-                $builder->implement($ifaceNode);
+                // Interfaces are FQCNs by contract — always emit fully qualified so a
+                // global-namespace interface (e.g. an introduced 'Stringable') is not
+                // mis-resolved against the generated file's namespace. See #21 in the
+                // laravel bridge and the identical handling in EnumGenerator.
+                $builder->implement(new Name\FullyQualified(ltrim($interface, '\\')));
             }
         }
 
-        // Traits (always use FQN to avoid namespace ambiguity)
+        // Traits (use FQN unless the caller passed a deliberate short name, which
+        // refers to a trait in the proxy's own namespace, e.g. Foo__AopProxied)
         if (!empty($this->traits)) {
             // Collect unique trait names (preserving order of first occurrence)
             $seen       = [];
-            $traitFqcns = [];
+            $traitNames = [];
             foreach ($this->traits as $trait) {
                 $normalized = ltrim($trait, '\\');
                 if (!isset($seen[$normalized])) {
-                    $seen[$normalized] = true;
-                    $traitFqcns[]      = $normalized;
+                    $seen[$normalized]  = true;
+                    $traitNames[]       = str_starts_with($trait, '\\') || str_contains($normalized, '\\')
+                        ? new Name\FullyQualified($normalized)
+                        : new Name($normalized);
                 }
             }
 
@@ -222,12 +226,6 @@ final class ClassGenerator implements GeneratorInterface
                 );
             }
 
-            $traitNames = array_map(
-                static fn(string $t) => str_contains($t, '\\')
-                    ? new Name\FullyQualified($t)
-                    : new Name($t),
-                $traitFqcns
-            );
             $builder->addStmt(new TraitUse($traitNames, $adaptations));
         }
 
