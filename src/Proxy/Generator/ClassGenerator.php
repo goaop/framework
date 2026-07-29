@@ -154,6 +154,24 @@ final class ClassGenerator implements GeneratorInterface
     }
 
     /**
+     * Builds the AST name node for a class-like reference (parent, interface,
+     * trait, alias) with a single universal rule: explicitly rooted
+     * ("\Stringable") and multi-segment names are fully qualified; a bare
+     * short name resolves in the generated class's own namespace (e.g. the
+     * Foo__AopProxied body trait). Global-namespace names coming from
+     * ::class constants are rooted upstream (AdviceMatcher, proxy generators)
+     * before they reach this generator.
+     */
+    private static function classNameNode(string $name): Name
+    {
+        $normalized = ltrim($name, '\\');
+
+        return str_starts_with($name, '\\') || str_contains($normalized, '\\')
+            ? new Name\FullyQualified($normalized)
+            : new Name($normalized);
+    }
+
+    /**
      * Returns the class AST node only — no namespace or use wrappers.
      * Suitable for direct injection into a cloned file AST.
      */
@@ -176,58 +194,38 @@ final class ClassGenerator implements GeneratorInterface
         }
 
         if ($this->parentClass !== null && $this->parentClass !== '') {
-            // Use FullyQualified when the name contains a namespace separator to avoid
-            // ambiguity in the generated file's namespace context.
-            $parentName = ltrim($this->parentClass, '\\');
-            $parentNode = str_contains($parentName, '\\')
-                ? new Name\FullyQualified($parentName)
-                : $parentName;
-            $builder->extend($parentNode);
+            $builder->extend(self::classNameNode($this->parentClass));
         }
 
         foreach ($this->interfaces as $interface) {
             if ($interface !== '') {
-                $ifaceName = ltrim($interface, '\\');
-                $ifaceNode = str_contains($ifaceName, '\\')
-                    ? new Name\FullyQualified($ifaceName)
-                    : $ifaceName;
-                $builder->implement($ifaceNode);
+                $builder->implement(self::classNameNode($interface));
             }
         }
 
-        // Traits (always use FQN to avoid namespace ambiguity)
         if (!empty($this->traits)) {
             // Collect unique trait names (preserving order of first occurrence)
             $seen       = [];
-            $traitFqcns = [];
+            $traitNames = [];
             foreach ($this->traits as $trait) {
                 $normalized = ltrim($trait, '\\');
                 if (!isset($seen[$normalized])) {
                     $seen[$normalized] = true;
-                    $traitFqcns[]      = $normalized;
+                    $traitNames[]      = self::classNameNode($trait);
                 }
             }
 
             // Build adaptations for all aliases
             $adaptations = [];
             foreach ($this->traitAliases as $info) {
-                $traitNameNode   = str_contains($info['trait'], '\\')
-                    ? new Name\FullyQualified($info['trait'])
-                    : new Name($info['trait']);
                 $adaptations[] = new TraitUseAdaptation\Alias(
-                    $traitNameNode,
+                    self::classNameNode($info['trait']),
                     new Identifier($info['method']),
                     $this->mapVisibility($info['visibility']),
                     new Identifier($info['alias'])
                 );
             }
 
-            $traitNames = array_map(
-                static fn(string $t) => str_contains($t, '\\')
-                    ? new Name\FullyQualified($t)
-                    : new Name($t),
-                $traitFqcns
-            );
             $builder->addStmt(new TraitUse($traitNames, $adaptations));
         }
 

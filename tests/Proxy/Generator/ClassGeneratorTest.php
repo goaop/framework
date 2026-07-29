@@ -76,6 +76,33 @@ class ClassGeneratorTest extends TestCase
         $this->assertStringContainsString('Iterator', $output);
     }
 
+    public function testImplementsGlobalInterfaceIsFullyQualifiedInNamespace(): void
+    {
+        // A global-namespace interface (single segment) must not resolve
+        // relative to the generated class namespace
+        $gen = new ClassGenerator('MyClass', 'My\Namespace', null, null, ['\Stringable']);
+        $output = $gen->generate();
+        $this->assertStringContainsString('implements \Stringable', $output);
+    }
+
+    public function testExtendsExplicitlyRootedGlobalParentStaysFullyQualified(): void
+    {
+        $gen = new ClassGenerator('MyClass', 'My\Namespace', null, '\Exception');
+        $output = $gen->generate();
+        $this->assertStringContainsString('extends \Exception', $output);
+    }
+
+    public function testUsesExplicitlyRootedGlobalTraitStaysFullyQualified(): void
+    {
+        $gen = new ClassGenerator('MyClass', 'My\Namespace', null, null);
+        $gen->addTraits(['\GlobalHelperTrait', 'MyClass__AopProxied']);
+        $output = $gen->generate();
+        $this->assertStringContainsString('\GlobalHelperTrait', $output);
+        // Deliberate short names keep referring to the class' own namespace
+        $this->assertStringContainsString('MyClass__AopProxied', $output);
+        $this->assertStringNotContainsString('\MyClass__AopProxied', $output);
+    }
+
     public function testWithMethod(): void
     {
         $method = MethodGenerator::fromReflection(new ReflectionMethod(
