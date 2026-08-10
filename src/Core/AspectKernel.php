@@ -41,6 +41,16 @@ use function define;
  *   excludePaths: string[],
  *   containerClass: class-string<AspectContainer>
  * }
+ * @phpstan-type UserKernelOptions array{
+ *   debug?: bool,
+ *   appDir?: string,
+ *   cacheDir?: string|null,
+ *   cacheFileMode?: int,
+ *   features?: int,
+ *   includePaths?: string[],
+ *   excludePaths?: string[],
+ *   containerClass?: class-string<AspectContainer>
+ * }
  */
 abstract class AspectKernel
 {
@@ -102,16 +112,7 @@ abstract class AspectKernel
     /**
      * Init the kernel and make adjustments
      *
-     * @phpstan-param array{
-     *   debug?: bool,
-     *   appDir?: literal-string&non-falsy-string,
-     *   cacheDir?: string|null,
-     *   cacheFileMode?: int,
-     *   features?: int,
-     *   includePaths?: array{},
-     *   excludePaths?: array{},
-     *   containerClass?: class-string<AspectContainer>
-     * } $options Additional kernel options
+     * @phpstan-param UserKernelOptions $options Additional kernel options
      */
     public function init(array $options = []): void
     {
