@@ -182,7 +182,16 @@ abstract class AspectKernel
             CachingTransformer::class,
             fn(AspectContainer $container): CachingTransformer => new CachingTransformer(
                 $this,
-                fn(): array => $this->createSourceTransformers(),
+                static function () use ($container): array {
+                    // Tagged loading: every registered service implementing SourceTransformer
+                    // forms the chain, in registration order. A kernel can plug its own
+                    // transformer in with a single addLazyService() call from configureAop().
+                    $transformers = $container->getServicesByInterface(SourceTransformer::class);
+                    // The caching transformer is the pipeline entry point wrapping this chain
+                    unset($transformers[CachingTransformer::class]);
+
+                    return array_values($transformers);
+                },
                 $container->getService(CachePathManager::class)
             )
         );
@@ -316,27 +325,6 @@ abstract class AspectKernel
      * Configures an AspectContainer with advisors, aspects and pointcuts
      */
     abstract protected function configureAop(AspectContainer $container): void;
-
-    /**
-     * Returns list of source transformers, that will be applied to the PHP source on a cache miss
-     *
-     * Called lazily by the CachingTransformer when the first file actually needs weaving;
-     * never runs on a warm-cache request.
-     *
-     * @return SourceTransformer[]
-     * @internal This method is internal and should not be used outside this project
-     */
-    protected function createSourceTransformers(): array
-    {
-        // Tagged loading: every registered service implementing SourceTransformer forms the
-        // chain, in registration order. A kernel can plug its own transformer in with a
-        // single addLazyService() call from configureAop().
-        $transformers = $this->container->getServicesByInterface(SourceTransformer::class);
-        // The caching transformer is the pipeline entry point wrapping this chain, not part of it
-        unset($transformers[CachingTransformer::class]);
-
-        return array_values($transformers);
-    }
 
     /**
      * Returns a file name where kernel has been initialized
