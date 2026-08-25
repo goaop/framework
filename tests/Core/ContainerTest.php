@@ -174,7 +174,7 @@ class ContainerTest extends TestCase
         $this->container->getService(First::class);
     }
 
-    public function testLazyServicePassesInstanceofWithoutInitialization(): void
+    public function testLazyServiceIsNotConstructedUntilFirstRetrieval(): void
     {
         $initialized = false;
         $container = new Container();
@@ -183,15 +183,27 @@ class ContainerTest extends TestCase
             return new PointcutLexer();
         });
 
-        // Service should be available and pass instanceof without initialization
-        $value = $container->getValue(PointcutLexer::class);
-        $this->assertInstanceOf(PointcutLexer::class, $value);
+        // Registration alone must not invoke the factory (nor autoload anything)
+        $this->assertTrue($container->has(PointcutLexer::class));
         $this->assertFalse($initialized, 'Factory should not have been called yet');
+
+        // First retrieval constructs the service exactly once
+        $value = $container->getService(PointcutLexer::class);
+        $this->assertInstanceOf(PointcutLexer::class, $value);
+        $this->assertTrue($initialized, 'Factory should have been called on first retrieval');
+        $this->assertSame($value, $container->getService(PointcutLexer::class));
     }
 
     public function testLazyServiceIsTaggedByInterface(): void
     {
         $services = $this->container->getServicesByInterface(AspectLoaderExtension::class);
         $this->assertNotEmpty($services);
+    }
+
+    public function testLazyServiceRejectsNonClassNameId(): void
+    {
+        $this->expectException(AspectException::class);
+        $this->expectExceptionMessageMatches('/Lazy service id must be a valid class name/');
+        $this->container->addLazyService('kernel.not-a-class', fn(): PointcutLexer => new PointcutLexer());
     }
 }

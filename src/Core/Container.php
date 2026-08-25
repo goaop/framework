@@ -20,7 +20,6 @@ use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\ClassLoading\CachePathManager;
 use OutOfBoundsException;
-use ReflectionClass;
 use ReflectionObject;
 
 /**
@@ -32,6 +31,11 @@ class Container implements AspectContainer
      * @var array<string, mixed> Hashmap of items/services in the container
      */
     private array $values = [];
+
+    /**
+     * @var array<class-string, Closure(AspectContainer): object> Deferred service factories, keyed by class-name
+     */
+    private array $factories = [];
 
     /**
      * @var array<class-string, list<string>> Holds information about mapping of interface tags into identifiers
@@ -122,13 +126,20 @@ class Container implements AspectContainer
 
     final public function addLazyService(string $id, Closure $lazyInitializationClosure): void
     {
-        $reflectionClass = new ReflectionClass($id);
-        $proxy = $reflectionClass->newLazyProxy(fn (object $proxy): object => $lazyInitializationClosure($this));
-        $this->add($id, $proxy);
+        // Only class-names are acceptable ids here: getServicesByInterface() probes these
+        // keys with is_subclass_of(), so an arbitrary string id must be rejected upfront
+        // (checked syntactically to avoid autoloading anything at registration time).
+        if (preg_match('/^\\\\?[A-Za-z_\x80-\xff][\w\x80-\xff]*(\\\\[A-Za-z_\x80-\xff][\w\x80-\xff]*)*$/', $id) !== 1) {
+            throw new AspectException("Lazy service id must be a valid class name, \"$id\" given");
+        }
+        $this->factories[$id] = $lazyInitializationClosure;
     }
 
     final public function getService(string $className): object
     {
+        if (!isset($this->values[$className]) && isset($this->factories[$className])) {
+            $this->materializeService($className);
+        }
         if (!isset($this->values[$className])) {
             throw new OutOfBoundsException("Value $className is not defined in the container");
         }
@@ -142,7 +153,11 @@ class Container implements AspectContainer
     final public function getValue(string $key): mixed
     {
         if (!isset($this->values[$key])) {
-            throw new OutOfBoundsException("Value $key is not defined in the container");
+            if (isset($this->factories[$key])) {
+                $this->materializeService($key);
+            } else {
+                throw new OutOfBoundsException("Value $key is not defined in the container");
+            }
         }
 
         return $this->values[$key];
@@ -150,17 +165,37 @@ class Container implements AspectContainer
 
     final public function has(string $id): bool
     {
-        return isset($this->values[$id]);
+        return isset($this->values[$id]) || isset($this->factories[$id]);
     }
 
     final public function getServicesByInterface(string $interfaceTagClassName): array
     {
+        // Deferred services are only tagged once constructed, so materialize the
+        // pending ones that implement the requested interface first. This path is
+        // only taken during weaving/console runs, never on a hot request.
+        foreach (array_keys($this->factories) as $id) {
+            if (is_subclass_of($id, $interfaceTagClassName)) {
+                $this->materializeService($id);
+            }
+        }
+
         $values = [];
         foreach (($this->tags[$interfaceTagClassName] ?? []) as $containerKey) {
             $values[$containerKey] = $this->getValue($containerKey);
         }
 
         return $values;
+    }
+
+    /**
+     * Constructs a deferred service from its registered factory and stores it in the container
+     */
+    private function materializeService(string $id): void
+    {
+        $factory = $this->factories[$id];
+        // Unset before invoking the factory so a re-entrant lookup cannot run it twice
+        unset($this->factories[$id]);
+        $this->add($id, $factory($this));
     }
 
     final public function hasAnyResourceChangedSince(int $timestamp): bool
