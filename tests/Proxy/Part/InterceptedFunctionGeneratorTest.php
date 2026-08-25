@@ -105,9 +105,12 @@ class InterceptedFunctionGeneratorTest extends TestCase
                 'array_pop',
                 'function array_pop(array &$array): mixed'
             ],
-            'strcoll' => [
-                'strcoll',
-                'function strcoll(string $string1, string $string2): int'
+            // strcmp instead of strcoll here: PHP 8.6 deprecated strcoll(), and the
+            // generator (correctly) mirrors the native #[\Deprecated] attribute into
+            // the generated signature, which would make an exact match version-dependent
+            'strcmp' => [
+                'strcmp',
+                'function strcmp(string $string1, string $string2): int'
             ],
             'microtime' => [
                 'microtime',
