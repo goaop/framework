@@ -25,13 +25,13 @@ class AwesomeAspectKernel extends AspectKernel
      */
     protected function configureAop(AspectContainer $container): void
     {
-        $container->registerAspect(new CachingAspect());
-        $container->registerAspect(new LoggingAspect());
-        $container->registerAspect(new IntroductionAspect());
-        $container->registerAspect(new PropertyInterceptorAspect());
-        $container->registerAspect(new FunctionInterceptorAspect());
-        $container->registerAspect(new FluentInterfaceAspect());
-        $container->registerAspect(new HealthyLiveAspect());
-        $container->registerAspect(new DynamicMethodsAspect());
+        $container->registerAspect(CachingAspect::class);
+        $container->registerAspect(LoggingAspect::class);
+        $container->registerAspect(IntroductionAspect::class);
+        $container->registerAspect(PropertyInterceptorAspect::class);
+        $container->registerAspect(FunctionInterceptorAspect::class);
+        $container->registerAspect(FluentInterfaceAspect::class);
+        $container->registerAspect(HealthyLiveAspect::class);
+        $container->registerAspect(DynamicMethodsAspect::class);
     }
 }

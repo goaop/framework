@@ -20,6 +20,7 @@ use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\ClassLoading\CachePathManager;
 use OutOfBoundsException;
+use ReflectionClass;
 use ReflectionObject;
 
 /**
@@ -103,9 +104,78 @@ class Container implements AspectContainer
         ));
     }
 
-    final public function registerAspect(Aspect $aspect): void
+    final public function registerAspect(Aspect|string $aspectOrClassName, ?Closure $aspectFactory = null): void
     {
-        $this->add($aspect::class, $aspect);
+        if ($aspectOrClassName instanceof Aspect) {
+            $this->add($aspectOrClassName::class, $aspectOrClassName);
+
+            return;
+        }
+
+        // Deferred registration by class-name: the aspect is constructed on first use
+        // (first advice hit, or aspect enumeration on the weaving path), so a hot-cache
+        // request never pays for aspects it does not touch.
+        $this->addLazyService($aspectOrClassName, function () use ($aspectOrClassName, $aspectFactory): Aspect {
+            return $this->materializeAspect($aspectOrClassName, $aspectFactory);
+        });
+
+        // In debug mode the aspect's source file must be tracked as a resource right away:
+        // CachingTransformer consults resource freshness before any aspect materializes.
+        // Production skips this - its warm path never checks freshness, and a cache miss
+        // materializes every aspect during weaving anyway.
+        if ($this->isDebug()) {
+            if (!is_subclass_of($aspectOrClassName, Aspect::class)) {
+                throw new AspectException("Aspect class $aspectOrClassName must implement " . Aspect::class);
+            }
+            $aspectFileName = (new ReflectionClass($aspectOrClassName))->getFileName();
+            if (is_string($aspectFileName)) {
+                $this->addResource($aspectFileName);
+            }
+        }
+    }
+
+    /**
+     * Constructs a lazily registered aspect, either through its factory or by validated
+     * default construction
+     *
+     * @param null|Closure(AspectContainer): Aspect $aspectFactory
+     */
+    private function materializeAspect(string $aspectClassName, ?Closure $aspectFactory): Aspect
+    {
+        if (!is_subclass_of($aspectClassName, Aspect::class)) {
+            throw new AspectException("Aspect class $aspectClassName must implement " . Aspect::class);
+        }
+        if ($aspectFactory !== null) {
+            $aspect = $aspectFactory($this);
+            if (!$aspect instanceof $aspectClassName) {
+                throw new AspectException("Aspect factory for $aspectClassName returned an incompatible object");
+            }
+
+            return $aspect;
+        }
+
+        $constructor = (new ReflectionClass($aspectClassName))->getConstructor();
+        if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
+            throw new AspectException(
+                "Aspect $aspectClassName has required constructor arguments, "
+                . "pass a factory closure to registerAspect() to create it"
+            );
+        }
+
+        return new $aspectClassName();
+    }
+
+    /**
+     * Whether the kernel that owns this container runs in debug mode
+     */
+    private function isDebug(): bool
+    {
+        if (!$this->has('kernel.options')) {
+            return false;
+        }
+        $options = $this->getValue('kernel.options');
+
+        return is_array($options) && ($options['debug'] ?? false) === true;
     }
 
     final public function add(string $id, mixed $value): void
@@ -173,8 +243,12 @@ class Container implements AspectContainer
         // Deferred services are only tagged once constructed, so materialize the
         // pending ones that implement the requested interface first. This path is
         // only taken during weaving/console runs, never on a hot request.
+        // Both the is_subclass_of() autoload and the factory invocation can re-enter
+        // this method (an aspect class autoloaded here goes through the weaving
+        // pipeline, which enumerates aspects again), consuming pending factories from
+        // under this loop - hence the existence re-check and the tolerant materialization.
         foreach (array_keys($this->factories) as $id) {
-            if (is_subclass_of($id, $interfaceTagClassName)) {
+            if (array_key_exists($id, $this->factories) && is_subclass_of($id, $interfaceTagClassName)) {
                 $this->materializeService($id);
             }
         }
@@ -192,7 +266,11 @@ class Container implements AspectContainer
      */
     private function materializeService(string $id): void
     {
-        $factory = $this->factories[$id];
+        $factory = $this->factories[$id] ?? null;
+        if ($factory === null) {
+            // Already materialized by a re-entrant call (e.g. triggered through autoloading)
+            return;
+        }
         // Unset before invoking the factory so a re-entrant lookup cannot run it twice
         unset($this->factories[$id]);
         $this->add($id, $factory($this));

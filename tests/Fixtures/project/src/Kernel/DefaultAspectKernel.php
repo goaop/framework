@@ -23,14 +23,14 @@ class DefaultAspectKernel extends AspectKernel
      */
     protected function configureAop(AspectContainer $container): void
     {
-        $container->registerAspect(new LoggingAspect(new NullLogger()));
-        $container->registerAspect(new DoSomethingAspect());
-        $container->registerAspect(new ArrayPropertyInterceptAspect());
-        $container->registerAspect(new PropertyInterceptAspect());
-        $container->registerAspect(new Issue293Aspect());
-        $container->registerAspect(new InitializationAspect());
-        $container->registerAspect(new WeavingAspect());
-        $container->registerAspect(new TraitCompositionAspect());
-        $container->registerAspect(new EnumMethodAspect());
+        $container->registerAspect(LoggingAspect::class, fn(): LoggingAspect => new LoggingAspect(new NullLogger()));
+        $container->registerAspect(DoSomethingAspect::class);
+        $container->registerAspect(ArrayPropertyInterceptAspect::class);
+        $container->registerAspect(PropertyInterceptAspect::class);
+        $container->registerAspect(Issue293Aspect::class);
+        $container->registerAspect(InitializationAspect::class);
+        $container->registerAspect(WeavingAspect::class);
+        $container->registerAspect(TraitCompositionAspect::class);
+        $container->registerAspect(EnumMethodAspect::class);
     }
 }
