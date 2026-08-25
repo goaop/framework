@@ -126,6 +126,12 @@ class Container implements AspectContainer
 
     final public function addLazyService(string $id, Closure $lazyInitializationClosure): void
     {
+        // Only class-names are acceptable ids here: getServicesByInterface() probes these
+        // keys with is_subclass_of(), so an arbitrary string id must be rejected upfront
+        // (checked syntactically to avoid autoloading anything at registration time).
+        if (preg_match('/^\\\\?[A-Za-z_\x80-\xff][\w\x80-\xff]*(\\\\[A-Za-z_\x80-\xff][\w\x80-\xff]*)*$/', $id) !== 1) {
+            throw new AspectException("Lazy service id must be a valid class name, \"$id\" given");
+        }
         $this->factories[$id] = $lazyInitializationClosure;
     }
 

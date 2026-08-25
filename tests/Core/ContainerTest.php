@@ -199,4 +199,11 @@ class ContainerTest extends TestCase
         $services = $this->container->getServicesByInterface(AspectLoaderExtension::class);
         $this->assertNotEmpty($services);
     }
+
+    public function testLazyServiceRejectsNonClassNameId(): void
+    {
+        $this->expectException(AspectException::class);
+        $this->expectExceptionMessageMatches('/Lazy service id must be a valid class name/');
+        $this->container->addLazyService('kernel.not-a-class', fn(): PointcutLexer => new PointcutLexer());
+    }
 }
