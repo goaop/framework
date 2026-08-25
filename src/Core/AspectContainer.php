@@ -109,8 +109,20 @@ interface AspectContainer
 
     /**
      * Register an aspect in the container
+     *
+     * Passing an aspect instance registers it immediately, exactly as before.
+     *
+     * Passing a class-name defers construction until the aspect is first needed (first
+     * advice hit, or aspect enumeration during weaving), keeping it off the hot boot path.
+     * An aspect with required constructor arguments must also pass a factory closure that
+     * creates the instance; without a factory the class must be default-constructible,
+     * which is validated when the aspect materializes.
+     *
+     * @param Aspect|class-string<Aspect> $aspectOrClassName Aspect instance or its class-name
+     * @param null|Closure(AspectContainer $container): Aspect $aspectFactory Factory for deferred
+     *        construction (only allowed together with a class-name)
      */
-    public function registerAspect(Aspect $aspect): void;
+    public function registerAspect(Aspect|string $aspectOrClassName, ?Closure $aspectFactory = null): void;
 
     /**
      * Checks if there are any file resources with changes after since given timestamp

@@ -19,7 +19,11 @@ use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Stubs\First;
+use Go\Tests\TestProject\Aspect\DoSomethingAspect;
+use Go\Tests\TestProject\Aspect\EnumMethodAspect;
+use Go\Tests\TestProject\Aspect\LoggingAspect;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use stdClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -205,5 +209,73 @@ class ContainerTest extends TestCase
         $this->expectException(AspectException::class);
         $this->expectExceptionMessageMatches('/Lazy service id must be a valid class name/');
         $this->container->addLazyService('kernel.not-a-class', fn(): PointcutLexer => new PointcutLexer());
+    }
+
+    public function testAspectRegisteredByClassNameIsConstructedOnFirstUse(): void
+    {
+        $constructed = false;
+        $this->container->registerAspect(
+            LoggingAspect::class,
+            function () use (&$constructed): LoggingAspect {
+                $constructed = true;
+
+                return new LoggingAspect(new NullLogger());
+            }
+        );
+
+        $this->assertTrue($this->container->has(LoggingAspect::class));
+        $this->assertFalse($constructed, 'Aspect should not have been constructed at registration');
+
+        $aspect = $this->container->getService(LoggingAspect::class);
+        $this->assertInstanceOf(LoggingAspect::class, $aspect);
+        $this->assertTrue($constructed);
+    }
+
+    public function testLazyAspectAppearsInAspectInterfaceQuery(): void
+    {
+        $this->container->registerAspect(DoSomethingAspect::class);
+
+        $aspects = $this->container->getServicesByInterface(Aspect::class);
+        $this->assertArrayHasKey(DoSomethingAspect::class, $aspects);
+        $this->assertInstanceOf(DoSomethingAspect::class, $aspects[DoSomethingAspect::class]);
+    }
+
+    public function testLazyAspectWithRequiredConstructorArgsNeedsFactory(): void
+    {
+        // LoggingAspect requires a LoggerInterface constructor argument
+        $this->container->registerAspect(LoggingAspect::class);
+
+        $this->expectException(AspectException::class);
+        $this->expectExceptionMessageMatches('/pass a factory closure/');
+        $this->container->getService(LoggingAspect::class);
+    }
+
+    public function testLazyAspectMustImplementAspectInterface(): void
+    {
+        $this->container->registerAspect(stdClass::class);
+
+        $this->expectException(AspectException::class);
+        $this->expectExceptionMessageMatches('/must implement/');
+        $this->container->getService(stdClass::class);
+    }
+
+    public function testInterfaceQuerySurvivesReentrantMaterialization(): void
+    {
+        // A factory that re-enters getServicesByInterface() consumes other pending
+        // factories from under the outer materialization loop (this also happens
+        // implicitly when an aspect class is autoloaded through the weaving pipeline)
+        $this->container->registerAspect(
+            DoSomethingAspect::class,
+            function (AspectContainer $container): DoSomethingAspect {
+                $container->getServicesByInterface(Aspect::class);
+
+                return new DoSomethingAspect();
+            }
+        );
+        $this->container->registerAspect(EnumMethodAspect::class);
+
+        $aspects = $this->container->getServicesByInterface(Aspect::class);
+        $this->assertArrayHasKey(DoSomethingAspect::class, $aspects);
+        $this->assertArrayHasKey(EnumMethodAspect::class, $aspects);
     }
 }
