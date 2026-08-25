@@ -64,9 +64,17 @@ class MagicConstantTransformer extends BaseSourceTransformer
 
     /**
      * Resolves file name from the cache directory to the real application root dir
+     *
+     * Called at runtime from woven code, so it configures its paths on demand from the
+     * booted kernel: the transformer object itself only exists on the weaving path.
      */
     public static function resolveFileName(string $fileName): string
     {
+        if (self::$rootPath === '') {
+            $options             = AspectKernel::getInstance()->getOptions();
+            self::$rootPath      = $options['appDir'];
+            self::$rewriteToPath = $options['cacheDir'] ?? '';
+        }
         if (self::$rewriteToPath !== '' && str_starts_with($fileName, self::$rewriteToPath)) {
             $fileName = str_replace(self::$rewriteToPath, self::$rootPath, $fileName);
             $fileName = str_replace(AspectContainer::AOP_PROXIED_SUFFIX . '.php', '.php', $fileName);

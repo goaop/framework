@@ -57,6 +57,10 @@ class CacheWarmer
             throw new InvalidArgumentException('Cache warmer require the `cacheDir` options to be configured');
         }
 
+        // The transformation pipeline is registered lazily; the filter URIs built below
+        // bypass FilterInjectorTransformer::rewrite(), so bring it up explicitly
+        SourceTransformingLoader::ensureRegistered($this->aspectKernel->getContainer());
+
         $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
         $iterator   = $enumerator->enumerate();
         $total      = iterator_count($iterator);

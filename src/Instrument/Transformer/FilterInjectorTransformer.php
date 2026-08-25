@@ -14,11 +14,11 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Include_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\FindingVisitor;
-use RuntimeException;
 
 /**
  * Transformer that injects source filter for "require" and "include" operations
@@ -58,16 +58,42 @@ class FilterInjectorTransformer implements SourceTransformer
 
     /**
      * Static configurator for filter
+     *
+     * Set-once: the first configuration wins. The transformer can be configured either
+     * through its constructor (weaving path) or implicitly by the first rewrite() call.
      */
     protected static function configure(AspectKernel $kernel, string $filterName, CachePathManager $cacheManager): void
     {
         if (self::$kernel !== null) {
-            throw new RuntimeException('Filter injector can be configured only once.');
+            return;
         }
         self::$kernel           = $kernel;
         self::$options          = $kernel->getOptions();
         self::$filterName       = $filterName;
         self::$cachePathManager = $cacheManager;
+    }
+
+    /**
+     * Configures the rewriting statics on demand from the booted kernel
+     *
+     * rewrite() call sites (autoloader miss path, rewritten include statements inside
+     * cached files) can run before any transformer object exists, since the pipeline
+     * itself is constructed lazily on the first cache miss.
+     */
+    protected static function ensureConfigured(): void
+    {
+        if (self::$kernel !== null) {
+            return;
+        }
+        $kernel = AspectKernel::getInstance();
+        // Bring up the stream filter (and the transformer pipeline) so that the
+        // php://filter fallback URI built below is actually serviceable
+        SourceTransformingLoader::ensureRegistered($kernel->getContainer());
+        self::configure(
+            $kernel,
+            SourceTransformingLoader::getId(),
+            $kernel->getContainer()->getService(CachePathManager::class)
+        );
     }
 
     /**
@@ -80,6 +106,8 @@ class FilterInjectorTransformer implements SourceTransformer
      */
     public static function rewrite(string $originalResource, string $originalDir = ''): string
     {
+        self::ensureConfigured();
+
         static $appDir, $cacheDir, $debug;
         if ($appDir === null) {
             extract(self::$options, EXTR_IF_EXISTS);

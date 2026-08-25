@@ -138,11 +138,17 @@ abstract class AspectKernel
         $container->add('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
         $container->add('kernel.options', $this->options);
 
-        SourceTransformingLoader::register();
-
-        foreach ($this->registerTransformers() as $sourceTransformer) {
-            SourceTransformingLoader::addTransformer($sourceTransformer);
-        }
+        // The whole transformer pipeline (and the stream filter itself) is only needed on
+        // a cache miss, so it is registered as a deferred definition and brought up by
+        // SourceTransformingLoader::ensureRegistered() from the miss path.
+        $container->addLazyService(
+            CachingTransformer::class,
+            fn(AspectContainer $container): CachingTransformer => new CachingTransformer(
+                $this,
+                fn(): array => $this->createSourceTransformers(),
+                $container->getService(CachePathManager::class)
+            )
+        );
 
         AopComposerLoader::init($this->options, $container);
 
@@ -275,39 +281,34 @@ abstract class AspectKernel
     abstract protected function configureAop(AspectContainer $container): void;
 
     /**
-     * Returns list of source transformers, that will be applied to the PHP source
+     * Returns list of source transformers, that will be applied to the PHP source on a cache miss
+     *
+     * Called lazily by the CachingTransformer when the first file actually needs weaving;
+     * never runs on a warm-cache request.
      *
      * @return SourceTransformer[]
      * @internal This method is internal and should not be used outside this project
      */
-    protected function registerTransformers(): array
+    protected function createSourceTransformers(): array
     {
-        $cacheManager     = $this->getContainer()->getService(CachePathManager::class);
-        $filterInjector   = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
-        $magicTransformer = new MagicConstantTransformer($this);
+        $cacheManager = $this->getContainer()->getService(CachePathManager::class);
 
-        $sourceTransformers = function () use ($filterInjector, $magicTransformer, $cacheManager) {
-            $transformers = [];
-            if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
-                $transformers[] = new ConstructorExecutionTransformer();
-            }
-            if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
-                $transformers[] = $filterInjector;
-            }
-            $transformers[]  = new WeavingTransformer(
-                $this,
-                $this->container->getService(AdviceMatcher::class),
-                $cacheManager,
-                $this->container->getService(CachedAspectLoader::class)
-            );
-            $transformers[] = $magicTransformer;
+        $transformers = [];
+        if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
+            $transformers[] = new ConstructorExecutionTransformer();
+        }
+        if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
+            $transformers[] = new FilterInjectorTransformer($this, SourceTransformingLoader::getId(), $cacheManager);
+        }
+        $transformers[] = new WeavingTransformer(
+            $this,
+            $this->container->getService(AdviceMatcher::class),
+            $cacheManager,
+            $this->container->getService(CachedAspectLoader::class)
+        );
+        $transformers[] = new MagicConstantTransformer($this);
 
-            return $transformers;
-        };
-
-        return [
-            new CachingTransformer($this, $sourceTransformers, $cacheManager)
-        ];
+        return $transformers;
     }
 
     /**
