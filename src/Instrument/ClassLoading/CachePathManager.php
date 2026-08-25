@@ -14,6 +14,7 @@ namespace Go\Instrument\ClassLoading;
 
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
+use Go\Instrument\BootTimer;
 use InvalidArgumentException;
 
 use function function_exists;
@@ -87,10 +88,13 @@ class CachePathManager
             }
 
             if (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
+                BootTimer::begin('cachePathManager.includeCacheState');
                 $cacheData = include $this->cacheDir . self::CACHE_FILE_NAME;
                 if (is_array($cacheData)) {
                     $this->cacheState = $cacheData;
                 }
+                BootTimer::add('cacheState.entries', count($this->cacheState));
+                BootTimer::end();
             }
         }
     }

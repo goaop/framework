@@ -14,6 +14,7 @@ namespace Go\Core;
 
 use Go\Aop\AspectException;
 use Go\Aop\Features;
+use Go\Instrument\BootTimer;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
@@ -120,7 +121,12 @@ abstract class AspectKernel
             return;
         }
 
+        BootTimer::initFromEnv();
+        BootTimer::begin('kernel.init');
+
+        BootTimer::begin('kernel.normalizeOptions');
         $this->options = $this->normalizeOptions($options);
+        BootTimer::end();
         define('AOP_ROOT_DIR', $this->options['appDir']);
         define('AOP_CACHE_DIR', $this->options['cacheDir']);
 
@@ -133,23 +139,34 @@ abstract class AspectKernel
             throw new AspectException("Invalid aspect container class");
         }
 
+        BootTimer::begin('container.construct');
         $container = $this->container = new $this->options['containerClass']($resourcesToTrack);
         $container->add(AspectKernel::class, $this);
         $container->add('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
         $container->add('kernel.options', $this->options);
+        BootTimer::end();
 
+        BootTimer::begin('kernel.streamFilterRegister');
         SourceTransformingLoader::register();
+        BootTimer::end();
 
+        BootTimer::begin('kernel.registerTransformers');
         foreach ($this->registerTransformers() as $sourceTransformer) {
             SourceTransformingLoader::addTransformer($sourceTransformer);
         }
+        BootTimer::end();
 
+        BootTimer::begin('kernel.aopComposerLoader');
         AopComposerLoader::init($this->options, $container);
+        BootTimer::end();
 
         // Register all AOP configuration in the container
+        BootTimer::begin('kernel.configureAop');
         $this->configureAop($container);
+        BootTimer::end();
 
         $this->wasInitialized = true;
+        BootTimer::end();
     }
 
     /**

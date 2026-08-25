@@ -18,6 +18,7 @@ use Go\Aop\AspectException;
 use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
+use Go\Instrument\BootTimer;
 use Go\Instrument\ClassLoading\CachePathManager;
 use OutOfBoundsException;
 use ReflectionClass;
@@ -101,6 +102,7 @@ class Container implements AspectContainer
 
     final public function registerAspect(Aspect $aspect): void
     {
+        BootTimer::add('container.registerAspect.count');
         $this->add($aspect::class, $aspect);
     }
 
@@ -122,9 +124,11 @@ class Container implements AspectContainer
 
     final public function addLazyService(string $id, Closure $lazyInitializationClosure): void
     {
+        BootTimer::begin('container.lazyService.' . $id);
         $reflectionClass = new ReflectionClass($id);
         $proxy = $reflectionClass->newLazyProxy(fn (object $proxy): object => $lazyInitializationClosure($this));
         $this->add($id, $proxy);
+        BootTimer::end();
     }
 
     final public function getService(string $className): object

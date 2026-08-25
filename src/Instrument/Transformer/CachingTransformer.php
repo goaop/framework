@@ -15,6 +15,7 @@ namespace Go\Instrument\Transformer;
 use Closure;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Instrument\BootTimer;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\ParserReflection\ReflectionEngine;
 
@@ -76,7 +77,12 @@ class CachingTransformer extends BaseSourceTransformer
             || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)
             || !$this->container->hasAnyResourceChangedSince($cacheModified)
         ) {
+            $startNs          = BootTimer::$enabled ? hrtime(true) : 0;
             $processingResult = $this->processTransformers($metadata);
+            if (BootTimer::$enabled) {
+                BootTimer::add('transform.weaveNs', hrtime(true) - $startNs);
+                BootTimer::add('transform.weaveCount');
+            }
             if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
                 if (!str_contains($cacheUri, AspectContainer::AOP_PROXIED_SUFFIX)
                     && str_contains($metadata->source, AspectContainer::AOP_PROXIED_SUFFIX)
@@ -106,11 +112,16 @@ class CachingTransformer extends BaseSourceTransformer
             $processingResult = isset($cacheState['cacheUri']) ? TransformerResultEnum::RESULT_TRANSFORMED : TransformerResultEnum::RESULT_ABORTED;
         }
         if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {
+            $startNs = BootTimer::$enabled ? hrtime(true) : 0;
             // Just replace all tokens in the stream
             ReflectionEngine::parseFile($cacheUri);
             $metadata->setTokenStreamFromRawTokens(
                 ...ReflectionEngine::getParser()->getTokens()
             );
+            if (BootTimer::$enabled) {
+                BootTimer::add('transform.cachedReparseNs', hrtime(true) - $startNs);
+                BootTimer::add('transform.cachedReparseCount');
+            }
         }
 
         return $processingResult;

@@ -98,8 +98,13 @@ class SourceTransformingLoader extends PhpStreamFilter
         if ($closing || feof($this->stream)) {
             $consumed = strlen($this->data);
 
+            $startNs = \Go\Instrument\BootTimer::$enabled ? hrtime(true) : 0;
             // $this->stream contains pointer to the source
             $metadata = new StreamMetaData($this->stream, $this->data);
+            if (\Go\Instrument\BootTimer::$enabled) {
+                \Go\Instrument\BootTimer::add('filter.sourceParseNs', hrtime(true) - $startNs);
+                \Go\Instrument\BootTimer::add('filter.count');
+            }
             self::transformCode($metadata);
 
             $bucket = stream_bucket_new($this->stream, $metadata->source);

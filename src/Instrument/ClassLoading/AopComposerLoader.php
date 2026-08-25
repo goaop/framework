@@ -16,6 +16,7 @@ use Closure;
 use SplFileInfo;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Instrument\BootTimer;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
@@ -89,7 +90,9 @@ class AopComposerLoader
 
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
         $this->fileEnumerator = $fileEnumerator;
+        BootTimer::begin('aopLoader.queryCacheState');
         $this->cacheState     = $container->getService(CachePathManager::class)->queryCacheState() ?? [];
+        BootTimer::end();
     }
 
     /**
@@ -148,19 +151,30 @@ class AopComposerLoader
             $this->isProduction    = !$this->options['debug'];
         }
 
-        $file = $this->original->findFile($class);
+        $startNs = BootTimer::$enabled ? hrtime(true) : 0;
+        $file    = $this->original->findFile($class);
+        if (BootTimer::$enabled) {
+            BootTimer::add('findFile.composerNs', hrtime(true) - $startNs);
+            BootTimer::add('findFile.count');
+        }
 
         if ($file !== false) {
+            $startNs  = BootTimer::$enabled ? hrtime(true) : 0;
             $resolved = PathResolver::realpath($file);
+            if (BootTimer::$enabled) {
+                BootTimer::add('findFile.realpathNs', hrtime(true) - $startNs);
+            }
             if (is_string($resolved)) {
                 $file = $resolved;
             }
             $cacheState = $this->cacheState[$file] ?? null;
             if ($cacheState && $this->isProduction) {
+                BootTimer::add('findFile.cacheHit');
                 $cacheUri = is_array($cacheState) && is_string($cacheState['cacheUri'] ?? null) ? $cacheState['cacheUri'] : null;
                 $file     = $cacheUri ?: $file;
             } elseif (($this->isAllowedFilter)(new SplFileInfo($file))) {
                 // can be optimized here with $cacheState even for debug mode, but no needed right now
+                BootTimer::add('findFile.filterRewrite');
                 $file = FilterInjectorTransformer::rewrite($file);
             }
         }
