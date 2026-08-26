@@ -27,9 +27,14 @@ use function function_exists;
 class CachePathManager
 {
     /**
-     * Name of the file with cache paths
+     * Name of the file with full transformation metadata (build-time data, loaded lazily)
      */
     private const CACHE_FILE_NAME = '/_transformation.cache';
+
+    /**
+     * Name of the file with the minimal runtime include map (originalPath => cacheUri|null)
+     */
+    private const INCLUDE_MAP_FILE_NAME = '/_include.cache';
 
     /** @phpstan-var KernelOptions */
     protected array $options;
@@ -51,9 +56,25 @@ class CachePathManager
     /**
      * Cached metadata for transformation state for the concrete file
      *
+     * Loaded lazily from the metadata file: only the cache-miss/weaving paths need it,
+     * a hot request works from the include map alone.
+     *
      * @var array<string, mixed>
      */
     protected array $cacheState = [];
+
+    /**
+     * Whether the full transformation metadata was already loaded from its file
+     */
+    private bool $cacheStateLoaded = false;
+
+    /**
+     * Minimal runtime map of original file path to its cached counterpart
+     * (null value = file is known but was not transformed)
+     *
+     * @var array<string, string|null>
+     */
+    protected array $includeMap = [];
 
     /**
      * New metadata items, that was not present in $cacheState
@@ -91,13 +112,56 @@ class CachePathManager
                 }
             }
 
-            if (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
-                $cacheData = include $this->cacheDir . self::CACHE_FILE_NAME;
-                if (is_array($cacheData)) {
-                    $this->cacheState = $cacheData;
+            if (file_exists($this->cacheDir . self::INCLUDE_MAP_FILE_NAME)) {
+                $includeMap = include $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
+                if (is_array($includeMap)) {
+                    foreach ($includeMap as $originalPath => $cacheUri) {
+                        if (is_string($originalPath)) {
+                            $this->includeMap[$originalPath] = is_string($cacheUri) ? $cacheUri : null;
+                        }
+                    }
+                }
+            } elseif (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
+                // Legacy cache directory (pre-split format): derive the include map from
+                // the full metadata once; the next flush writes both files
+                $this->loadCacheState();
+                foreach ($this->cacheState as $originalPath => $metadata) {
+                    $cacheUri = is_array($metadata) ? ($metadata['cacheUri'] ?? null) : null;
+                    $this->includeMap[$originalPath] = is_string($cacheUri) ? $cacheUri : null;
                 }
             }
         }
+    }
+
+    /**
+     * Loads the full transformation metadata from its file on first demand
+     */
+    private function loadCacheState(): void
+    {
+        if ($this->cacheStateLoaded) {
+            return;
+        }
+        $this->cacheStateLoaded = true;
+
+        if ($this->cacheDir !== null && file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
+            $cacheData = include $this->cacheDir . self::CACHE_FILE_NAME;
+            if (is_array($cacheData)) {
+                $this->cacheState = $cacheData;
+            }
+        }
+    }
+
+    /**
+     * Returns the minimal runtime map of original file paths to their cached counterparts
+     *
+     * A null value means the file is known to the cache but was not transformed. Unlike
+     * queryCacheState(), this accessor never materializes the full metadata array.
+     *
+     * @return array<string, string|null>
+     */
+    public function queryIncludeMap(): array
+    {
+        return $this->includeMap;
     }
 
     /**
@@ -146,6 +210,8 @@ class CachePathManager
      */
     public function queryCacheState(?string $resource = null): ?array
     {
+        $this->loadCacheState();
+
         if ($resource === null) {
             return $this->cacheState;
         }
@@ -173,6 +239,9 @@ class CachePathManager
     public function setCacheState(string $resource, array $metadata): void
     {
         $this->newCacheState[$resource] = $metadata;
+
+        $cacheUri = $metadata['cacheUri'] ?? null;
+        $this->includeMap[$resource] = is_string($cacheUri) ? $cacheUri : null;
     }
 
     /**
@@ -191,27 +260,50 @@ class CachePathManager
     public function flushCacheState(bool $force = false): void
     {
         if ((!empty($this->newCacheState) && $this->cacheDir !== null && is_writable($this->cacheDir)) || $force) {
-            $fullCacheMap      = $this->newCacheState + $this->cacheState;
-            $cachePath         = substr(var_export($this->cacheDir, true), 1, -1);
-            $rootPath          = substr(var_export($this->appDir, true), 1, -1);
-            $cacheData         = '<?php return ' . var_export($fullCacheMap, true) . ';';
-            $cacheData         = strtr(
-                $cacheData,
-                [
-                    '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
-                    '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
-                ]
-            );
-            $fullCacheFileName = $this->cacheDir . self::CACHE_FILE_NAME;
-            file_put_contents($fullCacheFileName, $cacheData, LOCK_EX);
-            // For cache files we don't want executable bits by default
-            chmod($fullCacheFileName, $this->fileMode & (~0111));
+            // The full metadata must be loaded before merging, otherwise entries that were
+            // never queried during this request would be dropped from the written file
+            $this->loadCacheState();
+            $fullCacheMap = $this->newCacheState + $this->cacheState;
 
-            if (function_exists('opcache_invalidate')) {
-                opcache_invalidate($fullCacheFileName, true);
+            $includeMap = [];
+            foreach ($fullCacheMap as $originalPath => $metadata) {
+                $cacheUri = is_array($metadata) ? ($metadata['cacheUri'] ?? null) : null;
+                $includeMap[$originalPath] = is_string($cacheUri) ? $cacheUri : null;
             }
-            $this->cacheState    = $this->newCacheState + $this->cacheState;
+
+            $this->writeCacheFile(self::CACHE_FILE_NAME, $fullCacheMap);
+            $this->writeCacheFile(self::INCLUDE_MAP_FILE_NAME, $includeMap);
+
+            $this->cacheState    = $fullCacheMap;
+            $this->includeMap    = $includeMap;
             $this->newCacheState = [];
+        }
+    }
+
+    /**
+     * Writes one cache file as an opcache-friendly PHP return-array with portable paths
+     *
+     * @param array<string, mixed> $data
+     */
+    private function writeCacheFile(string $relativeFileName, array $data): void
+    {
+        $cachePath = substr(var_export($this->cacheDir, true), 1, -1);
+        $rootPath  = substr(var_export($this->appDir, true), 1, -1);
+        $cacheData = '<?php return ' . var_export($data, true) . ';';
+        $cacheData = strtr(
+            $cacheData,
+            [
+                '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
+                '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
+            ]
+        );
+        $fullCacheFileName = $this->cacheDir . $relativeFileName;
+        file_put_contents($fullCacheFileName, $cacheData, LOCK_EX);
+        // For cache files we don't want executable bits by default
+        chmod($fullCacheFileName, $this->fileMode & (~0111));
+
+        if (function_exists('opcache_invalidate')) {
+            opcache_invalidate($fullCacheFileName, true);
         }
     }
 
@@ -220,8 +312,10 @@ class CachePathManager
      */
     public function clearCacheState(): void
     {
-        $this->cacheState    = [];
-        $this->newCacheState = [];
+        $this->cacheState       = [];
+        $this->cacheStateLoaded = true;
+        $this->includeMap       = [];
+        $this->newCacheState    = [];
 
         $this->flushCacheState(true);
     }

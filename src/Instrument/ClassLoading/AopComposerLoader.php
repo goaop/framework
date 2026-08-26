@@ -46,11 +46,11 @@ class AopComposerLoader
     protected Enumerator $fileEnumerator;
 
     /**
-     * Cache state
+     * Runtime include map: original file path => cached counterpart (null = not transformed)
      *
-     * @var array<string, mixed>
+     * @var array<string, string|null>
      */
-    private array $cacheState;
+    private array $includeMap;
 
     /**
      * Was initialization successful or not
@@ -89,7 +89,7 @@ class AopComposerLoader
 
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
         $this->fileEnumerator = $fileEnumerator;
-        $this->cacheState     = $container->getService(CachePathManager::class)->queryCacheState() ?? [];
+        $this->includeMap     = $container->getService(CachePathManager::class)->queryIncludeMap();
     }
 
     /**
@@ -155,12 +155,11 @@ class AopComposerLoader
             if (is_string($resolved)) {
                 $file = $resolved;
             }
-            $cacheState = $this->cacheState[$file] ?? null;
-            if ($cacheState && $this->isProduction) {
-                $cacheUri = is_array($cacheState) && is_string($cacheState['cacheUri'] ?? null) ? $cacheState['cacheUri'] : null;
-                $file     = $cacheUri ?: $file;
+            if ($this->isProduction && array_key_exists($file, $this->includeMap)) {
+                // Known file: use its cached counterpart, or the original when untransformed
+                $file = $this->includeMap[$file] ?? $file;
             } elseif (($this->isAllowedFilter)(new SplFileInfo($file))) {
-                // can be optimized here with $cacheState even for debug mode, but no needed right now
+                // can be optimized here with the include map even for debug mode, but no needed right now
                 $file = FilterInjectorTransformer::rewrite($file);
             }
         }
