@@ -259,6 +259,25 @@ class ContainerTest extends TestCase
         $this->container->getService(stdClass::class);
     }
 
+    public function testReRegisteringPendingFactoryKeepsTagOrderAndReplacesFactory(): void
+    {
+        // Downstream kernels replace built-in pipeline services by re-registering the
+        // same id; the replacement must keep the id's position in the chain order
+        $this->container->registerAspect(DoSomethingAspect::class);
+        $this->container->registerAspect(EnumMethodAspect::class);
+
+        $replaced = false;
+        $this->container->addLazyService(DoSomethingAspect::class, function () use (&$replaced): DoSomethingAspect {
+            $replaced = true;
+
+            return new DoSomethingAspect();
+        });
+
+        $aspects = $this->container->getServicesByInterface(Aspect::class);
+        $this->assertSame([DoSomethingAspect::class, EnumMethodAspect::class], array_keys($aspects));
+        $this->assertTrue($replaced, 'Re-registered factory should have been used');
+    }
+
     public function testInterfaceQuerySurvivesReentrantMaterialization(): void
     {
         // A factory that re-enters getServicesByInterface() consumes other pending

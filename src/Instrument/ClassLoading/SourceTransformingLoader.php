@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Core\AspectContainer;
+use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResultEnum;
@@ -70,6 +72,22 @@ class SourceTransformingLoader extends PhpStreamFilter
             throw new RuntimeException('Stream filter was not registered');
         }
         self::$filterId = $filterId;
+    }
+
+    /**
+     * Brings up the transformation pipeline on demand: registers the stream filter and
+     * attaches the caching transformer from the container.
+     *
+     * Idempotent; called from the cache-miss paths (autoloader miss, include rewriting,
+     * cache warmup), so a warm-cache request never registers the filter nor constructs
+     * any transformer.
+     */
+    public static function ensureRegistered(AspectContainer $container): void
+    {
+        if (empty(self::$filterId)) {
+            self::register();
+            self::addTransformer($container->getService(CachingTransformer::class));
+        }
     }
 
     /**
