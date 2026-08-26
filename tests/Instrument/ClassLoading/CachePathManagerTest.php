@@ -88,14 +88,16 @@ class CachePathManagerTest extends TestCase
         return new CachePathManager($kernel);
     }
 
-    public function testFlushWritesBothFilesAndIncludeMapLoadsWithoutFullMetadata(): void
+    public function testFlushWritesBothFilesAndClassMapLoadsWithoutFullMetadata(): void
     {
         $original    = self::$appDir . '/src/Some.php';
         $transformed = self::$cacheDir . '/src/Some.php';
         $known       = self::$appDir . '/src/Untransformed.php';
 
         $writer = $this->createManager();
+        $writer->registerClassForResource($original, 'App\Some');
         $writer->setCacheState($original, ['filemtime' => 12345, 'cacheUri' => $transformed]);
+        $writer->registerClassForResource($known, 'App\Untransformed');
         $writer->setCacheState($known, ['filemtime' => 12345, 'cacheUri' => null]);
         $writer->flushCacheState();
 
@@ -103,23 +105,21 @@ class CachePathManagerTest extends TestCase
         $this->assertFileExists(self::$cacheDir . '/_include.cache');
 
         $reader = $this->createManager();
-        // The include map is available immediately...
-        $this->assertSame(
-            [$original => $transformed, $known => null],
-            $reader->queryIncludeMap()
-        );
+        // The runtime class map and skip set are available immediately...
+        $this->assertSame(['App\Some' => $transformed], $reader->queryClassMap());
+        $this->assertSame(['App\Untransformed' => true], $reader->querySkippedClasses());
         // ...while the full metadata was not materialized yet (loaded lazily on demand)
         $loadedFlag = new ReflectionProperty(CachePathManager::class, 'cacheStateLoaded');
         $this->assertFalse($loadedFlag->getValue($reader), 'Full metadata should not be loaded eagerly');
 
         $this->assertSame(
-            ['filemtime' => 12345, 'cacheUri' => $transformed],
+            ['filemtime' => 12345, 'cacheUri' => $transformed, 'classes' => ['App\Some']],
             $reader->queryCacheState($original)
         );
         $this->assertTrue($loadedFlag->getValue($reader));
     }
 
-    public function testLegacyCacheDirectoryWithoutIncludeMapStillWorks(): void
+    public function testLegacyCacheDirectoryWithoutClassMapIsTreatedAsStale(): void
     {
         $original    = self::$appDir . '/src/Legacy.php';
         $transformed = self::$cacheDir . '/src/Legacy.php';
@@ -129,7 +129,11 @@ class CachePathManagerTest extends TestCase
         $writer->flushCacheState();
         unlink(self::$cacheDir . '/_include.cache');
 
+        // Pre-class-map cache directories carry no class names, so the metadata is
+        // ignored entirely: everything re-weaves once and both files are rewritten
         $reader = $this->createManager();
-        $this->assertSame([$original => $transformed], $reader->queryIncludeMap());
+        $this->assertSame([], $reader->queryClassMap());
+        $this->assertSame([], $reader->querySkippedClasses());
+        $this->assertNull($reader->queryCacheState($original));
     }
 }

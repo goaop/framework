@@ -69,12 +69,28 @@ class CachePathManager
     private bool $cacheStateLoaded = false;
 
     /**
-     * Minimal runtime map of original file path to its cached counterpart
-     * (null value = file is known but was not transformed)
+     * Minimal runtime map of woven class name to its cached file, integrateable
+     * directly into the composer loader via ClassLoader::addClassMap()
      *
-     * @var array<string, string|null>
+     * @var array<class-string, string>
      */
-    protected array $includeMap = [];
+    protected array $classMap = [];
+
+    /**
+     * Set of class names that are known to the cache but were not transformed,
+     * so the autoloader can serve them natively without any filtering
+     *
+     * @var array<class-string, true>
+     */
+    protected array $skippedClasses = [];
+
+    /**
+     * Class names discovered by the weaver per original file, pending until
+     * setCacheState() folds them into the metadata record
+     *
+     * @var array<string, list<class-string>>
+     */
+    private array $pendingClasses = [];
 
     /**
      * New metadata items, that was not present in $cacheState
@@ -113,22 +129,29 @@ class CachePathManager
             }
 
             if (file_exists($this->cacheDir . self::INCLUDE_MAP_FILE_NAME)) {
-                $includeMap = include $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
-                if (is_array($includeMap)) {
-                    foreach ($includeMap as $originalPath => $cacheUri) {
-                        if (is_string($originalPath)) {
-                            $this->includeMap[$originalPath] = is_string($cacheUri) ? $cacheUri : null;
+                $includeData = include $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
+                if (is_array($includeData)) {
+                    $rawClassMap = is_array($includeData['map'] ?? null) ? $includeData['map'] : [];
+                    foreach ($rawClassMap as $className => $cacheUri) {
+                        if (is_string($className) && is_string($cacheUri)) {
+                            /** @var class-string $className */
+                            $this->classMap[$className] = $cacheUri;
+                        }
+                    }
+                    $rawSkip = is_array($includeData['skip'] ?? null) ? $includeData['skip'] : [];
+                    foreach (array_keys($rawSkip) as $className) {
+                        if (is_string($className)) {
+                            /** @var class-string $className */
+                            $this->skippedClasses[$className] = true;
                         }
                     }
                 }
             } elseif (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
-                // Legacy cache directory (pre-split format): derive the include map from
-                // the full metadata once; the next flush writes both files
-                $this->loadCacheState();
-                foreach ($this->cacheState as $originalPath => $metadata) {
-                    $cacheUri = is_array($metadata) ? ($metadata['cacheUri'] ?? null) : null;
-                    $this->includeMap[$originalPath] = is_string($cacheUri) ? $cacheUri : null;
-                }
+                // Legacy cache directory (pre-class-map format): the metadata records carry
+                // no class names, so the cache cannot serve the class map. Treat the whole
+                // cache as stale - everything re-weaves once and both files are rewritten
+                // in the new format (or run `cache:warmup:aop` at deploy time).
+                $this->cacheStateLoaded = true;
             }
         }
     }
@@ -152,16 +175,41 @@ class CachePathManager
     }
 
     /**
-     * Returns the minimal runtime map of original file paths to their cached counterparts
+     * Returns the runtime map of woven class names to their cached files
      *
-     * A null value means the file is known to the cache but was not transformed. Unlike
-     * queryCacheState(), this accessor never materializes the full metadata array.
+     * Suitable for direct integration into composer via ClassLoader::addClassMap().
+     * Unlike queryCacheState(), this accessor never materializes the full metadata array.
      *
-     * @return array<string, string|null>
+     * @return array<class-string, string>
      */
-    public function queryIncludeMap(): array
+    public function queryClassMap(): array
     {
-        return $this->includeMap;
+        return $this->classMap;
+    }
+
+    /**
+     * Returns the set of class names known to the cache but not transformed
+     *
+     * The autoloader serves these natively, without any include-path filtering.
+     *
+     * @return array<class-string, true>
+     */
+    public function querySkippedClasses(): array
+    {
+        return $this->skippedClasses;
+    }
+
+    /**
+     * Records a class name discovered by the weaver in the given original file
+     *
+     * The pending names are folded into the file's metadata record by setCacheState()
+     * and become the runtime class map / skip set on flush.
+     *
+     * @param class-string $className
+     */
+    public function registerClassForResource(string $resource, string $className): void
+    {
+        $this->pendingClasses[$resource][] = $className;
     }
 
     /**
@@ -238,10 +286,23 @@ class CachePathManager
      */
     public function setCacheState(string $resource, array $metadata): void
     {
+        $classNames = $this->pendingClasses[$resource] ?? [];
+        unset($this->pendingClasses[$resource]);
+        $metadata['classes'] = $classNames;
+
         $this->newCacheState[$resource] = $metadata;
 
+        // Keep the in-memory runtime map coherent within this request
         $cacheUri = $metadata['cacheUri'] ?? null;
-        $this->includeMap[$resource] = is_string($cacheUri) ? $cacheUri : null;
+        foreach ($classNames as $className) {
+            if (is_string($cacheUri)) {
+                $this->classMap[$className] = $cacheUri;
+                unset($this->skippedClasses[$className]);
+            } else {
+                $this->skippedClasses[$className] = true;
+                unset($this->classMap[$className]);
+            }
+        }
     }
 
     /**
@@ -265,18 +326,34 @@ class CachePathManager
             $this->loadCacheState();
             $fullCacheMap = $this->newCacheState + $this->cacheState;
 
-            $includeMap = [];
-            foreach ($fullCacheMap as $originalPath => $metadata) {
-                $cacheUri = is_array($metadata) ? ($metadata['cacheUri'] ?? null) : null;
-                $includeMap[$originalPath] = is_string($cacheUri) ? $cacheUri : null;
+            $classMap       = [];
+            $skippedClasses = [];
+            foreach ($fullCacheMap as $metadata) {
+                if (!is_array($metadata)) {
+                    continue;
+                }
+                $cacheUri   = $metadata['cacheUri'] ?? null;
+                $classNames = is_array($metadata['classes'] ?? null) ? $metadata['classes'] : [];
+                foreach ($classNames as $className) {
+                    if (!is_string($className)) {
+                        continue;
+                    }
+                    /** @var class-string $className */
+                    if (is_string($cacheUri)) {
+                        $classMap[$className] = $cacheUri;
+                    } else {
+                        $skippedClasses[$className] = true;
+                    }
+                }
             }
 
             $this->writeCacheFile(self::CACHE_FILE_NAME, $fullCacheMap);
-            $this->writeCacheFile(self::INCLUDE_MAP_FILE_NAME, $includeMap);
+            $this->writeCacheFile(self::INCLUDE_MAP_FILE_NAME, ['map' => $classMap, 'skip' => $skippedClasses]);
 
-            $this->cacheState    = $fullCacheMap;
-            $this->includeMap    = $includeMap;
-            $this->newCacheState = [];
+            $this->cacheState     = $fullCacheMap;
+            $this->classMap       = $classMap;
+            $this->skippedClasses = $skippedClasses;
+            $this->newCacheState  = [];
         }
     }
 
@@ -314,7 +391,9 @@ class CachePathManager
     {
         $this->cacheState       = [];
         $this->cacheStateLoaded = true;
-        $this->includeMap       = [];
+        $this->classMap         = [];
+        $this->skippedClasses   = [];
+        $this->pendingClasses   = [];
         $this->newCacheState    = [];
 
         $this->flushCacheState(true);

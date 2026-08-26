@@ -98,6 +98,10 @@ class WeavingTransformer extends BaseSourceTransformer
         foreach ($namespaces as $namespace) {
             $classes = $namespace->getClasses();
             foreach ($classes as $class) {
+                // Every discovered class (woven or not) is recorded so the runtime class
+                // map / skip set can be built for the autoloader at flush time
+                $this->cachePathManager->registerClassForResource($metadata->uri, $class->getName());
+
                 // Skip interfaces and aspects — enums are now supported via EnumProxyGenerator
                 if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames(), true)) {
                     continue;

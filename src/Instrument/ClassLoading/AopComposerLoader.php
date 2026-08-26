@@ -46,11 +46,18 @@ class AopComposerLoader
     protected Enumerator $fileEnumerator;
 
     /**
-     * Runtime include map: original file path => cached counterpart (null = not transformed)
+     * Runtime class map: woven class name => cached file (also fed to composer's classmap)
      *
-     * @var array<string, string|null>
+     * @var array<class-string, string>
      */
-    private array $includeMap;
+    private array $classMap;
+
+    /**
+     * Classes known to the cache but not transformed - served natively by composer
+     *
+     * @var array<class-string, true>
+     */
+    private array $skippedClasses;
 
     /**
      * Was initialization successful or not
@@ -89,7 +96,18 @@ class AopComposerLoader
 
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
         $this->fileEnumerator = $fileEnumerator;
-        $this->includeMap     = $container->getService(CachePathManager::class)->queryIncludeMap();
+
+        $cachePathManager     = $container->getService(CachePathManager::class);
+        $this->classMap       = $cachePathManager->queryClassMap();
+        $this->skippedClasses = $cachePathManager->querySkippedClasses();
+
+        // In production the woven class map is handed to composer directly: its findFile()
+        // consults the class map before PSR-4/PSR-0, so woven classes resolve natively to
+        // their cached files. Untransformed classes are deliberately NOT added - composer
+        // already resolves them to their original files.
+        if (!$options['debug'] && $this->classMap !== []) {
+            $original->addClassMap($this->classMap);
+        }
     }
 
     /**
@@ -151,15 +169,17 @@ class AopComposerLoader
         $file = $this->original->findFile($class);
 
         if ($file !== false) {
+            if ($this->isProduction && (isset($this->classMap[$class]) || isset($this->skippedClasses[$class]))) {
+                // Known class: composer already resolved it to the cached file (via the
+                // injected class map) or to the untouched original - nothing left to do
+                return $file;
+            }
             $resolved = PathResolver::realpath($file);
             if (is_string($resolved)) {
                 $file = $resolved;
             }
-            if ($this->isProduction && array_key_exists($file, $this->includeMap)) {
-                // Known file: use its cached counterpart, or the original when untransformed
-                $file = $this->includeMap[$file] ?? $file;
-            } elseif (($this->isAllowedFilter)(new SplFileInfo($file))) {
-                // can be optimized here with the include map even for debug mode, but no needed right now
+            if (($this->isAllowedFilter)(new SplFileInfo($file))) {
+                // can be optimized here with the class map even for debug mode, but no needed right now
                 $file = FilterInjectorTransformer::rewrite($file);
             }
         }
