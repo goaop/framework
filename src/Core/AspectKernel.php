@@ -156,7 +156,7 @@ abstract class AspectKernel
                     // The caching transformer is the pipeline entry point wrapping this chain
                     unset($transformers[CachingTransformer::class]);
 
-                    return array_values($transformers);
+                    return $transformers;
                 },
                 $container->getService(CachePathManager::class)
             )
