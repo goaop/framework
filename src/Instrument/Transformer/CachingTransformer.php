@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\Transformer;
 
 use Closure;
+use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
@@ -67,14 +68,22 @@ class CachingTransformer extends BaseSourceTransformer
             return TransformerResultEnum::RESULT_ABORTED;
         }
 
-        $lastModified  = filemtime($originalUri);
-        $cacheState    = $this->cacheManager->queryCacheState($originalUri);
+        $cacheState = $this->cacheManager->queryCacheState($originalUri);
+
+        // With a prebuilt cache (built at deploy time) an existing cache record is trusted
+        // as-is: no filemtime or tracked-resource freshness checks - staleness is the
+        // deployer's responsibility.
+        $isTrustedCacheRecord = $cacheState !== null
+            && ($this->options['features'] & Features::PREBUILT_CACHE) !== 0;
+
+        $lastModified   = $isTrustedCacheRecord ? 0 : filemtime($originalUri);
         $cacheFilemtime = $cacheState !== null ? ($cacheState['filemtime'] ?? 0) : 0;
         $cacheModified  = is_int($cacheFilemtime) ? $cacheFilemtime : 0;
 
-        if ($cacheModified < $lastModified
-            || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)
-            || !$this->container->hasAnyResourceChangedSince($cacheModified)
+        if (!$isTrustedCacheRecord
+            && ($cacheModified < $lastModified
+                || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)
+                || !$this->container->hasAnyResourceChangedSince($cacheModified))
         ) {
             $processingResult = $this->processTransformers($metadata);
             if ($processingResult === TransformerResultEnum::RESULT_TRANSFORMED) {

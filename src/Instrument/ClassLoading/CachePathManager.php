@@ -72,18 +72,23 @@ class CachePathManager
         $this->fileMode = $options['cacheFileMode'];
 
         if ($this->cacheDir) {
-            if (!is_dir($this->cacheDir)) {
-                $cacheRootDir = dirname($this->cacheDir);
-                if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
-                    throw new InvalidArgumentException(
-                        "Can not create a directory {$this->cacheDir} for the cache.
-                        Parent directory {$cacheRootDir} is not writable or not exist."
-                    );
+            // With a prebuilt cache the directory is guaranteed to exist (built at deploy
+            // time), so all directory/writability stat checks are skipped - this also
+            // covers read-only file systems (GAE, phar, etc)
+            if (!$this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
+                if (!is_dir($this->cacheDir)) {
+                    $cacheRootDir = dirname($this->cacheDir);
+                    if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
+                        throw new InvalidArgumentException(
+                            "Can not create a directory {$this->cacheDir} for the cache.
+                            Parent directory {$cacheRootDir} is not writable or not exist."
+                        );
+                    }
+                    mkdir($this->cacheDir, $this->fileMode, true);
                 }
-                mkdir($this->cacheDir, $this->fileMode, true);
-            }
-            if (!$this->kernel->hasFeature(Features::PREBUILT_CACHE) && !is_writable($this->cacheDir)) {
-                throw new InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
+                if (!is_writable($this->cacheDir)) {
+                    throw new InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
+                }
             }
 
             if (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
