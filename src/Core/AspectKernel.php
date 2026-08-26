@@ -141,43 +141,9 @@ abstract class AspectKernel
         // The whole transformer pipeline (and the stream filter itself) is only needed on
         // a cache miss, so every transformer is registered as a typical deferred container
         // service and brought up by SourceTransformingLoader::ensureRegistered() from the
-        // miss path. Registration order below IS the source transformation order; feature
-        // flags gate registration exactly as they used to gate construction.
-        if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
-            $container->addLazyService(
-                ConstructorExecutionTransformer::class,
-                fn(): ConstructorExecutionTransformer => new ConstructorExecutionTransformer()
-            );
-        }
-        if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
-            $container->addLazyService(
-                FilterInjectorTransformer::class,
-                function (AspectContainer $container): FilterInjectorTransformer {
-                    // Guarantees the stream filter exists even if this service is
-                    // materialized directly, before the pipeline was brought up
-                    SourceTransformingLoader::ensureRegistered($container);
-
-                    return new FilterInjectorTransformer(
-                        $this,
-                        SourceTransformingLoader::getId(),
-                        $container->getService(CachePathManager::class)
-                    );
-                }
-            );
-        }
-        $container->addLazyService(
-            WeavingTransformer::class,
-            fn(AspectContainer $container): WeavingTransformer => new WeavingTransformer(
-                $this,
-                $container->getService(AdviceMatcher::class),
-                $container->getService(CachePathManager::class),
-                $container->getService(CachedAspectLoader::class)
-            )
-        );
-        $container->addLazyService(
-            MagicConstantTransformer::class,
-            fn(): MagicConstantTransformer => new MagicConstantTransformer($this)
-        );
+        // miss path. The overridable hook registers the inner chain; the caching wrapper
+        // that every pipeline needs is registered below.
+        $this->registerTransformerServices($container);
         $container->addLazyService(
             CachingTransformer::class,
             fn(AspectContainer $container): CachingTransformer => new CachingTransformer(
@@ -325,6 +291,59 @@ abstract class AspectKernel
      * Configures an AspectContainer with advisors, aspects and pointcuts
      */
     abstract protected function configureAop(AspectContainer $container): void;
+
+    /**
+     * Registers the source transformer services forming the transformation chain
+     *
+     * Every registered container service implementing SourceTransformer becomes part of
+     * the chain, in registration order (registration order IS the transformation order);
+     * feature flags gate registration exactly as they used to gate construction. Nothing
+     * is constructed here - these are deferred definitions, materialized on the first
+     * cache miss only.
+     *
+     * Override this method to replace, omit, reorder or extend the built-in transformers
+     * (e.g. a mocking framework registering its own weaver instead of WeavingTransformer).
+     * To merely append a transformer, a single addLazyService() call from configureAop()
+     * is enough - it is picked up by the interface tag automatically.
+     */
+    protected function registerTransformerServices(AspectContainer $container): void
+    {
+        if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
+            $container->addLazyService(
+                ConstructorExecutionTransformer::class,
+                fn(): ConstructorExecutionTransformer => new ConstructorExecutionTransformer()
+            );
+        }
+        if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
+            $container->addLazyService(
+                FilterInjectorTransformer::class,
+                function (AspectContainer $container): FilterInjectorTransformer {
+                    // Guarantees the stream filter exists even if this service is
+                    // materialized directly, before the pipeline was brought up
+                    SourceTransformingLoader::ensureRegistered($container);
+
+                    return new FilterInjectorTransformer(
+                        $this,
+                        SourceTransformingLoader::getId(),
+                        $container->getService(CachePathManager::class)
+                    );
+                }
+            );
+        }
+        $container->addLazyService(
+            WeavingTransformer::class,
+            fn(AspectContainer $container): WeavingTransformer => new WeavingTransformer(
+                $this,
+                $container->getService(AdviceMatcher::class),
+                $container->getService(CachePathManager::class),
+                $container->getService(CachedAspectLoader::class)
+            )
+        );
+        $container->addLazyService(
+            MagicConstantTransformer::class,
+            fn(): MagicConstantTransformer => new MagicConstantTransformer($this)
+        );
+    }
 
     /**
      * Returns a file name where kernel has been initialized
