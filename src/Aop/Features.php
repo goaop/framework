@@ -36,9 +36,13 @@ interface Features
     public const INTERCEPT_INCLUDES = 4;
 
     /**
-     * Do not check the cache presence and assume that cache is already prepared
+     * Trust the cache built at deploy time (`bin/aspect cache:warmup:aop`) unconditionally
      *
-     * This flag is usable for read-only file systems (GAE, phar, etc)
+     * Skips every cache-related stat/freshness check at runtime: cache directory
+     * existence/writability probes, source filemtime comparisons, tracked-resource
+     * checks and advisor cache freshness. Staleness is the deployer's responsibility -
+     * rebuild the cache on every deployment. Also usable for read-only file systems
+     * (GAE, phar, etc).
      */
     public const PREBUILT_CACHE = 64;
 

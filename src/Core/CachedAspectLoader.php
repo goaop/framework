@@ -16,6 +16,7 @@ use AllowDynamicProperties;
 use RuntimeException;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
+use Go\Aop\Features;
 use Go\Aop\Pointcut;
 use ReflectionClass;
 
@@ -46,6 +47,11 @@ class CachedAspectLoader extends AspectLoader
     protected string $loaderId;
 
     /**
+     * Whether an existing advisor cache file is trusted without freshness checks
+     */
+    protected bool $isPrebuiltCache = false;
+
+    /**
      * Cached loader constructor
      *
      * @param class-string<AspectLoader> $loaderId
@@ -53,10 +59,11 @@ class CachedAspectLoader extends AspectLoader
      */
     public function __construct(AspectContainer $container, string $loaderId, array $options)
     {
-        $this->cacheDir      = $options['cacheDir'];
-        $this->cacheFileMode = $options['cacheFileMode'];
-        $this->loaderId      = $loaderId;
-        $this->container     = $container;
+        $this->cacheDir        = $options['cacheDir'];
+        $this->cacheFileMode   = $options['cacheFileMode'];
+        $this->loaderId        = $loaderId;
+        $this->container       = $container;
+        $this->isPrebuiltCache = ($options['features'] & Features::PREBUILT_CACHE) !== 0;
     }
 
     public function load(Aspect $aspect): array
@@ -67,6 +74,18 @@ class CachedAspectLoader extends AspectLoader
 
         $refAspect = new ReflectionClass($aspect);
         $fileName  = $this->cacheDir . '/_aspect/' . sha1($refAspect->getName());
+
+        // With a prebuilt cache an existing advisor cache file is trusted without any
+        // freshness checks; on a corrupt/empty file fall back to the direct loader
+        // WITHOUT writing (the file system may be read-only).
+        if ($this->isPrebuiltCache && file_exists($fileName)) {
+            $loadedItems = $this->loadFromCache($fileName);
+            if ($loadedItems !== []) {
+                return $loadedItems;
+            }
+
+            return $this->loader->load($aspect);
+        }
 
         // If cache is present and actual, then use it
         $aspectFileName = $refAspect->getFileName();
@@ -102,7 +121,9 @@ class CachedAspectLoader extends AspectLoader
         if ($content === false) {
             return [];
         }
-        $loadedItems = unserialize($content);
+        // A corrupt cache file is handled by the empty-result fallback, so the
+        // unserialize() warning carries no information
+        $loadedItems = @unserialize($content);
 
         if (!is_array($loadedItems)) {
             return [];
