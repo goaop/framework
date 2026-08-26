@@ -46,14 +46,28 @@ class CachePathManagerTest extends TestCase
 
     public static function tearDownAfterClass(): void
     {
-        array_map(unlink(...), glob(self::$cacheDir . '/*') ?: []);
+        self::removeKnownCacheFiles();
         @rmdir(self::$cacheDir);
         @rmdir(self::$appDir);
     }
 
     protected function setUp(): void
     {
-        array_map(unlink(...), glob(self::$cacheDir . '/*') ?: []);
+        self::removeKnownCacheFiles();
+    }
+
+    /**
+     * Deletes only the exact files this test writes, never a glob/recursive sweep:
+     * a wrong directory value must not be able to erase anything else
+     */
+    private static function removeKnownCacheFiles(): void
+    {
+        self::assertStringStartsWith(sys_get_temp_dir() . '/goaop-cpm-', self::$cacheDir);
+        foreach (['/_transformation.cache', '/_include.cache'] as $knownFile) {
+            if (is_file(self::$cacheDir . $knownFile)) {
+                unlink(self::$cacheDir . $knownFile);
+            }
+        }
     }
 
     private function createManager(): CachePathManager

@@ -34,7 +34,14 @@ class CachedAspectLoaderTest extends TestCase
 
     protected function tearDown(): void
     {
-        array_map(unlink(...), glob($this->cacheDir . '/_aspect/*') ?: []);
+        // Guard the cleanup: deletions must stay inside the uniquely-named temp
+        // directory this test created, whatever happens to the property value
+        $this->assertStringStartsWith(sys_get_temp_dir() . '/goaop-cached-loader-', $this->cacheDir);
+        foreach (glob($this->cacheDir . '/_aspect/*') ?: [] as $cacheFile) {
+            if (is_file($cacheFile)) {
+                unlink($cacheFile);
+            }
+        }
         @rmdir($this->cacheDir . '/_aspect');
         @rmdir($this->cacheDir);
     }
