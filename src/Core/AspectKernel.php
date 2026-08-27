@@ -18,11 +18,9 @@ use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\PathResolver;
-use Go\Instrument\Transformer\CachingTransformer;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
-use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use RuntimeException;
 
@@ -141,26 +139,10 @@ abstract class AspectKernel
         // The whole transformer pipeline (and the stream filter itself) is only needed on
         // a cache miss, so every transformer is registered as a typical deferred container
         // service and brought up by SourceTransformingLoader::ensureRegistered() from the
-        // miss path. The overridable hook registers the inner chain; the caching wrapper
-        // that every pipeline needs is registered below.
+        // miss path. Caching itself lives in SourceTransformingLoader, which serves cache
+        // hits before any transformer (or even the parser) is touched - the overridable
+        // hook below only registers the transformation chain.
         $this->registerTransformerServices($container);
-        $container->addLazyService(
-            CachingTransformer::class,
-            fn(AspectContainer $container): CachingTransformer => new CachingTransformer(
-                $this,
-                static function () use ($container): array {
-                    // Tagged loading: every registered service implementing SourceTransformer
-                    // forms the chain, in registration order. A kernel can plug its own
-                    // transformer in with a single addLazyService() call from configureAop().
-                    $transformers = $container->getServicesByInterface(SourceTransformer::class);
-                    // The caching transformer is the pipeline entry point wrapping this chain
-                    unset($transformers[CachingTransformer::class]);
-
-                    return $transformers;
-                },
-                $container->getService(CachePathManager::class)
-            )
-        );
 
         AopComposerLoader::init($this->options, $container);
 

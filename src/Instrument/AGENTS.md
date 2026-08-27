@@ -1,10 +1,10 @@
 # src/Instrument — AOP interception pipeline
 
 ## Init flow
-1. AspectKernel::init() — singleton, registers stream filter, builds transformers, calls configureAop()
-2. SourceTransformingLoader::register() — PHP stream filter (php://filter/read=go.source.transforming.loader/resource=... protocol)
+1. AspectKernel::init() — singleton, registers deferred transformer services, calls configureAop()
+2. SourceTransformingLoader — PHP stream filter (php://filter/read=go.source.transforming.loader/resource=... protocol); registered lazily on the first cache miss via ensureRegistered()
 3. AopComposerLoader::init() — hooks Composer autoloader → redirects through stream filter
-4. CachingTransformer — outer; cache miss → inner chain → write cache
+4. Caching lives in SourceTransformingLoader::filter() — cache hit → cached content emitted as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → write cache
 
 ## Transformer chain (order matters)
 Applied per loaded file. Each returns TransformerResultEnum: RESULT_TRANSFORMED|RESULT_ABSTAIN|RESULT_ABORTED.

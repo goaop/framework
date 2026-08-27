@@ -120,7 +120,7 @@ class Container implements AspectContainer
         });
 
         // In debug mode the aspect's source file must be tracked as a resource right away:
-        // CachingTransformer consults resource freshness before any aspect materializes.
+        // SourceTransformingLoader consults resource freshness before any aspect materializes.
         // Production skips this - its warm path never checks freshness, and a cache miss
         // materializes every aspect during weaving anyway.
         if ($this->isDebug()) {
