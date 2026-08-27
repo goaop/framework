@@ -729,8 +729,10 @@ class WeavingTransformer extends BaseSourceTransformer
 
         $body = '<?php' . PHP_EOL . $childCode;
 
-        $isVirtualSystem = strpos($proxyFileName, 'vfs') === 0;
-        file_put_contents($proxyFileName, $body, $isVirtualSystem ? 0 : LOCK_EX);
+        // PHP core refuses the LOCK_EX flag for any non-"file://" stream wrapper path,
+        // so it can not be used when the cache is placed on a virtual filesystem
+        $isStreamPath = str_contains($proxyFileName, '://');
+        file_put_contents($proxyFileName, $body, $isStreamPath ? 0 : LOCK_EX);
         // For cache files we don't want executable bits by default
         chmod($proxyFileName, $this->options['cacheFileMode'] & (~0111));
 
