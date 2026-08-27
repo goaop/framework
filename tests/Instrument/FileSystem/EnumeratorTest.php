@@ -12,9 +12,9 @@ declare(strict_types = 1);
 
 namespace Go\Instrument\FileSystem;
 
+use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
 use SplFileInfo;
-use Vfs\FileSystem;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class EnumeratorTest extends TestCase
@@ -28,8 +28,7 @@ class EnumeratorTest extends TestCase
      */
     public static function setUpBeforeClass(): void
     {
-        static::$fileSystem = FileSystem::factory('vfs://');
-        static::$fileSystem->mount();
+        static::$fileSystem = FileSystem::mount('vfs');
 
         $testPaths = [
             '/base/sub/test',
@@ -38,8 +37,7 @@ class EnumeratorTest extends TestCase
 
         // Setup some files we test against
         foreach ($testPaths as $path) {
-            mkdir('vfs://' . $path, 0777, true);
-            touch('vfs://' . $path . DIRECTORY_SEPARATOR . 'TestClass.php');
+            static::$fileSystem->createFile($path . '/TestClass.php');
         }
     }
 

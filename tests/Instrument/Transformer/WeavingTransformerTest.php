@@ -18,10 +18,10 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use Vfs\FileSystem;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class WeavingTransformerTest extends TestCase
@@ -41,8 +41,12 @@ class WeavingTransformerTest extends TestCase
      */
     public static function setUpBeforeClass(): void
     {
-        static::$fileSystem = FileSystem::factory('vfs://');
-        static::$fileSystem->mount();
+        static::$fileSystem = FileSystem::mount('vfs');
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        static::$fileSystem->unmount();
     }
 
     /**
