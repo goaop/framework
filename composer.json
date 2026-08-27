@@ -21,6 +21,7 @@
         "goaop/virtual-file-system": "^1.0",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^13.0",
+        "psr/log": "^3.0",
         "symfony/console": "^7.4 || ^8.0",
         "symfony/filesystem": "^7.4 || ^8.0",
         "symfony/process": "^7.4 || ^8.0",
