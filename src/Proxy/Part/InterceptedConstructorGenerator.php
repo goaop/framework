@@ -31,7 +31,6 @@ final class InterceptedConstructorGenerator
      *
      * @param ReflectionMethod|null           $constructor           Instance of original constructor or null
      * @param InterceptedMethodGenerator|null $constructorGenerator  Constructor body generator (if present)
-     * @param bool                            $useTypeWidening       Should generator use parameter widening for PHP>=7.2
      * @param bool                            $constructorIsInTrait  True when the original constructor is in the trait
      *                                                               (i.e. defined in the class itself, not inherited);
      *                                                               in that case the alias __aop____construct is used
@@ -40,7 +39,6 @@ final class InterceptedConstructorGenerator
     public function __construct(
         ?ReflectionMethod $constructor = null,
         ?InterceptedMethodGenerator $constructorGenerator = null,
-        bool $useTypeWidening = false,
         bool $constructorIsInTrait = false
     ) {
         if ($constructor !== null) {
@@ -52,7 +50,7 @@ final class InterceptedConstructorGenerator
                 } else {
                     $constructorCallBody = 'parent::__construct(' . $splatPrefix . $callArguments->generate() . ');';
                 }
-                $generator = MethodGenerator::fromReflection($constructor, $useTypeWidening);
+                $generator = MethodGenerator::fromReflection($constructor);
                 $generator->setBody($constructorCallBody);
             } else {
                 $generator = $constructorGenerator->getGenerator();

@@ -41,17 +41,6 @@ final class ClassGenerator implements GeneratorInterface
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
 
-    private string $name;
-    private ?string $namespace;
-    private ?int $flags;
-    private ?string $parentClass;
-
-    /** @var string[] */
-    private array $interfaces;
-
-    /** @var PropertyNodeProvider[] */
-    private array $properties;
-
     /** @var MethodGenerator[] */
     private array $methods;
 
@@ -74,22 +63,21 @@ final class ClassGenerator implements GeneratorInterface
      * @param PropertyNodeProvider[] $properties
      * @param MethodGenerator[]      $methods
      */
+    /**
+     * @param string[]               $interfaces
+     * @param PropertyNodeProvider[] $properties
+     * @param MethodGenerator[]      $methods
+     */
     public function __construct(
-        string $name,
-        ?string $namespace,
-        ?int $flags,
-        ?string $parentClass,
-        array $interfaces = [],
-        array $properties = [],
+        private readonly string $name,
+        private readonly ?string $namespace,
+        private readonly ?int $flags,
+        private readonly ?string $parentClass,
+        private readonly array $interfaces = [],
+        private readonly array $properties = [],
         array $methods = [],
     ) {
-        $this->name        = $name;
-        $this->namespace   = $namespace;
-        $this->flags       = $flags;
-        $this->parentClass = $parentClass;
-        $this->interfaces  = $interfaces;
-        $this->properties  = $properties;
-        $this->methods     = array_values($methods);
+        $this->methods = array_values($methods);
     }
 
     /**

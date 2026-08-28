@@ -49,4 +49,3 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 Interface with bitmask constants:
 - INTERCEPT_FUNCTIONS=1, INTERCEPT_INITIALIZATIONS=2, INTERCEPT_INCLUDES=4
 - PREBUILT_CACHE=64 — assume cache already prepared, skip freshness checks
-- PARAMETER_WIDENING=128 — enable parameter widening for PHP>=7.2

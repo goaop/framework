@@ -394,6 +394,59 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * Golden-file coverage of general PHP 8.0-8.3 syntax through the current weaver
+     * (issue #610): constructor promotion (non-intercepted property), new-in-initializer
+     * parameter default, named arguments, match expression, nullsafe operator, enum usage
+     * in a method body, readonly property, first-class callable and a typed class constant.
+     * Only the class is woven — the enum in the same file must stay untouched.
+     */
+    public function testWeaverForPhp80To82Syntax(): void
+    {
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher
+            ->method('getAdvicesForClass')
+            ->willReturnCallback(function (ReflectionClass $refClass) {
+                // Weave only the target class — the enum stays untouched
+                if ($refClass->getShortName() !== 'TestPhp80To82SyntaxClass') {
+                    return [];
+                }
+                $advices = [];
+                foreach ($refClass->getMethods() as $method) {
+                    $advisorId = "advisor.{$refClass->name}->{$method->name}";
+                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
+                }
+                return $advices;
+            });
+        $adviceMatcher
+            ->method('getAdvicesForFunctions')
+            ->willReturn([]);
+
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$this->getContainerMock()])
+            ->getMock();
+        $transformer = new WeavingTransformer(
+            $this->kernel,
+            $adviceMatcher,
+            $this->cachePathManager,
+            $loader
+        );
+
+        $metadata = $this->loadTestMetadata('php80-82-syntax');
+        $transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php80-82-syntax-woven')->source);
+        $this->assertEquals($expected, $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+        $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php80-82-syntax-proxy')->source);
+        $this->assertEquals($expectedProxyContent, $actualProxyContent);
+    }
+
+    /**
      * Attribute classes must be weavable (issue #615): #[\Attribute] and
      * #[\AllowDynamicProperties] are compile-time invalid on traits, so they must be removed
      * from the woven trait tokens. In a grouped attribute only the incompatible entry is

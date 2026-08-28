@@ -36,8 +36,6 @@ final class PropertyGenerator implements PropertyNodeProvider
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
 
-    private string $name;
-    private int $flags;
     private mixed $defaultValue;
     private bool $hasDefault    = false;
 
@@ -52,10 +50,10 @@ final class PropertyGenerator implements PropertyNodeProvider
     /** @var list<PropertyHook> */
     private array $hooks = [];
 
-    public function __construct(string $name, int $flags = self::FLAG_PUBLIC)
-    {
-        $this->name  = $name;
-        $this->flags = $flags;
+    public function __construct(
+        private readonly string $name,
+        private readonly int $flags = self::FLAG_PUBLIC
+    ) {
     }
 
     public function setDefaultValue(mixed $defaultValue): void

@@ -43,16 +43,14 @@ class FunctionProxyGenerator
     /**
      * Constructs functions stub class from namespace Reflection
      *
-     * @param ReflectionFileNamespace $namespace            Reflection of namespace
-     * @param string[][][]            $adviceNames          List of function advices
-     * @param bool                    $useParameterWidening Enables usage of parameter widening feature
+     * @param ReflectionFileNamespace $namespace   Reflection of namespace
+     * @param string[][][]            $adviceNames List of function advices
      *
      * @throws ReflectionException If there is an advice for unknown function
      */
     public function __construct(
         ReflectionFileNamespace $namespace,
-        array $adviceNames = [],
-        bool $useParameterWidening = false
+        array $adviceNames = []
     ) {
         $this->adviceNames   = $adviceNames;
         $this->fileGenerator = new FileGenerator();
@@ -65,7 +63,7 @@ class FunctionProxyGenerator
         foreach (array_keys($functionAdvices) as $functionName) {
             $functionReflection = new ReflectionFunction($functionName);
             $functionBody       = $this->getJoinpointInvocationBody($functionReflection);
-            $funcGenerator      = FunctionGenerator::fromReflection($functionReflection, $useParameterWidening);
+            $funcGenerator      = FunctionGenerator::fromReflection($functionReflection);
             $funcGenerator->setBody($functionBody);
             $functionsContent[] = $funcGenerator->generate();
         }

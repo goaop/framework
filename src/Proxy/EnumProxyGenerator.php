@@ -76,13 +76,11 @@ class EnumProxyGenerator extends ClassProxyGenerator
      * @param ReflectionClass<object> $originalClass        Original enum reflection (before transformation)
      * @param string                  $traitName            FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
      * @param string[][][]            $classAdviceNames     List of advices for enum
-     * @param bool                    $useParameterWidening Enables usage of parameter widening feature
      */
     public function __construct(
         ReflectionClass $originalClass,
         string $traitName,
-        array $classAdviceNames,
-        bool $useParameterWidening
+        array $classAdviceNames
     ) {
         // Enums cannot be instantiated (no `new EnumClass()`) and cannot have properties, so
         // initialization and property-access join points must never be woven for enums.
@@ -93,8 +91,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
             AspectContainer::STATIC_METHOD_PREFIX => true,
         ]);
 
-        $this->adviceNames          = $classAdviceNames;
-        $this->useParameterWidening = $useParameterWidening;
+        $this->adviceNames = $classAdviceNames;
 
         $dynamicMethodAdvices = $classAdviceNames[AspectContainer::METHOD_PREFIX] ?? [];
         $staticMethodAdvices  = $classAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];

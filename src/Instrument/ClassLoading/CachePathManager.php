@@ -39,11 +39,6 @@ class CachePathManager
     /** @phpstan-var KernelOptions */
     protected array $options;
 
-    /**
-     * Aspect kernel instance
-     */
-    protected AspectKernel $kernel;
-
     protected ?string $cacheDir = null;
 
     /**
@@ -99,9 +94,8 @@ class CachePathManager
      */
     protected array $newCacheState = [];
 
-    public function __construct(AspectKernel $kernel)
+    public function __construct(protected readonly AspectKernel $kernel)
     {
-        $this->kernel   = $kernel;
         $options        = $kernel->getOptions();
         $this->options  = $options;
         $this->appDir   = $options['appDir'];

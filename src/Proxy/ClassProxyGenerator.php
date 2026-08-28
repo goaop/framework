@@ -52,11 +52,6 @@ class ClassProxyGenerator
     protected GeneratorInterface $generator;
 
     /**
-     * Should parameter widening be used or not
-     */
-    protected bool $useParameterWidening;
-
-    /**
      * Generates a proxy class that wraps the original class body (now a trait) via trait-use.
      *
      * The original class has been converted to a trait named $traitName by WeavingTransformer.
@@ -64,19 +59,16 @@ class ClassProxyGenerator
      * that trait, and aliases each intercepted method as `private __aop__<method>` so the
      * overriding method body can delegate to the original via a Closure::bind proceed closure.
      *
-     * @param ReflectionClass<object> $originalClass        Original class reflection (before transformation)
-     * @param string                  $traitName            FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
-     * @param string[][][]            $classAdviceNames     List of advices for class
-     * @param bool                    $useParameterWidening Enables usage of parameter widening feature
+     * @param ReflectionClass<object> $originalClass    Original class reflection (before transformation)
+     * @param string                  $traitName        FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
+     * @param string[][][]            $classAdviceNames List of advices for class
      */
     public function __construct(
         ReflectionClass $originalClass,
         string $traitName,
-        array $classAdviceNames,
-        bool $useParameterWidening
+        array $classAdviceNames
     ) {
-        $this->adviceNames          = $classAdviceNames;
-        $this->useParameterWidening = $useParameterWidening;
+        $this->adviceNames = $classAdviceNames;
 
         $dynamicMethodAdvices  = $classAdviceNames[AspectContainer::METHOD_PREFIX] ?? [];
         $staticMethodAdvices   = $classAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
@@ -244,11 +236,7 @@ class ClassProxyGenerator
             $reflectionMethod = $originalClass->getMethod($methodName);
             $methodBody       = $this->getJoinpointInvocationBody($reflectionMethod, $originalClass);
 
-            $interceptedMethods[$methodName] = new InterceptedMethodGenerator(
-                $reflectionMethod,
-                $methodBody,
-                $this->useParameterWidening
-            );
+            $interceptedMethods[$methodName] = new InterceptedMethodGenerator($reflectionMethod, $methodBody);
         }
 
         return $interceptedMethods;

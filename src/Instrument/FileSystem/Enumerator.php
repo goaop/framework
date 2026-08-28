@@ -27,36 +27,17 @@ use UnexpectedValueException;
 class Enumerator
 {
     /**
-     * Path to the root directory, where enumeration should start
-     */
-    private string $rootDirectory;
-
-    /**
-     * List of additional include paths, should be below rootDirectory
-     *
-     * @var string[]
-     */
-    private array $includePaths;
-
-    /**
-     * List of additional exclude paths, should be below rootDirectory
-     *
-     * @var string[]
-     */
-    private array $excludePaths;
-
-    /**
      * Initializes an enumerator
      *
-     * @param string   $rootDirectory Path to the root directory
-     * @param string[] $includePaths  List of additional include paths
-     * @param string[] $excludePaths  List of additional exclude paths
+     * @param string   $rootDirectory Path to the root directory, where enumeration should start
+     * @param string[] $includePaths  List of additional include paths, should be below rootDirectory
+     * @param string[] $excludePaths  List of additional exclude paths, should be below rootDirectory
      */
-    public function __construct(string $rootDirectory, array $includePaths = [], array $excludePaths = [])
-    {
-        $this->rootDirectory = $rootDirectory;
-        $this->includePaths  = $includePaths;
-        $this->excludePaths  = $excludePaths;
+    public function __construct(
+        private readonly string $rootDirectory,
+        private readonly array $includePaths = [],
+        private readonly array $excludePaths = []
+    ) {
     }
 
     /**

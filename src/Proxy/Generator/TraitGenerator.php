@@ -36,16 +36,11 @@ final class TraitGenerator implements GeneratorInterface
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
 
-    private string $name;
-    private ?string $namespace;
-
     /** @var MethodGenerator[] */
     private array $methods;
 
     /** @var PropertyNode[] */
     private array $properties;
-
-    private ?DocBlockGenerator $docBlock = null;
 
     /** @var string[] used trait FQCNs */
     private array $usedTraits = [];
@@ -61,16 +56,13 @@ final class TraitGenerator implements GeneratorInterface
      * @param PropertyNode[] $properties
      */
     public function __construct(
-        string $name,
-        ?string $namespace,
+        private readonly string $name,
+        private readonly ?string $namespace,
         array $methods = [],
-        ?DocBlockGenerator $docBlock = null,
+        private readonly ?DocBlockGenerator $docBlock = null,
         array $properties = [],
     ) {
-        $this->name      = $name;
-        $this->namespace = $namespace;
-        $this->methods   = array_values($methods);
-        $this->docBlock  = $docBlock;
+        $this->methods    = array_values($methods);
         $this->properties = array_values($properties);
     }
 

@@ -14,7 +14,6 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
-use Go\Aop\Features;
 use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AdviceMatcher;
 use Go\Core\AdviceMatcherInterface;
@@ -56,40 +55,19 @@ class WeavingTransformer extends BaseSourceTransformer
     private const array TRAIT_INCOMPATIBLE_ATTRIBUTES = ['Attribute', 'AllowDynamicProperties'];
 
     /**
-     * Advice matcher for class
-     */
-    protected AdviceMatcherInterface $adviceMatcher;
-
-    /**
-     * Should we use parameter widening for our decorators
-     */
-    protected bool $useParameterWidening = false;
-
-    /**
-     * Cache manager
-     */
-    private CachePathManager $cachePathManager;
-
-    /**
-     * Loader for aspects
-     */
-    protected AspectLoader $aspectLoader;
-
-    /**
      * Constructs a weaving transformer
+     *
+     * @param AdviceMatcherInterface $adviceMatcher    Advice matcher for class
+     * @param CachePathManager       $cachePathManager Cache manager
+     * @param AspectLoader           $aspectLoader     Loader for aspects
      */
     public function __construct(
         AspectKernel $kernel,
-        AdviceMatcherInterface $adviceMatcher,
-        CachePathManager $cachePathManager,
-        AspectLoader $loader
+        protected readonly AdviceMatcherInterface $adviceMatcher,
+        private readonly CachePathManager $cachePathManager,
+        protected readonly AspectLoader $aspectLoader
     ) {
         parent::__construct($kernel);
-        $this->adviceMatcher    = $adviceMatcher;
-        $this->cachePathManager = $cachePathManager;
-        $this->aspectLoader     = $loader;
-
-        $this->useParameterWidening = $kernel->hasFeature(Features::PARAMETER_WIDENING);
     }
 
     /**
@@ -173,13 +151,13 @@ class WeavingTransformer extends BaseSourceTransformer
         if ($class->isTrait()) {
             $this->commentOutInterceptedPropertiesInTraitBody($class, $advices, $metadata);
             $this->adjustOriginalTrait($class, $metadata, $newClassName);
-            $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
+            $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices);
         } elseif ($class->isEnum()) {
             $this->convertEnumToTrait($class, $advices, $metadata, $newClassName);
-            $childProxyGenerator = new EnumProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
+            $childProxyGenerator = new EnumProxyGenerator($class, $newFqcn, $advices);
         } else {
             $this->convertClassToTrait($class, $advices, $metadata, $newClassName);
-            $childProxyGenerator = new ClassProxyGenerator($class, $newFqcn, $advices, $this->useParameterWidening);
+            $childProxyGenerator = new ClassProxyGenerator($class, $newFqcn, $advices);
         }
 
         $classFileName = $class->getFileName();
@@ -998,7 +976,7 @@ class WeavingTransformer extends BaseSourceTransformer
                 if (!file_exists($dirname)) {
                     mkdir($dirname, $this->options['cacheFileMode'], true);
                 }
-                $generator = new FunctionProxyGenerator($namespace, $functionAdvices, $this->useParameterWidening);
+                $generator = new FunctionProxyGenerator($namespace, $functionAdvices);
                 file_put_contents($functionFileName, $generator->generate(), LOCK_EX);
                 // For cache files we don't want executable bits by default
                 chmod($functionFileName, $this->options['cacheFileMode'] & (~0111));

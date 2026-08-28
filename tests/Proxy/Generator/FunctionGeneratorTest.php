@@ -131,17 +131,6 @@ class FunctionGeneratorTest extends TestCase
         $this->assertStringContainsString('function &funcGenHelper_simple', $output);
     }
 
-    public function testWideningMode(): void
-    {
-        $gen = FunctionGenerator::fromReflection(
-            new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'),
-            true
-        );
-        $output = $gen->generate();
-        $this->assertStringNotContainsString('string $name', $output);
-        $this->assertStringContainsString('$name', $output);
-    }
-
     public function testSetBodyEmptyString(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));

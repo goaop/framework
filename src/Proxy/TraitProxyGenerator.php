@@ -40,11 +40,9 @@ class TraitProxyGenerator extends ClassProxyGenerator
     public function __construct(
         ReflectionClass $originalTrait,
         string $parentTraitName,
-        array $traitAdviceNames,
-        bool $useParameterWidening
+        array $traitAdviceNames
     ) {
-        $this->adviceNames          = $traitAdviceNames;
-        $this->useParameterWidening = $useParameterWidening;
+        $this->adviceNames = $traitAdviceNames;
 
         $dynamicMethodAdvices = $traitAdviceNames[AspectContainer::METHOD_PREFIX] ?? [];
         $staticMethodAdvices  = $traitAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];

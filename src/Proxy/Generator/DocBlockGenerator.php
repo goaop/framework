@@ -20,19 +20,16 @@ namespace Go\Proxy\Generator;
  */
 final class DocBlockGenerator
 {
-    private string $shortDescription;
-    private string $longDescription;
-
     /** @var array<string, string[]> tagName => list of tag content lines */
     private array $tags = [];
 
     /** Holds a raw docblock string when constructed via fromDocComment() */
     private ?string $rawDocComment = null;
 
-    public function __construct(string $shortDescription = '', string $longDescription = '')
-    {
-        $this->shortDescription = $shortDescription;
-        $this->longDescription  = $longDescription;
+    public function __construct(
+        private readonly string $shortDescription = '',
+        private readonly string $longDescription = ''
+    ) {
     }
 
     /**

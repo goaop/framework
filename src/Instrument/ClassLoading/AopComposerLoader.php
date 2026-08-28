@@ -29,18 +29,6 @@ use Composer\Autoload\ClassLoader;
 class AopComposerLoader
 {
     /**
-     * Instance of original autoloader
-     */
-    protected ClassLoader $original;
-
-    /**
-     * AOP kernel options
-     *
-     * @phpstan-var KernelOptions
-     */
-    protected array $options;
-
-    /**
      * File enumerator
      */
     protected Enumerator $fileEnumerator;
@@ -79,11 +67,11 @@ class AopComposerLoader
      *
      * @phpstan-param KernelOptions $options Configuration options
      */
-    public function __construct(ClassLoader $original, AspectContainer $container, array $options)
-    {
-        $this->options  = $options;
-        $this->original = $original;
-
+    public function __construct(
+        protected readonly ClassLoader $original,
+        AspectContainer $container,
+        protected readonly array $options
+    ) {
         $prefixes     = $original->getPrefixes();
         $excludePaths = $options['excludePaths'];
 

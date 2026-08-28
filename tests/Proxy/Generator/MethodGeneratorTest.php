@@ -161,15 +161,6 @@ class MethodGeneratorTest extends TestCase
         $this->assertStringContainsString('bool $extra', $output);
     }
 
-    public function testWideningMode(): void
-    {
-        $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'), true);
-        $output = $gen->generate();
-        // With widening, parameter types are dropped
-        $this->assertStringNotContainsString('string $name', $output);
-        $this->assertStringContainsString('$name', $output);
-    }
-
     public function testSetAbstract(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
