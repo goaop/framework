@@ -52,7 +52,8 @@
         },
         "psr-4": {
             "Go\\": "tests/",
-            "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
+            "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/",
+            "Go\\Tests\\Audit\\": "tests/Fixtures/audit/src/"
         },
         "files": [
             "tests/functions.php",

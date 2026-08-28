@@ -2,14 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Repro;
-
-class Collaborator
-{
-    public function __construct(public string $tag = 'default')
-    {
-    }
-}
+namespace Go\Tests\Audit;
 
 class Php81NewInInitializers
 {

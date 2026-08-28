@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Repro;
 
-class Php85PipeOperator
+trait Php85PipeOperator__AopProxied
 {
     public function transform(string $input): string
     {
@@ -19,3 +19,4 @@ class Php85PipeOperator
         return [$value] |> (fn(array $items) => new \ArrayObject($items));
     }
 }
+include_once AOP_CACHE_DIR . '/Transformer/_files/audit/Php85PipeOperator.php';

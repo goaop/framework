@@ -2,15 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Repro;
-
-#[\Attribute(\Attribute::TARGET_ALL)]
-class ExprAttr
-{
-    public function __construct(public mixed $value = null)
-    {
-    }
-}
+namespace Go\Tests\Audit;
 
 #[ExprAttr(static function (int $x): int { return $x * 2; })]
 class Php85ClosuresInConstExpr

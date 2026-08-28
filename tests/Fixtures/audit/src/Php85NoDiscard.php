@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Repro;
+namespace Go\Tests\Audit;
 
 class Php85NoDiscard
 {

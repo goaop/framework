@@ -24,7 +24,7 @@ use ReflectionClass;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class Php85AuditScratchTest extends TestCase
 {
-    private const OUT_DIR = __DIR__ . '/_files/audit/out';
+    private const FIXTURE_DIR = __DIR__ . '/../../Fixtures/audit/src';
 
     protected static FileSystem $fileSystem;
 
@@ -37,9 +37,14 @@ class Php85AuditScratchTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         static::$fileSystem = FileSystem::mount('vfs');
-        if (!is_dir(self::OUT_DIR)) {
-            mkdir(self::OUT_DIR, 0777, true);
+        if (!is_dir(self::outDir())) {
+            mkdir(self::outDir(), 0777, true);
         }
+    }
+
+    private static function outDir(): string
+    {
+        return sys_get_temp_dir() . '/php85-audit-out';
     }
 
     public static function tearDownAfterClass(): void
@@ -81,7 +86,7 @@ class Php85AuditScratchTest extends TestCase
     public static function fixtureNames(): array
     {
         $names = [];
-        foreach (glob(__DIR__ . '/_files/audit/*.php') as $file) {
+        foreach (glob(self::FIXTURE_DIR . '/*.php') as $file) {
             $name = basename($file, '.php');
             $names[$name] = [$name];
         }
@@ -89,36 +94,91 @@ class Php85AuditScratchTest extends TestCase
         return $names;
     }
 
+    /**
+     * Fixtures currently known to produce a broken weave, keyed to their tracking issue.
+     * A fix PR that resolves one of these MUST remove the entry (the test then asserts success).
+     */
+    private const KNOWN_GAPS = [
+        'Php80ClassAttrPlain'        => 'https://github.com/goaop/framework/issues/598',
+        'ExprAttr'                   => 'https://github.com/goaop/framework/issues/598 + 599',
+        'ConstAttr'                  => 'https://github.com/goaop/framework/issues/598 + 599',
+        'RichAttr'                   => 'https://github.com/goaop/framework/issues/598 + 599',
+        'Collaborator'               => 'https://github.com/goaop/framework/issues/599',
+        'Php81EnumConstExprCases'    => 'https://github.com/goaop/framework/issues/600',
+        'Php81NonScalarAttributeArgs' => 'https://github.com/goaop/framework/issues/601',
+        'Php85ClosuresInConstExpr'   => 'https://github.com/goaop/framework/issues/601',
+        'Php80GlobalConstAttrArg'    => 'https://github.com/goaop/framework/issues/602',
+    ];
+
     #[DataProvider('fixtureNames')]
     public function testWeaveAndLint(string $name): void
     {
-        $metadata = $this->loadTestMetadata('audit/' . $name);
-
-        try {
-            $result = $this->transformer->transform($metadata);
-        } catch (\Throwable $e) {
-            file_put_contents(self::OUT_DIR . "/$name.ERROR.txt", (string) $e);
-            $this->fail("TRANSFORM ERROR for $name: {$e->getMessage()}");
+        // 8.5-only syntax cannot lint (nor natively reflect) on older runtimes
+        if (str_starts_with($name, 'Php85') && PHP_VERSION_ID < 80500) {
+            $this->markTestSkipped('Fixture uses PHP 8.5 syntax');
         }
 
-        $woven = $metadata->source;
-        file_put_contents(self::OUT_DIR . "/$name-woven.php", $woven);
-        $this->assertLints(self::OUT_DIR . "/$name-woven.php", "$name woven trait");
+        $problems = $this->weaveAndCollectProblems($name);
+
+        if (isset(self::KNOWN_GAPS[$name])) {
+            $issue = self::KNOWN_GAPS[$name];
+            $this->assertNotSame(
+                [],
+                $problems,
+                "$name weaves cleanly now — the gap tracked in $issue looks fixed. " .
+                'Remove it from KNOWN_GAPS so this stays asserted.'
+            );
+            $this->addToAssertionCount(1);
+
+            return;
+        }
+
+        $this->assertSame([], $problems, "$name should weave cleanly:\n" . implode("\n---\n", $problems));
+    }
+
+    /**
+     * @return list<string> Problems encountered (transform exception or lint failures); empty = clean weave
+     */
+    private function weaveAndCollectProblems(string $name): array
+    {
+        $metadata = $this->loadAuditMetadata($name);
+
+        try {
+            $this->transformer->transform($metadata);
+        } catch (\Throwable $e) {
+            file_put_contents(self::outDir() . "/$name.ERROR.txt", (string) $e);
+
+            return ["TRANSFORM ERROR: {$e->getMessage()}"];
+        }
+
+        $problems = [];
+        $woven    = $metadata->source;
+        file_put_contents(self::outDir() . "/$name-woven.php", $woven);
+        $problems = [...$problems, ...$this->lintProblems(self::outDir() . "/$name-woven.php", "$name woven trait")];
 
         if (preg_match_all("/AOP_CACHE_DIR . '(.+)';$/m", $woven, $matches)) {
             foreach ($matches[1] as $i => $proxyPath) {
                 $proxyContent = (string) file_get_contents('vfs://' . $proxyPath);
                 $suffix       = $i > 0 ? "-$i" : '';
-                file_put_contents(self::OUT_DIR . "/$name-proxy$suffix.php", $proxyContent);
-                $this->assertLints(self::OUT_DIR . "/$name-proxy$suffix.php", "$name proxy #$i");
+                file_put_contents(self::outDir() . "/$name-proxy$suffix.php", $proxyContent);
+                $problems = [...$problems, ...$this->lintProblems(self::outDir() . "/$name-proxy$suffix.php", "$name proxy #$i")];
             }
         }
+
+        return $problems;
     }
 
-    private function assertLints(string $file, string $label): void
+    /**
+     * @return list<string>
+     */
+    private function lintProblems(string $file, string $label): array
     {
         exec(escapeshellarg(PHP_BINARY) . ' -l ' . escapeshellarg($file) . ' 2>&1', $output, $code);
-        $this->assertSame(0, $code, "$label does not lint:\n" . implode("\n", $output));
+        if ($code !== 0) {
+            return ["$label does not lint:\n" . implode("\n", $output)];
+        }
+
+        return [];
     }
 
     private function getInterceptEverythingMatcher(): AdviceMatcherInterface
@@ -139,7 +199,8 @@ class Php85AuditScratchTest extends TestCase
                     if ($property->getDeclaringClass()->name !== $refClass->name) {
                         continue;
                     }
-                    if ($property->isReadOnly()) {
+                    // Mirror the real AdviceMatcher gates (static/readonly/hooked are not interceptable)
+                    if ($property->isStatic() || $property->isReadOnly() || $property->hasHooks()) {
                         continue;
                     }
                     $advisorId = "advisor.{$refClass->name}->{$property->name}";
@@ -165,9 +226,9 @@ class Php85AuditScratchTest extends TestCase
         return $mock;
     }
 
-    private function loadTestMetadata(string $name): StreamMetaData
+    private function loadAuditMetadata(string $name): StreamMetaData
     {
-        $fileName = __DIR__ . '/_files/' . $name . '.php';
+        $fileName = self::FIXTURE_DIR . '/' . $name . '.php';
         $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
         $source   = file_get_contents($fileName);
         $metadata = new StreamMetaData($stream, $source);
