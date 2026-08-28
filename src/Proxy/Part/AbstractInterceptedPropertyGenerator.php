@@ -82,7 +82,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             }
         }
 
-        $attributeGroups = AttributeGroupsGenerator::fromReflectionAttributes($this->property->getAttributes());
+        $attributeGroups = AttributeGroupsGenerator::fromReflector($this->property);
         if ($attributeGroups !== []) {
             $generator->addAttributeGroups($attributeGroups);
         }

@@ -150,7 +150,7 @@ class ClassProxyGenerator
 
         // Copy PHP 8+ attributes from original class to proxy so that runtime
         // attribute inspection on proxy objects returns the same attributes
-        $classAttrGroups = AttributeGroupsGenerator::fromReflectionAttributes($originalClass->getAttributes());
+        $classAttrGroups = AttributeGroupsGenerator::fromReflector($originalClass);
         if (!empty($classAttrGroups)) {
             $classGenerator->addAttributeGroups($classAttrGroups);
         }

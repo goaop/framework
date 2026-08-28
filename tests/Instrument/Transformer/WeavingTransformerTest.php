@@ -316,6 +316,66 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringContainsString('#[\FakeAttr]', $actual);
     }
 
+    /**
+     * PHP 8.0/8.1 non-scalar and non-foldable attribute arguments must be copied to the
+     * proxy from the AST verbatim: enum cases, new-in-initializer objects and global
+     * constants must never be evaluated at weave time.
+     *
+     * @see https://github.com/goaop/framework/issues/601
+     * @see https://github.com/goaop/framework/issues/602
+     */
+    public function testWeaverCopiesNonScalarAttributeArgumentsFromAst(): void
+    {
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher
+            ->method('getAdvicesForClass')
+            ->willReturnCallback(function (ReflectionClass $refClass) {
+                // Only weave the target class — leave the enum and the attribute class alone
+                if ($refClass->getShortName() !== 'TestAttributeArgsClass') {
+                    return [];
+                }
+                $advices = [];
+                foreach ($refClass->getMethods() as $method) {
+                    $advisorId = "advisor.{$refClass->name}->{$method->name}";
+                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
+                }
+                return $advices;
+            });
+        $adviceMatcher
+            ->method('getAdvicesForFunctions')
+            ->willReturn([]);
+
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$this->getContainerMock()])
+            ->getMock();
+        $transformer = new WeavingTransformer(
+            $this->kernel,
+            $adviceMatcher,
+            $this->cachePathManager,
+            $loader
+        );
+
+        $metadata = $this->loadTestMetadata('php81-attr-args');
+        $transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-attr-args-woven')->source);
+        $this->assertEquals($expected, $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+        $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php81-attr-args-proxy')->source);
+        $this->assertEquals($expectedProxyContent, $actualProxyContent);
+
+        // The argument expressions must be preserved, not evaluated/constant-folded
+        $this->assertStringContainsString('\Test\ns1\AttrStatus::Active', $actualProxyContent);
+        $this->assertStringContainsString('new \ArrayObject([1, 2])', $actualProxyContent);
+        $this->assertStringContainsString('PHP_INT_MAX', $actualProxyContent);
+        $this->assertStringNotContainsString((string) PHP_INT_MAX, $actualProxyContent);
+    }
+
     public function testWeaverMovesInterceptedPropertiesToProxyHooks(): void
     {
         $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);

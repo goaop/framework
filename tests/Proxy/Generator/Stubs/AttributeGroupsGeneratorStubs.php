@@ -59,3 +59,42 @@ class AttrGenHelperClass
 
     public function methodWithAttrParam(#[TestNoArgsAttr] string $name): void {}
 }
+
+enum TestStatusEnum: string
+{
+    case Active = 'active';
+    case Disabled = 'disabled';
+}
+
+#[Attribute(Attribute::TARGET_ALL)]
+class TestRichAttr
+{
+    public function __construct(
+        public mixed $value = null,
+        public mixed $extra = null,
+    ) {}
+}
+
+#[TestRichAttr(TestStatusEnum::Active)]
+function attrGenHelper_enumArg(): void {}
+
+#[TestRichAttr(new \ArrayObject([1, 2]))]
+function attrGenHelper_objectArg(): void {}
+
+#[TestRichAttr(PHP_INT_MAX)]
+function attrGenHelper_globalConstArg(): void {}
+
+class AttrGenRichHelperClass
+{
+    #[TestRichAttr(TestStatusEnum::Disabled, 123)]
+    public function tagged(#[TestRichAttr(TestStatusEnum::Active)] int $x = 8): int
+    {
+        return $x;
+    }
+
+    #[TestRichAttr(PHP_INT_MAX)]
+    public function limited(): int
+    {
+        return PHP_INT_MAX;
+    }
+}

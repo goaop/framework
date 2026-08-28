@@ -20,7 +20,6 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
-use ReflectionAttribute;
 use ReflectionMethod;
 use ReflectionNamedType;
 
@@ -55,8 +54,8 @@ final class MethodGenerator
     /** @var ParameterGenerator[] */
     private array $parameters = [];
 
-    /** @var ReflectionAttribute<object>[] */
-    private array $reflectionAttributes = [];
+    /** @var \PhpParser\Node\AttributeGroup[] */
+    private array $attributeGroups = [];
 
     /** @var Stmt[]|null null for abstract methods */
     private ?array $stmts = [];
@@ -131,8 +130,9 @@ final class MethodGenerator
             $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam, $useWidening));
         }
 
-        // Attributes
-        $generator->reflectionAttributes = $method->getAttributes();
+        // Attributes: cloned from the AST when available (parser-reflection), so that
+        // argument expressions are never evaluated at weave time (issues #601, #602)
+        $generator->attributeGroups = AttributeGroupsGenerator::fromReflector($method);
 
         return $generator;
     }
@@ -278,7 +278,7 @@ final class MethodGenerator
             $builder->addParam($param->getNode());
         }
 
-        foreach (AttributeGroupsGenerator::fromReflectionAttributes($this->reflectionAttributes) as $attrGroup) {
+        foreach ($this->attributeGroups as $attrGroup) {
             $builder->addAttribute($attrGroup);
         }
 
