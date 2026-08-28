@@ -12,8 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Lang\Attribute;
 
-use BadMethodCallException;
-
 abstract class AbstractAttribute
 {
     /**
@@ -24,26 +22,4 @@ abstract class AbstractAttribute
         readonly public string $expression = '',
         readonly public int    $order = 0,
     ) {}
-
-    /**
-     * Error handler for unknown property accessor in attribute class.
-     */
-    public function __get(string $name): never
-    {
-        throw new BadMethodCallException(
-            sprintf("Unknown property '%s' on attribute '%s'.", $name, static::class)
-        );
-    }
-
-    /**
-     * Error handler for unknown property mutator in attribute class.
-     *
-     * @param mixed $value Property value
-     */
-    public function __set(string $name, mixed $value): never
-    {
-        throw new BadMethodCallException(
-            sprintf("Unknown property '%s' on attribute '%s'.", $name, static::class)
-        );
-    }
 }

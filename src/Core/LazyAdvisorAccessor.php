@@ -12,7 +12,6 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
-use AllowDynamicProperties;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
@@ -22,36 +21,37 @@ use InvalidArgumentException;
 /**
  * Provides an interface for loading of advisors from the container
  */
-#[AllowDynamicProperties]
 final class LazyAdvisorAccessor
 {
+    /**
+     * @var array<string, Interceptor> Resolved interceptors, keyed by advisor identifier
+     */
+    private array $interceptors = [];
+
     /**
      * Accessor constructor
      */
     public function __construct(
-        protected readonly AspectContainer $container,
-        protected readonly AspectLoader $loader
+        private readonly AspectContainer $container,
+        private readonly AspectLoader $loader
     ) {}
 
     /**
-     * Returns the Interceptor for the given advisor name, loading and caching it on first access.
-     *
-     * Prefer this over the magic property accessor when the name is a variable — PHP's `__get()` is
-     * identical in behaviour, but static-analysis tools cannot track its return type for variable keys.
+     * Returns the Interceptor for the given advisor name, loading and caching it on first access
      *
      * @throws InvalidArgumentException if referenced value is not an advisor or its advice is not an Interceptor
      */
     public function getInterceptor(string $name): Interceptor
     {
-        return $this->__get($name);
+        return $this->interceptors[$name] ??= $this->loadInterceptor($name);
     }
 
     /**
-     * Magic advice accessor
+     * Resolves an interceptor from the container, loading the owning aspect on demand
      *
      * @throws InvalidArgumentException if referenced value is not an advisor or its advice is not an Interceptor
      */
-    public function __get(string $name): Interceptor
+    private function loadInterceptor(string $name): Interceptor
     {
         if (!$this->container->has($name)) {
             [$aspectName] = explode('->', $name, 2);
@@ -60,7 +60,6 @@ final class LazyAdvisorAccessor
             }
             $aspectInstance = $this->container->getService($aspectName);
             $this->loader->loadAndRegister($aspectInstance);
-
         }
         $advisor = $this->container->getValue($name);
         if (!$advisor instanceof Advisor) {
@@ -70,8 +69,7 @@ final class LazyAdvisorAccessor
         if (!$advice instanceof Interceptor) {
             throw new InvalidArgumentException("Advice {$name} is not an Interceptor");
         }
-        $this->$name = $advice;
 
-        return $this->$name;
+        return $advice;
     }
 }

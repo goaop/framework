@@ -30,6 +30,8 @@ use Go\Proxy\ClassProxyGenerator;
 use Go\Proxy\EnumProxyGenerator;
 use Go\Proxy\FunctionProxyGenerator;
 use Go\Proxy\TraitProxyGenerator;
+use PhpParser\Node\Param;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Property;
 use ReflectionProperty;
@@ -205,7 +207,7 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
-        $position = $classNode->getAttribute('startTokenPos');
+        $position = $this->getPositionAfterAttributeGroups($classNode);
         if (!is_int($position)) {
             return;
         }
@@ -221,6 +223,32 @@ class WeavingTransformer extends BaseSourceTransformer
             }
             ++$position;
         } while (true);
+    }
+
+    /**
+     * Returns the token position where the class/enum declaration scan should start.
+     *
+     * A ClassLike node's startTokenPos includes its attribute groups (`#[...]`), so scanning
+     * from there would rename the first T_STRING inside the attribute to the trait name and
+     * then delete the real class header (see https://github.com/goaop/framework/issues/598).
+     * Class-level attributes are kept as-is on the generated trait — attributes are legal
+     * on traits — so the scan starts right after the last attribute group.
+     */
+    private function getPositionAfterAttributeGroups(ClassLike $classNode): ?int
+    {
+        $position = $classNode->getAttribute('startTokenPos');
+        if (!is_int($position)) {
+            return null;
+        }
+        $lastAttrGroup = end($classNode->attrGroups);
+        if ($lastAttrGroup !== false) {
+            $attrGroupsEnd = $lastAttrGroup->getAttribute('endTokenPos');
+            if (is_int($attrGroupsEnd)) {
+                $position = $attrGroupsEnd + 1;
+            }
+        }
+
+        return $position;
     }
 
     /**
@@ -241,7 +269,7 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
-        $position = $classNode->getAttribute('startTokenPos');
+        $position = $this->getPositionAfterAttributeGroups($classNode);
         if (!is_int($position)) {
             return;
         }
@@ -327,7 +355,7 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
-        $position = $classNode->getAttribute('startTokenPos');
+        $position = $this->getPositionAfterAttributeGroups($classNode);
         if (!is_int($position)) {
             return;
         }
@@ -586,6 +614,7 @@ class WeavingTransformer extends BaseSourceTransformer
         }
 
         $mask = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED | ReflectionProperty::IS_PRIVATE;
+        $promotedAssignments = [];
         foreach ($class->getProperties($mask) as $property) {
             if (!isset($interceptedProperties[$property->getName()])) {
                 continue;
@@ -598,12 +627,164 @@ class WeavingTransformer extends BaseSourceTransformer
             if (!is_object($propertyNode) || !method_exists($propertyNode, 'getAttribute')) {
                 continue;
             }
+            if ($propertyNode instanceof Param) {
+                // Promoted constructor property (issue #599): the declaration cannot be commented
+                // out — it doubles as the constructor parameter. Demote it to a plain parameter
+                // instead and assign it to the (proxy-declared) property in the constructor body.
+                $this->demotePromotedPropertyParameter($propertyNode, $streamMetaData);
+                $propertyName          = $property->getName();
+                $promotedAssignments[] = sprintf('$this->%1$s = $%1$s;', $propertyName);
+                continue;
+            }
             $start = $propertyNode->getAttribute('startTokenPos');
             $end   = $propertyNode->getAttribute('endTokenPos');
             if (!is_int($start) || !is_int($end)) {
                 continue;
             }
             $this->commentOutMovedPropertyTokenRange($class->name, $property->getName(), $start, $end, $streamMetaData);
+        }
+
+        if ($promotedAssignments !== []) {
+            $this->injectConstructorAssignments($class, $promotedAssignments, $streamMetaData);
+        }
+    }
+
+    /**
+     * Demotes a promoted constructor property to a plain constructor parameter (issue #599).
+     *
+     * Removes only the promotion modifiers (visibility, asymmetric set-visibility, readonly,
+     * final) from the parameter tokens, keeping attributes, type, name, and default value.
+     * The property itself is re-declared with interception hooks in the proxy class, and the
+     * value is assigned in the constructor body (see injectConstructorAssignments), which
+     * routes the write through the proxy's set hook.
+     *
+     * Whitespace containing newlines is preserved so line numbers stay intact.
+     */
+    private function demotePromotedPropertyParameter(Param $parameterNode, StreamMetaData $streamMetaData): void
+    {
+        $start = $parameterNode->getAttribute('startTokenPos');
+        $end   = $parameterNode->getAttribute('endTokenPos');
+        if (!is_int($start) || !is_int($end)) {
+            return;
+        }
+
+        $modifierTokenIds = [
+            T_PUBLIC, T_PROTECTED, T_PRIVATE,
+            T_PUBLIC_SET, T_PROTECTED_SET, T_PRIVATE_SET,
+            T_READONLY, T_FINAL,
+        ];
+
+        $position = $start;
+        while ($position <= $end) {
+            if (!isset($streamMetaData->tokenStream[$position])) {
+                ++$position;
+                continue;
+            }
+            $token = $streamMetaData->tokenStream[$position];
+            // Modifiers can only appear before the parameter variable — stop there so that
+            // tokens inside the default value expression are never touched
+            if ($token->id === T_VARIABLE) {
+                break;
+            }
+            // Skip parameter attribute groups entirely: '#[' opens a bracket context that can
+            // contain arbitrary nested brackets inside attribute arguments
+            if ($token->id === T_ATTRIBUTE) {
+                $bracketDepth = 1;
+                ++$position;
+                while ($position <= $end && $bracketDepth > 0) {
+                    $innerText = isset($streamMetaData->tokenStream[$position]) ? $streamMetaData->tokenStream[$position]->text : '';
+                    if ($innerText === '[') {
+                        ++$bracketDepth;
+                    } elseif ($innerText === ']') {
+                        --$bracketDepth;
+                    }
+                    ++$position;
+                }
+                continue;
+            }
+            if (in_array($token->id, $modifierTokenIds, true)) {
+                unset($streamMetaData->tokenStream[$position]);
+                // Also drop the following whitespace unless it holds a newline (line budget)
+                if (isset($streamMetaData->tokenStream[$position + 1])) {
+                    $nextToken = $streamMetaData->tokenStream[$position + 1];
+                    if ($nextToken->id === T_WHITESPACE && strpbrk($nextToken->text, "\r\n") === false) {
+                        unset($streamMetaData->tokenStream[$position + 1]);
+                    }
+                }
+            }
+            ++$position;
+        }
+    }
+
+    /**
+     * Injects property assignments at the very beginning of the constructor body.
+     *
+     * The assignments are appended to the opening '{' token of the constructor body, all on
+     * the same line, so the original line numbers of the constructor statements are preserved.
+     *
+     * @param non-empty-list<string> $assignments Assignment statements like '$this->name = $name;'
+     */
+    private function injectConstructorAssignments(
+        ReflectionClass $class,
+        array $assignments,
+        StreamMetaData $streamMetaData
+    ): void {
+        $constructor = $class->getConstructor();
+        if ($constructor === null || !$constructor instanceof ReflectionMethod) {
+            return;
+        }
+        $constructorNode = $constructor->getNode();
+        $start = $constructorNode->getAttribute('startTokenPos');
+        $end   = $constructorNode->getAttribute('endTokenPos');
+        if (!is_int($start) || !is_int($end)) {
+            return;
+        }
+
+        // The body '{' is the first '{' token after the parameter list closes (parenthesis
+        // depth back to zero). Hook bodies of promoted parameters contain '{' too, but they
+        // are always nested inside the parameter parentheses, so the depth guard skips them.
+        $position          = $start;
+        $seenFunction      = false;
+        $seenParameterList = false;
+        $parenthesisDepth  = 0;
+        while ($position <= $end) {
+            if (!isset($streamMetaData->tokenStream[$position])) {
+                ++$position;
+                continue;
+            }
+            $token = $streamMetaData->tokenStream[$position];
+            if (!$seenFunction) {
+                // Skip attribute groups before the 'function' keyword — their arguments
+                // may contain arbitrary parentheses
+                if ($token->id === T_ATTRIBUTE) {
+                    $bracketDepth = 1;
+                    ++$position;
+                    while ($position <= $end && $bracketDepth > 0) {
+                        $innerText = isset($streamMetaData->tokenStream[$position]) ? $streamMetaData->tokenStream[$position]->text : '';
+                        if ($innerText === '[') {
+                            ++$bracketDepth;
+                        } elseif ($innerText === ']') {
+                            --$bracketDepth;
+                        }
+                        ++$position;
+                    }
+                    continue;
+                }
+                $seenFunction = ($token->id === T_FUNCTION);
+                ++$position;
+                continue;
+            }
+            if ($token->text === '(') {
+                ++$parenthesisDepth;
+                $seenParameterList = true;
+            } elseif ($token->text === ')') {
+                --$parenthesisDepth;
+            } elseif ($token->text === '{' && $seenParameterList && $parenthesisDepth === 0) {
+                $streamMetaData->tokenStream[$position]->text .= ' ' . implode(' ', $assignments);
+
+                return;
+            }
+            ++$position;
         }
     }
 

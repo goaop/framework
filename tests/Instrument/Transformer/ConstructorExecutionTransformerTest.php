@@ -92,7 +92,41 @@ class ConstructorExecutionTransformerTest extends TestCase
             [
                 '$n = new stdClass(new static::$object[0]->name)',
                 '$n = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}(\Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{static::$object[0]->name})'
-            ]
+            ],
+            // PHP 8.1 new in initializers (issue #603): `new` inside constant-expression
+            // contexts must stay untouched — the rewrite is not a valid constant expression.
+            'parameter default value' => [
+                'function a($helper = new stdClass("x")) { return $helper; }',
+                'function a($helper = new stdClass("x")) { return $helper; }'
+            ],
+            'static variable initializer' => [
+                'function b() { static $memo = new \ArrayObject(); return $memo; }',
+                'function b() { static $memo = new \ArrayObject(); return $memo; }'
+            ],
+            'global constant initializer' => [
+                'const GLOBAL_SERVICE = new stdClass',
+                'const GLOBAL_SERVICE = new stdClass'
+            ],
+            'attribute argument' => [
+                '#[SomeAttr(new stdClass)] function c() {}',
+                '#[SomeAttr(new stdClass)] function c() {}'
+            ],
+            'parameter default kept while body is still rewritten' => [
+                'function d($helper = new stdClass) { return new stdClass; }',
+                'function d($helper = new stdClass) { return \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}; }'
+            ],
+            'static variable kept while body is still rewritten' => [
+                'function e() { static $memo = new stdClass; $memo->x = new stdClass(); return $memo; }',
+                'function e() { static $memo = new stdClass; $memo->x = \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}(); return $memo; }'
+            ],
+            'nested new inside parameter default' => [
+                'function f($helper = new stdClass(new stdClass())) {}',
+                'function f($helper = new stdClass(new stdClass())) {}'
+            ],
+            'promoted property hook body is still rewritten' => [
+                'class G { public function __construct(public stdClass $h = new stdClass { get { return new stdClass; } }) {} }',
+                'class G { public function __construct(public stdClass $h = new stdClass { get { return \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}; } }) {} }'
+            ],
         ];
     }
 }

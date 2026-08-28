@@ -125,4 +125,33 @@ class EnumeratorTest extends TestCase
 
         $this->assertEquals($expectedPaths, $testPaths);
     }
+
+    /**
+     * Regression test: the include-path check must be a prefix test.
+     *
+     * The former `strpos($path, $rootDirectory, 0) === false` was a substring-anywhere
+     * test, so an include path that merely CONTAINED the root directory somewhere in the
+     * middle (here: '/somewhere/base/other' contains root '/base') was wrongly accepted
+     * instead of being rejected as outside the root.
+     */
+    public function testIncludePathMerelyContainingRootDirectoryIsRejected(): void
+    {
+        $enumerator = new Enumerator('/base', ['/somewhere/base/other']);
+
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Path /somewhere/base/other is not in /base');
+        $enumerator->enumerate();
+    }
+
+    /**
+     * Sanity check for the fixed prefix test: include paths below the root are accepted
+     * (no UnexpectedValueException; Finder then fails on the nonexistent directory itself)
+     */
+    public function testIncludePathBelowRootDirectoryPassesTheRootCheck(): void
+    {
+        $enumerator = new Enumerator('vfs://base', ['vfs://base/sub']);
+
+        $files = iterator_to_array($enumerator->enumerate());
+        $this->assertNotEmpty($files);
+    }
 }

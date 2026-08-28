@@ -33,7 +33,9 @@ Asymmetric visibility on **non-readonly** properties _is_ preserved in generated
 
 ## Lazy Objects
 
-PHP 8.4 introduced `ReflectionClass::newLazyProxy()` and `ReflectionClass::newLazyGhost()` for [lazy object initialization](https://wiki.php.net/rfc/lazy-objects). While the framework's `Container` uses lazy objects internally, **lazy object initialization itself is not interceptable** by the framework. There is no join point for the moment a lazy proxy materializes its backing instance.
+PHP 8.4 introduced `ReflectionClass::newLazyProxy()` and `ReflectionClass::newLazyGhost()` for [lazy object initialization](https://wiki.php.net/rfc/lazy-objects). The framework's `Container` uses native lazy proxies for its own deferred services and for aspects registered by class name: retrieving such a service hands out a typed, `instanceof`-correct `newLazyProxy()` instance, and the registered factory only runs on the first real interaction with that object (classes PHP cannot make lazy — internal classes and their non-`stdClass` subclasses, abstract classes, enums, and readonly classes before PHP 8.5 — fall back to eager construction).
+
+However, **lazy object initialization itself is not interceptable** by the framework. There is no join point for the moment a lazy proxy materializes its backing instance.
 
 ## Summary Table
 

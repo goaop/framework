@@ -21,11 +21,33 @@ use function is_array, is_resource;
 
 /**
  * Stream metadata object
- *
- * @property-read string $source
  */
 class StreamMetaData
 {
+    /**
+     * Source code represented by the token stream.
+     *
+     * Reading rebuilds the source directly from {@see self::$tokenStream}. Writing is
+     * deprecated: it re-tokenizes the given source into the token stream instead - use
+     * {@see self::setTokenStreamFromRawTokens()} directly.
+     */
+    public string $source {
+        get {
+            $transformedSource = '';
+            foreach ($this->tokenStream as $token) {
+                if ($token->id !== 0) {
+                    $transformedSource .= $token->text;
+                }
+            }
+
+            return $transformedSource;
+        }
+        set {
+            trigger_error('Setting StreamMetaData->source is deprecated, use tokenStream instead', E_USER_DEPRECATED);
+            $this->setTokenStreamFromRawTokens(...PhpToken::tokenize($value));
+        }
+    }
+
     /**
      * Mapping between array keys and properties
      *
@@ -105,57 +127,6 @@ class StreamMetaData
         }
         $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
         $this->setTokenStreamFromRawTokens(...ReflectionEngine::getParser()->getTokens());
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function __get(string $name): mixed
-    {
-        if ($name === 'source') {
-            return $this->getSource();
-        }
-
-        return null;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function __set(string $name, mixed $value): void
-    {
-        if ($name === 'source' && is_string($value)) {
-            trigger_error('Setting StreamMetaData->source is deprecated, use tokenStream instead', E_USER_DEPRECATED);
-            $this->setSource($value);
-        }
-    }
-
-    /**
-     * Returns source code directly from tokens
-     */
-    private function getSource(): string
-    {
-        $transformedSource = '';
-        foreach ($this->tokenStream as $token) {
-            if ($token->id !== 0) {
-                $transformedSource .= $token->text;
-            }
-        }
-
-        return $transformedSource;
-    }
-
-    /**
-     * Sets the new source for this file
-     *
-     * @TODO: Unfortunately, AST won't be changed, so please be accurate during transformation
-     *
-     * @param string $newSource
-     */
-    private function setSource(string $newSource): void
-    {
-        $rawTokens = PhpToken::tokenize($newSource);
-        $this->setTokenStreamFromRawTokens(...$rawTokens);
     }
 
     /**

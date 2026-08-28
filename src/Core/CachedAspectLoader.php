@@ -12,8 +12,6 @@ declare(strict_types = 1);
 
 namespace Go\Core;
 
-use AllowDynamicProperties;
-use RuntimeException;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Features;
@@ -23,12 +21,17 @@ use ReflectionClass;
 /**
  * Cached loader is responsible for faster initialization of pointcuts/advisors for concrete aspect
  *
- * @property AspectLoader $loader
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-#[AllowDynamicProperties]
 class CachedAspectLoader extends AspectLoader
 {
+    /**
+     * Original loader, resolved from the container on first access and memoized in the backing store
+     */
+    private AspectLoader $loader {
+        get => $this->loader ??= $this->container->getService($this->loaderId);
+    }
+
     /**
      * Path to the cache directory
      */
@@ -98,17 +101,6 @@ class CachedAspectLoader extends AspectLoader
 
         return $loadedItems;
     }
-
-    public function __get(string $name): AspectLoader
-    {
-        if ($name === 'loader') {
-            $this->loader = $this->container->getService($this->loaderId);
-
-            return $this->loader;
-        }
-        throw new RuntimeException('Not implemented');
-    }
-
 
     /**
      * Loads pointcuts and advisors from the file

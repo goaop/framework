@@ -11,6 +11,7 @@ use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use Go\Tests\TestProject\Aspect\InitializationAspect;
 use Go\Tests\TestProject\Aspect\Issue293Aspect;
 use Go\Tests\TestProject\Aspect\LoggingAspect;
+use Go\Tests\TestProject\Aspect\PromotedPropertyInterceptAspect;
 use Go\Tests\TestProject\Aspect\PropertyInterceptAspect;
 use Go\Tests\TestProject\Aspect\TraitCompositionAspect;
 use Go\Tests\TestProject\Aspect\WeavingAspect;
@@ -27,6 +28,7 @@ class DefaultAspectKernel extends AspectKernel
         $container->registerAspect(DoSomethingAspect::class);
         $container->registerAspect(ArrayPropertyInterceptAspect::class);
         $container->registerAspect(PropertyInterceptAspect::class);
+        $container->registerAspect(PromotedPropertyInterceptAspect::class);
         $container->registerAspect(Issue293Aspect::class);
         $container->registerAspect(InitializationAspect::class);
         $container->registerAspect(WeavingAspect::class);

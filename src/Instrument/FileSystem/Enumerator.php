@@ -81,7 +81,7 @@ class Enumerator
         $iterator = $finder->getIterator();
 
         // on Windows platform the default iterator is unable to rewind, not sure why
-        if (strpos(PHP_OS, 'WIN') === 0) {
+        if (PHP_OS_FAMILY === 'Windows') {
             $iterator = new ArrayIterator(iterator_to_array($iterator));
         }
 
@@ -105,30 +105,17 @@ class Enumerator
 
             $fullPath = $this->getFileFullPath($file);
             // Do not touch files that not under rootDirectory
-            if (strpos($fullPath, $rootDirectory) !== 0) {
+            if (!str_starts_with($fullPath, $rootDirectory)) {
                 return false;
             }
 
-            if (!empty($includePaths)) {
-                $found = false;
-                foreach ($includePaths as $includePattern) {
-                    if (fnmatch("{$includePattern}*", $fullPath, FNM_NOESCAPE)) {
-                        $found = true;
-                        break;
-                    }
-                }
-                if (!$found) {
-                    return false;
-                }
+            $matchesPattern = fn(string $pattern): bool => fnmatch("{$pattern}*", $fullPath, FNM_NOESCAPE);
+
+            if (!empty($includePaths) && !array_any($includePaths, $matchesPattern)) {
+                return false;
             }
 
-            foreach ($excludePaths as $excludePattern) {
-                if (fnmatch("{$excludePattern}*", $fullPath, FNM_NOESCAPE)) {
-                    return false;
-                }
-            }
-
-            return true;
+            return !array_any($excludePaths, $matchesPattern);
         };
     }
 
@@ -155,7 +142,9 @@ class Enumerator
         $inPaths = [];
 
         foreach ($this->includePaths as $path) {
-            if (strpos($path, $this->rootDirectory, 0) === false) {
+            // Include paths must be below the root directory: this is a prefix check,
+            // a path merely containing the root somewhere else must be rejected
+            if (!str_starts_with($path, $this->rootDirectory)) {
                 throw new UnexpectedValueException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
             }
 
