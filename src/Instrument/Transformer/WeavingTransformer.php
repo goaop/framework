@@ -44,6 +44,18 @@ class WeavingTransformer extends BaseSourceTransformer
     private const FUNCTIONS_CACHE_SUFFIX = '/_functions/';
 
     /**
+     * Class-level attributes that are compile-time invalid on traits.
+     *
+     * When a class is converted to a trait, these attribute entries must be removed from the
+     * woven trait tokens: PHP raises "Cannot apply #[\Attribute] to trait" (and the same for
+     * #[\AllowDynamicProperties]) at load time. The proxy class re-declares them from the AST
+     * via AttributeGroupsGenerator, so attribute classes keep working (issue #615).
+     *
+     * @var list<string>
+     */
+    private const TRAIT_INCOMPATIBLE_ATTRIBUTES = ['Attribute', 'AllowDynamicProperties'];
+
+    /**
      * Advice matcher for class
      */
     protected AdviceMatcherInterface $adviceMatcher;
@@ -335,6 +347,119 @@ class WeavingTransformer extends BaseSourceTransformer
         // match, PHP would raise a fatal error if #[\Override] were present on the alias.
         $this->commentOutInterceptedPropertiesInTraitBody($class, $advices, $streamMetaData);
         $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
+        $this->stripTraitIncompatibleClassAttributes($classNode, $streamMetaData);
+    }
+
+    /**
+     * Removes class-level attributes that cannot be applied to traits (issue #615).
+     *
+     * `#[\Attribute]` and `#[\AllowDynamicProperties]` are compile-time invalid on traits, so
+     * weaving an attribute class would make the woven trait fatal at load time. The attribute
+     * entries are removed from the trait tokens only — the proxy class copies the original
+     * attribute groups from the AST (AttributeGroupsGenerator), so runtime reflection on the
+     * proxied class still reports them.
+     *
+     * In a multi-attribute group (e.g. `#[\Attribute, SomethingElse]`) only the incompatible
+     * entries are removed together with one adjacent comma; the rest of the group is kept.
+     * Newlines inside removed token ranges are preserved so that all subsequent declarations
+     * stay at their original line numbers (XDebug breakpoint mapping).
+     */
+    private function stripTraitIncompatibleClassAttributes(ClassLike $classNode, StreamMetaData $streamMetaData): void
+    {
+        foreach ($classNode->attrGroups as $attrGroup) {
+            $incompatibleAttributes = [];
+            foreach ($attrGroup->attrs as $attribute) {
+                // Names are resolved by parser-reflection's NameResolver, so global attribute
+                // classes are FullyQualified nodes ('Attribute', 'AllowDynamicProperties').
+                if (in_array(ltrim($attribute->name->toString(), '\\'), self::TRAIT_INCOMPATIBLE_ATTRIBUTES, true)) {
+                    $incompatibleAttributes[] = $attribute;
+                }
+            }
+            if ($incompatibleAttributes === []) {
+                continue;
+            }
+            if (count($incompatibleAttributes) === count($attrGroup->attrs)) {
+                // Every attribute in the group is incompatible — blank out the whole group '#[...]'
+                $start = $attrGroup->getAttribute('startTokenPos');
+                $end   = $attrGroup->getAttribute('endTokenPos');
+                if (is_int($start) && is_int($end)) {
+                    $this->blankTokenRangePreservingNewlines($start, $end, $streamMetaData);
+                }
+                continue;
+            }
+            foreach ($incompatibleAttributes as $attribute) {
+                $start = $attribute->getAttribute('startTokenPos');
+                $end   = $attribute->getAttribute('endTokenPos');
+                if (!is_int($start) || !is_int($end)) {
+                    continue;
+                }
+                $this->blankTokenRangePreservingNewlines($start, $end, $streamMetaData);
+                $this->removeAdjacentAttributeComma($start, $end, $streamMetaData);
+            }
+        }
+    }
+
+    /**
+     * Blanks out all tokens in [$start, $end], keeping only the newlines they contained.
+     *
+     * Token objects are kept in place (text emptied) instead of being unset, so the iteration
+     * order of the token stream is untouched and the line budget of the file is preserved.
+     */
+    private function blankTokenRangePreservingNewlines(int $start, int $end, StreamMetaData $streamMetaData): void
+    {
+        for ($position = $start; $position <= $end; ++$position) {
+            if (!isset($streamMetaData->tokenStream[$position])) {
+                continue;
+            }
+            $text = $streamMetaData->tokenStream[$position]->text;
+            $streamMetaData->tokenStream[$position]->text = str_repeat("\n", substr_count($text, "\n"));
+        }
+    }
+
+    /**
+     * Removes one comma adjacent to a removed attribute entry inside a multi-attribute group.
+     *
+     * Prefers the trailing comma (after $end); falls back to the leading comma (before $start)
+     * when the removed entry was the last one in the group. Whitespace next to the comma is
+     * dropped only when it holds no newline (line budget).
+     */
+    private function removeAdjacentAttributeComma(int $start, int $end, StreamMetaData $streamMetaData): void
+    {
+        // Scan forward for a trailing comma, skipping blank/whitespace tokens
+        $position = $end + 1;
+        while (isset($streamMetaData->tokenStream[$position])) {
+            $token = $streamMetaData->tokenStream[$position];
+            if ($token->text === ',') {
+                unset($streamMetaData->tokenStream[$position]);
+                $nextPosition = $position + 1;
+                if (isset($streamMetaData->tokenStream[$nextPosition])) {
+                    $nextToken = $streamMetaData->tokenStream[$nextPosition];
+                    if ($nextToken->id === T_WHITESPACE && strpbrk($nextToken->text, "\r\n") === false) {
+                        unset($streamMetaData->tokenStream[$nextPosition]);
+                    }
+                }
+
+                return;
+            }
+            if ($token->id !== T_WHITESPACE && $token->text !== '') {
+                break;
+            }
+            ++$position;
+        }
+        // No trailing comma — remove the leading one instead
+        $position = $start - 1;
+        while (isset($streamMetaData->tokenStream[$position])) {
+            $token = $streamMetaData->tokenStream[$position];
+            if ($token->text === ',') {
+                unset($streamMetaData->tokenStream[$position]);
+
+                return;
+            }
+            if ($token->id !== T_WHITESPACE && $token->text !== '') {
+                break;
+            }
+            --$position;
+        }
     }
 
     /**

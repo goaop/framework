@@ -393,6 +393,37 @@ class WeavingTransformerTest extends TestCase
         $this->assertEquals($expected, $actual);
     }
 
+    /**
+     * Attribute classes must be weavable (issue #615): #[\Attribute] and
+     * #[\AllowDynamicProperties] are compile-time invalid on traits, so they must be removed
+     * from the woven trait tokens. In a grouped attribute only the incompatible entry is
+     * removed. The proxy class must keep the original attribute groups (copied from the AST).
+     */
+    public function testWeaverStripsAttributeClassMarkersFromWovenTrait(): void
+    {
+        $metadata = $this->loadTestMetadata('php80-attribute-class');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php80-attribute-class-woven')->source);
+        $this->assertEquals($expected, $actual);
+
+        // Incompatible attributes must be gone from every woven trait
+        $this->assertStringNotContainsString('#[\Attribute', $actual);
+        $this->assertStringNotContainsString('\AllowDynamicProperties', $actual);
+        // The compatible part of the grouped attribute must survive
+        $this->assertStringContainsString('#[\FakeMarkerAttr]', $actual);
+
+        // The proxy (last class in the file wins the shared cache path) must keep #[\Attribute(...)]
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertStringContainsString(
+            '#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]',
+            $proxyContent
+        );
+    }
+
     public function testWeaverMovesInterceptedPropertiesToProxyHooks(): void
     {
         $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
