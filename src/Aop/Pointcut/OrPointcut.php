@@ -53,13 +53,10 @@ final readonly class OrPointcut implements Pointcut
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
     ): bool {
-        foreach ($this->pointcuts as $singlePointcut) {
-            if ($singlePointcut->matches($context, $reflector)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(
+            $this->pointcuts,
+            fn(Pointcut $singlePointcut): bool => $singlePointcut->matches($context, $reflector)
+        );
     }
 
     public function getKind(): int
