@@ -98,11 +98,10 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             return $type->getName() === 'array';
         }
         if ($type instanceof ReflectionUnionType) {
-            foreach ($type->getTypes() as $unionType) {
-                if ($unionType instanceof ReflectionNamedType && $unionType->getName() === 'array') {
-                    return true;
-                }
-            }
+            return array_any(
+                $type->getTypes(),
+                fn($unionType): bool => $unionType instanceof ReflectionNamedType && $unionType->getName() === 'array'
+            );
         }
 
         return false;

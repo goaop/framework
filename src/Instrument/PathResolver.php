@@ -63,7 +63,7 @@ class PathResolver
 
         // resolve path parts (single dot, double dot and double delimiters)
         $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
-        if (strpos($path, '.') !== false) {
+        if (str_contains($path, '.')) {
             $parts     = explode(DIRECTORY_SEPARATOR, $path);
             $absolutes = [];
             foreach ($parts as $part) {

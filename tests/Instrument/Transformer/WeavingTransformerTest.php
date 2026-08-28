@@ -133,7 +133,8 @@ class WeavingTransformerTest extends TestCase
         $this->assertEquals($expected, $actual);
 
         $proxyContent = file_get_contents($this->cachePathManager->getCacheDir() . '/Transformer/_files/class-typehint.php');
-        $this->assertFalse(strpos($proxyContent, '\\\\Exception'));
+        $this->assertNotFalse($proxyContent);
+        $this->assertStringNotContainsString('\\\\Exception', $proxyContent);
     }
 
     /**

@@ -46,7 +46,8 @@ class ReflectionFilenameTest extends BaseFunctionalTestCase
         parent::tearDown();
         $reflectedClass    = new \ReflectionClass(FilterInjectorTransformer::class);
         $reflectedProperty = $reflectedClass->getProperty('kernel');
-        $reflectedProperty->setValue(null);
+        // Static property: the two-argument form (null object) is the non-deprecated way
+        $reflectedProperty->setValue(null, null);
     }
 
     public function testReflectionFilenameIsCorrect()
