@@ -52,6 +52,7 @@ final readonly class AndPointcut implements Pointcut
         $this->pointcuts    = $pointcuts;
     }
 
+    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
@@ -62,6 +63,7 @@ final readonly class AndPointcut implements Pointcut
         );
     }
 
+    #[\Override]
     public function getKind(): int
     {
         return $this->pointcutKind;

@@ -22,6 +22,7 @@ use Go\Aop\Intercept\Joinpoint;
  */
 final class AroundInterceptor extends AbstractInterceptor implements AdviceAround
 {
+    #[\Override]
     public function invoke(Joinpoint $joinpoint): mixed
     {
         return ($this->adviceMethod)($joinpoint);

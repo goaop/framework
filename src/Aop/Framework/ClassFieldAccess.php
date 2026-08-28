@@ -83,11 +83,13 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         $this->reflectionProperty = new ReflectionProperty($className, $fieldName);
     }
 
+    #[\Override]
     public function getAccessType(): FieldAccessType
     {
         return $this->accessType;
     }
 
+    #[\Override]
     public function getField(): ReflectionProperty
     {
         return $this->reflectionProperty;
@@ -98,6 +100,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @return V
      */
+    #[\Override]
     public function getValue(): mixed
     {
         if (!$this->reflectionProperty->isInitialized($this->instance)) {
@@ -112,6 +115,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @return V
      */
+    #[\Override]
     public function getValueToSet(): mixed
     {
         if ($this->accessType === FieldAccessType::READ) {
@@ -120,6 +124,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         return $this->newValue;
     }
 
+    #[\Override]
     final public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
@@ -142,6 +147,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      *
      * @phpstan-return V Templated return type of property
      */
+    #[\Override]
     final public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed
     {
         $this->current    = 0;
@@ -166,16 +172,19 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         return $this->{self::$propertyMap[$accessType->name]};
     }
 
+    #[\Override]
     final public function getThis(): object
     {
         return $this->instance;
     }
 
+    #[\Override]
     final public function isDynamic(): true
     {
         return true;
     }
 
+    #[\Override]
     final public function getScope(): string
     {
         return $this->instance::class;
@@ -184,6 +193,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Returns a friendly description of current joinpoint
      */
+    #[\Override]
     final public function __toString(): string
     {
         return sprintf(

@@ -90,6 +90,7 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
         parent::__construct($property);
     }
 
+    #[\Override]
     public function getNode(): PropertyNode
     {
         $generator = $this->createBasePropertyGenerator();

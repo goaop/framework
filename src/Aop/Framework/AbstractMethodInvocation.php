@@ -57,6 +57,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
         $this->reflectionMethod = new ReflectionMethod($className, $methodName);
     }
 
+    #[\Override]
     final public function getMethod(): ReflectionMethod
     {
         return $this->reflectionMethod;
@@ -65,6 +66,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     /**
      * Returns friendly description of this joinpoint
      */
+    #[\Override]
     final public function __toString(): string
     {
         return sprintf(

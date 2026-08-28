@@ -46,6 +46,7 @@ class AdviceMatcher implements AdviceMatcherInterface
      *
      * @return array<string, array<string, array<string, Aop\Advice>>> List of advices for function
      */
+    #[\Override]
     public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors): array
     {
         if (!$this->isInterceptFunctions) {
@@ -81,6 +82,7 @@ class AdviceMatcher implements AdviceMatcherInterface
      *
      * @return array<string, array<string, array<string, Aop\Advice>>> List of advices for class
      */
+    #[\Override]
     public function getAdvicesForClass(ReflectionClass $class, array $advisors): array
     {
         $classAdvices = [];

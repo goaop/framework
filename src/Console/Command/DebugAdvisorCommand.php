@@ -33,9 +33,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class DebugAdvisorCommand extends BaseAspectCommand
 {
-    /**
-     * {@inheritDoc}
-     */
+    #[\Override]
     protected function configure(): void
     {
         parent::configure();
@@ -51,9 +49,7 @@ EOT
         ;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);

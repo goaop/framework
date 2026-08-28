@@ -32,6 +32,7 @@ final readonly class NotPointcut implements Pointcut
     /**
      * @return ($reflector is null ? true : bool)
      */
+    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
@@ -45,6 +46,7 @@ final readonly class NotPointcut implements Pointcut
         return !$this->pointcut->matches($context, $reflector);
     }
 
+    #[\Override]
     public function getKind(): int
     {
         return $this->pointcut->getKind();

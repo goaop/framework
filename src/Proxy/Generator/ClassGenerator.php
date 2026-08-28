@@ -34,9 +34,9 @@ use ReflectionMethod;
  */
 final class ClassGenerator implements GeneratorInterface
 {
-    public const FLAG_FINAL     = 0b001;
-    public const FLAG_ABSTRACT  = 0b010;
-    public const FLAG_READONLY  = 0b100;
+    public const int FLAG_FINAL     = 0b001;
+    public const int FLAG_ABSTRACT  = 0b010;
+    public const int FLAG_READONLY  = 0b100;
 
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
@@ -148,6 +148,7 @@ final class ClassGenerator implements GeneratorInterface
         $this->attrGroups = $attrGroups;
     }
 
+    #[\Override]
     public function getName(): string
     {
         return $this->name;
@@ -249,6 +250,7 @@ final class ClassGenerator implements GeneratorInterface
     /**
      * Generates the full PHP source: namespace declaration, use statements, and class.
      */
+    #[\Override]
     public function generate(): string
     {
         $stmts = [];

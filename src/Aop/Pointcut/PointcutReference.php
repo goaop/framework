@@ -39,6 +39,7 @@ final class PointcutReference implements Pointcut
         private readonly string $pointcutId
     ) {}
 
+    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
@@ -46,6 +47,7 @@ final class PointcutReference implements Pointcut
         return $this->getPointcut()->matches($context, $reflector);
     }
 
+    #[\Override]
     public function getKind(): int
     {
         return $this->getPointcut()->getKind();

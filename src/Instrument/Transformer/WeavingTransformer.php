@@ -41,7 +41,7 @@ use ReflectionProperty;
  */
 class WeavingTransformer extends BaseSourceTransformer
 {
-    private const FUNCTIONS_CACHE_SUFFIX = '/_functions/';
+    private const string FUNCTIONS_CACHE_SUFFIX = '/_functions/';
 
     /**
      * Class-level attributes that are compile-time invalid on traits.
@@ -53,7 +53,7 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @var list<string>
      */
-    private const TRAIT_INCOMPATIBLE_ATTRIBUTES = ['Attribute', 'AllowDynamicProperties'];
+    private const array TRAIT_INCOMPATIBLE_ATTRIBUTES = ['Attribute', 'AllowDynamicProperties'];
 
     /**
      * Advice matcher for class
@@ -95,6 +95,7 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      */
+    #[\Override]
     public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
         $totalTransformations = 0;

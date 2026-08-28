@@ -24,14 +24,14 @@ use PhpParser\PrettyPrinter\Standard;
  */
 final class PropertyGenerator implements PropertyNodeProvider
 {
-    public const FLAG_PUBLIC    = 0b0001;
-    public const FLAG_PROTECTED = 0b0010;
-    public const FLAG_PRIVATE   = 0b0100;
-    public const FLAG_STATIC    = 0b1000;
-    public const FLAG_READONLY      = 0b0001_0000;
-    public const FLAG_PROTECTED_SET = 0b0010_0000;
-    public const FLAG_PRIVATE_SET   = 0b0100_0000;
-    public const FLAG_FINAL         = 0b1000_0000;
+    public const int FLAG_PUBLIC    = 0b0001;
+    public const int FLAG_PROTECTED = 0b0010;
+    public const int FLAG_PRIVATE   = 0b0100;
+    public const int FLAG_STATIC    = 0b1000;
+    public const int FLAG_READONLY      = 0b0001_0000;
+    public const int FLAG_PROTECTED_SET = 0b0010_0000;
+    public const int FLAG_PRIVATE_SET   = 0b0100_0000;
+    public const int FLAG_FINAL         = 0b1000_0000;
 
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
@@ -109,6 +109,7 @@ final class PropertyGenerator implements PropertyNodeProvider
     /**
      * Returns the underlying AST property node.
      */
+    #[\Override]
     public function getNode(): PropertyNode
     {
         $builder = self::getFactory()->property($this->name);

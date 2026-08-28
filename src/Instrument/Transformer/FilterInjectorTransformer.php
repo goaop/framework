@@ -30,7 +30,7 @@ class FilterInjectorTransformer implements SourceTransformer
     /**
      * Php filter definition
      */
-    public const PHP_FILTER_READ = 'php://filter/read=';
+    public const string PHP_FILTER_READ = 'php://filter/read=';
 
     /**
      * Name of the filter to inject
@@ -136,6 +136,7 @@ class FilterInjectorTransformer implements SourceTransformer
     /**
      * Wrap all includes into rewrite filter
      */
+    #[\Override]
     public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
         $includeExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof Include_);

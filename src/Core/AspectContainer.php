@@ -24,47 +24,47 @@ interface AspectContainer
     /**
      * Prefix for function interceptor
      */
-    public const FUNCTION_PREFIX = 'func';
+    public const string FUNCTION_PREFIX = 'func';
 
     /**
      * Prefix for properties interceptor
      */
-    public const PROPERTY_PREFIX = 'prop';
+    public const string PROPERTY_PREFIX = 'prop';
 
     /**
      * Prefix for method interceptor
      */
-    public const METHOD_PREFIX = 'method';
+    public const string METHOD_PREFIX = 'method';
 
     /**
      * Prefix for static method interceptor
      */
-    public const STATIC_METHOD_PREFIX = 'static';
+    public const string STATIC_METHOD_PREFIX = 'static';
 
     /**
      * Trait introduction prefix
      */
-    public const INTRODUCTION_TRAIT_PREFIX = 'trait';
+    public const string INTRODUCTION_TRAIT_PREFIX = 'trait';
 
     /**
      * Interface introduction prefix
      */
-    public const INTRODUCTION_INTERFACE_PREFIX = 'interface';
+    public const string INTRODUCTION_INTERFACE_PREFIX = 'interface';
 
     /**
      * Initialization prefix, is used for initialization pointcuts
      */
-    public const INIT_PREFIX = 'init';
+    public const string INIT_PREFIX = 'init';
 
     /**
      * Initialization prefix, is used for initialization pointcuts
      */
-    public const STATIC_INIT_PREFIX = 'staticinit';
+    public const string STATIC_INIT_PREFIX = 'staticinit';
 
     /**
      * Suffix, that will be added to all proxied class names
      */
-    public const AOP_PROXIED_SUFFIX = '__AopProxied';
+    public const string AOP_PROXIED_SUFFIX = '__AopProxied';
 
     /**
      * Returns a service from the container.

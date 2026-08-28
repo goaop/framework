@@ -58,6 +58,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      * @phpstan-return T
      * @throws \ReflectionException If class is internal and cannot be created without constructor
      */
+    #[\Override]
     final public function proceed(): object
     {
         if (isset($this->advices[$this->current])) {
@@ -77,6 +78,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
         return $this->instance;
     }
 
+    #[\Override]
     public function getConstructor(): ?ReflectionMethod
     {
         return $this->constructor;
@@ -87,6 +89,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      *
      * @phpstan-return T|null Instance of object or null if object hasn't been created yet (Before)
      */
+    #[\Override]
     public function getThis(): ?object
     {
         return $this->instance;
@@ -98,6 +101,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      * @param list<mixed> $arguments Arguments for constructor invocation
      * @phpstan-return T Instance of object
      */
+    #[\Override]
     final public function __invoke(array $arguments = []): object
     {
         $this->current   = 0;
@@ -109,11 +113,13 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
     /**
      * @return true Covariance, always true for new object creation
      */
+    #[\Override]
     public function isDynamic(): true
     {
         return true;
     }
 
+    #[\Override]
     public function getScope(): string
     {
         return $this->class->getName();
@@ -122,6 +128,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
     /**
      * Returns a friendly description of current joinpoint
      */
+    #[\Override]
     final public function __toString(): string
     {
         return sprintf(

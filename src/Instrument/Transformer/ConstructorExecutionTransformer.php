@@ -52,6 +52,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
     /**
      * Rewrites all "new" expressions with our implementation
      */
+    #[\Override]
     public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
         // Skips `new` inside constant-expression contexts (parameter defaults, static var

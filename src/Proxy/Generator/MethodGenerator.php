@@ -33,9 +33,9 @@ use ReflectionNamedType;
  */
 final class MethodGenerator
 {
-    public const VISIBILITY_PUBLIC    = 'public';
-    public const VISIBILITY_PROTECTED = 'protected';
-    public const VISIBILITY_PRIVATE   = 'private';
+    public const string VISIBILITY_PUBLIC    = 'public';
+    public const string VISIBILITY_PROTECTED = 'protected';
+    public const string VISIBILITY_PRIVATE   = 'private';
 
     private static ?Standard $printer = null;
     private static ?Parser $parser    = null;

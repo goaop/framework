@@ -41,6 +41,7 @@ final readonly class AttributePointcut implements Pointcut
         private bool   $useContextForMatching = false,
     ) {}
 
+    #[\Override]
     final public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
@@ -65,6 +66,7 @@ final readonly class AttributePointcut implements Pointcut
         return count($instanceToCheck->getAttributes($this->attributeClassName)) > 0;
     }
 
+    #[\Override]
     public function getKind(): int
     {
         return $this->pointcutKind;
