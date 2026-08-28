@@ -18,6 +18,8 @@ use Go\Tests\TestProject\Application\ClassWithComplexTypes;
 use Go\Tests\TestProject\Application\FinalClass;
 use Go\Tests\TestProject\Application\FooInterface;
 use Go\Tests\TestProject\Application\Main;
+use Go\Tests\TestProject\Application\PromotedPropertyClass;
+use Go\Tests\TestProject\Application\SingleLinePromotedClass;
 
 class ClassWeavingTest extends BaseFunctionalTestCase
 {
@@ -85,6 +87,25 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(ClassWithComplexTypes::class, 'publicMethodWithUnionTypeReturn');
         $this->assertMethodWoven(ClassWithComplexTypes::class, 'publicMethodWithIntersectionTypeReturn');
         $this->assertMethodWoven(ClassWithComplexTypes::class, 'publicMethodWithDNFTypeReturn');
+    }
+
+    /**
+     * Promoted constructor properties must be weavable (issue #599): the promoted parameter
+     * is demoted to a plain parameter in the woven trait and the property is re-declared
+     * with interception hooks in the proxy — for multi-line and single-line constructors.
+     */
+    public function testPromotedPropertyWeaving(): void
+    {
+        $this->assertPropertyWoven(
+            PromotedPropertyClass::class,
+            'name',
+            'Go\\Tests\\TestProject\\Aspect\\PromotedPropertyInterceptAspect->beforePromotedNameAccess'
+        );
+        $this->assertPropertyWoven(
+            SingleLinePromotedClass::class,
+            'tag',
+            'Go\\Tests\\TestProject\\Aspect\\PromotedPropertyInterceptAspect->beforePromotedTagAccess'
+        );
     }
 
     public function testArrayPropertyInterceptionAllowsIndirectModification(): void
