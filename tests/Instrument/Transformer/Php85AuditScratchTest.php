@@ -102,13 +102,17 @@ class Php85AuditScratchTest extends TestCase
         // #598/#599/#601/#602/#603 are fixed on master; #600 lands with PR #614
         'Php81EnumConstExprCases' => 'https://github.com/goaop/framework/issues/600',
         // Follow-ups found after the #598/#599 fixes landed:
-        // #[\Attribute] itself is compile-invalid on the woven trait
+        // #[\Attribute] on a trait only became a compile error in PHP 8.5,
+        // so these three are gaps on 8.5+ but weave cleanly on 8.4
         'ConstAttr'               => 'https://github.com/goaop/framework/issues/615',
         'ExprAttr'                => 'https://github.com/goaop/framework/issues/615',
         'RichAttr'                => 'https://github.com/goaop/framework/issues/615',
         // new-in-initializer default copied onto the proxy hook property
         'Php81NewInInitializers'  => 'https://github.com/goaop/framework/issues/616',
     ];
+
+    /** Fixtures whose KNOWN_GAPS entry applies only on PHP >= 8.5 (see above). */
+    private const GAP_ONLY_ON_85 = ['ConstAttr' => true, 'ExprAttr' => true, 'RichAttr' => true];
 
     #[DataProvider('fixtureNames')]
     public function testWeaveAndLint(string $name): void
@@ -120,7 +124,10 @@ class Php85AuditScratchTest extends TestCase
 
         $problems = $this->weaveAndCollectProblems($name);
 
-        if (isset(self::KNOWN_GAPS[$name])) {
+        $isKnownGap = isset(self::KNOWN_GAPS[$name])
+            && (!isset(self::GAP_ONLY_ON_85[$name]) || PHP_VERSION_ID >= 80500);
+
+        if ($isKnownGap) {
             $issue = self::KNOWN_GAPS[$name];
             $this->assertNotSame(
                 [],
