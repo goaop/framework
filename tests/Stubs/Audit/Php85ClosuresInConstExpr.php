@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Go\Tests\Audit;
+namespace Go\Stubs\Audit;
 
 #[ExprAttr(static function (int $x): int { return $x * 2; })]
 class Php85ClosuresInConstExpr

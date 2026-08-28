@@ -24,7 +24,7 @@ use ReflectionClass;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class Php85AuditScratchTest extends TestCase
 {
-    private const FIXTURE_DIR = __DIR__ . '/../../Fixtures/audit/src';
+    private const FIXTURE_DIR = __DIR__ . '/../../Stubs/Audit';
 
     protected static FileSystem $fileSystem;
 

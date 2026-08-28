@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Go\Tests\Audit;
+namespace Go\Stubs\Audit;
 
 class Php85FinalPromotionAsymStatic
 {

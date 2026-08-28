@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Go\Tests\Audit;
+namespace Go\Stubs\Audit;
 
 enum Php81EnumConstExprCases: int
 {
