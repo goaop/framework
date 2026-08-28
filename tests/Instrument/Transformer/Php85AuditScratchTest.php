@@ -105,9 +105,9 @@ class Php85AuditScratchTest extends TestCase
         'RichAttr'                   => 'https://github.com/goaop/framework/issues/598 + 599',
         'Collaborator'               => 'https://github.com/goaop/framework/issues/599',
         'Php81EnumConstExprCases'    => 'https://github.com/goaop/framework/issues/600',
-        'Php81NonScalarAttributeArgs' => 'https://github.com/goaop/framework/issues/601',
-        'Php85ClosuresInConstExpr'   => 'https://github.com/goaop/framework/issues/601',
-        'Php80GlobalConstAttrArg'    => 'https://github.com/goaop/framework/issues/602',
+        // #601/#602 are fixed; these two still carry a class-level attribute, so #598 remains
+        'Php81NonScalarAttributeArgs' => 'https://github.com/goaop/framework/issues/598',
+        'Php85ClosuresInConstExpr'   => 'https://github.com/goaop/framework/issues/598',
     ];
 
     #[DataProvider('fixtureNames')]
