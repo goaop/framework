@@ -18,6 +18,7 @@ use Dissect\Parser\Grammar;
 use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use ReflectionMethod;
+use ReflectionProperty;
 use function constant;
 
 /**
@@ -185,7 +186,7 @@ final class PointcutGrammar extends Grammar
                     );
                 }
             )
-            ->is('memberReference', '(', 'argumentList', ')', ':', 'namespaceName')
+            ->is('memberReference', '(', 'argumentList', ')', ':', 'returnTypePattern')
             ->call(
                 function (ClassMemberReference $reference, mixed $_0, mixed $_1, mixed $_2, mixed $_3, string $returnType) {
                     return new AndPointcut(
@@ -211,7 +212,7 @@ final class PointcutGrammar extends Grammar
                     );
                 }
             )
-            ->is('namespacePattern', 'nsSeparator', 'namePatternPart', '(', 'argumentList', ')', ':', 'namespaceName')
+            ->is('namespacePattern', 'nsSeparator', 'namePatternPart', '(', 'argumentList', ')', ':', 'returnTypePattern')
             ->call(
                 function (string $namespacePattern, mixed $_0, string $namePattern, mixed $_1, mixed $_2, mixed $_3, mixed $_4, string $returnType) {
                     return new AndPointcut(
@@ -304,6 +305,21 @@ final class PointcutGrammar extends Grammar
             ->call($stringConverter)
         ;
 
+        // Return-type patterns support union ('|') and intersection ('&') members.
+        // DNF groups are written without parentheses — 'A&B|C' is equivalent to '(A&B)|C',
+        // matching PHP's own type precedence; ReturnTypePointcut normalizes both forms.
+        $this('returnTypeMember')
+            ->is('namespaceName')
+            ->is('returnTypeMember', '&', 'namespaceName')
+            ->call(fn(string $left, mixed $_0, string $right) => "{$left}&{$right}")
+        ;
+
+        $this('returnTypePattern')
+            ->is('returnTypeMember')
+            ->is('returnTypePattern', '|', 'returnTypeMember')
+            ->call(fn(string $left, mixed $_0, string $right) => "{$left}|{$right}")
+        ;
+
         $this('memberModifiers')
             ->is('memberModifier', '|', 'memberModifiers')
             ->call(fn(int $modifier, mixed $_0, ModifierPointcut $matcher) => $matcher->orMatch($modifier))
@@ -323,6 +339,12 @@ final class PointcutGrammar extends Grammar
             ->call($converter)
             ->is('final')
             ->call($converter)
+            ->is('readonly')
+            ->call(fn() => ReflectionProperty::IS_READONLY)
+            ->is('private(set)')
+            ->call(fn() => ReflectionProperty::IS_PRIVATE_SET)
+            ->is('protected(set)')
+            ->call(fn() => ReflectionProperty::IS_PROTECTED_SET)
         ;
 
         $this->start('pointcutExpression');

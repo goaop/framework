@@ -41,6 +41,12 @@ final class PointcutLexer extends SimpleLexer
         $this->token('protected');
         $this->token('private');
         $this->token('final');
+        $this->token('readonly');
+
+        // Asymmetric visibility modifiers (PHP 8.4+), lexed as single tokens.
+        // The lexer prefers the longest match, so 'private(set)' wins over 'private' + '('.
+        $this->token('private(set)');
+        $this->token('protected(set)');
 
         // Access type (dynamic or static)
         $this->token('->');
