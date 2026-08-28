@@ -18,8 +18,11 @@ use Go\Tests\TestProject\Application\ClassWithComplexTypes;
 use Go\Tests\TestProject\Application\FinalClass;
 use Go\Tests\TestProject\Application\FooInterface;
 use Go\Tests\TestProject\Application\Main;
+use Go\Tests\TestProject\Application\NewInInitializerClass;
 use Go\Tests\TestProject\Application\PromotedPropertyClass;
 use Go\Tests\TestProject\Application\SingleLinePromotedClass;
+use Symfony\Component\Process\PhpExecutableFinder;
+use Symfony\Component\Process\Process;
 
 class ClassWeavingTest extends BaseFunctionalTestCase
 {
@@ -106,6 +109,41 @@ class ClassWeavingTest extends BaseFunctionalTestCase
             'tag',
             'Go\\Tests\\TestProject\\Aspect\\PromotedPropertyInterceptAspect->beforePromotedTagAccess'
         );
+    }
+
+    /**
+     * An intercepted promoted property whose default is a new-in-initializer expression
+     * must weave into loadable code (issue #616): the proxy hook property must not carry
+     * the `new` default (illegal in property initializers). The runtime subprocess loads
+     * the woven class, instantiates it without arguments and reads the property, proving
+     * that the constructor default still materializes through the injected assignment.
+     */
+    public function testNewInInitializerPromotedPropertyWeaving(): void
+    {
+        $this->assertPropertyWoven(
+            NewInInitializerClass::class,
+            'bag',
+            'Go\\Tests\\TestProject\\Aspect\\PromotedPropertyInterceptAspect->beforeNewInInitializerBagAccess'
+        );
+
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        $script = sprintf(
+            'include %s; $instance = new %s(); echo implode(",", $instance->getBagItems());',
+            var_export($this->configuration['frontController'], true),
+            '\\' . NewInInitializerClass::class
+        );
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()]
+        );
+        $process->run();
+
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Loading the woven class failed: ' . $process->getOutput() . $process->getErrorOutput()
+        );
+        $this->assertSame('seed', trim($process->getOutput()));
     }
 
     public function testArrayPropertyInterceptionAllowsIndirectModification(): void

@@ -18,9 +18,11 @@ use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\TypeGenerator;
 use InvalidArgumentException;
 use PhpParser\Comment\Doc;
+use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Param;
 use PhpParser\Node\PropertyItem;
 use PhpParser\Node\Stmt\Property;
+use PhpParser\NodeFinder;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
 use ReflectionProperty;
@@ -117,6 +119,13 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
      *
      * For promoted constructor properties the default lives on the Param node while
      * reflection's hasDefaultValue() reports false, so the AST node is authoritative.
+     *
+     * A default containing a `new` expression is never returned (issue #616): `new` is legal
+     * in a constructor parameter default but illegal in a property initializer, so copying it
+     * onto the proxy hook property would be a compile error ("New expressions are not
+     * supported in this context"). The hook property then stays uninitialized — the
+     * constructor assignment injected by the promoted-parameter demotion supplies the value,
+     * and the isInitialized() guard in the get hook covers the pre-construction window.
      */
     private function getAstDefaultNode(): ?\PhpParser\Node\Expr
     {
@@ -125,9 +134,16 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         }
         $astNode = $this->property->getNode();
 
-        return ($astNode instanceof PropertyItem || $astNode instanceof Param)
+        $default = ($astNode instanceof PropertyItem || $astNode instanceof Param)
             ? $astNode->default
             : null;
+
+        if ($default !== null
+            && (new NodeFinder())->findFirstInstanceOf([$default], New_::class) !== null) {
+            return null;
+        }
+
+        return $default;
     }
 
     protected function createFieldAccessDocComment(string $variableName = 'fieldAccess', bool $isNullable = false): Doc

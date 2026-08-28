@@ -514,6 +514,52 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * An intercepted promoted property whose default is a new-in-initializer expression
+     * must not carry the default onto the proxy hook property (issue #616): `new` is legal
+     * in a parameter default but illegal in a property initializer. The property stays
+     * uninitialized in the proxy — the constructor assignment injected by the demotion
+     * supplies the value, and the isInitialized() guard covers the pre-construction window.
+     */
+    public function testWeaverSkipsNewInInitializerDefaultOnProxyHookProperty(): void
+    {
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::PROPERTY_PREFIX => [
+                'bag' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->bag' => true],
+            ],
+            AspectContainer::METHOD_PREFIX => [
+                '__construct' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->__construct' => true],
+                'getBagItems' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->getBagItems' => true],
+            ],
+        ]);
+
+        $metadata = $this->loadTestMetadata('php81-new-in-initializer');
+        $transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+
+        // Demoted parameter keeps its new-in-initializer default in the woven trait...
+        $this->assertStringContainsString("\ArrayObject \$bag = new \ArrayObject(['seed'])", $actual);
+        // ...and the injected constructor assignment routes the value through the proxy set hook
+        $this->assertStringContainsString('$this->bag = $bag;', $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+
+        // The hook property must NOT carry the new-in-initializer default (compile error);
+        // note the proxy __construct parameter legitimately keeps it (legal in param defaults)
+        $this->assertStringNotContainsString('private \ArrayObject $bag =', $proxyContent);
+        $this->assertStringContainsString('private \ArrayObject $bag {', $proxyContent);
+        // Uninitialized typed property must be guarded in the hooks
+        $this->assertStringContainsString('isInitialized($this)', $proxyContent);
+
+        // The generated proxy must stay parseable as PHP (guards against emitting
+        // constructs that are syntactically invalid in property context)
+        $parser = (new \PhpParser\ParserFactory())->createForHostVersion();
+        $this->assertNotNull($parser->parse($proxyContent));
+    }
+
+    /**
      * A promoted property inside a single-line constructor must weave without a parse error
      * (issue #599). Commenting the parameter out used to swallow the closing ')' and '{'.
      */
