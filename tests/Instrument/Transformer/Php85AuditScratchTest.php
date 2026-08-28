@@ -99,15 +99,15 @@ class Php85AuditScratchTest extends TestCase
      * A fix PR that resolves one of these MUST remove the entry (the test then asserts success).
      */
     private const KNOWN_GAPS = [
-        'Php80ClassAttrPlain'        => 'https://github.com/goaop/framework/issues/598',
-        'ExprAttr'                   => 'https://github.com/goaop/framework/issues/598 + 599',
-        'ConstAttr'                  => 'https://github.com/goaop/framework/issues/598 + 599',
-        'RichAttr'                   => 'https://github.com/goaop/framework/issues/598 + 599',
-        'Collaborator'               => 'https://github.com/goaop/framework/issues/599',
-        'Php81EnumConstExprCases'    => 'https://github.com/goaop/framework/issues/600',
-        // #601/#602 are fixed; these two still carry a class-level attribute, so #598 remains
-        'Php81NonScalarAttributeArgs' => 'https://github.com/goaop/framework/issues/598',
-        'Php85ClosuresInConstExpr'   => 'https://github.com/goaop/framework/issues/598',
+        // #598/#599/#601/#602/#603 are fixed on master; #600 lands with PR #614
+        'Php81EnumConstExprCases' => 'https://github.com/goaop/framework/issues/600',
+        // Follow-ups found after the #598/#599 fixes landed:
+        // #[\Attribute] itself is compile-invalid on the woven trait
+        'ConstAttr'               => 'https://github.com/goaop/framework/issues/615',
+        'ExprAttr'                => 'https://github.com/goaop/framework/issues/615',
+        'RichAttr'                => 'https://github.com/goaop/framework/issues/615',
+        // new-in-initializer default copied onto the proxy hook property
+        'Php81NewInInitializers'  => 'https://github.com/goaop/framework/issues/616',
     ];
 
     #[DataProvider('fixtureNames')]
