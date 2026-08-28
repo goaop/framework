@@ -69,7 +69,8 @@ interface AspectContainer
     /**
      * Returns a service from the container.
      *
-     * Services registered via addLazyService() are constructed by their factory on first retrieval.
+     * Services registered via addLazyService() are returned as typed, instanceof-correct
+     * native lazy objects where possible; their factory runs on first actual use.
      *
      * @param class-string<T> $className Class-name of service to retrieve from the container
      * @return T
@@ -113,10 +114,11 @@ interface AspectContainer
      * Passing an aspect instance registers it immediately, exactly as before.
      *
      * Passing a class-name defers construction until the aspect is first needed (first
-     * advice hit, or aspect enumeration during weaving), keeping it off the hot boot path.
+     * advice hit, or first real interaction with the lazy object handed out during aspect
+     * enumeration on the weaving path), keeping it off the hot boot path.
      * An aspect with required constructor arguments must also pass a factory closure that
      * creates the instance; without a factory the class must be default-constructible,
-     * which is validated when the aspect materializes.
+     * which is validated when the aspect materializes into its lazy object.
      *
      * @param Aspect|class-string<Aspect> $aspectOrClassName Aspect instance or its class-name
      * @param null|Closure(AspectContainer $container): Aspect $aspectFactory Factory for deferred
@@ -142,9 +144,11 @@ interface AspectContainer
     /**
      * Adds a deferred service definition to the container.
      *
-     * Nothing is autoloaded or constructed at registration time: the factory closure is
-     * invoked once, on the first retrieval of the service (or when the service matches a
-     * getServicesByInterface() query), and the result is stored as a regular container entry.
+     * Nothing is autoloaded or constructed at registration time. On the first retrieval of
+     * the service (or when the service matches a getServicesByInterface() query) the entry
+     * materializes as a native lazy object of the service class, and the factory closure is
+     * invoked once, on the first actual interaction with that object. For classes that PHP
+     * cannot make lazy the factory is invoked at materialization time instead.
      *
      * @param class-string<T> $id Identifier of value to store, must be equal to the class-name
      * @param Closure(AspectContainer $container): T $lazyInitializationClosure

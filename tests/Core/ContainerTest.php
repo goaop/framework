@@ -178,7 +178,7 @@ class ContainerTest extends TestCase
         $this->container->getService(First::class);
     }
 
-    public function testLazyServiceIsNotConstructedUntilFirstRetrieval(): void
+    public function testLazyServiceIsNotConstructedUntilFirstUse(): void
     {
         $initialized = false;
         $container = new Container();
@@ -191,10 +191,17 @@ class ContainerTest extends TestCase
         $this->assertTrue($container->has(PointcutLexer::class));
         $this->assertFalse($initialized, 'Factory should not have been called yet');
 
-        // First retrieval constructs the service exactly once
+        // Retrieval hands out a typed, instanceof-correct lazy proxy without running the factory
         $value = $container->getService(PointcutLexer::class);
         $this->assertInstanceOf(PointcutLexer::class, $value);
-        $this->assertTrue($initialized, 'Factory should have been called on first retrieval');
+        $this->assertFalse($initialized, 'Factory should not run on retrieval');
+        $this->assertTrue((new \ReflectionClass(PointcutLexer::class))->isUninitializedLazyObject($value));
+        $this->assertSame($value, $container->getService(PointcutLexer::class));
+
+        // First real interaction with the object runs the factory exactly once
+        $value->lex('public');
+        $this->assertTrue($initialized, 'Factory should have been called on first use');
+        $this->assertFalse((new \ReflectionClass(PointcutLexer::class))->isUninitializedLazyObject($value));
         $this->assertSame($value, $container->getService(PointcutLexer::class));
     }
 
@@ -226,8 +233,13 @@ class ContainerTest extends TestCase
         $this->assertTrue($this->container->has(LoggingAspect::class));
         $this->assertFalse($constructed, 'Aspect should not have been constructed at registration');
 
+        // Retrieval returns an instanceof-correct lazy object, construction is still deferred
         $aspect = $this->container->getService(LoggingAspect::class);
         $this->assertInstanceOf(LoggingAspect::class, $aspect);
+        $this->assertFalse($constructed, 'Aspect should not have been constructed by retrieval');
+
+        // First real interaction with the aspect object triggers the factory
+        (new \ReflectionClass(LoggingAspect::class))->initializeLazyObject($aspect);
         $this->assertTrue($constructed);
     }
 
@@ -238,6 +250,52 @@ class ContainerTest extends TestCase
         $aspects = $this->container->getServicesByInterface(Aspect::class);
         $this->assertArrayHasKey(DoSomethingAspect::class, $aspects);
         $this->assertInstanceOf(DoSomethingAspect::class, $aspects[DoSomethingAspect::class]);
+    }
+
+    public function testLazyAspectEnumerationHandsOutUninitializedLazyObjects(): void
+    {
+        $constructed = false;
+        $this->container->registerAspect(
+            StatefulTestAspect::class,
+            function () use (&$constructed): StatefulTestAspect {
+                $constructed = true;
+
+                return new StatefulTestAspect(42);
+            }
+        );
+
+        $aspects = $this->container->getServicesByInterface(Aspect::class);
+        $aspect  = $aspects[StatefulTestAspect::class];
+
+        // instanceof is correct before initialization, and the factory has not run yet
+        $this->assertInstanceOf(Aspect::class, $aspect);
+        $this->assertInstanceOf(StatefulTestAspect::class, $aspect);
+        $this->assertTrue((new \ReflectionClass(StatefulTestAspect::class))->isUninitializedLazyObject($aspect));
+        $this->assertFalse($constructed, 'Enumeration should not construct the aspect');
+
+        // A real method call transparently initializes the lazy object and delegates to it
+        $this->assertSame(42, $aspect->getState());
+        $this->assertTrue($constructed, 'First method call should construct the aspect');
+        $this->assertFalse((new \ReflectionClass(StatefulTestAspect::class))->isUninitializedLazyObject($aspect));
+    }
+
+    public function testPropertylessServiceFallsBackToEagerConstruction(): void
+    {
+        // PHP creates lazy objects of property-less classes as already initialized,
+        // which would silently skip the factory - the container must construct these eagerly
+        $constructed = false;
+        $this->container->registerAspect(
+            DoSomethingAspect::class,
+            function () use (&$constructed): DoSomethingAspect {
+                $constructed = true;
+
+                return new DoSomethingAspect();
+            }
+        );
+
+        $aspect = $this->container->getService(DoSomethingAspect::class);
+        $this->assertInstanceOf(DoSomethingAspect::class, $aspect);
+        $this->assertTrue($constructed, 'Factory of a property-less service must run at materialization');
     }
 
     public function testLazyAspectWithRequiredConstructorArgsNeedsFactory(): void
@@ -275,6 +333,8 @@ class ContainerTest extends TestCase
 
         $aspects = $this->container->getServicesByInterface(Aspect::class);
         $this->assertSame([DoSomethingAspect::class, EnumMethodAspect::class], array_keys($aspects));
+        // DoSomethingAspect has no instance properties, so it materializes eagerly
+        // through the re-registered factory (see testPropertylessServiceFallsBackToEagerConstruction)
         $this->assertTrue($replaced, 'Re-registered factory should have been used');
     }
 
@@ -296,5 +356,18 @@ class ContainerTest extends TestCase
         $aspects = $this->container->getServicesByInterface(Aspect::class);
         $this->assertArrayHasKey(DoSomethingAspect::class, $aspects);
         $this->assertArrayHasKey(EnumMethodAspect::class, $aspects);
+    }
+}
+
+/**
+ * Stateful aspect fixture: has an instance property, so PHP can create a true lazy proxy for it
+ */
+class StatefulTestAspect implements Aspect
+{
+    public function __construct(private readonly int $state) {}
+
+    public function getState(): int
+    {
+        return $this->state;
     }
 }
