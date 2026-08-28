@@ -14,11 +14,8 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Aop\InitializationAware;
-use PhpParser\Node;
-use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
 use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\FindingVisitor;
 
 /**
  * Transforms the source code to add an ability to intercept new instances creation
@@ -57,15 +54,16 @@ final class ConstructorExecutionTransformer implements SourceTransformer
      */
     public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
-        $newExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof New_);
+        // Skips `new` inside constant-expression contexts (parameter defaults, static var
+        // initializers, attribute arguments, constants, enum cases) — see issue #603.
+        $newExpressionFinder = new NewExpressionFinderVisitor();
 
         // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
         $traverser = new NodeTraverser();
         $traverser->addVisitor($newExpressionFinder);
         $traverser->traverse($metadata->syntaxTree);
 
-        /** @var Node\Expr\New_[] $newExpressions */
-        $newExpressions = $newExpressionFinder->getFoundNodes();
+        $newExpressions = $newExpressionFinder->getFoundNewExpressions();
 
         if (empty($newExpressions)) {
             return TransformerResultEnum::RESULT_ABSTAIN;

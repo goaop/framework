@@ -377,6 +377,22 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringNotContainsString((string) PHP_INT_MAX, $actualProxyContent);
     }
 
+    /**
+     * Class-level attributes (with and without arguments) must survive the class→trait
+     * conversion untouched (issue #598). Previously the first token inside `#[...]` was
+     * renamed to the trait name and the rest of the attribute plus the real class header
+     * was deleted, producing a parse error like `#[Foo__AopProxied {`.
+     */
+    public function testWeaverKeepsClassLevelAttributesOnWovenTrait(): void
+    {
+        $metadata = $this->loadTestMetadata('php80-class-attribute');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php80-class-attribute-woven')->source);
+        $this->assertEquals($expected, $actual);
+    }
+
     public function testWeaverMovesInterceptedPropertiesToProxyHooks(): void
     {
         $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
@@ -425,6 +441,131 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringContainsString("public protected(set) string \$limited = 'limited' {", $proxyContent);
         $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'value'", $proxyContent);
         $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'limited'", $proxyContent);
+    }
+
+    /**
+     * Intercepted promoted constructor properties must be demoted to plain parameters in the
+     * woven trait — keeping type and default value — with explicit assignments injected at the
+     * start of the constructor body (issue #599). The proxy re-declares the property with
+     * interception hooks and must keep the original default value.
+     */
+    public function testWeaverDemotesInterceptedPromotedProperties(): void
+    {
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::PROPERTY_PREFIX => [
+                'name' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name' => true],
+                'counter' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter' => true],
+            ],
+            AspectContainer::METHOD_PREFIX => [
+                '__construct' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->__construct' => true],
+                'getName' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->getName' => true],
+            ],
+        ]);
+
+        $metadata = $this->loadTestMetadata('php80-promoted-property');
+        $transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php80-promoted-property-woven')->source);
+        $this->assertEquals($expected, $actual);
+
+        // Non-intercepted promoted parameter must stay promoted in the trait
+        $this->assertStringContainsString('protected ?\ArrayObject $bag = null', $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+        $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php80-promoted-property-proxy')->source);
+        $this->assertEquals($expectedProxyContent, $actualProxyContent);
+
+        // The proxy hook property must keep the original promoted default value
+        $this->assertStringContainsString("private string \$name = 'initial' {", $actualProxyContent);
+    }
+
+    /**
+     * A promoted property inside a single-line constructor must weave without a parse error
+     * (issue #599). Commenting the parameter out used to swallow the closing ')' and '{'.
+     */
+    public function testWeaverDemotesPromotedPropertyInSingleLineConstructor(): void
+    {
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::PROPERTY_PREFIX => [
+                'tag' => ['advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->tag' => true],
+            ],
+            AspectContainer::METHOD_PREFIX => [
+                '__construct' => ['advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->__construct' => true],
+            ],
+        ]);
+
+        $metadata = $this->loadTestMetadata('php80-promoted-property-single-line');
+        $transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php80-promoted-property-single-line-woven')->source);
+        $this->assertEquals($expected, $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+        $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php80-promoted-property-single-line-proxy')->source);
+        $this->assertEquals($expectedProxyContent, $actualProxyContent);
+    }
+
+    /**
+     * PHP 8.5 `final` promoted constructor properties must demote cleanly: the woven trait
+     * drops both `final` and the visibility modifier, while the proxy re-declares the
+     * property as final with the original default value (issue #599).
+     */
+    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 8.5.0')]
+    public function testWeaverDemotesFinalPromotedProperty(): void
+    {
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::PROPERTY_PREFIX => [
+                'token' => ['advisor.Go\Instrument\Transformer\Stubs\FinalPromotedClass85->token' => true],
+            ],
+            AspectContainer::METHOD_PREFIX => [
+                '__construct' => ['advisor.Go\Instrument\Transformer\Stubs\FinalPromotedClass85->__construct' => true],
+            ],
+        ]);
+
+        $fileName = __DIR__ . '/Stubs/FinalPromotedClass85.php';
+        $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
+        $metadata = new StreamMetaData($stream, (string) file_get_contents($fileName));
+        fclose($stream);
+        $transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+        $this->assertStringContainsString(
+            "public function __construct(string \$token = 'secret') { \$this->token = \$token;}",
+            $actual
+        );
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+        $this->assertStringContainsString("final public string \$token = 'secret' {", $proxyContent);
+    }
+
+    /**
+     * Creates a WeavingTransformer whose advice matcher returns the given advices for any class.
+     */
+    private function createTransformerWithAdvices(array $advices): WeavingTransformer
+    {
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher->method('getAdvicesForClass')->willReturn($advices);
+        $adviceMatcher->method('getAdvicesForFunctions')->willReturn([]);
+
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$this->getContainerMock()])
+            ->getMock();
+
+        return new WeavingTransformer(
+            $this->kernel,
+            $adviceMatcher,
+            $this->cachePathManager,
+            $loader
+        );
     }
 
     /**

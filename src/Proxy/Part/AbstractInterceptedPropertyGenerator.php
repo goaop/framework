@@ -55,31 +55,29 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         if ($this->property->hasType()) {
             $generator->setType(TypeGenerator::fromReflectionType($this->property->getType()));
         }
-        if ($this->property->hasDefaultValue()) {
-            // When parser-reflection is loaded, prefer the raw AST default node over
-            // getDefaultValue(). This avoids parser-reflection bugs where getDefaultValue()
-            // crashes (uninitialized typed property for FCC) or returns null (Closure defaults),
-            // and correctly handles scalars, arrays, and FCC expressions uniformly.
-            if (method_exists($this->property, 'getNode')) {
-                $astNode = $this->property->getNode();
-                $astDefault = ($astNode instanceof PropertyItem || $astNode instanceof Param)
-                    ? $astNode->default
-                    : null;
-                if ($astDefault !== null) {
-                    $generator->setDefaultExpressionNode($astDefault);
-                }
-            } else {
-                $rawDefault = $this->property->getDefaultValue();
-                if ($rawDefault instanceof \Closure) {
-                    throw new \LogicException(sprintf(
-                        'Cannot generate proxy for property %s::$%s: PHP 8.5 Closure default values '
-                        . 'require goaop/parser-reflection for AST access.',
-                        $this->property->getDeclaringClass()->getName(),
-                        $this->property->getName()
-                    ));
-                }
-                $generator->setDefaultValue($rawDefault);
+        // When parser-reflection is loaded, prefer the raw AST default node over
+        // getDefaultValue(). This avoids parser-reflection bugs where getDefaultValue()
+        // crashes (uninitialized typed property for FCC) or returns null (Closure defaults),
+        // and correctly handles scalars, arrays, and FCC expressions uniformly.
+        // The AST node is also the only source for promoted constructor property defaults:
+        // reflection reports hasDefaultValue() === false for them because the default
+        // formally belongs to the constructor parameter (see issue #599), but the proxy
+        // property must carry it so that the demoted woven trait plus proxy behave like
+        // the original promoted declaration.
+        $astDefault = $this->getAstDefaultNode();
+        if ($astDefault !== null) {
+            $generator->setDefaultExpressionNode($astDefault);
+        } elseif ($this->property->hasDefaultValue() && !method_exists($this->property, 'getNode')) {
+            $rawDefault = $this->property->getDefaultValue();
+            if ($rawDefault instanceof \Closure) {
+                throw new \LogicException(sprintf(
+                    'Cannot generate proxy for property %s::$%s: PHP 8.5 Closure default values '
+                    . 'require goaop/parser-reflection for AST access.',
+                    $this->property->getDeclaringClass()->getName(),
+                    $this->property->getName()
+                ));
             }
+            $generator->setDefaultValue($rawDefault);
         }
 
         $attributeGroups = AttributeGroupsGenerator::fromReflector($this->property);
@@ -109,7 +107,27 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
 
     protected function hasPotentiallyUninitializedTypedProperty(): bool
     {
-        return $this->property->hasType() && !$this->property->hasDefaultValue();
+        return $this->property->hasType()
+            && !$this->property->hasDefaultValue()
+            && $this->getAstDefaultNode() === null;
+    }
+
+    /**
+     * Returns the raw AST default value expression when parser-reflection is loaded.
+     *
+     * For promoted constructor properties the default lives on the Param node while
+     * reflection's hasDefaultValue() reports false, so the AST node is authoritative.
+     */
+    private function getAstDefaultNode(): ?\PhpParser\Node\Expr
+    {
+        if (!method_exists($this->property, 'getNode')) {
+            return null;
+        }
+        $astNode = $this->property->getNode();
+
+        return ($astNode instanceof PropertyItem || $astNode instanceof Param)
+            ? $astNode->default
+            : null;
     }
 
     protected function createFieldAccessDocComment(string $variableName = 'fieldAccess', bool $isNullable = false): Doc
