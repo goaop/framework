@@ -16,7 +16,6 @@ use Go\ParserReflection\Resolver\TypeExpressionResolver;
 use PhpParser\BuilderFactory;
 use PhpParser\Node;
 use PhpParser\PrettyPrinter\Standard;
-use ReflectionAttribute;
 use ReflectionNamedType;
 use ReflectionParameter;
 
@@ -34,8 +33,8 @@ final class ParameterGenerator
     private bool $variadic;
     private ?ValueGenerator $defaultValue;
 
-    /** @var ReflectionAttribute<object>[] */
-    private array $reflectionAttributes = [];
+    /** @var Node\AttributeGroup[] */
+    private array $attributeGroups = [];
 
     public function __construct(
         string $name,
@@ -128,7 +127,9 @@ final class ParameterGenerator
             $defaultValue,
         );
 
-        $generator->reflectionAttributes = $param->getAttributes();
+        // Attributes: cloned from the AST when available (parser-reflection), so that
+        // argument expressions are never evaluated at weave time (issues #601, #602)
+        $generator->attributeGroups = AttributeGroupsGenerator::fromReflector($param);
 
         return $generator;
     }
@@ -183,7 +184,7 @@ final class ParameterGenerator
             $builder->setDefault($this->defaultValue->getNode());
         }
 
-        foreach (AttributeGroupsGenerator::fromReflectionAttributes($this->reflectionAttributes) as $attrGroup) {
+        foreach ($this->attributeGroups as $attrGroup) {
             $builder->addAttribute($attrGroup);
         }
 
