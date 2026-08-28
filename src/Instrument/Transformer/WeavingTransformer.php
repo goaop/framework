@@ -30,6 +30,7 @@ use Go\Proxy\ClassProxyGenerator;
 use Go\Proxy\EnumProxyGenerator;
 use Go\Proxy\FunctionProxyGenerator;
 use Go\Proxy\TraitProxyGenerator;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Property;
 use ReflectionProperty;
@@ -205,7 +206,7 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
-        $position = $classNode->getAttribute('startTokenPos');
+        $position = $this->getPositionAfterAttributeGroups($classNode);
         if (!is_int($position)) {
             return;
         }
@@ -221,6 +222,32 @@ class WeavingTransformer extends BaseSourceTransformer
             }
             ++$position;
         } while (true);
+    }
+
+    /**
+     * Returns the token position where the class/enum declaration scan should start.
+     *
+     * A ClassLike node's startTokenPos includes its attribute groups (`#[...]`), so scanning
+     * from there would rename the first T_STRING inside the attribute to the trait name and
+     * then delete the real class header (see https://github.com/goaop/framework/issues/598).
+     * Class-level attributes are kept as-is on the generated trait — attributes are legal
+     * on traits — so the scan starts right after the last attribute group.
+     */
+    private function getPositionAfterAttributeGroups(ClassLike $classNode): ?int
+    {
+        $position = $classNode->getAttribute('startTokenPos');
+        if (!is_int($position)) {
+            return null;
+        }
+        $lastAttrGroup = end($classNode->attrGroups);
+        if ($lastAttrGroup !== false) {
+            $attrGroupsEnd = $lastAttrGroup->getAttribute('endTokenPos');
+            if (is_int($attrGroupsEnd)) {
+                $position = $attrGroupsEnd + 1;
+            }
+        }
+
+        return $position;
     }
 
     /**
@@ -241,7 +268,7 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
-        $position = $classNode->getAttribute('startTokenPos');
+        $position = $this->getPositionAfterAttributeGroups($classNode);
         if (!is_int($position)) {
             return;
         }
@@ -327,7 +354,7 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName
     ): void {
         $classNode = $class->getNode();
-        $position = $classNode->getAttribute('startTokenPos');
+        $position = $this->getPositionAfterAttributeGroups($classNode);
         if (!is_int($position)) {
             return;
         }

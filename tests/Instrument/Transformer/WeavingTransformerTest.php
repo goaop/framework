@@ -377,6 +377,22 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringNotContainsString((string) PHP_INT_MAX, $actualProxyContent);
     }
 
+    /**
+     * Class-level attributes (with and without arguments) must survive the class→trait
+     * conversion untouched (issue #598). Previously the first token inside `#[...]` was
+     * renamed to the trait name and the rest of the attribute plus the real class header
+     * was deleted, producing a parse error like `#[Foo__AopProxied {`.
+     */
+    public function testWeaverKeepsClassLevelAttributesOnWovenTrait(): void
+    {
+        $metadata = $this->loadTestMetadata('php80-class-attribute');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php80-class-attribute-woven')->source);
+        $this->assertEquals($expected, $actual);
+    }
+
     public function testWeaverMovesInterceptedPropertiesToProxyHooks(): void
     {
         $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
