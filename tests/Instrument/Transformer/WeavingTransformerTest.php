@@ -275,6 +275,70 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * Backed enum cases whose values are constant expressions (issue #600).
+     *
+     * `case Negative = -1;`, `case Shifted = 1 << 2;` and `case FromConst = self::SHIFT + 10;`
+     * are not String_/Int_ literals in the AST. The proxy enum must re-declare these cases with
+     * their original expressions verbatim — dropping the value would declare a pure case inside
+     * a backed enum, which is a PHP fatal error.
+     */
+    public function testWeaverForEnumWithConstantExpressionCaseValues(): void
+    {
+        $metadata = $this->loadTestMetadata('php81-enum-const-expr');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-const-expr-woven')->source);
+        $this->assertEquals($expected, $actual);
+        $this->assertMatchesRegularExpression("/AOP_CACHE_DIR . '(.+)';$/m", $actual);
+        if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
+            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-const-expr-proxy')->source);
+            $this->assertEquals($expectedProxyContent, $actualProxyContent);
+        }
+    }
+
+    /**
+     * Functional check for issue #600: the woven trait plus the generated proxy enum must
+     * actually load and keep the evaluated constant-expression case values at runtime.
+     *
+     * This also proves that `self::SHIFT` keeps resolving on the proxy enum: the class constant
+     * stays in the woven trait, and trait constants participate in the composing class (PHP 8.2+).
+     */
+    public function testWovenEnumWithConstantExpressionCaseValuesWorksAtRuntime(): void
+    {
+        $metadata = $this->loadTestMetadata('php81-enum-const-expr');
+        $this->transformer->transform($metadata);
+
+        $this->assertMatchesRegularExpression("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source);
+        preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches);
+        $proxyContent = file_get_contents('vfs://' . $matches[1]);
+
+        // The woven trait source, without the include_once tail (the proxy is included manually)
+        $traitSource = preg_replace('/^include_once AOP_CACHE_DIR.*$/m', '', $metadata->source);
+
+        $tempDir   = sys_get_temp_dir();
+        $traitFile = tempnam($tempDir, 'aop_enum_trait_');
+        $proxyFile = tempnam($tempDir, 'aop_enum_proxy_');
+        try {
+            file_put_contents($traitFile, $traitSource);
+            file_put_contents($proxyFile, $proxyContent);
+            include $traitFile;
+            include $proxyFile;
+
+            $enumName = 'Test\\ns1\\ConstExprStatus';
+            $this->assertTrue(enum_exists($enumName));
+            $this->assertSame(-1, $enumName::Negative->value);
+            $this->assertSame(1 << 2, $enumName::Shifted->value);
+            $this->assertSame(12, $enumName::FromConst->value, 'self::SHIFT + 10 must resolve via the trait constant');
+            $this->assertSame($enumName::FromConst, $enumName::from(12));
+        } finally {
+            unlink($traitFile);
+            unlink($proxyFile);
+        }
+    }
+
+    /**
      * PHP 8.3 #[\Override] attribute must be stripped from intercepted methods.
      *
      * When a method is aliased in the proxy's trait-use block (e.g. __aop__overriddenMethod),
