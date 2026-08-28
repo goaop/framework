@@ -63,6 +63,8 @@ if ($fieldAccess->getField()->isInitialized($this)) {
 ```
 
 > **See also:** [PHP 8.4 Feature Support & Known Limitations](docs/php84-limitations.md) for detailed information about property hooks, readonly properties, lazy objects, and other PHP 8.4 features.
+>
+> [PHP 8.5 Feature Support & Known Limitations](docs/php85-limitations.md) covers the PHP 8.5 audit results.
 
 ### 🛠️ Developer Experience
 
