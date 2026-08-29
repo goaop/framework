@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
+use Go\Aop\AdviceTypeEnum;
 use Go\Aop\IntroductionInfo;
 
 /**
@@ -38,5 +39,10 @@ final readonly class TraitIntroductionInfo implements IntroductionInfo
     public function getTrait(): string
     {
         return $this->introducedTrait;
+    }
+
+    public function getType(): AdviceTypeEnum
+    {
+        return AdviceTypeEnum::Introduction;
     }
 }

@@ -15,7 +15,6 @@ namespace Go\Aop\Framework;
 use Go\Aop\Advice;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
-use Go\Aop\Intercept\Interceptor;
 use ReflectionFunction;
 
 /**
@@ -46,13 +45,7 @@ final readonly class GeneratedInterceptor
         }
 
         return new self(
-            match ($advice::class) {
-                BeforeInterceptor::class        => 'before',
-                AfterInterceptor::class         => 'after',
-                AroundInterceptor::class        => 'around',
-                AfterThrowingInterceptor::class => 'afterThrowing',
-                default => throw new AspectException("Advisor {$advisorId} uses unsupported interceptor " . $advice::class),
-            },
+            $advice->getType()->value,
             $scopeClass->name,
             $reflectionAdvice->name,
             $advice->getAdviceOrder(),

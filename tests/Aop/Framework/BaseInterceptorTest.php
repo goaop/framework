@@ -30,7 +30,7 @@ class BaseInterceptorTest extends AbstractInterceptorTestCase
 
         $interceptor = $this->getMockBuilder(AbstractInterceptor::class)
             ->setConstructorArgs([$advice])
-            ->onlyMethods(['invoke'])
+            ->onlyMethods(['invoke', 'getType'])
             ->getMock();
         $this->assertEquals($advice, $interceptor->getRawAdvice());
     }

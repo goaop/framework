@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\AdviceBefore;
+use Go\Aop\AdviceTypeEnum;
 use Go\Aop\Intercept\Joinpoint;
 
 /**
@@ -20,12 +20,17 @@ use Go\Aop\Intercept\Joinpoint;
  *
  * @api
  */
-final class BeforeInterceptor extends AbstractInterceptor implements AdviceBefore
+final class BeforeInterceptor extends AbstractInterceptor
 {
     public function invoke(Joinpoint $joinpoint): mixed
     {
         ($this->adviceMethod)($joinpoint);
 
         return $joinpoint->proceed();
+    }
+
+    public function getType(): AdviceTypeEnum
+    {
+        return AdviceTypeEnum::Before;
     }
 }

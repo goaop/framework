@@ -13,9 +13,6 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
-use Go\Aop\AdviceAfter;
-use Go\Aop\AdviceAround;
-use Go\Aop\AdviceBefore;
 use Go\Aop\IntroductionInfo;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
@@ -62,12 +59,17 @@ abstract class AbstractJoinpoint implements Joinpoint
         $sortedAdvices = $advices;
         uasort(
             $sortedAdvices,
-            fn(mixed $first, mixed $second) => match (true) {
-                $first instanceof AdviceBefore && !($second instanceof AdviceBefore) => -1,
-                $first instanceof AdviceAround && !($second instanceof AdviceAround) => 1,
-                $first instanceof AdviceAfter && !($second instanceof AdviceAfter) => $second instanceof AdviceBefore ? 1 : -1,
-                $first instanceof OrderedAdvice && $second instanceof OrderedAdvice => $first->getAdviceOrder() - $second->getAdviceOrder(),
-                default => 0,
+            function (mixed $first, mixed $second): int {
+                if ($first instanceof Advice && $second instanceof Advice) {
+                    $priority = $first->getType()->compareTo($second->getType());
+                    if ($priority !== 0) {
+                        return $priority;
+                    }
+                }
+
+                return $first instanceof OrderedAdvice && $second instanceof OrderedAdvice
+                    ? $first->getAdviceOrder() - $second->getAdviceOrder()
+                    : 0;
             }
         );
 

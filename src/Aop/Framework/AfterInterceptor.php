@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\AdviceAfter;
+use Go\Aop\AdviceTypeEnum;
 use Go\Aop\Intercept\Joinpoint;
 
 /**
@@ -20,7 +20,7 @@ use Go\Aop\Intercept\Joinpoint;
  *
  * @api
  */
-final class AfterInterceptor extends AbstractInterceptor implements AdviceAfter
+final class AfterInterceptor extends AbstractInterceptor
 {
     public function invoke(Joinpoint $joinpoint): mixed
     {
@@ -29,5 +29,10 @@ final class AfterInterceptor extends AbstractInterceptor implements AdviceAfter
         } finally {
             ($this->adviceMethod)($joinpoint);
         }
+    }
+
+    public function getType(): AdviceTypeEnum
+    {
+        return AdviceTypeEnum::After;
     }
 }
