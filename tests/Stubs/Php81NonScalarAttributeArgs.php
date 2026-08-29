@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Go\Stubs\Audit;
+namespace Go\Stubs;
 
 #[RichAttr(Status::Active, new \ArrayObject([1, 2]))]
 class Php81NonScalarAttributeArgs

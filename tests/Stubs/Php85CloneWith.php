@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Go\Stubs\Audit;
+namespace Go\Stubs;
 
 class Php85CloneWith
 {

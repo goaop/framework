@@ -24,7 +24,27 @@ use ReflectionClass;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class Php85AuditScratchTest extends TestCase
 {
-    private const FIXTURE_DIR = __DIR__ . '/../../Stubs/Audit';
+    private const FIXTURE_DIR = __DIR__ . '/../../Stubs';
+
+    /** Audit fixture stubs living in tests/Stubs alongside the general-purpose stubs. */
+    private const AUDIT_FIXTURES = [
+        'Collaborator',
+        'ConstAttr',
+        'ExprAttr',
+        'Php80ClassAttrPlain',
+        'Php80GlobalConstAttrArg',
+        'Php81EnumConstExprCases',
+        'Php81NewInInitializers',
+        'Php81NonScalarAttributeArgs',
+        'Php85CloneWith',
+        'Php85ClosuresInConstExpr',
+        'Php85ConstAttributes',
+        'Php85FinalPromotionAsymStatic',
+        'Php85NoDiscard',
+        'Php85PipeOperator',
+        'RichAttr',
+        'Status',
+    ];
 
     protected static FileSystem $fileSystem;
 
@@ -86,8 +106,7 @@ class Php85AuditScratchTest extends TestCase
     public static function fixtureNames(): array
     {
         $names = [];
-        foreach (glob(self::FIXTURE_DIR . '/*.php') as $file) {
-            $name = basename($file, '.php');
+        foreach (self::AUDIT_FIXTURES as $name) {
             $names[$name] = [$name];
         }
 

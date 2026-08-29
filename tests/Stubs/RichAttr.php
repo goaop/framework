@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Go\Stubs\Audit;
+namespace Go\Stubs;
 
 #[\Attribute(\Attribute::TARGET_ALL)]
 class RichAttr
