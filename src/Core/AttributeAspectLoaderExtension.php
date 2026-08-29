@@ -14,6 +14,7 @@ namespace Go\Core;
 
 use Closure;
 use Go\Aop\Aspect;
+use Go\Aop\AspectException;
 use Go\Aop\Framework\AfterInterceptor;
 use Go\Aop\Framework\AfterThrowingInterceptor;
 use Go\Aop\Framework\AroundInterceptor;
@@ -64,12 +65,17 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
      * Returns an advice (interceptor) instance by meta-type attribute and closure
      *
      * @throws UnexpectedValueException For unsupported annotations
+     * @throws AspectException If the advice method is not public
      */
     protected function getAdvice(
         AbstractInterceptor $interceptorAttribute,
         Aspect $aspect,
         ReflectionMethod $aspectMethod
     ): Interceptor {
+        if (!$aspectMethod->isPublic()) {
+            throw new AspectException("Advice method {$aspectMethod->class}::{$aspectMethod->name}() must be public; first-class advice callables require all advice methods to be public");
+        }
+
         $adviceCallback     = $aspectMethod->getClosure($aspect);
         $adviceOrder        = $interceptorAttribute->order;
         $pointcutExpression = $interceptorAttribute->expression;
