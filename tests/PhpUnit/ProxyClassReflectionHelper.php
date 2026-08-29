@@ -250,9 +250,23 @@ final class ProxyClassReflectionHelper
                 continue;
             }
             $aspectCall = $adviceCall->var;
-            if (!$aspectCall instanceof StaticCall || !$aspectCall->class instanceof Name || !str_ends_with($aspectCall->class->toString(), 'The') || !isset($aspectCall->args[0])) {
+            if (!$aspectCall instanceof StaticCall || !$aspectCall->class instanceof Name || !$aspectCall->name instanceof Identifier || !str_ends_with($aspectCall->class->toString(), 'The') || !isset($aspectCall->args[0])) {
                 continue;
             }
+
+            if ($aspectCall->name->toString() === 'advice') {
+                $advisorId = $aspectCall->args[0]->value;
+                if ($advisorId instanceof String_) {
+                    $advisorNames[] = $advisorId->value;
+                }
+
+                continue;
+            }
+
+            if ($aspectCall->name->toString() !== 'aspect') {
+                continue;
+            }
+
             $aspectClassConst = $aspectCall->args[0]->value;
             if (!$aspectClassConst instanceof ClassConstFetch || !$aspectClassConst->class instanceof Name) {
                 continue;

@@ -137,7 +137,9 @@ class FunctionProxyGenerator
         foreach ($adviceNames as $typedAdvices) {
             foreach ($typedAdvices as $concreteAdvices) {
                 foreach ($concreteAdvices as $advice) {
-                    $interceptors[] = $advice;
+                    if ($advice instanceof GeneratedInterceptor) {
+                        $interceptors[] = $advice;
+                    }
                 }
             }
         }

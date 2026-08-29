@@ -4,7 +4,6 @@ namespace Test\ns1;
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
-use Test\ns1\TestClassWithOverride;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 /**
  * PHP 8.3 — class with #[\Override] on an intercepted method.
@@ -25,7 +24,7 @@ class TestClassWithOverride implements \Go\Aop\Proxy
             self::class,
             'overriddenMethod',
             [
-                Interceptor::before(The::aspect(TestClassWithOverride::class)->overriddenMethod(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClassWithOverride->overriddenMethod')),
             ],
             $this->__aop__overriddenMethod(...),
         );
@@ -38,7 +37,7 @@ class TestClassWithOverride implements \Go\Aop\Proxy
             self::class,
             'normalMethod',
             [
-                Interceptor::before(The::aspect(TestClassWithOverride::class)->normalMethod(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClassWithOverride->normalMethod')),
             ],
             $this->__aop__normalMethod(...),
         );

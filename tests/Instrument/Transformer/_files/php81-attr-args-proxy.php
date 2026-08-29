@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
+
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
-use Test\ns1\TestAttributeArgsClass;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 class TestAttributeArgsClass implements \Go\Aop\Proxy
 {
@@ -23,7 +23,7 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
             self::class,
             'tagged',
             [
-                Interceptor::before(The::aspect(TestAttributeArgsClass::class)->tagged(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestAttributeArgsClass->tagged')),
             ],
             $this->__aop__tagged(...),
         );
@@ -37,7 +37,7 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
             self::class,
             'collected',
             [
-                Interceptor::before(The::aspect(TestAttributeArgsClass::class)->collected(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestAttributeArgsClass->collected')),
             ],
             $this->__aop__collected(...),
         );

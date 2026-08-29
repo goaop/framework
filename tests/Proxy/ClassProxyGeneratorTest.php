@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Framework\BeforeInterceptor;
+use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
@@ -40,7 +42,7 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass($className);
         $classAdvices    = [
             'method' => [
-                $methodName => ['test']
+                $methodName => [self::testAdvice()]
             ]
         ];
 
@@ -75,8 +77,8 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass(First::class);
         $classAdvices    = [
             'prop' => [
-                'public'    => ['test'],
-                'protected' => ['test'],
+                'public'    => [self::testAdvice()],
+                'protected' => [self::testAdvice()],
             ]
         ];
 
@@ -111,7 +113,7 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass($target);
         $classAdvices    = [
             'prop' => [
-                'name'  => ['test'],
+                'name'  => [self::testAdvice()],
             ]
         ];
 
@@ -136,7 +138,7 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass($target);
         $classAdvices = [
             'prop' => [
-                'privateProperty' => ['test'],
+                'privateProperty' => [self::testAdvice()],
             ],
         ];
 
@@ -174,9 +176,9 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass($target);
         $classAdvices    = [
             'prop' => [
-                'intercepted' => ['test'],
-                'readonly' => ['test'],
-                'alreadyHooked' => ['test'],
+                'intercepted' => [self::testAdvice()],
+                'readonly' => [self::testAdvice()],
+                'alreadyHooked' => [self::testAdvice()],
             ]
         ];
 
@@ -195,7 +197,7 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass($target);
         $classAdvices = [
             'prop' => [
-                'final' => ['test'],
+                'final' => [self::testAdvice()],
             ],
         ];
 
@@ -214,8 +216,8 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass(PropertyInheritanceChild::class);
         $classAdvices = [
             'prop' => [
-                'parentPublic' => ['test'],
-                'parentProtected' => ['test'],
+                'parentPublic' => [self::testAdvice()],
+                'parentProtected' => [self::testAdvice()],
             ],
         ];
 
@@ -239,7 +241,7 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass($target);
         $classAdvices    = [
             'prop' => [
-                'uninitialized' => ['test'],
+                'uninitialized' => [self::testAdvice()],
             ],
         ];
 
@@ -284,7 +286,7 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass($target);
         $classAdvices    = [
             'prop' => [
-                'items' => ['test'],
+                'items' => [self::testAdvice()],
             ],
         ];
 
@@ -311,10 +313,10 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass(First::class);
         $classAdvices    = [
             'method' => [
-                'privateMethod'      => ['test'], // private function
+                'privateMethod'      => [self::testAdvice()], // private function
             ],
             'static' => [
-                'staticSelfPrivate'  => ['test'], // private static function
+                'staticSelfPrivate'  => [self::testAdvice()], // private static function
             ],
         ];
 
@@ -379,8 +381,8 @@ class ClassProxyGeneratorTest extends TestCase
         // and also declares ownPublicMethod directly.
         $classAdvices = [
             'method' => [
-                'publicMethod'    => ['test'], // defined in TraitAliasProxied
-                'ownPublicMethod' => ['test'], // defined directly in ClassWithMixedSources
+                'publicMethod'    => [self::testAdvice()], // defined in TraitAliasProxied
+                'ownPublicMethod' => [self::testAdvice()], // defined directly in ClassWithMixedSources
             ],
         ];
 
@@ -410,7 +412,7 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass(FirstStatic::class);
         $classAdvices    = [
             'method' => [
-                'publicMethod' => ['test'],
+                'publicMethod' => [self::testAdvice()],
             ],
         ];
 
@@ -446,7 +448,7 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass(FirstStatic::class);
         $classAdvices    = [
             'static' => [
-                'staticSelfPublic' => ['test'],
+                'staticSelfPublic' => [self::testAdvice()],
             ],
         ];
 
@@ -491,8 +493,8 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass($target);
         $classAdvices    = [
             'method' => [
-                'oldMethod'    => ['test'],
-                'normalMethod' => ['test'],
+                'oldMethod'    => [self::testAdvice()],
+                'normalMethod' => [self::testAdvice()],
             ],
         ];
 
@@ -531,7 +533,7 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass(First::class);
         $classAdvices    = [
             'method' => [
-                'publicMethod' => ['test'],
+                'publicMethod' => [self::testAdvice()],
             ],
         ];
 
@@ -557,7 +559,7 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass(First::class);
         $classAdvices    = [
             'method' => [
-                'publicMethod' => ['test'],
+                'publicMethod' => [self::testAdvice()],
             ],
         ];
 
@@ -570,6 +572,11 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('use \\Other\\Namespace\\First__AopProxied {', $output);
         $this->assertStringContainsString('\\Other\\Namespace\\First__AopProxied::publicMethod as private __aop__publicMethod', $output);
         $this->assertStringNotContainsString('use First__AopProxied {', $output);
+    }
+
+    private static function testAdvice(): GeneratedInterceptor
+    {
+        return GeneratedInterceptor::fromAdvice('test', new BeforeInterceptor(static function (): void {}));
     }
 
     /**

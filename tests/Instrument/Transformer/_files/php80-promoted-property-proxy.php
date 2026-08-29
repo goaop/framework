@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace Go\Tests\TestProject\Application;
+
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
-use Go\Tests\TestProject\Application\PromotedPropertyClass;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldAccessType;
@@ -25,7 +25,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                 self::class,
                 'name',
                 [
-                    Interceptor::before(The::aspect(PromotedPropertyClass::class)->name(...)),
+                    Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name')),
                 ],
             );
             return $__joinPoint->__invoke($this, FieldAccessType::READ, $this->name);
@@ -36,7 +36,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                 self::class,
                 'name',
                 [
-                    Interceptor::before(The::aspect(PromotedPropertyClass::class)->name(...)),
+                    Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name')),
                 ],
             );
             $this->name = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this->name);
@@ -49,7 +49,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                 self::class,
                 'counter',
                 [
-                    Interceptor::before(The::aspect(PromotedPropertyClass::class)->counter(...)),
+                    Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter')),
                 ],
             );
             return $__joinPoint->__invoke($this, FieldAccessType::READ, $this->counter);
@@ -60,7 +60,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                 self::class,
                 'counter',
                 [
-                    Interceptor::before(The::aspect(PromotedPropertyClass::class)->counter(...)),
+                    Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter')),
                 ],
             );
             $this->counter = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this->counter);
@@ -73,7 +73,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
             self::class,
             '__construct',
             [
-                Interceptor::before(The::aspect(PromotedPropertyClass::class)->__construct(...)),
+                Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->__construct')),
             ],
             $this->__aop____construct(...),
         );
@@ -86,7 +86,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
             self::class,
             'getName',
             [
-                Interceptor::before(The::aspect(PromotedPropertyClass::class)->getName(...)),
+                Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->getName')),
             ],
             $this->__aop__getName(...),
         );

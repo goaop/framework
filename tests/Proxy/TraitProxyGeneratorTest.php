@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Framework\BeforeInterceptor;
+use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Stubs\TraitAliasProxied;
 use Go\Stubs\TraitWithClassTypedProperty;
 use PHPUnit\Framework\TestCase;
@@ -42,7 +44,7 @@ class TraitProxyGeneratorTest extends TestCase
         $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
         $traitAdvices    = [
             'method' => [
-                'publicMethod' => ['advisor.TraitAliasProxied->publicMethod'],
+                'publicMethod' => [self::testAdvice('advisor.TraitAliasProxied->publicMethod')],
             ],
         ];
 
@@ -82,7 +84,7 @@ class TraitProxyGeneratorTest extends TestCase
         $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
         $traitAdvices    = [
             'static' => [
-                'staticPublicMethod' => ['advisor.TraitAliasProxied->staticPublicMethod'],
+                'staticPublicMethod' => [self::testAdvice('advisor.TraitAliasProxied->staticPublicMethod')],
             ],
         ];
 
@@ -113,11 +115,11 @@ class TraitProxyGeneratorTest extends TestCase
         $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
         $traitAdvices    = [
             'method' => [
-                'publicMethod'    => ['advisor1'],
-                'protectedMethod' => ['advisor2'],
+                'publicMethod'    => [self::testAdvice('advisor1')],
+                'protectedMethod' => [self::testAdvice('advisor2')],
             ],
             'static' => [
-                'staticPublicMethod' => ['advisor3'],
+                'staticPublicMethod' => [self::testAdvice('advisor3')],
             ],
         ];
 
@@ -150,7 +152,7 @@ class TraitProxyGeneratorTest extends TestCase
     {
         $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
         $traitAdvices    = [
-            'method' => ['publicMethod' => ['advisor']],
+            'method' => ['publicMethod' => [self::testAdvice('advisor')]],
         ];
 
         $generator = new TraitProxyGenerator(
@@ -175,7 +177,7 @@ class TraitProxyGeneratorTest extends TestCase
     {
         $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
         $traitAdvices    = [
-            'method' => ['publicMethod' => ['advisor']],
+            'method' => ['publicMethod' => [self::testAdvice('advisor')]],
         ];
 
         $generator = new TraitProxyGenerator(
@@ -200,7 +202,7 @@ class TraitProxyGeneratorTest extends TestCase
         $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
         $traitAdvices    = [
             'prop' => [
-                'public' => ['advisor.TraitAliasProxied->public'],
+                'public' => [self::testAdvice('advisor.TraitAliasProxied->public')],
             ],
         ];
 
@@ -226,7 +228,7 @@ class TraitProxyGeneratorTest extends TestCase
         $reflectionTrait = new ReflectionClass(TraitWithClassTypedProperty::class);
         $traitAdvices    = [
             'prop' => [
-                'privateProperty' => ['advisor.TraitWithClassTypedProperty->privateProperty'],
+                'privateProperty' => [self::testAdvice('advisor.TraitWithClassTypedProperty->privateProperty')],
             ],
         ];
 
@@ -254,7 +256,7 @@ class TraitProxyGeneratorTest extends TestCase
         $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
         $traitAdvices    = [
             'method' => [
-                'publicMethod' => ['advisor'],
+                'publicMethod' => [self::testAdvice('advisor')],
             ],
         ];
 
@@ -278,7 +280,7 @@ class TraitProxyGeneratorTest extends TestCase
         $reflectionTrait = new ReflectionClass(TraitAliasProxied::class);
         $traitAdvices    = [
             'method' => [
-                'publicMethod' => ['advisor'],
+                'publicMethod' => [self::testAdvice('advisor')],
             ],
         ];
 
@@ -291,5 +293,10 @@ class TraitProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('use \\Other\\Namespace\\TraitAliasProxied__AopProxied {', $output);
         $this->assertStringContainsString('\\Other\\Namespace\\TraitAliasProxied__AopProxied::publicMethod as private __aop__publicMethod', $output);
         $this->assertStringNotContainsString('use TraitAliasProxied__AopProxied {', $output);
+    }
+
+    private static function testAdvice(string $advisorId): GeneratedInterceptor
+    {
+        return GeneratedInterceptor::fromAdvice($advisorId, new BeforeInterceptor(static function (): void {}));
     }
 }

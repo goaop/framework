@@ -6,6 +6,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
 use Go\Aop\AdviceTypeEnum;
+use Go\Aop\AspectException;
 use Go\Aop\OrderedAdvice;
 use PHPUnit\Framework\TestCase;
 
@@ -83,6 +84,63 @@ class AbstractJoinpointTest extends TestCase
                 [get_class($first), get_class($forth)]
             ],
         ];
+    }
+
+    public function testFlatAndSortAdvicesGeneratesDescriptorsForEveryAdviceType(): void
+    {
+        $noop     = static fn(): mixed => null;
+        $advices  = [
+            'method' => [
+                'execute' => [
+                    'advisor.around'        => new AroundInterceptor($noop),
+                    'advisor.afterThrowing' => new AfterThrowingInterceptor($noop),
+                    'advisor.after'         => new AfterInterceptor($noop),
+                    'advisor.before'        => new BeforeInterceptor($noop),
+                ],
+            ],
+        ];
+
+        $flattened = AbstractJoinpoint::flatAndSortAdvices($advices);
+
+        $descriptors = $flattened['method']['execute'];
+        $this->assertContainsOnlyInstancesOf(GeneratedInterceptor::class, $descriptors);
+        $this->assertSame(
+            ['before', 'afterThrowing', 'after', 'around'],
+            array_map(static fn(GeneratedInterceptor $descriptor): string => $descriptor->factoryMethod, $descriptors)
+        );
+        $this->assertSame(
+            ['advisor.before', 'advisor.afterThrowing', 'advisor.after', 'advisor.around'],
+            array_map(static fn(GeneratedInterceptor $descriptor): string => $descriptor->advisorId, $descriptors)
+        );
+    }
+
+    public function testFlatAndSortAdvicesKeepsIntroductionAdvisorIds(): void
+    {
+        $advices = [
+            'introduction' => [
+                'root' => [
+                    '\Some\Interface' => new TraitIntroductionInfo('\Some\Trait', '\Some\Interface'),
+                ],
+            ],
+        ];
+
+        $flattened = AbstractJoinpoint::flatAndSortAdvices($advices);
+
+        $this->assertSame(['\Some\Interface'], $flattened['introduction']['root']);
+    }
+
+    public function testFlatAndSortAdvicesRejectsNonAdviceValues(): void
+    {
+        $this->expectException(AspectException::class);
+        $this->expectExceptionMessage('instead of advice instance');
+
+        AbstractJoinpoint::flatAndSortAdvices([
+            'method' => [
+                'execute' => [
+                    'advisor.broken' => true,
+                ],
+            ],
+        ]);
     }
 
     private static function makeAdvice(AdviceTypeEnum $type): Advice

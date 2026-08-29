@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace Go\Tests\TestProject\Application;
+
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
-use Go\Tests\TestProject\Application\SingleLinePromotedClass;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldAccessType;
@@ -24,7 +24,7 @@ class SingleLinePromotedClass implements \Go\Aop\Proxy
                 self::class,
                 'tag',
                 [
-                    Interceptor::before(The::aspect(SingleLinePromotedClass::class)->tag(...)),
+                    Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->tag')),
                 ],
             );
             return $__joinPoint->__invoke($this, FieldAccessType::READ, $this->tag);
@@ -35,7 +35,7 @@ class SingleLinePromotedClass implements \Go\Aop\Proxy
                 self::class,
                 'tag',
                 [
-                    Interceptor::before(The::aspect(SingleLinePromotedClass::class)->tag(...)),
+                    Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->tag')),
                 ],
             );
             $this->tag = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this->tag);
@@ -48,7 +48,7 @@ class SingleLinePromotedClass implements \Go\Aop\Proxy
             self::class,
             '__construct',
             [
-                Interceptor::before(The::aspect(SingleLinePromotedClass::class)->__construct(...)),
+                Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->__construct')),
             ],
             $this->__aop____construct(...),
         );

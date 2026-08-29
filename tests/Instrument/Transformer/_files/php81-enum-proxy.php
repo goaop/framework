@@ -4,7 +4,6 @@ namespace Test\ns1;
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
-use Test\ns1\TestStatus;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 enum TestStatus : string implements \Go\Aop\Proxy
 {
@@ -20,7 +19,7 @@ enum TestStatus : string implements \Go\Aop\Proxy
             self::class,
             'label',
             [
-                Interceptor::before(The::aspect(TestStatus::class)->label(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestStatus->label')),
             ],
             $this->__aop__label(...),
         );

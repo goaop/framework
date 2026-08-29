@@ -11,6 +11,7 @@ declare(strict_types = 1);
 namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
+use Go\Aop\Framework\BeforeInterceptor;
 use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -210,7 +211,7 @@ class Php85AuditScratchTest extends TestCase
                         continue;
                     }
                     $advisorId = "advisor.{$refClass->name}->{$method->name}";
-                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
+                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = new BeforeInterceptor(static function (): void {});
                 }
                 foreach ($refClass->getProperties() as $property) {
                     if ($property->getDeclaringClass()->name !== $refClass->name) {
@@ -221,7 +222,7 @@ class Php85AuditScratchTest extends TestCase
                         continue;
                     }
                     $advisorId = "advisor.{$refClass->name}->{$property->name}";
-                    $advices[AspectContainer::PROPERTY_PREFIX][$property->name][$advisorId] = true;
+                    $advices[AspectContainer::PROPERTY_PREFIX][$property->name][$advisorId] = new BeforeInterceptor(static function (): void {});
                 }
                 return $advices;
             });

@@ -26,10 +26,11 @@ final readonly class GeneratedInterceptor
 {
     private function __construct(
         public string $factoryMethod,
-        public string $aspectClass,
-        public string $adviceMethod,
+        public ?string $aspectClass,
+        public ?string $adviceMethod,
         public int $order,
-        public string $advisorId
+        public string $advisorId,
+        public bool $usesContainerAdvice = false
     ) {}
 
     public static function fromAdvice(string $advisorId, Advice $advice): self
@@ -38,28 +39,17 @@ final readonly class GeneratedInterceptor
             throw new AspectException("Advisor {$advisorId} uses unsupported advice " . get_debug_type($advice) . '; only framework aspect-method interceptors can be generated');
         }
 
-        $reflectionAdvice = new ReflectionFunction($advice->getRawAdvice());
-        $scopeClass       = $reflectionAdvice->getClosureScopeClass();
-        if ($scopeClass === null || !is_subclass_of($scopeClass->name, Aspect::class)) {
-            throw new AspectException("Advisor {$advisorId} uses an unsupported non-aspect callable; generated first-class advice callables require aspect methods");
-        }
+        $reflectionAdvice    = new ReflectionFunction($advice->getRawAdvice());
+        $scopeClass          = $reflectionAdvice->getClosureScopeClass();
+        $usesContainerAdvice = $scopeClass === null || !is_subclass_of($scopeClass->name, Aspect::class);
 
         return new self(
             $advice->getType()->value,
-            $scopeClass->name,
-            $reflectionAdvice->name,
+            $usesContainerAdvice ? null : $scopeClass->name,
+            $usesContainerAdvice ? null : $reflectionAdvice->name,
             $advice->getAdviceOrder(),
-            $advisorId
+            $advisorId,
+            $usesContainerAdvice
         );
-    }
-
-    public static function fromAdvisorId(string $advisorId): self
-    {
-        $reference = str_starts_with($advisorId, 'advisor.') ? substr($advisorId, 8) : $advisorId;
-        [$aspectClass, $adviceMethod] = str_contains($reference, '->')
-            ? explode('->', $reference, 2)
-            : [$reference, 'advice'];
-
-        return new self('before', $aspectClass, $adviceMethod, 0, $advisorId);
     }
 }

@@ -4,7 +4,6 @@ namespace Test\ns1;
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
-use Test\ns1\TestPhp7Class;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 class TestPhp7Class implements \Go\Aop\Proxy
 {
@@ -34,7 +33,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'stringSth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->stringSth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->stringSth')),
             ],
             $this->__aop__stringSth(...),
         );
@@ -47,7 +46,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'floatSth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->floatSth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->floatSth')),
             ],
             $this->__aop__floatSth(...),
         );
@@ -60,7 +59,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'boolSth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->boolSth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->boolSth')),
             ],
             $this->__aop__boolSth(...),
         );
@@ -73,7 +72,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'intSth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->intSth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->intSth')),
             ],
             $this->__aop__intSth(...),
         );
@@ -86,7 +85,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'callableSth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->callableSth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->callableSth')),
             ],
             $this->__aop__callableSth(...),
         );
@@ -99,7 +98,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'arraySth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->arraySth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->arraySth')),
             ],
             $this->__aop__arraySth(...),
         );
@@ -112,7 +111,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'variadicStringSthByRef',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->variadicStringSthByRef(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->variadicStringSthByRef')),
             ],
             $this->__aop__variadicStringSthByRef(...),
         );
@@ -125,7 +124,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'exceptionArg',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->exceptionArg(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->exceptionArg')),
             ],
             $this->__aop__exceptionArg(...),
         );
@@ -138,7 +137,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'stringRth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->stringRth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->stringRth')),
             ],
             $this->__aop__stringRth(...),
         );
@@ -151,7 +150,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'floatRth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->floatRth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->floatRth')),
             ],
             $this->__aop__floatRth(...),
         );
@@ -164,7 +163,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'boolRth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->boolRth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->boolRth')),
             ],
             $this->__aop__boolRth(...),
         );
@@ -177,7 +176,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'intRth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->intRth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->intRth')),
             ],
             $this->__aop__intRth(...),
         );
@@ -190,7 +189,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'callableRth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->callableRth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->callableRth')),
             ],
             $this->__aop__callableRth(...),
         );
@@ -203,7 +202,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'arrayRth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->arrayRth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->arrayRth')),
             ],
             $this->__aop__arrayRth(...),
         );
@@ -216,7 +215,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'exceptionRth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->exceptionRth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->exceptionRth')),
             ],
             $this->__aop__exceptionRth(...),
         );
@@ -229,7 +228,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'noRth',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->noRth(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->noRth')),
             ],
             $this->__aop__noRth(...),
         );
@@ -242,7 +241,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             self::class,
             'returnSelf',
             [
-                Interceptor::before(The::aspect(TestPhp7Class::class)->returnSelf(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->returnSelf')),
             ],
             $this->__aop__returnSelf(...),
         );

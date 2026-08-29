@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
+
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
-use Test\ns1\TestPhp80To82SyntaxClass;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 /**
  * Compact class covering general PHP 8.0-8.3 syntax through the weaver:
@@ -25,7 +25,7 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
             self::class,
             '__construct',
             [
-                Interceptor::before(The::aspect(TestPhp80To82SyntaxClass::class)->__construct(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp80To82SyntaxClass->__construct')),
             ],
             $this->__aop____construct(...),
         );
@@ -38,7 +38,7 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
             self::class,
             'describe',
             [
-                Interceptor::before(The::aspect(TestPhp80To82SyntaxClass::class)->describe(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp80To82SyntaxClass->describe')),
             ],
             $this->__aop__describe(...),
         );

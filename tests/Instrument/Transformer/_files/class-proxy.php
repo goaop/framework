@@ -4,7 +4,6 @@ namespace Test\ns1;
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
-use Test\ns1\TestClass;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\StaticMethodInvocation;
 class TestClass implements \Go\Aop\Proxy
@@ -25,7 +24,7 @@ class TestClass implements \Go\Aop\Proxy
             self::class,
             'publicMethod',
             [
-                Interceptor::before(The::aspect(TestClass::class)->publicMethod(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethod')),
             ],
             $this->__aop__publicMethod(...),
         );
@@ -38,7 +37,7 @@ class TestClass implements \Go\Aop\Proxy
             self::class,
             'protectedMethod',
             [
-                Interceptor::before(The::aspect(TestClass::class)->protectedMethod(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->protectedMethod')),
             ],
             $this->__aop__protectedMethod(...),
         );
@@ -51,7 +50,7 @@ class TestClass implements \Go\Aop\Proxy
             self::class,
             'publicStaticMethod',
             [
-                Interceptor::before(The::aspect(TestClass::class)->publicStaticMethod(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicStaticMethod')),
             ],
             self::__aop__publicStaticMethod(...),
         );
@@ -64,7 +63,7 @@ class TestClass implements \Go\Aop\Proxy
             self::class,
             'protectedStaticMethod',
             [
-                Interceptor::before(The::aspect(TestClass::class)->protectedStaticMethod(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->protectedStaticMethod')),
             ],
             self::__aop__protectedStaticMethod(...),
         );
@@ -77,7 +76,7 @@ class TestClass implements \Go\Aop\Proxy
             self::class,
             'publicMethodDynamicArguments',
             [
-                Interceptor::before(The::aspect(TestClass::class)->publicMethodDynamicArguments(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethodDynamicArguments')),
             ],
             $this->__aop__publicMethodDynamicArguments(...),
         );
@@ -90,7 +89,7 @@ class TestClass implements \Go\Aop\Proxy
             self::class,
             'publicMethodFixedArguments',
             [
-                Interceptor::before(The::aspect(TestClass::class)->publicMethodFixedArguments(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethodFixedArguments')),
             ],
             $this->__aop__publicMethodFixedArguments(...),
         );
@@ -103,7 +102,7 @@ class TestClass implements \Go\Aop\Proxy
             self::class,
             'methodWithSpecialTypeArguments',
             [
-                Interceptor::before(The::aspect(TestClass::class)->methodWithSpecialTypeArguments(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->methodWithSpecialTypeArguments')),
             ],
             $this->__aop__methodWithSpecialTypeArguments(...),
         );

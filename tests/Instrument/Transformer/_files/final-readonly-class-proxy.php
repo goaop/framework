@@ -4,7 +4,6 @@ namespace Test\ns1;
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
-use Test\ns1\TestReadonlyClass;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\StaticMethodInvocation;
 final readonly class TestReadonlyClass implements \Go\Aop\Proxy
@@ -21,7 +20,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             self::class,
             'publicMethod',
             [
-                Interceptor::before(The::aspect(TestReadonlyClass::class)->publicMethod(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->publicMethod')),
             ],
             $this->__aop__publicMethod(...),
         );
@@ -34,7 +33,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             self::class,
             'anotherMethod',
             [
-                Interceptor::before(The::aspect(TestReadonlyClass::class)->anotherMethod(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->anotherMethod')),
             ],
             $this->__aop__anotherMethod(...),
         );
@@ -47,7 +46,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             self::class,
             'staticMethod',
             [
-                Interceptor::before(The::aspect(TestReadonlyClass::class)->staticMethod(...)),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->staticMethod')),
             ],
             self::__aop__staticMethod(...),
         );
