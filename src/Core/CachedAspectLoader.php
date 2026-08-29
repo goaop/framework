@@ -69,7 +69,6 @@ class CachedAspectLoader extends AspectLoader
         $this->isPrebuiltCache = ($options['features'] & Features::PREBUILT_CACHE) !== 0;
     }
 
-    #[\Override]
     public function load(Aspect $aspect): array
     {
         if ($this->cacheDir === null || $this->cacheDir === '') {

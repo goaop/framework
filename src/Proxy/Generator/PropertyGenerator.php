@@ -107,7 +107,6 @@ final class PropertyGenerator implements PropertyNodeProvider
     /**
      * Returns the underlying AST property node.
      */
-    #[\Override]
     public function getNode(): PropertyNode
     {
         $builder = self::getFactory()->property($this->name);

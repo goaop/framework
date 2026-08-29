@@ -53,7 +53,6 @@ class MagicConstantTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      */
-    #[\Override]
     public function transform(StreamMetaData $metadata): TransformerResultEnum
     {
         $this->replaceMagicDirFileConstants($metadata);

@@ -30,13 +30,11 @@ final readonly class TraitIntroductionInfo implements IntroductionInfo
         private string $introducedInterface
     ){}
 
-    #[\Override]
     public function getInterface(): string
     {
         return $this->introducedInterface;
     }
 
-    #[\Override]
     public function getTrait(): string
     {
         return $this->introducedTrait;

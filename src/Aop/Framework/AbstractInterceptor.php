@@ -63,7 +63,6 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
         protected readonly string $pointcutExpression = ''
     ) {}
 
-    #[\Override]
     public function getAdviceOrder(): int
     {
         return $this->adviceOrder;

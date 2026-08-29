@@ -71,7 +71,6 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
     /**
      * @return V Covariant, always mixed
      */
-    #[\Override]
     public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
@@ -83,7 +82,6 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
         return ($this->closureToCall)(...$this->arguments);
     }
 
-    #[\Override]
     public function getFunction(): ReflectionFunction
     {
         return $this->reflectionFunction;
@@ -97,7 +95,6 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
      *
      * @return V Templated return type (mixed by default)
      */
-    #[\Override]
     final public function __invoke(array $arguments = [], array $variadicArguments = []): mixed
     {
         if ($this->level > 0) {
@@ -129,7 +126,6 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
     /**
      * Returns a friendly description of current joinpoint
      */
-    #[\Override]
     final public function __toString(): string
     {
         return sprintf(

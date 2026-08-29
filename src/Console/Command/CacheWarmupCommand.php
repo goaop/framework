@@ -23,7 +23,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class CacheWarmupCommand extends BaseAspectCommand
 {
-    #[\Override]
     protected function configure(): void
     {
         parent::configure();
@@ -41,7 +40,6 @@ EOT
         ;
     }
 
-    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);

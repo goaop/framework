@@ -31,7 +31,6 @@ final readonly class ClassInheritancePointcut implements Pointcut
      */
     public function __construct(private string $parentClassOrInterfaceName) {}
 
-    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
@@ -45,7 +44,6 @@ final readonly class ClassInheritancePointcut implements Pointcut
         return $context->isSubclassOf($this->parentClassOrInterfaceName) || in_array($this->parentClassOrInterfaceName, (array) $context->getInterfaceNames());
     }
 
-    #[\Override]
     public function getKind(): int
     {
         return self::KIND_CLASS;

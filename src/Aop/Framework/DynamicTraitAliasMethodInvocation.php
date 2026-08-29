@@ -83,7 +83,6 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
         );
     }
 
-    #[\Override]
     final public function __invoke(object $instance, array $arguments = [], array $variadicArguments = []): mixed
     {
         if ($this->level > 0) {
@@ -112,7 +111,6 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     /**
      * @return V Covariant, always mixed
      */
-    #[\Override]
     public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
@@ -125,7 +123,6 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     /**
      * @phpstan-return T Covariance, always instance of object
      */
-    #[\Override]
     final public function getThis(): object
     {
         return $this->instance;
@@ -134,13 +131,11 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     /**
      * @return true Covariance, always true for dynamic method calls
      */
-    #[\Override]
     final public function isDynamic(): true
     {
         return true;
     }
 
-    #[\Override]
     final public function getScope(): string
     {
         return $this->instance::class;

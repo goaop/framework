@@ -78,7 +78,6 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
      *
      * @return V Templated return type (mixed by default)
      */
-    #[\Override]
     final public function __invoke(string $scope, array $arguments = [], array $variadicArguments = []): mixed
     {
         if ($this->level > 0) {
@@ -107,7 +106,6 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     /**
      * @return V Covariant, always mixed
      */
-    #[\Override]
     public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
@@ -122,7 +120,6 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     /**
      * @return false Covariance, always false for static method calls
      */
-    #[\Override]
     final public function isDynamic(): false
     {
         return false;
@@ -131,13 +128,11 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     /**
      * @return null Covariance, always null for static invocations
      */
-    #[\Override]
     final public function getThis(): null
     {
         return null;
     }
 
-    #[\Override]
     final public function getScope(): string
     {
         return $this->scope;

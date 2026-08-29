@@ -27,7 +27,6 @@ final class AfterThrowingInterceptor extends AbstractInterceptor implements Advi
      * @inheritdoc
      * @throws Throwable if original joinpoint throws an exception
      */
-    #[\Override]
     public function invoke(Joinpoint $joinpoint): mixed
     {
         try {

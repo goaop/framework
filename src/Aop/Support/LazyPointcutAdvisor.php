@@ -40,7 +40,6 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
         private readonly Advice          $advice
     ) {}
 
-    #[\Override]
     public function getPointcut(): Pointcut
     {
         if (!isset($this->pointcut)) {
@@ -55,7 +54,6 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
         return $this->pointcut;
     }
 
-    #[\Override]
     public function getAdvice(): Advice
     {
         return $this->advice;

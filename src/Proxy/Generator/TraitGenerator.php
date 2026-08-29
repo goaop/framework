@@ -100,7 +100,6 @@ final class TraitGenerator implements GeneratorInterface
         ];
     }
 
-    #[\Override]
     public function getName(): string
     {
         return $this->name;
@@ -157,7 +156,6 @@ final class TraitGenerator implements GeneratorInterface
     /**
      * Generates the full PHP source: namespace declaration and trait.
      */
-    #[\Override]
     public function generate(): string
     {
         $stmts = [];

@@ -136,7 +136,6 @@ final class ClassGenerator implements GeneratorInterface
         $this->attrGroups = $attrGroups;
     }
 
-    #[\Override]
     public function getName(): string
     {
         return $this->name;
@@ -238,7 +237,6 @@ final class ClassGenerator implements GeneratorInterface
     /**
      * Generates the full PHP source: namespace declaration, use statements, and class.
      */
-    #[\Override]
     public function generate(): string
     {
         $stmts = [];

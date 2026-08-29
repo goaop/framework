@@ -35,7 +35,6 @@ use UnexpectedValueException;
  */
 class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
 {
-    #[\Override]
     public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
     {
         $loadedItems = [];

@@ -110,7 +110,6 @@ class Container implements AspectContainer
         ));
     }
 
-    #[\Override]
     final public function registerAspect(Aspect|string $aspectOrClassName, ?Closure $aspectFactory = null): void
     {
         if ($aspectOrClassName instanceof Aspect) {
@@ -208,7 +207,6 @@ class Container implements AspectContainer
         return is_array($options) && ($options['debug'] ?? false) === true;
     }
 
-    #[\Override]
     final public function add(string $id, mixed $value): void
     {
         $this->values[$id] = $value;
@@ -225,7 +223,6 @@ class Container implements AspectContainer
         }
     }
 
-    #[\Override]
     final public function addLazyService(string $id, Closure $lazyInitializationClosure): void
     {
         // Only class-names are acceptable ids here: getServicesByInterface() probes these
@@ -238,7 +235,6 @@ class Container implements AspectContainer
         unset($this->factoryValidators[$id]);
     }
 
-    #[\Override]
     final public function getService(string $className): object
     {
         if (!isset($this->values[$className]) && isset($this->factories[$className])) {
@@ -254,7 +250,6 @@ class Container implements AspectContainer
         return $this->values[$className];
     }
 
-    #[\Override]
     final public function getValue(string $key): mixed
     {
         if (!isset($this->values[$key])) {
@@ -268,13 +263,11 @@ class Container implements AspectContainer
         return $this->values[$key];
     }
 
-    #[\Override]
     final public function has(string $id): bool
     {
         return isset($this->values[$id]) || isset($this->factories[$id]);
     }
 
-    #[\Override]
     final public function getServicesByInterface(string $interfaceTagClassName): array
     {
         // Deferred services are only tagged once materialized (as lazy objects), so
@@ -389,7 +382,6 @@ class Container implements AspectContainer
         return true;
     }
 
-    #[\Override]
     final public function hasAnyResourceChangedSince(int $timestamp): bool
     {
         if (!isset($this->cachedMaxTimestamp)) {

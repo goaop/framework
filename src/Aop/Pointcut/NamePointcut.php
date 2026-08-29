@@ -52,7 +52,6 @@ final readonly class NamePointcut implements Pointcut
         ) . ')$/';
     }
 
-    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
@@ -71,7 +70,6 @@ final readonly class NamePointcut implements Pointcut
         return ($instanceToMatch->getName() === $this->name) || preg_match($this->regexp, $instanceToMatch->getName());
     }
 
-    #[\Override]
     public function getKind(): int
     {
         return $this->pointcutKind;

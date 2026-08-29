@@ -55,7 +55,6 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
         parent::__construct($property);
     }
 
-    #[\Override]
     public function getNode(): PropertyNode
     {
         $generator = $this->createBasePropertyGenerator();
