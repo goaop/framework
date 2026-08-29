@@ -19,8 +19,7 @@ use Go\Proxy\Generator\EnumGenerator;
 use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\Generator\ValueGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
-use PhpParser\Node\Scalar\Int_;
-use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Enum_ as EnumNode;
@@ -264,8 +263,15 @@ class EnumProxyGenerator extends ClassProxyGenerator
      *  - Native \ReflectionClass / \ReflectionEnum (test context, class already loaded):
      *    uses ReflectionEnum::isBacked(), getBackingType(), and getCases().
      *
+     * On the parser-reflection path, backed case values are passed through as raw PhpParser
+     * {@see Expr} nodes and re-emitted verbatim by {@see EnumGenerator}. This preserves
+     * constant-expression case values (e.g. `-1`, `1 << 2`, `self::SHIFT + 10`) that are not
+     * plain string/int literals. `self::CONST` expressions keep resolving on the proxy enum
+     * because class constants stay in the woven trait and trait constants participate in the
+     * composing class since PHP 8.2.
+     *
      * @param ReflectionClass<object> $class
-     * @return array{0: string|null, 1: list<array{0: string, 1: string|int|null}>}
+     * @return array{0: string|null, 1: list<array{0: string, 1: string|int|Expr|null}>}
      *   [backingType, [[caseName, caseValue], ...]]
      */
     private function resolveEnumData(ReflectionClass $class): array
@@ -285,14 +291,10 @@ class EnumProxyGenerator extends ClassProxyGenerator
                     if (!($stmt instanceof EnumCase)) {
                         continue;
                     }
-                    $caseName  = $stmt->name->toString();
-                    $caseValue = null;
-                    if ($stmt->expr instanceof String_) {
-                        $caseValue = $stmt->expr->value;
-                    } elseif ($stmt->expr instanceof Int_) {
-                        $caseValue = $stmt->expr->value;
-                    }
-                    $cases[] = [$caseName, $caseValue];
+                    // Pass the raw expression node through so that constant-expression case
+                    // values (UnaryMinus, BitwiseShift, self::CONST arithmetic, ...) survive.
+                    // Emitting a pure case inside a backed enum would be a PHP fatal error.
+                    $cases[] = [$stmt->name->toString(), $stmt->expr];
                 }
             }
 

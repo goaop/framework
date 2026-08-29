@@ -14,6 +14,7 @@ namespace Go\Proxy\Generator;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Modifiers;
+use PhpParser\Node\Expr;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Enum_ as EnumNode;
@@ -57,7 +58,7 @@ final class EnumGenerator implements GeneratorInterface
     /** @var array{trait: string, method: string, alias: string, visibility: int}[] */
     private array $traitAliases = [];
 
-    /** @var array{name: string, value: string|int|null}[] */
+    /** @var array{name: string, value: string|int|Expr|null}[] */
     private array $enumCases = [];
 
     /**
@@ -89,9 +90,13 @@ final class EnumGenerator implements GeneratorInterface
     /**
      * Adds an enum case to the generated enum.
      *
-     * @param string|int|null $value The case value (null for pure/unit enum cases)
+     * A scalar value is emitted as the corresponding literal. A {@see Expr} node (e.g. a constant
+     * expression such as `1 << 2`, `-1` or `self::SHIFT + 10` taken from the original enum AST)
+     * is emitted verbatim, preserving the original constant expression in the proxy enum.
+     *
+     * @param string|int|Expr|null $value The case value (null for pure/unit enum cases)
      */
-    public function addEnumCase(string $name, string|int|null $value = null): void
+    public function addEnumCase(string $name, string|int|Expr|null $value = null): void
     {
         $this->enumCases[] = ['name' => $name, 'value' => $value];
     }

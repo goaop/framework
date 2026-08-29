@@ -21,6 +21,18 @@ use ReflectionProperty;
 
 /**
  * ModifierPointcut performs matching on modifiers for reflector
+ *
+ * Matching is bitmask-based on {@see \ReflectionMethod::getModifiers()} /
+ * {@see \ReflectionProperty::getModifiers()}. Besides the classic visibility masks
+ * (public/protected/private/static/final), property-only masks are supported:
+ *
+ *  - {@see \ReflectionProperty::IS_READONLY} — 'readonly' grammar predicate
+ *  - {@see \ReflectionProperty::IS_PRIVATE_SET} — 'private(set)' grammar predicate (PHP 8.4+)
+ *  - {@see \ReflectionProperty::IS_PROTECTED_SET} — 'protected(set)' grammar predicate (PHP 8.4+)
+ *
+ * Both native reflection and Go\ParserReflection\ReflectionProperty expose these bits via
+ * getModifiers(), so no reflection-implementation-specific guards are needed here. Methods
+ * never carry these bits, so such predicates simply never match method reflectors.
  */
 final class ModifierPointcut implements Pointcut
 {

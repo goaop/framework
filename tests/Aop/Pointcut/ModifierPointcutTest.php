@@ -14,10 +14,12 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
 use Go\Stubs\FirstStatic;
+use Go\Stubs\StubPropertyModifiers;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
+use ReflectionProperty;
 
 class ModifierPointcutTest extends TestCase
 {
@@ -103,6 +105,37 @@ class ModifierPointcutTest extends TestCase
                 }
             }
         }
+    }
+
+    /**
+     * The IS_READONLY mask must match only readonly properties (issue #604).
+     */
+    public function testMatchesReadonlyPropertyModifier(): void
+    {
+        $reflectionClass = new ReflectionClass(StubPropertyModifiers::class);
+        $this->pointcut->andMatch(ReflectionProperty::IS_READONLY);
+
+        $this->assertTrue($this->pointcut->matches($reflectionClass, $reflectionClass->getProperty('readonlyProp')));
+        $this->assertFalse($this->pointcut->matches($reflectionClass, $reflectionClass->getProperty('plain')));
+    }
+
+    /**
+     * The IS_PRIVATE_SET / IS_PROTECTED_SET masks must match only properties with the
+     * corresponding asymmetric set-visibility (issue #604).
+     */
+    public function testMatchesAsymmetricVisibilityPropertyModifiers(): void
+    {
+        $reflectionClass = new ReflectionClass(StubPropertyModifiers::class);
+
+        $privateSetPointcut = new ModifierPointcut(ReflectionProperty::IS_PRIVATE_SET);
+        $this->assertTrue($privateSetPointcut->matches($reflectionClass, $reflectionClass->getProperty('privateSetProp')));
+        $this->assertFalse($privateSetPointcut->matches($reflectionClass, $reflectionClass->getProperty('protectedSetProp')));
+        $this->assertFalse($privateSetPointcut->matches($reflectionClass, $reflectionClass->getProperty('plain')));
+
+        $protectedSetPointcut = new ModifierPointcut(ReflectionProperty::IS_PROTECTED_SET);
+        $this->assertTrue($protectedSetPointcut->matches($reflectionClass, $reflectionClass->getProperty('protectedSetProp')));
+        $this->assertFalse($protectedSetPointcut->matches($reflectionClass, $reflectionClass->getProperty('privateSetProp')));
+        $this->assertFalse($protectedSetPointcut->matches($reflectionClass, $reflectionClass->getProperty('plain')));
     }
 
     public function testAlwaysMatchesWithoutReflectorInstance(): void

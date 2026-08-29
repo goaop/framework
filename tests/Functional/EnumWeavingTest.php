@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Functional;
 
 use Go\Tests\TestProject\Application\BackedEnum;
+use Go\Tests\TestProject\Application\ConstExprBackedEnum;
 use Go\Tests\TestProject\Application\SimpleEnum;
 
 /**
@@ -105,6 +106,29 @@ class EnumWeavingTest extends BaseFunctionalTestCase
         $this->assertMethodNotWoven(BackedEnum::class, 'cases');
         $this->assertMethodNotWoven(BackedEnum::class, 'from');
         $this->assertMethodNotWoven(BackedEnum::class, 'tryFrom');
+    }
+
+    /**
+     * A backed enum whose case values are constant expressions (issue #600) must be woven,
+     * and the generated proxy enum must re-declare the cases with their original expressions.
+     * Dropping the expressions would emit pure cases inside a backed enum — a PHP fatal error
+     * ("Case Negative of backed enum ... must have a value") as soon as the proxy is loaded.
+     */
+    public function testConstExprBackedEnumIsWovenWithCaseValuesPreserved(): void
+    {
+        $this->assertClassIsWoven(ConstExprBackedEnum::class);
+        $this->assertMethodWoven(
+            ConstExprBackedEnum::class,
+            'describe',
+            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterConstExprEnumMethod'
+        );
+
+        $proxyFile = $this->configuration['cacheDir'] . '/src/Application/ConstExprBackedEnum.php';
+        $this->assertFileExists($proxyFile);
+        $proxyContent = file_get_contents($proxyFile);
+        $this->assertStringContainsString('case Negative = -1;', $proxyContent);
+        $this->assertStringContainsString('case Shifted = 1 << 2;', $proxyContent);
+        $this->assertStringContainsString('case FromConst = self::SHIFT + 10;', $proxyContent);
     }
 
     /**
