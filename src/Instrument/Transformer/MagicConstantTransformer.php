@@ -27,6 +27,8 @@ use PhpParser\NodeVisitor\FindingVisitor;
  * Transformer that replaces magic __DIR__ and __FILE__ constants in the source code
  *
  * Additionally, ReflectionClass->getFileName() is also wrapped into normalizer method call
+ *
+ * @phpstan-import-type KernelOptions from AspectKernel
  */
 class MagicConstantTransformer extends BaseSourceTransformer
 {
@@ -46,8 +48,18 @@ class MagicConstantTransformer extends BaseSourceTransformer
     public function __construct(AspectKernel $kernel)
     {
         parent::__construct($kernel);
-        self::$rootPath      = $this->options['appDir'];
-        self::$rewriteToPath = $this->options['cacheDir'] ?? '';
+        self::configurePaths($this->options);
+    }
+
+    /**
+     * Remembers the path mapping used by resolveFileName()
+     *
+     * @phpstan-param KernelOptions $options
+     */
+    private static function configurePaths(array $options): void
+    {
+        self::$rootPath      = $options['appDir'];
+        self::$rewriteToPath = $options['cacheDir'] ?? '';
     }
 
     /**
@@ -71,9 +83,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
     public static function resolveFileName(string $fileName): string
     {
         if (self::$rootPath === '') {
-            $options             = AspectKernel::getInstance()->getOptions();
-            self::$rootPath      = $options['appDir'];
-            self::$rewriteToPath = $options['cacheDir'] ?? '';
+            self::configurePaths(AspectKernel::getInstance()->getOptions());
         }
         if (self::$rewriteToPath !== '' && str_starts_with($fileName, self::$rewriteToPath)) {
             $fileName = str_replace(self::$rewriteToPath, self::$rootPath, $fileName);

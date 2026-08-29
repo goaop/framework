@@ -148,6 +148,11 @@ class CachePathManager
                 $this->cacheStateLoaded = true;
             }
         }
+
+        // Flush pending cache records while the runtime environment is still fully
+        // intact: object destruction order during shutdown is unspecified, so relying
+        // on __destruct() alone can run the write after collaborators are torn down
+        register_shutdown_function($this->flushSilently(...));
     }
 
     /**
@@ -302,11 +307,28 @@ class CachePathManager
     /**
      * Automatic destructor saves all new changes into the cache
      *
+     * Safety net for managers released before shutdown; the shutdown function
+     * registered in the constructor has usually flushed already, making this a no-op.
      * This implementation is not thread-safe, so be care
      */
     public function __destruct()
     {
-        $this->flushCacheState();
+        $this->flushSilently();
+    }
+
+    /**
+     * Flushes without ever propagating an error out of shutdown/destruction
+     *
+     * Losing one cache write is recoverable (the next request simply re-weaves);
+     * an exception escaping a destructor or shutdown function is not.
+     */
+    private function flushSilently(): void
+    {
+        try {
+            $this->flushCacheState();
+        } catch (\Throwable) {
+            // Deliberately swallowed, see above
+        }
     }
 
     /**
