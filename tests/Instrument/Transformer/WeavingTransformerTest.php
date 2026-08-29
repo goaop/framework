@@ -457,6 +457,90 @@ class WeavingTransformerTest extends TestCase
         $this->assertEquals($expected, $actual);
     }
 
+    /**
+     * Golden-file coverage of general PHP 8.0-8.3 syntax through the current weaver
+     * (issue #610): constructor promotion (non-intercepted property), new-in-initializer
+     * parameter default, named arguments, match expression, nullsafe operator, enum usage
+     * in a method body, readonly property, first-class callable and a typed class constant.
+     * Only the class is woven — the enum in the same file must stay untouched.
+     */
+    public function testWeaverForPhp80To82Syntax(): void
+    {
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher
+            ->method('getAdvicesForClass')
+            ->willReturnCallback(function (ReflectionClass $refClass) {
+                // Weave only the target class — the enum stays untouched
+                if ($refClass->getShortName() !== 'TestPhp80To82SyntaxClass') {
+                    return [];
+                }
+                $advices = [];
+                foreach ($refClass->getMethods() as $method) {
+                    $advisorId = "advisor.{$refClass->name}->{$method->name}";
+                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
+                }
+                return $advices;
+            });
+        $adviceMatcher
+            ->method('getAdvicesForFunctions')
+            ->willReturn([]);
+
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$this->getContainerMock()])
+            ->getMock();
+        $transformer = new WeavingTransformer(
+            $this->kernel,
+            $adviceMatcher,
+            $this->cachePathManager,
+            $loader
+        );
+
+        $metadata = $this->loadTestMetadata('php80-82-syntax');
+        $transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php80-82-syntax-woven')->source);
+        $this->assertEquals($expected, $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+        $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php80-82-syntax-proxy')->source);
+        $this->assertEquals($expectedProxyContent, $actualProxyContent);
+    }
+
+    /**
+     * Attribute classes must be weavable (issue #615): #[\Attribute] and
+     * #[\AllowDynamicProperties] are compile-time invalid on traits, so they must be removed
+     * from the woven trait tokens. In a grouped attribute only the incompatible entry is
+     * removed. The proxy class must keep the original attribute groups (copied from the AST).
+     */
+    public function testWeaverStripsAttributeClassMarkersFromWovenTrait(): void
+    {
+        $metadata = $this->loadTestMetadata('php80-attribute-class');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php80-attribute-class-woven')->source);
+        $this->assertEquals($expected, $actual);
+
+        // Incompatible attributes must be gone from every woven trait
+        $this->assertStringNotContainsString('#[\Attribute', $actual);
+        $this->assertStringNotContainsString('\AllowDynamicProperties', $actual);
+        // The compatible part of the grouped attribute must survive
+        $this->assertStringContainsString('#[\FakeMarkerAttr]', $actual);
+
+        // The proxy (last class in the file wins the shared cache path) must keep #[\Attribute(...)]
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertStringContainsString(
+            '#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]',
+            $proxyContent
+        );
+    }
+
     public function testWeaverMovesInterceptedPropertiesToProxyHooks(): void
     {
         $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
@@ -544,6 +628,52 @@ class WeavingTransformerTest extends TestCase
 
         // The proxy hook property must keep the original promoted default value
         $this->assertStringContainsString("private string \$name = 'initial' {", $actualProxyContent);
+    }
+
+    /**
+     * An intercepted promoted property whose default is a new-in-initializer expression
+     * must not carry the default onto the proxy hook property (issue #616): `new` is legal
+     * in a parameter default but illegal in a property initializer. The property stays
+     * uninitialized in the proxy — the constructor assignment injected by the demotion
+     * supplies the value, and the isInitialized() guard covers the pre-construction window.
+     */
+    public function testWeaverSkipsNewInInitializerDefaultOnProxyHookProperty(): void
+    {
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::PROPERTY_PREFIX => [
+                'bag' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->bag' => true],
+            ],
+            AspectContainer::METHOD_PREFIX => [
+                '__construct' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->__construct' => true],
+                'getBagItems' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->getBagItems' => true],
+            ],
+        ]);
+
+        $metadata = $this->loadTestMetadata('php81-new-in-initializer');
+        $transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+
+        // Demoted parameter keeps its new-in-initializer default in the woven trait...
+        $this->assertStringContainsString("\ArrayObject \$bag = new \ArrayObject(['seed'])", $actual);
+        // ...and the injected constructor assignment routes the value through the proxy set hook
+        $this->assertStringContainsString('$this->bag = $bag;', $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+
+        // The hook property must NOT carry the new-in-initializer default (compile error);
+        // note the proxy __construct parameter legitimately keeps it (legal in param defaults)
+        $this->assertStringNotContainsString('private \ArrayObject $bag =', $proxyContent);
+        $this->assertStringContainsString('private \ArrayObject $bag {', $proxyContent);
+        // Uninitialized typed property must be guarded in the hooks
+        $this->assertStringContainsString('isInitialized($this)', $proxyContent);
+
+        // The generated proxy must stay parseable as PHP (guards against emitting
+        // constructs that are syntactically invalid in property context)
+        $parser = (new \PhpParser\ParserFactory())->createForHostVersion();
+        $this->assertNotNull($parser->parse($proxyContent));
     }
 
     /**

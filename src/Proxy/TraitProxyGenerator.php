@@ -40,11 +40,9 @@ class TraitProxyGenerator extends ClassProxyGenerator
     public function __construct(
         ReflectionClass $originalTrait,
         string $parentTraitName,
-        array $traitAdviceNames,
-        bool $useParameterWidening
+        array $traitAdviceNames
     ) {
-        $this->adviceNames          = $traitAdviceNames;
-        $this->useParameterWidening = $useParameterWidening;
+        $this->adviceNames = $traitAdviceNames;
 
         $dynamicMethodAdvices = $traitAdviceNames[AspectContainer::METHOD_PREFIX] ?? [];
         $staticMethodAdvices  = $traitAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
@@ -163,9 +161,6 @@ class TraitProxyGenerator extends ClassProxyGenerator
         BODY;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function addUse(string $use, ?string $useAlias = null): void
     {
         if ($use !== '' && $this->generator instanceof TraitGenerator) {
@@ -173,9 +168,6 @@ class TraitProxyGenerator extends ClassProxyGenerator
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function generate(): string
     {
         return $this->generator->generate();

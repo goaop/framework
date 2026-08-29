@@ -23,4 +23,10 @@ class PromotedPropertyInterceptAspect implements Aspect
     {
         // No-op: registration is asserted by functional tests
     }
+
+    #[Pointcut\Before("access(private Go\Tests\TestProject\Application\NewInInitializerClass->bag)")]
+    public function beforeNewInInitializerBagAccess(FieldAccess $access): void
+    {
+        // No-op: registration is asserted by functional tests
+    }
 }

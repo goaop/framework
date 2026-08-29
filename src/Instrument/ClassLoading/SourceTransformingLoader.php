@@ -41,12 +41,12 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Php filter definition
      */
-    public const PHP_FILTER_READ = 'php://filter/read=';
+    public const string PHP_FILTER_READ = 'php://filter/read=';
 
     /**
      * Default PHP filter name for registration
      */
-    public const FILTER_IDENTIFIER = 'go.source.transforming.loader';
+    public const string FILTER_IDENTIFIER = 'go.source.transforming.loader';
 
     /**
      * String buffer
@@ -140,9 +140,6 @@ class SourceTransformingLoader extends PhpStreamFilter
         return self::$filterId;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function filter($in, $out, &$consumed, $closing): int
     {
         while ($bucket = stream_bucket_make_writeable($in)) {

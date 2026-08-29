@@ -33,15 +33,14 @@ use ReflectionNamedType;
  */
 final class MethodGenerator
 {
-    public const VISIBILITY_PUBLIC    = 'public';
-    public const VISIBILITY_PROTECTED = 'protected';
-    public const VISIBILITY_PRIVATE   = 'private';
+    public const string VISIBILITY_PUBLIC    = 'public';
+    public const string VISIBILITY_PROTECTED = 'protected';
+    public const string VISIBILITY_PRIVATE   = 'private';
 
     private static ?Standard $printer = null;
     private static ?Parser $parser    = null;
     private static ?BuilderFactory $factory = null;
 
-    private string $name;
     private string $visibility = self::VISIBILITY_PUBLIC;
     private bool $static       = false;
     private bool $final        = false;
@@ -60,17 +59,14 @@ final class MethodGenerator
     /** @var Stmt[]|null null for abstract methods */
     private ?array $stmts = [];
 
-    public function __construct(string $name)
+    public function __construct(private readonly string $name)
     {
-        $this->name = $name;
     }
 
     /**
      * Creates a MethodGenerator from a reflection method.
-     *
-     * @param bool $useWidening When true, parameter types are omitted
      */
-    public static function fromReflection(ReflectionMethod $method, bool $useWidening = false): self
+    public static function fromReflection(ReflectionMethod $method): self
     {
         $generator = new self($method->getName());
 
@@ -127,7 +123,7 @@ final class MethodGenerator
 
         // Parameters
         foreach ($method->getParameters() as $reflectionParam) {
-            $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam, $useWidening));
+            $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam));
         }
 
         // Attributes: cloned from the AST when available (parser-reflection), so that

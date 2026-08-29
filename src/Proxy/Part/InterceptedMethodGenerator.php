@@ -27,11 +27,10 @@ final class InterceptedMethodGenerator
      *
      * @param ReflectionMethod $reflectionMethod Instance of original method
      * @param string           $body             Method body
-     * @param bool             $useTypeWidening  Should generator use parameter widening for PHP>=7.2
      */
-    public function __construct(ReflectionMethod $reflectionMethod, string $body, bool $useTypeWidening = false)
+    public function __construct(ReflectionMethod $reflectionMethod, string $body)
     {
-        $this->generator = MethodGenerator::fromReflection($reflectionMethod, $useTypeWidening);
+        $this->generator = MethodGenerator::fromReflection($reflectionMethod);
         $this->generator->setBody($body);
     }
 

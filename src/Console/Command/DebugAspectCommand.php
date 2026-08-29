@@ -27,9 +27,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class DebugAspectCommand extends BaseAspectCommand
 {
-    /**
-     * {@inheritDoc}
-     */
     protected function configure(): void
     {
         parent::configure();
@@ -45,9 +42,6 @@ EOT
         ;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);

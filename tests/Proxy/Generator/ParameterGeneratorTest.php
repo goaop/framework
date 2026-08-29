@@ -114,18 +114,6 @@ class ParameterGeneratorTest extends TestCase
         $this->assertSame("string \$myParam = 'hello'", $output);
     }
 
-    public function testWideningModeDropsTypeForBuiltin(): void
-    {
-        // When useWidening=true, builtin-typed params lose their type constraint
-        $gen = ParameterGenerator::fromReflection(
-            $this->getParam(self::STUBS_NS . '\paramGenHelper_simple', 0),
-            true
-        );
-        $output = $gen->generate();
-        // With widening, the type should be removed
-        $this->assertSame('$name', $output);
-    }
-
     public function testFromReflectionPreservesParameterAttribute(): void
     {
         $gen = ParameterGenerator::fromReflection(

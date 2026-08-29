@@ -35,7 +35,6 @@ final class FunctionGenerator
     private static ?Parser $parser         = null;
     private static ?BuilderFactory $factory = null;
 
-    private string $name;
     private bool $returnsRef = false;
     private ?TypeGenerator $returnType = null;
     private ?DocBlockGenerator $docBlock = null;
@@ -49,17 +48,14 @@ final class FunctionGenerator
     /** @var \PhpParser\Node\AttributeGroup[] */
     private array $attributeGroups = [];
 
-    public function __construct(string $name)
+    public function __construct(private readonly string $name)
     {
-        $this->name = $name;
     }
 
     /**
      * Creates a FunctionGenerator from a reflection function.
-     *
-     * @param bool $useWidening When true, parameter types are omitted
      */
-    public static function fromReflection(ReflectionFunction $function, bool $useWidening = false): self
+    public static function fromReflection(ReflectionFunction $function): self
     {
         $generator = new self($function->getShortName());
 
@@ -85,7 +81,7 @@ final class FunctionGenerator
 
         // Parameters
         foreach ($function->getParameters() as $reflectionParam) {
-            $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam, $useWidening));
+            $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam));
         }
 
         // Attributes: cloned from the AST when available (parser-reflection), so that

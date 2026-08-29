@@ -28,9 +28,6 @@ use RuntimeException;
  */
 final class MetadataLoadInterceptor implements EventSubscriber
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getSubscribedEvents(): array
     {
         return [

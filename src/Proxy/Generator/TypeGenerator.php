@@ -38,7 +38,7 @@ use ReflectionUnionType;
 final class TypeGenerator
 {
     /** @var list<string> */
-    private const BUILTIN_TYPES = [
+    private const array BUILTIN_TYPES = [
         'int', 'float', 'string', 'bool', 'array', 'callable', 'object',
         'iterable', 'void', 'null', 'never', 'mixed', 'false', 'true', 'self',
         'static', 'parent',

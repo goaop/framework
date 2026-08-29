@@ -92,7 +92,6 @@ class InterceptedConstructorGeneratorTest extends TestCase
         $generator             = new InterceptedConstructorGenerator(
             $reflectionConstructor,
             null,
-            false,
             true // $constructorIsInTrait
         );
 

@@ -27,15 +27,13 @@ final class ValueGenerator
 {
     private static ?Standard $printer = null;
 
-    private mixed $value;
     private int $arrayDepth = 0;
 
     /** Pre-built AST expression node for defaults that can't be represented as PHP scalars. */
     private ?Expr $astNode = null;
 
-    public function __construct(mixed $value)
+    public function __construct(private readonly mixed $value)
     {
-        $this->value = $value;
     }
 
     /**

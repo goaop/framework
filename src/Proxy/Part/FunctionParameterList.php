@@ -28,13 +28,12 @@ final class FunctionParameterList
     /**
      * ParameterListGenerator constructor.
      *
-     * @param ReflectionFunctionAbstract $functionLike    Instance of function or method
-     * @param bool                       $useTypeWidening Should generated parameters use type widening
+     * @param ReflectionFunctionAbstract $functionLike Instance of function or method
      */
-    public function __construct(ReflectionFunctionAbstract $functionLike, bool $useTypeWidening = false)
+    public function __construct(ReflectionFunctionAbstract $functionLike)
     {
         foreach ($functionLike->getParameters() as $reflectionParameter) {
-            $this->generatedParameters[] = ParameterGenerator::fromReflection($reflectionParameter, $useTypeWidening);
+            $this->generatedParameters[] = ParameterGenerator::fromReflection($reflectionParameter);
         }
     }
 

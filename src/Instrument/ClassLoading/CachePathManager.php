@@ -29,20 +29,15 @@ class CachePathManager
     /**
      * Name of the file with full transformation metadata (build-time data, loaded lazily)
      */
-    private const CACHE_FILE_NAME = '/_transformation.cache';
+    private const string CACHE_FILE_NAME = '/_transformation.cache';
 
     /**
      * Name of the file with the minimal runtime include map (originalPath => cacheUri|null)
      */
-    private const INCLUDE_MAP_FILE_NAME = '/_include.cache';
+    private const string INCLUDE_MAP_FILE_NAME = '/_include.cache';
 
     /** @phpstan-var KernelOptions */
     protected array $options;
-
-    /**
-     * Aspect kernel instance
-     */
-    protected AspectKernel $kernel;
 
     protected ?string $cacheDir = null;
 
@@ -99,9 +94,8 @@ class CachePathManager
      */
     protected array $newCacheState = [];
 
-    public function __construct(AspectKernel $kernel)
+    public function __construct(protected readonly AspectKernel $kernel)
     {
-        $this->kernel   = $kernel;
         $options        = $kernel->getOptions();
         $this->options  = $options;
         $this->appDir   = $options['appDir'];

@@ -27,40 +27,27 @@ final class ParameterGenerator
     private static ?Standard $printer     = null;
     private static ?BuilderFactory $factory = null;
 
-    private string $name;
-    private ?TypeGenerator $type;
-    private bool $byRef;
-    private bool $variadic;
-    private ?ValueGenerator $defaultValue;
-
     /** @var Node\AttributeGroup[] */
     private array $attributeGroups = [];
 
     public function __construct(
-        string $name,
-        ?TypeGenerator $type = null,
-        bool $byRef = false,
-        bool $variadic = false,
-        ?ValueGenerator $defaultValue = null,
+        private readonly string $name,
+        private readonly ?TypeGenerator $type = null,
+        private readonly bool $byRef = false,
+        private readonly bool $variadic = false,
+        private ?ValueGenerator $defaultValue = null,
     ) {
-        $this->name         = $name;
-        $this->type         = $type;
-        $this->byRef        = $byRef;
-        $this->variadic     = $variadic;
-        $this->defaultValue = $defaultValue;
     }
 
     /**
      * Creates a ParameterGenerator from a reflection parameter.
-     *
-     * @param bool $useWidening When true, type declarations are omitted (for parameter widening)
      */
-    public static function fromReflection(ReflectionParameter $param, bool $useWidening = false): self
+    public static function fromReflection(ReflectionParameter $param): self
     {
         $type         = null;
         $defaultValue = null;
 
-        if (!$useWidening && $param->hasType()) {
+        if ($param->hasType()) {
             // If the parameter exposes its AST node (Go\ParserReflection\ReflectionParameter),
             // re-process the raw type node with TypeExpressionResolver(null, null) so that
             // 'self' and 'parent' keywords are preserved without PHP 8.5+ name resolution,
