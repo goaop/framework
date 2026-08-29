@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Stubs\StubBackedEnum;
+use Go\Stubs\StubConstExprBackedEnum;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -110,6 +111,37 @@ class EnumProxyGeneratorTest extends TestCase
 
         $this->assertStringContainsString("case Active = 'active'", $output);
         $this->assertStringContainsString("case Inactive = 'inactive'", $output);
+    }
+
+    /**
+     * Backed cases declared with constant expressions (issue #600) must keep a value in the
+     * proxy enum — emitting a valueless case inside a backed enum is a PHP fatal error.
+     *
+     * On the native reflection path (enum already loaded), the case values are re-emitted as
+     * the evaluated scalars; the parser-reflection path (weaving time) re-emits the original
+     * expressions verbatim and is covered by WeavingTransformerTest.
+     */
+    public function testGeneratePreservesConstantExpressionCaseValues(): void
+    {
+        $reflectionClass = new ReflectionClass(StubConstExprBackedEnum::class);
+        $classAdvices    = [
+            'method' => ['describe' => ['advisor']],
+        ];
+
+        $generator = new EnumProxyGenerator(
+            $reflectionClass,
+            'Go\\Stubs\\StubConstExprBackedEnum__AopProxied',
+            $classAdvices,
+            false
+        );
+        $output = "<?php\n" . $generator->generate();
+
+        $this->assertStringContainsString('case Negative = -1;', $output);
+        $this->assertStringContainsString('case Shifted = 4;', $output);
+        $this->assertStringContainsString('case FromConst = 12;', $output);
+
+        // No case may be emitted without a value in a backed enum
+        $this->assertDoesNotMatchRegularExpression('/case\s+\w+\s*;/', $output);
     }
 
     /**
