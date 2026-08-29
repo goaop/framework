@@ -19,11 +19,11 @@ namespace Symfony\Component\Finder;
  * This helper function overrides the PHP glob() function so it is able to be run with virtual file system,
  * which is supported by Webmozart\Glob\Glob
  *
- * @param      $pattern
- * @param null $flags
+ * The signature stays compatible with how Symfony Finder invokes glob():
+ * a string pattern plus an int bitmask of GLOB_* flags.
  *
  * @return string[]
  */
-function glob($pattern, $flags = null) {
+function glob(string $pattern, int $flags = 0): array {
     return \Webmozart\Glob\Glob::glob($pattern, $flags);
 }

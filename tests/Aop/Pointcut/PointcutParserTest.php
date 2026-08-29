@@ -14,6 +14,8 @@ namespace Go\Aop\Pointcut;
 
 use Dissect\Lexer\Lexer;
 use Go\Core\AspectContainer;
+use Go\Stubs\StubPropertyModifiers;
+use Go\Tests\TestProject\Application\ClassWithComplexTypes;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -104,7 +106,78 @@ class PointcutParserTest extends TestCase
 
             // This will match dynamic initialization pointcut
             ['initialization(Some\Specific\Class\**)'],
+
+            // Union/intersection/DNF return types (issue #604)
+            ['execution(public Example->method(*): string|int)'],
+            ['execution(public Example->method(*): Countable&Iterator)'],
+            ['execution(public Example->method(*): Iterator|Countable&Iterator|null)'],
+            ['execution(Demo\Namespace\*(*): string|null)'],
+
+            // readonly and asymmetric visibility modifiers (issue #604)
+            ['access(readonly Example\Aspect\*->property*)'],
+            ['access(private(set) Example\Aspect\*->property*)'],
+            ['access(protected(set) Example\Aspect\*->property*)'],
+            ['access(public|readonly **->*)'],
+            ['access(final readonly Example->*)'],
         ];
     }
 
+    /**
+     * A parsed 'access(readonly ...)' pointcut must match only readonly properties.
+     */
+    public function testParsedReadonlyPointcutMatchesOnlyReadonlyProperties(): void
+    {
+        $pointcut = $this->parser->parse($this->lexer->lex('access(readonly **->*)'));
+
+        $class = new \ReflectionClass(StubPropertyModifiers::class);
+        $this->assertTrue($pointcut->matches($class, $class->getProperty('readonlyProp')));
+        $this->assertFalse($pointcut->matches($class, $class->getProperty('plain')));
+    }
+
+    /**
+     * Parsed 'private(set)' / 'protected(set)' pointcuts must match only properties
+     * with the corresponding asymmetric set-visibility.
+     */
+    public function testParsedAsymmetricVisibilityPointcutMatchesOnlyMatchingProperties(): void
+    {
+        $privateSet = $this->parser->parse($this->lexer->lex('access(private(set) **->*)'));
+
+        $class = new \ReflectionClass(StubPropertyModifiers::class);
+        $this->assertTrue($privateSet->matches($class, $class->getProperty('privateSetProp')));
+        $this->assertFalse($privateSet->matches($class, $class->getProperty('protectedSetProp')));
+        $this->assertFalse($privateSet->matches($class, $class->getProperty('plain')));
+
+        $protectedSet = $this->parser->parse($this->lexer->lex('access(protected(set) **->*)'));
+        $this->assertTrue($protectedSet->matches($class, $class->getProperty('protectedSetProp')));
+        $this->assertFalse($protectedSet->matches($class, $class->getProperty('privateSetProp')));
+        $this->assertFalse($protectedSet->matches($class, $class->getProperty('plain')));
+    }
+
+    /**
+     * A parsed execution pointcut with a union return type must match the method
+     * with that union return type, member order being irrelevant.
+     */
+    public function testParsedUnionReturnTypePointcutMatches(): void
+    {
+        $expression = 'execution(public **->publicMethodWithUnionTypeReturn(*): Closure|Exception)';
+        $pointcut   = $this->parser->parse($this->lexer->lex($expression));
+
+        $class = new \ReflectionClass(ClassWithComplexTypes::class);
+        $this->assertTrue($pointcut->matches($class, $class->getMethod('publicMethodWithUnionTypeReturn')));
+        $this->assertFalse($pointcut->matches($class, $class->getMethod('publicMethodWithIntersectionTypeReturn')));
+    }
+
+    /**
+     * A parsed execution pointcut with an intersection return type must match the method
+     * with that intersection return type.
+     */
+    public function testParsedIntersectionReturnTypePointcutMatches(): void
+    {
+        $expression = 'execution(public **->*(*): Countable&Exception)';
+        $pointcut   = $this->parser->parse($this->lexer->lex($expression));
+
+        $class = new \ReflectionClass(ClassWithComplexTypes::class);
+        $this->assertTrue($pointcut->matches($class, $class->getMethod('publicMethodWithIntersectionTypeReturn')));
+        $this->assertFalse($pointcut->matches($class, $class->getMethod('publicMethodWithUnionTypeReturn')));
+    }
 }

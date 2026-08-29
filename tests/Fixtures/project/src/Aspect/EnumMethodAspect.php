@@ -47,4 +47,13 @@ class EnumMethodAspect implements Aspect
     {
         // advice body intentionally empty — tested via weaving assertions only
     }
+
+    /**
+     * Intercepts the instance method on the enum with constant-expression case values (issue #600).
+     */
+    #[Pointcut\After("execution(public Go\Tests\TestProject\Application\ConstExprBackedEnum->describe(*))")]
+    public function afterConstExprEnumMethod(): void
+    {
+        // advice body intentionally empty — tested via weaving assertions only
+    }
 }
