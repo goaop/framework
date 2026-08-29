@@ -118,18 +118,11 @@ class Php85AuditScratchTest extends TestCase
      * A fix PR that resolves one of these MUST remove the entry (the test then asserts success).
      */
     private const KNOWN_GAPS = [
-        // #598-#603 are all fixed on master. Remaining follow-ups (#615/#616, fixed by PR #617):
-        // #[\Attribute] on a trait only became a compile error in PHP 8.5,
-        // so these three are gaps on 8.5+ but weave cleanly on 8.4
-        'ConstAttr'               => 'https://github.com/goaop/framework/issues/615',
-        'ExprAttr'                => 'https://github.com/goaop/framework/issues/615',
-        'RichAttr'                => 'https://github.com/goaop/framework/issues/615',
-        // new-in-initializer default copied onto the proxy hook property
-        'Php81NewInInitializers'  => 'https://github.com/goaop/framework/issues/616',
+        // All audit gaps (#598-#603, #615, #616) are fixed — every fixture must weave cleanly.
     ];
 
-    /** Fixtures whose KNOWN_GAPS entry applies only on PHP >= 8.5 (see above). */
-    private const GAP_ONLY_ON_85 = ['ConstAttr' => true, 'ExprAttr' => true, 'RichAttr' => true];
+    /** Fixtures whose KNOWN_GAPS entry applies only on PHP >= 8.5. */
+    private const GAP_ONLY_ON_85 = [];
 
     #[DataProvider('fixtureNames')]
     public function testWeaveAndLint(string $name): void
