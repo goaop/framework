@@ -23,15 +23,13 @@ use ReflectionProperty;
 /**
  * Return type filter that matches methods and functions with a specific return type.
  *
- * Type name can contain wildcards '*', '**' and '?' (each applied per type member).
+ * Type name can contain wildcards '*' and '**' (each applied per type member).
  *
  * Union, intersection and DNF types are supported with the following semantics — both the
  * pattern and the actual return type are normalized into sets of intersection groups (the
  * declaration is split on '|' at parenthesis depth zero, each resulting member on '&';
- * parentheses and leading backslashes are normalized away; a leading '?' nullable marker on
- * the ACTUAL type is expanded, '?Foo' being equivalent to 'Foo|null' — in the PATTERN, however,
- * '?' keeps its historical single-character-wildcard meaning, so nullable patterns should be
- * written as 'Foo|null'):
+ * parentheses and leading backslashes are normalized away; a leading '?' nullable marker is
+ * expanded on both sides, '?Foo' being equivalent to 'Foo|null'):
  *
  *  - A single-type pattern (no '|' and no '&', e.g. 'string' or 'Some*Interface') matches if
  *    ANY member of the actual type matches it. For example, the pattern 'string' matches
@@ -68,9 +66,7 @@ final readonly class ReturnTypePointcut implements Pointcut
         if (strlen($returnTypeName) === 0) {
             throw new \InvalidArgumentException("Return type name must not be empty");
         }
-        // Note: '?' at the start of the pattern is a single-character wildcard, not a nullable
-        // marker (BC with historical behavior) — nullable patterns are written as 'Foo|null'.
-        $this->patternGroups         = self::normalizeTypeExpression($returnTypeName, false);
+        $this->patternGroups         = self::normalizeTypeExpression($returnTypeName);
         $this->isSingleAtomicPattern = count($this->patternGroups) === 1 && count($this->patternGroups[0]) === 1;
     }
 
@@ -129,16 +125,16 @@ final readonly class ReturnTypePointcut implements Pointcut
     /**
      * Normalizes a type declaration into a sorted set of intersection groups.
      *
-     * For actual reflection types ($expandNullableMarker = true), '?Foo' is normalized into
-     * 'Foo|null'. Parentheses around DNF groups are removed, and each atomic type is trimmed
+     * A leading '?' nullable marker is expanded, '?Foo' being normalized into 'Foo|null'.
+     * Parentheses around DNF groups are removed, and each atomic type is trimmed
      * from whitespace and leading backslashes.
      *
      * @return list<list<string>> List of intersection groups, each a sorted list of atomic types
      */
-    private static function normalizeTypeExpression(string $type, bool $expandNullableMarker = true): array
+    private static function normalizeTypeExpression(string $type): array
     {
         $type = trim($type);
-        if ($expandNullableMarker && str_starts_with($type, '?')) {
+        if (str_starts_with($type, '?')) {
             $type = substr($type, 1) . '|null';
         }
 
@@ -193,7 +189,7 @@ final readonly class ReturnTypePointcut implements Pointcut
     }
 
     /**
-     * Checks whether one atomic type pattern (with possible '*', '?' wildcards) matches an atomic type.
+     * Checks whether one atomic type pattern (with a possible '*' wildcard) matches an atomic type.
      */
     private static function atomMatches(string $pattern, string $actual): bool
     {
@@ -202,7 +198,6 @@ final readonly class ReturnTypePointcut implements Pointcut
         }
         $regexp = '/^(' . strtr(preg_quote($pattern, '/'), [
             '\\*' => '[^\\\\]+',
-            '\\?' => '.',
         ]) . ')$/';
 
         return (bool) preg_match($regexp, $actual);

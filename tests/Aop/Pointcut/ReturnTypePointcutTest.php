@@ -38,7 +38,7 @@ final class ReturnTypePointcutTest extends TestCase
         return [
             'Exact match (int)' => ['int', new ReflectionFunction('strlen'), true],
             'Star match (bool)' => ['b*l', new ReflectionMethod(ReturnTypePointcut::class, 'matches'), true],
-            'Question match (int)' => ['?nt', new ReflectionMethod(ReturnTypePointcut::class, 'getKind'), true],
+            'Question mark is not a wildcard' => ['?nt', new ReflectionFunction('strlen'), false],
             'No match (int)' => ['array', new ReflectionFunction('strlen'), false],
 
             // Union return types (Exception|Closure)
@@ -68,6 +68,8 @@ final class ReturnTypePointcutTest extends TestCase
             'Nullable actual matched by union with null' => ['array|null', $nullableMethod, true],
             'Nullable actual matched by null pattern' => ['null', $nullableMethod, true],
             'Nullable actual not matched by other union' => ['array|false', $nullableMethod, false],
+            'Nullable pattern matches nullable actual' => ['?array', $nullableMethod, true],
+            'Nullable pattern does not match plain actual' => ['?int', new ReflectionFunction('strlen'), false],
         ];
     }
 

@@ -32,7 +32,7 @@ final readonly class NamePointcut implements Pointcut
     /**
      * Name matcher constructor
      *
-     * @param string $name                  Element name to match, can contain wildcards **,*,?,|
+     * @param string $name                  Element name to match, can contain wildcards **,*,|
      * @param bool   $useContextForMatching Switch to matching context name instead of reflector
      */
     public function __construct(
@@ -46,7 +46,6 @@ final readonly class NamePointcut implements Pointcut
             [
                 '\\*'    => '[^\\\\]+?',
                 '\\*\\*' => '.+?',
-                '\\?'    => '.',
                 '\\|'    => '|'
             ]
         ) . ')$/';
