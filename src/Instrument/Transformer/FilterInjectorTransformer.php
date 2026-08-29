@@ -108,10 +108,8 @@ class FilterInjectorTransformer implements SourceTransformer
     {
         self::ensureConfigured();
 
-        static $appDir, $cacheDir, $debug;
-        if ($appDir === null) {
-            extract(self::$options, EXTR_IF_EXISTS);
-        }
+        $cacheDir = self::$options['cacheDir'];
+        $debug    = self::$options['debug'];
 
         $resource = $originalResource;
         if ($resource[0] !== '/') {
