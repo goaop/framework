@@ -99,9 +99,7 @@ class Php85AuditScratchTest extends TestCase
      * A fix PR that resolves one of these MUST remove the entry (the test then asserts success).
      */
     private const KNOWN_GAPS = [
-        // #598/#599/#601/#602/#603 are fixed on master; #600 lands with PR #614
-        'Php81EnumConstExprCases' => 'https://github.com/goaop/framework/issues/600',
-        // Follow-ups found after the #598/#599 fixes landed:
+        // #598-#603 are all fixed on master. Remaining follow-ups (#615/#616, fixed by PR #617):
         // #[\Attribute] on a trait only became a compile error in PHP 8.5,
         // so these three are gaps on 8.5+ but weave cleanly on 8.4
         'ConstAttr'               => 'https://github.com/goaop/framework/issues/615',
