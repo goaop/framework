@@ -21,14 +21,14 @@ final class InterceptorListGeneratorTest extends TestCase
             new AroundInterceptor(static fn(): mixed => null, 20)
         );
 
-        $code = (new InterceptorListGenerator([$descriptor]))->generate('        ');
+        $code = (new InterceptorListGenerator([$descriptor]))->generate();
 
         $this->assertSame([], InterceptorListGenerator::aspectClasses([$descriptor]));
         $this->assertSame(
             <<<'PHP'
 [
-            Interceptor::around(The::advice('manual.around'), order: 20),
-        ]
+                Interceptor::around(The::advice('manual.around'), order: 20),
+            ]
 PHP,
             $code
         );
@@ -44,16 +44,16 @@ PHP,
             GeneratedInterceptor::fromAdvice('manual.afterThrowing', new AfterThrowingInterceptor($noop)),
         ];
 
-        $code = (new InterceptorListGenerator($descriptors))->generate('        ');
+        $code = (new InterceptorListGenerator($descriptors))->generate();
 
         $this->assertSame(
             <<<'PHP'
 [
-            Interceptor::before(The::advice('manual.before')),
-            Interceptor::after(The::advice('manual.after')),
-            Interceptor::around(The::advice('manual.around')),
-            Interceptor::afterThrowing(The::advice('manual.afterThrowing')),
-        ]
+                Interceptor::before(The::advice('manual.before')),
+                Interceptor::after(The::advice('manual.after')),
+                Interceptor::around(The::advice('manual.around')),
+                Interceptor::afterThrowing(The::advice('manual.afterThrowing')),
+            ]
 PHP,
             $code
         );

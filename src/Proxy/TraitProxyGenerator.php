@@ -14,6 +14,13 @@ namespace Go\Proxy;
 
 use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\The;
+use Go\Aop\Intercept\DynamicMethodInvocation;
+use Go\Aop\Intercept\FieldAccess;
+use Go\Aop\Intercept\FieldAccessType;
+use Go\Aop\Intercept\StaticMethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\InterceptorListGenerator;
@@ -86,9 +93,9 @@ class TraitProxyGenerator extends ClassProxyGenerator
         // Register use-imports for AOP classes referenced in generated method bodies.
         // Determine needed invocation types from actual method signatures, not advice
         // category keys, because callers may place static-method advices under METHOD_PREFIX.
-        $traitGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
-        $traitGenerator->addUse('Go\Aop\Framework\Interceptor');
-        $traitGenerator->addUse('Go\Aop\Framework\The');
+        $traitGenerator->addUse(InterceptorInjector::class);
+        $traitGenerator->addUse(Interceptor::class);
+        $traitGenerator->addUse(The::class);
         foreach ($this->collectAspectClasses($traitAdviceNames) as $aspectClass) {
             if (str_contains($aspectClass, '\\')) {
                 $traitGenerator->addUse($aspectClass);
@@ -96,15 +103,15 @@ class TraitProxyGenerator extends ClassProxyGenerator
         }
         foreach ($interceptedMethods as $methodName) {
             if ($originalTrait->hasMethod($methodName) && $originalTrait->getMethod($methodName)->isStatic()) {
-                $traitGenerator->addUse('Go\Aop\Intercept\StaticMethodInvocation');
+                $traitGenerator->addUse(StaticMethodInvocation::class);
             } else {
-                $traitGenerator->addUse('Go\Aop\Intercept\DynamicMethodInvocation');
+                $traitGenerator->addUse(DynamicMethodInvocation::class);
             }
         }
         $propertyAdvices = $traitAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
         if (!empty($propertyAdvices)) {
-            $traitGenerator->addUse('Go\Aop\Intercept\FieldAccess');
-            $traitGenerator->addUse('Go\Aop\Intercept\FieldAccessType');
+            $traitGenerator->addUse(FieldAccess::class);
+            $traitGenerator->addUse(FieldAccessType::class);
         }
 
         // Store generator instance for compatibility with parent generate() call
@@ -139,7 +146,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         $adviceNames = $this->adviceNames[$prefix][$method->name]
             ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
-        $advicesCode = (new InterceptorListGenerator($adviceNames))->generate('            ');
+        $advicesCode = (new InterceptorListGenerator($adviceNames))->generate();
         $returnTypeString = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
         // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
         // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.

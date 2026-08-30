@@ -14,6 +14,11 @@ namespace Go\Proxy;
 
 use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\The;
+use Go\Aop\Intercept\DynamicMethodInvocation;
+use Go\Aop\Intercept\StaticMethodInvocation;
 use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
 use Go\Proxy\Generator\EnumGenerator;
@@ -161,9 +166,9 @@ class EnumProxyGenerator extends ClassProxyGenerator
         // Register use-imports for AOP classes referenced in generated method bodies.
         // Determine needed invocation types from actual method signatures, not advice
         // category keys, because callers may place static-method advices under METHOD_PREFIX.
-        $enumGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
-        $enumGenerator->addUse('Go\Aop\Framework\Interceptor');
-        $enumGenerator->addUse('Go\Aop\Framework\The');
+        $enumGenerator->addUse(InterceptorInjector::class);
+        $enumGenerator->addUse(Interceptor::class);
+        $enumGenerator->addUse(The::class);
         foreach ($this->collectAspectClasses($classAdviceNames) as $aspectClass) {
             if (str_contains($aspectClass, '\\')) {
                 $enumGenerator->addUse($aspectClass);
@@ -171,9 +176,9 @@ class EnumProxyGenerator extends ClassProxyGenerator
         }
         foreach ($interceptedMethods as $methodName) {
             if ($originalClass->hasMethod($methodName) && $originalClass->getMethod($methodName)->isStatic()) {
-                $enumGenerator->addUse('Go\Aop\Intercept\StaticMethodInvocation');
+                $enumGenerator->addUse(StaticMethodInvocation::class);
             } else {
-                $enumGenerator->addUse('Go\Aop\Intercept\DynamicMethodInvocation');
+                $enumGenerator->addUse(DynamicMethodInvocation::class);
             }
         }
 
@@ -230,7 +235,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
 
         $adviceNames = $this->adviceNames[$prefix][$method->name]
             ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
-        $advicesCode = (new InterceptorListGenerator($adviceNames))->generate('            ');
+        $advicesCode = (new InterceptorListGenerator($adviceNames))->generate();
         $returnTypeString = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
         // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
         // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.

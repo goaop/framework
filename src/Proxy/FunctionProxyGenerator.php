@@ -13,6 +13,10 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\The;
+use Go\Aop\Intercept\FunctionInvocation;
 use Go\Core\AspectContainer;
 use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Proxy\Generator\FileGenerator;
@@ -56,10 +60,10 @@ class FunctionProxyGenerator
         $this->adviceNames   = $adviceNames;
         $this->fileGenerator = new FileGenerator();
         $this->fileGenerator->setNamespace($namespace->getName());
-        $this->fileGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
-        $this->fileGenerator->addUse('Go\Aop\Framework\Interceptor');
-        $this->fileGenerator->addUse('Go\Aop\Framework\The');
-        $this->fileGenerator->addUse('Go\Aop\Intercept\FunctionInvocation');
+        $this->fileGenerator->addUse(InterceptorInjector::class);
+        $this->fileGenerator->addUse(Interceptor::class);
+        $this->fileGenerator->addUse(The::class);
+        $this->fileGenerator->addUse(FunctionInvocation::class);
         foreach ($this->collectAspectClasses($adviceNames) as $aspectClass) {
             if (str_contains($aspectClass, '\\')) {
                 $this->fileGenerator->addUse($aspectClass);
@@ -109,7 +113,7 @@ class FunctionProxyGenerator
         }
 
         $functionAdvices = $this->adviceNames[AspectContainer::FUNCTION_PREFIX][$function->name];
-        $advicesCode = (new InterceptorListGenerator(array_values($functionAdvices)))->generate('            ');
+        $advicesCode = (new InterceptorListGenerator(array_values($functionAdvices)))->generate();
         $returnTypeString = $function->hasReturnType() ? '<' . TypeGenerator::renderTypeForPhpDoc($function->getReturnType()) . '>' : '';
 
         // Use a fully-qualified (global) callable so proceed() calls the original built-in

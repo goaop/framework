@@ -14,7 +14,16 @@ namespace Go\Proxy;
 
 use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\The;
 use Go\Aop\InitializationAware;
+use Go\Aop\Intercept\ClassJoinpoint;
+use Go\Aop\Intercept\ConstructorInvocation;
+use Go\Aop\Intercept\DynamicMethodInvocation;
+use Go\Aop\Intercept\FieldAccess;
+use Go\Aop\Intercept\FieldAccessType;
+use Go\Aop\Intercept\StaticMethodInvocation;
 use Go\Aop\Proxy;
 use Go\Aop\StaticInitializationAware;
 use Go\Core\AspectContainer;
@@ -182,9 +191,9 @@ class ClassProxyGenerator
         // Register use-imports for AOP classes referenced in generated method bodies.
         // Determine needed invocation types from actual method signatures, not advice
         // category keys, because callers may place static-method advices under METHOD_PREFIX.
-        $classGenerator->addUse('Go\Aop\Framework\InterceptorInjector');
-        $classGenerator->addUse('Go\Aop\Framework\Interceptor');
-        $classGenerator->addUse('Go\Aop\Framework\The');
+        $classGenerator->addUse(InterceptorInjector::class);
+        $classGenerator->addUse(Interceptor::class);
+        $classGenerator->addUse(The::class);
         foreach ($this->collectAspectClasses($classAdviceNames) as $aspectClass) {
             if (str_contains($aspectClass, '\\')) {
                 $classGenerator->addUse($aspectClass);
@@ -192,20 +201,20 @@ class ClassProxyGenerator
         }
         foreach ($interceptedMethods as $methodName) {
             if ($originalClass->hasMethod($methodName) && $originalClass->getMethod($methodName)->isStatic()) {
-                $classGenerator->addUse('Go\Aop\Intercept\StaticMethodInvocation');
+                $classGenerator->addUse(StaticMethodInvocation::class);
             } else {
-                $classGenerator->addUse('Go\Aop\Intercept\DynamicMethodInvocation');
+                $classGenerator->addUse(DynamicMethodInvocation::class);
             }
         }
         if ($staticInitializationAdvices !== []) {
-            $classGenerator->addUse('Go\Aop\Intercept\ClassJoinpoint');
+            $classGenerator->addUse(ClassJoinpoint::class);
         }
         if ($initializationAdvices !== []) {
-            $classGenerator->addUse('Go\Aop\Intercept\ConstructorInvocation');
+            $classGenerator->addUse(ConstructorInvocation::class);
         }
         if (!empty($propertyAdvices)) {
-            $classGenerator->addUse('Go\Aop\Intercept\FieldAccess');
-            $classGenerator->addUse('Go\Aop\Intercept\FieldAccessType');
+            $classGenerator->addUse(FieldAccess::class);
+            $classGenerator->addUse(FieldAccessType::class);
         }
 
         $this->generator = $classGenerator;
@@ -318,7 +327,7 @@ class ClassProxyGenerator
 
         $adviceNames = $this->adviceNames[$prefix][$method->name]
             ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
-        $advicesCode = (new InterceptorListGenerator($adviceNames))->generate('            ');
+        $advicesCode = (new InterceptorListGenerator($adviceNames))->generate();
         $returnTypeString   = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
         // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
         // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.
@@ -375,7 +384,7 @@ class ClassProxyGenerator
      */
     private function createStaticInitializationMethod(array $advisorNames): MethodGenerator
     {
-        $advicesCode = (new InterceptorListGenerator($advisorNames))->generate('            ');
+        $advicesCode = (new InterceptorListGenerator($advisorNames))->generate();
 
         $method = new MethodGenerator('__aop__staticInitialization');
         $method->setStatic(true);
@@ -397,7 +406,7 @@ class ClassProxyGenerator
      */
     private function createInitializationMethod(array $advisorNames): MethodGenerator
     {
-        $advicesCode = (new InterceptorListGenerator($advisorNames))->generate('            ');
+        $advicesCode = (new InterceptorListGenerator($advisorNames))->generate();
 
         $method = new MethodGenerator('__aop__initialization');
         $method->setStatic(true);

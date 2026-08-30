@@ -35,6 +35,15 @@ use PhpParser\Node\VariadicPlaceholder;
 final class InterceptorListGenerator
 {
     /**
+     * Default continuation-line indentation for the rendered interceptor list.
+     *
+     * The list is embedded as an argument of the `InterceptorInjector::for*()` call inside a
+     * generated proxy method body, so every line after the opening bracket sits three levels
+     * deep: method body (2 levels) plus the injector call arguments (1 level), 4 spaces each.
+     */
+    private const string JOINPOINT_ARGUMENT_INDENT = '            ';
+
+    /**
      * @var list<GeneratedInterceptor>
      */
     private readonly array $interceptors;
@@ -74,7 +83,7 @@ final class InterceptorListGenerator
         return array_values($classes);
     }
 
-    public function generate(string $indent): string
+    public function generate(string $indent = self::JOINPOINT_ARGUMENT_INDENT): string
     {
         if ($this->interceptors === []) {
             return '[]';
