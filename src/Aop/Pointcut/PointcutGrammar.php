@@ -266,14 +266,7 @@ final class PointcutGrammar extends Grammar
             ->is('::')
             ->call(fn() => new ModifierPointcut(ReflectionMethod::IS_STATIC))
             ->is('->')
-            ->call(
-                function () {
-                    $modifierMatcherFilter = new ModifierPointcut();
-                    $modifierMatcherFilter->notMatch(ReflectionMethod::IS_STATIC);
-
-                    return $modifierMatcherFilter;
-                },
-            )
+            ->call(fn() => new ModifierPointcut(notMask: ReflectionMethod::IS_STATIC))
         ;
 
         $this('namespacePattern')

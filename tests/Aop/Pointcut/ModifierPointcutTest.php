@@ -42,13 +42,13 @@ class ModifierPointcutTest extends TestCase
         ReflectionMethod $reflector,
     ): void {
         if ($orMask > 0) {
-            $this->pointcut->orMatch($orMask);
+            $this->pointcut = $this->pointcut->orMatch($orMask);
         }
         if ($andMask > 0) {
-            $this->pointcut->andMatch($andMask);
+            $this->pointcut = $this->pointcut->andMatch($andMask);
         }
         if ($notMask > 0) {
-            $this->pointcut->notMatch($notMask);
+            $this->pointcut = $this->pointcut->notMatch($notMask);
         }
 
         $modifiers = $reflector->getModifiers();
@@ -113,7 +113,7 @@ class ModifierPointcutTest extends TestCase
     public function testMatchesReadonlyPropertyModifier(): void
     {
         $reflectionClass = new ReflectionClass(StubPropertyModifiers::class);
-        $this->pointcut->andMatch(ReflectionProperty::IS_READONLY);
+        $this->pointcut  = $this->pointcut->andMatch(ReflectionProperty::IS_READONLY);
 
         $this->assertTrue($this->pointcut->matches($reflectionClass, $reflectionClass->getProperty('readonlyProp')));
         $this->assertFalse($this->pointcut->matches($reflectionClass, $reflectionClass->getProperty('plain')));
@@ -148,7 +148,7 @@ class ModifierPointcutTest extends TestCase
     public function testNeverMatchesForFunctionModifiers(): void
     {
         $reflectionClass = new ReflectionClass(FirstStatic::class);
-        $this->pointcut->andMatch(ReflectionMethod::IS_PUBLIC);
+        $this->pointcut  = $this->pointcut->andMatch(ReflectionMethod::IS_PUBLIC);
 
         $this->assertFalse($this->pointcut->matches(
             $reflectionClass,

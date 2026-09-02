@@ -34,32 +34,20 @@ use ReflectionProperty;
  * getModifiers(), so no reflection-implementation-specific guards are needed here. Methods
  * never carry these bits, so such predicates simply never match method reflectors.
  */
-final class ModifierPointcut implements Pointcut
+final readonly class ModifierPointcut implements Pointcut
 {
     /**
-     * Bit mask, that should be always match
-     */
-    private int $andMask;
-
-    /**
-     * Bit mask, that can be used for additional check
-     */
-    private int $orMask = 0;
-
-    /**
-     * Bit mask to exclude specific value from matching, for example, !public
-     */
-    private int $notMask = 0;
-
-    /**
-     * Initialize default filter with "and" mask
+     * Initialize the filter with pre-resolved bit masks
      *
-     * @param int $initialMask Default mask for "and"
+     * @param int $andMask Bit mask that should always match
+     * @param int $orMask  Bit mask that can be used for additional check
+     * @param int $notMask Bit mask to exclude specific value from matching, for example, !public
      */
-    public function __construct(int $initialMask = 0)
-    {
-        $this->andMask = $initialMask;
-    }
+    public function __construct(
+        private int $andMask = 0,
+        private int $orMask = 0,
+        private int $notMask = 0,
+    ) {}
 
     /**
      * @return ($reflector is null ? true : bool)
@@ -85,33 +73,27 @@ final class ModifierPointcut implements Pointcut
     }
 
     /**
-     * Add "and" mask
+     * Returns a new filter with the given bits added to the "and" mask
      */
     public function andMatch(int $bitMask): self
     {
-        $this->andMask |= $bitMask;
-
-        return $this;
+        return new self($this->andMask | $bitMask, $this->orMask, $this->notMask);
     }
 
     /**
-     * Add "or" mask
+     * Returns a new filter with the given bits added to the "or" mask
      */
     public function orMatch(int $bitMask): self
     {
-        $this->orMask |= $bitMask;
-
-        return $this;
+        return new self($this->andMask, $this->orMask | $bitMask, $this->notMask);
     }
 
     /**
-     * Add "not" mask
+     * Returns a new filter with the given bits added to the "not" mask
      */
     public function notMatch(int $bitMask): self
     {
-        $this->notMask |= $bitMask;
-
-        return $this;
+        return new self($this->andMask, $this->orMask, $this->notMask | $bitMask);
     }
 
     public function getKind(): int
