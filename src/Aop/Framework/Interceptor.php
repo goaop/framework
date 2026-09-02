@@ -19,23 +19,23 @@ use Closure;
  */
 final class Interceptor
 {
-    public static function before(Closure $advice, int $order = 0): BeforeInterceptor
+    public static function before(Closure $advice, int $order = 0, string $expression = ''): BeforeInterceptor
     {
-        return new BeforeInterceptor($advice, $order);
+        return new BeforeInterceptor($advice, $order, $expression);
     }
 
-    public static function after(Closure $advice, int $order = 0): AfterInterceptor
+    public static function after(Closure $advice, int $order = 0, string $expression = ''): AfterInterceptor
     {
-        return new AfterInterceptor($advice, $order);
+        return new AfterInterceptor($advice, $order, $expression);
     }
 
-    public static function around(Closure $advice, int $order = 0): AroundInterceptor
+    public static function around(Closure $advice, int $order = 0, string $expression = ''): AroundInterceptor
     {
-        return new AroundInterceptor($advice, $order);
+        return new AroundInterceptor($advice, $order, $expression);
     }
 
-    public static function afterThrowing(Closure $advice, int $order = 0): AfterThrowingInterceptor
+    public static function afterThrowing(Closure $advice, int $order = 0, string $expression = ''): AfterThrowingInterceptor
     {
-        return new AfterThrowingInterceptor($advice, $order);
+        return new AfterThrowingInterceptor($advice, $order, $expression);
     }
 }

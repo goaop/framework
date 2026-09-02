@@ -13,12 +13,18 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceTypeEnum;
+use Go\Aop\CompilableToPhp;
 use Go\Aop\IntroductionInfo;
+use Go\Core\AdvisorCacheCompiler;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 
 /**
  * Advice for introduction that holds trait and interface for the concrete class
  */
-final readonly class TraitIntroductionInfo implements IntroductionInfo
+final readonly class TraitIntroductionInfo implements IntroductionInfo, CompilableToPhp
 {
     /**
      * Creates a TraitIntroductionInfo with given trait name and interface name.
@@ -44,5 +50,13 @@ final readonly class TraitIntroductionInfo implements IntroductionInfo
     public function getType(): AdviceTypeEnum
     {
         return AdviceTypeEnum::Introduction;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class), [
+            new Arg(AdvisorCacheCompiler::compileClassName($this->introducedTrait)),
+            new Arg(AdvisorCacheCompiler::compileClassName($this->introducedInterface)),
+        ]);
     }
 }

@@ -23,7 +23,7 @@ use PhpParser\PrettyPrinter\Standard;
  * Keeps joinpoint initialization readable even when method bodies are parsed
  * through AST nodes before class generation.
  */
-final class GeneratedCodePrinter extends Standard
+class GeneratedCodePrinter extends Standard
 {
     protected function pExpr_Array(Expr\Array_ $node): string
     {

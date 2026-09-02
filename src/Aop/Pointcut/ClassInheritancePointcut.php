@@ -12,8 +12,14 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
+use Go\Core\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -24,7 +30,7 @@ use function in_array;
 /**
  * Inheritance pointcut that matches any child for given parent or implements given interface
  */
-final readonly class ClassInheritancePointcut implements Pointcut
+final readonly class ClassInheritancePointcut implements Pointcut, CompilableToPhp
 {
     /**
      * Inheritance class matcher constructor
@@ -48,5 +54,12 @@ final readonly class ClassInheritancePointcut implements Pointcut
     public function getKind(): int
     {
         return self::KIND_CLASS;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class), [
+            new Arg(AdvisorCacheCompiler::compileClassName($this->parentClassOrInterfaceName)),
+        ]);
     }
 }

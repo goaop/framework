@@ -12,8 +12,17 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
+use Go\Core\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ConstFetch;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\Int_;
+use PhpParser\Node\Scalar\String_;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -22,7 +31,7 @@ use ReflectionProperty;
 /**
  * General name pointcut checks element name to match it
  */
-final readonly class NamePointcut implements Pointcut
+final readonly class NamePointcut implements Pointcut, CompilableToPhp
 {
     /**
      * Regular expression for pattern matching
@@ -72,5 +81,14 @@ final readonly class NamePointcut implements Pointcut
     public function getKind(): int
     {
         return $this->pointcutKind;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([
+            ['pointcutKind', new Int_($this->pointcutKind), false],
+            ['name', new String_($this->name), false],
+            ['useContextForMatching', new ConstFetch(new Name('true')), !$this->useContextForMatching],
+        ]));
     }
 }

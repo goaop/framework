@@ -12,9 +12,15 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
 use InvalidArgumentException;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\String_;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
@@ -40,12 +46,12 @@ use ReflectionProperty;
  *    member set, regardless of the order of members ('int|string' matches 'string|int').
  *    Each pattern member may still use wildcards ('Some*|null' matches 'SomeClass|null').
  */
-final readonly class ReturnTypePointcut implements Pointcut
+final readonly class ReturnTypePointcut implements Pointcut, CompilableToPhp
 {
     /**
      * Trimmed constructor pattern, retained verbatim for re-emission into compiled advisor caches.
      */
-    private string $returnTypeName; // @phpstan-ignore property.onlyWritten (consumed by the upcoming advisor cache compilation)
+    private string $returnTypeName;
 
     /**
      * Normalized pattern: list of intersection groups, each group is a list of atomic patterns.
@@ -127,6 +133,13 @@ final readonly class ReturnTypePointcut implements Pointcut
     public function getKind(): int
     {
         return Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class), [
+            new Arg(new String_($this->returnTypeName)),
+        ]);
     }
 
     /**

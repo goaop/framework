@@ -15,9 +15,21 @@ namespace Go\Aop\Framework;
 use Closure;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\OrderedAdvice;
 use Go\Core\AspectKernel;
+use Go\Core\NotCompilableException;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Identifier;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\Int_;
+use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\VariadicPlaceholder;
 use ReflectionFunction;
 use ReflectionMethod;
 
@@ -47,7 +59,7 @@ use ReflectionMethod;
  *   }
  * </pre>
  */
-abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
+abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, CompilableToPhp
 {
     /**
      * @var array<string, Closure> Local hashmap of advices for faster unserialization
@@ -99,6 +111,50 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     public function getRawAdvice(): Closure
     {
         return $this->adviceMethod;
+    }
+
+    /**
+     * Compiles the interceptor into an Interceptor factory facade call
+     *
+     * The emitted expression mirrors the interceptor declarations rendered into generated
+     * proxy code: the advice is referenced as a first-class callable on the aspect instance,
+     * e.g. `Interceptor::after(The::aspect(SomeAspect::class)->afterMethod(...))`.
+     */
+    final public function compileToPhp(): Expr
+    {
+        $reflectionAdvice     = new ReflectionFunction($this->adviceMethod);
+        $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
+        if (!isset($scopeReflectionClass) || !is_subclass_of($scopeReflectionClass->name, Aspect::class)) {
+            throw new AspectException('Could not compile an interceptor without valid aspect');
+        }
+
+        $factoryMethod = match ($this::class) {
+            BeforeInterceptor::class        => 'before',
+            AfterInterceptor::class         => 'after',
+            AroundInterceptor::class        => 'around',
+            AfterThrowingInterceptor::class => 'afterThrowing',
+            default                         => throw new NotCompilableException(
+                'Cannot compile an instance of ' . $this::class . ' into plain PHP',
+            ),
+        };
+
+        $adviceAccessor = new MethodCall(
+            new StaticCall(new FullyQualified(The::class), 'aspect', [
+                new Arg(new ClassConstFetch(new FullyQualified($scopeReflectionClass->name), 'class')),
+            ]),
+            $reflectionAdvice->name,
+            [new VariadicPlaceholder()],
+        );
+
+        $args = [new Arg($adviceAccessor)];
+        if ($this->adviceOrder !== 0) {
+            $args[] = new Arg(new Int_($this->adviceOrder), name: new Identifier('order'));
+        }
+        if ($this->pointcutExpression !== '') {
+            $args[] = new Arg(new String_($this->pointcutExpression), name: new Identifier('expression'));
+        }
+
+        return new StaticCall(new FullyQualified(\Go\Aop\Framework\Interceptor::class), $factoryMethod, $args);
     }
 
     /**

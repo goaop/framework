@@ -13,10 +13,16 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\AspectException;
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\String_;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -25,7 +31,7 @@ use ReflectionProperty;
 /**
  * Reference to the pointcut holds an id of pointcut to fetch when needed
  */
-final class PointcutReference implements Pointcut
+final class PointcutReference implements Pointcut, CompilableToPhp
 {
     private ?Pointcut $pointcut = null;
 
@@ -53,6 +59,13 @@ final class PointcutReference implements Pointcut
     public function getKind(): int
     {
         return $this->getPointcut()->getKind();
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class), [
+            new Arg(new String_($this->pointcutId)),
+        ]);
     }
 
     /**

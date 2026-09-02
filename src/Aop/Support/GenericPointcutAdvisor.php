@@ -13,8 +13,14 @@ declare(strict_types=1);
 namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
 use Go\Aop\PointcutAdvisor;
+use Go\Core\AdvisorCacheCompiler;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 
 /**
  * Convenient Pointcut-driven Advisor implementation.
@@ -22,7 +28,7 @@ use Go\Aop\PointcutAdvisor;
  * This is the most commonly used Advisor implementation. It can be used with any pointcut and advice type,
  * including introductions.
  */
-final readonly class GenericPointcutAdvisor implements PointcutAdvisor
+final readonly class GenericPointcutAdvisor implements PointcutAdvisor, CompilableToPhp
 {
     public function __construct(private Pointcut $pointcut, private Advice $advice) {}
 
@@ -34,5 +40,13 @@ final readonly class GenericPointcutAdvisor implements PointcutAdvisor
     public function getPointcut(): Pointcut
     {
         return $this->pointcut;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class), [
+            new Arg(AdvisorCacheCompiler::compileNested($this->pointcut)),
+            new Arg(AdvisorCacheCompiler::compileNested($this->advice)),
+        ]);
     }
 }

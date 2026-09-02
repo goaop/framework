@@ -12,8 +12,14 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
+use Go\Core\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\Int_;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -22,7 +28,7 @@ use ReflectionProperty;
 /**
  * Canonical Pointcut instance that always matches.
  */
-final readonly class TruePointcut implements Pointcut
+final readonly class TruePointcut implements Pointcut, CompilableToPhp
 {
     /**
      * Default constructor can be used to specify concrete pointcut kind
@@ -43,5 +49,12 @@ final readonly class TruePointcut implements Pointcut
     public function getKind(): int
     {
         return $this->pointcutKind;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([
+            ['pointcutKind', new Int_($this->pointcutKind), $this->pointcutKind === self::KIND_ALL],
+        ]));
     }
 }

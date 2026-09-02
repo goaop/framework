@@ -12,8 +12,14 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
+use Go\Core\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -22,7 +28,7 @@ use ReflectionProperty;
 /**
  * Logical "not" pointcut filter.
  */
-final readonly class NotPointcut implements Pointcut
+final readonly class NotPointcut implements Pointcut, CompilableToPhp
 {
     /**
      * Not constructor
@@ -48,5 +54,12 @@ final readonly class NotPointcut implements Pointcut
     public function getKind(): int
     {
         return $this->pointcut->getKind();
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class), [
+            new Arg(AdvisorCacheCompiler::compileNested($this->pointcut)),
+        ]);
     }
 }

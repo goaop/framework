@@ -12,8 +12,14 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
+use Go\Core\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -22,7 +28,7 @@ use ReflectionProperty;
 /**
  * Logical "or" filter.
  */
-final readonly class OrPointcut implements Pointcut
+final readonly class OrPointcut implements Pointcut, CompilableToPhp
 {
     /**
      * Kind of filter
@@ -62,5 +68,15 @@ final readonly class OrPointcut implements Pointcut
     public function getKind(): int
     {
         return $this->pointcutKind;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        $args = [];
+        foreach ($this->pointcuts as $singlePointcut) {
+            $args[] = new Arg(AdvisorCacheCompiler::compileNested($singlePointcut));
+        }
+
+        return new New_(new FullyQualified(self::class), $args);
     }
 }

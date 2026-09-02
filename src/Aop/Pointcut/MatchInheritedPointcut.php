@@ -12,8 +12,12 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -24,7 +28,7 @@ use ReflectionProperty;
  *
  * As it is used only inside class context for methods and properties, it rejects all other type of points
  */
-final class MatchInheritedPointcut implements Pointcut
+final class MatchInheritedPointcut implements Pointcut, CompilableToPhp
 {
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
@@ -54,5 +58,10 @@ final class MatchInheritedPointcut implements Pointcut
     public function getKind(): int
     {
         return Pointcut::KIND_METHOD | Pointcut::KIND_PROPERTY;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class));
     }
 }

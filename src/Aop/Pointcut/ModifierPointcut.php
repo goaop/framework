@@ -12,8 +12,14 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
+use Go\Core\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\Int_;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -34,7 +40,7 @@ use ReflectionProperty;
  * getModifiers(), so no reflection-implementation-specific guards are needed here. Methods
  * never carry these bits, so such predicates simply never match method reflectors.
  */
-final readonly class ModifierPointcut implements Pointcut
+final readonly class ModifierPointcut implements Pointcut, CompilableToPhp
 {
     /**
      * Initialize the filter with pre-resolved bit masks
@@ -99,5 +105,14 @@ final readonly class ModifierPointcut implements Pointcut
     public function getKind(): int
     {
         return Pointcut::KIND_ALL;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([
+            ['andMask', new Int_($this->andMask), $this->andMask === 0],
+            ['orMask', new Int_($this->orMask), $this->orMask === 0],
+            ['notMask', new Int_($this->notMask), $this->notMask === 0],
+        ]));
     }
 }
