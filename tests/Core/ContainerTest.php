@@ -72,7 +72,6 @@ class ContainerTest extends TestCase
             AdviceMatcher::class       => [AdviceMatcher::class],
             AspectLoader::class        => [AspectLoader::class],
             CachedAspectLoader::class  => [CachedAspectLoader::class],
-            LazyAdvisorAccessor::class => [LazyAdvisorAccessor::class],
             // [CachePathManager::class], // Need to politely switch to options instead of whole kernel
         ];
     }

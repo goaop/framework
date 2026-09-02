@@ -250,7 +250,7 @@ class WeavingTransformer extends BaseSourceTransformer
      *  - Renames the class to $newClassName (__AopProxied suffix)
      *  - Removes the 'extends X' and 'implements Y, Z' clauses (moved to the proxy class)
      *
-     * @param array<string, array<string, array<string>>> $advices List of class advices (sorted advice IDs)
+     * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices List of class advices
      */
     private function convertClassToTrait(
         ReflectionClass $class,
@@ -449,7 +449,7 @@ class WeavingTransformer extends BaseSourceTransformer
      *  - Removes the backed type (': string' / ': int') and any 'implements ...' clause
      *  - Removes all enum case declarations from the body (cases live in the proxy enum instead)
      *
-     * @param array<string, array<string, array<string>>> $advices List of class advices (sorted advice IDs)
+     * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices List of class advices
      */
     private function convertEnumToTrait(
         ReflectionClass $class,
@@ -538,7 +538,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * parent method → fatal error. We strip the attribute only from methods that will be aliased
      * (those with dynamic or static method advices).
      *
-     * @param array<string, array<string, array<string>>> $advices
+     * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices
      */
     private function stripOverrideAttributeFromInterceptedMethods(
         ReflectionClass $class,
@@ -676,7 +676,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * The proxy class re-declares these properties with native PHP 8.4 hooks. Tokens are neutralised
      * (not deleted) to preserve original line numbers for debugger mapping.
      *
-     * @param array<string, array<string, array<string>>> $advices
+     * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices
      */
     private function commentOutInterceptedPropertiesInTraitBody(
         ReflectionClass $class,

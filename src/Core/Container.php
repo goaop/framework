@@ -100,11 +100,6 @@ class Container implements AspectContainer
             return new CachedAspectLoader($container, AspectLoader::class, $options);
         });
 
-        $this->addLazyService(LazyAdvisorAccessor::class, fn(AspectContainer $container): LazyAdvisorAccessor => new LazyAdvisorAccessor(
-            $container,
-            $container->getService(CachedAspectLoader::class)
-        ));
-
         $this->addLazyService(CachePathManager::class, fn(AspectContainer $container): CachePathManager => new CachePathManager(
             $container->getService(AspectKernel::class)
         ));

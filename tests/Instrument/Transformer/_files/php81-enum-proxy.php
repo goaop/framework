@@ -2,6 +2,8 @@
 declare(strict_types=1);
 namespace Test\ns1;
 use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 enum TestStatus : string implements \Go\Aop\Proxy
 {
@@ -13,7 +15,14 @@ enum TestStatus : string implements \Go\Aop\Proxy
     public function label(): string
     {
         /** @var DynamicMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'label', ['advisor.Test\ns1\TestStatus->label'], $this->__aop__label(...));
+        static $__joinPoint = InterceptorInjector::forMethod(
+            self::class,
+            'label',
+            [
+                Interceptor::before(The::advice('advisor.Test\ns1\TestStatus->label')),
+            ],
+            $this->__aop__label(...),
+        );
         return $__joinPoint->__invoke($this);
     }
 }

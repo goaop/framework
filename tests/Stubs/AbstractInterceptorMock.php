@@ -13,6 +13,7 @@ declare(strict_types = 1);
 namespace Go\Stubs;
 
 use Closure;
+use Go\Aop\AdviceTypeEnum;
 use Go\Aop\Framework\AbstractInterceptor;
 use Go\Aop\Intercept\Joinpoint;
 
@@ -39,5 +40,10 @@ class AbstractInterceptorMock extends AbstractInterceptor
     public function invoke(Joinpoint $joinpoint): Joinpoint
     {
         return $joinpoint;
+    }
+
+    public function getType(): AdviceTypeEnum
+    {
+        return AdviceTypeEnum::Before;
     }
 }

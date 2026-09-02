@@ -33,12 +33,21 @@ class Foo extends OriginalParent implements OriginalInterfaces, \Go\Aop\Proxy
     public function interceptedMethod(ArgType $arg): ReturnType {
         /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, ReturnType> $__joinPoint */
         static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
-            self::class, 'interceptedMethod', [...], $this->__aop__interceptedMethod(...)
+            self::class,
+            'interceptedMethod',
+            [
+                Interceptor::before(The::aspect(SomeAspect::class)->adviceMethod(...)),
+            ],
+            $this->__aop__interceptedMethod(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
 }
 ```
+Interceptor list entries are first-class advice callables on the aspect instance
+(`The::aspect(X::class)->m(...)`); container-backed closure advices use
+`The::advice('advisorId')` instead. Emitted by InterceptorListGenerator from
+GeneratedInterceptor descriptors (string advisor ids are rejected).
 
 ### Key invariants
 - Proxy re-inherits parent+interfaces via reflection (not from woven source)

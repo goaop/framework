@@ -19,4 +19,11 @@ namespace Go\Aop;
  */
 interface Advice
 {
+
+    /**
+     * Returns the Advice type
+     *
+     * @api
+     */
+    public function getType(): AdviceTypeEnum;
 }

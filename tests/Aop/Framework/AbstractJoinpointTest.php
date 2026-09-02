@@ -4,9 +4,9 @@ declare(strict_types = 1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\AdviceAfter;
-use Go\Aop\AdviceAround;
-use Go\Aop\AdviceBefore;
+use Go\Aop\Advice;
+use Go\Aop\AdviceTypeEnum;
+use Go\Aop\AspectException;
 use Go\Aop\OrderedAdvice;
 use PHPUnit\Framework\TestCase;
 
@@ -24,15 +24,20 @@ class AbstractJoinpointTest extends TestCase
         $advices = AbstractJoinpoint::sortAdvices($advices);
         foreach ($advices as $advice) {
             $expected = array_shift($order);
-            $this->assertInstanceOf($expected, $advice);
+            if ($expected instanceof AdviceTypeEnum) {
+                $this->assertInstanceOf(Advice::class, $advice);
+                $this->assertSame($expected, $advice->getType());
+            } else {
+                $this->assertInstanceOf($expected, $advice);
+            }
         }
     }
 
     public static function sortingTestSource(): array
     {
-        $after  = new class implements AdviceAfter {};
-        $before = new class implements AdviceBefore {};
-        $around = new class implements AdviceAround {};
+        $after  = self::makeAdvice(AdviceTypeEnum::After);
+        $before = self::makeAdvice(AdviceTypeEnum::Before);
+        $around = self::makeAdvice(AdviceTypeEnum::Around);
 
         $forth = self::makeOrderedAdvice(4);
         $first = self::makeOrderedAdvice(1);
@@ -41,37 +46,37 @@ class AbstractJoinpointTest extends TestCase
             // #0
             [
                 [clone $after, clone $before],
-                [AdviceBefore::class, AdviceAfter::class]
+                [AdviceTypeEnum::Before, AdviceTypeEnum::After]
             ],
             // #1
             [
                 [clone $after, clone $around],
-                [AdviceAfter::class, AdviceAround::class]
+                [AdviceTypeEnum::After, AdviceTypeEnum::Around]
             ],
             // #2
             [
                 [clone $before, clone $after],
-                [AdviceBefore::class, AdviceAfter::class]
+                [AdviceTypeEnum::Before, AdviceTypeEnum::After]
             ],
             // #3
             [
                 [clone $before, clone $around],
-                [AdviceBefore::class, AdviceAround::class]
+                [AdviceTypeEnum::Before, AdviceTypeEnum::Around]
             ],
             // #4
             [
                 [clone $around, clone $after],
-                [AdviceAfter::class, AdviceAround::class]
+                [AdviceTypeEnum::After, AdviceTypeEnum::Around]
             ],
             // #5
             [
                 [clone $around, clone $before],
-                [AdviceBefore::class, AdviceAround::class]
+                [AdviceTypeEnum::Before, AdviceTypeEnum::Around]
             ],
             // #6
             [
                 [clone $before, clone $around, clone $before, clone $after],
-                [AdviceBefore::class, AdviceBefore::class, AdviceAfter::class, AdviceAround::class]
+                [AdviceTypeEnum::Before, AdviceTypeEnum::Before, AdviceTypeEnum::After, AdviceTypeEnum::Around]
             ],
             // #7
             [
@@ -79,6 +84,75 @@ class AbstractJoinpointTest extends TestCase
                 [get_class($first), get_class($forth)]
             ],
         ];
+    }
+
+    public function testFlatAndSortAdvicesGeneratesDescriptorsForEveryAdviceType(): void
+    {
+        $noop     = static fn(): mixed => null;
+        $advices  = [
+            'method' => [
+                'execute' => [
+                    'advisor.around'        => new AroundInterceptor($noop),
+                    'advisor.afterThrowing' => new AfterThrowingInterceptor($noop),
+                    'advisor.after'         => new AfterInterceptor($noop),
+                    'advisor.before'        => new BeforeInterceptor($noop),
+                ],
+            ],
+        ];
+
+        $flattened = AbstractJoinpoint::flatAndSortAdvices($advices);
+
+        $descriptors = $flattened['method']['execute'];
+        $this->assertContainsOnlyInstancesOf(GeneratedInterceptor::class, $descriptors);
+        $this->assertSame(
+            ['before', 'afterThrowing', 'after', 'around'],
+            array_map(static fn(GeneratedInterceptor $descriptor): string => $descriptor->factoryMethod, $descriptors)
+        );
+        $this->assertSame(
+            ['advisor.before', 'advisor.afterThrowing', 'advisor.after', 'advisor.around'],
+            array_map(static fn(GeneratedInterceptor $descriptor): string => $descriptor->advisorId, $descriptors)
+        );
+    }
+
+    public function testFlatAndSortAdvicesKeepsIntroductionAdvisorIds(): void
+    {
+        $advices = [
+            'introduction' => [
+                'root' => [
+                    '\Some\Interface' => new TraitIntroductionInfo('\Some\Trait', '\Some\Interface'),
+                ],
+            ],
+        ];
+
+        $flattened = AbstractJoinpoint::flatAndSortAdvices($advices);
+
+        $this->assertSame(['\Some\Interface'], $flattened['introduction']['root']);
+    }
+
+    public function testFlatAndSortAdvicesRejectsNonAdviceValues(): void
+    {
+        $this->expectException(AspectException::class);
+        $this->expectExceptionMessage('instead of advice instance');
+
+        AbstractJoinpoint::flatAndSortAdvices([
+            'method' => [
+                'execute' => [
+                    'advisor.broken' => true,
+                ],
+            ],
+        ]);
+    }
+
+    private static function makeAdvice(AdviceTypeEnum $type): Advice
+    {
+        return new class($type) implements Advice {
+            public function __construct(private readonly AdviceTypeEnum $type) {}
+
+            public function getType(): AdviceTypeEnum
+            {
+                return $this->type;
+            }
+        };
     }
 
     private static function makeOrderedAdvice(int $order): OrderedAdvice
@@ -89,6 +163,11 @@ class AbstractJoinpointTest extends TestCase
             public function getAdviceOrder(): int
             {
                 return $this->order;
+            }
+
+            public function getType(): AdviceTypeEnum
+            {
+                return AdviceTypeEnum::Introduction;
             }
         };
     }

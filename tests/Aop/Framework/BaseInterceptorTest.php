@@ -30,7 +30,7 @@ class BaseInterceptorTest extends AbstractInterceptorTestCase
 
         $interceptor = $this->getMockBuilder(AbstractInterceptor::class)
             ->setConstructorArgs([$advice])
-            ->onlyMethods(['invoke'])
+            ->onlyMethods(['invoke', 'getType'])
             ->getMock();
         $this->assertEquals($advice, $interceptor->getRawAdvice());
     }
@@ -63,5 +63,6 @@ class BaseInterceptorTest extends AbstractInterceptorTestCase
         $serialized = 'O:' . $mockNameLength .':"' . $mockClass . '":1:{s:12:"adviceMethod";a:3:{s:5:"scope";s:6:"aspect";s:6:"method";s:26:"Go\Aop\Framework\{closure}";s:6:"aspect";s:36:"Go\Aop\Framework\BaseInterceptorTest";}}';
         $result     = unserialize($serialized);
         $this->assertEquals($advice, $result->getRawAdvice());
+        $this->assertSame(0, $result->getAdviceOrder());
     }
 }

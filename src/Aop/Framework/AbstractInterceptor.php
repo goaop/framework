@@ -102,7 +102,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     final public function __unserialize(array $state): void
     {
         $state['adviceMethod'] = static::unserializeAdvice($state['adviceMethod']);
-        foreach ($state as $key => $value) {
+        foreach ($state + ['adviceOrder' => 0, 'pointcutExpression' => ''] as $key => $value) {
             $this->$key = $value;
         }
     }

@@ -35,6 +35,13 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 | ClassFieldAccess                  | FieldAccess             | Property interception via native get/set hooks on proxied properties                                                   |
 | StaticInitializationJoinpoint     | ClassJoinpoint          | Fired once after proxy class loaded via injectJoinPoints()                                                             |
 
+## Advice wiring (src/Aop/Framework/)
+- The — proxy-code accessor: aspect(X::class) fetches aspect from container; advice('advisorId') resolves container-backed closure advice (unwraps Advisor/AbstractInterceptor to raw Closure)
+- Interceptor — factory facade for generated code: before()/after()/around()/afterThrowing(Closure, int $order=0)
+- GeneratedInterceptor — internal descriptor built by AbstractJoinpoint::flatAndSortAdvices() via fromAdvice(); usesContainerAdvice=true when advice closure isn't scoped to an Aspect class
+- AdviceTypeEnum — Advice::getType() kind + sorting priority (before → after/afterThrowing → around → introduction); replaced AdviceBefore/AdviceAfter/AdviceAround marker interfaces
+- Advice methods MUST be public (FCC calls them on the aspect instance from generated code)
+
 ## Pointcuts (src/Aop/Pointcut/)
 - LALR grammar: PointcutGrammar, PointcutParser, PointcutLexer, PointcutParseTable
 - Combinators: AndPointcut, OrPointcut, NotPointcut, NamePointcut, AttributePointcut, ClassInheritancePointcut, MatchInheritedPointcut, ModifierPointcut, ReturnTypePointcut, TruePointcut

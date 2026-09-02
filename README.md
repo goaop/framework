@@ -82,7 +82,7 @@ if ($fieldAccess->getField()->isInitialized($this)) {
 
  - **Opcode cache friendly** — First-class support for **OPcache**. Transformed files and classes are stored as plain PHP files, fully optimized by your opcode cache just like regular code.
 
- - **Smart caching** — Lazy loading of advice and aspects — only what's needed gets loaded. Joinpoints are resolved at compile-time and cached, eliminating runtime reflection costs.
+ - **Smart caching** — Advices are woven as **first-class callables** pointing straight at your aspect methods, joinpoints are resolved at compile-time and cached in the generated code — eliminating runtime reflection costs and lazy advisor indirection.
 
  - **No runtime overhead** — Zero runtime annotation parsing, no slow `__call` methods, no proxy objects wrapping your instances. Method interception happens through direct, inlined PHP code — as fast as handwritten cross-cutting code. **Zero** overhead for non-intercepted methods.
 
@@ -231,6 +231,7 @@ $applicationAspectKernel->init([
 ### 4. Create an aspect
 
 Aspect is the key element of AOP philosophy. Go! AOP framework just uses simple PHP classes for declaring aspects, which makes it possible to use all features of OOP for aspect classes.
+Advices are declared as **public methods** of the aspect — the framework weaves them into your code as [first-class callables](https://www.php.net/manual/en/functions.first_class_callable_syntax.php), so every advice must be callable on the aspect instance from the outside (a `protected` or `private` advice method is rejected during aspect loading).
 As an example, let's intercept all the methods and display their names:
 
 ```php
@@ -269,6 +270,36 @@ Easy, isn't it? We declared here that we want to install a hook before the execu
 all dynamic public methods in the class Example. This is done with the help of attribute
 `#[Before("execution(public Example->*(*))")]`
 Hooks can be of any types, you will see them later.
+
+#### Advices are first-class callables
+
+There is no magic behind applying an aspect. For every intercepted method the framework
+generates a plain, debuggable interceptor chain in which each advice is referenced as a
+**closure created with first-class callable syntax** right on the aspect instance:
+
+```php
+static $__joinPoint = InterceptorInjector::forMethod(
+    self::class,
+    'doSomething',
+    [
+        Interceptor::before(The::aspect(MonitorAspect::class)->beforeMethodExecution(...)),
+    ],
+    $this->__aop__doSomething(...),
+);
+```
+
+`The::aspect()` fetches the aspect instance from the aspect container, and
+`->beforeMethodExecution(...)` is the very advice method you wrote above — you can
+Ctrl-click it in your IDE, set a breakpoint inside it, and step through the woven code as if
+it were handwritten. This direct wiring is the main way advices are applied.
+
+Advices that are registered in the container as plain closures (rather than aspect methods)
+are woven through the lazy `The::advice()` accessor instead, which resolves the advisor by
+its identifier and unwraps it down to the raw advice closure:
+
+```php
+Interceptor::around(The::advice('advisor.Demo\Aspect\DynamicMethodsAspect->aroundMagicMethods')),
+```
 
 ### 5. Register the aspect in the aspect kernel
 

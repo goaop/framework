@@ -274,7 +274,7 @@ final class ClassGenerator implements GeneratorInterface
     private static function getPrinter(): Standard
     {
         if (self::$printer === null) {
-            self::$printer = new Standard(['shortArraySyntax' => true]);
+            self::$printer = new GeneratedCodePrinter(['shortArraySyntax' => true]);
         }
         return self::$printer;
     }
