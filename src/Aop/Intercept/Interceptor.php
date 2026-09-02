@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Intercept;
 
 use Go\Aop\Advice;
+use Go\Aop\AdviceTypeEnum;
 
 /**
  * This interface represents a generic interceptor.

@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Framework\BeforeInterceptor;
+use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Stubs\StubBackedEnum;
 use Go\Stubs\StubConstExprBackedEnum;
 use PHPUnit\Framework\TestCase;
@@ -41,7 +43,7 @@ class EnumProxyGeneratorTest extends TestCase
         $traitName       = 'Go\\Stubs\\StubBackedEnum__AopProxied';
         $classAdvices    = [
             'method' => [
-                'label' => ['advisor.StubBackedEnum->label'],
+                'label' => [self::testAdvice('advisor.StubBackedEnum->label')],
             ],
         ];
 
@@ -80,7 +82,7 @@ class EnumProxyGeneratorTest extends TestCase
         $traitName       = 'Go\\Stubs\\StubBackedEnum__AopProxied';
         $classAdvices    = [
             'static' => [
-                'fromLabel' => ['advisor.StubBackedEnum->fromLabel'],
+                'fromLabel' => [self::testAdvice('advisor.StubBackedEnum->fromLabel')],
             ],
         ];
 
@@ -103,7 +105,7 @@ class EnumProxyGeneratorTest extends TestCase
     {
         $reflectionClass = new ReflectionClass(StubBackedEnum::class);
         $classAdvices    = [
-            'method' => ['label' => ['advisor']],
+            'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
         $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices, false);
@@ -125,7 +127,7 @@ class EnumProxyGeneratorTest extends TestCase
     {
         $reflectionClass = new ReflectionClass(StubConstExprBackedEnum::class);
         $classAdvices    = [
-            'method' => ['describe' => ['advisor']],
+            'method' => ['describe' => [self::testAdvice('advisor')]],
         ];
 
         $generator = new EnumProxyGenerator(
@@ -151,7 +153,7 @@ class EnumProxyGeneratorTest extends TestCase
     {
         $reflectionClass = new ReflectionClass(StubBackedEnum::class);
         $classAdvices    = [
-            'method' => ['label' => ['advisor']],
+            'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
         $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices, false);
@@ -169,7 +171,7 @@ class EnumProxyGeneratorTest extends TestCase
     {
         $reflectionClass = new ReflectionClass(StubBackedEnum::class);
         $classAdvices    = [
-            'method' => ['label' => ['advisor']],
+            'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
         $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices, false);
@@ -192,7 +194,7 @@ class EnumProxyGeneratorTest extends TestCase
     {
         $reflectionClass = new ReflectionClass(StubBackedEnum::class);
         $classAdvices    = [
-            'method' => ['label' => ['advisor']],
+            'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
         $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices, false);
@@ -218,7 +220,7 @@ class EnumProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass(StubBackedEnum::class);
         $classAdvices    = [
             'method' => [
-                'label' => ['advisor'],
+                'label' => [self::testAdvice('advisor')],
             ],
         ];
 
@@ -242,7 +244,7 @@ class EnumProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass(StubBackedEnum::class);
         $classAdvices    = [
             'method' => [
-                'label' => ['advisor'],
+                'label' => [self::testAdvice('advisor')],
             ],
         ];
 
@@ -266,12 +268,12 @@ class EnumProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass(StubBackedEnum::class);
         $classAdvices    = [
             'method' => [
-                'label' => ['advisor'],
-                'cases' => ['advisor'],       // built-in, must be ignored
-                'from'  => ['advisor'],       // built-in, must be ignored
+                'label' => [self::testAdvice('advisor')],
+                'cases' => [self::testAdvice('advisor')],       // built-in, must be ignored
+                'from'  => [self::testAdvice('advisor')],       // built-in, must be ignored
             ],
             'static' => [
-                'tryFrom' => ['advisor'],     // built-in, must be ignored
+                'tryFrom' => [self::testAdvice('advisor')],     // built-in, must be ignored
             ],
         ];
 
@@ -283,5 +285,10 @@ class EnumProxyGeneratorTest extends TestCase
         $this->assertStringNotContainsString('__aop__cases', $output);
         $this->assertStringNotContainsString('__aop__from', $output);
         $this->assertStringNotContainsString('__aop__tryFrom', $output);
+    }
+
+    private static function testAdvice(string $advisorId): GeneratedInterceptor
+    {
+        return GeneratedInterceptor::fromAdvice($advisorId, new BeforeInterceptor(static function (): void {}));
     }
 }

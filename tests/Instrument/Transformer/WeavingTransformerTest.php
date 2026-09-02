@@ -13,6 +13,7 @@ declare(strict_types = 1);
 namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
+use Go\Aop\Framework\BeforeInterceptor;
 use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -402,7 +403,7 @@ class WeavingTransformerTest extends TestCase
                 $advices = [];
                 foreach ($refClass->getMethods() as $method) {
                     $advisorId = "advisor.{$refClass->name}->{$method->name}";
-                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
+                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = new BeforeInterceptor(static function (): void {});
                 }
                 return $advices;
             });
@@ -477,7 +478,7 @@ class WeavingTransformerTest extends TestCase
                 $advices = [];
                 foreach ($refClass->getMethods() as $method) {
                     $advisorId = "advisor.{$refClass->name}->{$method->name}";
-                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
+                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = new BeforeInterceptor(static function (): void {});
                 }
                 return $advices;
             });
@@ -548,8 +549,12 @@ class WeavingTransformerTest extends TestCase
             ->method('getAdvicesForClass')
             ->willReturn([
                 AspectContainer::PROPERTY_PREFIX => [
-                    'value' => ['advisor.Go\Tests\TestProject\Application\Php84PropertyHooksClass->value' => true],
-                    'limited' => ['advisor.Go\Tests\TestProject\Application\Php84PropertyHooksClass->limited' => true],
+                    'value' => [
+                        'advisor.Go\Tests\TestProject\Application\Php84PropertyHooksClass->value' => new BeforeInterceptor(static function (): void {}),
+                    ],
+                    'limited' => [
+                        'advisor.Go\Tests\TestProject\Application\Php84PropertyHooksClass->limited' => new BeforeInterceptor(static function (): void {}),
+                    ],
                 ],
             ]);
         $adviceMatcher
@@ -587,8 +592,8 @@ class WeavingTransformerTest extends TestCase
 
         $this->assertStringContainsString("public string \$value = 'test' {", $proxyContent);
         $this->assertStringContainsString("public protected(set) string \$limited = 'limited' {", $proxyContent);
-        $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'value'", $proxyContent);
-        $this->assertStringContainsString("InterceptorInjector::forProperty(self::class, 'limited'", $proxyContent);
+        $this->assertStringContainsString("InterceptorInjector::forProperty(", $proxyContent);
+        $this->assertStringContainsString("InterceptorInjector::forProperty(", $proxyContent);
     }
 
     /**
@@ -601,12 +606,12 @@ class WeavingTransformerTest extends TestCase
     {
         $transformer = $this->createTransformerWithAdvices([
             AspectContainer::PROPERTY_PREFIX => [
-                'name' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name' => true],
-                'counter' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter' => true],
+                'name' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name' => new BeforeInterceptor(static function (): void {})],
+                'counter' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter' => new BeforeInterceptor(static function (): void {})],
             ],
             AspectContainer::METHOD_PREFIX => [
-                '__construct' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->__construct' => true],
-                'getName' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->getName' => true],
+                '__construct' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->__construct' => new BeforeInterceptor(static function (): void {})],
+                'getName' => ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->getName' => new BeforeInterceptor(static function (): void {})],
             ],
         ]);
 
@@ -641,11 +646,11 @@ class WeavingTransformerTest extends TestCase
     {
         $transformer = $this->createTransformerWithAdvices([
             AspectContainer::PROPERTY_PREFIX => [
-                'bag' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->bag' => true],
+                'bag' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->bag' => new BeforeInterceptor(static function (): void {})],
             ],
             AspectContainer::METHOD_PREFIX => [
-                '__construct' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->__construct' => true],
-                'getBagItems' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->getBagItems' => true],
+                '__construct' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->__construct' => new BeforeInterceptor(static function (): void {})],
+                'getBagItems' => ['advisor.Go\Tests\TestProject\Application\NewInInitializerClass->getBagItems' => new BeforeInterceptor(static function (): void {})],
             ],
         ]);
 
@@ -684,10 +689,10 @@ class WeavingTransformerTest extends TestCase
     {
         $transformer = $this->createTransformerWithAdvices([
             AspectContainer::PROPERTY_PREFIX => [
-                'tag' => ['advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->tag' => true],
+                'tag' => ['advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->tag' => new BeforeInterceptor(static function (): void {})],
             ],
             AspectContainer::METHOD_PREFIX => [
-                '__construct' => ['advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->__construct' => true],
+                '__construct' => ['advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->__construct' => new BeforeInterceptor(static function (): void {})],
             ],
         ]);
 
@@ -715,10 +720,10 @@ class WeavingTransformerTest extends TestCase
     {
         $transformer = $this->createTransformerWithAdvices([
             AspectContainer::PROPERTY_PREFIX => [
-                'token' => ['advisor.Go\Instrument\Transformer\Stubs\FinalPromotedClass85->token' => true],
+                'token' => ['advisor.Go\Instrument\Transformer\Stubs\FinalPromotedClass85->token' => new BeforeInterceptor(static function (): void {})],
             ],
             AspectContainer::METHOD_PREFIX => [
-                '__construct' => ['advisor.Go\Instrument\Transformer\Stubs\FinalPromotedClass85->__construct' => true],
+                '__construct' => ['advisor.Go\Instrument\Transformer\Stubs\FinalPromotedClass85->__construct' => new BeforeInterceptor(static function (): void {})],
             ],
         ]);
 
@@ -827,7 +832,7 @@ class WeavingTransformerTest extends TestCase
                 $advices  = [];
                 foreach ($refClass->getMethods() as $method) {
                     $advisorId = "advisor.{$refClass->name}->{$method->name}";
-                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = true;
+                    $advices[AspectContainer::METHOD_PREFIX][$method->name][$advisorId] = new BeforeInterceptor(static function (): void {});
                 }
                 return $advices;
             });

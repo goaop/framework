@@ -31,7 +31,7 @@ class CachingAspect implements Aspect
      * Real-life examples will use APC or Memcache to store value in the cache
      */
     #[Around('@execution(Demo\Attribute\Cacheable)')]
-    protected function aroundCacheable(MethodInvocation $invocation): mixed
+    public function aroundCacheable(MethodInvocation $invocation): mixed
     {
         static $memoryCache = [];
 

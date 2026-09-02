@@ -38,7 +38,7 @@ class HealthyLiveAspect implements Aspect
      * @param DynamicMethodInvocation<HumanDemo> $invocation
      */
     #[Before('$this->humanEat')]
-    protected function washUpBeforeEat(DynamicMethodInvocation $invocation): void
+    public function washUpBeforeEat(DynamicMethodInvocation $invocation): void
     {
         $person = $invocation->getThis();
         $person->washUp();
@@ -50,7 +50,7 @@ class HealthyLiveAspect implements Aspect
      * @param DynamicMethodInvocation<HumanDemo> $invocation
      */
     #[After('$this->humanEat')]
-    protected function cleanTeethAfterEat(DynamicMethodInvocation $invocation): void
+    public function cleanTeethAfterEat(DynamicMethodInvocation $invocation): void
     {
         $person = $invocation->getThis();
         $person->cleanTeeth();
@@ -62,7 +62,7 @@ class HealthyLiveAspect implements Aspect
      * @param DynamicMethodInvocation<HumanDemo> $invocation
      */
     #[Before('execution(public Demo\Example\HumanDemo->sleep(*))')]
-    protected function cleanTeethBeforeSleep(DynamicMethodInvocation $invocation): void
+    public function cleanTeethBeforeSleep(DynamicMethodInvocation $invocation): void
     {
         $person = $invocation->getThis();
         $person->cleanTeeth();

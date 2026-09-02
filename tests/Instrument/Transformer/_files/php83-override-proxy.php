@@ -2,6 +2,8 @@
 declare(strict_types=1);
 namespace Test\ns1;
 use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 /**
  * PHP 8.3 — class with #[\Override] on an intercepted method.
@@ -18,13 +20,27 @@ class TestClassWithOverride implements \Go\Aop\Proxy
     public function overriddenMethod(): string
     {
         /** @var DynamicMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'overriddenMethod', ['advisor.Test\ns1\TestClassWithOverride->overriddenMethod'], $this->__aop__overriddenMethod(...));
+        static $__joinPoint = InterceptorInjector::forMethod(
+            self::class,
+            'overriddenMethod',
+            [
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClassWithOverride->overriddenMethod')),
+            ],
+            $this->__aop__overriddenMethod(...),
+        );
         return $__joinPoint->__invoke($this);
     }
     public function normalMethod(): int
     {
         /** @var DynamicMethodInvocation<self, int> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'normalMethod', ['advisor.Test\ns1\TestClassWithOverride->normalMethod'], $this->__aop__normalMethod(...));
+        static $__joinPoint = InterceptorInjector::forMethod(
+            self::class,
+            'normalMethod',
+            [
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClassWithOverride->normalMethod')),
+            ],
+            $this->__aop__normalMethod(...),
+        );
         return $__joinPoint->__invoke($this);
     }
 }

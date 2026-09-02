@@ -3,6 +3,8 @@ declare(strict_types=1);
 namespace Go\Tests\TestProject\Application;
 
 use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldAccessType;
@@ -19,37 +21,75 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
     private string $name = 'initial' {
         get {
             /** @var FieldAccess<self, string> $__joinPoint */
-            static $__joinPoint = InterceptorInjector::forProperty(self::class, 'name', ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name']);
+            static $__joinPoint = InterceptorInjector::forProperty(
+                self::class,
+                'name',
+                [
+                    Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name')),
+                ],
+            );
             return $__joinPoint->__invoke($this, FieldAccessType::READ, $this->name);
         }
         set {
             /** @var FieldAccess<self, string> $__joinPoint */
-            static $__joinPoint = InterceptorInjector::forProperty(self::class, 'name', ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name']);
+            static $__joinPoint = InterceptorInjector::forProperty(
+                self::class,
+                'name',
+                [
+                    Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name')),
+                ],
+            );
             $this->name = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this->name);
         }
     }
     final public private(set) int $counter = 1 {
         get {
             /** @var FieldAccess<self, int> $__joinPoint */
-            static $__joinPoint = InterceptorInjector::forProperty(self::class, 'counter', ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter']);
+            static $__joinPoint = InterceptorInjector::forProperty(
+                self::class,
+                'counter',
+                [
+                    Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter')),
+                ],
+            );
             return $__joinPoint->__invoke($this, FieldAccessType::READ, $this->counter);
         }
         set {
             /** @var FieldAccess<self, int> $__joinPoint */
-            static $__joinPoint = InterceptorInjector::forProperty(self::class, 'counter', ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter']);
+            static $__joinPoint = InterceptorInjector::forProperty(
+                self::class,
+                'counter',
+                [
+                    Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter')),
+                ],
+            );
             $this->counter = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this->counter);
         }
     }
     public function __construct(string $name = 'initial', int $counter = 1, ?\ArrayObject $bag = null)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, '__construct', ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->__construct'], $this->__aop____construct(...));
+        static $__joinPoint = InterceptorInjector::forMethod(
+            self::class,
+            '__construct',
+            [
+                Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->__construct')),
+            ],
+            $this->__aop____construct(...),
+        );
         return $__joinPoint->__invoke($this, \array_slice([$name, $counter, $bag], 0, \func_num_args()));
     }
     public function getName(): string
     {
         /** @var DynamicMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(self::class, 'getName', ['advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->getName'], $this->__aop__getName(...));
+        static $__joinPoint = InterceptorInjector::forMethod(
+            self::class,
+            'getName',
+            [
+                Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->getName')),
+            ],
+            $this->__aop__getName(...),
+        );
         return $__joinPoint->__invoke($this);
     }
 }

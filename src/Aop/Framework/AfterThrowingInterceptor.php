@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\AdviceAfter;
+use Go\Aop\AdviceTypeEnum;
 use Go\Aop\Intercept\Joinpoint;
 use Throwable;
 
@@ -21,7 +21,7 @@ use Throwable;
  *
  * @api
  */
-final class AfterThrowingInterceptor extends AbstractInterceptor implements AdviceAfter
+final class AfterThrowingInterceptor extends AbstractInterceptor
 {
     /**
      * @inheritdoc
@@ -36,5 +36,10 @@ final class AfterThrowingInterceptor extends AbstractInterceptor implements Advi
 
             throw $throwableInstance;
         }
+    }
+
+    public function getType(): AdviceTypeEnum
+    {
+        return AdviceTypeEnum::AfterThrowing;
     }
 }

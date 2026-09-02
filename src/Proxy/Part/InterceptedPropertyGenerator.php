@@ -12,13 +12,12 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Aop\Intercept\FieldAccessType;
+use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\PropertyNodeProvider;
 use PhpParser\Node\Arg;
-use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\Assign;
-use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
@@ -81,7 +80,7 @@ use ReflectionProperty;
 final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGenerator implements PropertyNodeProvider
 {
     /**
-     * @param list<string> $adviceNames
+     * @param list<GeneratedInterceptor|string> $adviceNames
      */
     public function __construct(
         ReflectionProperty $property,
@@ -280,10 +279,7 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
             [
                 new Arg(new ClassConstFetch(new Name('self'), 'class')),
                 new Arg(new String_($propertyName)),
-                new Arg(new Array_(array_map(
-                    static fn (string $adviceName): ArrayItem => new ArrayItem(new String_($adviceName)),
-                    $this->adviceNames
-                ))),
+                new Arg((new InterceptorListGenerator($this->adviceNames))->getNode()),
             ]
         );
     }

@@ -19,7 +19,7 @@ AOP via source transformation at load time (stream filter, no PECL, no eval).
 Intercepts PHP class loading pipeline: source stream filter transforms source → injects interception hooks → caches result.
 - Init: AspectKernel::init() → stream filter → transformers → configureAop()
 - Main transformer: WeavingTransformer (class→trait, proxy class re-inherits parent+interfaces)
-- Proxy dispatch: per-method static $__joinPoint → InterceptorInjector → advisor chain
+- Proxy dispatch: per-method static $__joinPoint → InterceptorInjector → interceptor chain of first-class advice callables (The::aspect(X::class)->m(...), The::advice('id') for closure advices)
 
 ## Directory → AGENTS.md map
 | Directory         | Sub-AGENTS.md              | Covers                                                        |
