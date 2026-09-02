@@ -65,12 +65,27 @@
     },
 
     "minimum-stability": "stable",
+    "prefer-stable": true,
     "extra": {
         "branch-alias": {
             "dev-master": "4.0-dev"
         }
     },
     "config": {
+        "allow-plugins": {},
         "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyze": "phpstan analyze --memory-limit=512M",
+        "check": [
+            "@analyze",
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Run the PHPUnit test suite",
+        "analyze": "Run PHPStan static analysis (level 10)",
+        "check": "Run static analysis and the test suite"
     }
 }
