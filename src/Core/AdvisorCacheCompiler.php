@@ -36,6 +36,8 @@ use PhpParser\Node\Scalar\String_;
  * The produced file returns a versioned payload where the whole pointcut/advisor
  * graph is expressed as nested static constructor expressions, so loading the cache
  * is a single opcache-friendly include with no unserialization involved.
+ *
+ * @internal
  */
 final class AdvisorCacheCompiler
 {
@@ -57,7 +59,12 @@ final class AdvisorCacheCompiler
     {
         $advisorItems = [];
         foreach ($items as $itemId => $item) {
-            $advisorItems[] = new ArrayItem(self::compileNested($item), self::compileAdvisorKey($itemId));
+            if (!$item instanceof CompilableToPhp) {
+                throw new NotCompilableException(
+                    'Cannot compile an instance of ' . get_debug_type($item) . ' into plain PHP',
+                );
+            }
+            $advisorItems[] = new ArrayItem($item->compileToPhp(), self::compileAdvisorKey($itemId));
         }
 
         $payload = new Array_(
@@ -84,40 +91,6 @@ final class AdvisorCacheCompiler
             . " */\n\n"
             . $printedUses
             . 'return ' . $printedPayload . ";\n";
-    }
-
-    /**
-     * Compiles a nested advisor cache item, requiring it to be compilable
-     *
-     * @internal Helper for {@see CompilableToPhp} implementations
-     *
-     * @throws NotCompilableException When the item cannot be expressed as plain PHP
-     */
-    public static function compileNested(object $item): Expr
-    {
-        if (!$item instanceof CompilableToPhp) {
-            throw new NotCompilableException(
-                'Cannot compile an instance of ' . get_debug_type($item) . ' into plain PHP',
-            );
-        }
-
-        return $item->compileToPhp();
-    }
-
-    /**
-     * Compiles a string as a "::class" fetch when it refers to an existing class-like name
-     *
-     * Patterns and other free-form expressions stay plain string literals.
-     *
-     * @internal Helper for {@see CompilableToPhp} implementations
-     */
-    public static function compileClassName(string $name): Expr
-    {
-        if (self::isExistingClassLikeName($name)) {
-            return new ClassConstFetch(new FullyQualified($name), 'class');
-        }
-
-        return new String_($name);
     }
 
     /**
@@ -157,6 +130,8 @@ final class AdvisorCacheCompiler
      *
      * Ids of the "Aspect\ClassName->member" form are emitted as a `ClassName::class . '->member'`
      * concatenation, producing exactly the same runtime string as the direct aspect loader.
+     * The class part is checked purely syntactically - deciding by existence is not an option,
+     * as compilation may run in the middle of a class load inside the autoloader.
      */
     private static function compileAdvisorKey(int|string $itemId): Expr
     {
@@ -167,7 +142,7 @@ final class AdvisorCacheCompiler
         $separatorPosition = strpos($itemId, '->');
         if ($separatorPosition !== false) {
             $className = substr($itemId, 0, $separatorPosition);
-            if (self::isExistingClassLikeName($className)) {
+            if (preg_match('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*(\\\\[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)*$/', $className) === 1) {
                 return new Concat(
                     new ClassConstFetch(new FullyQualified($className), 'class'),
                     new String_(substr($itemId, $separatorPosition)),
@@ -176,18 +151,6 @@ final class AdvisorCacheCompiler
         }
 
         return new String_($itemId);
-    }
-
-    /**
-     * Checks that a string is a syntactically valid, existing class-like (class/interface/trait) name
-     */
-    private static function isExistingClassLikeName(string $name): bool
-    {
-        if (preg_match('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*(\\\\[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*)*$/', $name) !== 1) {
-            return false;
-        }
-
-        return class_exists($name) || interface_exists($name) || trait_exists($name);
     }
 
     /**

@@ -22,6 +22,8 @@ use PhpParser\Node\Stmt;
  * Keeps the nested constructor graph readable: arrays are always printed one
  * item per line, and constructor calls with several arguments break their
  * argument list over multiple lines as well.
+ *
+ * @internal
  */
 final class AdvisorCachePrinter extends GeneratedCodePrinter
 {

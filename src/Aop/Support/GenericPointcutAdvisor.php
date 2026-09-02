@@ -16,7 +16,7 @@ use Go\Aop\Advice;
 use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
 use Go\Aop\PointcutAdvisor;
-use Go\Core\AdvisorCacheCompiler;
+use Go\Core\NotCompilableException;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\New_;
@@ -44,9 +44,17 @@ final readonly class GenericPointcutAdvisor implements PointcutAdvisor, Compilab
 
     public function compileToPhp(): Expr
     {
+        if (!$this->pointcut instanceof CompilableToPhp || !$this->advice instanceof CompilableToPhp) {
+            $notCompilable = $this->pointcut instanceof CompilableToPhp ? $this->advice : $this->pointcut;
+
+            throw new NotCompilableException(
+                'Cannot compile an instance of ' . get_debug_type($notCompilable) . ' into plain PHP',
+            );
+        }
+
         return new New_(new FullyQualified(self::class), [
-            new Arg(AdvisorCacheCompiler::compileNested($this->pointcut)),
-            new Arg(AdvisorCacheCompiler::compileNested($this->advice)),
+            new Arg($this->pointcut->compileToPhp()),
+            new Arg($this->advice->compileToPhp()),
         ]);
     }
 }

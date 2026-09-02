@@ -123,14 +123,17 @@ class AdvisorCacheCompilerTest extends TestCase
         $this->assertStringContainsString('use Go\Tests\TestProject\Application\FooInterface;', $content);
     }
 
-    public function testCompilesClassInheritancePointcutWithUnknownParentAsStringLiteral(): void
+    public function testCompilesClassInheritancePointcutParentWithoutExistenceChecks(): void
     {
+        // The parent name is a class name by construction, so a ::class fetch is emitted
+        // unconditionally - triggering autoloading via class_exists() during compilation
+        // is not an option, and ::class on a not-yet-loaded name is a plain compile-time string
         $content = $this->compiler->compile(DoSomethingAspect::class, [
-            DoSomethingAspect::class . '->childrenPointcut' => new ClassInheritancePointcut('Some\NonExisting\ParentClass'),
+            DoSomethingAspect::class . '->childrenPointcut' => new ClassInheritancePointcut('Some\NotYetLoaded\ParentClass'),
         ]);
 
-        // A parent name that does not resolve to an existing class-like stays a string literal
-        $this->assertStringContainsString("new ClassInheritancePointcut('Some\\NonExisting\\ParentClass')", $content);
+        $this->assertStringContainsString('new ClassInheritancePointcut(ParentClass::class)', $content);
+        $this->assertStringContainsString('use Some\NotYetLoaded\ParentClass;', $content);
     }
 
     public function testCompilesMatchInheritedPointcutWithoutArguments(): void

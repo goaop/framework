@@ -14,7 +14,7 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
-use Go\Core\AdvisorCacheCompiler;
+use Go\Core\NotCompilableException;
 use Go\ParserReflection\ReflectionFileNamespace;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
@@ -58,8 +58,14 @@ final readonly class NotPointcut implements Pointcut, CompilableToPhp
 
     public function compileToPhp(): Expr
     {
+        if (!$this->pointcut instanceof CompilableToPhp) {
+            throw new NotCompilableException(
+                'Cannot compile an instance of ' . get_debug_type($this->pointcut) . ' into plain PHP',
+            );
+        }
+
         return new New_(new FullyQualified(self::class), [
-            new Arg(AdvisorCacheCompiler::compileNested($this->pointcut)),
+            new Arg($this->pointcut->compileToPhp()),
         ]);
     }
 }

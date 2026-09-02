@@ -23,6 +23,8 @@ use function constant;
 
 /**
  * Pointcut grammar defines general structure of pointcuts and rules of parsing
+ *
+ * @internal Framework implementation detail of pointcut parsing, free to change between releases
  */
 final class PointcutGrammar extends Grammar
 {

@@ -30,6 +30,8 @@ use ReflectionProperty;
 
 /**
  * Reference to the pointcut holds an id of pointcut to fetch when needed
+ *
+ * @internal Framework implementation detail of pointcut parsing and caching, free to change between releases
  */
 final class PointcutReference implements Pointcut, CompilableToPhp
 {

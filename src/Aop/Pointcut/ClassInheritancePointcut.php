@@ -14,10 +14,10 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
-use Go\Core\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name\FullyQualified;
 use ReflectionClass;
@@ -58,8 +58,9 @@ final readonly class ClassInheritancePointcut implements Pointcut, CompilableToP
 
     public function compileToPhp(): Expr
     {
+        // The parent name comes from existing code, so a ::class fetch is always safe
         return new New_(new FullyQualified(self::class), [
-            new Arg(AdvisorCacheCompiler::compileClassName($this->parentClassOrInterfaceName)),
+            new Arg(new ClassConstFetch(new FullyQualified($this->parentClassOrInterfaceName), 'class')),
         ]);
     }
 }

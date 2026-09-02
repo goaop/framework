@@ -17,6 +17,7 @@ use Go\Aop\Pointcut;
 use Go\Core\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
 use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
@@ -80,9 +81,10 @@ final readonly class AttributePointcut implements Pointcut, CompilableToPhp
 
     public function compileToPhp(): Expr
     {
+        // The attribute class name comes from existing code, so a ::class fetch is always safe
         return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([
             ['pointcutKind', new Int_($this->pointcutKind), false],
-            ['attributeClassName', AdvisorCacheCompiler::compileClassName($this->attributeClassName), false],
+            ['attributeClassName', new ClassConstFetch(new FullyQualified($this->attributeClassName), 'class'), false],
             ['useContextForMatching', new ConstFetch(new Name('true')), !$this->useContextForMatching],
         ]));
     }

@@ -188,11 +188,18 @@ class CachedAspectLoader implements AspectLoaderInterface
     {
         try {
             $cacheData = (static fn(): mixed => include $fileName)();
-        } catch (Throwable) {
-            // A corrupt cache file is handled by the empty-result fallback
+        } catch (Throwable $includeError) {
+            // The empty result makes the caller fall back to the direct loader, but a broken
+            // cache file deserves a loud explanation instead of silent degradation
+            trigger_error(
+                'Go! AOP advisor cache file "' . $fileName . '" is unusable: ' . $includeError->getMessage(),
+                E_USER_WARNING,
+            );
+
             return [];
         }
 
+        // A clean version mismatch is the expected upgrade path and rebuilds silently
         if (
             !is_array($cacheData)
             || ($cacheData['version'] ?? null) !== AdvisorCacheCompiler::VERSION
@@ -223,7 +230,12 @@ class CachedAspectLoader implements AspectLoaderInterface
     {
         try {
             $content = $this->advisorCacheCompiler->compile($aspectClassName, $items);
-        } catch (NotCompilableException) {
+        } catch (NotCompilableException $compilationError) {
+            trigger_error(
+                'Advisors for aspect ' . $aspectClassName . ' cannot be compiled to the cache: ' . $compilationError->getMessage(),
+                E_USER_WARNING,
+            );
+
             return;
         }
 

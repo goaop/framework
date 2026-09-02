@@ -15,9 +15,9 @@ namespace Go\Aop\Framework;
 use Go\Aop\AdviceTypeEnum;
 use Go\Aop\CompilableToPhp;
 use Go\Aop\IntroductionInfo;
-use Go\Core\AdvisorCacheCompiler;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name\FullyQualified;
 
@@ -54,9 +54,10 @@ final readonly class TraitIntroductionInfo implements IntroductionInfo, Compilab
 
     public function compileToPhp(): Expr
     {
+        // Trait and interface names come from existing code, so ::class fetches are always safe
         return new New_(new FullyQualified(self::class), [
-            new Arg(AdvisorCacheCompiler::compileClassName($this->introducedTrait)),
-            new Arg(AdvisorCacheCompiler::compileClassName($this->introducedInterface)),
+            new Arg(new ClassConstFetch(new FullyQualified($this->introducedTrait), 'class')),
+            new Arg(new ClassConstFetch(new FullyQualified($this->introducedInterface), 'class')),
         ]);
     }
 }

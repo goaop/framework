@@ -39,6 +39,8 @@ use ReflectionProperty;
  * Both native reflection and Go\ParserReflection\ReflectionProperty expose these bits via
  * getModifiers(), so no reflection-implementation-specific guards are needed here. Methods
  * never carry these bits, so such predicates simply never match method reflectors.
+ *
+ * @internal Framework implementation detail of pointcut parsing and caching, free to change between releases
  */
 final readonly class ModifierPointcut implements Pointcut, CompilableToPhp
 {

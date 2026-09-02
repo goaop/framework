@@ -16,6 +16,8 @@ use Closure;
 
 /**
  * Factory facade for generated proxy interceptor declarations.
+ *
+ * @internal Consumed by generated proxy code and compiled advisor caches, free to change between releases
  */
 final class Interceptor
 {

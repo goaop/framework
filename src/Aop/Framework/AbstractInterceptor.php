@@ -16,7 +16,7 @@ use Closure;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
 use Go\Aop\CompilableToPhp;
-use Go\Aop\Intercept\Interceptor;
+use Go\Aop\Intercept\Interceptor as InterceptorInterface;
 use Go\Aop\OrderedAdvice;
 use Go\Core\NotCompilableException;
 use PhpParser\Node\Arg;
@@ -57,7 +57,7 @@ use ReflectionFunction;
  *   }
  * </pre>
  */
-abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, CompilableToPhp
+abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvice, CompilableToPhp
 {
     /**
      * Order of advice invocation, lower values are invoked first
@@ -139,6 +139,6 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Compil
             $args[] = new Arg(new String_($this->pointcutExpression), name: new Identifier('expression'));
         }
 
-        return new StaticCall(new FullyQualified(\Go\Aop\Framework\Interceptor::class), $factoryMethod, $args);
+        return new StaticCall(new FullyQualified(Interceptor::class), $factoryMethod, $args);
     }
 }
