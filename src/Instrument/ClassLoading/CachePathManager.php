@@ -14,9 +14,8 @@ namespace Go\Instrument\ClassLoading;
 
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
+use Go\Instrument\FileSystem\CacheFileWriter;
 use InvalidArgumentException;
-
-use function function_exists;
 
 /**
  * Class that manages real-code to cached-code paths mapping.
@@ -47,6 +46,11 @@ class CachePathManager
     protected int $fileMode;
 
     protected ?string $appDir = null;
+
+    /**
+     * Writer performing the actual cache file system operations
+     */
+    private readonly CacheFileWriter $cacheFileWriter;
 
     /**
      * Cached metadata for transformation state for the concrete file
@@ -101,6 +105,8 @@ class CachePathManager
         $this->appDir   = $options['appDir'];
         $this->cacheDir = $options['cacheDir'];
         $this->fileMode = $options['cacheFileMode'];
+
+        $this->cacheFileWriter = new CacheFileWriter($this->fileMode);
 
         if ($this->cacheDir) {
             // With a prebuilt cache the directory is guaranteed to exist (built at deploy
@@ -388,14 +394,7 @@ class CachePathManager
                 '\'' . $rootPath  => 'AOP_ROOT_DIR . \'',
             ],
         );
-        $fullCacheFileName = $this->cacheDir . $relativeFileName;
-        file_put_contents($fullCacheFileName, $cacheData, LOCK_EX);
-        // For cache files we don't want executable bits by default
-        chmod($fullCacheFileName, $this->fileMode & (~0111));
-
-        if (function_exists('opcache_invalidate')) {
-            opcache_invalidate($fullCacheFileName, true);
-        }
+        $this->cacheFileWriter->write($this->cacheDir . $relativeFileName, $cacheData);
     }
 
     /**
