@@ -68,7 +68,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
         string $pointcutExpression
     ): TokenStream {
         try {
-            $resolvedThisPointcut = str_replace('$this', \get_class($aspect), $pointcutExpression);
+            $resolvedThisPointcut = str_replace('$this', $aspect::class, $pointcutExpression);
             $stream = $this->pointcutLexer->lex($resolvedThisPointcut);
         } catch (RecognitionException $e) {
             $message = 'Can not recognize the lexical structure `%s` before %s, defined in %s:%d';

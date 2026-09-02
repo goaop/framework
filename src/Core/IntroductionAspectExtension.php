@@ -50,7 +50,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 
                     $loadedItems[$propertyId] = $advisor;
                 } else {
-                    throw new UnexpectedValueException('Unsupported attribute class: ' . get_class($attribute));
+                    throw new UnexpectedValueException('Unsupported attribute class: ' . $attribute::class);
                 }
             }
         }
@@ -72,7 +72,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
             $interceptorAttribute instanceof DeclareParents =>
                 new TraitIntroductionInfo($interceptorAttribute->traitName, $interceptorAttribute->interfaceName),
             default =>
-                throw new UnexpectedValueException('Unsupported attribute class: ' . get_class($interceptorAttribute)),
+                throw new UnexpectedValueException('Unsupported attribute class: ' . $interceptorAttribute::class),
         };
     }
 }

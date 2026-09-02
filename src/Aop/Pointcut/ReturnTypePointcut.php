@@ -14,6 +14,7 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
+use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
@@ -64,7 +65,7 @@ final readonly class ReturnTypePointcut implements Pointcut
     {
         $returnTypeName = trim($returnTypeName, " \t\\");
         if (strlen($returnTypeName) === 0) {
-            throw new \InvalidArgumentException("Return type name must not be empty");
+            throw new InvalidArgumentException("Return type name must not be empty");
         }
         $this->patternGroups         = self::normalizeTypeExpression($returnTypeName);
         $this->isSingleAtomicPattern = count($this->patternGroups) === 1 && count($this->patternGroups[0]) === 1;

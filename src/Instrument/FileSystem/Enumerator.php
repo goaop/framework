@@ -74,11 +74,7 @@ class Enumerator
      */
     public function getFilter(): Closure
     {
-        $rootDirectory = $this->rootDirectory;
-        $includePaths = $this->includePaths;
-        $excludePaths = $this->excludePaths;
-
-        return function (SplFileInfo $file) use ($rootDirectory, $includePaths, $excludePaths) {
+        return function (SplFileInfo $file) {
 
             if ($file->getExtension() !== 'php') {
                 return false;
@@ -86,17 +82,17 @@ class Enumerator
 
             $fullPath = $this->getFileFullPath($file);
             // Do not touch files that not under rootDirectory
-            if (!str_starts_with($fullPath, $rootDirectory)) {
+            if (!str_starts_with($fullPath, $this->rootDirectory)) {
                 return false;
             }
 
             $matchesPattern = fn(string $pattern): bool => fnmatch("{$pattern}*", $fullPath, FNM_NOESCAPE);
 
-            if (!empty($includePaths) && !array_any($includePaths, $matchesPattern)) {
+            if (!empty($this->includePaths) && !array_any($this->includePaths, $matchesPattern)) {
                 return false;
             }
 
-            return !array_any($excludePaths, $matchesPattern);
+            return !array_any($this->excludePaths, $matchesPattern);
         };
     }
 

@@ -54,7 +54,7 @@ EOT
 
         $aspectName = $input->getOption('aspect');
         if (!$aspectName) {
-            $io->text('<info>' . get_class($this->aspectKernel) . '</info> has following enabled aspects:');
+            $io->text('<info>' . $this->aspectKernel::class . '</info> has following enabled aspects:');
             $aspects = $container->getServicesByInterface(Aspect::class);
         } elseif (is_string($aspectName) && is_subclass_of($aspectName, Aspect::class)) {
             $aspect    = $container->getService($aspectName);
