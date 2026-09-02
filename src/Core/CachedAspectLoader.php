@@ -16,11 +16,18 @@ use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Features;
 use Go\Aop\Pointcut;
+use Go\Instrument\FileSystem\CacheFileWriter;
 use ReflectionClass;
+use Throwable;
 
 /**
  * Cached loader is a decorator that is responsible for faster initialization
  * of pointcuts/advisors for concrete aspect
+ *
+ * Loaded advisors are compiled into plain-PHP cache files shadowing the aspect
+ * sources: the aspect path below the application root is mirrored below the cache
+ * directory with a '.cache.php' suffix, e.g. '{appDir}/src/Aspect/LoggingAspect.php'
+ * is cached as '{cacheDir}/src/Aspect/LoggingAspect.cache.php'.
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
@@ -39,14 +46,24 @@ class CachedAspectLoader implements AspectLoaderInterface
     private readonly ?string $cacheDir;
 
     /**
-     * File mode for the cache files
+     * Path to the application root directory
      */
-    private readonly int $cacheFileMode;
+    private readonly string $appDir;
 
     /**
      * Whether an existing advisor cache file is trusted without freshness checks
      */
     private readonly bool $isPrebuiltCache;
+
+    /**
+     * Writer performing the actual cache file system operations
+     */
+    private readonly CacheFileWriter $cacheFileWriter;
+
+    /**
+     * Compiler rendering loaded advisors into plain-PHP cache file content
+     */
+    private readonly AdvisorCacheCompiler $advisorCacheCompiler;
 
     /**
      * @var class-string[] List of aspect class names that have been loaded
@@ -64,9 +81,11 @@ class CachedAspectLoader implements AspectLoaderInterface
         private readonly string $loaderId,
         array $options,
     ) {
-        $this->cacheDir        = $options['cacheDir'];
-        $this->cacheFileMode   = $options['cacheFileMode'];
-        $this->isPrebuiltCache = ($options['features'] & Features::PREBUILT_CACHE) !== 0;
+        $this->cacheDir             = $options['cacheDir'];
+        $this->appDir               = $options['appDir'];
+        $this->isPrebuiltCache      = ($options['features'] & Features::PREBUILT_CACHE) !== 0;
+        $this->cacheFileWriter      = new CacheFileWriter($options['cacheFileMode']);
+        $this->advisorCacheCompiler = new AdvisorCacheCompiler();
     }
 
     public function load(Aspect $aspect): array
@@ -75,14 +94,19 @@ class CachedAspectLoader implements AspectLoaderInterface
             return $this->loader->load($aspect);
         }
 
-        $refAspect = new ReflectionClass($aspect);
-        $fileName  = $this->cacheDir . '/_aspect/' . sha1($refAspect->getName());
+        $refAspect      = new ReflectionClass($aspect);
+        $aspectFileName = $refAspect->getFileName();
+        $cacheFileName  = $aspectFileName !== false ? $this->resolveCacheFileName($aspectFileName) : null;
+        if ($cacheFileName === null || $aspectFileName === false) {
+            // Aspects without a resolvable source file below the application root are not cached
+            return $this->loader->load($aspect);
+        }
 
         // With a prebuilt cache an existing advisor cache file is trusted without any
-        // freshness checks; on a corrupt/empty file fall back to the direct loader
-        // WITHOUT writing (the file system may be read-only).
-        if ($this->isPrebuiltCache && file_exists($fileName)) {
-            $loadedItems = $this->loadFromCache($fileName);
+        // freshness checks; on a corrupt/incompatible/empty file fall back to the direct
+        // loader WITHOUT writing (the file system may be read-only).
+        if ($this->isPrebuiltCache && file_exists($cacheFileName)) {
+            $loadedItems = $this->loadFromCache($cacheFileName);
             if ($loadedItems !== []) {
                 return $loadedItems;
             }
@@ -90,14 +114,17 @@ class CachedAspectLoader implements AspectLoaderInterface
             return $this->loader->load($aspect);
         }
 
-        // If cache is present and actual, then use it
-        $aspectFileName = $refAspect->getFileName();
-        if ($aspectFileName !== false && file_exists($fileName) && filemtime($fileName) >= filemtime($aspectFileName)) {
-            $loadedItems = $this->loadFromCache($fileName);
-        } else {
-            $loadedItems = $this->loader->load($aspect);
-            $this->saveToCache($loadedItems, $fileName);
+        // A fresh cache file is used only when it yields a usable result; a corrupt or
+        // wrong-version file is rebuilt through the direct loader and rewritten below
+        if (file_exists($cacheFileName) && filemtime($cacheFileName) >= filemtime($aspectFileName)) {
+            $loadedItems = $this->loadFromCache($cacheFileName);
+            if ($loadedItems !== []) {
+                return $loadedItems;
+            }
         }
+
+        $loadedItems = $this->loader->load($aspect);
+        $this->saveToCache($refAspect->getName(), $loadedItems, $cacheFileName);
 
         return $loadedItems;
     }
@@ -133,43 +160,73 @@ class CachedAspectLoader implements AspectLoaderInterface
     }
 
     /**
-     * Loads pointcuts and advisors from the file
+     * Resolves the advisor cache file shadowing the given aspect source file
      *
-     * @return array<string, Pointcut|Advisor>
+     * @return string|null The cache file path, or null when the aspect source is not below the application root
+     */
+    private function resolveCacheFileName(string $aspectFileName): ?string
+    {
+        assert($this->cacheDir !== null);
+        $shadowFileName = str_replace($this->appDir, $this->cacheDir, $aspectFileName);
+        if ($shadowFileName === $aspectFileName) {
+            return null;
+        }
+
+        if (str_ends_with($shadowFileName, '.php')) {
+            $shadowFileName = substr($shadowFileName, 0, -strlen('.php'));
+        }
+
+        return $shadowFileName . '.cache.php';
+    }
+
+    /**
+     * Loads pointcuts and advisors from the compiled cache file
+     *
+     * @return array<string, Pointcut|Advisor> Loaded items, or [] when the file is corrupt or incompatible
      */
     private function loadFromCache(string $fileName): array
     {
-        $content = file_get_contents($fileName);
-        if ($content === false) {
+        try {
+            $cacheData = (static fn(): mixed => include $fileName)();
+        } catch (Throwable) {
+            // A corrupt cache file is handled by the empty-result fallback
             return [];
         }
-        // A corrupt cache file is handled by the empty-result fallback, so the
-        // unserialize() warning carries no information
-        $loadedItems = @unserialize($content);
 
-        if (!is_array($loadedItems)) {
+        if (
+            !is_array($cacheData)
+            || ($cacheData['version'] ?? null) !== AdvisorCacheCompiler::VERSION
+            || !is_array($cacheData['advisors'] ?? null)
+        ) {
             return [];
         }
+
         /** @var array<string, Pointcut|Advisor> $filtered */
-        $filtered = array_filter($loadedItems, fn($item) => $item instanceof Pointcut || $item instanceof Advisor);
+        $filtered = array_filter(
+            $cacheData['advisors'],
+            fn($item) => $item instanceof Pointcut || $item instanceof Advisor,
+        );
 
         return $filtered;
     }
 
     /**
-     * Save pointcuts and advisors to the file
+     * Compiles pointcuts and advisors into the cache file
      *
-     * @param array<string, Pointcut|Advisor> $items Array of items to store
+     * Aspects holding items that cannot be expressed as plain PHP are simply not
+     * cached at all - no file is written and the aspect is loaded directly each time.
+     *
+     * @param class-string                    $aspectClassName Aspect the items were loaded from
+     * @param array<string, Pointcut|Advisor> $items           Array of items to store
      */
-    private function saveToCache(array $items, string $fileName): void
+    private function saveToCache(string $aspectClassName, array $items, string $fileName): void
     {
-        $content       = serialize($items);
-        $directoryName = dirname($fileName);
-        if (!is_dir($directoryName)) {
-            mkdir($directoryName, $this->cacheFileMode, true);
+        try {
+            $content = $this->advisorCacheCompiler->compile($aspectClassName, $items);
+        } catch (NotCompilableException) {
+            return;
         }
-        file_put_contents($fileName, $content, LOCK_EX);
-        // For cache files we don't want executable bits by default
-        chmod($fileName, $this->cacheFileMode & (~0111));
+
+        $this->cacheFileWriter->write($fileName, $content);
     }
 }
