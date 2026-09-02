@@ -14,6 +14,10 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -62,5 +66,15 @@ final readonly class OrPointcut implements Pointcut
     public function getKind(): int
     {
         return $this->pointcutKind;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        $args = [];
+        foreach ($this->pointcuts as $singlePointcut) {
+            $args[] = new Arg($singlePointcut->compileToPhp());
+        }
+
+        return new New_(new FullyQualified(self::class), $args);
     }
 }

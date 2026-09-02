@@ -16,7 +16,7 @@ use Go\Aop\Advice;
 use Go\Aop\Advisor;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
-use Go\Core\CachedAspectLoader;
+use Go\Core\Cache\CachedAspectLoader;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

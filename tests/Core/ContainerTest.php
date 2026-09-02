@@ -18,6 +18,7 @@ use Go\Aop\AspectException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
+use Go\Core\Cache\CachedAspectLoader;
 use Go\Stubs\First;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;

@@ -16,7 +16,6 @@ use Closure;
 use Dissect\Lexer\Token;
 use Dissect\Parser\Grammar;
 use Go\Aop\Pointcut;
-use Go\Core\AspectContainer;
 use ReflectionMethod;
 use ReflectionProperty;
 
@@ -24,13 +23,15 @@ use function constant;
 
 /**
  * Pointcut grammar defines general structure of pointcuts and rules of parsing
+ *
+ * @internal Framework implementation detail of pointcut parsing, free to change between releases
  */
 final class PointcutGrammar extends Grammar
 {
     /**
      * Constructs a pointcut grammar with AST
      */
-    public function __construct(AspectContainer $container)
+    public function __construct()
     {
         $this('empty')
             ->is(/* empty */);
@@ -156,7 +157,7 @@ final class PointcutGrammar extends Grammar
 
         $this('pointcutReference')
             ->is('namespaceName', '->', 'namePatternPart')
-            ->call(fn(string $className, mixed $_0, string $name) => new PointcutReference($container, "{$className}->{$name}"))
+            ->call(fn(string $className, mixed $_0, string $name) => new PointcutReference("{$className}->{$name}"))
         ;
 
         $this('propertyAccessReference')
@@ -266,14 +267,7 @@ final class PointcutGrammar extends Grammar
             ->is('::')
             ->call(fn() => new ModifierPointcut(ReflectionMethod::IS_STATIC))
             ->is('->')
-            ->call(
-                function () {
-                    $modifierMatcherFilter = new ModifierPointcut();
-                    $modifierMatcherFilter->notMatch(ReflectionMethod::IS_STATIC);
-
-                    return $modifierMatcherFilter;
-                },
-            )
+            ->call(fn() => new ModifierPointcut(notMask: ReflectionMethod::IS_STATIC))
         ;
 
         $this('namespacePattern')

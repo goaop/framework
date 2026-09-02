@@ -16,6 +16,7 @@ use Closure;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
 use Go\Aop\Pointcut\PointcutGrammar;
+use Go\Core\Cache\CachedAspectLoader;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\ClassLoading\CachePathManager;
@@ -70,8 +71,8 @@ class Container implements AspectContainer
 
         $this->addLazyService(PointcutLexer::class, fn(): PointcutLexer => new PointcutLexer());
 
-        $this->addLazyService(PointcutParser::class, fn(AspectContainer $container): PointcutParser => new PointcutParser(
-            new PointcutGrammar($container),
+        $this->addLazyService(PointcutParser::class, fn(): PointcutParser => new PointcutParser(
+            new PointcutGrammar(),
         ));
 
         $this->addLazyService(AdviceMatcher::class, fn(AspectContainer $container): AdviceMatcher => new AdviceMatcher(

@@ -18,6 +18,10 @@ use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Aop\PointcutAdvisor;
 use Go\Core\AspectContainer;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 
 /**
  * Lazy pointcut advisor is used to create a delayed pointcut only when needed
@@ -52,5 +56,17 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
     public function getAdvice(): Advice
     {
         return $this->advice;
+    }
+
+    /**
+     * Compiles into a generic advisor over the parsed pointcut: the compiled cache
+     * resolves the parsing laziness away, so including it never needs the container
+     */
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(GenericPointcutAdvisor::class), [
+            new Arg($this->pointcut->compileToPhp()),
+            new Arg($this->advice->compileToPhp()),
+        ]);
     }
 }

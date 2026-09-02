@@ -14,6 +14,9 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -54,5 +57,10 @@ final class MatchInheritedPointcut implements Pointcut
     public function getKind(): int
     {
         return Pointcut::KIND_METHOD | Pointcut::KIND_PROPERTY;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class));
     }
 }

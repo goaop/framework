@@ -14,6 +14,11 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceTypeEnum;
 use Go\Aop\IntroductionInfo;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 
 /**
  * Advice for introduction that holds trait and interface for the concrete class
@@ -44,5 +49,14 @@ final readonly class TraitIntroductionInfo implements IntroductionInfo
     public function getType(): AdviceTypeEnum
     {
         return AdviceTypeEnum::Introduction;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        // Trait and interface names come from existing code, so ::class fetches are always safe
+        return new New_(new FullyQualified(self::class), [
+            new Arg(new ClassConstFetch(new FullyQualified($this->introducedTrait), 'class')),
+            new Arg(new ClassConstFetch(new FullyQualified($this->introducedInterface), 'class')),
+        ]);
     }
 }

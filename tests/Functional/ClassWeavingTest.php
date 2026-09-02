@@ -26,6 +26,46 @@ use Symfony\Component\Process\Process;
 
 class ClassWeavingTest extends BaseFunctionalTestCase
 {
+    /**
+     * The advisor cache must be compiled into plain-PHP shadow files mirroring the aspect
+     * sources, and compilation must be byte-deterministic across full cache rebuilds.
+     */
+    public function testAdvisorCacheShadowFilesAreCompiledDeterministically(): void
+    {
+        $collectShadowFiles = function (): array {
+            $cacheDir = \Go\Instrument\PathResolver::realpath($this->configuration['cacheDir']);
+            assert(is_string($cacheDir));
+            $shadowFiles = [];
+            $iterator    = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($cacheDir, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS),
+            );
+            foreach ($iterator as $fileInfo) {
+                assert($fileInfo instanceof \SplFileInfo);
+                if ($fileInfo->isFile() && str_ends_with($fileInfo->getFilename(), '.cache.php')) {
+                    $shadowFiles[$fileInfo->getPathname()] = file_get_contents($fileInfo->getPathname());
+                }
+            }
+            ksort($shadowFiles, SORT_STRING);
+
+            return $shadowFiles;
+        };
+
+        // setUp() has already warmed the cache once
+        $firstPassFiles = $collectShadowFiles();
+        $this->assertNotEmpty($firstPassFiles, 'Warmup must produce *.cache.php advisor shadow files');
+        // Shadow files mirror the aspect sources below the cache directory
+        $this->assertArrayHasKey(
+            \Go\Instrument\PathResolver::realpath($this->configuration['cacheDir']) . '/src/Aspect/LoggingAspect.cache.php',
+            $firstPassFiles,
+        );
+
+        // A full rebuild from scratch must produce byte-identical shadow files
+        $this->clearCache();
+        $this->warmUp();
+
+        $this->assertSame($firstPassFiles, $collectShadowFiles());
+    }
+
     public function testPropertyWeaving(): void
     {
         // it weaves Main class public and protected properties

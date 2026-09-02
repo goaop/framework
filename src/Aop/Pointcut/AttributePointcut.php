@@ -13,7 +13,15 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
+use Go\Core\Cache\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\ConstFetch;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\Int_;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -68,5 +76,15 @@ final readonly class AttributePointcut implements Pointcut
     public function getKind(): int
     {
         return $this->pointcutKind;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        // The attribute class name comes from existing code, so a ::class fetch is always safe
+        return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([
+            ['pointcutKind', new Int_($this->pointcutKind), false],
+            ['attributeClassName', new ClassConstFetch(new FullyQualified($this->attributeClassName), 'class'), false],
+            ['useContextForMatching', new ConstFetch(new Name('true')), !$this->useContextForMatching],
+        ]));
     }
 }

@@ -8,6 +8,8 @@ use Go\Aop\Advice;
 use Go\Aop\AdviceTypeEnum;
 use Go\Aop\AspectException;
 use Go\Aop\OrderedAdvice;
+use LogicException;
+use PhpParser\Node\Expr;
 use PHPUnit\Framework\TestCase;
 
 class AbstractJoinpointTest extends TestCase
@@ -157,6 +159,11 @@ class AbstractJoinpointTest extends TestCase
             {
                 return $this->type;
             }
+
+            public function compileToPhp(): Expr
+            {
+                throw new LogicException('Not expected to be called');
+            }
         };
     }
 
@@ -173,6 +180,11 @@ class AbstractJoinpointTest extends TestCase
             public function getType(): AdviceTypeEnum
             {
                 return AdviceTypeEnum::Introduction;
+            }
+
+            public function compileToPhp(): Expr
+            {
+                throw new LogicException('Not expected to be called');
             }
         };
     }

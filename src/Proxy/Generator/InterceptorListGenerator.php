@@ -131,6 +131,10 @@ final class InterceptorListGenerator
             throw new \LogicException('Aspect-backed interceptor descriptor is incomplete');
         }
 
+        // The eager first-class-callable form is deliberate for generated proxies: this code
+        // only runs when the intercepted method/hook is already executing, so the interceptor
+        // is needed right now and a lazy-proxy detour would be pure overhead. Only advisor
+        // cache files use the lazy static-data form of the Interceptor facade.
         return new MethodCall(
             new StaticCall(new Name('The'), 'aspect', [
                 new Arg(new ClassConstFetch(new Name(self::shortClassName($interceptor->aspectClass)), 'class')),

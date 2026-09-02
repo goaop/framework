@@ -14,8 +14,10 @@ namespace Go\Aop;
 
 /**
  * Base interface holding AOP advice (action to take at a joinpoint)
+ *
+ * Every advisor can compile itself into a plain-PHP expression for the advisor cache.
  */
-interface Advisor
+interface Advisor extends Compilable
 {
     /**
      * Return the advice part of this aspect. An advice may be an interceptor, a before advice, a throws advice, etc.

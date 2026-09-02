@@ -17,6 +17,11 @@ use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\String_;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -24,20 +29,26 @@ use ReflectionProperty;
 
 /**
  * Reference to the pointcut holds an id of pointcut to fetch when needed
+ *
+ * @internal Framework implementation detail of pointcut parsing and caching, free to change between releases
  */
 final class PointcutReference implements Pointcut
 {
     private ?Pointcut $pointcut = null;
 
     /**
+     * Aspect container, resolved from the kernel on first access and memoized in the backing store
+     */
+    private AspectContainer $container {
+        get => $this->container ??= AspectKernel::getInstance()->getContainer();
+    }
+
+    /**
      * Pointcut reference constructor
      *
      * @param string $pointcutId Name of the pointcut to fetch from the container
      */
-    public function __construct(
-        private AspectContainer $container,
-        private readonly string $pointcutId,
-    ) {}
+    public function __construct(private readonly string $pointcutId) {}
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
@@ -51,14 +62,11 @@ final class PointcutReference implements Pointcut
         return $this->getPointcut()->getKind();
     }
 
-    public function __sleep(): array
+    public function compileToPhp(): Expr
     {
-        return ['pointcutId'];
-    }
-
-    public function __wakeup(): void
-    {
-        $this->container = AspectKernel::getInstance()->getContainer();
+        return new New_(new FullyQualified(self::class), [
+            new Arg(new String_($this->pointcutId)),
+        ]);
     }
 
     /**

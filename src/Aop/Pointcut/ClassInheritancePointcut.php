@@ -14,6 +14,11 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -48,5 +53,13 @@ final readonly class ClassInheritancePointcut implements Pointcut
     public function getKind(): int
     {
         return self::KIND_CLASS;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        // The parent name comes from existing code, so a ::class fetch is always safe
+        return new New_(new FullyQualified(self::class), [
+            new Arg(new ClassConstFetch(new FullyQualified($this->parentClassOrInterfaceName), 'class')),
+        ]);
     }
 }

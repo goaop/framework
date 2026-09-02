@@ -15,6 +15,10 @@ namespace Go\Aop\Support;
 use Go\Aop\Advice;
 use Go\Aop\Pointcut;
 use Go\Aop\PointcutAdvisor;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name\FullyQualified;
 
 /**
  * Convenient Pointcut-driven Advisor implementation.
@@ -34,5 +38,13 @@ final readonly class GenericPointcutAdvisor implements PointcutAdvisor
     public function getPointcut(): Pointcut
     {
         return $this->pointcut;
+    }
+
+    public function compileToPhp(): Expr
+    {
+        return new New_(new FullyQualified(self::class), [
+            new Arg($this->pointcut->compileToPhp()),
+            new Arg($this->advice->compileToPhp()),
+        ]);
     }
 }

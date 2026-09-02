@@ -39,8 +39,10 @@ use ReflectionProperty;
  *
  * Evaluation ends here statically, and generated code will not contain any runtime checks
  * for given point filter, allowing for better performance.
+ *
+ * Every pointcut can compile itself into a plain-PHP expression for the advisor cache.
  */
-interface Pointcut
+interface Pointcut extends Compilable
 {
     public const int KIND_METHOD       = 1;
     public const int KIND_PROPERTY     = 2;
