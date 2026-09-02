@@ -20,6 +20,8 @@ use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\AndPointcut;
 use Go\Aop\Pointcut\AttributePointcut;
+use Go\Aop\Pointcut\ClassInheritancePointcut;
+use Go\Aop\Pointcut\MatchInheritedPointcut;
 use Go\Aop\Pointcut\ModifierPointcut;
 use Go\Aop\Pointcut\NamePointcut;
 use Go\Aop\Pointcut\NotPointcut;
@@ -74,6 +76,8 @@ class AdvisorCacheCompilerTest extends TestCase
                 new NotPointcut(new AttributePointcut(Pointcut::KIND_METHOD, Loggable::class)),
                 new ReturnTypePointcut('string|int'),
                 new NamePointcut(Pointcut::KIND_METHOD, 'doSomethingElse'),
+                new ClassInheritancePointcut(FooInterface::class),
+                new MatchInheritedPointcut(),
             ),
         );
 
@@ -106,6 +110,89 @@ class AdvisorCacheCompilerTest extends TestCase
         $secondPass = $this->compiler->compile(DoSomethingAspect::class, $this->createRealisticItems());
 
         $this->assertSame($firstPass, $secondPass);
+    }
+
+    public function testCompilesClassInheritancePointcutWithClassConstFetch(): void
+    {
+        $content = $this->compiler->compile(DoSomethingAspect::class, [
+            DoSomethingAspect::class . '->childrenPointcut' => new ClassInheritancePointcut(FooInterface::class),
+        ]);
+
+        // An existing parent class/interface name is emitted as a ::class constant fetch
+        $this->assertStringContainsString('new ClassInheritancePointcut(FooInterface::class)', $content);
+        $this->assertStringContainsString('use Go\Tests\TestProject\Application\FooInterface;', $content);
+    }
+
+    public function testCompilesClassInheritancePointcutWithUnknownParentAsStringLiteral(): void
+    {
+        $content = $this->compiler->compile(DoSomethingAspect::class, [
+            DoSomethingAspect::class . '->childrenPointcut' => new ClassInheritancePointcut('Some\NonExisting\ParentClass'),
+        ]);
+
+        // A parent name that does not resolve to an existing class-like stays a string literal
+        $this->assertStringContainsString("new ClassInheritancePointcut('Some\\NonExisting\\ParentClass')", $content);
+    }
+
+    public function testCompilesMatchInheritedPointcutWithoutArguments(): void
+    {
+        $content = $this->compiler->compile(DoSomethingAspect::class, [
+            DoSomethingAspect::class . '->inheritedPointcut' => new MatchInheritedPointcut(),
+        ]);
+
+        $this->assertStringContainsString('new MatchInheritedPointcut()', $content);
+    }
+
+    public function testCompilesPlainStringAndIntegerLikeAdvisorKeys(): void
+    {
+        $content = $this->compiler->compile(DoSomethingAspect::class, [
+            // Not of the "Fqcn->member" form, so no ::class concatenation is possible
+            'custom.pointcut.id' => new TruePointcut(),
+            // PHP casts integer-like string keys to int keys
+            '42'                 => new TruePointcut(),
+        ]);
+
+        $this->assertStringContainsString("'custom.pointcut.id' => new TruePointcut()", $content);
+        $this->assertStringContainsString('42 => new TruePointcut()', $content);
+    }
+
+    public function testCompilesEmptyItemsToEmptyAdvisorsArray(): void
+    {
+        $content = $this->compiler->compile(DoSomethingAspect::class, []);
+
+        $this->assertStringContainsString("'advisors' => []", $content);
+    }
+
+    public function testThrowsForInterceptorAdviceNotScopedToAnAspect(): void
+    {
+        // The closure is scoped to this test case, which is not an Aspect implementation
+        $interceptor = new AfterInterceptor(function (): void {});
+
+        $this->expectException(\Go\Aop\AspectException::class);
+        $this->expectExceptionMessage('Could not compile an interceptor without valid aspect');
+
+        $interceptor->compileToPhp();
+    }
+
+    public function testThrowsForUnknownInterceptorSubclass(): void
+    {
+        $aspect        = new DoSomethingAspect();
+        $adviceClosure = new ReflectionMethod(DoSomethingAspect::class, 'afterDoSomething')->getClosure($aspect);
+        // A custom interceptor subclass has no known factory facade counterpart
+        $interceptor = new class ($adviceClosure) extends \Go\Aop\Framework\AbstractInterceptor {
+            public function invoke(\Go\Aop\Intercept\Joinpoint $joinpoint): mixed
+            {
+                return $joinpoint->proceed();
+            }
+
+            public function getType(): \Go\Aop\AdviceTypeEnum
+            {
+                return \Go\Aop\AdviceTypeEnum::Around;
+            }
+        };
+
+        $this->expectException(NotCompilableException::class);
+
+        $interceptor->compileToPhp();
     }
 
     public function testThrowsForItemNotImplementingCompilableToPhp(): void

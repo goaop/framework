@@ -88,7 +88,7 @@ class CachedAspectLoaderTest extends TestCase
         rmdir($baseDir);
     }
 
-    private function createLoader(int $features): CachedAspectLoader
+    private function createLoader(int $features, bool $withCacheDir = true): CachedAspectLoader
     {
         $this->innerLoader = $this->createMock(AspectLoaderInterface::class);
         $container         = $this->createMock(AspectContainer::class);
@@ -97,7 +97,7 @@ class CachedAspectLoaderTest extends TestCase
         return new CachedAspectLoader($container, AspectLoader::class, [
             'debug'          => false,
             'appDir'         => $this->appDir,
-            'cacheDir'       => $this->cacheDir,
+            'cacheDir'       => $withCacheDir ? $this->cacheDir : null,
             'cacheFileMode'  => 0770,
             'features'       => $features,
             'includePaths'   => [],
@@ -243,6 +243,16 @@ class CachedAspectLoaderTest extends TestCase
 
         $this->assertSame($loadedItems, $loader->load($this->aspect));
         // Never a half-written file: compilation failure must skip the write entirely
+        $this->assertFileDoesNotExist($this->cacheFileName);
+    }
+
+    public function testWithoutCacheDirectoryEveryLoadDelegatesToTheLoader(): void
+    {
+        $loader      = $this->createLoader(0, withCacheDir: false);
+        $loadedItems = ['pc' => new TruePointcut()];
+        $this->innerLoader->expects($this->once())->method('load')->willReturn($loadedItems);
+
+        $this->assertSame($loadedItems, $loader->load($this->aspect));
         $this->assertFileDoesNotExist($this->cacheFileName);
     }
 

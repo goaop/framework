@@ -13,6 +13,8 @@ use Go\Aop\Framework\The;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut\AndPointcut;
 use Go\Aop\Pointcut\AttributePointcut;
+use Go\Aop\Pointcut\ClassInheritancePointcut;
+use Go\Aop\Pointcut\MatchInheritedPointcut;
 use Go\Aop\Pointcut\ModifierPointcut;
 use Go\Aop\Pointcut\NamePointcut;
 use Go\Aop\Pointcut\NotPointcut;
@@ -58,6 +60,8 @@ return [
                         1,
                         'doSomethingElse',
                     ),
+                    new ClassInheritancePointcut(FooInterface::class),
+                    new MatchInheritedPointcut(),
                 ),
             ),
             Interceptor::after(The::aspect(DoSomethingAspect::class)->afterDoSomething(...), order: 7, expression: 'execution(public Go\Tests\TestProject\Application\*->doSomething(*))'),

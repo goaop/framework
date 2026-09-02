@@ -47,8 +47,9 @@ final class AdvisorCacheCompiler
     /**
      * Compiles the loaded items of one aspect into advisor cache file content
      *
-     * @param class-string                   $aspectClassName Aspect the items were loaded from
-     * @param array<string, Pointcut|Advisor> $items          Loaded pointcuts and advisors, keyed by advisor id
+     * @param class-string                      $aspectClassName Aspect the items were loaded from
+     * @param array<array-key, Pointcut|Advisor> $items          Loaded pointcuts and advisors, keyed by advisor id
+     *                                                           (an integer-like string id surfaces as an int key)
      *
      * @throws NotCompilableException When any item cannot be expressed as plain PHP
      */
