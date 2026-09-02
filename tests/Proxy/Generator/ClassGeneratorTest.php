@@ -24,7 +24,7 @@ class ClassGeneratorTest extends TestCase
 {
     public function testBasicClass(): void
     {
-        $gen = new ClassGenerator('MyClass', 'My\Namespace', null, null);
+        $gen = new ClassGenerator('MyClass', 'My\Namespace', [], null);
         $output = $gen->generate();
         $this->assertStringContainsString('class MyClass', $output);
         $this->assertStringContainsString('namespace My\Namespace', $output);
@@ -32,14 +32,14 @@ class ClassGeneratorTest extends TestCase
 
     public function testFinalClass(): void
     {
-        $gen = new ClassGenerator('MyClass', null, ClassGenerator::FLAG_FINAL, null);
+        $gen = new ClassGenerator('MyClass', null, [ClassModifier::FINAL], null);
         $output = $gen->generate();
         $this->assertStringContainsString('final class MyClass', $output);
     }
 
     public function testAbstractClass(): void
     {
-        $gen = new ClassGenerator('MyClass', null, ClassGenerator::FLAG_ABSTRACT, null);
+        $gen = new ClassGenerator('MyClass', null, [ClassModifier::ABSTRACT], null);
         $output = $gen->generate();
         $this->assertStringContainsString('abstract class MyClass', $output);
     }
@@ -47,7 +47,7 @@ class ClassGeneratorTest extends TestCase
     public function testExtendsSimpleName(): void
     {
         // Parent without namespace separator — should NOT be FQN
-        $gen = new ClassGenerator('MyClass', 'Foo', null, 'ParentClass');
+        $gen = new ClassGenerator('MyClass', 'Foo', [], 'ParentClass');
         $output = $gen->generate();
         $this->assertStringContainsString('extends ParentClass', $output);
     }
@@ -55,14 +55,14 @@ class ClassGeneratorTest extends TestCase
     public function testExtendsFullyQualified(): void
     {
         // Parent with namespace separator — should be FQN
-        $gen = new ClassGenerator('MyClass', 'Foo', null, 'Other\Namespace\ParentClass');
+        $gen = new ClassGenerator('MyClass', 'Foo', [], 'Other\Namespace\ParentClass');
         $output = $gen->generate();
         $this->assertStringContainsString('extends \Other\Namespace\ParentClass', $output);
     }
 
     public function testImplementsInterface(): void
     {
-        $gen = new ClassGenerator('MyClass', null, null, null, ['\Countable']);
+        $gen = new ClassGenerator('MyClass', null, [], null, ['\Countable']);
         $output = $gen->generate();
         $this->assertStringContainsString('implements', $output);
         $this->assertStringContainsString('Countable', $output);
@@ -70,7 +70,7 @@ class ClassGeneratorTest extends TestCase
 
     public function testImplementsMultipleInterfaces(): void
     {
-        $gen = new ClassGenerator('MyClass', null, null, null, ['\Countable', '\Iterator']);
+        $gen = new ClassGenerator('MyClass', null, [], null, ['\Countable', '\Iterator']);
         $output = $gen->generate();
         $this->assertStringContainsString('Countable', $output);
         $this->assertStringContainsString('Iterator', $output);
@@ -80,21 +80,21 @@ class ClassGeneratorTest extends TestCase
     {
         // A global-namespace interface (single segment) must not resolve
         // relative to the generated class namespace
-        $gen = new ClassGenerator('MyClass', 'My\Namespace', null, null, ['\Stringable']);
+        $gen = new ClassGenerator('MyClass', 'My\Namespace', [], null, ['\Stringable']);
         $output = $gen->generate();
         $this->assertStringContainsString('implements \Stringable', $output);
     }
 
     public function testExtendsExplicitlyRootedGlobalParentStaysFullyQualified(): void
     {
-        $gen = new ClassGenerator('MyClass', 'My\Namespace', null, '\Exception');
+        $gen = new ClassGenerator('MyClass', 'My\Namespace', [], '\Exception');
         $output = $gen->generate();
         $this->assertStringContainsString('extends \Exception', $output);
     }
 
     public function testUsesExplicitlyRootedGlobalTraitStaysFullyQualified(): void
     {
-        $gen = new ClassGenerator('MyClass', 'My\Namespace', null, null);
+        $gen = new ClassGenerator('MyClass', 'My\Namespace', [], null);
         $gen->addTraits(['\GlobalHelperTrait', 'MyClass__AopProxied']);
         $output = $gen->generate();
         $this->assertStringContainsString('\GlobalHelperTrait', $output);
@@ -109,24 +109,24 @@ class ClassGeneratorTest extends TestCase
             MethodGeneratorTestStub::class,
             'publicMethod'
         ));
-        $gen = new ClassGenerator('MyClass', null, null, null, [], [], [$method]);
+        $gen = new ClassGenerator('MyClass', null, [], null, [], [], [$method]);
         $output = $gen->generate();
         $this->assertStringContainsString('function publicMethod', $output);
     }
 
     public function testWithProperty(): void
     {
-        $prop = new PropertyGenerator('myProp', PropertyGenerator::FLAG_PRIVATE | PropertyGenerator::FLAG_STATIC);
+        $prop = new PropertyGenerator('myProp', [PropertyModifier::PRIVATE, PropertyModifier::STATIC]);
         $prop->setDefaultValue([]);
         $prop->setType(TypeGenerator::fromTypeString('array'));
-        $gen = new ClassGenerator('MyClass', null, null, null, [], [$prop]);
+        $gen = new ClassGenerator('MyClass', null, [], null, [], [$prop]);
         $output = $gen->generate();
         $this->assertStringContainsString('$myProp', $output);
     }
 
     public function testAddUse(): void
     {
-        $gen = new ClassGenerator('MyClass', 'Foo', null, null);
+        $gen = new ClassGenerator('MyClass', 'Foo', [], null);
         $gen->addUse(\Exception::class);
         $output = $gen->generate();
         $this->assertStringContainsString('use Exception', $output);
@@ -134,7 +134,7 @@ class ClassGeneratorTest extends TestCase
 
     public function testAddUseWithAlias(): void
     {
-        $gen = new ClassGenerator('MyClass', 'Foo', null, null);
+        $gen = new ClassGenerator('MyClass', 'Foo', [], null);
         $gen->addUse(\Exception::class, 'Ex');
         $output = $gen->generate();
         $this->assertStringContainsString('use Exception as Ex', $output);
@@ -142,7 +142,7 @@ class ClassGeneratorTest extends TestCase
 
     public function testAddTraits(): void
     {
-        $gen = new ClassGenerator('MyClass', null, null, null);
+        $gen = new ClassGenerator('MyClass', null, [], null);
         $gen->addTraits(['\My\Trait\Foo']);
         $output = $gen->generate();
         $this->assertStringContainsString('use \My\Trait\Foo', $output);
@@ -150,7 +150,7 @@ class ClassGeneratorTest extends TestCase
 
     public function testSetDocBlock(): void
     {
-        $gen = new ClassGenerator('MyClass', null, null, null);
+        $gen = new ClassGenerator('MyClass', null, [], null);
         $gen->setDocBlock(new DocBlockGenerator('Class doc.'));
         $output = $gen->generate();
         $this->assertStringContainsString('Class doc.', $output);
@@ -158,7 +158,7 @@ class ClassGeneratorTest extends TestCase
 
     public function testGetNode(): void
     {
-        $gen = new ClassGenerator('MyClass', null, null, null);
+        $gen = new ClassGenerator('MyClass', null, [], null);
         $node = $gen->getNode();
         $this->assertInstanceOf(Class_::class, $node);
         $this->assertSame('MyClass', (string) $node->name);
@@ -166,13 +166,13 @@ class ClassGeneratorTest extends TestCase
 
     public function testGetName(): void
     {
-        $gen = new ClassGenerator('MyClass', null, null, null);
+        $gen = new ClassGenerator('MyClass', null, [], null);
         $this->assertSame('MyClass', $gen->getName());
     }
 
     public function testGetNodeDoesNotIncludeNamespace(): void
     {
-        $gen = new ClassGenerator('MyClass', 'My\NS', null, null);
+        $gen = new ClassGenerator('MyClass', 'My\NS', [], null);
         $node = $gen->getNode();
         // getNode() should return just the class node, not wrapped in namespace
         $this->assertInstanceOf(Class_::class, $node);
@@ -180,7 +180,7 @@ class ClassGeneratorTest extends TestCase
 
     public function testEmptyTraitSkipped(): void
     {
-        $gen = new ClassGenerator('MyClass', null, null, null);
+        $gen = new ClassGenerator('MyClass', null, [], null);
         $gen->addTraits(['', 'ValidTrait']);
         $output = $gen->generate();
         $this->assertStringContainsString('ValidTrait', $output);
@@ -188,7 +188,7 @@ class ClassGeneratorTest extends TestCase
 
     public function testImplementsSkipsEmpty(): void
     {
-        $gen = new ClassGenerator('MyClass', null, null, null, ['', '\Countable']);
+        $gen = new ClassGenerator('MyClass', null, [], null, ['', '\Countable']);
         $output = $gen->generate();
         $this->assertStringContainsString('Countable', $output);
     }
@@ -197,7 +197,7 @@ class ClassGeneratorTest extends TestCase
     {
         $factory = new BuilderFactory();
         $attrGroup = new AttributeGroup([$factory->attribute(new Name\FullyQualified('Deprecated'))]);
-        $gen = new ClassGenerator('MyClass', null, null, null);
+        $gen = new ClassGenerator('MyClass', null, [], null);
         $gen->addAttributeGroups([$attrGroup]);
         $output = $gen->generate();
         $this->assertStringContainsString('#[', $output);
@@ -206,7 +206,7 @@ class ClassGeneratorTest extends TestCase
 
     public function testAddAttributeGroupsEmpty(): void
     {
-        $gen = new ClassGenerator('MyClass', null, null, null);
+        $gen = new ClassGenerator('MyClass', null, [], null);
         $gen->addAttributeGroups([]);
         $output = $gen->generate();
         $this->assertStringNotContainsString('#[', $output);

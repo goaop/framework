@@ -14,6 +14,7 @@ namespace Go\Proxy\Part;
 
 use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\PropertyGenerator;
+use Go\Proxy\Generator\PropertyModifier;
 use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\TypeGenerator;
 use InvalidArgumentException;
@@ -53,7 +54,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
 
     protected function createBasePropertyGenerator(): PropertyGenerator
     {
-        $generator = new PropertyGenerator($this->property->getName(), $this->getPropertyFlags());
+        $generator = new PropertyGenerator($this->property->getName(), $this->getPropertyModifiers());
         if ($this->property->hasType()) {
             $generator->setType(TypeGenerator::fromReflectionType($this->property->getType()));
         }
@@ -204,26 +205,29 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         return str_starts_with($typeName, '\\') ? $typeName : '\\' . $typeName;
     }
 
-    private function getPropertyFlags(): int
+    /**
+     * @return list<PropertyModifier>
+     */
+    private function getPropertyModifiers(): array
     {
-        $flags = 0;
+        $modifiers = [];
         if ($this->property->isPrivate()) {
-            $flags |= PropertyGenerator::FLAG_PRIVATE;
+            $modifiers[] = PropertyModifier::PRIVATE;
         } elseif ($this->property->isProtected()) {
-            $flags |= PropertyGenerator::FLAG_PROTECTED;
+            $modifiers[] = PropertyModifier::PROTECTED;
         } else {
-            $flags |= PropertyGenerator::FLAG_PUBLIC;
+            $modifiers[] = PropertyModifier::PUBLIC;
         }
         if ($this->property->isFinal()) {
-            $flags |= PropertyGenerator::FLAG_FINAL;
+            $modifiers[] = PropertyModifier::FINAL;
         }
 
         if ($this->property->isPrivateSet()) {
-            $flags |= PropertyGenerator::FLAG_PRIVATE_SET;
+            $modifiers[] = PropertyModifier::PRIVATE_SET;
         } elseif ($this->property->isProtectedSet()) {
-            $flags |= PropertyGenerator::FLAG_PROTECTED_SET;
+            $modifiers[] = PropertyModifier::PROTECTED_SET;
         }
 
-        return $flags;
+        return $modifiers;
     }
 }

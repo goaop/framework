@@ -18,6 +18,7 @@ use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\TraitGenerator;
 use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\Generator\ValueGenerator;
+use Go\Proxy\Generator\Visibility;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use Go\Proxy\Part\TraitInterceptedPropertyGenerator;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -80,7 +81,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         foreach ($interceptedMethods as $methodName) {
             $fullName = $parentNormalizedName . '::' . $methodName;
-            $traitGenerator->addTraitAlias($fullName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
+            $traitGenerator->addTraitAlias($fullName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, Visibility::PRIVATE);
         }
 
         // Register use-imports for AOP classes referenced in generated method bodies.

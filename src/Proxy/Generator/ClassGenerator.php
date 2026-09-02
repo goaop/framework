@@ -14,7 +14,6 @@ namespace Go\Proxy\Generator;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Comment\Doc;
-use PhpParser\Modifiers;
 use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
@@ -22,7 +21,6 @@ use PhpParser\Node\Stmt\Class_ as ClassNode;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Node\Stmt\TraitUseAdaptation;
 use PhpParser\PrettyPrinter\Standard;
-use ReflectionMethod;
 
 /**
  * Generates a PHP class declaration as an AST node or full PHP source string.
@@ -34,10 +32,6 @@ use ReflectionMethod;
  */
 final class ClassGenerator implements GeneratorInterface
 {
-    public const int FLAG_FINAL     = 0b001;
-    public const int FLAG_ABSTRACT  = 0b010;
-    public const int FLAG_READONLY  = 0b100;
-
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
 
@@ -50,7 +44,7 @@ final class ClassGenerator implements GeneratorInterface
     /** @var string[] trait FQCNs */
     private array $traits = [];
 
-    /** @var array{trait: string, method: string, alias: string, visibility: int}[] */
+    /** @var array{trait: string, method: string, alias: string, visibility: Visibility}[] */
     private array $traitAliases = [];
 
     private ?DocBlockGenerator $docBlock = null;
@@ -59,19 +53,15 @@ final class ClassGenerator implements GeneratorInterface
     private array $attrGroups = [];
 
     /**
+     * @param list<ClassModifier>    $modifiers   Class declaration modifiers (final/abstract/readonly)
      * @param string[]               $interfaces  FQCNs of interfaces to implement
-     * @param PropertyNodeProvider[] $properties
-     * @param MethodGenerator[]      $methods
-     */
-    /**
-     * @param string[]               $interfaces
      * @param PropertyNodeProvider[] $properties
      * @param MethodGenerator[]      $methods
      */
     public function __construct(
         private readonly string $name,
         private readonly ?string $namespace,
-        private readonly ?int $flags,
+        private readonly array $modifiers,
         private readonly ?string $parentClass,
         private readonly array $interfaces = [],
         private readonly array $properties = [],
@@ -105,12 +95,12 @@ final class ClassGenerator implements GeneratorInterface
     /**
      * Adds a trait with method aliases (e.g. `use FooTrait { greet as private __aop__greet; }`).
      *
-     * @param string $traitFqcn  Fully-qualified trait name (leading backslash ok)
-     * @param string $methodName Original method name in the trait
-     * @param string $alias      New alias (e.g. '__aop__greet')
-     * @param int    $visibility ReflectionMethod::IS_PUBLIC|IS_PROTECTED|IS_PRIVATE
+     * @param string     $traitFqcn  Fully-qualified trait name (leading backslash ok)
+     * @param string     $methodName Original method name in the trait
+     * @param string     $alias      New alias (e.g. '__aop__greet')
+     * @param Visibility $visibility Visibility of the aliased method
      */
-    public function addTraitAlias(string $traitFqcn, string $methodName, string $alias, int $visibility): void
+    public function addTraitAlias(string $traitFqcn, string $methodName, string $alias, Visibility $visibility): void
     {
         $this->traits[]       = $traitFqcn;
         $this->traitAliases[] = [
@@ -167,13 +157,13 @@ final class ClassGenerator implements GeneratorInterface
     {
         $builder = self::getFactory()->class($this->name);
 
-        if (($this->flags ?? 0) & self::FLAG_FINAL) {
+        if (in_array(ClassModifier::FINAL, $this->modifiers, true)) {
             $builder->makeFinal();
         }
-        if (($this->flags ?? 0) & self::FLAG_ABSTRACT) {
+        if (in_array(ClassModifier::ABSTRACT, $this->modifiers, true)) {
             $builder->makeAbstract();
         }
-        if (($this->flags ?? 0) & self::FLAG_READONLY) {
+        if (in_array(ClassModifier::READONLY, $this->modifiers, true)) {
             $builder->makeReadonly();
         }
 
@@ -209,7 +199,7 @@ final class ClassGenerator implements GeneratorInterface
                 $adaptations[] = new TraitUseAdaptation\Alias(
                     self::classNameNode($info['trait']),
                     new Identifier($info['method']),
-                    $this->mapVisibility($info['visibility']),
+                    $info['visibility']->toAstModifier(),
                     new Identifier($info['alias'])
                 );
             }
@@ -256,19 +246,6 @@ final class ClassGenerator implements GeneratorInterface
         $stmts[] = $this->getNode();
 
         return self::getPrinter()->prettyPrint($stmts);
-    }
-
-    /**
-     * Maps ReflectionMethod visibility flag to PhpParser Modifiers constant.
-     * ReflectionMethod::IS_PUBLIC = 1, IS_PROTECTED = 2, IS_PRIVATE = 4 match Modifiers directly.
-     */
-    private function mapVisibility(int $visibility): int
-    {
-        return match (true) {
-            (bool) ($visibility & ReflectionMethod::IS_PRIVATE)   => Modifiers::PRIVATE,
-            (bool) ($visibility & ReflectionMethod::IS_PROTECTED) => Modifiers::PROTECTED,
-            default                                                 => Modifiers::PUBLIC,
-        };
     }
 
     private static function getPrinter(): Standard

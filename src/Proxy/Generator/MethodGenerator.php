@@ -33,15 +33,11 @@ use ReflectionNamedType;
  */
 final class MethodGenerator
 {
-    public const string VISIBILITY_PUBLIC    = 'public';
-    public const string VISIBILITY_PROTECTED = 'protected';
-    public const string VISIBILITY_PRIVATE   = 'private';
-
     private static ?Standard $printer = null;
     private static ?Parser $parser    = null;
     private static ?BuilderFactory $factory = null;
 
-    private string $visibility = self::VISIBILITY_PUBLIC;
+    private Visibility $visibility = Visibility::PUBLIC;
     private bool $static       = false;
     private bool $final        = false;
     private bool $abstract     = false;
@@ -70,15 +66,7 @@ final class MethodGenerator
     {
         $generator = new self($method->getName());
 
-        // Visibility
-        if ($method->isPrivate()) {
-            $generator->setVisibility(self::VISIBILITY_PRIVATE);
-        } elseif ($method->isProtected()) {
-            $generator->setVisibility(self::VISIBILITY_PROTECTED);
-        } else {
-            $generator->setVisibility(self::VISIBILITY_PUBLIC);
-        }
-
+        $generator->setVisibility(Visibility::fromReflectionMethod($method));
         $generator->setStatic($method->isStatic());
         $generator->setFinal($method->isFinal());
         $generator->setAbstract($method->isAbstract());
@@ -133,7 +121,7 @@ final class MethodGenerator
         return $generator;
     }
 
-    public function setVisibility(string $visibility): void
+    public function setVisibility(Visibility $visibility): void
     {
         $this->visibility = $visibility;
     }
@@ -248,10 +236,9 @@ final class MethodGenerator
         $builder = self::getFactory()->method($this->name);
 
         match ($this->visibility) {
-            self::VISIBILITY_PUBLIC    => $builder->makePublic(),
-            self::VISIBILITY_PROTECTED => $builder->makeProtected(),
-            self::VISIBILITY_PRIVATE   => $builder->makePrivate(),
-            default                    => $builder->makePublic(),
+            Visibility::PUBLIC    => $builder->makePublic(),
+            Visibility::PROTECTED => $builder->makeProtected(),
+            Visibility::PRIVATE   => $builder->makePrivate(),
         };
 
         if ($this->static) {

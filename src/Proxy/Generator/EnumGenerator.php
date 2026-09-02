@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use PhpParser\BuilderFactory;
-use PhpParser\Modifiers;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
@@ -21,7 +20,6 @@ use PhpParser\Node\Stmt\Enum_ as EnumNode;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Node\Stmt\TraitUseAdaptation;
 use PhpParser\PrettyPrinter\Standard;
-use ReflectionMethod;
 
 /**
  * Generates a PHP enum declaration (backed or pure) as an AST node or full PHP source string.
@@ -55,7 +53,7 @@ final class EnumGenerator implements GeneratorInterface
     /** @var string[] trait FQCNs */
     private array $traits = [];
 
-    /** @var array{trait: string, method: string, alias: string, visibility: int}[] */
+    /** @var array{trait: string, method: string, alias: string, visibility: Visibility}[] */
     private array $traitAliases = [];
 
     /** @var array{name: string, value: string|int|Expr|null}[] */
@@ -118,12 +116,12 @@ final class EnumGenerator implements GeneratorInterface
     /**
      * Adds a trait with method aliases (e.g. `use FooTrait { greet as private __aop__greet; }`).
      *
-     * @param string $traitFqcn  Fully-qualified trait name (leading backslash ok)
-     * @param string $methodName Original method name in the trait
-     * @param string $alias      New alias (e.g. '__aop__greet')
-     * @param int    $visibility ReflectionMethod::IS_PUBLIC|IS_PROTECTED|IS_PRIVATE
+     * @param string     $traitFqcn  Fully-qualified trait name (leading backslash ok)
+     * @param string     $methodName Original method name in the trait
+     * @param string     $alias      New alias (e.g. '__aop__greet')
+     * @param Visibility $visibility Visibility of the aliased method
      */
-    public function addTraitAlias(string $traitFqcn, string $methodName, string $alias, int $visibility): void
+    public function addTraitAlias(string $traitFqcn, string $methodName, string $alias, Visibility $visibility): void
     {
         $this->traits[]       = $traitFqcn;
         $this->traitAliases[] = [
@@ -166,7 +164,7 @@ final class EnumGenerator implements GeneratorInterface
                 $adaptations[] = new TraitUseAdaptation\Alias(
                     $traitNameNode,
                     new Identifier($info['method']),
-                    $this->mapVisibility($info['visibility']),
+                    $info['visibility']->toAstModifier(),
                     new Identifier($info['alias'])
                 );
             }
@@ -232,18 +230,6 @@ final class EnumGenerator implements GeneratorInterface
         $stmts[] = $this->getNode();
 
         return self::getPrinter()->prettyPrint($stmts);
-    }
-
-    /**
-     * Maps ReflectionMethod visibility flag to PhpParser Modifiers constant.
-     */
-    private function mapVisibility(int $visibility): int
-    {
-        return match (true) {
-            (bool) ($visibility & ReflectionMethod::IS_PRIVATE)   => Modifiers::PRIVATE,
-            (bool) ($visibility & ReflectionMethod::IS_PROTECTED) => Modifiers::PROTECTED,
-            default                                                 => Modifiers::PUBLIC,
-        };
     }
 
     private static function getPrinter(): Standard
