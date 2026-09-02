@@ -39,16 +39,12 @@ final readonly class CacheFileWriter
             mkdir($directoryName, $this->fileMode, true);
         }
 
-        // PHP core refuses the LOCK_EX flag for any non-"file://" stream wrapper path and
-        // rename() semantics are wrapper-specific, so virtual file systems get a plain write
-        $isStreamPath = str_contains($fileName, '://');
-        if ($isStreamPath) {
-            file_put_contents($fileName, $content);
-        } else {
-            $temporaryName = $directoryName . '/' . uniqid(basename($fileName), true) . '.tmp';
-            file_put_contents($temporaryName, $content, LOCK_EX);
-            rename($temporaryName, $fileName);
-        }
+        // The temporary name is unique per call, so no file locking is needed: the content
+        // becomes visible atomically through the same-directory rename. One universal code
+        // path for plain files and stream wrapper paths (virtual file systems) alike.
+        $temporaryName = $directoryName . '/' . uniqid(basename($fileName), true) . '.tmp';
+        file_put_contents($temporaryName, $content);
+        rename($temporaryName, $fileName);
         // For cache files we don't want executable bits by default
         chmod($fileName, $this->fileMode & (~0111));
 

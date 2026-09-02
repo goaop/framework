@@ -4,7 +4,7 @@
 - CachedAspectLoader — AspectLoaderInterface decorator over AspectLoader; reads/writes the compiled cache
 - AdvisorCacheCompiler — renders loaded items into includable plain-PHP cache file content (VERSION const)
 - AdvisorCachePrinter — pretty-printer (extends Proxy\Generator\GeneratedCodePrinter; multiline arrays/news)
-- CacheFileWriter — mkdir-recursive, ATOMIC same-dir tmp+rename writes (`://` stream paths → plain write), strips exec bits, opcache_invalidate; also used by Instrument\ClassLoading\CachePathManager for woven classes
+- CacheFileWriter — mkdir-recursive, ATOMIC same-dir tmp+rename writes (one universal path, no LOCK_EX: the unique tmp name makes locking redundant, and the same code runs on stream wrapper paths - tests use goaop/virtual-file-system), strips exec bits, opcache_invalidate; also used by Instrument\ClassLoading\CachePathManager for woven classes
 - NotCompilableException — see src/Aop/AGENTS.md (Compilable section)
 
 ## Format & naming

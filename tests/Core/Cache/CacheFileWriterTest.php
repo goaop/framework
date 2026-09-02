@@ -17,29 +17,23 @@ use PHPUnit\Framework\TestCase;
 
 class CacheFileWriterTest extends TestCase
 {
+    /**
+     * In-memory file system - the writer uses one universal atomic write path,
+     * so the virtual driver exercises exactly the production code
+     */
+    private FileSystem $fileSystem;
+
     private string $baseDir;
 
     protected function setUp(): void
     {
-        $this->baseDir = sys_get_temp_dir() . '/goaop-cache-file-writer-' . uniqid();
+        $this->fileSystem = FileSystem::mount('cachewritervfs');
+        $this->baseDir    = $this->fileSystem->path('/base');
     }
 
     protected function tearDown(): void
     {
-        // Guard the cleanup: deletions must stay inside the uniquely-named temp
-        // directory this test created, whatever happens to the property value
-        $this->assertStringStartsWith(sys_get_temp_dir() . '/goaop-cache-file-writer-', $this->baseDir);
-        if (is_dir($this->baseDir)) {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($this->baseDir, \FilesystemIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::CHILD_FIRST,
-            );
-            foreach ($iterator as $fileInfo) {
-                assert($fileInfo instanceof \SplFileInfo);
-                $fileInfo->isDir() ? rmdir($fileInfo->getPathname()) : unlink($fileInfo->getPathname());
-            }
-            rmdir($this->baseDir);
-        }
+        $this->fileSystem->unmount();
     }
 
     public function testWritesContentCreatingMissingDirectories(): void
@@ -81,22 +75,9 @@ class CacheFileWriterTest extends TestCase
 
         $writer->write($fileName, 'content');
 
-        $this->assertSame([$fileName], glob($this->baseDir . '/*'));
-    }
-
-    public function testWritesToStreamWrapperPath(): void
-    {
-        $fileSystem = FileSystem::mount('cachewritervfs');
-        try {
-            $writer   = new CacheFileWriter(0770);
-            $fileName = 'cachewritervfs://cache/file.php';
-            $fileSystem->createDirectory('/cache', recursive: true);
-
-            $writer->write($fileName, 'stream content');
-
-            $this->assertSame('stream content', file_get_contents($fileName));
-        } finally {
-            $fileSystem->unmount();
-        }
+        // The atomic tmp+rename write must leave only the target file in the directory
+        $directoryEntries = scandir($this->baseDir);
+        $this->assertIsArray($directoryEntries);
+        $this->assertSame(['cache.php'], array_values(array_diff($directoryEntries, ['.', '..'])));
     }
 }
