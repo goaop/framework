@@ -21,6 +21,8 @@ use Go\Instrument\FileSystem\Enumerator;
 use Go\ParserReflection\ReflectionFile;
 use InvalidArgumentException;
 use ReflectionClass;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -28,24 +30,20 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Console command to debug an advisors
- *
- * @codeCoverageIgnore
  */
+#[AsCommand(
+    name: 'debug:advisor',
+    description: 'Provides an interface for checking and debugging advisors',
+    help: <<<EOT
+Allows to query an information about matching joinpoints for specified advisor.
+EOT
+)]
 class DebugAdvisorCommand extends BaseAspectCommand
 {
     protected function configure(): void
     {
         parent::configure();
-        $this
-            ->setName('debug:advisor')
-            ->addOption('advisor', null, InputOption::VALUE_OPTIONAL, 'Identifier of advisor')
-            ->setDescription('Provides an interface for checking and debugging advisors')
-            ->setHelp(
-                <<<EOT
-Allows to query an information about matching joinpoints for specified advisor.
-EOT
-            )
-        ;
+        $this->addOption('advisor', null, InputOption::VALUE_OPTIONAL, 'Identifier of advisor');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -63,7 +61,7 @@ EOT
             $this->showAdvisorInformation($io, $advisorId);
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 
     private function showAdvisorsList(SymfonyStyle $io): void

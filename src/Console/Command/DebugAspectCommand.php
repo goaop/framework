@@ -17,6 +17,8 @@ use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use Go\Core\AspectLoader;
 use ReflectionObject;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -25,21 +27,19 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 /**
  * Console command for querying an information about aspects
  */
+#[AsCommand(
+    name: 'debug:aspect',
+    description: 'Provides an interface for querying the information about aspects',
+    help: <<<EOT
+Allows to query an information about enabled aspects.
+EOT
+)]
 class DebugAspectCommand extends BaseAspectCommand
 {
     protected function configure(): void
     {
         parent::configure();
-        $this
-            ->setName('debug:aspect')
-            ->addOption('aspect', null, InputOption::VALUE_OPTIONAL, 'Optional aspect name to filter')
-            ->setDescription('Provides an interface for querying the information about aspects')
-            ->setHelp(
-                <<<EOT
-Allows to query an information about enabled aspects.
-EOT
-            )
-        ;
+        $this->addOption('aspect', null, InputOption::VALUE_OPTIONAL, 'Optional aspect name to filter');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -62,7 +62,7 @@ EOT
         }
         $this->showRegisteredAspectsInfo($io, $aspects);
 
-        return 0;
+        return Command::SUCCESS;
     }
 
     /**

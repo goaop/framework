@@ -5,7 +5,7 @@ This framework brings **Aspect-Oriented Programming** to PHP — a powerful para
 
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/goaop/framework/phpunit.yml?branch=master)
-[![Code Coverage](https://codecov.io/gh/goaop/framework/graph/badge.svg)](https://codecov.io/gh/goaop/framework)
+[![Code Coverage](https://img.shields.io/codecov/c/github/goaop/framework/master)](https://app.codecov.io/gh/goaop/framework)
 ![PHPStan Badge](https://img.shields.io/badge/PHPStan-level%2010-brightgreen.svg?style=flat&link=https%3A%2F%2Fphpstan.org%2Fuser-guide%2Frule-levels)
 [![GitHub release](https://img.shields.io/github/release/goaop/framework.svg)](https://github.com/goaop/framework/releases/latest)
 [![Total Downloads](https://img.shields.io/packagist/dt/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)

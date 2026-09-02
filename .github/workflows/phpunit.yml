@@ -115,4 +115,5 @@ jobs:
         with:
           files: build/logs/clover.xml
           fail_ci_if_error: false
+          slug: goaop/framework
           token: ${{ secrets.CODECOV_TOKEN }}
