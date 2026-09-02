@@ -20,23 +20,23 @@ use ReflectionClass;
 /**
  * Loader of aspects into the container
  */
-class AspectLoader
+class AspectLoader implements AspectLoaderInterface
 {
     /**
      * @var AspectLoaderExtension[] List of aspect loaders
      */
-    protected readonly array $aspectLoaders;
+    private readonly array $aspectLoaders;
 
     /**
      * @var class-string[] List of aspect class names that have been loaded
      */
-    protected array $loadedAspects = [];
+    private array $loadedAspects = [];
 
     /**
      * Loader constructor
      */
     public function __construct(
-        protected AspectContainer $container,
+        private readonly AspectContainer $container,
         AspectLoaderExtension ...$aspectLoaders,
     ) {
         $this->aspectLoaders = $aspectLoaders;

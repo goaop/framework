@@ -19,7 +19,7 @@ use Go\Core\AdviceMatcher;
 use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
-use Go\Core\AspectLoader;
+use Go\Core\AspectLoaderInterface;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionFile;
@@ -59,13 +59,13 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * @param AdviceMatcherInterface $adviceMatcher    Advice matcher for class
      * @param CachePathManager       $cachePathManager Cache manager
-     * @param AspectLoader           $aspectLoader     Loader for aspects
+     * @param AspectLoaderInterface  $aspectLoader     Loader for aspects
      */
     public function __construct(
         AspectKernel $kernel,
         protected readonly AdviceMatcherInterface $adviceMatcher,
         private readonly CachePathManager $cachePathManager,
-        protected readonly AspectLoader $aspectLoader
+        protected readonly AspectLoaderInterface $aspectLoader
     ) {
         parent::__construct($kernel);
     }

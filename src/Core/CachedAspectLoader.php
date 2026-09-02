@@ -19,53 +19,53 @@ use Go\Aop\Pointcut;
 use ReflectionClass;
 
 /**
- * Cached loader is responsible for faster initialization of pointcuts/advisors for concrete aspect
+ * Cached loader is a decorator that is responsible for faster initialization
+ * of pointcuts/advisors for concrete aspect
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-class CachedAspectLoader extends AspectLoader
+class CachedAspectLoader implements AspectLoaderInterface
 {
     /**
      * Original loader, resolved from the container on first access and memoized in the backing store
      */
-    private AspectLoader $loader {
+    private AspectLoaderInterface $loader {
         get => $this->loader ??= $this->container->getService($this->loaderId);
     }
 
     /**
      * Path to the cache directory
      */
-    protected ?string $cacheDir = null;
+    private readonly ?string $cacheDir;
 
     /**
      * File mode for the cache files
      */
-    protected int $cacheFileMode;
-
-    /**
-     * Identifier of original loader
-     *
-     * @var class-string<AspectLoader>
-     */
-    protected string $loaderId;
+    private readonly int $cacheFileMode;
 
     /**
      * Whether an existing advisor cache file is trusted without freshness checks
      */
-    protected bool $isPrebuiltCache = false;
+    private readonly bool $isPrebuiltCache;
+
+    /**
+     * @var class-string[] List of aspect class names that have been loaded
+     */
+    private array $loadedAspects = [];
 
     /**
      * Cached loader constructor
      *
-     * @param class-string<AspectLoader> $loaderId
+     * @param class-string<AspectLoaderInterface> $loaderId Identifier of original loader
      * @phpstan-param KernelOptions $options List of kernel options
      */
-    public function __construct(AspectContainer $container, string $loaderId, array $options)
-    {
+    public function __construct(
+        private readonly AspectContainer $container,
+        private readonly string $loaderId,
+        array $options,
+    ) {
         $this->cacheDir        = $options['cacheDir'];
         $this->cacheFileMode   = $options['cacheFileMode'];
-        $this->loaderId        = $loaderId;
-        $this->container       = $container;
         $this->isPrebuiltCache = ($options['features'] & Features::PREBUILT_CACHE) !== 0;
     }
 
@@ -103,11 +103,41 @@ class CachedAspectLoader extends AspectLoader
     }
 
     /**
+     * Loads and register all items of aspect in the container
+     */
+    public function loadAndRegister(Aspect $aspect): void
+    {
+        $loadedItems = $this->load($aspect);
+        foreach ($loadedItems as $itemId => $item) {
+            $this->container->add($itemId, $item);
+        }
+        $this->loadedAspects[$aspect::class] = $aspect::class;
+    }
+
+    /**
+     * Returns list of unloaded aspects in the container
+     *
+     * @return list<Aspect>
+     */
+    public function getUnloadedAspects(): array
+    {
+        $unloadedAspects = [];
+
+        foreach ($this->container->getServicesByInterface(Aspect::class) as $aspect) {
+            if (!isset($this->loadedAspects[$aspect::class])) {
+                $unloadedAspects[] = $aspect;
+            }
+        }
+
+        return $unloadedAspects;
+    }
+
+    /**
      * Loads pointcuts and advisors from the file
      *
      * @return array<string, Pointcut|Advisor>
      */
-    protected function loadFromCache(string $fileName): array
+    private function loadFromCache(string $fileName): array
     {
         $content = file_get_contents($fileName);
         if ($content === false) {
@@ -131,7 +161,7 @@ class CachedAspectLoader extends AspectLoader
      *
      * @param array<string, Pointcut|Advisor> $items Array of items to store
      */
-    protected function saveToCache(array $items, string $fileName): void
+    private function saveToCache(array $items, string $fileName): void
     {
         $content       = serialize($items);
         $directoryName = dirname($fileName);
