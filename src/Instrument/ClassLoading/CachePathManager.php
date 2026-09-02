@@ -228,14 +228,12 @@ class CachePathManager
     }
 
     /**
-     * Returns cache path for requested file name
-     *
-     * @return string|false
+     * Returns cache path for requested file name, or null when caching is disabled
      */
-    public function getCachePathForResource(string $resource)
+    public function getCachePathForResource(string $resource): ?string
     {
         if (!$this->cacheDir) {
-            return false;
+            return null;
         }
 
         $cacheState = $this->queryCacheState($resource);

@@ -119,12 +119,10 @@ class FilterInjectorTransformer implements SourceTransformer
                 ?: PathResolver::realpath("{$originalDir}/{$resource}", $shouldCheckExistence)
                 ?: $originalResource;
         }
-        $cachedResource = self::$cachePathManager !== null
-            ? self::$cachePathManager->getCachePathForResource($resource)
-            : false;
+        $cachedResource = self::$cachePathManager?->getCachePathForResource($resource);
 
         // If the cache is disabled, resource path not resolvable, or no cache yet, then use on-fly method
-        if ($cachedResource === false || !$cacheDir || $debug || !file_exists($cachedResource)) {
+        if ($cachedResource === null || !$cacheDir || $debug || !file_exists($cachedResource)) {
             return self::PHP_FILTER_READ . self::$filterName . '/resource=' . $resource;
         }
 
