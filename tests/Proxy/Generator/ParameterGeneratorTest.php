@@ -90,8 +90,9 @@ class ParameterGeneratorTest extends TestCase
     {
         $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_simple', 0));
         $node = $gen->getNode();
-        $this->assertInstanceOf(Node\Param::class, $node);
-        $this->assertSame('name', (string) $node->var->name);
+        $this->assertInstanceOf(Node\Expr\Variable::class, $node->var);
+        $this->assertIsString($node->var->name);
+        $this->assertSame('name', $node->var->name);
     }
 
     public function testConstructorManual(): void
@@ -167,8 +168,10 @@ class ParameterGeneratorTest extends TestCase
      */
     private function getParserReflectionFunction(string $filePath, string $functionName): ParserReflectionFunction
     {
-        $parser   = (new ParserFactory())->createForHostVersion();
-        $fileAst  = $parser->parse(file_get_contents($filePath));
+        $stubSource = file_get_contents($filePath);
+        $this->assertIsString($stubSource);
+        $parser  = (new ParserFactory())->createForHostVersion();
+        $fileAst = $parser->parse($stubSource);
         $this->assertNotNull($fileAst, 'Failed to parse stub file');
 
         $fullName = self::STUBS_NS . '\\' . $functionName;
@@ -180,6 +183,8 @@ class ParameterGeneratorTest extends TestCase
 
     /**
      * Walks the AST to find a Function_ node with the given name.
+     *
+     * @param Node\Stmt[] $stmts
      */
     private function findFunctionNode(array $stmts, string $name): ?Function_
     {

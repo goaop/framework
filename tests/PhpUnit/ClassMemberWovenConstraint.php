@@ -15,12 +15,18 @@ namespace Go\PhpUnit;
 use PHPUnit\Framework\Constraint\Constraint;
 
 /**
+ * @phpstan-import-type ProjectConfiguration from ProxyClassReflectionHelper
+ *
  * Asserts that class member is woven for given class.
  */
 final class ClassMemberWovenConstraint extends Constraint
 {
+    /** @var ProjectConfiguration */
     private array $configuration;
 
+    /**
+     * @param ProjectConfiguration $configuration
+     */
     public function __construct(array $configuration)
     {
         $this->configuration = $configuration;
@@ -29,7 +35,7 @@ final class ClassMemberWovenConstraint extends Constraint
     /**
      * {@inheritdoc}
      */
-    public function matches($other): bool
+    public function matches(mixed $other): bool
     {
         if (!$other instanceof ClassAdvisorIdentifier) {
             throw new \InvalidArgumentException(sprintf('Expected instance of "%s", got "%s".', ClassAdvisorIdentifier::class, is_object($other) ? get_class($other) : gettype($other)));

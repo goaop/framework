@@ -24,6 +24,9 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
      * Verifies that invoking routes through __aop__<method> (the trait alias),
      * not through the overridden public method that returns the sentinel -1.
      */
+    /**
+     * @param non-empty-string $methodName
+     */
     #[\PHPUnit\Framework\Attributes\DataProvider('dynamicMethodsBatch')]
     public function testDynamicMethodInvocation(string $methodName, int $expectedResult): void
     {
@@ -90,6 +93,7 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
         $value  = 'original';
         $result = $invocation($instance, [&$value]);
         $this->assertNull($result);
+        // @phpstan-ignore method.impossibleType ($value is set to null by reference inside the invocation)
         $this->assertNull($value);
     }
 
@@ -115,6 +119,7 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
     {
         $instance   = new TraitAliasProxy();
         $invocation = new DynamicTraitAliasMethodInvocation([], TraitAliasProxy::class, 'publicMethod', $instance->getCallableFor('publicMethod'));
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertTrue($invocation->isDynamic());
     }
 
@@ -134,6 +139,9 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
         $invocation($instance);
     }
 
+    /**
+     * @return array<array{non-empty-string, int}>
+     */
     public static function dynamicMethodsBatch(): array
     {
         return [

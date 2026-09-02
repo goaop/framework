@@ -43,6 +43,7 @@ class PathResolverTest extends TestCase
         $components = explode('://', $expected, 2);
         [$pathScheme, $localPath] = isset($components[1]) ? $components : [null, $components[0]];
 
+        assert($localPath !== null);
         // resolve path parts (single dot, double dot and double delimiters)
         $localPath  = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $localPath);
         if ($pathScheme) {
@@ -56,11 +57,12 @@ class PathResolverTest extends TestCase
     /**
      * Test paths provider
      *
-     * @return array
+     * @return array<array{string, string}>
      */
     public static function realpathExamples(): array
     {
         $curDir = getcwd();
+        assert($curDir !== false);
         $parent = dirname($curDir);
         // If we use top-level directory in Docker, then dirname will be '/' and result will be incorrect
         if ($parent === '/') {

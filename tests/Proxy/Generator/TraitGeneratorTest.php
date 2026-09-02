@@ -74,7 +74,6 @@ class TraitGeneratorTest extends TestCase
     {
         $gen = new TraitGenerator('MyTrait', null);
         $node = $gen->getNode();
-        $this->assertInstanceOf(Trait_::class, $node);
         $this->assertSame('MyTrait', (string) $node->name);
     }
 
@@ -87,6 +86,7 @@ class TraitGeneratorTest extends TestCase
     public function testImplementsGeneratorInterface(): void
     {
         $gen = new TraitGenerator('MyTrait', null);
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the implemented interface)
         $this->assertInstanceOf(GeneratorInterface::class, $gen);
     }
 

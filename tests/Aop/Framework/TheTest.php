@@ -30,6 +30,7 @@ final class TheTest extends TestCase
     {
         $this->initKernelWithContainerValues([]);
 
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertInstanceOf(TheTestAspect::class, The::aspect(TheTestAspect::class));
     }
 
@@ -51,6 +52,7 @@ final class TheTest extends TestCase
             },
         ]);
 
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertInstanceOf(Closure::class, The::advice('manual-advisor'));
     }
 

@@ -20,7 +20,7 @@ class Issue293Test extends BaseFunctionalTestCase
     /**
      * test for https://github.com/goaop/framework/issues/293
      */
-    public function testItDoesNotWeaveDynamicMethodsForComplexStaticPointcut()
+    public function testItDoesNotWeaveDynamicMethodsForComplexStaticPointcut(): void
     {
         $this->assertClassIsWoven(Issue293StaticMembers::class);
         $this->assertStaticMethodWoven(Issue293StaticMembers::class, 'doSomething', 'Go\\Tests\\TestProject\\Aspect\\Issue293Aspect->afterPublicOrProtectedStaticMethods');

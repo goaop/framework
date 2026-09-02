@@ -33,6 +33,7 @@ class AdviceMatcherTest extends TestCase
 {
     protected AdviceMatcherInterface $adviceMatcher;
 
+    /** @var ReflectionClass<object> */
     protected ReflectionClass $reflectionClass;
 
     /**

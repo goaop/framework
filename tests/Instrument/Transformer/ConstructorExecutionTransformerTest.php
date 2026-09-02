@@ -27,9 +27,10 @@ class ConstructorExecutionTransformerTest extends TestCase
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('listOfExpressions')]
-    public function testCanTransformNewExpressions($source, $expected): void
+    public function testCanTransformNewExpressions(string $source, string $expected): void
     {
         $stream   = fopen('php://input', 'r');
+        assert($stream !== false);
         $metadata = new StreamMetaData($stream, "<?php $source; ?>");
 
         self::$transformer->transform($metadata);
@@ -38,6 +39,9 @@ class ConstructorExecutionTransformerTest extends TestCase
         fclose($stream);
     }
 
+    /**
+     * @return array<array{string, string}>
+     */
     public static function listOfExpressions(): array
     {
         return [

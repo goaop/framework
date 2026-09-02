@@ -31,7 +31,7 @@ class ClassProxyGeneratorTest extends TestCase
     /**
      * Test proxy generation for class method
      *
-     * @param string $className Name of the class to intercept
+     * @param class-string $className Name of the class to intercept
      * @param string $methodName Name of the method to intercept
      *
      * @throws ReflectionException
@@ -49,8 +49,7 @@ class ClassProxyGeneratorTest extends TestCase
         $childGenerator = new ClassProxyGenerator(
             $reflectionClass,
             'Test',
-            $classAdvices,
-            false
+            $classAdvices
         );
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
@@ -82,7 +81,7 @@ class ClassProxyGeneratorTest extends TestCase
             ]
         ];
 
-        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
@@ -117,7 +116,7 @@ class ClassProxyGeneratorTest extends TestCase
             ]
         ];
 
-        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
@@ -133,6 +132,7 @@ class ClassProxyGeneratorTest extends TestCase
     public function testGenerateWithClassTypedPropertyUsesFullyQualifiedTypeInFieldAccessPhpDoc(): void
     {
         $target = new class {
+            // @phpstan-ignore property.unused (declared only to be intercepted by the generated proxy)
             private \Exception $privateProperty;
         };
         $reflectionClass = new ReflectionClass($target);
@@ -142,7 +142,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
@@ -183,7 +183,7 @@ class ClassProxyGeneratorTest extends TestCase
         ];
 
         $this->expectException(InvalidArgumentException::class);
-        new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
     }
 
     /**
@@ -201,7 +201,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString("final public string \$final = 'final' {", $proxyFileContent);
@@ -221,7 +221,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString("public string \$parentPublic = 'parent-public' {", $proxyFileContent);
@@ -245,7 +245,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
@@ -276,6 +276,7 @@ class ClassProxyGeneratorTest extends TestCase
     public function testGenerateWithArrayPropertyInterceptionUsesGetHookOnly(): void
     {
         $target = new class {
+            /** @var array<int> */
             public array $items = [1, 2, 3];
 
             public function appendValue(int $value): void
@@ -290,7 +291,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertMatchesRegularExpression('/&get\s*\\{/', $proxyFileContent);
@@ -320,7 +321,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'OriginalBodyTrait', $classAdvices, false);
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'OriginalBodyTrait', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         // Trait alias must exist for each private method
@@ -353,7 +354,7 @@ class ClassProxyGeneratorTest extends TestCase
         ];
 
         $traitName        = 'OriginalBodyTrait';
-        $childGenerator   = new ClassProxyGenerator($reflectionClass, $traitName, $classAdvices, false);
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, $traitName, $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
@@ -386,7 +387,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator        = new ClassProxyGenerator($reflectionClass, 'ClassWithMixedSources__AopProxied', $classAdvices, false);
+        $generator        = new ClassProxyGenerator($reflectionClass, 'ClassWithMixedSources__AopProxied', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
 
         // Both trait-defined and own methods must have trait aliases
@@ -416,7 +417,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator        = new ClassProxyGenerator($reflectionClass, 'FirstStatic__AopProxied', $classAdvices, false);
+        $generator        = new ClassProxyGenerator($reflectionClass, 'FirstStatic__AopProxied', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
 
         $this->assertStringNotContainsString(
@@ -452,7 +453,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator        = new ClassProxyGenerator($reflectionClass, 'FirstStatic__AopProxied', $classAdvices, false);
+        $generator        = new ClassProxyGenerator($reflectionClass, 'FirstStatic__AopProxied', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
 
         // No trait alias for inherited static method
@@ -498,7 +499,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator        = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, false);
+        $generator        = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
 
         // Deprecated attribute must be present on the proxied oldMethod
@@ -539,7 +540,7 @@ class ClassProxyGeneratorTest extends TestCase
 
         // Trait in the same namespace as the proxy (Go\Stubs)
         $traitFqcn = 'Go\\Stubs\\First__AopProxied';
-        $generator = new ClassProxyGenerator($reflectionClass, $traitFqcn, $classAdvices, false);
+        $generator = new ClassProxyGenerator($reflectionClass, $traitFqcn, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Must use the short (unqualified) trait name
@@ -565,7 +566,7 @@ class ClassProxyGeneratorTest extends TestCase
 
         // Trait in a different namespace from the proxy (proxy is in Go\Stubs)
         $traitFqcn = 'Other\\Namespace\\First__AopProxied';
-        $generator = new ClassProxyGenerator($reflectionClass, $traitFqcn, $classAdvices, false);
+        $generator = new ClassProxyGenerator($reflectionClass, $traitFqcn, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Must use the FQCN for the trait name
@@ -582,7 +583,7 @@ class ClassProxyGeneratorTest extends TestCase
     /**
      * Provides list of methods with expected attributes
      *
-     * @return array
+     * @return array<array{class-string, string}>
      */
     public static function dataGenerator(): array
     {

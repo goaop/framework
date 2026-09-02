@@ -28,6 +28,9 @@ final class ReturnTypePointcutTest extends TestCase
         self::assertSame($expectedMatch, $result);
     }
 
+    /**
+     * @return array<string, array{string, \ReflectionFunctionAbstract, bool}>
+     */
     public static function returnTypeMatchesDataProvider(): array
     {
         $unionMethod        = new ReflectionMethod(ClassWithComplexTypes::class, 'publicMethodWithUnionTypeReturn');

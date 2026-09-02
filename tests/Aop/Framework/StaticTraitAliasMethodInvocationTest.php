@@ -89,6 +89,7 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
     {
         $callable   = TraitAliasProxy::getStaticCallableFor('staticPublicMethod');
         $invocation = new StaticTraitAliasMethodInvocation([], TraitAliasProxy::class, 'staticPublicMethod', $callable);
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertFalse($invocation->isDynamic());
     }
 
@@ -193,6 +194,7 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
         $value  = 'original';
         $result = $invocation(TraitAliasProxy::class, [&$value]);
         $this->assertNull($result);
+        // @phpstan-ignore method.impossibleType ($value is set to null by reference inside the invocation)
         $this->assertNull($value);
     }
 }

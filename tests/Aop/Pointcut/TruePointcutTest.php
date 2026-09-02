@@ -28,7 +28,9 @@ class TruePointcutTest extends TestCase
 
     public function testItAlwaysMatchesForAnything(): void
     {
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertTrue($this->pointcut->matches(new ReflectionClass(self::class)));
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertTrue(
             $this->pointcut->matches(
                 new ReflectionClass(self::class),

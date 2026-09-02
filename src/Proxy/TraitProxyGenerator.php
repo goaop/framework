@@ -42,7 +42,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
     /**
      * Generates an child code by original class reflection and joinpoints for it
      *
-     * @param ReflectionClass<object> $originalTrait    Original class reflection
+     * @param ReflectionClass<covariant object> $originalTrait    Original class reflection
      * @param string                  $parentTraitName  Parent trait name to use
      * @param array<string, array<string, list<string|GeneratedInterceptor>>> $traitAdviceNames List of advices for class
      */

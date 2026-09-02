@@ -17,7 +17,7 @@ use RuntimeException;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class AfterInterceptorTest extends AbstractInterceptorTestCase
 {
-    public function testAdviceIsCalledAfterInvocation()
+    public function testAdviceIsCalledAfterInvocation(): void
     {
         $sequence   = [];
         $advice     = $this->getAdvice($sequence);
@@ -30,7 +30,7 @@ class AfterInterceptorTest extends AbstractInterceptorTestCase
         $this->assertEquals(['invocation', 'advice'], $sequence, "After advice should be invoked after invocation");
     }
 
-    public function testAdviceIsCalledAfterExceptionInInvocation()
+    public function testAdviceIsCalledAfterExceptionInInvocation(): void
     {
         $sequence   = [];
         $advice     = $this->getAdvice($sequence);

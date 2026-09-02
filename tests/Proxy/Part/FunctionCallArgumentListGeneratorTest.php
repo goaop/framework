@@ -33,6 +33,8 @@ class FunctionCallArgumentListGeneratorTest extends TestCase
 
     /**
      * Provides list of functions with expected generated code for calling such functions
+     *
+     * @return array<array{string, string}>
      */
     public static function dataGenerator(): array
     {

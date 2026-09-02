@@ -126,6 +126,7 @@ class EnumWeavingTest extends BaseFunctionalTestCase
         $proxyFile = $this->configuration['cacheDir'] . '/src/Application/ConstExprBackedEnum.php';
         $this->assertFileExists($proxyFile);
         $proxyContent = file_get_contents($proxyFile);
+        $this->assertIsString($proxyContent);
         $this->assertStringContainsString('case Negative = -1;', $proxyContent);
         $this->assertStringContainsString('case Shifted = 1 << 2;', $proxyContent);
         $this->assertStringContainsString('case FromConst = self::SHIFT + 10;', $proxyContent);

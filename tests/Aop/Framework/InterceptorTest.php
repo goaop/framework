@@ -13,7 +13,6 @@ final class InterceptorTest extends TestCase
     {
         $interceptor = Interceptor::before(static function (Joinpoint $joinpoint): void {}, order: 10);
 
-        $this->assertInstanceOf(BeforeInterceptor::class, $interceptor);
         $this->assertSame(10, $interceptor->getAdviceOrder());
     }
 
@@ -21,21 +20,22 @@ final class InterceptorTest extends TestCase
     {
         $interceptor = Interceptor::after(static function (Joinpoint $joinpoint): void {});
 
-        $this->assertInstanceOf(AfterInterceptor::class, $interceptor);
         $this->assertSame(0, $interceptor->getAdviceOrder());
     }
 
     public function testCreatesAroundInterceptor(): void
     {
-        $interceptor = Interceptor::around(static fn(Joinpoint $joinpoint): mixed => $joinpoint->proceed());
+        $advice      = static fn(Joinpoint $joinpoint): mixed => $joinpoint->proceed();
+        $interceptor = Interceptor::around($advice);
 
-        $this->assertInstanceOf(AroundInterceptor::class, $interceptor);
+        $this->assertSame($advice, $interceptor->getRawAdvice());
     }
 
     public function testCreatesAfterThrowingInterceptor(): void
     {
-        $interceptor = Interceptor::afterThrowing(static function (Joinpoint $joinpoint, \Throwable $throwable): void {});
+        $advice      = static function (Joinpoint $joinpoint, \Throwable $throwable): void {};
+        $interceptor = Interceptor::afterThrowing($advice);
 
-        $this->assertInstanceOf(AfterThrowingInterceptor::class, $interceptor);
+        $this->assertSame($advice, $interceptor->getRawAdvice());
     }
 }

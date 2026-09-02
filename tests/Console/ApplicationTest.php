@@ -44,9 +44,13 @@ class ApplicationTest extends TestCase
         $this->assertStringContainsString('Go! AOP', $process->getOutput());
     }
 
+    /**
+     * @param list<string> $args
+     */
     private function runConsoleCommand(string $command, array $args = []): Process
     {
         $phpExecutable = (new PhpExecutableFinder())->find();
+        assert($phpExecutable !== false);
         $commandLine   = array_merge(
             [$phpExecutable, $this->console, $command],
             $args

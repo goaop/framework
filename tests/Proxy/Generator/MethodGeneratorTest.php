@@ -94,6 +94,7 @@ class MethodGeneratorTest extends TestCase
         $gen->setBody("return 42;");
         $stmts = $gen->getStmts();
 
+        $this->assertNotNull($stmts);
         $gen2 = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
         $gen2->setStmts($stmts);
         $this->assertSame($gen->getBody(), $gen2->getBody());
@@ -103,7 +104,6 @@ class MethodGeneratorTest extends TestCase
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
         $node = $gen->getNode();
-        $this->assertInstanceOf(ClassMethod::class, $node);
         $this->assertSame('publicMethod', (string) $node->name);
     }
 

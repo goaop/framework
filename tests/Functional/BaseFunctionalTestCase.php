@@ -19,6 +19,7 @@ use Go\PhpUnit\ClassIsNotWovenConstraint;
 use Go\PhpUnit\ClassMemberNotWovenConstraint;
 use Go\PhpUnit\ClassMemberWovenConstraint;
 use Go\PhpUnit\ClassWovenConstraint;
+use Go\PhpUnit\ProxyClassReflectionHelper;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\PhpExecutableFinder;
@@ -26,13 +27,17 @@ use Symfony\Component\Process\Process;
 
 /**
  * Base class for functional tests.
+ *
+ * @phpstan-import-type ProjectConfiguration from ProxyClassReflectionHelper
  */
 abstract class BaseFunctionalTestCase extends TestCase
 {
     /**
      * Configuration which ought to be used in this test suite.
+     *
+     * @var ProjectConfiguration
      */
-    protected array $configuration = [];
+    protected array $configuration;
 
     /**
      * {@inheritdoc}
@@ -60,6 +65,7 @@ abstract class BaseFunctionalTestCase extends TestCase
         $filesystem = new Filesystem();
         // We need to normalize path to prevent Windows 260-length filename trouble
         $absoluteCacheDir = PathResolver::realpath($this->configuration['cacheDir']);
+        assert(is_string($absoluteCacheDir));
         if ($filesystem->exists($absoluteCacheDir)) {
             $filesystem->remove($absoluteCacheDir);
         }
@@ -95,7 +101,8 @@ abstract class BaseFunctionalTestCase extends TestCase
      */
     protected function loadConfiguration(): void
     {
-        if (!$this->configuration) {
+        if (!isset($this->configuration)) {
+            /** @var array<string, ProjectConfiguration> $configurations Shape of our own fixture file is trusted */
             $configurations      = require __DIR__ . '/../Fixtures/project/web/configuration.php';
             $this->configuration = $configurations[$this->getConfigurationName()];
         }
@@ -105,7 +112,7 @@ abstract class BaseFunctionalTestCase extends TestCase
      * Execute console command.
      *
      * @param string   $command          Command to execute.
-     * @param array    $args             Optional command arguments to append, if any.
+     * @param array<string> $args        Optional command arguments to append, if any.
      * @param bool     $expectSuccess    Should command be executed successfully
      * @param null|int $expectedExitCode If provided, exit code will be asserted.
      *
@@ -118,6 +125,7 @@ abstract class BaseFunctionalTestCase extends TestCase
         ?int $expectedExitCode = null
     ): string {
         $phpExecutable = (new PhpExecutableFinder())->find();
+        assert($phpExecutable !== false);
         $commandLine   = [
             $phpExecutable,
             $this->configuration['console'],
@@ -340,8 +348,8 @@ abstract class BaseFunctionalTestCase extends TestCase
         $identifier = new ClassAdvisorIdentifier(
             $class,
             $propertyName,
-            $advisorIdentifier,
-            AspectContainer::PROPERTY_PREFIX
+            AspectContainer::PROPERTY_PREFIX,
+            $advisorIdentifier
         );
         $constraint = new ClassMemberNotWovenConstraint($this->configuration);
 

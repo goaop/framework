@@ -76,7 +76,7 @@ class AdviceMatcher implements AdviceMatcherInterface
     /**
      * Return list of advices for class
      *
-     * @param ReflectionClass<object> $class
+     * @param ReflectionClass<covariant object> $class
      * @param Aop\Advisor[] $advisors List of advisor to match
      *
      * @return array<string, array<string, array<string, Aop\Advice>>> List of advices for class
@@ -122,7 +122,7 @@ class AdviceMatcher implements AdviceMatcherInterface
     /**
      * Returns list of class advices from advisor and point filter
      *
-     * @param ReflectionClass<object> $class
+     * @param ReflectionClass<covariant object> $class
      * @return array<string, array<string, array<string, Aop\Advice>>>
      */
     private function getClassAdvicesFromAdvisor(
@@ -154,7 +154,7 @@ class AdviceMatcher implements AdviceMatcherInterface
     /**
      * Returns list of advices from advisor and point filter
      *
-     * @param ReflectionClass<object> $class
+     * @param ReflectionClass<covariant object> $class
      * @return array<string, array<string, array<string, Aop\Advice>>>
      */
     private function getClassLevelAdvicesFromAdvisor(

@@ -51,8 +51,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices,
-            false
+            $traitAdvices
         );
 
         $output = "<?php\n" . $generator->generate();
@@ -91,8 +90,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices,
-            false
+            $traitAdvices
         );
 
         $output = "<?php\n" . $generator->generate();
@@ -126,8 +124,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices,
-            false
+            $traitAdvices
         );
 
         $output = "<?php\n" . $generator->generate();
@@ -158,8 +155,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices,
-            false
+            $traitAdvices
         );
 
         $output = $generator->generate();
@@ -183,8 +179,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices,
-            false
+            $traitAdvices
         );
 
         $output = $generator->generate();
@@ -209,8 +204,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices,
-            false
+            $traitAdvices
         );
 
         $output = "<?php\n" . $generator->generate();
@@ -235,8 +229,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitWithClassTypedProperty__AopProxied',
-            $traitAdvices,
-            false
+            $traitAdvices
         );
 
         $output = "<?php\n" . $generator->generate();
@@ -262,7 +255,7 @@ class TraitProxyGeneratorTest extends TestCase
 
         // Parent trait in the same namespace as the proxy trait (Go\Stubs)
         $parentTraitFqcn = 'Go\\Stubs\\TraitAliasProxied__AopProxied';
-        $generator       = new TraitProxyGenerator($reflectionTrait, $parentTraitFqcn, $traitAdvices, false);
+        $generator       = new TraitProxyGenerator($reflectionTrait, $parentTraitFqcn, $traitAdvices);
         $output          = "<?php\n" . $generator->generate();
 
         // Must use the short (unqualified) parent trait name
@@ -286,7 +279,7 @@ class TraitProxyGeneratorTest extends TestCase
 
         // Parent trait in a different namespace from the proxy trait (proxy is in Go\Stubs)
         $parentTraitFqcn = 'Other\\Namespace\\TraitAliasProxied__AopProxied';
-        $generator       = new TraitProxyGenerator($reflectionTrait, $parentTraitFqcn, $traitAdvices, false);
+        $generator       = new TraitProxyGenerator($reflectionTrait, $parentTraitFqcn, $traitAdvices);
         $output          = "<?php\n" . $generator->generate();
 
         // Must use the FQCN for the parent trait name

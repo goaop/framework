@@ -79,7 +79,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
      * the enum is already in memory). The backing type and cases are resolved via the appropriate
      * API for each case.
      *
-     * @param ReflectionClass<object> $originalClass        Original enum reflection (before transformation)
+     * @param ReflectionClass<covariant object> $originalClass        Original enum reflection (before transformation)
      * @param string                  $traitName            FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
      * @param array<string, array<string, list<string|GeneratedInterceptor>>> $classAdviceNames List of advices for enum
      */
@@ -284,7 +284,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
      * because class constants stay in the woven trait and trait constants participate in the
      * composing class since PHP 8.2.
      *
-     * @param ReflectionClass<object> $class
+     * @param ReflectionClass<covariant object> $class
      * @return array{0: string|null, 1: list<array{0: string, 1: string|int|Expr|null}>}
      *   [backingType, [[caseName, caseValue], ...]]
      */

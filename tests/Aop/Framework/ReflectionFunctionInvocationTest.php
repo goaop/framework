@@ -97,6 +97,7 @@ class ReflectionFunctionInvocationTest extends TestCase
         $matches = null;
         $invocation(['/(\d+)/', 'abc123', &$matches]);
 
+        // @phpstan-ignore method.impossibleType ($matches is filled by reference inside the invocation)
         $this->assertSame(['123', '123'], $matches);
     }
 }

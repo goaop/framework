@@ -60,10 +60,8 @@ interface Pointcut
     /**
      * Performs matching of point of code, returns true if point matches
      *
-     * @param ReflectionClass<T>|ReflectionFileNamespace $context                    Related context, can be class or file namespace
+     * @param ReflectionClass<covariant object>|ReflectionFileNamespace $context    Related context, can be class or file namespace
      * @param ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector Specific part of code, can be any Reflection class
-     *
-     * @template T of object
      */
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,

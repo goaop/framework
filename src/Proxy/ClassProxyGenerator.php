@@ -72,7 +72,7 @@ class ClassProxyGenerator
      * that trait, and aliases each intercepted method as `private __aop__<method>` so the
      * overriding method body can delegate to the original via a Closure::bind proceed closure.
      *
-     * @param ReflectionClass<object> $originalClass    Original class reflection (before transformation)
+     * @param ReflectionClass<covariant object> $originalClass    Original class reflection (before transformation)
      * @param string                  $traitName        FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
      * @param array<string, array<string, list<string|GeneratedInterceptor>>> $classAdviceNames List of advices for class
      */
@@ -250,7 +250,7 @@ class ClassProxyGenerator
     /**
      * Returns list of intercepted method generators for class by method names
      *
-     * @param ReflectionClass<object> $originalClass
+     * @param ReflectionClass<covariant object> $originalClass
      * @param string[] $methodNames List of methods to intercept
      *
      * @return InterceptedMethodGenerator[]
@@ -269,7 +269,7 @@ class ClassProxyGenerator
     }
 
     /**
-     * @param ReflectionClass<object> $originalClass
+     * @param ReflectionClass<covariant object> $originalClass
      * @param array<array-key, list<string|GeneratedInterceptor>> $propertyAdvices
      * @param string[] $propertyNames Intercepted property names from advice map
      *
@@ -300,7 +300,7 @@ class ClassProxyGenerator
     /**
      * Creates string definition for method body by method reflection
      *
-     * @param ReflectionClass<object>|null $originalClass The original class being proxied. When provided,
+     * @param ReflectionClass<covariant object>|null $originalClass The original class being proxied. When provided,
      *                                                    it is used to determine if the method has a trait alias
      *                                                    (method declared in the class itself) or is inherited
      *                                                    (uses parent:: callable wrapper).

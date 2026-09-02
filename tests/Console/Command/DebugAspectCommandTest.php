@@ -16,7 +16,7 @@ use Go\Functional\BaseFunctionalTestCase;
 
 class DebugAspectCommandTest extends BaseFunctionalTestCase
 {
-    public function testItDisplaysAspectsDebugInfo()
+    public function testItDisplaysAspectsDebugInfo(): void
     {
         $output = $this->execute('debug:aspect');
 

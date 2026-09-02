@@ -24,6 +24,7 @@ class CachedAspectLoaderTest extends TestCase
 {
     private string $cacheDir;
 
+    /** @var AspectLoaderInterface&\PHPUnit\Framework\MockObject\MockObject */
     private AspectLoaderInterface $innerLoader;
 
     protected function setUp(): void

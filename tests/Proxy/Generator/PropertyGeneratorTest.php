@@ -105,7 +105,6 @@ class PropertyGeneratorTest extends TestCase
     {
         $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
         $node = $gen->getNode();
-        $this->assertInstanceOf(Property::class, $node);
         $this->assertSame('myProp', (string) $node->props[0]->name);
     }
 
@@ -118,6 +117,7 @@ class PropertyGeneratorTest extends TestCase
     public function testImplementsPropertyNodeProvider(): void
     {
         $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the implemented interface)
         $this->assertInstanceOf(PropertyNodeProvider::class, $gen);
     }
 
@@ -146,8 +146,8 @@ class PropertyGeneratorTest extends TestCase
         $parser = (new ParserFactory())->createForHostVersion();
         $stmts  = $parser->parse('<?php \strlen(...);');
         $this->assertNotNull($stmts, 'Failed to parse PHP snippet');
+        $this->assertInstanceOf(\PhpParser\Node\Stmt\Expression::class, $stmts[0]);
         $exprNode = $stmts[0]->expr;
-        $this->assertInstanceOf(Expr::class, $exprNode);
 
         $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
         $gen->setDefaultExpressionNode($exprNode);

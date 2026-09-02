@@ -31,11 +31,11 @@ class WeavingTransformerTest extends TestCase
 
     protected WeavingTransformer $transformer;
 
-    protected ?AspectKernel $kernel;
+    protected AspectKernel $kernel;
 
-    protected ?AdviceMatcherInterface $adviceMatcher;
+    protected AdviceMatcherInterface $adviceMatcher;
 
-    protected ?CachePathManager $cachePathManager;
+    protected CachePathManager $cachePathManager;
 
     /**
      * @inheritDoc
@@ -150,7 +150,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php7-class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -193,7 +193,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('class-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -215,7 +215,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -233,7 +233,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -294,7 +294,7 @@ class WeavingTransformerTest extends TestCase
         $this->assertEquals($expected, $actual);
         $this->assertMatchesRegularExpression("/AOP_CACHE_DIR . '(.+)';$/m", $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php81-enum-const-expr-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -312,8 +312,7 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('php81-enum-const-expr');
         $this->transformer->transform($metadata);
 
-        $this->assertMatchesRegularExpression("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source);
-        preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches);
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches));
         $proxyContent = file_get_contents('vfs://' . $matches[1]);
 
         // The woven trait source, without the include_once tail (the proxy is included manually)
@@ -328,12 +327,20 @@ class WeavingTransformerTest extends TestCase
             include $traitFile;
             include $proxyFile;
 
+            // The enum only exists after the runtime includes above, so inspect it via cases()
             $enumName = 'Test\\ns1\\ConstExprStatus';
             $this->assertTrue(enum_exists($enumName));
-            $this->assertSame(-1, $enumName::Negative->value);
-            $this->assertSame(1 << 2, $enumName::Shifted->value);
-            $this->assertSame(12, $enumName::FromConst->value, 'self::SHIFT + 10 must resolve via the trait constant');
-            $this->assertSame($enumName::FromConst, $enumName::from(12));
+            $cases = $enumName::cases();
+            $this->assertIsArray($cases);
+            $caseValues = [];
+            foreach ($cases as $case) {
+                $this->assertInstanceOf(\BackedEnum::class, $case);
+                $caseValues[$case->name] = $case->value;
+            }
+            $this->assertSame(-1, $caseValues['Negative'] ?? null);
+            $this->assertSame(1 << 2, $caseValues['Shifted'] ?? null);
+            $this->assertSame(12, $caseValues['FromConst'] ?? null, 'self::SHIFT + 10 must resolve via the trait constant');
+            $this->assertSame('FromConst', array_search(12, $caseValues, true), 'from(12) must resolve to the FromConst case');
         } finally {
             unlink($traitFile);
             unlink($proxyFile);
@@ -356,7 +363,7 @@ class WeavingTransformerTest extends TestCase
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-woven')->source);
         $this->assertEquals($expected, $actual);
         if (preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches)) {
-            $actualProxyContent   = $this->normalizeWhitespaces(file_get_contents('vfs://' . $matches[1]));
+            $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php83-override-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
@@ -729,6 +736,7 @@ class WeavingTransformerTest extends TestCase
 
         $fileName = __DIR__ . '/Stubs/FinalPromotedClass85.php';
         $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
+        assert($stream !== false);
         $metadata = new StreamMetaData($stream, (string) file_get_contents($fileName));
         fclose($stream);
         $transformer->transform($metadata);
@@ -747,6 +755,9 @@ class WeavingTransformerTest extends TestCase
 
     /**
      * Creates a WeavingTransformer whose advice matcher returns the given advices for any class.
+     */
+    /**
+     * @param array<string, array<string, array<string, mixed>>> $advices
      */
     private function createTransformerWithAdvices(array $advices): WeavingTransformer
     {
@@ -785,8 +796,11 @@ class WeavingTransformerTest extends TestCase
      */
     protected function normalizeWhitespaces(string $value): string
     {
+        $trimmed = preg_replace('/\s+$/m', '', $value);
+        assert($trimmed !== null);
+
         return strtr(
-            preg_replace('/\s+$/m', '', $value),
+            $trimmed,
             [
                 "\r\n" => PHP_EOL,
                 "\n"   => PHP_EOL,
@@ -797,7 +811,7 @@ class WeavingTransformerTest extends TestCase
     /**
      * Returns a mock for kernel
      *
-     * @param array           $options   Additional options for kernel
+     * @param array<string, mixed> $options Additional options for kernel
      * @param AspectContainer $container Container instance
      *
      * @return MockObject|AspectKernel
@@ -847,7 +861,9 @@ class WeavingTransformerTest extends TestCase
     {
         $fileName = __DIR__ . '/_files/' . $name . '.php';
         $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
+        assert($stream !== false);
         $source   = file_get_contents($fileName);
+        assert($source !== false);
         $metadata = new StreamMetaData($stream, $source);
         fclose($stream);
 

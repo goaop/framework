@@ -45,10 +45,13 @@ class PointcutParserTest extends TestCase
     public function testParsingExpression(string $pointcutExpression): void
     {
         $stream = $this->lexer->lex($pointcutExpression);
-        $result = $this->parser->parse($stream);
-        $this->assertNotNull($result);
+        $this->expectNotToPerformAssertions();
+        $this->parser->parse($stream);
     }
 
+    /**
+     * @return array<array{string}>
+     */
     public static function validPointcutDefinitions(): array
     {
         return [

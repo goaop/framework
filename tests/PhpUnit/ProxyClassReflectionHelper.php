@@ -17,6 +17,7 @@ use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
 use PhpParser\ConstExprEvaluator;
+use PhpParser\Node;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\ClassConstFetch;
@@ -31,6 +32,16 @@ use PhpParser\NodeFinder;
 /**
  * Utility functions that helps initialization of reflection classes that introspects classes and its members
  * by parsing its AST (without loading class into memory).
+ *
+ * @phpstan-type ProjectConfiguration array{
+ *     kernel: class-string,
+ *     console: string,
+ *     frontController: string,
+ *     appDir: string,
+ *     debug: bool,
+ *     cacheDir: string,
+ *     includePaths: list<string>
+ * }
  */
 final class ProxyClassReflectionHelper
 {
@@ -42,7 +53,7 @@ final class ProxyClassReflectionHelper
      * Extracts the advice names array from the injectJoinPoints() call in the generated proxy file.
      *
      * @param string $className     Full qualified class name
-     * @param array  $configuration Configuration used for Go! AOP project setup
+     * @param ProjectConfiguration $configuration Configuration used for Go! AOP project setup
      *
      * @return string[][][] Advice names indexed by join point type and name, or empty array if not found
      */
@@ -50,8 +61,10 @@ final class ProxyClassReflectionHelper
     {
         $parsedReflectionClass = new ReflectionClass($className);
         $originalClassFile     = $parsedReflectionClass->getFileName();
+        assert(is_string($originalClassFile));
 
-        $appDir       = PathResolver::realpath($configuration['appDir']);
+        $appDir = PathResolver::realpath($configuration['appDir']);
+        assert(is_string($appDir));
         $relativePath = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
         $proxyFileName = $configuration['cacheDir'] . '/' . str_replace('\\', '/', $relativePath);
 
@@ -71,10 +84,16 @@ final class ProxyClassReflectionHelper
         });
 
         if ($injectCall !== null && count($injectCall->args) >= 2) {
-            $advicesNode = $injectCall->args[1]->value;
-            $result      = (new ConstExprEvaluator())->evaluateSilently($advicesNode);
+            $advicesArg = $injectCall->args[1];
+            if ($advicesArg instanceof Arg) {
+                $result = (new ConstExprEvaluator())->evaluateSilently($advicesArg->value);
+                if (is_array($result)) {
+                    /** @var string[][][] $result The advice names literal from the generated proxy is trusted */
+                    return $result;
+                }
+            }
 
-            return is_array($result) ? $result : [];
+            return [];
         }
 
         // New proxy generation path uses centralized InterceptorInjector calls.
@@ -199,7 +218,7 @@ final class ProxyClassReflectionHelper
                 $subject = $subjectNode->value;
             }
 
-            /** @var list<string> $adviceNames */
+            /** @var array<string> $adviceNames */
             $result[$metadata['target']][$subject] = array_values($adviceNames);
         }
 
@@ -207,7 +226,7 @@ final class ProxyClassReflectionHelper
     }
 
     /**
-     * @param array<mixed> $ast
+     * @param Node[] $ast
      * @return array<string, string>
      */
     private static function extractUseAliases(array $ast): array
@@ -238,11 +257,11 @@ final class ProxyClassReflectionHelper
 
         $advisorNames = [];
         foreach ($advicesNode->items as $item) {
-            $factoryCall = $item?->value;
+            $factoryCall = $item->value;
             if (!$factoryCall instanceof StaticCall || !$factoryCall->class instanceof Name || !$factoryCall->name instanceof Identifier) {
                 continue;
             }
-            if (!str_ends_with($factoryCall->class->toString(), 'Interceptor') || !isset($factoryCall->args[0])) {
+            if (!str_ends_with($factoryCall->class->toString(), 'Interceptor') || !isset($factoryCall->args[0]) || !$factoryCall->args[0] instanceof Arg) {
                 continue;
             }
             $adviceCall = $factoryCall->args[0]->value;
@@ -250,7 +269,7 @@ final class ProxyClassReflectionHelper
                 continue;
             }
             $aspectCall = $adviceCall->var;
-            if (!$aspectCall instanceof StaticCall || !$aspectCall->class instanceof Name || !$aspectCall->name instanceof Identifier || !str_ends_with($aspectCall->class->toString(), 'The') || !isset($aspectCall->args[0])) {
+            if (!$aspectCall instanceof StaticCall || !$aspectCall->class instanceof Name || !$aspectCall->name instanceof Identifier || !str_ends_with($aspectCall->class->toString(), 'The') || !isset($aspectCall->args[0]) || !$aspectCall->args[0] instanceof Arg) {
                 continue;
             }
 
@@ -283,18 +302,21 @@ final class ProxyClassReflectionHelper
      * Creates \Go\ParserReflection\ReflectionClass instance that introspects class without loading class into memory.
      *
      * @param string $className Full qualified class name for which \Go\ParserReflection\ReflectionClass ought to be initialized
-     * @param array $configuration Configuration used for Go! AOP project setup
+     * @param ProjectConfiguration $configuration Configuration used for Go! AOP project setup
      */
     public static function createReflectionClass(string $className, array $configuration): ReflectionClass
     {
         $parsedReflectionClass = new ReflectionClass($className);
         $originalClassFile     = $parsedReflectionClass->getFileName();
+        assert(is_string($originalClassFile));
         $originalNamespace     = $parsedReflectionClass->getNamespaceName();
 
-        $appDir         = PathResolver::realpath($configuration['appDir']);
+        $appDir = PathResolver::realpath($configuration['appDir']);
+        assert(is_string($appDir));
         $relativePath   = str_replace($appDir . DIRECTORY_SEPARATOR, '', $originalClassFile);
         $proxyFileName  = $configuration['cacheDir'] . '/' . str_replace('\\', '/', $relativePath);
         $proxyFileContent  = file_get_contents($proxyFileName);
+        assert($proxyFileContent !== false);
 
         // To prevent deep analysis of parents, we just cut everything after "extends"
         $proxyFileContent = preg_replace('/extends.*/', '', $proxyFileContent);

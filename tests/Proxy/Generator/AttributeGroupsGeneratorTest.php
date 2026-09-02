@@ -33,6 +33,9 @@ class AttributeGroupsGeneratorTest extends TestCase
         self::$printer = new Standard(['shortArraySyntax' => true]);
     }
 
+    /**
+     * @param array<\PhpParser\Node\AttributeGroup> $groups
+     */
     private function generateGroups(array $groups): string
     {
         $output = '';
@@ -53,7 +56,6 @@ class AttributeGroupsGeneratorTest extends TestCase
         $func = new ReflectionFunction(self::STUBS_NS . '\attrGenHelper_noArgs');
         $groups = AttributeGroupsGenerator::fromReflectionAttributes($func->getAttributes());
         $this->assertCount(1, $groups);
-        $this->assertInstanceOf(AttributeGroup::class, $groups[0]);
         $output = $this->generateGroups($groups);
         $this->assertStringContainsString('TestNoArgsAttr', $output);
     }

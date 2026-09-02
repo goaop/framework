@@ -71,7 +71,6 @@ class FunctionGeneratorTest extends TestCase
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
         $gen->setBody("return 'x';");
         $stmts = $gen->getStmts();
-        $this->assertNotNull($stmts);
         $this->assertNotEmpty($stmts);
     }
 
@@ -90,7 +89,6 @@ class FunctionGeneratorTest extends TestCase
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
         $node = $gen->getNode();
-        $this->assertInstanceOf(Function_::class, $node);
         $this->assertSame('funcGenHelper_simple', (string) $node->name);
     }
 
@@ -136,7 +134,6 @@ class FunctionGeneratorTest extends TestCase
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
         $gen->setBody('');
         $stmts = $gen->getStmts();
-        $this->assertIsArray($stmts);
         $this->assertEmpty($stmts);
     }
 

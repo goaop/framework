@@ -141,6 +141,7 @@ class ModifierPointcutTest extends TestCase
     public function testAlwaysMatchesWithoutReflectorInstance(): void
     {
         $reflectionClass = new ReflectionClass(FirstStatic::class);
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the conditional return type)
         $this->assertTrue($this->pointcut->matches($reflectionClass));
     }
 

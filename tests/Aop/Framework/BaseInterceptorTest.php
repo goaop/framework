@@ -23,7 +23,7 @@ class BaseInterceptorTest extends AbstractInterceptorTestCase
      */
     protected const INVOCATION_CLASS = Invocation::class;
 
-    public function testReturnsRawAdvice()
+    public function testReturnsRawAdvice(): void
     {
         $sequence = [];
         $advice   = $this->getAdvice($sequence);
@@ -35,7 +35,7 @@ class BaseInterceptorTest extends AbstractInterceptorTestCase
         $this->assertEquals($advice, $interceptor->getRawAdvice());
     }
 
-    public function testCanSerializeInterceptor()
+    public function testCanSerializeInterceptor(): void
     {
         $sequence = [];
         $advice   = $this->getAdvice($sequence);
@@ -51,7 +51,7 @@ class BaseInterceptorTest extends AbstractInterceptorTestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testCanUnserializeInterceptor()
+    public function testCanUnserializeInterceptor(): void
     {
         $sequence = [];
         $advice   = $this->getAdvice($sequence);
@@ -62,6 +62,7 @@ class BaseInterceptorTest extends AbstractInterceptorTestCase
         // Trick to mock unserialization of advice
         $serialized = 'O:' . $mockNameLength .':"' . $mockClass . '":1:{s:12:"adviceMethod";a:3:{s:5:"scope";s:6:"aspect";s:6:"method";s:26:"Go\Aop\Framework\{closure}";s:6:"aspect";s:36:"Go\Aop\Framework\BaseInterceptorTest";}}';
         $result     = unserialize($serialized);
+        $this->assertInstanceOf(AbstractInterceptorMock::class, $result);
         $this->assertEquals($advice, $result->getRawAdvice());
         $this->assertSame(0, $result->getAdviceOrder());
     }

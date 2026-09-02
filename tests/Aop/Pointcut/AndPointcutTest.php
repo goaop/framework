@@ -50,6 +50,9 @@ class AndPointcutTest extends TestCase
         $this->assertSame($expected, $result);
     }
 
+    /**
+     * @return array<array{\Go\Aop\Pointcut, \Go\Aop\Pointcut, bool}>
+     */
     public static function logicCases(): array
     {
         $true  = new TruePointcut();
