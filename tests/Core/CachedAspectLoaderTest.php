@@ -24,7 +24,7 @@ class CachedAspectLoaderTest extends TestCase
 {
     private string $cacheDir;
 
-    private AspectLoader $innerLoader;
+    private AspectLoaderInterface $innerLoader;
 
     protected function setUp(): void
     {
@@ -48,7 +48,7 @@ class CachedAspectLoaderTest extends TestCase
 
     private function createLoader(int $features): CachedAspectLoader
     {
-        $this->innerLoader = $this->createMock(AspectLoader::class);
+        $this->innerLoader = $this->createMock(AspectLoaderInterface::class);
         $container         = $this->createMock(AspectContainer::class);
         $container->method('getService')->willReturn($this->innerLoader);
 
