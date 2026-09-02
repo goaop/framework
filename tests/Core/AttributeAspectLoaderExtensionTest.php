@@ -19,8 +19,7 @@ final class AttributeAspectLoaderExtensionTest extends TestCase
 
     protected function setUp(): void
     {
-        $container       = $this->createStub(AspectContainer::class);
-        $this->extension = new AttributeAspectLoaderExtension(new PointcutLexer(), new PointcutParser(new PointcutGrammar($container)));
+        $this->extension = new AttributeAspectLoaderExtension(new PointcutLexer(), new PointcutParser(new PointcutGrammar()));
     }
 
     public function testLoadsAdvisorForPublicAdviceMethod(): void

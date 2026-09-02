@@ -16,7 +16,6 @@ use Closure;
 use Dissect\Lexer\Token;
 use Dissect\Parser\Grammar;
 use Go\Aop\Pointcut;
-use Go\Core\AspectContainer;
 use ReflectionMethod;
 use ReflectionProperty;
 
@@ -30,7 +29,7 @@ final class PointcutGrammar extends Grammar
     /**
      * Constructs a pointcut grammar with AST
      */
-    public function __construct(AspectContainer $container)
+    public function __construct()
     {
         $this('empty')
             ->is(/* empty */);
@@ -156,7 +155,7 @@ final class PointcutGrammar extends Grammar
 
         $this('pointcutReference')
             ->is('namespaceName', '->', 'namePatternPart')
-            ->call(fn(string $className, mixed $_0, string $name) => new PointcutReference($container, "{$className}->{$name}"))
+            ->call(fn(string $className, mixed $_0, string $name) => new PointcutReference("{$className}->{$name}"))
         ;
 
         $this('propertyAccessReference')

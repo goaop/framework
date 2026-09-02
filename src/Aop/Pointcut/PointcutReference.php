@@ -30,14 +30,18 @@ final class PointcutReference implements Pointcut
     private ?Pointcut $pointcut = null;
 
     /**
+     * Aspect container, resolved from the kernel on first access and memoized in the backing store
+     */
+    private AspectContainer $container {
+        get => $this->container ??= AspectKernel::getInstance()->getContainer();
+    }
+
+    /**
      * Pointcut reference constructor
      *
      * @param string $pointcutId Name of the pointcut to fetch from the container
      */
-    public function __construct(
-        private AspectContainer $container,
-        private readonly string $pointcutId,
-    ) {}
+    public function __construct(private readonly string $pointcutId) {}
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
@@ -49,16 +53,6 @@ final class PointcutReference implements Pointcut
     public function getKind(): int
     {
         return $this->getPointcut()->getKind();
-    }
-
-    public function __sleep(): array
-    {
-        return ['pointcutId'];
-    }
-
-    public function __wakeup(): void
-    {
-        $this->container = AspectKernel::getInstance()->getContainer();
     }
 
     /**

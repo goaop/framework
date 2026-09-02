@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Dissect\Lexer\Lexer;
-use Go\Core\AspectContainer;
 use Go\Stubs\StubPropertyModifiers;
 use Go\Tests\TestProject\Application\ClassWithComplexTypes;
 use PHPUnit\Framework\TestCase;
@@ -21,7 +20,6 @@ use PHPUnit\Framework\TestCase;
 /**
  * Class PointcutParserTest defines common check for valid grammar parsing
  */
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class PointcutParserTest extends TestCase
 {
     protected Lexer $lexer;
@@ -34,8 +32,7 @@ class PointcutParserTest extends TestCase
     {
         parent::setUp();
         $this->lexer  = new PointcutLexer();
-        $container    = $this->createMock(AspectContainer::class);
-        $this->parser = new PointcutParser(new PointcutGrammar($container));
+        $this->parser = new PointcutParser(new PointcutGrammar());
     }
 
     /**
