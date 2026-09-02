@@ -18,7 +18,7 @@ use ReflectionFunction;
 
 class TypeGeneratorTest extends TestCase
 {
-    private const STUBS_NS = 'Go\Proxy\Generator\Stubs';
+    private const STUBS_NS = 'Go\Stubs\Generator';
 
     #[DataProvider('fromTypeStringProvider')]
     public function testFromTypeString(string $input, string $expected): void
@@ -80,7 +80,7 @@ class TypeGeneratorTest extends TestCase
      */
     public static function fromReflectionTypeProvider(): array
     {
-        $ns = 'Go\Proxy\Generator\Stubs';
+        $ns = 'Go\Stubs\Generator';
         return [
             'int'          => [$ns . '\typeGenHelper_namedInt', 'int'],
             'string'       => [$ns . '\typeGenHelper_namedString', 'string'],

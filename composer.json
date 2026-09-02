@@ -59,10 +59,10 @@
         "files": [
             "tests/functions.php",
             "tests/Stubs/ClassWithoutNamespace.php",
-            "tests/Proxy/Generator/Stubs/AttributeGroupsGeneratorStubs.php",
-            "tests/Proxy/Generator/Stubs/FunctionGeneratorStubs.php",
-            "tests/Proxy/Generator/Stubs/TypeGeneratorStubs.php",
-            "tests/Proxy/Generator/Stubs/ParameterGeneratorStubs.php"
+            "tests/Stubs/Generator/AttributeGroupsGeneratorStubs.php",
+            "tests/Stubs/Generator/FunctionGeneratorStubs.php",
+            "tests/Stubs/Generator/TypeGeneratorStubs.php",
+            "tests/Stubs/Generator/ParameterGeneratorStubs.php"
         ]
     },
 

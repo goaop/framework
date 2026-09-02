@@ -23,7 +23,7 @@ use ReflectionParameter;
 
 class ParameterGeneratorTest extends TestCase
 {
-    private const STUBS_NS = 'Go\Proxy\Generator\Stubs';
+    private const STUBS_NS = 'Go\Stubs\Generator';
 
     private function getParam(string $func, int $idx = 0): ReflectionParameter
     {
@@ -140,7 +140,7 @@ class ParameterGeneratorTest extends TestCase
         // default path (ValueGenerator::fromExprNode). This test uses a regular
         // integer default to verify the code path is exercised.
         $refFunc = $this->getParserReflectionFunction(
-            __DIR__ . '/Stubs/ParameterGeneratorStubs.php',
+            __DIR__ . '/../../Stubs/Generator/ParameterGeneratorStubs.php',
             'paramGenHelper_simple'
         );
         $param  = $refFunc->getParameters()[1]; // int $count = 0
@@ -152,9 +152,9 @@ class ParameterGeneratorTest extends TestCase
     #[RequiresPhp('>= 8.5.0')]
     public function testFromReflectionWithFccDefault(): void
     {
-        require_once __DIR__ . '/Stubs/ParameterGeneratorFccStubs.php';
+        require_once __DIR__ . '/../../Stubs/Generator/ParameterGeneratorFccStubs.php';
         $refFunc = $this->getParserReflectionFunction(
-            __DIR__ . '/Stubs/ParameterGeneratorFccStubs.php',
+            __DIR__ . '/../../Stubs/Generator/ParameterGeneratorFccStubs.php',
             'paramGenHelper_fcc'
         );
         $param  = $refFunc->getParameters()[0];

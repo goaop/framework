@@ -10,7 +10,7 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Proxy\Generator\Stubs;
+namespace Go\Stubs\Generator;
 
 use Countable;
 use Exception;

@@ -14,7 +14,7 @@ declare(strict_types=1);
 // This file is intentionally NOT autoloaded/eagerly loaded — it must only be
 // require_once'd from tests gated with #[RequiresPhp('>= 8.5.0')].
 
-namespace Go\Proxy\Generator\Stubs;
+namespace Go\Stubs\Generator;
 
 #[TestRichAttr(strlen(...))]
 function attrGenHelper85_fccArg(): void {}

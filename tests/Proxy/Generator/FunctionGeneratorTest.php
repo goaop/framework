@@ -18,7 +18,7 @@ use ReflectionFunction;
 
 class FunctionGeneratorTest extends TestCase
 {
-    private const STUBS_NS = 'Go\Proxy\Generator\Stubs';
+    private const STUBS_NS = 'Go\Stubs\Generator';
 
     public function testFromReflectionSimple(): void
     {

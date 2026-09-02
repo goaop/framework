@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use Go\ParserReflection\ReflectionFileNamespace;
-use Go\Proxy\Generator\Stubs\AttrGenHelperClass;
-use Go\Proxy\Generator\Stubs\AttrGenRichHelperClass;
+use Go\Stubs\Generator\AttrGenHelperClass;
+use Go\Stubs\Generator\AttrGenRichHelperClass;
 use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use PhpParser\Node\AttributeGroup;
@@ -24,7 +24,7 @@ use ReflectionMethod;
 
 class AttributeGroupsGeneratorTest extends TestCase
 {
-    private const STUBS_NS = 'Go\Proxy\Generator\Stubs';
+    private const STUBS_NS = 'Go\Stubs\Generator';
 
     private static Standard $printer;
 
@@ -225,8 +225,8 @@ class AttributeGroupsGeneratorTest extends TestCase
     #[RequiresPhp('>= 8.5.0')]
     public function testAstPathPreservesFccArgument(): void
     {
-        require_once __DIR__ . '/Stubs/AttributeGroupsGenerator85Stubs.php';
-        $func   = $this->getParserReflectionNamespace(__DIR__ . '/Stubs/AttributeGroupsGenerator85Stubs.php')
+        require_once __DIR__ . '/../../Stubs/Generator/AttributeGroupsGenerator85Stubs.php';
+        $func   = $this->getParserReflectionNamespace(__DIR__ . '/../../Stubs/Generator/AttributeGroupsGenerator85Stubs.php')
             ->getFunction('attrGenHelper85_fccArg');
         $groups = AttributeGroupsGenerator::fromReflector($func);
         $this->assertCount(1, $groups);
@@ -240,8 +240,8 @@ class AttributeGroupsGeneratorTest extends TestCase
     #[RequiresPhp('>= 8.5.0')]
     public function testAstPathPreservesClosureArgument(): void
     {
-        require_once __DIR__ . '/Stubs/AttributeGroupsGenerator85Stubs.php';
-        $func   = $this->getParserReflectionNamespace(__DIR__ . '/Stubs/AttributeGroupsGenerator85Stubs.php')
+        require_once __DIR__ . '/../../Stubs/Generator/AttributeGroupsGenerator85Stubs.php';
+        $func   = $this->getParserReflectionNamespace(__DIR__ . '/../../Stubs/Generator/AttributeGroupsGenerator85Stubs.php')
             ->getFunction('attrGenHelper85_closureArg');
         $groups = AttributeGroupsGenerator::fromReflector($func);
         $this->assertCount(1, $groups);
@@ -257,7 +257,7 @@ class AttributeGroupsGeneratorTest extends TestCase
     private function getParserReflectionNamespace(?string $file = null): ReflectionFileNamespace
     {
         return new ReflectionFileNamespace(
-            $file ?? __DIR__ . '/Stubs/AttributeGroupsGeneratorStubs.php',
+            $file ?? __DIR__ . '/../../Stubs/Generator/AttributeGroupsGeneratorStubs.php',
             self::STUBS_NS
         );
     }

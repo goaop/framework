@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Go\Proxy\Generator\Stubs\MethodGeneratorTestStub;
+use Go\Stubs\Generator\MethodGeneratorTestStub;
 use PHPUnit\Framework\TestCase;
 use PhpParser\BuilderFactory;
 use PhpParser\Node\AttributeGroup;
