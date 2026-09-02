@@ -155,7 +155,7 @@ class SourceTransformingLoader extends PhpStreamFilter
 
             // Guard to disable overwriting of original files or when cache is unavailable:
             // the source passes through untouched (previously RESULT_ABORTED in the wrapper)
-            if ($cacheUri === null || $cacheUri === false || $cacheUri === $originalUri) {
+            if ($cacheUri === null || $cacheUri === $originalUri) {
                 stream_bucket_append($out, stream_bucket_new($this->stream, $this->data));
 
                 return PSFS_PASS_ON;
