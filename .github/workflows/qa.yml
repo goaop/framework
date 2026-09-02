@@ -1,0 +1,66 @@
+name: "QA checks"
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  validate:
+    name: "Validate composer.json"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v7
+      - name: "Install PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: "none"
+          php-version: "8.4"
+          tools: composer:v2
+      - name: "Validate composer.json"
+        run: "composer validate --strict"
+
+  audit:
+    name: "Audit dependencies"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v7
+      - name: "Install PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: "none"
+          php-version: "8.4"
+          tools: composer:v2
+      - name: "Cache dependencies"
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.composer/cache
+            vendor
+          key: "php-8.4-audit"
+          restore-keys: "php-8.4-audit"
+      - name: "Install dependencies"
+        run: "composer install --no-interaction --no-progress"
+      - name: "Audit dependencies"
+        run: "composer audit"
+
+  normalize:
+    name: "Check composer.json normalization"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v7
+      - name: "Install PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: "none"
+          php-version: "8.4"
+          tools: composer:v2, composer-normalize
+      - name: "Check normalization"
+        run: "composer-normalize --dry-run --indent-size=4 --indent-style=space"
