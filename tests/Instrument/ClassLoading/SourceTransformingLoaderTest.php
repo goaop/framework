@@ -156,7 +156,7 @@ class SourceTransformingLoaderTest extends TestCase
     {
         $this->registerLoader([]);
         $this->container->expects($this->never())->method('getServicesByInterface');
-        $this->container->method('hasAnyResourceChangedSince')->willReturn(true);
+        $this->container->method('isFreshSince')->willReturn(true);
 
         $cacheFile = $this->cacheDir . '/src/Some.php';
         mkdir(dirname($cacheFile), 0777, true);
@@ -173,7 +173,7 @@ class SourceTransformingLoaderTest extends TestCase
     {
         $this->registerLoader([]);
         $this->container->expects($this->never())->method('getServicesByInterface');
-        $this->container->method('hasAnyResourceChangedSince')->willReturn(true);
+        $this->container->method('isFreshSince')->willReturn(true);
 
         $this->cachePathManager->setCacheState($this->originalFile, [
             'filemtime' => (int) filemtime($this->originalFile) + 10,
@@ -202,7 +202,7 @@ class SourceTransformingLoaderTest extends TestCase
     {
         $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, self::WOVEN_SOURCE);
         $this->registerLoader([$transformer]);
-        $this->container->method('hasAnyResourceChangedSince')->willReturn(true);
+        $this->container->method('isFreshSince')->willReturn(true);
 
         // The record is older than the original file => stale by the freshness rules
         $this->cachePathManager->setCacheState($this->originalFile, [
@@ -246,7 +246,7 @@ class SourceTransformingLoaderTest extends TestCase
         $this->registerLoader([], Features::PREBUILT_CACHE);
         $this->container->expects($this->never())->method('getServicesByInterface');
         // Freshness collaborators must not even be consulted for a trusted record
-        $this->container->expects($this->never())->method('hasAnyResourceChangedSince');
+        $this->container->expects($this->never())->method('isFreshSince');
 
         $cacheFile = $this->cacheDir . '/src/Some.php';
         mkdir(dirname($cacheFile), 0777, true);

@@ -127,10 +127,18 @@ interface AspectContainer
     public function registerAspect(Aspect|string $aspectOrClassName, ?Closure $aspectFactory = null): void;
 
     /**
+     * Checks if all tracked file resources are still fresh at the given timestamp
+     *
+     * @return bool True when no resource was modified after the given timestamp (file modification time of every resource is less than or equal to given)
+     */
+    public function isFreshSince(int $timestamp): bool;
+
+    /**
      * Checks if there are any file resources with changes after since given timestamp
      *
      * @return bool Whether or not there are new changes (file modification time of any resource is greater than given)
      */
+    #[\Deprecated(message: 'use isFreshSince() instead', since: '4.0.0')]
     public function hasAnyResourceChangedSince(int $timestamp): bool;
 
     /**

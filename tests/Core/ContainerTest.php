@@ -122,12 +122,12 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * Tests that container resources can be added and isFresh works correctly
+     * Tests that container resources can be added and isFreshSince works correctly
      */
     public function testResourceManagement(): void
     {
         // Without resources this should be always true
-        $isFresh = $this->container->hasAnyResourceChangedSince(time());
+        $isFresh = $this->container->isFreshSince(time());
         $this->assertTrue($isFresh);
 
         $this->container->add(First::class, new First());
@@ -136,11 +136,29 @@ class ContainerTest extends TestCase
         $this->assertFileExists($filename);
 
         $realMtime = filemtime($filename);
-        $isFresh = $this->container->hasAnyResourceChangedSince($realMtime - 3600);
+        $isFresh = $this->container->isFreshSince($realMtime - 3600);
         $this->assertFalse($isFresh);
 
-        $isFresh = $this->container->hasAnyResourceChangedSince(time() + 3600);
+        $isFresh = $this->container->isFreshSince(time() + 3600);
         $this->assertTrue($isFresh);
+    }
+
+    /**
+     * Tests that the deprecated hasAnyResourceChangedSince is the logical opposite of isFreshSince
+     */
+    #[\PHPUnit\Framework\Attributes\IgnoreDeprecations]
+    public function testHasAnyResourceChangedSinceIsOppositeOfIsFreshSince(): void
+    {
+        $this->container->add(First::class, new First());
+        $filename = (new \ReflectionClass(First::class))->getFileName();
+        $this->assertNotFalse($filename);
+
+        $realMtime = filemtime($filename);
+        $this->assertNotFalse($realMtime);
+        foreach ([$realMtime - 3600, $realMtime, time() + 3600] as $timestamp) {
+            $hasChanged = $this->container->hasAnyResourceChangedSince($timestamp);
+            $this->assertSame(!$this->container->isFreshSince($timestamp), $hasChanged);
+        }
     }
 
     public function testHasMethod(): void

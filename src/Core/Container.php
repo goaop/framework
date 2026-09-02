@@ -50,7 +50,7 @@ class Container implements AspectContainer
     private array $tags = [];
 
     /**
-     * Cached timestamp for resources, might be uninitialized if {@see self::hasAnyResourceChangedSince()} is not called yet
+     * Cached timestamp for resources, might be uninitialized if {@see self::isFreshSince()} is not called yet
      */
     private int $cachedMaxTimestamp;
 
@@ -377,13 +377,19 @@ class Container implements AspectContainer
         return true;
     }
 
-    final public function hasAnyResourceChangedSince(int $timestamp): bool
+    final public function isFreshSince(int $timestamp): bool
     {
         if (!isset($this->cachedMaxTimestamp)) {
             $this->cachedMaxTimestamp = max(array_filter(array_map(filemtime(...), $this->resources)) + [0]);
         }
 
         return $this->cachedMaxTimestamp <= $timestamp;
+    }
+
+    #[\Deprecated(message: 'use isFreshSince() instead', since: '4.0.0')]
+    final public function hasAnyResourceChangedSince(int $timestamp): bool
+    {
+        return !$this->isFreshSince($timestamp);
     }
 
     /**
