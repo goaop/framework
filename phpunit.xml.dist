@@ -5,9 +5,6 @@
       <directory>./tests/</directory>
     </testsuite>
   </testsuites>
-  <logging>
-    <junit outputFile="./build/logs/junit.xml"/>
-  </logging>
   <source>
     <include>
       <directory>./src/</directory>

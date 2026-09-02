@@ -47,7 +47,7 @@ jobs:
       - name: "Install PHP"
         uses: "shivammathur/setup-php@v2"
         with:
-          coverage: "xdebug"
+          coverage: "none"
           php-version: "${{ matrix.php-version }}"
           ini-values: memory_limit=-1
           tools: composer:v2, cs2pr
@@ -75,3 +75,44 @@ jobs:
 
       - name: "Tests"
         run: "vendor/bin/phpunit"
+
+  coverage:
+    name: "Code coverage (highest, 8.5, ubuntu-latest)"
+
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v7"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "xdebug"
+          php-version: "8.5"
+          ini-values: memory_limit=-1
+          tools: composer:v2
+
+      - name: "Cache dependencies"
+        uses: "actions/cache@v6"
+        with:
+          path: |
+            ~/.composer/cache
+            vendor
+          key: "php-8.5-highest-coverage"
+          restore-keys: |
+            php-8.5-highest-coverage
+            php-8.5-highest
+
+      - name: "Install highest dependencies"
+        run: "composer update --no-interaction --no-progress"
+
+      - name: "Tests with coverage"
+        run: "vendor/bin/phpunit --coverage-clover build/logs/clover.xml"
+
+      - name: "Upload coverage to Codecov"
+        uses: "codecov/codecov-action@v5"
+        with:
+          files: build/logs/clover.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
