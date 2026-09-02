@@ -4,16 +4,17 @@ AOP via source transformation at load time (stream filter, no PECL, no eval).
 
 ## Agent gate
 - PHP 8.4+ required. If PHP 8.3 or less → STOP, report can't run tests/phpstan.
-- Gate: `./vendor/bin/phpstan analyze --memory-limit=512M` before commit (level 10).
+- Gate: `composer analyze` before commit (phpstan level 10).
 
 ## Commands
 | Action    | Command                                                               |
 |-----------|-----------------------------------------------------------------------|
 | install   | `composer install`                                                    |
-| test:all  | `./vendor/bin/phpunit`                                                |
+| test:all  | `composer test` (= `./vendor/bin/phpunit`)                            |
 | test:file | `./vendor/bin/phpunit tests/Core/ContainerTest.php`                   |
 | test:one  | `./vendor/bin/phpunit --filter testName tests/Core/ContainerTest.php` |
-| analyze   | `./vendor/bin/phpstan analyze --memory-limit=512M`                    |
+| analyze   | `composer analyze` (= `./vendor/bin/phpstan analyze --memory-limit=512M`) |
+| check     | `composer check` (analyze + test)                                     |
 
 ## Architecture overview
 Intercepts PHP class loading pipeline: source stream filter transforms source → injects interception hooks → caches result.

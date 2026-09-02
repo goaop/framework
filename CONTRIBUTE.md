@@ -10,16 +10,18 @@ $ composer install
 
 ## Run Tests
 
-To run tests simply run the `phpunit` executable in the `vendor/bin`
+To run tests use the composer script (a shortcut for the `phpunit` executable in `vendor/bin`):
 
 ```bash
+$ composer test
+# or directly:
 $ ./vendor/bin/phpunit
 ```
 
 You should get an output similar to this
 
 ```bash
-$ ./vendor/bin/phpunit
+$ composer test
 
 PHPUnit 4.8.29 by Sebastian Bergmann and contributors.
  
@@ -31,4 +33,22 @@ Time: 658 ms, Memory: 25.00MB
  
 OK, but incomplete, skipped, or risky tests!
 Tests: 157, Assertions: 207, Skipped: 6.
+```
+
+## Static Analysis
+
+To run PHPStan static analysis (level 10):
+
+```bash
+$ composer analyze
+# or directly:
+$ ./vendor/bin/phpstan analyze --memory-limit=512M
+```
+
+## Full Check
+
+To run static analysis and the test suite in one go:
+
+```bash
+$ composer check
 ```
