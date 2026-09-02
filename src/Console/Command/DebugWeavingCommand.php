@@ -19,6 +19,8 @@ use Go\Instrument\ClassLoading\CacheWarmer;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -26,25 +28,17 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Console command for debugging weaving issues due to circular dependencies.
- *
- * @codeCoverageIgnore
  */
-class DebugWeavingCommand extends BaseAspectCommand
-{
-    protected function configure(): void
-    {
-        parent::configure();
-        $this
-            ->setName('debug:weaving')
-            ->setDescription('Checks consistency in weaving process')
-            ->setHelp(
-                <<<EOT
+#[AsCommand(
+    name: 'debug:weaving',
+    description: 'Checks consistency in weaving process',
+    help: <<<EOT
 Allows to check consistency of weaving process, detects circular references and mutual dependencies between
 subjects of weaving and aspects.
 EOT
-            )
-        ;
-    }
+)]
+class DebugWeavingCommand extends BaseAspectCommand
+{
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -84,12 +78,12 @@ EOT
         if ($errors > 0) {
             $io->error(sprintf('Weaving is unstable, there are %s reported error(s).', $errors));
 
-            return $errors;
+            return Command::FAILURE;
         }
 
         $io->success('Weaving is stable, there are no errors reported.');
 
-        return 0;
+        return Command::SUCCESS;
     }
 
     /**
