@@ -12,6 +12,10 @@ parameters:
     # *-woven.php/*-proxy.php expected outputs (traits/proxies referencing
     # framework internals out of context) — not meaningful for static analysis.
     - tests/Instrument/Transformer/_files
+    # Version-specific weaving-input stubs (e.g. FinalPromotedClass85.php uses
+    # PHP 8.5-only syntax): their exact source shape is the test subject and
+    # they cannot even parse under the oldest supported PHP version.
+    - tests/Instrument/Transformer/Stubs
     # Reflection targets for the code generator tests: their exact signatures
     # (untyped parameters, variadics, by-ref args) are what the generators are
     # asserted against, so they must stay as-is.
