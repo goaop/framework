@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Console\Command;
 
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\CacheWarmer;
 use InvalidArgumentException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -62,5 +63,13 @@ abstract class BaseAspectCommand extends Command
         }
 
         $this->aspectKernel = AspectKernel::getInstance();
+    }
+
+    /**
+     * Creates the cache warmer for the loaded aspect kernel
+     */
+    protected function createCacheWarmer(OutputInterface $output): CacheWarmer
+    {
+        return new CacheWarmer($this->aspectKernel, $output);
     }
 }

@@ -76,12 +76,4 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
         // Let the warmup loop stop cleanly, execute() maps the signal to an exit code
         return false;
     }
-
-    /**
-     * Creates the cache warmer for the loaded aspect kernel
-     */
-    protected function createCacheWarmer(OutputInterface $output): CacheWarmer
-    {
-        return new CacheWarmer($this->aspectKernel, $output);
-    }
 }

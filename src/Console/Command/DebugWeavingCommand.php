@@ -15,7 +15,6 @@ namespace Go\Console\Command;
 use FilesystemIterator;
 use Go\Core\AspectContainer;
 use Go\Instrument\ClassLoading\CachePathManager;
-use Go\Instrument\ClassLoading\CacheWarmer;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -49,7 +48,7 @@ class DebugWeavingCommand extends BaseAspectCommand
         $io->title('Weaving debug information');
 
         $cachePathManager = $this->aspectKernel->getContainer()->getService(CachePathManager::class);
-        $warmer           = new CacheWarmer($this->aspectKernel, new NullOutput());
+        $warmer           = $this->createCacheWarmer(new NullOutput());
         $warmer->warmUp();
 
         $proxies = $this->getProxies($cachePathManager);
