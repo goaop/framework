@@ -17,6 +17,7 @@ use Go\Console\Command\DebugAdvisorCommand;
 use Go\Console\Command\DebugAspectCommand;
 use Go\Console\Command\DebugWeavingCommand;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
 
 
 if (is_dir($vendor = __DIR__ . '/../vendor')) {
@@ -40,10 +41,10 @@ if (!class_exists(Application::class)) {
 }
 
 $app = new Application('Go! AOP', InstalledVersions::getVersion('goaop/framework'));
-$app->addCommands([
-    new CacheWarmupCommand(),
-    new DebugAspectCommand(),
-    new DebugAdvisorCommand(),
-    new DebugWeavingCommand(),
-]);
+$app->setCommandLoader(new FactoryCommandLoader([
+    'cache:warmup:aop' => static fn (): CacheWarmupCommand => new CacheWarmupCommand(),
+    'debug:aspect'     => static fn (): DebugAspectCommand => new DebugAspectCommand(),
+    'debug:advisor'    => static fn (): DebugAdvisorCommand => new DebugAdvisorCommand(),
+    'debug:weaving'    => static fn (): DebugWeavingCommand => new DebugWeavingCommand(),
+]));
 $app->run();

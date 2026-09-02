@@ -28,6 +28,11 @@ use function count;
 class CacheWarmer
 {
     /**
+     * Whether the warmup loop was asked to stop (e.g. by a signal handler)
+     */
+    private bool $interrupted = false;
+
+    /**
      * CacheWarmer constructor.
      *
      * @param AspectKernel    $aspectKernel Instance of aspect kernel
@@ -37,6 +42,14 @@ class CacheWarmer
         protected AspectKernel $aspectKernel,
         protected OutputInterface $output = new NullOutput(),
     ) {
+    }
+
+    /**
+     * Asks the warmup loop to stop cleanly before processing the next file
+     */
+    public function interrupt(): void
+    {
+        $this->interrupted = true;
     }
 
     /**
@@ -66,7 +79,8 @@ class CacheWarmer
             throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
 
-        $errors = [];
+        $errors    = [];
+        $processed = 0;
 
         $displayException = function (Throwable $exception, string $path) use (&$errors) {
             $this->output->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: %s', $path));
@@ -74,7 +88,13 @@ class CacheWarmer
         };
 
         foreach ($iterator as $file) {
+            if ($this->interrupted) {
+                $this->output->writeln('<comment>[STOP]: Warmup was interrupted, stopping...</comment>');
+                break;
+            }
+
             $path = $file->getRealPath();
+            $processed++;
 
             try {
                 // This will trigger creation of cache
@@ -98,6 +118,6 @@ class CacheWarmer
         }
 
         $this->output->writeln('');
-        $this->output->writeln(sprintf('<fg=green;>[DONE]</>: Total processed %s, %s errors.', $total, count($errors)));
+        $this->output->writeln(sprintf('<fg=green;>[DONE]</>: Total processed %s, %s errors.', $processed, count($errors)));
     }
 }
