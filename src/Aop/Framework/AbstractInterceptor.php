@@ -55,12 +55,18 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     private static array $localAdvicesCache = [];
 
     /**
+     * Default state of properties that is not stored during serialization to compress state representation
+     */
+    private const array DEFAULT_STATE = ['adviceOrder' => 0, 'pointcutExpression' => ''];
+
+    /**
      * Default constructor for interceptor
      */
     public function __construct(
         protected readonly Closure $adviceMethod,
         private readonly int $adviceOrder = 0,
-        protected readonly string $pointcutExpression = ''
+        /** @internal Framework-internal introspection point (e.g. debug:advisor command), not a public API */
+        public readonly string $pointcutExpression = ''
     ) {}
 
     public function getAdviceOrder(): int
@@ -85,8 +91,14 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
      */
     final public function __serialize(): array
     {
-        // Compressing state representation to avoid default values, eg pointcutExpression = '' or adviceOrder = 0
-        $state = array_filter(get_object_vars($this), fn(mixed $value): bool => !empty($value));
+        // Compressing state representation by dropping only the values that match the defaults
+        // restored by __unserialize(). Strict comparison keeps legitimate falsy values (eg '0') intact.
+        $state = get_object_vars($this);
+        foreach (self::DEFAULT_STATE as $key => $defaultValue) {
+            if ($state[$key] === $defaultValue) {
+                unset($state[$key]);
+            }
+        }
 
         // Override closure with array representation to enable serialization
         $state['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
@@ -102,7 +114,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     final public function __unserialize(array $state): void
     {
         $state['adviceMethod'] = static::unserializeAdvice($state['adviceMethod']);
-        foreach ($state + ['adviceOrder' => 0, 'pointcutExpression' => ''] as $key => $value) {
+        foreach ($state + self::DEFAULT_STATE as $key => $value) {
             $this->$key = $value;
         }
     }
