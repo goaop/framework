@@ -185,7 +185,7 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
         $resultSecond = $invocation($second);
 
         // Each call must return the spl_object_id of the respective instance.
-        $this->assertSame(spl_object_id($first),  $resultFirst);
+        $this->assertSame(spl_object_id($first), $resultFirst);
         $this->assertSame(spl_object_id($second), $resultSecond);
         $this->assertNotSame($resultFirst, $resultSecond, 'Different instances must produce different object IDs');
     }

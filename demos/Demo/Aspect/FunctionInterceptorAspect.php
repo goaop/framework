@@ -28,10 +28,10 @@ class FunctionInterceptorAspect implements Aspect
     public function aroundArrayFunctions(FunctionInvocation $invocation): mixed
     {
         echo 'Calling Around Interceptor for ',
-            $invocation,
-            ' with arguments: ',
-            json_encode($invocation->getArguments()),
-            PHP_EOL;
+        $invocation,
+        ' with arguments: ',
+        json_encode($invocation->getArguments()),
+        PHP_EOL;
 
         return $invocation->proceed();
     }
@@ -43,10 +43,10 @@ class FunctionInterceptorAspect implements Aspect
     public function aroundFileGetContents(FunctionInvocation $invocation): string
     {
         echo 'Calling Around Interceptor for ',
-            $invocation,
-            ' with arguments: ',
-            json_encode($invocation->getArguments()),
-            PHP_EOL;
+        $invocation,
+        ' with arguments: ',
+        json_encode($invocation->getArguments()),
+        PHP_EOL;
 
         // return $invocation->proceed(); // Do not call original file_get_contents()
         return 'Hello!'; // Override return value for function

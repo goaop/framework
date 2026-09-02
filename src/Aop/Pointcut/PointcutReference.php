@@ -36,12 +36,12 @@ final class PointcutReference implements Pointcut
      */
     public function __construct(
         private AspectContainer $container,
-        private readonly string $pointcutId
+        private readonly string $pointcutId,
     ) {}
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
         return $this->getPointcut()->matches($context, $reflector);
     }

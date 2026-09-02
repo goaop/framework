@@ -19,7 +19,6 @@ use Demo\Attribute\Loggable;
  */
 class LoggingDemo
 {
-
     /**
      * Executes a task and logs all incoming arguments
      *

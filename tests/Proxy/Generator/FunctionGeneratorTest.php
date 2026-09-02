@@ -62,7 +62,8 @@ class FunctionGeneratorTest extends TestCase
     public function testSetAndGetBody(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $gen->body = "return 'hello';";        $this->assertStringContainsString("return 'hello'", $gen->body);
+        $gen->body = "return 'hello';";
+        $this->assertStringContainsString("return 'hello'", $gen->body);
     }
 
     public function testSetAndGetStmts(): void
@@ -76,7 +77,8 @@ class FunctionGeneratorTest extends TestCase
     public function testSetStmtsFromArray(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $gen->body = "return 'original';";        $stmts = $gen->stmts;
+        $gen->body = "return 'original';";
+        $stmts = $gen->stmts;
 
         $gen2 = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
         $gen2->stmts = $stmts;
@@ -147,7 +149,8 @@ class FunctionGeneratorTest extends TestCase
     public function testManualConstructor(): void
     {
         $gen = new FunctionGenerator('myFunc');
-        $gen->body = 'return 42;';        $output = $gen->generate();
+        $gen->body = 'return 42;';
+        $output = $gen->generate();
         $this->assertStringContainsString('function myFunc', $output);
         $this->assertStringContainsString('return 42', $output);
     }

@@ -258,7 +258,7 @@ class AttributeGroupsGeneratorTest extends TestCase
     {
         return new ReflectionFileNamespace(
             $file ?? __DIR__ . '/../../Stubs/Generator/AttributeGroupsGeneratorStubs.php',
-            self::STUBS_NS
+            self::STUBS_NS,
         );
     }
 }

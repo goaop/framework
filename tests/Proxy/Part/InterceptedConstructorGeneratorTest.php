@@ -59,27 +59,27 @@ class InterceptedConstructorGeneratorTest extends TestCase
                 'public function __construct(string $message = \'\', int $code = 0, ?\Throwable $previous = null)
                 {
                     parent::__construct(...\array_slice([$message, $code, $previous], 0, \func_num_args()));
-                }'
+                }',
             ],
             [
                 ClassWithOptionalArgsConstructor::class,
                 'public function __construct(int $foo = 42, bool $bar = false, ?\stdClass $instance = null)
                 {
                     parent::__construct(...\array_slice([$foo, $bar, $instance], 0, \func_num_args()));
-                }'
+                }',
             ],
             [
                 ClassWithoutConstructor::class,
                 'public function __construct()
                 {
-                }'
+                }',
             ],
             [
                 ClassWithProtectedConstructor::class,
                 'protected function __construct(string $className, int &$byReference)
                 {
                     parent::__construct(...[$className, &$byReference]);
-                }'
+                }',
             ],
         ];
     }
@@ -96,7 +96,7 @@ class InterceptedConstructorGeneratorTest extends TestCase
         $generator             = new InterceptedConstructorGenerator(
             $reflectionConstructor,
             null,
-            true // $constructorIsInTrait
+            true, // $constructorIsInTrait
         );
 
         $generatedCode = $generator->generate();
@@ -104,17 +104,17 @@ class InterceptedConstructorGeneratorTest extends TestCase
         $this->assertStringContainsString(
             '$this->__aop____construct(',
             $generatedCode,
-            'When constructorIsInTrait=true, must call $this->__aop____construct() instead of parent::__construct()'
+            'When constructorIsInTrait=true, must call $this->__aop____construct() instead of parent::__construct()',
         );
         $this->assertStringNotContainsString(
             'parent::__construct',
             $generatedCode,
-            'When constructorIsInTrait=true, must NOT use parent::__construct'
+            'When constructorIsInTrait=true, must NOT use parent::__construct',
         );
         $this->assertStringNotContainsString(
             'bindTo',
             $generatedCode,
-            'Property accessor must not use bindTo and closures at all'
+            'Property accessor must not use bindTo and closures at all',
         );
     }
 
@@ -126,7 +126,7 @@ class InterceptedConstructorGeneratorTest extends TestCase
         $this->assertStringContainsString(
             'private function __construct',
             $generatedCode,
-            'When constructor is private, must not throw exception'
+            'When constructor is private, must not throw exception',
         );
     }
 }

@@ -42,7 +42,7 @@ class ValueGeneratorTest extends TestCase
             'float neg'    => [-1.5, '-1.5'],
             'empty string' => ['', "''"],
             'string'       => ['hello', "'hello'"],
-            'string quotes'=> ["it's", "'it\\'s'"],
+            'string quotes' => ["it's", "'it\\'s'"],
         ];
     }
 

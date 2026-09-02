@@ -79,7 +79,7 @@ class ClassProxyGenerator
     public function __construct(
         ReflectionClass $originalClass,
         string $traitName,
-        array $classAdviceNames
+        array $classAdviceNames,
     ) {
         $this->adviceNames = $classAdviceNames;
 
@@ -90,11 +90,11 @@ class ClassProxyGenerator
         $interceptedProperties = array_keys($propertyAdvices);
         $introducedInterfaces  = array_values(array_filter(
             $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [],
-            is_string(...)
+            is_string(...),
         ));
         $introducedTraits      = array_values(array_filter(
             $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [],
-            is_string(...)
+            is_string(...),
         ));
 
         $staticInitializationAdvices = $classAdviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? [];
@@ -115,7 +115,7 @@ class ClassProxyGenerator
         // Extract underlying MethodGenerator instances for ClassGenerator
         $methodGenerators = array_map(
             static fn($m) => $m->getGenerator(),
-            array_values($generatedMethods)
+            array_values($generatedMethods),
         );
         foreach ([
             [$staticInitializationAdvices, StaticInitializationAware::class, $this->createStaticInitializationMethod(...)],
@@ -152,7 +152,7 @@ class ClassProxyGenerator
             $parentClassName,
             $introducedInterfaces,
             $generatedProperties,
-            $methodGenerators
+            $methodGenerators,
         );
 
         if ($originalClass->getDocComment()) {
@@ -418,7 +418,7 @@ class ClassProxyGenerator
             TypeGenerator::fromTypeString('array'),
             false,
             false,
-            new ValueGenerator([])
+            new ValueGenerator([]),
         );
         $method->addParameter($argumentsParameter);
         $method->body = <<<BODY

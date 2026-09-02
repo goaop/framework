@@ -17,6 +17,4 @@ use RuntimeException;
 /**
  * Superclass for all AOP infrastructure exceptions
  */
-class AspectException extends RuntimeException
-{
-}
+class AspectException extends RuntimeException {}

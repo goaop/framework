@@ -26,11 +26,10 @@ class DeclareParents extends AbstractAttribute
      */
     public function __construct(
         string                 $expression,
-        readonly public string $interfaceName,
-        readonly public string $traitName,
+        public readonly string $interfaceName,
+        public readonly string $traitName,
         int                    $order = 0,
-    )
-    {
+    ) {
         parent::__construct($expression, $order);
     }
 }

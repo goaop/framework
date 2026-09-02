@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -26,7 +26,7 @@ class NotPointcutTest extends TestCase
         $filter = new NotPointcut($first);
         $result = $filter->matches(
             new ReflectionClass(self::class),
-            new ReflectionMethod(self::class, __FUNCTION__)
+            new ReflectionMethod(self::class, __FUNCTION__),
         );
         $this->assertSame($expected, $result);
     }

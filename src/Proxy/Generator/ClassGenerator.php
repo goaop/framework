@@ -184,7 +184,7 @@ final class ClassGenerator implements GeneratorInterface
                     self::classNameNode($info['trait']),
                     new Identifier($info['method']),
                     $info['visibility']->toAstModifier(),
-                    new Identifier($info['alias'])
+                    new Identifier($info['alias']),
                 );
             }
 

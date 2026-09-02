@@ -18,6 +18,4 @@ use Attribute;
  * Pointcut attribute
  */
 #[Attribute(Attribute::TARGET_METHOD)]
-class Pointcut extends AbstractAttribute
-{
-}
+class Pointcut extends AbstractAttribute {}

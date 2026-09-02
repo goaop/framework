@@ -34,11 +34,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
     help: <<<EOT
 Allows to check consistency of weaving process, detects circular references and mutual dependencies between
 subjects of weaving and aspects.
-EOT
+EOT,
 )]
 class DebugWeavingCommand extends BaseAspectCommand
 {
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);
@@ -99,9 +98,9 @@ class DebugWeavingCommand extends BaseAspectCommand
         $iterator = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator(
                 $path,
-                FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS
+                FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS,
             ),
-            RecursiveIteratorIterator::CHILD_FIRST
+            RecursiveIteratorIterator::CHILD_FIRST,
         );
 
         $proxies = [];

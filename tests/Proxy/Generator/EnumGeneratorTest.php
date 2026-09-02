@@ -59,7 +59,7 @@ class EnumGeneratorTest extends TestCase
         $generator->addEnumCase('Shifted', new ShiftLeft(new Int_(1), new Int_(2)));
         $generator->addEnumCase(
             'FromConst',
-            new Plus(new ClassConstFetch(new Name('self'), new Identifier('SHIFT')), new Int_(10))
+            new Plus(new ClassConstFetch(new Name('self'), new Identifier('SHIFT')), new Int_(10)),
         );
 
         $output = $generator->generate();

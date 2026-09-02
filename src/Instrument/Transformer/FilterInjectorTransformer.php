@@ -1,5 +1,6 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -92,7 +93,7 @@ class FilterInjectorTransformer implements SourceTransformer
         self::configure(
             $kernel,
             SourceTransformingLoader::getId(),
-            $kernel->getContainer()->getService(CachePathManager::class)
+            $kernel->getContainer()->getService(CachePathManager::class),
         );
     }
 
@@ -156,8 +157,8 @@ class FilterInjectorTransformer implements SourceTransformer
             }
 
             $metadata->tokenStream[$startPosition]->text .= ' \\' . self::class . '::rewrite(';
-            if ($metadata->tokenStream[$startPosition+1]->id === T_WHITESPACE) {
-                unset($metadata->tokenStream[$startPosition+1]);
+            if ($metadata->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
+                unset($metadata->tokenStream[$startPosition + 1]);
             }
 
             $metadata->tokenStream[$endPosition]->text .= ', __DIR__)';

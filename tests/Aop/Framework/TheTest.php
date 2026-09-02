@@ -144,6 +144,4 @@ final class TheTestAspectKernel extends AspectKernel
     }
 }
 
-final class TheTestAspect implements Aspect
-{
-}
+final class TheTestAspect implements Aspect {}

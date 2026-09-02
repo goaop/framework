@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -68,9 +68,9 @@ class WeavingTransformerTest extends TestCase
                 'cacheDir'      => 'vfs://',
                 'cacheFileMode' => 0770,
                 'includePaths'  => [],
-                'excludePaths'  => []
+                'excludePaths'  => [],
             ],
-            $container
+            $container,
         );
         $this->cachePathManager = new CachePathManager($this->kernel);
 
@@ -78,7 +78,7 @@ class WeavingTransformerTest extends TestCase
             $this->kernel,
             $this->adviceMatcher,
             $this->cachePathManager,
-            $loader
+            $loader,
         );
     }
 
@@ -175,7 +175,7 @@ class WeavingTransformerTest extends TestCase
                 'excludePaths'  => [],
                 'cacheFileMode' => 0770,
             ],
-            $container
+            $container,
         );
         $cachePathManager = new CachePathManager($kernel);
 
@@ -183,7 +183,7 @@ class WeavingTransformerTest extends TestCase
             $kernel,
             $this->adviceMatcher,
             $cachePathManager,
-            $loader
+            $loader,
         );
 
         $metadata = $this->loadTestMetadata('class');
@@ -272,7 +272,7 @@ class WeavingTransformerTest extends TestCase
         $this->assertSame(
             $labelLineInOrig,
             $labelLineWoven,
-            'label() must appear at the same line number in the woven trait as in the original enum source'
+            'label() must appear at the same line number in the woven trait as in the original enum source',
         );
     }
 
@@ -426,7 +426,7 @@ class WeavingTransformerTest extends TestCase
             $this->kernel,
             $adviceMatcher,
             $this->cachePathManager,
-            $loader
+            $loader,
         );
 
         $metadata = $this->loadTestMetadata('php81-attr-args');
@@ -501,7 +501,7 @@ class WeavingTransformerTest extends TestCase
             $this->kernel,
             $adviceMatcher,
             $this->cachePathManager,
-            $loader
+            $loader,
         );
 
         $metadata = $this->loadTestMetadata('php80-82-syntax');
@@ -545,7 +545,7 @@ class WeavingTransformerTest extends TestCase
         $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
         $this->assertStringContainsString(
             '#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]',
-            $proxyContent
+            $proxyContent,
         );
     }
 
@@ -576,7 +576,7 @@ class WeavingTransformerTest extends TestCase
             $this->kernel,
             $adviceMatcher,
             $this->cachePathManager,
-            $loader
+            $loader,
         );
 
         $metadata = $this->loadTestMetadata('php84-property-hooks');
@@ -585,11 +585,11 @@ class WeavingTransformerTest extends TestCase
         $actualWoven = $this->normalizeWhitespaces($metadata->source);
         $this->assertStringContainsString(
             "// public string \$value = 'test'; // Moved by weaving interceptor to the {@see Go\\Tests\\TestProject\\Application\\Php84PropertyHooksClass->value}",
-            $actualWoven
+            $actualWoven,
         );
         $this->assertStringContainsString(
             "// public protected(set) string \$limited = 'limited'; // Moved by weaving interceptor to the {@see Go\\Tests\\TestProject\\Application\\Php84PropertyHooksClass->limited}",
-            $actualWoven
+            $actualWoven,
         );
         $this->assertStringContainsString("public string \$plain = 'plain';", $actualWoven);
 
@@ -744,7 +744,7 @@ class WeavingTransformerTest extends TestCase
         $actual = $this->normalizeWhitespaces($metadata->source);
         $this->assertStringContainsString(
             "public function __construct(string \$token = 'secret') { \$this->token = \$token;}",
-            $actual
+            $actual,
         );
 
         $matches = [];
@@ -774,7 +774,7 @@ class WeavingTransformerTest extends TestCase
             $this->kernel,
             $adviceMatcher,
             $this->cachePathManager,
-            $loader
+            $loader,
         );
     }
 
@@ -804,7 +804,7 @@ class WeavingTransformerTest extends TestCase
             [
                 "\r\n" => PHP_EOL,
                 "\n"   => PHP_EOL,
-            ]
+            ],
         );
     }
 
@@ -882,7 +882,7 @@ class WeavingTransformerTest extends TestCase
         $container
             ->method('getServicesByInterface')
             ->willReturnMap([
-                [Advisor::class, []]
+                [Advisor::class, []],
             ]);
 
         return $container;

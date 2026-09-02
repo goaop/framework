@@ -79,7 +79,7 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
         }
         $this->originalMethodToCall = new ReflectionMethod(
             $closureScopeClass->getName(),
-            $reflectionClosure->getName()
+            $reflectionClosure->getName(),
         );
     }
 

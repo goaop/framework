@@ -19,7 +19,7 @@ abstract class AbstractAttribute
      * @param int $order         Order for advice/interceptor (used for sorting)
      */
     public function __construct(
-        readonly public string $expression = '',
-        readonly public int    $order = 0,
+        public readonly string $expression = '',
+        public readonly int    $order = 0,
     ) {}
 }

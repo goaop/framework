@@ -116,7 +116,7 @@ final class TraitGenerator implements GeneratorInterface
                     : new Name($aliasInfo['trait']),
                 new \PhpParser\Node\Identifier($aliasInfo['method']),
                 $aliasInfo['visibility']->toAstModifier(),
-                new \PhpParser\Node\Identifier($aliasInfo['alias'])
+                new \PhpParser\Node\Identifier($aliasInfo['alias']),
             );
         }
 
@@ -125,7 +125,7 @@ final class TraitGenerator implements GeneratorInterface
                 static fn(string $t) => str_contains($t, '\\')
                     ? new FullyQualified($t)
                     : new Name($t),
-                $this->usedTraits
+                $this->usedTraits,
             );
             $builder->addStmt(new TraitUse($traitNames, $traitUseAdaptations));
         }

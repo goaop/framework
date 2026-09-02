@@ -19,6 +19,4 @@ namespace Go\Aop;
  *
  * @api
  */
-interface Proxy
-{
-}
+interface Proxy {}

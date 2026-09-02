@@ -93,7 +93,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
     {
         return sprintf(
             'staticinitialization(%s)',
-            $this->getScope()
+            $this->getScope(),
         );
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -46,7 +46,7 @@ class OrPointcutTest extends TestCase
         $filter = new OrPointcut($first, $second);
         $result = $filter->matches(
             new ReflectionClass(self::class),
-            new ReflectionMethod(self::class, __FUNCTION__)
+            new ReflectionMethod(self::class, __FUNCTION__),
             /* anything */
         );
         $this->assertSame($expected, $result);
@@ -63,7 +63,7 @@ class OrPointcutTest extends TestCase
             [$false, $false, false],
             [$false, $true, true],
             [$true, $false, true],
-            [$true, $true, true]
+            [$true, $true, true],
         ];
     }
 }

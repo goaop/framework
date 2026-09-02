@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Intercept\Joinpoint;
@@ -91,7 +93,7 @@ final class ReturnTypePointcutTest extends TestCase
 
         $this->assertFalse($pointcut->matches(
             $reflectionClass,
-            $reflectionClass->getProperty('public')
+            $reflectionClass->getProperty('public'),
         ));
     }
 
@@ -102,7 +104,7 @@ final class ReturnTypePointcutTest extends TestCase
 
         $this->assertFalse($pointcut->matches(
             $reflectionClass,
-            $reflectionClass->getMethod('proceed')
+            $reflectionClass->getMethod('proceed'),
         ));
     }
 

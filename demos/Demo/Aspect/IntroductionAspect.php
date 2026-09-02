@@ -28,7 +28,7 @@ class IntroductionAspect implements Aspect
     #[DeclareParents(
         'within(Demo\Example\IntroductionDemo)',
         interfaceName: Stringable::class,
-        traitName: StringableImpl::class
+        traitName: StringableImpl::class,
     )]
     protected null $introduction;
 }

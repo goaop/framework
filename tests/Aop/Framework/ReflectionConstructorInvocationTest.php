@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -37,7 +37,7 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
     public function testStringRepresentation(): void
     {
         $invocation = new ReflectionConstructorInvocation([], \Exception::class);
-        $name       = (string)$invocation;
+        $name       = (string) $invocation;
 
         $this->assertEquals('initialization(Exception)', $name);
     }
@@ -63,7 +63,7 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
     {
         try {
             // @phpstan-ignore new.privateConstructor (instantiation failure of a private constructor is the test subject)
-            $testClassInstance = new class('Test') {
+            $testClassInstance = new class ('Test') {
                 public string $message;
 
                 private function __construct(string $message)

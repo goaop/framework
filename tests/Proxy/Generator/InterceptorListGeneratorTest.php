@@ -18,7 +18,7 @@ final class InterceptorListGeneratorTest extends TestCase
     {
         $descriptor = GeneratedInterceptor::fromAdvice(
             'manual.around',
-            new AroundInterceptor(static fn(): mixed => null, 20)
+            new AroundInterceptor(static fn(): mixed => null, 20),
         );
 
         $code = (new InterceptorListGenerator([$descriptor]))->generate();
@@ -30,7 +30,7 @@ final class InterceptorListGeneratorTest extends TestCase
                 Interceptor::around(The::advice('manual.around'), order: 20),
             ]
 PHP,
-            $code
+            $code,
         );
     }
 
@@ -55,7 +55,7 @@ PHP,
                 Interceptor::afterThrowing(The::advice('manual.afterThrowing')),
             ]
 PHP,
-            $code
+            $code,
         );
     }
 

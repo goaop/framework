@@ -126,7 +126,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
     {
         return sprintf(
             'initialization(%s)',
-            $this->getScope()
+            $this->getScope(),
         );
     }
 }

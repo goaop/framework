@@ -85,7 +85,7 @@ class ApplicationTest extends TestCase
         assert($phpExecutable !== false);
         $commandLine   = array_merge(
             [$phpExecutable, $this->console, $command],
-            $args
+            $args,
         );
 
         $process = new Process($commandLine);

@@ -54,7 +54,7 @@ class TypeGeneratorTest extends TestCase
             'namespaced'     => ['Foo\Bar\Baz', '\Foo\Bar\Baz'],
             'FQN with slash' => ['\Exception', '\Exception'],
             'union'          => ['int|string', 'int|string'],
-            'union with null'=> ['int|null', 'int|null'],
+            'union with null' => ['int|null', 'int|null'],
             'intersection'   => ['Countable&Iterator', '\Countable&\Iterator'],
             'dnf'            => ['(Countable&Iterator)|null', '(\Countable&\Iterator)|null'],
         ];

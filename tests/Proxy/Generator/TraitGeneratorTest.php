@@ -39,7 +39,7 @@ class TraitGeneratorTest extends TestCase
     {
         $method = MethodGenerator::fromReflection(new ReflectionMethod(
             MethodGeneratorTestStub::class,
-            'publicMethod'
+            'publicMethod',
         ));
         $gen = new TraitGenerator('MyTrait', null, [$method]);
         $output = $gen->generate();

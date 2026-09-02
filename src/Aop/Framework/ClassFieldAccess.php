@@ -190,7 +190,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
             '%s(%s->%s)',
             $this->accessType->value,
             $this->getScope(),
-            $this->reflectionProperty->name
+            $this->reflectionProperty->name,
         );
     }
 }

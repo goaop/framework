@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -29,7 +29,7 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
      */
     private Pointcut $pointcut {
         get => $this->pointcut ??= $this->container->getService(PointcutParser::class)->parse(
-            $this->container->getService(PointcutLexer::class)->lex($this->pointcutExpression)
+            $this->container->getService(PointcutLexer::class)->lex($this->pointcutExpression),
         );
     }
 
@@ -41,7 +41,7 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
     public function __construct(
         private readonly AspectContainer $container,
         private readonly string          $pointcutExpression,
-        private readonly Advice          $advice
+        private readonly Advice          $advice,
     ) {}
 
     public function getPointcut(): Pointcut

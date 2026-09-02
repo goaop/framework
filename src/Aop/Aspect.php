@@ -21,6 +21,4 @@ namespace Go\Aop;
  * @api
  * @link http://en.wikipedia.org/wiki/Aspect_%28computer_science%29
  */
-interface Aspect
-{
-}
+interface Aspect {}

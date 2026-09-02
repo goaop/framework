@@ -25,7 +25,7 @@ trait StringableImpl
         return static::class . '(' . implode(', ', array_map(
             static fn(string $k, mixed $v): string => "$k=" . var_export($v, true),
             array_keys(get_object_vars($this)),
-            get_object_vars($this)
+            get_object_vars($this),
         )) . ')';
     }
 }

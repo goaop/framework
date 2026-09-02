@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -11,7 +11,6 @@ declare(strict_types = 1);
  */
 
 namespace Go\Aop\Framework;
-
 
 use RuntimeException;
 
@@ -45,4 +44,5 @@ class AfterThrowingInterceptorTest extends AbstractInterceptorTestCase
             $this->assertEquals(['invocation', 'advice'], $sequence, "Advice should be invoked after invocation");
             throw $e;
         }
-    }}
+    }
+}

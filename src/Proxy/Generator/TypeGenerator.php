@@ -141,7 +141,7 @@ final class TypeGenerator
      * - null input returns `mixed`.
      */
     public static function renderAstTypeForPhpDoc(
-        Identifier|Name|ComplexType|null $node
+        Identifier|Name|ComplexType|null $node,
     ): string {
         if ($node === null) {
             return 'mixed';

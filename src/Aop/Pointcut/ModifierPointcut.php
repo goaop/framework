@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -66,7 +66,7 @@ final class ModifierPointcut implements Pointcut
      */
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
         // With context only we always match, as we don't know about modifiers of given reflector
         if (!isset($reflector)) {
@@ -80,8 +80,8 @@ final class ModifierPointcut implements Pointcut
             $modifiers = $reflector->getModifiers();
         }
 
-        return !($this->notMask & $modifiers) &&
-            (($this->andMask === ($this->andMask & $modifiers)) || ($this->orMask & $modifiers));
+        return !($this->notMask & $modifiers)
+            && (($this->andMask === ($this->andMask & $modifiers)) || ($this->orMask & $modifiers));
     }
 
     /**

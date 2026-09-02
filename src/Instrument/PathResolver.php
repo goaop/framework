@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -22,7 +22,6 @@ use function is_array;
  */
 class PathResolver
 {
-
     /**
      * Custom replacement for realpath() and stream_resolve_include_path()
      *

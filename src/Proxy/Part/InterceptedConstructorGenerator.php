@@ -39,7 +39,7 @@ final class InterceptedConstructorGenerator
     public function __construct(
         ?ReflectionMethod $constructor = null,
         ?InterceptedMethodGenerator $constructorGenerator = null,
-        bool $constructorIsInTrait = false
+        bool $constructorIsInTrait = false,
     ) {
         if ($constructor !== null) {
             if ($constructorGenerator === null) {

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -34,7 +34,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      */
     public function __construct(
         protected PointcutLexer $pointcutLexer,
-        protected PointcutParser $pointcutParser
+        protected PointcutParser $pointcutParser,
     ) {}
 
     /**
@@ -47,7 +47,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     final protected function parsePointcut(
         Aspect $aspect,
         ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
-        string $pointcutExpression
+        string $pointcutExpression,
     ): Pointcut {
         $stream = $this->makeLexicalAnalyze($aspect, $reflection, $pointcutExpression);
 
@@ -65,7 +65,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     private function makeLexicalAnalyze(
         Aspect $aspect,
         ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
-        string $pointcutExpression
+        string $pointcutExpression,
     ): TokenStream {
         try {
             $resolvedThisPointcut = str_replace('$this', $aspect::class, $pointcutExpression);
@@ -79,7 +79,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                 $reflection instanceof ReflectionProperty
                     ? $reflection->getDeclaringClass()->getFileName()
                     : $reflection->getFileName(),
-                $reflection instanceof ReflectionProperty ? 0 : $reflection->getStartLine()
+                $reflection instanceof ReflectionProperty ? 0 : $reflection->getStartLine(),
             );
             throw new UnexpectedValueException($message, 0, $e);
         }
@@ -98,7 +98,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     private function parseTokenStream(
         ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
         string $pointcutExpression,
-        TokenStream $stream
+        TokenStream $stream,
     ): Pointcut {
         try {
             $pointcut = $this->pointcutParser->parse($stream);
@@ -115,7 +115,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                     ? $reflection->getDeclaringClass()->getFileName()
                     : $reflection->getFileName(),
                 $reflection instanceof ReflectionProperty ? 0 : $reflection->getStartLine(),
-                implode(', ', $e->getExpected())
+                implode(', ', $e->getExpected()),
             );
             throw new UnexpectedValueException($message, 0, $e);
         }

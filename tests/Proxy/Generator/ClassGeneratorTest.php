@@ -107,7 +107,7 @@ class ClassGeneratorTest extends TestCase
     {
         $method = MethodGenerator::fromReflection(new ReflectionMethod(
             MethodGeneratorTestStub::class,
-            'publicMethod'
+            'publicMethod',
         ));
         $gen = new ClassGenerator('MyClass', null, [], null, [], [], [$method]);
         $output = $gen->generate();

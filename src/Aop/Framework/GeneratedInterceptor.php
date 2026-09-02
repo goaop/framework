@@ -30,7 +30,7 @@ final readonly class GeneratedInterceptor
         public ?string $adviceMethod,
         public int $order,
         public string $advisorId,
-        public bool $usesContainerAdvice = false
+        public bool $usesContainerAdvice = false,
     ) {}
 
     public static function fromAdvice(string $advisorId, Advice $advice): self
@@ -49,7 +49,7 @@ final readonly class GeneratedInterceptor
             $usesContainerAdvice ? null : $reflectionAdvice->name,
             $advice->getAdviceOrder(),
             $advisorId,
-            $usesContainerAdvice
+            $usesContainerAdvice,
         );
     }
 }

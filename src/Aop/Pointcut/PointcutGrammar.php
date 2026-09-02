@@ -19,6 +19,7 @@ use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use ReflectionMethod;
 use ReflectionProperty;
+
 use function constant;
 
 /**
@@ -91,9 +92,9 @@ final class PointcutGrammar extends Grammar
                 function (mixed $_0, mixed $_1, Pointcut $classFilter) {
                     return new AndPointcut(
                         Pointcut::KIND_ALL,
-                        $classFilter
+                        $classFilter,
                     );
-                }
+                },
             )
         ;
 
@@ -102,7 +103,7 @@ final class PointcutGrammar extends Grammar
             ->call(
                 function (mixed $_0, mixed $_1, mixed $_2, string $attributeClassName) {
                     return new AttributePointcut(Pointcut::KIND_PROPERTY, $attributeClassName);
-                }
+                },
             )
         ;
 
@@ -111,7 +112,7 @@ final class PointcutGrammar extends Grammar
             ->call(
                 function (mixed $_0, mixed $_1, mixed $_2, string $attributeClassName) {
                     return new AttributePointcut(Pointcut::KIND_METHOD, $attributeClassName);
-                }
+                },
             )
         ;
 
@@ -120,7 +121,7 @@ final class PointcutGrammar extends Grammar
             ->call(
                 function (mixed $_0, mixed $_1, mixed $_2, string $attributeClassName) {
                     return new AttributePointcut(Pointcut::KIND_ALL, $attributeClassName, true);
-                }
+                },
             )
         ;
 
@@ -130,9 +131,9 @@ final class PointcutGrammar extends Grammar
                 function (mixed $_0, mixed $_1, Pointcut $classFilter) {
                     return new AndPointcut(
                         Pointcut::KIND_INIT | Pointcut::KIND_CLASS,
-                        $classFilter
+                        $classFilter,
                     );
-                }
+                },
             )
         ;
 
@@ -142,9 +143,9 @@ final class PointcutGrammar extends Grammar
                 function (mixed $_0, mixed $_1, Pointcut $classFilter) {
                     return new AndPointcut(
                         Pointcut::KIND_STATIC_INIT | Pointcut::KIND_CLASS,
-                        $classFilter
+                        $classFilter,
                     );
-                }
+                },
             )
         ;
 
@@ -167,9 +168,9 @@ final class PointcutGrammar extends Grammar
                         $reference->classFilter,
                         $reference->visibilityFilter,
                         $reference->accessTypeFilter,
-                        new NamePointcut(Pointcut::KIND_PROPERTY, $reference->memberNamePattern)
+                        new NamePointcut(Pointcut::KIND_PROPERTY, $reference->memberNamePattern),
                     );
-                }
+                },
             )
         ;
 
@@ -182,9 +183,9 @@ final class PointcutGrammar extends Grammar
                         $reference->classFilter,
                         $reference->visibilityFilter,
                         $reference->accessTypeFilter,
-                        new NamePointcut(Pointcut::KIND_METHOD, $reference->memberNamePattern)
+                        new NamePointcut(Pointcut::KIND_METHOD, $reference->memberNamePattern),
                     );
-                }
+                },
             )
             ->is('memberReference', '(', 'argumentList', ')', ':', 'returnTypePattern')
             ->call(
@@ -197,7 +198,7 @@ final class PointcutGrammar extends Grammar
                         new NamePointcut(Pointcut::KIND_METHOD, $reference->memberNamePattern),
                         new ReturnTypePointcut($returnType),
                     );
-                }
+                },
             )
         ;
 
@@ -210,7 +211,7 @@ final class PointcutGrammar extends Grammar
                         new NamePointcut(Pointcut::KIND_FUNCTION, $namespacePattern, true),
                         new NamePointcut(Pointcut::KIND_FUNCTION, $namePattern),
                     );
-                }
+                },
             )
             ->is('namespacePattern', 'nsSeparator', 'namePatternPart', '(', 'argumentList', ')', ':', 'returnTypePattern')
             ->call(
@@ -221,7 +222,7 @@ final class PointcutGrammar extends Grammar
                         new ReturnTypePointcut($returnType),
                         new NamePointcut(Pointcut::KIND_FUNCTION, $namePattern),
                     );
-                }
+                },
             )
         ;
 
@@ -232,15 +233,15 @@ final class PointcutGrammar extends Grammar
                     ModifierPointcut $memberModifiers,
                     Pointcut         $classFilter,
                     ModifierPointcut $memberAccessType,
-                    string           $namePattern
+                    string           $namePattern,
                 ) {
                     return new ClassMemberReference(
                         $classFilter,
                         $memberModifiers,
                         $memberAccessType,
-                        $namePattern
+                        $namePattern,
                     );
-                }
+                },
             )
         ;
 
@@ -252,7 +253,7 @@ final class PointcutGrammar extends Grammar
                     return $pattern === '**'
                         ? new TruePointcut()
                         : new NamePointcut(Pointcut::KIND_ALL, $pattern, true);
-                }
+                },
             )
             ->is('namespacePattern', '+')
             ->call(fn(string $parentClassName) => new ClassInheritancePointcut($parentClassName))
@@ -271,7 +272,7 @@ final class PointcutGrammar extends Grammar
                     $modifierMatcherFilter->notMatch(ReflectionMethod::IS_STATIC);
 
                     return $modifierMatcherFilter;
-                }
+                },
             )
         ;
 

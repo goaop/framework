@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -73,7 +73,7 @@ class BaseInterceptorTest extends AbstractInterceptorTestCase
         $mockClass      = get_class($mock);
         $mockNameLength = strlen($mockClass);
         // Trick to mock unserialization of advice
-        $serialized = 'O:' . $mockNameLength .':"' . $mockClass . '":1:{s:12:"adviceMethod";a:3:{s:5:"scope";s:6:"aspect";s:6:"method";s:26:"Go\Aop\Framework\{closure}";s:6:"aspect";s:36:"Go\Aop\Framework\BaseInterceptorTest";}}';
+        $serialized = 'O:' . $mockNameLength . ':"' . $mockClass . '":1:{s:12:"adviceMethod";a:3:{s:5:"scope";s:6:"aspect";s:6:"method";s:26:"Go\Aop\Framework\{closure}";s:6:"aspect";s:36:"Go\Aop\Framework\BaseInterceptorTest";}}';
         $result     = unserialize($serialized);
         $this->assertInstanceOf(AbstractInterceptorMock::class, $result);
         $this->assertEquals($advice, $result->getRawAdvice());

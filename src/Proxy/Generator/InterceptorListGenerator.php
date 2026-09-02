@@ -58,7 +58,7 @@ final class InterceptorListGenerator
         foreach ($interceptors as $interceptor) {
             if (!$interceptor instanceof GeneratedInterceptor) {
                 throw new AspectException(
-                    'Interceptor list expects generated interceptor descriptors, got ' . get_debug_type($interceptor)
+                    'Interceptor list expects generated interceptor descriptors, got ' . get_debug_type($interceptor),
                 );
             }
             $descriptors[] = $interceptor;
@@ -98,7 +98,7 @@ final class InterceptorListGenerator
     {
         return new Array_(array_map(
             static fn(GeneratedInterceptor $interceptor): ArrayItem => new ArrayItem(self::createCallNode($interceptor)),
-            $this->interceptors
+            $this->interceptors,
         ), ['kind' => Array_::KIND_SHORT]);
     }
 
@@ -123,7 +123,7 @@ final class InterceptorListGenerator
                 'advice',
                 [
                     new Arg(new String_($interceptor->advisorId)),
-                ]
+                ],
             );
         }
 
@@ -136,7 +136,7 @@ final class InterceptorListGenerator
                 new Arg(new ClassConstFetch(new Name(self::shortClassName($interceptor->aspectClass)), 'class')),
             ]),
             $interceptor->adviceMethod,
-            [new VariadicPlaceholder()]
+            [new VariadicPlaceholder()],
         );
     }
 

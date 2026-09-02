@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -24,16 +24,16 @@ class MagicConstantTransformerTest extends TestCase
 
     protected ?StreamMetaData $metadata;
 
-     /**
-     * {@inheritDoc}
-     */
+    /**
+    * {@inheritDoc}
+    */
     public function setUp(): void
     {
         $this->transformer = new MagicConstantTransformer(
             $this->getKernelMock([
                 'cacheDir' => __DIR__,
                 'appDir'   => dirname(__DIR__),
-            ])
+            ]),
         );
     }
 
@@ -82,7 +82,7 @@ class MagicConstantTransformerTest extends TestCase
     public function testTransformerCanResolveDirMagicConst(): void
     {
         $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __DIR__; ?>');
-        $expected = '<?php echo \''.__DIR__.'\'; ?>';
+        $expected = '<?php echo \'' . __DIR__ . '\'; ?>';
         $this->transformer->transform($metadata);
         $this->assertEquals($expected, $metadata->source);
     }
@@ -90,7 +90,7 @@ class MagicConstantTransformerTest extends TestCase
     public function testTransformerCanResolveFileMagicConst(): void
     {
         $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __FILE__; ?>');
-        $expected = '<?php echo \''.__FILE__.'\'; ?>';
+        $expected = '<?php echo \'' . __FILE__ . '\'; ?>';
         $this->transformer->transform($metadata);
         $this->assertEquals($expected, $metadata->source);
     }

@@ -42,14 +42,14 @@ class ClassProxyGeneratorTest extends TestCase
         $reflectionClass = new ReflectionClass($className);
         $classAdvices    = [
             'method' => [
-                $methodName => [self::testAdvice()]
-            ]
+                $methodName => [self::testAdvice()],
+            ],
         ];
 
         $childGenerator = new ClassProxyGenerator(
             $reflectionClass,
             'Test',
-            $classAdvices
+            $classAdvices,
         );
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
@@ -57,14 +57,14 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString(
             "__aop__{$methodName}",
             $proxyFileContent,
-            'Proxy must contain trait alias for intercepted method'
+            'Proxy must contain trait alias for intercepted method',
         );
 
         // Proxy intercepted method delegates to the join-point invocation chain
         $this->assertStringContainsString(
             "InterceptorInjector::forMethod(",
             $proxyFileContent,
-            'Proxy method body must delegate to the join-point invocation chain'
+            'Proxy method body must delegate to the join-point invocation chain',
         );
     }
 
@@ -78,7 +78,7 @@ class ClassProxyGeneratorTest extends TestCase
             'prop' => [
                 'public'    => [self::testAdvice()],
                 'protected' => [self::testAdvice()],
-            ]
+            ],
         ];
 
         $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
@@ -87,17 +87,17 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString(
             "public int \$public = ",
             $proxyFileContent,
-            'Proxy with property advices must re-declare intercepted properties with native hooks'
+            'Proxy with property advices must re-declare intercepted properties with native hooks',
         );
         $this->assertStringContainsString("InterceptorInjector::forProperty(", $proxyFileContent);
         $this->assertStringContainsString(
             "/** @var FieldAccess<self, int> \$__joinPoint */",
             $proxyFileContent,
-            'Proxy with property advices must route writes through join points in property hooks'
+            'Proxy with property advices must route writes through join points in property hooks',
         );
         $this->assertStringContainsString(
             "set {\n            /** @var FieldAccess<self, int> \$__joinPoint */\n            static \$__joinPoint = InterceptorInjector::forProperty(",
-            $proxyFileContent
+            $proxyFileContent,
         );
     }
 
@@ -113,7 +113,7 @@ class ClassProxyGeneratorTest extends TestCase
         $classAdvices    = [
             'prop' => [
                 'name'  => [self::testAdvice()],
-            ]
+            ],
         ];
 
         $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
@@ -122,7 +122,7 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString(
             'public protected(set) string $name = \'test\' {',
             $proxyFileContent,
-            'Proxy must preserve asymmetric visibility on intercepted properties'
+            'Proxy must preserve asymmetric visibility on intercepted properties',
         );
     }
 
@@ -147,7 +147,7 @@ class ClassProxyGeneratorTest extends TestCase
 
         $this->assertStringContainsString(
             "/** @var FieldAccess<self, \\Exception> \$__joinPoint */",
-            $proxyFileContent
+            $proxyFileContent,
         );
     }
 
@@ -179,7 +179,7 @@ class ClassProxyGeneratorTest extends TestCase
                 'intercepted' => [self::testAdvice()],
                 'readonly' => [self::testAdvice()],
                 'alreadyHooked' => [self::testAdvice()],
-            ]
+            ],
         ];
 
         $this->expectException(InvalidArgumentException::class);
@@ -250,23 +250,23 @@ class ClassProxyGeneratorTest extends TestCase
 
         $this->assertStringContainsString(
             "if (\$__joinPoint->getField()->isInitialized(\$this)) {",
-            $proxyFileContent
+            $proxyFileContent,
         );
         $this->assertStringContainsString(
             "return \$__joinPoint->__invoke(\$this, FieldAccessType::READ);",
-            $proxyFileContent
+            $proxyFileContent,
         );
         $this->assertStringContainsString(
             "if (\$__joinPoint->getField()->isInitialized(\$this)) {",
-            $proxyFileContent
+            $proxyFileContent,
         );
         $this->assertStringContainsString(
             "if (\$__joinPoint->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, FieldAccessType::WRITE, \$value, \$this->uninitialized);",
-            $proxyFileContent
+            $proxyFileContent,
         );
         $this->assertStringContainsString(
             "} else {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, FieldAccessType::WRITE, \$value);",
-            $proxyFileContent
+            $proxyFileContent,
         );
     }
 
@@ -360,7 +360,7 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString(
             $traitName,
             $proxyFileContent,
-            'Proxy must use the original class body trait even when no methods are intercepted'
+            'Proxy must use the original class body trait even when no methods are intercepted',
         );
     }
 
@@ -422,17 +422,17 @@ class ClassProxyGeneratorTest extends TestCase
 
         $this->assertStringNotContainsString(
             'FirstStatic__AopProxied::publicMethod as private __aop__publicMethod',
-            $proxyFileContent
+            $proxyFileContent,
         );
         $this->assertStringContainsString(
             "InterceptorInjector::forMethod(",
-            $proxyFileContent
+            $proxyFileContent,
         );
         // Inherited instance method must use parent:: first-class callable (no __aop__ alias available)
         $this->assertStringContainsString(
             "parent::publicMethod(...)",
             $proxyFileContent,
-            'Inherited instance method must use parent::method(...) as first-class callable'
+            'Inherited instance method must use parent::method(...) as first-class callable',
         );
     }
 
@@ -460,20 +460,20 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringNotContainsString(
             '__aop__staticSelfPublic',
             $proxyFileContent,
-            'Inherited static method must not produce a trait alias'
+            'Inherited static method must not produce a trait alias',
         );
 
         // Must delegate to the join-point chain
         $this->assertStringContainsString(
             "InterceptorInjector::forStaticMethod(",
-            $proxyFileContent
+            $proxyFileContent,
         );
 
         // Inherited static method must use parent:: first-class callable
         $this->assertStringContainsString(
             "parent::staticSelfPublic(...)",
             $proxyFileContent,
-            'Inherited static method must use parent::method(...) as first-class callable'
+            'Inherited static method must use parent::method(...) as first-class callable',
         );
     }
 
@@ -506,12 +506,12 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString(
             '#[\Deprecated(',
             $proxyFileContent,
-            'Proxy must preserve #[\Deprecated] attribute on the proxied method'
+            'Proxy must preserve #[\Deprecated] attribute on the proxied method',
         );
         $this->assertStringContainsString(
             "'use newMethod() instead'",
             $proxyFileContent,
-            'Proxy must preserve the deprecation message argument'
+            'Proxy must preserve the deprecation message argument',
         );
 
         // Count occurrences — should appear exactly once (only on oldMethod, not normalMethod)
@@ -519,7 +519,7 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertSame(
             1,
             $deprecatedCount,
-            'Deprecated attribute should appear exactly once (only on oldMethod)'
+            'Deprecated attribute should appear exactly once (only on oldMethod)',
         );
     }
 

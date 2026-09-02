@@ -55,7 +55,7 @@ class FunctionProxyGenerator
      */
     public function __construct(
         ReflectionFileNamespace $namespace,
-        array $adviceNames = []
+        array $adviceNames = [],
     ) {
         $this->adviceNames   = $adviceNames;
         $this->fileGenerator = new FileGenerator();

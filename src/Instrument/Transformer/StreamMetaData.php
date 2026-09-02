@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -17,7 +17,9 @@ use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
 use PhpParser\Node;
 use PhpToken;
-use function is_array, is_resource;
+
+use function is_array;
+use function is_resource;
 
 /**
  * Stream metadata object

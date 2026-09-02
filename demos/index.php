@@ -1,7 +1,8 @@
 <?php
-declare(strict_types = 1);
+declare(strict_types=1);
 
 use Go\Aop\Proxy;
+
 /*
  * Go! AOP framework
  *
@@ -171,7 +172,7 @@ switch ($showCase) {
         $example = new DynamicMethodsDemo();
         $example->saveById(123); // intercept magic dynamic method
         $example->load(456); // notice, that advice filters out this method by name
-        DynamicMethodsDemo::find(['id' =>124]); //intercept magic static method
+        DynamicMethodsDemo::find(['id' => 124]); //intercept magic static method
         break;
 
     case 'function-interceptor':
@@ -222,7 +223,7 @@ switch ($showCase) {
   <div class="panel-group" id="accordion">
 <?php // Conditional block with source code of aspect
 if ($aspectName !== ''):
-?>
+    ?>
 
     <div class="panel panel-default" id="aspect">
       <div class="panel-heading">
@@ -232,9 +233,9 @@ if ($aspectName !== ''):
           </div>
       <div class="panel-body well panel-collapse collapse out" id="collapseOne">
 <?php
-$refAspect = new ReflectionClass($aspectName);
-Highlighter::highlight(MagicConstantTransformer::resolveFileName($refAspect->getFileName()));
-?>
+    $refAspect = new ReflectionClass($aspectName);
+    Highlighter::highlight(MagicConstantTransformer::resolveFileName($refAspect->getFileName()));
+    ?>
       </div>
     </div>
 <?php // End of conditional block with source code of class
@@ -243,7 +244,7 @@ endif;
 
 <?php // Conditional block with source code of class
 if ($example):
-?>
+    ?>
     <div class="panel panel-default">
       <div class="panel-heading">
           <a data-toggle="collapse" href="#collapseTwo">
@@ -251,18 +252,18 @@ if ($example):
           </a></div>
       <div class="panel-body well panel-collapse collapse out" id="collapseTwo">
 <?php
-$refObject = new ReflectionObject($example);
+    $refObject = new ReflectionObject($example);
 
-/**
- * Get filename without proxy additions
- */
-$path = $refObject->getFileName();
-$basename = basename($path);
-$explodedPath = explode($basename, $path);
-$path = array_shift($explodedPath) . $basename;
+    /**
+     * Get filename without proxy additions
+     */
+    $path = $refObject->getFileName();
+    $basename = basename($path);
+    $explodedPath = explode($basename, $path);
+    $path = array_shift($explodedPath) . $basename;
 
-Highlighter::highlight(MagicConstantTransformer::resolveFileName($path));
-?>
+    Highlighter::highlight(MagicConstantTransformer::resolveFileName($path));
+    ?>
       </div>
     </div>
 <?php // End of conditional block with source code of class

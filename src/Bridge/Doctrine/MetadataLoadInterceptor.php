@@ -82,7 +82,7 @@ final class MetadataLoadInterceptor
                     unset(
                         $metadata->fieldMappings[$name],
                         $metadata->fieldNames[$columnName],
-                        $metadata->columnNames[$name]
+                        $metadata->columnNames[$name],
                     );
                 }
             }

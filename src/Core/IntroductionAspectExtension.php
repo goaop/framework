@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -28,12 +28,11 @@ use UnexpectedValueException;
  */
 class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 {
-
     public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
     {
         $loadedItems = [];
         foreach ($reflectionAspect->getProperties() as $aspectProperty) {
-            $propertyId = $reflectionAspect->getName() . '->'. $aspectProperty->getName();
+            $propertyId = $reflectionAspect->getName() . '->' . $aspectProperty->getName();
             $attributes = $aspectProperty->getAttributes();
 
             foreach ($attributes as $reflectionAttribute) {
@@ -43,7 +42,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                     // Introduction doesn't have own syntax and uses any suitable class-filter
                     $pointcut = new Pointcut\AndPointcut(
                         Pointcut::KIND_INTRODUCTION | Pointcut::KIND_CLASS,
-                        $pointcut
+                        $pointcut,
                     );
                     $advice  = $this->getAdvice($attribute, $aspect, $aspectProperty);
                     $advisor = new GenericPointcutAdvisor($pointcut, $advice);
@@ -66,13 +65,13 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
     protected function getAdvice(
         AbstractAttribute $interceptorAttribute,
         Aspect $aspect,
-        ReflectionProperty $aspectProperty
+        ReflectionProperty $aspectProperty,
     ): Advice {
         return match (true) {
-            $interceptorAttribute instanceof DeclareParents =>
-                new TraitIntroductionInfo($interceptorAttribute->traitName, $interceptorAttribute->interfaceName),
-            default =>
-                throw new UnexpectedValueException('Unsupported attribute class: ' . $interceptorAttribute::class),
+            $interceptorAttribute instanceof DeclareParents
+                => new TraitIntroductionInfo($interceptorAttribute->traitName, $interceptorAttribute->interfaceName),
+            default
+            => throw new UnexpectedValueException('Unsupported attribute class: ' . $interceptorAttribute::class),
         };
     }
 }

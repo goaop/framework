@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -34,7 +34,7 @@ final readonly class NotPointcut implements Pointcut
      */
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
         // For Logical "not" expression without reflector, we should match statically for any context
         if (!isset($reflector)) {

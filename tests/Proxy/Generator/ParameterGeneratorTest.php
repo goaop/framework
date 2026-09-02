@@ -118,7 +118,7 @@ class ParameterGeneratorTest extends TestCase
     public function testFromReflectionPreservesParameterAttribute(): void
     {
         $gen = ParameterGenerator::fromReflection(
-            $this->getParam(self::STUBS_NS . '\paramGenHelper_sensitiveParam', 0)
+            $this->getParam(self::STUBS_NS . '\paramGenHelper_sensitiveParam', 0),
         );
         $output = $gen->generate();
         $this->assertStringContainsString('SensitiveParameter', $output);
@@ -128,7 +128,7 @@ class ParameterGeneratorTest extends TestCase
     public function testFromReflectionNoAttributeWhenNone(): void
     {
         $gen = ParameterGenerator::fromReflection(
-            $this->getParam(self::STUBS_NS . '\paramGenHelper_noAttrParam', 0)
+            $this->getParam(self::STUBS_NS . '\paramGenHelper_noAttrParam', 0),
         );
         $output = $gen->generate();
         $this->assertStringNotContainsString('#[', $output);
@@ -141,7 +141,7 @@ class ParameterGeneratorTest extends TestCase
         // integer default to verify the code path is exercised.
         $refFunc = $this->getParserReflectionFunction(
             __DIR__ . '/../../Stubs/Generator/ParameterGeneratorStubs.php',
-            'paramGenHelper_simple'
+            'paramGenHelper_simple',
         );
         $param  = $refFunc->getParameters()[1]; // int $count = 0
         $gen    = ParameterGenerator::fromReflection($param);
@@ -155,7 +155,7 @@ class ParameterGeneratorTest extends TestCase
         require_once __DIR__ . '/../../Stubs/Generator/ParameterGeneratorFccStubs.php';
         $refFunc = $this->getParserReflectionFunction(
             __DIR__ . '/../../Stubs/Generator/ParameterGeneratorFccStubs.php',
-            'paramGenHelper_fcc'
+            'paramGenHelper_fcc',
         );
         $param  = $refFunc->getParameters()[0];
         $gen    = ParameterGenerator::fromReflection($param);

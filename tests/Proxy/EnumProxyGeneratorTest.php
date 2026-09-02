@@ -133,7 +133,7 @@ class EnumProxyGeneratorTest extends TestCase
         $generator = new EnumProxyGenerator(
             $reflectionClass,
             'Go\\Stubs\\StubConstExprBackedEnum__AopProxied',
-            $classAdvices
+            $classAdvices,
         );
         $output = "<?php\n" . $generator->generate();
 

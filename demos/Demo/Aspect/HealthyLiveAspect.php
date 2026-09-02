@@ -28,9 +28,7 @@ class HealthyLiveAspect implements Aspect
      * Pointcut for eat method
      */
     #[Pointcut('execution(public Demo\Example\HumanDemo->eat(*))')]
-    protected function humanEat(): void
-    {
-    }
+    protected function humanEat(): void {}
 
     /**
      * Washing hands before eating
