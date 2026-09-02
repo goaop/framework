@@ -24,15 +24,6 @@ use PhpParser\PrettyPrinter\Standard;
  */
 final class PropertyGenerator implements PropertyNodeProvider
 {
-    public const int FLAG_PUBLIC    = 0b0001;
-    public const int FLAG_PROTECTED = 0b0010;
-    public const int FLAG_PRIVATE   = 0b0100;
-    public const int FLAG_STATIC    = 0b1000;
-    public const int FLAG_READONLY      = 0b0001_0000;
-    public const int FLAG_PROTECTED_SET = 0b0010_0000;
-    public const int FLAG_PRIVATE_SET   = 0b0100_0000;
-    public const int FLAG_FINAL         = 0b1000_0000;
-
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
 
@@ -50,9 +41,12 @@ final class PropertyGenerator implements PropertyNodeProvider
     /** @var list<PropertyHook> */
     private array $hooks = [];
 
+    /**
+     * @param list<PropertyModifier> $modifiers Property declaration modifiers
+     */
     public function __construct(
         private readonly string $name,
-        private readonly int $flags = self::FLAG_PUBLIC
+        private readonly array $modifiers = [PropertyModifier::PUBLIC]
     ) {
     }
 
@@ -112,26 +106,26 @@ final class PropertyGenerator implements PropertyNodeProvider
         $builder = self::getFactory()->property($this->name);
 
         // Visibility
-        if ($this->flags & self::FLAG_PRIVATE) {
+        if ($this->hasModifier(PropertyModifier::PRIVATE)) {
             $builder->makePrivate();
-        } elseif ($this->flags & self::FLAG_PROTECTED) {
+        } elseif ($this->hasModifier(PropertyModifier::PROTECTED)) {
             $builder->makeProtected();
         } else {
             $builder->makePublic();
         }
 
-        if ($this->flags & self::FLAG_STATIC) {
+        if ($this->hasModifier(PropertyModifier::STATIC)) {
             $builder->makeStatic();
         }
-        if ($this->flags & self::FLAG_FINAL) {
+        if ($this->hasModifier(PropertyModifier::FINAL)) {
             $builder->makeFinal();
         }
-        if ($this->flags & self::FLAG_READONLY) {
+        if ($this->hasModifier(PropertyModifier::READONLY)) {
             $builder->makeReadonly();
         }
-        if ($this->flags & self::FLAG_PRIVATE_SET) {
+        if ($this->hasModifier(PropertyModifier::PRIVATE_SET)) {
             $builder->makePrivateSet();
-        } elseif ($this->flags & self::FLAG_PROTECTED_SET) {
+        } elseif ($this->hasModifier(PropertyModifier::PROTECTED_SET)) {
             $builder->makeProtectedSet();
         }
 
@@ -169,6 +163,11 @@ final class PropertyGenerator implements PropertyNodeProvider
     public function generate(): string
     {
         return self::getPrinter()->prettyPrint([$this->getNode()]);
+    }
+
+    private function hasModifier(PropertyModifier $modifier): bool
+    {
+        return in_array($modifier, $this->modifiers, true);
     }
 
     private static function getPrinter(): Standard

@@ -29,6 +29,7 @@ use Go\Aop\StaticInitializationAware;
 use Go\Core\AspectContainer;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\ClassGenerator;
+use Go\Proxy\Generator\ClassModifier;
 use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\GeneratorInterface;
 use Go\Proxy\Generator\InterceptorListGenerator;
@@ -36,6 +37,7 @@ use Go\Proxy\Generator\MethodGenerator;
 use Go\Proxy\Generator\ParameterGenerator;
 use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\Generator\ValueGenerator;
+use Go\Proxy\Generator\Visibility;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use Go\Proxy\Part\InterceptedMethodGenerator;
 use Go\Proxy\Part\InterceptedPropertyGenerator;
@@ -131,22 +133,22 @@ class ClassProxyGenerator
         $parentClass     = $originalClass->getParentClass();
         $parentClassName = $parentClass !== false ? $parentClass->getName() : null;
 
-        // Proxy flags: preserve final/abstract/readonly from original class.
-        $flags = 0;
+        // Proxy modifiers: preserve final/abstract/readonly from original class.
+        $modifiers = [];
         if ($originalClass->isFinal()) {
-            $flags |= ClassGenerator::FLAG_FINAL;
+            $modifiers[] = ClassModifier::FINAL;
         }
         if ($originalClass->isAbstract()) {
-            $flags |= ClassGenerator::FLAG_ABSTRACT;
+            $modifiers[] = ClassModifier::ABSTRACT;
         }
         if ($originalClass->isReadOnly()) {
-            $flags |= ClassGenerator::FLAG_READONLY;
+            $modifiers[] = ClassModifier::READONLY;
         }
 
         $classGenerator = new ClassGenerator(
             $originalClass->getShortName(),
             !empty($originalClass->getNamespaceName()) ? $originalClass->getNamespaceName() : null,
-            $flags !== 0 ? $flags : null,
+            $modifiers,
             $parentClassName,
             $introducedInterfaces,
             $generatedProperties,
@@ -183,7 +185,7 @@ class ClassProxyGenerator
                 continue;
             }
 
-            $classGenerator->addTraitAlias($effectiveTraitName, $methodName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, ReflectionMethod::IS_PRIVATE);
+            $classGenerator->addTraitAlias($effectiveTraitName, $methodName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, Visibility::PRIVATE);
         }
         // Add any AOP-introduced traits
         $classGenerator->addTraits($introducedTraits);

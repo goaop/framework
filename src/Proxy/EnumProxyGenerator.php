@@ -24,6 +24,7 @@ use Go\Core\AspectContainer;
 use Go\Proxy\Generator\EnumGenerator;
 use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\TypeGenerator;
+use Go\Proxy\Generator\Visibility;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -159,7 +160,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
                 $effectiveTraitName,
                 $methodName,
                 AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName,
-                ReflectionMethod::IS_PRIVATE
+                Visibility::PRIVATE
             );
         }
 

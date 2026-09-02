@@ -124,7 +124,7 @@ class MethodGeneratorTest extends TestCase
     public function testSetVisibility(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setVisibility(MethodGenerator::VISIBILITY_PROTECTED);
+        $gen->setVisibility(Visibility::PROTECTED);
         $output = $gen->generate();
         $this->assertStringContainsString('protected', $output);
     }
@@ -200,7 +200,7 @@ class MethodGeneratorTest extends TestCase
     public function testManualConstructor(): void
     {
         $gen = new MethodGenerator('myMethod');
-        $gen->setVisibility(MethodGenerator::VISIBILITY_PUBLIC);
+        $gen->setVisibility(Visibility::PUBLIC);
         $gen->setBody("return true;");
         $output = $gen->generate();
         $this->assertStringContainsString('function myMethod', $output);
@@ -220,7 +220,7 @@ class MethodGeneratorTest extends TestCase
     public function testVisibilityPrivate(): void
     {
         $gen = new MethodGenerator('myMethod');
-        $gen->setVisibility(MethodGenerator::VISIBILITY_PRIVATE);
+        $gen->setVisibility(Visibility::PRIVATE);
         $output = $gen->generate();
         $this->assertStringContainsString('private', $output);
     }

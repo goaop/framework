@@ -14,7 +14,6 @@ namespace Go\Proxy\Generator;
 
 use PhpParser\BuilderFactory;
 use PhpParser\Comment\Doc;
-use PhpParser\Modifiers;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Property as PropertyNode;
@@ -48,7 +47,7 @@ final class TraitGenerator implements GeneratorInterface
     /** @var array<string, string|null> use => alias */
     private array $uses = [];
 
-    /** @var array{trait: string, method: string, alias: string, visibility: int}[] */
+    /** @var array{trait: string, method: string, alias: string, visibility: Visibility}[] */
     private array $traitAliases = [];
 
     /**
@@ -85,11 +84,11 @@ final class TraitGenerator implements GeneratorInterface
     /**
      * Adds an alias adaptation for a used trait's method.
      *
-     * @param string $traitAndMethod  e.g. "ParentTrait::methodName"
-     * @param string $alias           e.g. "__aop__methodName"
-     * @param int    $visibility      ReflectionMethod::IS_PUBLIC|IS_PROTECTED|IS_PRIVATE (maps directly to Modifiers)
+     * @param string     $traitAndMethod  e.g. "ParentTrait::methodName"
+     * @param string     $alias           e.g. "__aop__methodName"
+     * @param Visibility $visibility      Visibility of the aliased method
      */
-    public function addTraitAlias(string $traitAndMethod, string $alias, int $visibility): void
+    public function addTraitAlias(string $traitAndMethod, string $alias, Visibility $visibility): void
     {
         [$traitName, $methodName] = explode('::', $traitAndMethod, 2);
         $this->traitAliases[] = [
@@ -121,7 +120,7 @@ final class TraitGenerator implements GeneratorInterface
                     ? new FullyQualified($aliasInfo['trait'])
                     : new Name($aliasInfo['trait']),
                 new \PhpParser\Node\Identifier($aliasInfo['method']),
-                $this->mapVisibility($aliasInfo['visibility']),
+                $aliasInfo['visibility']->toAstModifier(),
                 new \PhpParser\Node\Identifier($aliasInfo['alias'])
             );
         }
@@ -175,19 +174,6 @@ final class TraitGenerator implements GeneratorInterface
         $stmts[] = $this->getNode();
 
         return self::getPrinter()->prettyPrint($stmts);
-    }
-
-    /**
-     * Maps ReflectionMethod visibility flag to PhpParser Modifiers constant.
-     * ReflectionMethod::IS_PUBLIC = 1, IS_PROTECTED = 2, IS_PRIVATE = 4 match Modifiers directly.
-     */
-    private function mapVisibility(int $visibility): int
-    {
-        return match (true) {
-            (bool)($visibility & \ReflectionMethod::IS_PRIVATE)   => Modifiers::PRIVATE,
-            (bool)($visibility & \ReflectionMethod::IS_PROTECTED) => Modifiers::PROTECTED,
-            default                                                 => Modifiers::PUBLIC,
-        };
     }
 
     private static function getPrinter(): Standard

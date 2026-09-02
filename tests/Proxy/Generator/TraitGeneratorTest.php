@@ -65,7 +65,7 @@ class TraitGeneratorTest extends TestCase
     {
         $gen = new TraitGenerator('MyTrait', 'Foo');
         $gen->addTrait('BaseTrait');
-        $gen->addTraitAlias('BaseTrait::myMethod', 'aliasedMethod', \ReflectionMethod::IS_PUBLIC);
+        $gen->addTraitAlias('BaseTrait::myMethod', 'aliasedMethod', Visibility::PUBLIC);
         $output = $gen->generate();
         $this->assertStringContainsString('aliasedMethod', $output);
     }
@@ -94,7 +94,7 @@ class TraitGeneratorTest extends TestCase
     {
         $gen = new TraitGenerator('MyTrait', 'Foo');
         $gen->addTrait('BaseTrait');
-        $gen->addTraitAlias('BaseTrait::myMethod', 'privateAlias', \ReflectionMethod::IS_PRIVATE);
+        $gen->addTraitAlias('BaseTrait::myMethod', 'privateAlias', Visibility::PRIVATE);
         $output = $gen->generate();
         $this->assertStringContainsString('privateAlias', $output);
         $this->assertStringContainsString('private', $output);
@@ -104,7 +104,7 @@ class TraitGeneratorTest extends TestCase
     {
         $gen = new TraitGenerator('MyTrait', 'Foo');
         $gen->addTrait('BaseTrait');
-        $gen->addTraitAlias('BaseTrait::myMethod', 'protectedAlias', \ReflectionMethod::IS_PROTECTED);
+        $gen->addTraitAlias('BaseTrait::myMethod', 'protectedAlias', Visibility::PROTECTED);
         $output = $gen->generate();
         $this->assertStringContainsString('protectedAlias', $output);
         $this->assertStringContainsString('protected', $output);
