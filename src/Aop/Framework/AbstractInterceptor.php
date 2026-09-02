@@ -18,7 +18,6 @@ use Go\Aop\AspectException;
 use Go\Aop\CompilableToPhp;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\OrderedAdvice;
-use Go\Core\AspectKernel;
 use Go\Core\NotCompilableException;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
@@ -31,7 +30,6 @@ use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\VariadicPlaceholder;
 use ReflectionFunction;
-use ReflectionMethod;
 
 /**
  * Base class for all framework interceptor implementations
@@ -61,19 +59,6 @@ use ReflectionMethod;
  */
 abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, CompilableToPhp
 {
-    /**
-     * @var array<string, Closure> Local hashmap of advices for faster unserialization
-     */
-    private static array $localAdvicesCache = [];
-
-    /**
-     * Default state of properties that is not stored during serialization to compress state representation.
-     *
-     * Values must match the declared property defaults, as the engine initializes properties
-     * from their declarations before __unserialize() is invoked.
-     */
-    private const array DEFAULT_STATE = ['adviceOrder' => 0, 'pointcutExpression' => ''];
-
     /**
      * Order of advice invocation, lower values are invoked first
      */
@@ -155,86 +140,5 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice, Compil
         }
 
         return new StaticCall(new FullyQualified(\Go\Aop\Framework\Interceptor::class), $factoryMethod, $args);
-    }
-
-    /**
-     * Serializes an interceptor into it's array shape representation
-     *
-     * @return array<mixed>
-     */
-    final public function __serialize(): array
-    {
-        // Compressing state representation by dropping only the values that match the defaults
-        // restored by __unserialize(). Strict comparison keeps legitimate falsy values (eg '0') intact.
-        $state = get_object_vars($this);
-        foreach (self::DEFAULT_STATE as $key => $defaultValue) {
-            if ($state[$key] === $defaultValue) {
-                unset($state[$key]);
-            }
-        }
-
-        // Override closure with array representation to enable serialization
-        $state['adviceMethod'] = static::serializeAdvice($this->adviceMethod);
-
-        return $state;
-    }
-
-    /**
-     * Un-serializes an interceptor from it's stored state
-     *
-     * @param array{adviceMethod: array{class: class-string<Aspect>, name: string}} $state The stored representation of the interceptor.
-     */
-    final public function __unserialize(array $state): void
-    {
-        $state['adviceMethod'] = static::unserializeAdvice($state['adviceMethod']);
-        // Only stored state is assigned here: properties compressed away by __serialize()
-        // are already initialized by the engine with their declared default values.
-        foreach ($state as $key => $value) {
-            $this->$key = $value;
-        }
-    }
-
-    /**
-     * Serializes advice closure into array
-     *
-     * @return array<string, mixed>
-     */
-    protected static function serializeAdvice(Closure $adviceMethod): array
-    {
-        $reflectionAdvice     = new ReflectionFunction($adviceMethod);
-        $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
-        if (!isset($scopeReflectionClass) || !is_subclass_of($scopeReflectionClass->name, Aspect::class)) {
-            throw new AspectException('Could not pack an interceptor without valid aspect');
-        }
-
-        return [
-            'name'  => $reflectionAdvice->name,
-            'class' => $scopeReflectionClass->name,
-        ];
-    }
-
-    /**
-     * Unserialize an advice
-     *
-     * @param array<string, mixed> $adviceData Information about advice
-     */
-    protected static function unserializeAdvice(array $adviceData): Closure
-    {
-        $aspectName = $adviceData['class'] ?? null;
-        $methodName = $adviceData['name'] ?? null;
-        // General unpacking supports only aspect's advices
-        if (!is_string($aspectName) || !is_string($methodName) || !is_subclass_of($aspectName, Aspect::class)) {
-            throw new AspectException('Could not unpack an interceptor without aspect name');
-        }
-
-        // With aspect name and method name, we can restore back a closure for it
-        if (!isset(self::$localAdvicesCache["$aspectName->$methodName"])) {
-            $aspect = AspectKernel::getInstance()->getContainer()->getService($aspectName);
-            $advice = new ReflectionMethod($aspectName, $methodName)->getClosure($aspect);
-
-            self::$localAdvicesCache["$aspectName->$methodName"] = $advice;
-        }
-
-        return self::$localAdvicesCache["$aspectName->$methodName"];
     }
 }
