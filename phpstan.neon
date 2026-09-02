@@ -1,7 +1,26 @@
 includes:
 	- phpstan-baseline.php
+	- phpstan-baseline-tests.php
 
 parameters:
   level: 10
   paths:
     - src
+    - tests
+  excludePaths:
+    # Snapshot fixtures for the weaving transformer: raw inputs plus generated
+    # *-woven.php/*-proxy.php expected outputs (traits/proxies referencing
+    # framework internals out of context) — not meaningful for static analysis.
+    - tests/Instrument/Transformer/_files
+    # Reflection targets for the code generator tests: their exact signatures
+    # (untyped parameters, variadics, by-ref args) are what the generators are
+    # asserted against, so they must stay as-is.
+    - tests/Proxy/Generator/Stubs
+    # Weaving-input stub classes: their exact source shape (untyped methods,
+    # unused private members, exotic syntax) is what the weaver is tested
+    # against; adding types here would change woven/proxy snapshot output.
+    - tests/Stubs
+    # Fixture project woven at runtime by the functional tests (inputs under
+    # tests/Fixtures/project/src plus its generated var/ cache) — same
+    # source-shape-under-test reasoning as tests/Stubs.
+    - tests/Fixtures
