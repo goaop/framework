@@ -9,7 +9,6 @@ declare(strict_types=1);
  */
 
 use Go\Aop\Framework\Interceptor;
-use Go\Aop\Framework\The;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut\AndPointcut;
 use Go\Aop\Pointcut\AttributePointcut;
@@ -64,7 +63,7 @@ return [
                     new MatchInheritedPointcut(),
                 ),
             ),
-            Interceptor::after(The::aspect(DoSomethingAspect::class)->afterDoSomething(...), order: 7, expression: 'execution(public Go\Tests\TestProject\Application\*->doSomething(*))'),
+            Interceptor::after(DoSomethingAspect::class, 'afterDoSomething', order: 7, expression: 'execution(public Go\Tests\TestProject\Application\*->doSomething(*))'),
         ),
         DoSomethingAspect::class . '->introduction' => new GenericPointcutAdvisor(
             new AndPointcut(

@@ -37,7 +37,7 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 
 ## Advice wiring (src/Aop/Framework/)
 - The — proxy-code accessor: aspect(X::class) fetches aspect from container; advice('advisorId') resolves container-backed closure advice (unwraps Advisor/AbstractInterceptor to raw Closure)
-- Interceptor — @internal factory facade for generated code and compiled advisor caches: before()/after()/around()/afterThrowing(Closure, int $order=0, string $expression=''); free to change between releases
+- Interceptor — @internal LAZY factory facade for generated code and compiled advisor caches: before()/after()/around()/afterThrowing(class-string<Aspect>|Closure, ?string $methodName=null, int $order=0, string $expression=''); with aspect class + method name it returns a native PHP 8.4 lazy proxy (newLazyProxy) — interceptor construction, The::aspect() resolution and FCC creation all defer until first real use (invocation/ordering), so unmatched advices never instantiate their aspect; a ready Closure (The::advice path) constructs eagerly; free to change between releases
 - GeneratedInterceptor — internal descriptor built by AbstractJoinpoint::flatAndSortAdvices() via fromAdvice(); usesContainerAdvice=true when advice closure isn't scoped to an Aspect class
 - AdviceTypeEnum — Advice::getType() kind + sorting priority (before → after/afterThrowing → around → introduction); replaced AdviceBefore/AdviceAfter/AdviceAround marker interfaces
 - Advice methods MUST be public (FCC calls them on the aspect instance from generated code)
@@ -51,7 +51,7 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 
 ## CompilableToPhp (src/Aop/CompilableToPhp.php, @internal)
 - compileToPhp(): PhpParser\Node\Expr — emit a nested static-constructor expression recreating the instance for the compiled advisor cache
-- Implemented by every concrete Pointcut, GenericPointcutAdvisor, TraitIntroductionInfo, AbstractInterceptor (emits Interceptor::before/after/around/afterThrowing facade calls)
+- Implemented by every concrete Pointcut, GenericPointcutAdvisor, TraitIntroductionInfo, AbstractInterceptor (emits pure-static-data Interceptor::before(Aspect::class, 'method', ...) facade calls — no FCC in cache files)
 - Emission rules: resolved private state as ctor args; trailing declared defaults omitted; named args when earlier defaults skipped; args that are class names by construction (attribute class, parent class, trait/interface, aspect class) always emit `Fqcn::class` (never class_exists checks — compilation may run mid-classload inside the autoloader); patterns/expressions stay string literals
 - Non-compilable nested item (custom Advisor/Pointcut/Advice or foreign interceptor subclass) → throw Go\Core\NotCompilableException; the loader then skips caching that aspect with an E_USER_WARNING
 

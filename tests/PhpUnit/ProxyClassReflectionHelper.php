@@ -262,6 +262,20 @@ final class ProxyClassReflectionHelper
             if (!str_ends_with($factoryCall->class->toString(), 'Interceptor') || !isset($factoryCall->args[0]) || !$factoryCall->args[0] instanceof Arg) {
                 continue;
             }
+            // Lazy factory shape: Interceptor::before(AspectClass::class, 'adviceMethod', ...)
+            $aspectClassArg = $factoryCall->args[0]->value;
+            if ($aspectClassArg instanceof ClassConstFetch && $aspectClassArg->class instanceof Name) {
+                $methodNameArg = isset($factoryCall->args[1]) && $factoryCall->args[1] instanceof Arg
+                    ? $factoryCall->args[1]->value
+                    : null;
+                if ($methodNameArg instanceof String_) {
+                    $aspectName     = $aspectClassArg->class->toString();
+                    $advisorNames[] = ($useAliases[$aspectName] ?? $aspectName) . '->' . $methodNameArg->value;
+                }
+
+                continue;
+            }
+
             $adviceCall = $factoryCall->args[0]->value;
             if (!$adviceCall instanceof MethodCall || !$adviceCall->name instanceof Identifier) {
                 continue;

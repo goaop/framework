@@ -22,13 +22,11 @@ use Go\Core\NotCompilableException;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ClassConstFetch;
-use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
-use PhpParser\Node\VariadicPlaceholder;
 use ReflectionFunction;
 
 /**
@@ -102,8 +100,9 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
      * Compiles the interceptor into an Interceptor factory facade call
      *
      * The emitted expression mirrors the interceptor declarations rendered into generated
-     * proxy code: the advice is referenced as a first-class callable on the aspect instance,
-     * e.g. `Interceptor::after(The::aspect(SomeAspect::class)->afterMethod(...))`.
+     * proxy code and carries pure static data, e.g.
+     * `Interceptor::after(SomeAspect::class, 'afterMethod')` - the facade defers aspect
+     * resolution and advice closure creation behind a native lazy proxy.
      */
     final public function compileToPhp(): Expr
     {
@@ -123,15 +122,10 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
             ),
         };
 
-        $adviceAccessor = new MethodCall(
-            new StaticCall(new FullyQualified(The::class), 'aspect', [
-                new Arg(new ClassConstFetch(new FullyQualified($scopeReflectionClass->name), 'class')),
-            ]),
-            $reflectionAdvice->name,
-            [new VariadicPlaceholder()],
-        );
-
-        $args = [new Arg($adviceAccessor)];
+        $args = [
+            new Arg(new ClassConstFetch(new FullyQualified($scopeReflectionClass->name), 'class')),
+            new Arg(new String_($reflectionAdvice->name)),
+        ];
         if ($this->adviceOrder !== 0) {
             $args[] = new Arg(new Int_($this->adviceOrder), name: new Identifier('order'));
         }
