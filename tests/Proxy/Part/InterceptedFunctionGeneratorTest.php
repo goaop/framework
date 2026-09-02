@@ -78,7 +78,7 @@ class InterceptedFunctionGeneratorTest extends TestCase
     {
         $reflectionFunction = new ReflectionFunction($functionName);
         $generator          = FunctionGenerator::fromReflection($reflectionFunction);
-        $generator->setBody("\n");
+        $generator->body = "\n";
 
         $generatedCode = $generator->generate();
         // Clean PhpDoc comment, @see https://stackoverflow.com/a/4207149/801258

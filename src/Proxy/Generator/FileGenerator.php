@@ -20,16 +20,13 @@ namespace Go\Proxy\Generator;
  */
 final class FileGenerator
 {
-    private ?string $namespace = null;
-    private string $body       = '';
+    public ?string $namespace = null;
+
+    /** PHP code body to emit after the namespace declaration. */
+    public string $body = '';
 
     /** @var array<string, string|null> use => alias */
     private array $uses = [];
-
-    public function setNamespace(string $namespace): void
-    {
-        $this->namespace = $namespace;
-    }
 
     /**
      * Adds a `use` statement to the generated file.
@@ -37,14 +34,6 @@ final class FileGenerator
     public function addUse(string $use, ?string $alias = null): void
     {
         $this->uses[$use] = $alias;
-    }
-
-    /**
-     * Sets the PHP code body to emit after the namespace declaration.
-     */
-    public function setBody(string $body): void
-    {
-        $this->body = $body;
     }
 
     /**

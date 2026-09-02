@@ -27,7 +27,11 @@ final class ValueGenerator
 {
     private static ?Standard $printer = null;
 
-    private int $arrayDepth = 0;
+    /**
+     * Limits array representation to a specific nesting depth.
+     * Depth 0 means unlimited, depth 1 means only top-level keys are preserved.
+     */
+    public int $arrayDepth = 0;
 
     /** Pre-built AST expression node for defaults that can't be represented as PHP scalars. */
     private ?Expr $astNode = null;
@@ -48,15 +52,6 @@ final class ValueGenerator
         $instance->astNode = $node;
 
         return $instance;
-    }
-
-    /**
-     * Limits array representation to a specific nesting depth.
-     * Depth 0 means unlimited, depth 1 means only top-level keys are preserved.
-     */
-    public function setArrayDepth(int $depth): void
-    {
-        $this->arrayDepth = $depth;
     }
 
     /**

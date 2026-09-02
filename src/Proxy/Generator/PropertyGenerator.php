@@ -27,17 +27,41 @@ final class PropertyGenerator implements PropertyNodeProvider
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
 
-    private mixed $defaultValue;
-    private bool $hasDefault    = false;
+    private bool $hasDefault = false;
 
-    /** Pre-built AST expression node for defaults that can't be represented as PHP scalars. */
-    private ?Expr $defaultExpressionNode = null;
+    /** Default value to emit; any write (including null) marks the property as having a default. */
+    public mixed $defaultValue {
+        set {
+            $this->defaultValue = $value;
+            $this->hasDefault   = true;
+        }
+    }
 
-    private ?TypeGenerator $type      = null;
-    private ?DocBlockGenerator $docBlock = null;
+    /**
+     * Pre-built AST expression node for defaults that can't be represented as PHP scalars.
+     *
+     * Used for PHP 8.5+ defaults (first-class callables, closures, arrow functions);
+     * writing a node marks the property as having a default.
+     */
+    public ?Expr $defaultExpressionNode = null {
+        set {
+            $this->defaultExpressionNode = $value;
+            if ($value !== null) {
+                $this->hasDefault = true;
+            }
+        }
+    }
 
-    /** @var AttributeGroup[] */
-    private array $attrGroups = [];
+    public ?TypeGenerator $type = null;
+    public ?DocBlockGenerator $docBlock = null;
+
+    /**
+     * Attribute groups to emit on the property declaration.
+     *
+     * @var AttributeGroup[]
+     */
+    public array $attrGroups = [];
+
     /** @var list<PropertyHook> */
     private array $hooks = [];
 
@@ -45,57 +69,14 @@ final class PropertyGenerator implements PropertyNodeProvider
      * @param list<PropertyModifier> $modifiers Property declaration modifiers
      */
     public function __construct(
-        private readonly string $name,
+        public readonly string $name,
         private readonly array $modifiers = [PropertyModifier::PUBLIC]
     ) {
-    }
-
-    public function setDefaultValue(mixed $defaultValue): void
-    {
-        $this->defaultValue = $defaultValue;
-        $this->hasDefault   = true;
-    }
-
-    /**
-     * Sets the default value from an existing AST expression node.
-     *
-     * Used for PHP 8.5+ defaults (first-class callables, closures, arrow functions)
-     * that cannot be represented as PHP scalars.
-     */
-    public function setDefaultExpressionNode(Expr $expression): void
-    {
-        $this->defaultExpressionNode = $expression;
-        $this->hasDefault            = true;
-    }
-
-    public function setType(TypeGenerator $type): void
-    {
-        $this->type = $type;
-    }
-
-    public function setDocBlock(DocBlockGenerator $docBlock): void
-    {
-        $this->docBlock = $docBlock;
-    }
-
-    /**
-     * Sets attribute groups to emit on the property declaration.
-     *
-     * @param AttributeGroup[] $attrGroups
-     */
-    public function addAttributeGroups(array $attrGroups): void
-    {
-        $this->attrGroups = $attrGroups;
     }
 
     public function addHook(PropertyHook $hook): void
     {
         $this->hooks[] = $hook;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     /**

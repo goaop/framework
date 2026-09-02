@@ -27,9 +27,9 @@ use ReflectionNamedType;
  * Generates a PHP class method declaration as an AST node or PHP string.
  *
  * Method bodies are stored as AST statements, enabling bidirectional conversion:
- *   - {@see setBody()} parses a PHP string into AST stmts
- *   - {@see getBody()} reconstructs the PHP string from AST stmts
- *   - {@see setStmts()} / {@see getStmts()} for direct AST mutation
+ *   - writing {@see self::$body} parses a PHP string into AST stmts
+ *   - reading {@see self::$body} reconstructs the PHP string from AST stmts
+ *   - {@see self::$stmts} for direct AST mutation
  */
 final class MethodGenerator
 {
@@ -37,14 +37,39 @@ final class MethodGenerator
     private static ?Parser $parser    = null;
     private static ?BuilderFactory $factory = null;
 
-    private Visibility $visibility = Visibility::PUBLIC;
-    private bool $static       = false;
-    private bool $final        = false;
-    private bool $abstract     = false;
-    private bool $returnsRef   = false;
-    private bool $isInterface  = false;
-    private ?TypeGenerator $returnType = null;
-    private ?DocBlockGenerator $docBlock = null;
+    public Visibility $visibility = Visibility::PUBLIC;
+    public bool $static     = false;
+    public bool $final      = false;
+    public bool $returnsRef = false;
+
+    /** Marking a method abstract discards its body statements. */
+    public bool $abstract = false {
+        set {
+            $this->abstract = $value;
+            if ($value) {
+                $this->stmts = null;
+            }
+        }
+    }
+
+    /** Marking a method as an interface member discards its body statements. */
+    public bool $isInterface = false {
+        set {
+            $this->isInterface = $value;
+            if ($value) {
+                $this->stmts = null;
+            }
+        }
+    }
+
+    /** Return type; a type string (e.g. 'void', '?int') is normalized to a TypeGenerator on write. */
+    public ?TypeGenerator $returnType = null {
+        set(string|TypeGenerator|null $type) {
+            $this->returnType = is_string($type) ? TypeGenerator::fromTypeString($type) : $type;
+        }
+    }
+
+    public ?DocBlockGenerator $docBlock = null;
 
     /** @var ParameterGenerator[] */
     private array $parameters = [];
@@ -52,10 +77,36 @@ final class MethodGenerator
     /** @var \PhpParser\Node\AttributeGroup[] */
     private array $attributeGroups = [];
 
-    /** @var Stmt[]|null null for abstract methods */
-    private ?array $stmts = [];
+    /**
+     * Underlying AST statements for direct traversal or mutation (null for abstract/interface methods).
+     *
+     * @var Stmt[]|null
+     */
+    public ?array $stmts = [];
 
-    public function __construct(private readonly string $name)
+    /**
+     * Method body as a PHP string, backed by {@see self::$stmts}:
+     * writes are parsed into AST statements (no leading `<?php` needed),
+     * reads reconstruct the PHP source from the stored AST statements.
+     */
+    public string $body {
+        get {
+            if (empty($this->stmts)) {
+                return '';
+            }
+            return self::getPrinter()->prettyPrint($this->stmts);
+        }
+        set {
+            if (trim($value) === '') {
+                $this->stmts = [];
+                return;
+            }
+            $ast = self::getParser()->parse('<?php ' . $value);
+            $this->stmts = $ast ?? [];
+        }
+    }
+
+    public function __construct(public readonly string $name)
     {
     }
 
@@ -66,12 +117,12 @@ final class MethodGenerator
     {
         $generator = new self($method->getName());
 
-        $generator->setVisibility(Visibility::fromReflectionMethod($method));
-        $generator->setStatic($method->isStatic());
-        $generator->setFinal($method->isFinal());
-        $generator->setAbstract($method->isAbstract());
-        $generator->setReturnsReference($method->returnsReference());
-        $generator->setInterface($method->getDeclaringClass()->isInterface());
+        $generator->visibility  = Visibility::fromReflectionMethod($method);
+        $generator->static      = $method->isStatic();
+        $generator->final       = $method->isFinal();
+        $generator->abstract    = $method->isAbstract();
+        $generator->returnsRef  = $method->returnsReference();
+        $generator->isInterface = $method->getDeclaringClass()->isInterface();
 
         // Return type
         if ($method->hasReturnType()) {
@@ -88,7 +139,7 @@ final class MethodGenerator
                     $typeResolver->process($returnTypeNode, false);
                     $resolvedType = $typeResolver->getType();
                     if ($resolvedType !== null) {
-                        $generator->setReturnType(TypeGenerator::fromReflectionType($resolvedType));
+                        $generator->returnType = TypeGenerator::fromReflectionType($resolvedType);
                     }
                 }
             } else {
@@ -96,9 +147,9 @@ final class MethodGenerator
                 if ($reflectionReturnType instanceof ReflectionNamedType) {
                     $typeName = TypeGenerator::resolveReflectionNamedTypeName($reflectionReturnType);
                     $nullable = $reflectionReturnType->allowsNull() && !in_array($typeName, ['mixed', 'null'], true);
-                    $generator->setReturnType(TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName));
+                    $generator->returnType = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName);
                 } else {
-                    $generator->setReturnType(TypeGenerator::fromReflectionType($reflectionReturnType));
+                    $generator->returnType = TypeGenerator::fromReflectionType($reflectionReturnType);
                 }
             }
         }
@@ -106,7 +157,7 @@ final class MethodGenerator
         // Docblock
         $docComment = $method->getDocComment();
         if ($docComment !== false) {
-            $generator->setDocBlock(DocBlockGenerator::fromDocComment($docComment));
+            $generator->docBlock = DocBlockGenerator::fromDocComment($docComment);
         }
 
         // Parameters
@@ -121,111 +172,9 @@ final class MethodGenerator
         return $generator;
     }
 
-    public function setVisibility(Visibility $visibility): void
-    {
-        $this->visibility = $visibility;
-    }
-
-    public function setStatic(bool $static): void
-    {
-        $this->static = $static;
-    }
-
-    public function setFinal(bool $final): void
-    {
-        $this->final = $final;
-    }
-
-    public function setAbstract(bool $abstract): void
-    {
-        $this->abstract = $abstract;
-        if ($abstract) {
-            $this->stmts = null;
-        }
-    }
-
-    public function setReturnsReference(bool $returnsRef): void
-    {
-        $this->returnsRef = $returnsRef;
-    }
-
-    public function setInterface(bool $isInterface): void
-    {
-        $this->isInterface = $isInterface;
-        if ($isInterface) {
-            $this->stmts = null;
-        }
-    }
-
-    public function setReturnType(string|TypeGenerator $type): void
-    {
-        if (is_string($type)) {
-            $type = TypeGenerator::fromTypeString($type);
-        }
-        $this->returnType = $type;
-    }
-
-    public function setDocBlock(DocBlockGenerator $docBlock): void
-    {
-        $this->docBlock = $docBlock;
-    }
-
     public function addParameter(ParameterGenerator $parameter): void
     {
         $this->parameters[] = $parameter;
-    }
-
-    /**
-     * Sets the method body from a PHP string.
-     * The string is parsed into AST statements (no leading `<?php` needed).
-     */
-    public function setBody(string $rawPhp): void
-    {
-        if (trim($rawPhp) === '') {
-            $this->stmts = [];
-            return;
-        }
-        $ast = self::getParser()->parse('<?php ' . $rawPhp);
-        $this->stmts = $ast ?? [];
-    }
-
-    /**
-     * Reconstructs the method body as a PHP string from the stored AST statements.
-     */
-    public function getBody(): string
-    {
-        if (empty($this->stmts)) {
-            return '';
-        }
-        return self::getPrinter()->prettyPrint($this->stmts);
-    }
-
-    /**
-     * Replaces method body statements directly with pre-built AST nodes.
-     *
-     * @param Stmt[] $stmts
-     */
-    public function setStmts(array $stmts): void
-    {
-        $this->stmts = $stmts;
-    }
-
-    /**
-     * Returns the underlying AST statements for direct traversal or mutation.
-     *
-     * @return Stmt[]|null null for abstract/interface methods
-     */
-    public function getStmts(): ?array
-    {
-        return $this->stmts;
-    }
-
-    /**
-     * Returns the method name.
-     */
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     /**

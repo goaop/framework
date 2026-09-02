@@ -56,7 +56,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     {
         $generator = new PropertyGenerator($this->property->getName(), $this->getPropertyModifiers());
         if ($this->property->hasType()) {
-            $generator->setType(TypeGenerator::fromReflectionType($this->property->getType()));
+            $generator->type = TypeGenerator::fromReflectionType($this->property->getType());
         }
         // When parser-reflection is loaded, prefer the raw AST default node over
         // getDefaultValue(). This avoids parser-reflection bugs where getDefaultValue()
@@ -69,7 +69,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         // the original promoted declaration.
         $astDefault = $this->getAstDefaultNode();
         if ($astDefault !== null) {
-            $generator->setDefaultExpressionNode($astDefault);
+            $generator->defaultExpressionNode = $astDefault;
         } elseif ($this->property->hasDefaultValue() && !method_exists($this->property, 'getNode')) {
             $rawDefault = $this->property->getDefaultValue();
             if ($rawDefault instanceof \Closure) {
@@ -80,12 +80,12 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
                     $this->property->getName()
                 ));
             }
-            $generator->setDefaultValue($rawDefault);
+            $generator->defaultValue = $rawDefault;
         }
 
         $attributeGroups = AttributeGroupsGenerator::fromReflector($this->property);
         if ($attributeGroups !== []) {
-            $generator->addAttributeGroups($attributeGroups);
+            $generator->attrGroups = $attributeGroups;
         }
 
         return $generator;

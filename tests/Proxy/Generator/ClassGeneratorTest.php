@@ -117,8 +117,8 @@ class ClassGeneratorTest extends TestCase
     public function testWithProperty(): void
     {
         $prop = new PropertyGenerator('myProp', [PropertyModifier::PRIVATE, PropertyModifier::STATIC]);
-        $prop->setDefaultValue([]);
-        $prop->setType(TypeGenerator::fromTypeString('array'));
+        $prop->defaultValue = [];
+        $prop->type = TypeGenerator::fromTypeString('array');
         $gen = new ClassGenerator('MyClass', null, [], null, [], [$prop]);
         $output = $gen->generate();
         $this->assertStringContainsString('$myProp', $output);
@@ -151,7 +151,7 @@ class ClassGeneratorTest extends TestCase
     public function testSetDocBlock(): void
     {
         $gen = new ClassGenerator('MyClass', null, [], null);
-        $gen->setDocBlock(new DocBlockGenerator('Class doc.'));
+        $gen->docBlock = new DocBlockGenerator('Class doc.');
         $output = $gen->generate();
         $this->assertStringContainsString('Class doc.', $output);
     }
@@ -167,7 +167,7 @@ class ClassGeneratorTest extends TestCase
     public function testGetName(): void
     {
         $gen = new ClassGenerator('MyClass', null, [], null);
-        $this->assertSame('MyClass', $gen->getName());
+        $this->assertSame('MyClass', $gen->name);
     }
 
     public function testGetNodeDoesNotIncludeNamespace(): void
@@ -198,7 +198,7 @@ class ClassGeneratorTest extends TestCase
         $factory = new BuilderFactory();
         $attrGroup = new AttributeGroup([$factory->attribute(new Name\FullyQualified('Deprecated'))]);
         $gen = new ClassGenerator('MyClass', null, [], null);
-        $gen->addAttributeGroups([$attrGroup]);
+        $gen->attrGroups = [$attrGroup];
         $output = $gen->generate();
         $this->assertStringContainsString('#[', $output);
         $this->assertStringContainsString('Deprecated', $output);
@@ -207,7 +207,7 @@ class ClassGeneratorTest extends TestCase
     public function testAddAttributeGroupsEmpty(): void
     {
         $gen = new ClassGenerator('MyClass', null, [], null);
-        $gen->addAttributeGroups([]);
+        $gen->attrGroups = [];
         $output = $gen->generate();
         $this->assertStringNotContainsString('#[', $output);
     }

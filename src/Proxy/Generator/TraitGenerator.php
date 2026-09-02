@@ -55,7 +55,7 @@ final class TraitGenerator implements GeneratorInterface
      * @param PropertyNode[] $properties
      */
     public function __construct(
-        private readonly string $name,
+        public readonly string $name,
         private readonly ?string $namespace,
         array $methods = [],
         private readonly ?DocBlockGenerator $docBlock = null,
@@ -97,11 +97,6 @@ final class TraitGenerator implements GeneratorInterface
             'alias'      => $alias,
             'visibility' => $visibility,
         ];
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     /**
