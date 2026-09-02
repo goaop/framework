@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Core\Cache;
 
-use FilesystemIterator;
 use Go\Aop\Advice;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
@@ -22,14 +21,18 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectLoader;
 use Go\Core\AspectLoaderInterface;
 use Go\Core\Container;
+use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class CachedAspectLoaderTest extends TestCase
 {
+    /**
+     * In-memory file system holding both the fake application and its cache -
+     * unmounting drops everything at once, nothing ever touches the real disk
+     */
+    private FileSystem $fileSystem;
+
     private string $appDir;
 
     private string $cacheDir;
@@ -51,18 +54,18 @@ class CachedAspectLoaderTest extends TestCase
 
     protected function setUp(): void
     {
-        $baseDir        = sys_get_temp_dir() . '/goaop-cached-loader-' . uniqid();
-        $this->appDir   = $baseDir . '/app';
-        $this->cacheDir = $baseDir . '/cache';
-        mkdir($this->appDir . '/src/Aspect', 0777, true);
-        mkdir($this->cacheDir, 0777, true);
+        $this->fileSystem = FileSystem::mount('cachedloadervfs');
+        $this->appDir     = $this->fileSystem->path('/app');
+        $this->cacheDir   = $this->fileSystem->path('/cache');
+        $this->fileSystem->createDirectory('/app/src/Aspect', recursive: true);
+        $this->fileSystem->createDirectory('/cache', recursive: true);
 
         // A uniquely-named fake aspect class living below the application root gives full
         // control over both the aspect source file and its shadow advisor cache file
         $shortClassName       = 'CachedLoaderTestAspect' . str_replace('.', '', uniqid('', true));
         $this->aspectFileName = $this->appDir . '/src/Aspect/' . $shortClassName . '.php';
-        file_put_contents(
-            $this->aspectFileName,
+        $this->fileSystem->createFile(
+            '/app/src/Aspect/' . $shortClassName . '.php',
             "<?php\n\nnamespace Go\\Core\\TestFixture;\n\nclass {$shortClassName} implements \\Go\\Aop\\Aspect {}\n",
         );
         require $this->aspectFileName;
@@ -77,19 +80,7 @@ class CachedAspectLoaderTest extends TestCase
 
     protected function tearDown(): void
     {
-        // Guard the cleanup: deletions must stay inside the uniquely-named temp
-        // directory this test created, whatever happens to the property value
-        $this->assertStringStartsWith(sys_get_temp_dir() . '/goaop-cached-loader-', $this->appDir);
-        $baseDir  = dirname($this->appDir);
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($baseDir, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST,
-        );
-        foreach ($iterator as $fileInfo) {
-            assert($fileInfo instanceof SplFileInfo);
-            $fileInfo->isDir() ? rmdir($fileInfo->getPathname()) : unlink($fileInfo->getPathname());
-        }
-        rmdir($baseDir);
+        $this->fileSystem->unmount();
     }
 
     private function createLoader(int $features, bool $withCacheDir = true): CachedAspectLoader
@@ -299,9 +290,8 @@ class CachedAspectLoaderTest extends TestCase
         $this->assertSame($loadedItems, $loader->load($foreignAspect));
 
         // No shadow file may appear anywhere below the cache directory
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($this->cacheDir, FilesystemIterator::SKIP_DOTS),
-        );
-        $this->assertCount(0, iterator_to_array($iterator));
+        $cacheEntries = scandir($this->cacheDir);
+        $this->assertIsArray($cacheEntries);
+        $this->assertSame([], array_diff($cacheEntries, ['.', '..']));
     }
 }

@@ -35,6 +35,7 @@ use Go\Tests\TestProject\Annotation\Loggable;
 use Go\Tests\TestProject\Application\BehaviorTrait;
 use Go\Tests\TestProject\Application\FooInterface;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
+use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -46,6 +47,23 @@ class AdvisorCacheCompilerTest extends TestCase
     protected function setUp(): void
     {
         $this->compiler = new AdvisorCacheCompiler();
+    }
+
+    /**
+     * Writes the compiled content into an in-memory file system and includes it back -
+     * no real disk involved, the mount vanishes wholesale afterwards
+     */
+    private function includeFromVirtualFileSystem(string $content): mixed
+    {
+        $fileSystem = FileSystem::mount('compilervfs');
+        try {
+            $fileName = $fileSystem->path('/advisor-cache.php');
+            file_put_contents($fileName, $content);
+
+            return include $fileName;
+        } finally {
+            $fileSystem->unmount();
+        }
     }
 
     /**
@@ -183,14 +201,7 @@ class AdvisorCacheCompilerTest extends TestCase
         $this->assertStringContainsString('\Stringable::class', $content);
 
         // Including the emitted file must not raise any warning (failOnWarning guards this)
-        $fileName = tempnam(sys_get_temp_dir(), 'goaop-advisor-cache-');
-        $this->assertIsString($fileName);
-        try {
-            file_put_contents($fileName, $content);
-            $loadedData = include $fileName;
-        } finally {
-            unlink($fileName);
-        }
+        $loadedData = $this->includeFromVirtualFileSystem($content);
         $this->assertIsArray($loadedData);
     }
 
@@ -283,14 +294,9 @@ class AdvisorCacheCompilerTest extends TestCase
             DoSomethingAspect::class . '->truePointcut'      => new TruePointcut(),
         ];
 
-        $fileName = tempnam(sys_get_temp_dir(), 'goaop-advisor-cache-');
-        $this->assertIsString($fileName);
-        try {
-            file_put_contents($fileName, $this->compiler->compile(DoSomethingAspect::class, ...$items));
-            $loadedData = include $fileName;
-        } finally {
-            unlink($fileName);
-        }
+        $loadedData = $this->includeFromVirtualFileSystem(
+            $this->compiler->compile(DoSomethingAspect::class, ...$items),
+        );
 
         $this->assertIsArray($loadedData);
         $this->assertSame(AdvisorCacheCompiler::VERSION, $loadedData['version']);
