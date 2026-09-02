@@ -127,11 +127,13 @@ interface AspectContainer
     public function registerAspect(Aspect|string $aspectOrClassName, ?Closure $aspectFactory = null): void;
 
     /**
-     * Checks if there are any file resources with changes after since given timestamp
+     * Checks if all tracked file resources are still fresh at the given timestamp
      *
-     * @return bool Whether or not there are new changes (file modification time of any resource is greater than given)
+     * @internal Used by the framework itself to decide whether cached woven code is still valid
+     *
+     * @return bool True when no resource was modified after the given timestamp (file modification time of every resource is less than or equal to given)
      */
-    public function hasAnyResourceChangedSince(int $timestamp): bool;
+    public function isFreshSince(int $timestamp): bool;
 
     /**
      * Adds a new item into the container

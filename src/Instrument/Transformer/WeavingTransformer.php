@@ -969,7 +969,7 @@ class WeavingTransformer extends BaseSourceTransformer
 
             $functionFileName = $cacheDir . $fileName;
             $filemtime = file_exists($functionFileName) ? filemtime($functionFileName) : false;
-            if ($filemtime === false || !$this->container->hasAnyResourceChangedSince($filemtime)) {
+            if ($filemtime === false || !$this->container->isFreshSince($filemtime)) {
                 $functionAdvices = AbstractJoinpoint::flatAndSortAdvices($functionAdvices);
                 $dirname         = dirname($functionFileName);
                 if (!file_exists($dirname)) {

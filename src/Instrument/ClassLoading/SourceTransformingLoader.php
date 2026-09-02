@@ -255,7 +255,7 @@ class SourceTransformingLoader extends PhpStreamFilter
 
             $isStale = $cacheModified < $lastModified
                 || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)
-                || !(self::$container?->hasAnyResourceChangedSince($cacheModified) ?? false);
+                || !(self::$container?->isFreshSince($cacheModified) ?? false);
             if ($isStale) {
                 return null;
             }

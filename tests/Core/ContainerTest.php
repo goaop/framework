@@ -122,12 +122,12 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * Tests that container resources can be added and isFresh works correctly
+     * Tests that container resources can be added and isFreshSince works correctly
      */
     public function testResourceManagement(): void
     {
         // Without resources this should be always true
-        $isFresh = $this->container->hasAnyResourceChangedSince(time());
+        $isFresh = $this->container->isFreshSince(time());
         $this->assertTrue($isFresh);
 
         $this->container->add(First::class, new First());
@@ -136,10 +136,10 @@ class ContainerTest extends TestCase
         $this->assertFileExists($filename);
 
         $realMtime = filemtime($filename);
-        $isFresh = $this->container->hasAnyResourceChangedSince($realMtime - 3600);
+        $isFresh = $this->container->isFreshSince($realMtime - 3600);
         $this->assertFalse($isFresh);
 
-        $isFresh = $this->container->hasAnyResourceChangedSince(time() + 3600);
+        $isFresh = $this->container->isFreshSince(time() + 3600);
         $this->assertTrue($isFresh);
     }
 
