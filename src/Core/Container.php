@@ -386,12 +386,6 @@ class Container implements AspectContainer
         return $this->cachedMaxTimestamp <= $timestamp;
     }
 
-    #[\Deprecated(message: 'use isFreshSince() instead', since: '4.0.0')]
-    final public function hasAnyResourceChangedSince(int $timestamp): bool
-    {
-        return !$this->isFreshSince($timestamp);
-    }
-
     /**
      * Adds a link to the file resource into the container
      *
