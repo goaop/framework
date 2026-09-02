@@ -18,7 +18,6 @@ use Go\Proxy\Generator\FunctionGenerator;
 use Go\Stubs\StubAttribute;
 use Iterator;
 use PHPUnit\Framework\TestCase;
-
 use ReflectionFunction;
 
 use function preg_replace;
@@ -102,46 +101,46 @@ class InterceptedFunctionGeneratorTest extends TestCase
         return [
             'var_dump' => [
                 'var_dump',
-                'function var_dump(mixed $value, mixed ...$values): void'
+                'function var_dump(mixed $value, mixed ...$values): void',
             ],
             'array_pop' => [
                 'array_pop',
-                'function array_pop(array &$array): mixed'
+                'function array_pop(array &$array): mixed',
             ],
             // strcmp instead of strcoll here: PHP 8.6 deprecated strcoll(), and the
             // generator (correctly) mirrors the native #[\Deprecated] attribute into
             // the generated signature, which would make an exact match version-dependent
             'strcmp' => [
                 'strcmp',
-                'function strcmp(string $string1, string $string2): int'
+                'function strcmp(string $string1, string $string2): int',
             ],
             'microtime' => [
                 'microtime',
-                'function microtime(bool $as_float = false): string|float'
+                'function microtime(bool $as_float = false): string|float',
             ],
             'funcWithReturnTypeAndDocBlock' => [
                 '\Go\Proxy\Part\funcWithReturnTypeAndDocBlock',
-                'function funcWithReturnTypeAndDocBlock(): \Exception'
+                'function funcWithReturnTypeAndDocBlock(): \Exception',
             ],
             [
                 'array_slice',
-                'function array_slice(array $array, int $offset, ?int $length = null, bool $preserve_keys = false): array'
+                'function array_slice(array $array, int $offset, ?int $length = null, bool $preserve_keys = false): array',
             ],
             [
                 '\Go\Proxy\Part\funcWithNullableParams',
-                'function funcWithNullableParams(?string $name = null, int $count = 0): ?string'
+                'function funcWithNullableParams(?string $name = null, int $count = 0): ?string',
             ],
             [
                 '\Go\Proxy\Part\funcReturningNull',
-                'function funcReturningNull(): null'
+                'function funcReturningNull(): null',
             ],
             'funcWithAttributes' => [
                 '\Go\Proxy\Part\funcWithAttributes',
-                "#[\\Go\\Stubs\\StubAttribute('function')]\nfunction funcWithAttributes(\n    #[\\Go\\Stubs\\StubAttribute('argument')]\n    string \$argument\n): string"
+                "#[\\Go\\Stubs\\StubAttribute('function')]\nfunction funcWithAttributes(\n    #[\\Go\\Stubs\\StubAttribute('argument')]\n    string \$argument\n): string",
             ],
             'funcWithDNFTypeReturn' => [
                 '\Go\Proxy\Part\funcWithDNFTypeReturn',
-                'function funcWithDNFTypeReturn(\Iterator|(\Exception&\Countable) $value): \Iterator|(\Exception&\Countable)'
+                'function funcWithDNFTypeReturn(\Iterator|(\Exception&\Countable) $value): \Iterator|(\Exception&\Countable)',
             ],
         ];
     }

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -54,11 +54,11 @@ final readonly class AndPointcut implements Pointcut
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
         return array_all(
             $this->pointcuts,
-            fn(Pointcut $singlePointcut): bool => $singlePointcut->matches($context, $reflector)
+            fn(Pointcut $singlePointcut): bool => $singlePointcut->matches($context, $reflector),
         );
     }
 

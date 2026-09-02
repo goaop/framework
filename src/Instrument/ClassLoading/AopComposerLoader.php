@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -70,7 +70,7 @@ class AopComposerLoader
     public function __construct(
         protected readonly ClassLoader $original,
         AspectContainer $container,
-        protected readonly array $options
+        protected readonly array $options,
     ) {
         $prefixes     = $original->getPrefixes();
         $excludePaths = $options['excludePaths'];

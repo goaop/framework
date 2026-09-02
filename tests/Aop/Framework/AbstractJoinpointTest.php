@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
@@ -50,42 +50,42 @@ class AbstractJoinpointTest extends TestCase
             // #0
             [
                 [clone $after, clone $before],
-                [AdviceTypeEnum::Before, AdviceTypeEnum::After]
+                [AdviceTypeEnum::Before, AdviceTypeEnum::After],
             ],
             // #1
             [
                 [clone $after, clone $around],
-                [AdviceTypeEnum::After, AdviceTypeEnum::Around]
+                [AdviceTypeEnum::After, AdviceTypeEnum::Around],
             ],
             // #2
             [
                 [clone $before, clone $after],
-                [AdviceTypeEnum::Before, AdviceTypeEnum::After]
+                [AdviceTypeEnum::Before, AdviceTypeEnum::After],
             ],
             // #3
             [
                 [clone $before, clone $around],
-                [AdviceTypeEnum::Before, AdviceTypeEnum::Around]
+                [AdviceTypeEnum::Before, AdviceTypeEnum::Around],
             ],
             // #4
             [
                 [clone $around, clone $after],
-                [AdviceTypeEnum::After, AdviceTypeEnum::Around]
+                [AdviceTypeEnum::After, AdviceTypeEnum::Around],
             ],
             // #5
             [
                 [clone $around, clone $before],
-                [AdviceTypeEnum::Before, AdviceTypeEnum::Around]
+                [AdviceTypeEnum::Before, AdviceTypeEnum::Around],
             ],
             // #6
             [
                 [clone $before, clone $around, clone $before, clone $after],
-                [AdviceTypeEnum::Before, AdviceTypeEnum::Before, AdviceTypeEnum::After, AdviceTypeEnum::Around]
+                [AdviceTypeEnum::Before, AdviceTypeEnum::Before, AdviceTypeEnum::After, AdviceTypeEnum::Around],
             ],
             // #7
             [
                 [$forth, $first],
-                [get_class($first), get_class($forth)]
+                [get_class($first), get_class($forth)],
             ],
         ];
     }
@@ -110,11 +110,11 @@ class AbstractJoinpointTest extends TestCase
         $this->assertContainsOnlyInstancesOf(GeneratedInterceptor::class, $descriptors);
         $this->assertSame(
             ['before', 'afterThrowing', 'after', 'around'],
-            array_map(static fn(GeneratedInterceptor $descriptor): string => $descriptor->factoryMethod, $descriptors)
+            array_map(static fn(GeneratedInterceptor $descriptor): string => $descriptor->factoryMethod, $descriptors),
         );
         $this->assertSame(
             ['advisor.before', 'advisor.afterThrowing', 'advisor.after', 'advisor.around'],
-            array_map(static fn(GeneratedInterceptor $descriptor): string => $descriptor->advisorId, $descriptors)
+            array_map(static fn(GeneratedInterceptor $descriptor): string => $descriptor->advisorId, $descriptors),
         );
     }
 
@@ -150,7 +150,7 @@ class AbstractJoinpointTest extends TestCase
 
     private static function makeAdvice(AdviceTypeEnum $type): Advice
     {
-        return new class($type) implements Advice {
+        return new class ($type) implements Advice {
             public function __construct(private readonly AdviceTypeEnum $type) {}
 
             public function getType(): AdviceTypeEnum
@@ -162,7 +162,7 @@ class AbstractJoinpointTest extends TestCase
 
     private static function makeOrderedAdvice(int $order): OrderedAdvice
     {
-        return new class($order) implements OrderedAdvice {
+        return new class ($order) implements OrderedAdvice {
             public function __construct(private readonly int $order) {}
 
             public function getAdviceOrder(): int

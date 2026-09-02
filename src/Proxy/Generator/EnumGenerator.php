@@ -160,7 +160,7 @@ final class EnumGenerator implements GeneratorInterface
                     $traitNameNode,
                     new Identifier($info['method']),
                     $info['visibility']->toAstModifier(),
-                    new Identifier($info['alias'])
+                    new Identifier($info['alias']),
                 );
             }
 
@@ -168,7 +168,7 @@ final class EnumGenerator implements GeneratorInterface
                 static fn(string $t) => str_contains($t, '\\')
                     ? new Name\FullyQualified($t)
                     : new Name($t),
-                $traitFqcns
+                $traitFqcns,
             );
             $stmts[] = new TraitUse($traitNames, $adaptations);
         }

@@ -19,7 +19,6 @@ namespace Go\Aop;
  */
 interface Advice
 {
-
     /**
      * Returns the Advice type
      *

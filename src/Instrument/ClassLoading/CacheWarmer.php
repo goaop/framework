@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -20,6 +20,7 @@ use InvalidArgumentException;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
+
 use function count;
 
 /**
@@ -41,8 +42,7 @@ class CacheWarmer
     public function __construct(
         protected AspectKernel $aspectKernel,
         protected OutputInterface $output = new NullOutput(),
-    ) {
-    }
+    ) {}
 
     /**
      * Asks the warmup loop to stop cleanly before processing the next file
@@ -98,9 +98,10 @@ class CacheWarmer
 
             try {
                 // This will trigger creation of cache
-                file_get_contents(FilterInjectorTransformer::PHP_FILTER_READ .
-                    SourceTransformingLoader::FILTER_IDENTIFIER .
-                    '/resource=' . $path
+                file_get_contents(
+                    FilterInjectorTransformer::PHP_FILTER_READ
+                    . SourceTransformingLoader::FILTER_IDENTIFIER
+                    . '/resource=' . $path,
                 );
 
                 $this->output->writeln(sprintf('<fg=green;options=bold>[OK]</>: <comment>%s</comment>', $path));

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -31,7 +31,7 @@ class ClassInheritancePointcutTest extends TestCase
         $pointcut = new ClassInheritancePointcut(static::class);
 
         $this->assertFalse($pointcut->matches(
-            new ReflectionFileNamespace(__FILE__, __NAMESPACE__)
+            new ReflectionFileNamespace(__FILE__, __NAMESPACE__),
         ));
     }
 

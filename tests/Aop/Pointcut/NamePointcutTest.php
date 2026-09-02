@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -28,7 +28,7 @@ class NamePointcutTest extends TestCase
     {
         $pointcut = new NamePointcut(
             Pointcut::KIND_METHOD,
-            'publicMethod'
+            'publicMethod',
         );
 
         $matched = $pointcut->matches(new ReflectionClass(First::class), new ReflectionMethod(First::class, 'publicMethod'));
@@ -42,7 +42,7 @@ class NamePointcutTest extends TestCase
     {
         $pointcut = new NamePointcut(
             Pointcut::KIND_PROPERTY,
-            'public'
+            'public',
         );
 
         $matched = $pointcut->matches(new ReflectionClass(First::class), new ReflectionProperty(First::class, 'public'));
@@ -56,7 +56,7 @@ class NamePointcutTest extends TestCase
     {
         $pointcut = new NamePointcut(
             Pointcut::KIND_METHOD,
-            '*Method'
+            '*Method',
         );
 
         $matched = $pointcut->matches(new ReflectionClass(First::class), new ReflectionMethod(First::class, 'publicMethod'));
@@ -73,7 +73,7 @@ class NamePointcutTest extends TestCase
     {
         $pointcut = new NamePointcut(
             Pointcut::KIND_METHOD,
-            'publicMethod|protectedMethod'
+            'publicMethod|protectedMethod',
         );
 
         $matched = $pointcut->matches(new ReflectionClass(First::class), new ReflectionMethod(First::class, 'publicMethod'));
@@ -92,7 +92,7 @@ class NamePointcutTest extends TestCase
     {
         $pointcut = new NamePointcut(
             Pointcut::KIND_METHOD,
-            'public|Public'
+            'public|Public',
         );
 
         $matched = $pointcut->matches(new ReflectionClass(First::class), new ReflectionMethod(First::class, 'publicMethod'));
@@ -106,7 +106,7 @@ class NamePointcutTest extends TestCase
     {
         $pointcut = new NamePointcut(
             Pointcut::KIND_METHOD,
-            '*Method'
+            '*Method',
         );
 
         $matched = $pointcut->matches(new ReflectionClass(First::class));
@@ -118,7 +118,7 @@ class NamePointcutTest extends TestCase
         $pointcut = new NamePointcut(
             Pointcut::KIND_METHOD,
             First::class,
-            true
+            true,
         );
 
         $matched = $pointcut->matches(new ReflectionClass(First::class));
@@ -127,7 +127,7 @@ class NamePointcutTest extends TestCase
         // When context matching is enabled, it matches any methods based only on context matching, ignoring ref name.
         $matched = $pointcut->matches(
             new ReflectionClass(First::class),
-            new ReflectionMethod(First::class, 'publicMethod')
+            new ReflectionMethod(First::class, 'publicMethod'),
         );
         $this->assertTrue($matched, "Pointcut should match this method");
     }

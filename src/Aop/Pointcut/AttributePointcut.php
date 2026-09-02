@@ -43,7 +43,7 @@ final readonly class AttributePointcut implements Pointcut
 
     final public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
         // If we don't use context for matching and we do static check, then always match
         if (!$this->useContextForMatching && !isset($reflector)) {

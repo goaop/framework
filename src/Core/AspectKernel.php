@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -242,7 +242,7 @@ abstract class AspectKernel
                 throw new RuntimeException(sprintf(
                     'Container class "%s" must extend %s.',
                     $containerClassOption,
-                    AspectContainer::class
+                    AspectContainer::class,
                 ));
             }
             $containerClass = $containerClassOption;
@@ -293,7 +293,7 @@ abstract class AspectKernel
         if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
             $container->addLazyService(
                 ConstructorExecutionTransformer::class,
-                fn(): ConstructorExecutionTransformer => new ConstructorExecutionTransformer()
+                fn(): ConstructorExecutionTransformer => new ConstructorExecutionTransformer(),
             );
         }
         if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
@@ -307,9 +307,9 @@ abstract class AspectKernel
                     return new FilterInjectorTransformer(
                         $this,
                         SourceTransformingLoader::getId(),
-                        $container->getService(CachePathManager::class)
+                        $container->getService(CachePathManager::class),
                     );
-                }
+                },
             );
         }
         $container->addLazyService(
@@ -318,12 +318,12 @@ abstract class AspectKernel
                 $this,
                 $container->getService(AdviceMatcher::class),
                 $container->getService(CachePathManager::class),
-                $container->getService(CachedAspectLoader::class)
-            )
+                $container->getService(CachedAspectLoader::class),
+            ),
         );
         $container->addLazyService(
             MagicConstantTransformer::class,
-            fn(): MagicConstantTransformer => new MagicConstantTransformer($this)
+            fn(): MagicConstantTransformer => new MagicConstantTransformer($this),
         );
     }
 

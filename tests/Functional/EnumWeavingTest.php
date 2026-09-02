@@ -52,7 +52,7 @@ class EnumWeavingTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(
             SimpleEnum::class,
             'doSomething',
-            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterSimpleEnumMethod'
+            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterSimpleEnumMethod',
         );
     }
 
@@ -64,7 +64,7 @@ class EnumWeavingTest extends BaseFunctionalTestCase
         $this->assertStaticMethodWoven(
             SimpleEnum::class,
             'doSomethingStatic',
-            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterSimpleEnumStaticMethod'
+            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterSimpleEnumStaticMethod',
         );
     }
 
@@ -76,12 +76,12 @@ class EnumWeavingTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(
             BackedEnum::class,
             'doSomething',
-            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterBackedEnumMethod'
+            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterBackedEnumMethod',
         );
         $this->assertMethodWoven(
             BackedEnum::class,
             'label',
-            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterBackedEnumMethod'
+            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterBackedEnumMethod',
         );
     }
 
@@ -93,7 +93,7 @@ class EnumWeavingTest extends BaseFunctionalTestCase
         $this->assertStaticMethodWoven(
             BackedEnum::class,
             'doSomethingStatic',
-            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterBackedEnumStaticMethod'
+            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterBackedEnumStaticMethod',
         );
     }
 
@@ -120,7 +120,7 @@ class EnumWeavingTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(
             ConstExprBackedEnum::class,
             'describe',
-            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterConstExprEnumMethod'
+            'Go\\Tests\\TestProject\\Aspect\\EnumMethodAspect->afterConstExprEnumMethod',
         );
 
         $proxyFile = $this->configuration['cacheDir'] . '/src/Application/ConstExprBackedEnum.php';

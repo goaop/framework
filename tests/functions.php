@@ -13,6 +13,7 @@ declare(strict_types=1);
 /*
  * @author Martin Fris <rasta@lj.sk>
  */
+
 namespace Symfony\Component\Finder;
 
 /**
@@ -24,6 +25,7 @@ namespace Symfony\Component\Finder;
  *
  * @return string[]
  */
-function glob(string $pattern, int $flags = 0): array {
+function glob(string $pattern, int $flags = 0): array
+{
     return \Webmozart\Glob\Glob::glob($pattern, $flags);
 }

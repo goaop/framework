@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -65,7 +65,7 @@ class WeavingTransformer extends BaseSourceTransformer
         AspectKernel $kernel,
         protected readonly AdviceMatcherInterface $adviceMatcher,
         private readonly CachePathManager $cachePathManager,
-        protected readonly AspectLoaderInterface $aspectLoader
+        protected readonly AspectLoaderInterface $aspectLoader,
     ) {
         parent::__construct($kernel);
     }
@@ -102,7 +102,7 @@ class WeavingTransformer extends BaseSourceTransformer
                     $advisors,
                     $metadata,
                     $class,
-                    $parsedSource->isStrictMode()
+                    $parsedSource->isStrictMode(),
                 );
                 $totalTransformations += (int) $wasClassProcessed;
             }
@@ -128,7 +128,7 @@ class WeavingTransformer extends BaseSourceTransformer
         array $advisors,
         StreamMetaData $metadata,
         ReflectionClass $class,
-        bool $useStrictMode
+        bool $useStrictMode,
     ): bool {
         $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
 
@@ -194,7 +194,7 @@ class WeavingTransformer extends BaseSourceTransformer
     private function adjustOriginalTrait(
         ReflectionClass $class,
         StreamMetaData $streamMetaData,
-        string $newClassName
+        string $newClassName,
     ): void {
         $classNode = $class->getNode();
         $position = $this->getPositionAfterAttributeGroups($classNode);
@@ -256,7 +256,7 @@ class WeavingTransformer extends BaseSourceTransformer
         ReflectionClass $class,
         array $advices,
         StreamMetaData $streamMetaData,
-        string $newClassName
+        string $newClassName,
     ): void {
         $classNode = $class->getNode();
         $position = $this->getPositionAfterAttributeGroups($classNode);
@@ -455,7 +455,7 @@ class WeavingTransformer extends BaseSourceTransformer
         ReflectionClass $class,
         array $advices,
         StreamMetaData $streamMetaData,
-        string $newClassName
+        string $newClassName,
     ): void {
         $classNode = $class->getNode();
         $position = $this->getPositionAfterAttributeGroups($classNode);
@@ -543,11 +543,11 @@ class WeavingTransformer extends BaseSourceTransformer
     private function stripOverrideAttributeFromInterceptedMethods(
         ReflectionClass $class,
         array $advices,
-        StreamMetaData $streamMetaData
+        StreamMetaData $streamMetaData,
     ): void {
         $interceptedNames = array_merge(
             array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []),
-            array_keys($advices[AspectContainer::STATIC_METHOD_PREFIX] ?? [])
+            array_keys($advices[AspectContainer::STATIC_METHOD_PREFIX] ?? []),
         );
 
         foreach ($interceptedNames as $methodName) {
@@ -681,7 +681,7 @@ class WeavingTransformer extends BaseSourceTransformer
     private function commentOutInterceptedPropertiesInTraitBody(
         ReflectionClass $class,
         array $advices,
-        StreamMetaData $streamMetaData
+        StreamMetaData $streamMetaData,
     ): void {
         $interceptedProperties = array_keys($advices[AspectContainer::PROPERTY_PREFIX] ?? []);
         if ($interceptedProperties === []) {
@@ -830,7 +830,7 @@ class WeavingTransformer extends BaseSourceTransformer
     private function injectConstructorAssignments(
         ReflectionClass $class,
         array $assignments,
-        StreamMetaData $streamMetaData
+        StreamMetaData $streamMetaData,
     ): void {
         $constructor = $class->getConstructor();
         if ($constructor === null || !$constructor instanceof ReflectionMethod) {
@@ -896,7 +896,7 @@ class WeavingTransformer extends BaseSourceTransformer
         string $propertyName,
         int $start,
         int $end,
-        StreamMetaData $streamMetaData
+        StreamMetaData $streamMetaData,
     ): void {
         $firstTokenPosition = $start;
         while ($firstTokenPosition <= $end && !isset($streamMetaData->tokenStream[$firstTokenPosition])) {
@@ -915,7 +915,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $suffix = sprintf(
             ' // Moved by weaving interceptor to the {@see %s->%s}',
             $className,
-            $propertyName
+            $propertyName,
         );
         $lastTokenText = $streamMetaData->tokenStream[$lastTokenPosition]->text;
         $newLine = $this->findLastNewlinePosition($lastTokenText);
@@ -958,7 +958,7 @@ class WeavingTransformer extends BaseSourceTransformer
     private function processFunctions(
         array $advisors,
         StreamMetaData $metadata,
-        ReflectionFileNamespace $namespace
+        ReflectionFileNamespace $namespace,
     ): bool {
         $wasProcessedFunctions = false;
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace, $advisors);

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -29,15 +29,12 @@ use function count;
  */
 class AdviceMatcher implements AdviceMatcherInterface
 {
-
     /**
      * Constructor
      *
      * @param bool $isInterceptFunctions Optional flag to enable function interception
      */
-    public function __construct(private readonly bool $isInterceptFunctions = false)
-    {
-    }
+    public function __construct(private readonly bool $isInterceptFunctions = false) {}
 
     /**
      * Returns list of function advices for namespace
@@ -129,7 +126,7 @@ class AdviceMatcher implements AdviceMatcherInterface
         ReflectionClass $class,
         PointcutAdvisor $advisor,
         string $advisorId,
-        Pointcut $pointcut
+        Pointcut $pointcut,
     ): array {
         $classAdvices = [];
         $pointcutKind = $pointcut->getKind();
@@ -161,7 +158,7 @@ class AdviceMatcher implements AdviceMatcherInterface
         ReflectionClass $class,
         PointcutAdvisor $advisor,
         string $advisorId,
-        Pointcut $pointcut
+        Pointcut $pointcut,
     ): array {
         $classAdvices = [];
         $pointcutKind = $pointcut->getKind();
@@ -220,7 +217,8 @@ class AdviceMatcher implements AdviceMatcherInterface
      *
      * @return array<string, array<string, array<string, IntroductionInfo>>>
      */
-    private function getIntroductionAdvices(IntroductionInfo $introduction): array {
+    private function getIntroductionAdvices(IntroductionInfo $introduction): array
+    {
         $classAdvices = [];
 
         $introducedTrait = $introduction->getTrait();
@@ -248,7 +246,7 @@ class AdviceMatcher implements AdviceMatcherInterface
         ReflectionFileNamespace $namespace,
         PointcutAdvisor $advisor,
         string $advisorId,
-        Pointcut $pointcut
+        Pointcut $pointcut,
     ): array {
         $functions = [];
         $advices   = [];

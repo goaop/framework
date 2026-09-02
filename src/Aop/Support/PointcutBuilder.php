@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -78,7 +78,7 @@ final class PointcutBuilder
     {
         $this->container->add(
             $this->getPointcutId($pointcutExpression),
-            new LazyPointcutAdvisor($this->container, $pointcutExpression, $adviceToInvoke)
+            new LazyPointcutAdvisor($this->container, $pointcutExpression, $adviceToInvoke),
         );
     }
 

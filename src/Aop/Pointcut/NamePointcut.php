@@ -46,14 +46,14 @@ final readonly class NamePointcut implements Pointcut
             [
                 '\\*'    => '[^\\\\]+?',
                 '\\*\\*' => '.+?',
-                '\\|'    => '|'
-            ]
+                '\\|'    => '|',
+            ],
         ) . ')$/';
     }
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
         // Let's determine what will be used for matching - context or reflector
         if ($this->useContextForMatching) {

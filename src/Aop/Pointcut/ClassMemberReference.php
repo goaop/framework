@@ -31,6 +31,6 @@ final readonly class ClassMemberReference
         public Pointcut         $classFilter,
         public ModifierPointcut $visibilityFilter,
         public ModifierPointcut $accessTypeFilter,
-        public string           $memberNamePattern
+        public string           $memberNamePattern,
     ) {}
 }

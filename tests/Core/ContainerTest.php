@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -230,7 +230,7 @@ class ContainerTest extends TestCase
                 $constructed = true;
 
                 return new LoggingAspect(new NullLogger());
-            }
+            },
         );
 
         $this->assertTrue($this->container->has(LoggingAspect::class));
@@ -267,7 +267,7 @@ class ContainerTest extends TestCase
                 $constructed = true;
 
                 return new StatefulTestAspect(42);
-            }
+            },
         );
 
         $aspects = $this->container->getServicesByInterface(Aspect::class);
@@ -298,7 +298,7 @@ class ContainerTest extends TestCase
                 $constructed = true;
 
                 return new DoSomethingAspect();
-            }
+            },
         );
 
         $aspect = $this->container->getService(DoSomethingAspect::class);
@@ -359,7 +359,7 @@ class ContainerTest extends TestCase
                 $container->getServicesByInterface(Aspect::class);
 
                 return new DoSomethingAspect();
-            }
+            },
         );
         $this->container->registerAspect(EnumMethodAspect::class);
 

@@ -280,7 +280,7 @@ class SourceTransformingLoader extends PhpStreamFilter
         string $originalUri,
         string $cacheUri,
         string $transformedSource,
-        TransformerResultEnum $result
+        TransformerResultEnum $result,
     ): void {
         if (self::$cachePathManager === null) {
             return;
@@ -306,7 +306,7 @@ class SourceTransformingLoader extends PhpStreamFilter
             [
                 'filemtime' => $_SERVER['REQUEST_TIME'] ?? time(),
                 'cacheUri'  => ($result === TransformerResultEnum::RESULT_TRANSFORMED) ? $cacheUri : null,
-            ]
+            ],
         );
     }
 

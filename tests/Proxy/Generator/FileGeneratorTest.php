@@ -20,7 +20,8 @@ class FileGeneratorTest extends TestCase
     {
         $gen = new FileGenerator();
         $gen->namespace = 'My\Namespace';
-        $gen->body = '$x = 1;';        $output = $gen->generate();
+        $gen->body = '$x = 1;';
+        $output = $gen->generate();
         $this->assertStringContainsString('<?php', $output);
         $this->assertStringContainsString("declare(strict_types=1)", $output);
         $this->assertStringContainsString('namespace My\Namespace', $output);
@@ -30,7 +31,8 @@ class FileGeneratorTest extends TestCase
     public function testGenerateWithoutNamespace(): void
     {
         $gen = new FileGenerator();
-        $gen->body = 'echo "hello";';        $output = $gen->generate();
+        $gen->body = 'echo "hello";';
+        $output = $gen->generate();
         $this->assertStringContainsString('<?php', $output);
         $this->assertStringNotContainsString('namespace', $output);
         $this->assertStringContainsString('echo "hello"', $output);

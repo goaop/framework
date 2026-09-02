@@ -71,7 +71,7 @@ abstract class AbstractJoinpoint implements Joinpoint
                 return $first instanceof OrderedAdvice && $second instanceof OrderedAdvice
                     ? $first->getAdviceOrder() - $second->getAdviceOrder()
                     : 0;
-            }
+            },
         );
 
         return $sortedAdvices;
@@ -97,7 +97,7 @@ abstract class AbstractJoinpoint implements Joinpoint
                     }
                     if (!$advice instanceof Advice) {
                         throw new AspectException(
-                            "Advisor {$advisorId} provides " . get_debug_type($advice) . ' instead of advice instance'
+                            "Advisor {$advisorId} provides " . get_debug_type($advice) . ' instead of advice instance',
                         );
                     }
                     $flattenAdvices[$type][$name][] = GeneratedInterceptor::fromAdvice((string) $advisorId, $advice);

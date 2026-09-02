@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -152,7 +152,7 @@ class ModifierPointcutTest extends TestCase
 
         $this->assertFalse($this->pointcut->matches(
             $reflectionClass,
-            new ReflectionFunction('var_dump')
+            new ReflectionFunction('var_dump'),
         ));
     }
 

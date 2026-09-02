@@ -49,7 +49,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
     public function __construct(
         ReflectionClass $originalTrait,
         string $parentTraitName,
-        array $traitAdviceNames
+        array $traitAdviceNames,
     ) {
         $this->adviceNames = $traitAdviceNames;
 
@@ -68,14 +68,14 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         $methodGenerators = array_map(
             static fn($m) => $m->getGenerator(),
-            array_values($generatedMethods)
+            array_values($generatedMethods),
         );
         $traitGenerator = new TraitGenerator(
             $originalTrait->getShortName(),
             $originalTrait->getNamespaceName(),
             $methodGenerators,
             $docBlock,
-            $generatedProperties
+            $generatedProperties,
         );
 
         // Use the short (unqualified) trait name only when the parent trait and proxy

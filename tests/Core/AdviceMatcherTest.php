@@ -76,9 +76,9 @@ class AdviceMatcherTest extends TestCase
         $pointcut
             ->method('matches')
             ->willReturnCallback(
-                function (ReflectionClass $class, ReflectionMethod|null $method) use ($methodName): bool {
+                function (ReflectionClass $class, ?ReflectionMethod $method) use ($methodName): bool {
                     return !isset($method) || $method->name === $methodName;
-                }
+                },
             )
         ;
         $pointcut
@@ -108,8 +108,8 @@ class AdviceMatcherTest extends TestCase
         $pointcut = $this->createMock(Pointcut::class);
         $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
         $pointcut->method('matches')->willReturnCallback(
-            static fn(ReflectionClass $c, ?ReflectionMethod $m = null): bool =>
-                $m === null || $m->name === $methodName
+            static fn(ReflectionClass $c, ?ReflectionMethod $m = null): bool
+                => $m === null || $m->name === $methodName,
         );
 
         $advice  = $this->createMock(Advice::class);
@@ -132,8 +132,8 @@ class AdviceMatcherTest extends TestCase
         $pointcut = $this->createMock(Pointcut::class);
         $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
         $pointcut->method('matches')->willReturnCallback(
-            static fn(ReflectionClass $c, ?ReflectionMethod $m = null): bool =>
-                $m === null || $m->name === $methodName
+            static fn(ReflectionClass $c, ?ReflectionMethod $m = null): bool
+                => $m === null || $m->name === $methodName,
         );
 
         $advice  = $this->createMock(Advice::class);
@@ -182,9 +182,9 @@ class AdviceMatcherTest extends TestCase
         $pointcut
             ->method('matches')
             ->willReturnCallback(
-                function (ReflectionClass $class, ReflectionProperty|null $property) use ($propertyName): bool {
+                function (ReflectionClass $class, ?ReflectionProperty $property) use ($propertyName): bool {
                     return !isset($property) || $property->name === $propertyName;
-                }
+                },
             )
         ;
         $pointcut

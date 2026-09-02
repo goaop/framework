@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -34,26 +34,26 @@ class TruePointcutTest extends TestCase
         $this->assertTrue(
             $this->pointcut->matches(
                 new ReflectionClass(self::class),
-                new ReflectionMethod(self::class, __FUNCTION__)
-            )
+                new ReflectionMethod(self::class, __FUNCTION__),
+            ),
         );
     }
 
     public function testItMatchesWithDefaultKinds(): void
     {
         $kind = $this->pointcut->getKind();
-        $this->assertTrue((bool)($kind & Pointcut::KIND_METHOD));
-        $this->assertTrue((bool)($kind & Pointcut::KIND_PROPERTY));
-        $this->assertTrue((bool)($kind & Pointcut::KIND_CLASS));
-        $this->assertTrue((bool)($kind & Pointcut::KIND_TRAIT));
-        $this->assertTrue((bool)($kind & Pointcut::KIND_FUNCTION));
-        $this->assertTrue((bool)($kind & Pointcut::KIND_INIT));
-        $this->assertTrue((bool)($kind & Pointcut::KIND_STATIC_INIT));
+        $this->assertTrue((bool) ($kind & Pointcut::KIND_METHOD));
+        $this->assertTrue((bool) ($kind & Pointcut::KIND_PROPERTY));
+        $this->assertTrue((bool) ($kind & Pointcut::KIND_CLASS));
+        $this->assertTrue((bool) ($kind & Pointcut::KIND_TRAIT));
+        $this->assertTrue((bool) ($kind & Pointcut::KIND_FUNCTION));
+        $this->assertTrue((bool) ($kind & Pointcut::KIND_INIT));
+        $this->assertTrue((bool) ($kind & Pointcut::KIND_STATIC_INIT));
     }
 
     public function testItDoesNotMatchWithIntroductionKindByDefault(): void
     {
         $kind = $this->pointcut->getKind();
-        $this->assertFalse((bool)($kind & Pointcut::KIND_INTRODUCTION));
+        $this->assertFalse((bool) ($kind & Pointcut::KIND_INTRODUCTION));
     }
 }

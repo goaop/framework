@@ -36,8 +36,7 @@ final class ParameterGenerator
         private readonly bool $byRef = false,
         private readonly bool $variadic = false,
         private ?ValueGenerator $defaultValue = null,
-    ) {
-    }
+    ) {}
 
     /**
      * Creates a ParameterGenerator from a reflection parameter.
@@ -96,7 +95,7 @@ final class ParameterGenerator
                         throw new \LogicException(sprintf(
                             'Cannot generate proxy for parameter $%s: PHP 8.5 Closure default values '
                             . 'require goaop/parser-reflection for AST access.',
-                            $param->getName()
+                            $param->getName(),
                         ));
                     }
                     $defaultValue = new ValueGenerator($rawDefault);

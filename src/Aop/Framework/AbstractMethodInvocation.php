@@ -71,7 +71,7 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
             'execution(%s%s%s())',
             $this->getScope(),
             $this->reflectionMethod->isStatic() ? '::' : '->',
-            $this->reflectionMethod->name
+            $this->reflectionMethod->name,
         );
     }
 }

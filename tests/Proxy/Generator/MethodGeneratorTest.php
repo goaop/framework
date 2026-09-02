@@ -74,14 +74,16 @@ class MethodGeneratorTest extends TestCase
     public function testSetAndGetBody(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->body = "return 'test';";        $body = $gen->body;
+        $gen->body = "return 'test';";
+        $body = $gen->body;
         $this->assertStringContainsString("return 'test'", $body);
     }
 
     public function testSetAndGetStmts(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->body = "return 42;";        $stmts = $gen->stmts;
+        $gen->body = "return 42;";
+        $stmts = $gen->stmts;
         $this->assertNotNull($stmts);
         $this->assertNotEmpty($stmts);
     }
@@ -89,7 +91,8 @@ class MethodGeneratorTest extends TestCase
     public function testSetStmtsFromArray(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->body = "return 42;";        $stmts = $gen->stmts;
+        $gen->body = "return 42;";
+        $stmts = $gen->stmts;
 
         $this->assertNotNull($stmts);
         $gen2 = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
@@ -198,7 +201,8 @@ class MethodGeneratorTest extends TestCase
     {
         $gen = new MethodGenerator('myMethod');
         $gen->visibility = Visibility::PUBLIC;
-        $gen->body = "return true;";        $output = $gen->generate();
+        $gen->body = "return true;";
+        $output = $gen->generate();
         $this->assertStringContainsString('function myMethod', $output);
         $this->assertStringContainsString('return true', $output);
     }

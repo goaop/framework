@@ -48,7 +48,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             throw new InvalidArgumentException(sprintf(
                 'Property %s::$%s cannot be intercepted with native hooks',
                 $this->property->getDeclaringClass()->getName(),
-                $this->property->getName()
+                $this->property->getName(),
             ));
         }
     }
@@ -78,7 +78,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
                     'Cannot generate proxy for property %s::$%s: PHP 8.5 Closure default values '
                     . 'require goaop/parser-reflection for AST access.',
                     $this->property->getDeclaringClass()->getName(),
-                    $this->property->getName()
+                    $this->property->getName(),
                 ));
             }
             $generator->defaultValue = $rawDefault;
@@ -102,7 +102,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         if ($type instanceof ReflectionUnionType) {
             return array_any(
                 $type->getTypes(),
-                fn($unionType): bool => $unionType instanceof ReflectionNamedType && $unionType->getName() === 'array'
+                fn($unionType): bool => $unionType instanceof ReflectionNamedType && $unionType->getName() === 'array',
             );
         }
 

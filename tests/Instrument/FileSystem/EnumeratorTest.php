@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -32,7 +32,7 @@ class EnumeratorTest extends TestCase
 
         $testPaths = [
             '/base/sub/test',
-            '/base/sub/sub/test'
+            '/base/sub/sub/test',
         ];
 
         // Setup some files we test against
@@ -56,38 +56,38 @@ class EnumeratorTest extends TestCase
                 // No include or exclude, every folder should be there
                 ['vfs://base/sub/test', 'vfs://base/sub/sub/test'],
                 [],
-                []
+                [],
             ],
             [
                 // Exclude double sub folder
                 ['vfs://base/sub/test'],
                 [],
-                ['vfs://base/sub/sub/test']
+                ['vfs://base/sub/sub/test'],
             ],
             [
                 // Exclude double sub folder just by base path
                 ['vfs://base/sub/test'],
                 [],
-                ['vfs://base/sub/sub']
+                ['vfs://base/sub/sub'],
             ],
             [
                 // Exclude all, expected shout be empty
                 [],
                 [],
-                ['vfs://base/sub/test', 'vfs://base/sub/sub/test']
+                ['vfs://base/sub/test', 'vfs://base/sub/sub/test'],
             ],
             [
                 // Exclude all sub using wildcard
                 [],
                 [],
-                ['vfs://base/*/test']
+                ['vfs://base/*/test'],
             ],
             [
                 // Includepath using wildcard should not break
                 ['vfs://base/sub/test', 'vfs://base/sub/sub/test'],
                 ['vfs://base/*'],
-                []
-            ]
+                [],
+            ],
         ];
     }
 

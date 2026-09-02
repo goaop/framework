@@ -73,7 +73,7 @@ final readonly class ReturnTypePointcut implements Pointcut
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
         // With only static context we always match, as we don't have any information about concrete reflector
         if (!isset($reflector)) {
@@ -113,8 +113,8 @@ final readonly class ReturnTypePointcut implements Pointcut
             static fn(array $patternGroup, array $actualGroup): bool => self::matchOneToOne(
                 $patternGroup,
                 $actualGroup,
-                static fn(string $patternAtom, string $actualAtom): bool => self::atomMatches($patternAtom, $actualAtom)
-            )
+                static fn(string $patternAtom, string $actualAtom): bool => self::atomMatches($patternAtom, $actualAtom),
+            ),
         );
     }
 

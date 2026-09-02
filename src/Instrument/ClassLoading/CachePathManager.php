@@ -112,7 +112,7 @@ class CachePathManager
                     if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
                         throw new InvalidArgumentException(
                             "Can not create a directory {$this->cacheDir} for the cache.
-                            Parent directory {$cacheRootDir} is not writable or not exist."
+                            Parent directory {$cacheRootDir} is not writable or not exist.",
                         );
                     }
                     mkdir($this->cacheDir, $this->fileMode, true);
@@ -385,8 +385,8 @@ class CachePathManager
             $cacheData,
             [
                 '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
-                '\'' . $rootPath  => 'AOP_ROOT_DIR . \''
-            ]
+                '\'' . $rootPath  => 'AOP_ROOT_DIR . \'',
+            ],
         );
         $fullCacheFileName = $this->cacheDir . $relativeFileName;
         file_put_contents($fullCacheFileName, $cacheData, LOCK_EX);

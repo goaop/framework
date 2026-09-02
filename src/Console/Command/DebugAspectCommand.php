@@ -32,7 +32,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
     description: 'Provides an interface for querying the information about aspects',
     help: <<<EOT
 Allows to query an information about enabled aspects.
-EOT
+EOT,
 )]
 class DebugAspectCommand extends BaseAspectCommand
 {

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -23,7 +23,7 @@ class DebugAspectCommandTest extends BaseFunctionalTestCase
         $expected = [
             'Go\Tests\TestProject\Kernel\DefaultAspectKernel has following enabled aspects',
             'Go\Tests\TestProject\Aspect\LoggingAspect',
-            'Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod'
+            'Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod',
         ];
 
         foreach ($expected as $string) {

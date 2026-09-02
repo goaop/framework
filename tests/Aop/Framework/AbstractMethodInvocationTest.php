@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
@@ -32,7 +32,6 @@ class AbstractMethodInvocationTest extends TestCase
     public function testInstanceIsInitialized(): void
     {
         $o = new class extends AbstractMethodInvocation {
-
             public function __construct()
             {
                 parent::__construct([new AroundInterceptor(function () {})], AbstractMethodInvocationTest::class, 'testInstanceIsInitialized', static fn() => null);

@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -19,32 +19,31 @@ use Go\Console\Command\DebugWeavingCommand;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
 
-
 if (is_dir($vendor = __DIR__ . '/../vendor')) {
     require $vendor . '/autoload.php';
 } elseif (is_dir($vendor = __DIR__ . '/../../..')) {
     require $vendor . '/autoload.php';
 } else {
     die(
-        'You must set up the project dependencies.' . PHP_EOL .
-        'To do that, run the following commands:' . PHP_EOL . PHP_EOL .
-        '$ curl -s http://getcomposer.org/installer | php' . PHP_EOL .
-        '$ php composer.phar install' . PHP_EOL
+        'You must set up the project dependencies.' . PHP_EOL
+        . 'To do that, run the following commands:' . PHP_EOL . PHP_EOL
+        . '$ curl -s http://getcomposer.org/installer | php' . PHP_EOL
+        . '$ php composer.phar install' . PHP_EOL
     );
 }
 
 if (!class_exists(Application::class)) {
     die(
-        'You must install the symfony/console package in order ' .
-        'to use the command-line tool.' . PHP_EOL
+        'You must install the symfony/console package in order '
+        . 'to use the command-line tool.' . PHP_EOL
     );
 }
 
 $app = new Application('Go! AOP', InstalledVersions::getVersion('goaop/framework'));
 $app->setCommandLoader(new FactoryCommandLoader([
-    'cache:warmup:aop' => static fn (): CacheWarmupCommand => new CacheWarmupCommand(),
-    'debug:aspect'     => static fn (): DebugAspectCommand => new DebugAspectCommand(),
-    'debug:advisor'    => static fn (): DebugAdvisorCommand => new DebugAdvisorCommand(),
-    'debug:weaving'    => static fn (): DebugWeavingCommand => new DebugWeavingCommand(),
+    'cache:warmup:aop' => static fn(): CacheWarmupCommand => new CacheWarmupCommand(),
+    'debug:aspect'     => static fn(): DebugAspectCommand => new DebugAspectCommand(),
+    'debug:advisor'    => static fn(): DebugAdvisorCommand => new DebugAdvisorCommand(),
+    'debug:weaving'    => static fn(): DebugWeavingCommand => new DebugWeavingCommand(),
 ]));
 $app->run();

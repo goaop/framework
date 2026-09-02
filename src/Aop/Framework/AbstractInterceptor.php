@@ -80,7 +80,7 @@ abstract class AbstractInterceptor implements Interceptor, OrderedAdvice
     public function __construct(
         protected readonly Closure $adviceMethod,
         int $adviceOrder = 0,
-        string $pointcutExpression = ''
+        string $pointcutExpression = '',
     ) {
         $this->adviceOrder        = $adviceOrder;
         $this->pointcutExpression = $pointcutExpression;

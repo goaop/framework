@@ -19,7 +19,7 @@ final class GeneratedInterceptorTest extends TestCase
     {
         $interceptor = GeneratedInterceptor::fromAdvice(
             'manual-advisor',
-            new BeforeInterceptor(static function (Joinpoint $joinpoint): void {}, 10)
+            new BeforeInterceptor(static function (Joinpoint $joinpoint): void {}, 10),
         );
 
         $this->assertSame('before', $interceptor->factoryMethod);
@@ -38,7 +38,7 @@ final class GeneratedInterceptorTest extends TestCase
     {
         $interceptor = GeneratedInterceptor::fromAdvice(
             'manual-advisor',
-            new $interceptorClass(static fn(): mixed => null)
+            new $interceptorClass(static fn(): mixed => null),
         );
 
         $this->assertSame($expectedFactoryMethod, $interceptor->factoryMethod);
@@ -66,7 +66,7 @@ final class GeneratedInterceptorTest extends TestCase
 
         $interceptor = GeneratedInterceptor::fromAdvice(
             'advisor.' . $aspect::class . '->publicAdvice',
-            new BeforeInterceptor($advice)
+            new BeforeInterceptor($advice),
         );
 
         $this->assertSame('before', $interceptor->factoryMethod);

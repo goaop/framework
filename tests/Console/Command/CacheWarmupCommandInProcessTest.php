@@ -75,7 +75,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
 
     public function testSuccessfulWarmupReturnsSuccess(): void
     {
-        $command = new class () extends CacheWarmupCommand {
+        $command = new class extends CacheWarmupCommand {
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
                 // No-op: kernel is not needed, warmup below is simulated
@@ -83,7 +83,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
 
             protected function createCacheWarmer(OutputInterface $output): CacheWarmer
             {
-                return new class () extends CacheWarmer {
+                return new class extends CacheWarmer {
                     public function __construct()
                     {
                         // Deliberately skips the parent constructor: no kernel is involved
@@ -106,7 +106,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        $command = new class () extends CacheWarmupCommand {
+        $command = new class extends CacheWarmupCommand {
             public function exposeCreateCacheWarmer(AspectKernel $kernel): CacheWarmer
             {
                 $this->aspectKernel = $kernel;
@@ -120,7 +120,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
 
     public function testInterruptedWarmupMapsSignalToExitCode(): void
     {
-        $command = new class () extends CacheWarmupCommand {
+        $command = new class extends CacheWarmupCommand {
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
                 // No-op: kernel is not needed, warmup below is simulated

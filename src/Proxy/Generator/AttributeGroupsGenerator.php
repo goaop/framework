@@ -62,7 +62,7 @@ final class AttributeGroupsGenerator
      * @return list<AttributeGroup>
      */
     public static function fromReflector(
-        ReflectionClass|ReflectionFunctionAbstract|ReflectionParameter|ReflectionProperty $reflection
+        ReflectionClass|ReflectionFunctionAbstract|ReflectionParameter|ReflectionProperty $reflection,
     ): array {
         $node = null;
 
@@ -192,7 +192,7 @@ final class AttributeGroupsGenerator
 
                     return null;
                 }
-            }
+            },
         );
 
         /** @var list<Node\Arg> $clonedArgs */

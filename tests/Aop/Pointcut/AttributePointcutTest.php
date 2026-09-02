@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -27,7 +27,7 @@ class AttributePointcutTest extends TestCase
         $pointcut = new AttributePointcut(
             Pointcut::KIND_CLASS,
             StubAttribute::class,
-            true
+            true,
         );
 
         $matched = $pointcut->matches(new ReflectionClass(First::class));
@@ -36,7 +36,7 @@ class AttributePointcutTest extends TestCase
         // When context matching is enabled, it should also match any methods based only on context matching, ignoring ref name.
         $matched = $pointcut->matches(
             new ReflectionClass(First::class),
-            new ReflectionMethod(First::class, 'publicMethod')
+            new ReflectionMethod(First::class, 'publicMethod'),
         );
         $this->assertTrue($matched, "Pointcut should match this method because annotation is matched");
     }
@@ -46,7 +46,7 @@ class AttributePointcutTest extends TestCase
         $pointcut = new AttributePointcut(
             Pointcut::KIND_CLASS,
             StubAttribute::class,
-            true
+            true,
         );
 
         $matched = $pointcut->matches(new ReflectionClass(self::class));
@@ -69,7 +69,7 @@ class AttributePointcutTest extends TestCase
 
         $matched = $pointcut->matches(
             new ReflectionClass(First::class),
-            new ReflectionMethod(First::class, 'publicMethodWithAttribute')
+            new ReflectionMethod(First::class, 'publicMethodWithAttribute'),
         );
         $this->assertTrue($matched, "Pointcut should match this method because annotation is matched");
     }
@@ -83,7 +83,7 @@ class AttributePointcutTest extends TestCase
 
         $matched = $pointcut->matches(
             new ReflectionClass(First::class),
-            new ReflectionMethod(First::class, 'publicMethod')
+            new ReflectionMethod(First::class, 'publicMethod'),
         );
         $this->assertFalse($matched, "Pointcut should not match this method because annotation is not matched");
     }
@@ -104,7 +104,7 @@ class AttributePointcutTest extends TestCase
 
         $matched = $pointcut->matches(
             new ReflectionClass(First::class),
-            new ReflectionProperty(First::class, 'publicWithAttribute')
+            new ReflectionProperty(First::class, 'publicWithAttribute'),
         );
         $this->assertTrue($matched, "Pointcut should match this property because annotation is matched");
     }
@@ -118,7 +118,7 @@ class AttributePointcutTest extends TestCase
 
         $matched = $pointcut->matches(
             new ReflectionClass(First::class),
-            new ReflectionProperty(First::class, 'public')
+            new ReflectionProperty(First::class, 'public'),
         );
         $this->assertFalse($matched, "Pointcut should not match this property because annotation is not matched");
     }
@@ -128,7 +128,7 @@ class AttributePointcutTest extends TestCase
         $pointcut = new AttributePointcut(
             Pointcut::KIND_CLASS,
             StubAttribute::class,
-            true
+            true,
         );
 
         $this->assertEquals(Pointcut::KIND_CLASS, $pointcut->getKind());

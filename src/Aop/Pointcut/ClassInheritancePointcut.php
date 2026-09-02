@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -18,6 +18,7 @@ use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionProperty;
+
 use function in_array;
 
 /**
@@ -33,7 +34,7 @@ final readonly class ClassInheritancePointcut implements Pointcut
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
-        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null
+        ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
         // We match only with ReflectionClass as a context
         if (!$context instanceof ReflectionClass) {

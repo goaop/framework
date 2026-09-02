@@ -30,7 +30,7 @@ Initializes the kernel and, if successful, warm up the cache for PHP
 files under the application directory.
 
 By default, the cache directory is taken from configured AspectKernel class.
-EOT
+EOT,
 )]
 class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandInterface
 {

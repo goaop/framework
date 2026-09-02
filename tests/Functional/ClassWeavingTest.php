@@ -106,12 +106,12 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertPropertyWoven(
             PromotedPropertyClass::class,
             'name',
-            'Go\\Tests\\TestProject\\Aspect\\PromotedPropertyInterceptAspect->beforePromotedNameAccess'
+            'Go\\Tests\\TestProject\\Aspect\\PromotedPropertyInterceptAspect->beforePromotedNameAccess',
         );
         $this->assertPropertyWoven(
             SingleLinePromotedClass::class,
             'tag',
-            'Go\\Tests\\TestProject\\Aspect\\PromotedPropertyInterceptAspect->beforePromotedTagAccess'
+            'Go\\Tests\\TestProject\\Aspect\\PromotedPropertyInterceptAspect->beforePromotedTagAccess',
         );
     }
 
@@ -127,26 +127,26 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertPropertyWoven(
             NewInInitializerClass::class,
             'bag',
-            'Go\\Tests\\TestProject\\Aspect\\PromotedPropertyInterceptAspect->beforeNewInInitializerBagAccess'
+            'Go\\Tests\\TestProject\\Aspect\\PromotedPropertyInterceptAspect->beforeNewInInitializerBagAccess',
         );
 
         $phpExecutable = (new PhpExecutableFinder())->find();
         $script = sprintf(
             'include %s; $instance = new %s(); echo implode(",", $instance->getBagItems());',
             var_export($this->configuration['frontController'], true),
-            '\\' . NewInInitializerClass::class
+            '\\' . NewInInitializerClass::class,
         );
         assert($phpExecutable !== false);
         $process = new Process(
             [$phpExecutable, '-r', $script],
             null,
-            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()]
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
         );
         $process->run();
 
         $this->assertTrue(
             $process->isSuccessful(),
-            'Loading the woven class failed: ' . $process->getOutput() . $process->getErrorOutput()
+            'Loading the woven class failed: ' . $process->getOutput() . $process->getErrorOutput(),
         );
         $this->assertSame('seed', trim($process->getOutput()));
     }
@@ -156,7 +156,7 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertPropertyWoven(
             ArrayPropertyDemo::class,
             'indirectModificationCheck',
-            'Go\\Tests\\TestProject\\Aspect\\ArrayPropertyInterceptAspect->aroundArrayFieldAccess'
+            'Go\\Tests\\TestProject\\Aspect\\ArrayPropertyInterceptAspect->aroundArrayFieldAccess',
         );
 
         $demo = new ArrayPropertyDemo();

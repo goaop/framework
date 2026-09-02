@@ -86,7 +86,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
     public function __construct(
         ReflectionClass $originalClass,
         string $traitName,
-        array $classAdviceNames
+        array $classAdviceNames,
     ) {
         // Enums cannot be instantiated (no `new EnumClass()`) and cannot have properties, so
         // initialization and property-access join points must never be woven for enums.
@@ -105,7 +105,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
         // Filter out built-in enum methods which cannot be overridden via trait aliasing
         $interceptedMethods = array_values(array_filter(
             array_keys($dynamicMethodAdvices + $staticMethodAdvices),
-            static fn(string $m) => !in_array($m, self::BUILTIN_ENUM_METHODS, true)
+            static fn(string $m) => !in_array($m, self::BUILTIN_ENUM_METHODS, true),
         ));
 
         $generatedMethods = $this->interceptMethods($originalClass, $interceptedMethods);
@@ -116,14 +116,14 @@ class EnumProxyGenerator extends ClassProxyGenerator
         // namespaced file would resolve them as e.g. Ns\UnitEnum instead of the global \UnitEnum.
         $originalInterfaces = array_filter(
             $originalClass->getInterfaceNames(),
-            static fn(string $i) => !in_array($i, self::BUILTIN_ENUM_INTERFACES, true)
+            static fn(string $i) => !in_array($i, self::BUILTIN_ENUM_INTERFACES, true),
         );
         $originalInterfaces   = array_map(static fn(string $i) => '\\' . $i, $originalInterfaces);
         $introducedInterfaces = array_values(array_unique(array_merge($originalInterfaces, ['\\' . Proxy::class])));
 
         $methodGenerators = array_map(
             static fn($m) => $m->getGenerator(),
-            array_values($generatedMethods)
+            array_values($generatedMethods),
         );
 
         // Resolve backing type and cases from either GoAOP parser reflection or native ReflectionEnum.
@@ -136,7 +136,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
             !empty($originalClass->getNamespaceName()) ? $originalClass->getNamespaceName() : null,
             $backingType,
             $introducedInterfaces,
-            $methodGenerators
+            $methodGenerators,
         );
 
         // Re-declare all enum cases — cases cannot live in traits
@@ -160,7 +160,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
                 $effectiveTraitName,
                 $methodName,
                 AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName,
-                Visibility::PRIVATE
+                Visibility::PRIVATE,
             );
         }
 

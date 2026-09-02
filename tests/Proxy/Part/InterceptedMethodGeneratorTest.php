@@ -14,7 +14,6 @@ namespace Go\Proxy\Part;
 
 use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
-
 use ReflectionMethod;
 
 use function preg_replace;
@@ -55,47 +54,47 @@ class InterceptedMethodGeneratorTest extends TestCase
             'variadicArgsTest' => [
                 First::class,
                 'variadicArgsTest',
-                'public function variadicArgsTest(...$args): string'
+                'public function variadicArgsTest(...$args): string',
             ],
             'staticLsbRecursion' => [
                 First::class,
                 'staticLsbRecursion',
-                'public static function staticLsbRecursion(int $value, int $level = 0): int'
+                'public static function staticLsbRecursion(int $value, int $level = 0): int',
             ],
             'staticLsbProtected' => [
                 First::class,
                 'staticLsbProtected',
-                'protected static function staticLsbProtected(): string'
+                'protected static function staticLsbProtected(): string',
             ],
             'passByReference' => [
                 First::class,
                 'passByReference',
-                'public function passByReference(&$valueByReference)'
+                'public function passByReference(&$valueByReference)',
             ],
             'privateMethod' => [
                 First::class,
                 'privateMethod',
-                'private function privateMethod(): int'
+                'private function privateMethod(): int',
             ],
             'publicMethodWithUnionTypeReturn' => [
                 First::class,
                 'publicMethodWithUnionTypeReturn',
-                'public function publicMethodWithUnionTypeReturn(\Exception|\Closure $value): \Exception|\Closure'
+                'public function publicMethodWithUnionTypeReturn(\Exception|\Closure $value): \Exception|\Closure',
             ],
             'publicMethodWithIntersectionTypeReturn' => [
                 First::class,
                 'publicMethodWithIntersectionTypeReturn',
-                'public function publicMethodWithIntersectionTypeReturn(\Exception&\Countable $value): \Exception&\Countable'
+                'public function publicMethodWithIntersectionTypeReturn(\Exception&\Countable $value): \Exception&\Countable',
             ],
             'publicMethodWithDNFTypeReturn' => [
                 First::class,
                 'publicMethodWithDNFTypeReturn',
-                'public function publicMethodWithDNFTypeReturn(\Iterator|(\Exception&\Countable) $value): \Iterator|(\Exception&\Countable)'
+                'public function publicMethodWithDNFTypeReturn(\Iterator|(\Exception&\Countable) $value): \Iterator|(\Exception&\Countable)',
             ],
             'publicMethodWithAttribute' => [
                 First::class,
                 'publicMethodWithAttribute',
-                "#[\\Go\\Stubs\\StubAttribute('Go\\Stubs\\First')]\npublic function publicMethodWithAttribute(\n    #[\\Go\\Stubs\\StubAttribute('argument')]\n    string \$argument\n): string"
+                "#[\\Go\\Stubs\\StubAttribute('Go\\Stubs\\First')]\npublic function publicMethodWithAttribute(\n    #[\\Go\\Stubs\\StubAttribute('argument')]\n    string \$argument\n): string",
             ],
         ];
     }

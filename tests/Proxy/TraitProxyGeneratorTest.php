@@ -51,7 +51,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices
+            $traitAdvices,
         );
 
         $output = "<?php\n" . $generator->generate();
@@ -90,7 +90,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices
+            $traitAdvices,
         );
 
         $output = "<?php\n" . $generator->generate();
@@ -124,7 +124,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices
+            $traitAdvices,
         );
 
         $output = "<?php\n" . $generator->generate();
@@ -155,7 +155,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices
+            $traitAdvices,
         );
 
         $output = $generator->generate();
@@ -179,7 +179,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices
+            $traitAdvices,
         );
 
         $output = $generator->generate();
@@ -204,7 +204,7 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitAliasProxied__AopProxied',
-            $traitAdvices
+            $traitAdvices,
         );
 
         $output = "<?php\n" . $generator->generate();
@@ -229,14 +229,14 @@ class TraitProxyGeneratorTest extends TestCase
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
             'Go\\Stubs\\TraitWithClassTypedProperty__AopProxied',
-            $traitAdvices
+            $traitAdvices,
         );
 
         $output = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString(
             "/** @var FieldAccess<self, \\Exception> \$__joinPoint */",
-            $output
+            $output,
         );
     }
 

@@ -42,7 +42,7 @@ final class InterceptorInjector
             $interceptors,
             $className,
             $methodName,
-            $closureToCall
+            $closureToCall,
         );
     }
 
@@ -62,7 +62,7 @@ final class InterceptorInjector
             $interceptors,
             $className,
             $methodName,
-            $closureToCall
+            $closureToCall,
         );
     }
 
@@ -78,7 +78,7 @@ final class InterceptorInjector
         return new ClassFieldAccess(
             $interceptors,
             $className,
-            $propertyName
+            $propertyName,
         );
     }
 
@@ -93,7 +93,7 @@ final class InterceptorInjector
         return new ReflectionFunctionInvocation(
             $interceptors,
             $functionName,
-            $closureToCall
+            $closureToCall,
         );
     }
 
@@ -107,7 +107,7 @@ final class InterceptorInjector
     {
         return new StaticInitializationJoinpoint(
             $interceptors,
-            $className
+            $className,
         );
     }
 
@@ -121,7 +121,7 @@ final class InterceptorInjector
     {
         return new ReflectionConstructorInvocation(
             $interceptors,
-            $className
+            $className,
         );
     }
 }

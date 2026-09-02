@@ -15,6 +15,4 @@ namespace Go\Lang\Attribute;
 /**
  * Interceptor attribute marker
  */
-interface Interceptor
-{
-}
+interface Interceptor {}

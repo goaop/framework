@@ -36,7 +36,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
     description: 'Provides an interface for checking and debugging advisors',
     help: <<<EOT
 Allows to query an information about matching joinpoints for specified advisor.
-EOT
+EOT,
 )]
 class DebugAdvisorCommand extends BaseAspectCommand
 {
@@ -82,8 +82,8 @@ class DebugAdvisorCommand extends BaseAspectCommand
         $io->writeln(
             [
                 'If you want to query an information about concrete advisor, then just query it',
-                'by adding <info>--advisor="Advisor\\Name"</info> to the command'
-            ]
+                'by adding <info>--advisor="Advisor\\Name"</info> to the command',
+            ],
         );
     }
 
@@ -108,7 +108,7 @@ class DebugAdvisorCommand extends BaseAspectCommand
         $iterator->rewind();
 
         foreach ($iterator as $file) {
-            $reflectionFile       = new ReflectionFile((string)$file);
+            $reflectionFile       = new ReflectionFile((string) $file);
             $reflectionNamespaces = $reflectionFile->getFileNamespaces();
             foreach ($reflectionNamespaces as $reflectionNamespace) {
                 foreach ($reflectionNamespace->getClasses() as $reflectionClass) {

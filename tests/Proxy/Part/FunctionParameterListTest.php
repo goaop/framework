@@ -65,8 +65,8 @@ class FunctionParameterListTest extends TestCase
                         'getVariadic'          => false,
                         'getName'              => 'value',
                         'getDefaultValue'      => null,
-                    ]
-                ]
+                    ],
+                ],
             ],
             [
                 'array_pop', // array_pop(&$stack)
@@ -77,8 +77,8 @@ class FunctionParameterListTest extends TestCase
                         'getVariadic'          => false,
                         'getName'              => 'array',
                         'getDefaultValue'      => null,
-                    ]
-                ]
+                    ],
+                ],
             ],
             [
                 'strcoll', // strcoll($str1, $str2)
@@ -89,8 +89,8 @@ class FunctionParameterListTest extends TestCase
                         'getVariadic'          => false,
                         'getName'              => 'string1',
                         'getDefaultValue'      => null,
-                    ]
-                ]
+                    ],
+                ],
             ],
             [
                 'microtime', // microtime($as_float = false)
@@ -100,10 +100,10 @@ class FunctionParameterListTest extends TestCase
                         'getPassedByReference' => false,
                         'getVariadic'          => false,
                         'getName'              => 'as_float',
-                        'getDefaultValue'      => ValueGenerator::class
-                    ]
-                ]
-            ]
+                        'getDefaultValue'      => ValueGenerator::class,
+                    ],
+                ],
+            ],
         ];
     }
 }

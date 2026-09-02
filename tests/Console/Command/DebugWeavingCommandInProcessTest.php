@@ -72,8 +72,7 @@ class DebugWeavingCommandInProcessTest extends TestCase
     public function testStableWeavingReturnsSuccess(): void
     {
         $cacheDir = $this->createEmptyCacheDir();
-        $tester   = new CommandTester($this->createCommandWithFakedKernel($cacheDir, static function (): void {
-        }));
+        $tester   = new CommandTester($this->createCommandWithFakedKernel($cacheDir, static function (): void {}));
 
         $exitCode = $tester->execute(['loader' => 'unused.php']);
 

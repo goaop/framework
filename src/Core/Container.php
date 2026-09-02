@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -71,21 +71,21 @@ class Container implements AspectContainer
         $this->addLazyService(PointcutLexer::class, fn(): PointcutLexer => new PointcutLexer());
 
         $this->addLazyService(PointcutParser::class, fn(AspectContainer $container): PointcutParser => new PointcutParser(
-            new PointcutGrammar($container)
+            new PointcutGrammar($container),
         ));
 
         $this->addLazyService(AdviceMatcher::class, fn(AspectContainer $container): AdviceMatcher => new AdviceMatcher(
-            (bool) $container->getValue('kernel.interceptFunctions')
+            (bool) $container->getValue('kernel.interceptFunctions'),
         ));
 
         $this->addLazyService(AttributeAspectLoaderExtension::class, fn(AspectContainer $container): AttributeAspectLoaderExtension => new AttributeAspectLoaderExtension(
             $container->getService(PointcutLexer::class),
-            $container->getService(PointcutParser::class)
+            $container->getService(PointcutParser::class),
         ));
 
         $this->addLazyService(IntroductionAspectExtension::class, fn(AspectContainer $container): IntroductionAspectExtension => new IntroductionAspectExtension(
             $container->getService(PointcutLexer::class),
-            $container->getService(PointcutParser::class)
+            $container->getService(PointcutParser::class),
         ));
 
         $this->addLazyService(AspectLoader::class, fn(AspectContainer $container): AspectLoader => new AspectLoader(
@@ -101,7 +101,7 @@ class Container implements AspectContainer
         });
 
         $this->addLazyService(CachePathManager::class, fn(AspectContainer $container): CachePathManager => new CachePathManager(
-            $container->getService(AspectKernel::class)
+            $container->getService(AspectKernel::class),
         ));
     }
 
@@ -183,7 +183,7 @@ class Container implements AspectContainer
             if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
                 throw new AspectException(
                     "Aspect $aspectClassName has required constructor arguments, "
-                    . "pass a factory closure to registerAspect() to create it"
+                    . "pass a factory closure to registerAspect() to create it",
                 );
             }
         }

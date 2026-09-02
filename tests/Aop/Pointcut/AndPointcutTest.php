@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -61,7 +61,7 @@ class AndPointcutTest extends TestCase
             [$false, $false, false],
             [$false, $true, false],
             [$true, $false, false],
-            [$true, $true, true]
+            [$true, $true, true],
         ];
     }
 }

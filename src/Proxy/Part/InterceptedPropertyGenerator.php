@@ -84,7 +84,7 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
      */
     public function __construct(
         ReflectionProperty $property,
-        private readonly array $adviceNames
+        private readonly array $adviceNames,
     ) {
         parent::__construct($property);
     }
@@ -164,14 +164,14 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
                     new MethodCall(
                         new MethodCall(new Variable('__joinPoint'), 'getField'),
                         'isInitialized',
-                        [new Arg(new Variable('this'))]
+                        [new Arg(new Variable('this'))],
                     ),
                     [
                         'stmts' => [
-                            new Return_($readInvokeWithValue)
+                            new Return_($readInvokeWithValue),
                         ],
                         'else' => new Else_([new Return_($readInvokeWithoutValue)]),
-                    ]
+                    ],
                 )
                 : new Return_($readInvokeWithValue),
         ], ['byRef' => $returnsByReference]);
@@ -230,26 +230,26 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
                     new MethodCall(
                         new MethodCall(new Variable('__joinPoint'), 'getField'),
                         'isInitialized',
-                        [new Arg(new Variable('this'))]
+                        [new Arg(new Variable('this'))],
                     ),
                     [
                         'stmts' => [
                             new Expression(new Assign(
                                 new PropertyFetch(new Variable('this'), $propertyName),
-                                $writeInvokeWithBackedValue
+                                $writeInvokeWithBackedValue,
                             )),
                         ],
                         'else' => new Else_([
                             new Expression(new Assign(
                                 new PropertyFetch(new Variable('this'), $propertyName),
-                                $writeInvokeWithoutBackedValue
+                                $writeInvokeWithoutBackedValue,
                             )),
                         ]),
-                    ]
+                    ],
                 )
                 : new Expression(new Assign(
                     new PropertyFetch(new Variable('this'), $propertyName),
-                    $writeInvokeWithBackedValue
+                    $writeInvokeWithBackedValue,
                 )),
         ]);
     }
@@ -280,7 +280,7 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
                 new Arg(new ClassConstFetch(new Name('self'), 'class')),
                 new Arg(new String_($propertyName)),
                 new Arg((new InterceptorListGenerator($this->adviceNames))->getNode()),
-            ]
+            ],
         );
     }
 }

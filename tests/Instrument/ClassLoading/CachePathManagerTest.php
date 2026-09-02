@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -118,7 +118,7 @@ class CachePathManagerTest extends TestCase
 
         $this->assertSame(
             ['filemtime' => 12345, 'cacheUri' => $transformed, 'classes' => ['App\Some']],
-            $reader->queryCacheState($original)
+            $reader->queryCacheState($original),
         );
         $this->assertTrue($loadedFlag->getValue($reader));
     }

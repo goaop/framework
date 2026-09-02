@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -60,7 +60,7 @@ abstract class AbstractInterceptorTestCase extends TestCase implements Aspect
                         throw new RuntimeException('Expected exception');
                     }
                     return 'invocation';
-                }
+                },
             );
 
         return $invocation;

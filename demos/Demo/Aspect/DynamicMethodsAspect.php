@@ -39,13 +39,13 @@ class DynamicMethodsAspect implements Aspect
             return;
         }
         echo 'Calling Magic Interceptor for method: ',
-            $invocation->getScope(),
-            '->',
-            $methodName,
-            '()',
-            ' with arguments: ',
-            json_encode($args),
-            PHP_EOL;
+        $invocation->getScope(),
+        '->',
+        $methodName,
+        '()',
+        ' with arguments: ',
+        json_encode($args),
+        PHP_EOL;
     }
 
     /**
@@ -60,12 +60,12 @@ class DynamicMethodsAspect implements Aspect
             return;
         }
         echo 'Calling Static Magic Interceptor for method: ',
-            $invocation->getScope(),
-            '::',
-            $methodName,
-            '()',
-            ' with arguments: ',
-            json_encode($args),
-            PHP_EOL;
+        $invocation->getScope(),
+        '::',
+        $methodName,
+        '()',
+        ' with arguments: ',
+        json_encode($args),
+        PHP_EOL;
     }
 }

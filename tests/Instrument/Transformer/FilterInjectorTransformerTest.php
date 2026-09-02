@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -36,9 +36,9 @@ class FilterInjectorTransformerTest extends TestCase
                     'cacheFileMode' => 0770,
                     'appDir'        => '',
                     'debug'         => false,
-                    'features'      => 0
+                    'features'      => 0,
                 ],
-                $this->createMock(AspectContainer::class)
+                $this->createMock(AspectContainer::class),
             );
             $cachePathManager = $this
                 ->getMockBuilder(CachePathManager::class)

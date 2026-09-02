@@ -122,7 +122,7 @@ abstract class BaseFunctionalTestCase extends TestCase
         string $command,
         array $args = [],
         bool $expectSuccess = true,
-        ?int $expectedExitCode = null
+        ?int $expectedExitCode = null,
     ): string {
         $phpExecutable = (new PhpExecutableFinder())->find();
         assert($phpExecutable !== false);
@@ -144,8 +144,8 @@ abstract class BaseFunctionalTestCase extends TestCase
                 sprintf(
                     'Unable to execute "%s" command, got output: "%s".',
                     $process->getCommandLine(),
-                    $process->getOutput()
-                )
+                    $process->getOutput(),
+                ),
             );
         } else {
             $this->assertFalse(
@@ -153,8 +153,8 @@ abstract class BaseFunctionalTestCase extends TestCase
                 sprintf(
                     'Command "%s" executed successfully, even if it is expected to fail, got output: "%s".',
                     $command,
-                    $process->getOutput()
-                )
+                    $process->getOutput(),
+                ),
             );
         }
 
@@ -206,14 +206,14 @@ abstract class BaseFunctionalTestCase extends TestCase
         string $staticMethodName,
         ?string $advisorIdentifier = null,
         ?int $index = null,
-        string $message = ''
+        string $message = '',
     ): void {
         $identifier = new ClassAdvisorIdentifier(
             $class,
             $staticMethodName,
             AspectContainer::STATIC_METHOD_PREFIX,
             $advisorIdentifier,
-            $index
+            $index,
         );
         $constraint = new ClassMemberWovenConstraint($this->configuration);
 
@@ -233,13 +233,13 @@ abstract class BaseFunctionalTestCase extends TestCase
         string $class,
         string $staticMethodName,
         ?string $advisorIdentifier = null,
-        string $message = ''
+        string $message = '',
     ): void {
         $identifier = new ClassAdvisorIdentifier(
             $class,
             $staticMethodName,
             AspectContainer::STATIC_METHOD_PREFIX,
-            $advisorIdentifier
+            $advisorIdentifier,
         );
         $constraint = new ClassMemberNotWovenConstraint($this->configuration);
 
@@ -261,14 +261,14 @@ abstract class BaseFunctionalTestCase extends TestCase
         string $methodName,
         ?string $advisorIdentifier = null,
         ?int $index = null,
-        string $message = ''
+        string $message = '',
     ): void {
         $identifier = new ClassAdvisorIdentifier(
             $class,
             $methodName,
             AspectContainer::METHOD_PREFIX,
             $advisorIdentifier,
-            $index
+            $index,
         );
         $constraint = new ClassMemberWovenConstraint($this->configuration);
 
@@ -288,13 +288,13 @@ abstract class BaseFunctionalTestCase extends TestCase
         string $class,
         string $methodName,
         ?string $advisorIdentifier = null,
-        string $message = ''
+        string $message = '',
     ): void {
         $identifier = new ClassAdvisorIdentifier(
             $class,
             $methodName,
             AspectContainer::METHOD_PREFIX,
-            $advisorIdentifier
+            $advisorIdentifier,
         );
         $constraint = new ClassMemberNotWovenConstraint($this->configuration);
 
@@ -316,14 +316,14 @@ abstract class BaseFunctionalTestCase extends TestCase
         string $propertyName,
         ?string $advisorIdentifier = null,
         ?int $index = null,
-        string $message = ''
+        string $message = '',
     ): void {
         $identifier = new ClassAdvisorIdentifier(
             $class,
             $propertyName,
             AspectContainer::PROPERTY_PREFIX,
             $advisorIdentifier,
-            $index
+            $index,
         );
         $constraint = new ClassMemberWovenConstraint($this->configuration);
 
@@ -343,13 +343,13 @@ abstract class BaseFunctionalTestCase extends TestCase
         string $class,
         string $propertyName,
         ?string $advisorIdentifier = null,
-        string $message = ''
+        string $message = '',
     ): void {
         $identifier = new ClassAdvisorIdentifier(
             $class,
             $propertyName,
             AspectContainer::PROPERTY_PREFIX,
-            $advisorIdentifier
+            $advisorIdentifier,
         );
         $constraint = new ClassMemberNotWovenConstraint($this->configuration);
 
@@ -369,14 +369,14 @@ abstract class BaseFunctionalTestCase extends TestCase
         string $class,
         ?string $advisorIdentifier = null,
         ?int $index = null,
-        string $message = ''
+        string $message = '',
     ): void {
         $identifier = new ClassAdvisorIdentifier(
             $class,
             'root',
             AspectContainer::INIT_PREFIX,
             $advisorIdentifier,
-            $index
+            $index,
         );
         $constraint = new ClassMemberWovenConstraint($this->configuration);
 
@@ -394,13 +394,13 @@ abstract class BaseFunctionalTestCase extends TestCase
     protected function assertClassInitializationNotWoven(
         string $class,
         ?string $advisorIdentifier = null,
-        string $message = ''
+        string $message = '',
     ): void {
         $identifier = new ClassAdvisorIdentifier(
             $class,
             'root',
             AspectContainer::INIT_PREFIX,
-            $advisorIdentifier
+            $advisorIdentifier,
         );
         $constraint = new ClassMemberNotWovenConstraint($this->configuration);
 
@@ -420,14 +420,14 @@ abstract class BaseFunctionalTestCase extends TestCase
         string $class,
         ?string $advisorIdentifier = null,
         ?int $index = null,
-        string $message = ''
+        string $message = '',
     ): void {
         $identifier = new ClassAdvisorIdentifier(
             $class,
             'root',
             AspectContainer::STATIC_INIT_PREFIX,
             $advisorIdentifier,
-            $index
+            $index,
         );
         $constraint = new ClassMemberWovenConstraint($this->configuration);
 
@@ -445,13 +445,13 @@ abstract class BaseFunctionalTestCase extends TestCase
     protected function assertClassStaticInitializationNotWoven(
         string $class,
         ?string $advisorIdentifier = null,
-        string $message = ''
+        string $message = '',
     ): void {
         $identifier = new ClassAdvisorIdentifier(
             $class,
             'root',
             AspectContainer::STATIC_INIT_PREFIX,
-            $advisorIdentifier
+            $advisorIdentifier,
         );
         $constraint = new ClassMemberNotWovenConstraint($this->configuration);
 

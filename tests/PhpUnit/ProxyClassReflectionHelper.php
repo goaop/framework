@@ -45,9 +45,7 @@ use PhpParser\NodeFinder;
  */
 final class ProxyClassReflectionHelper
 {
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     /**
      * Extracts the advice names array from the injectJoinPoints() call in the generated proxy file.

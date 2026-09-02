@@ -35,9 +35,9 @@ class LoggingAspect implements Aspect
     public function beforeMethodExecution(MethodInvocation $invocation): void
     {
         echo 'Calling Before Interceptor for ',
-             $invocation,
-             ' with arguments: ',
-             json_encode($invocation->getArguments()),
-             PHP_EOL;
+        $invocation,
+        ' with arguments: ',
+        json_encode($invocation->getArguments()),
+        PHP_EOL;
     }
 }

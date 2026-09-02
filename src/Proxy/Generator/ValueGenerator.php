@@ -37,9 +37,7 @@ final class ValueGenerator
     /** Pre-built AST expression node for defaults that can't be represented as PHP scalars. */
     private ?Expr $astNode = null;
 
-    public function __construct(private readonly mixed $value)
-    {
-    }
+    public function __construct(private readonly mixed $value) {}
 
     /**
      * Creates a ValueGenerator from an existing AST expression node.

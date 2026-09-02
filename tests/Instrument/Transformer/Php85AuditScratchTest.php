@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * PHP 8.5 AUDIT HARNESS (temporary, lives only on the audit branch).
  * Weaves PHP 8.1-8.5 feature fixtures from _files/audit through the real
@@ -87,9 +87,9 @@ class Php85AuditScratchTest extends TestCase
                 'cacheDir'      => 'vfs://',
                 'cacheFileMode' => 0770,
                 'includePaths'  => [],
-                'excludePaths'  => []
+                'excludePaths'  => [],
             ],
-            $container
+            $container,
         );
         $this->cachePathManager = new CachePathManager($this->kernel);
 
@@ -97,7 +97,7 @@ class Php85AuditScratchTest extends TestCase
             $this->kernel,
             $this->getInterceptEverythingMatcher(),
             $this->cachePathManager,
-            $loader
+            $loader,
         );
     }
 
@@ -154,8 +154,8 @@ class Php85AuditScratchTest extends TestCase
             $this->assertNotSame(
                 [],
                 $problems,
-                "$name weaves cleanly now — the gap tracked in $issue looks fixed. " .
-                'Remove it from KNOWN_GAPS so this stays asserted.'
+                "$name weaves cleanly now — the gap tracked in $issue looks fixed. "
+                . 'Remove it from KNOWN_GAPS so this stays asserted.',
             );
             $this->addToAssertionCount(1);
 
@@ -277,7 +277,7 @@ class Php85AuditScratchTest extends TestCase
         $container
             ->method('getServicesByInterface')
             ->willReturnMap([
-                [Advisor::class, []]
+                [Advisor::class, []],
             ]);
 
         return $container;

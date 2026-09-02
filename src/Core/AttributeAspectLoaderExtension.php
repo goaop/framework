@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -40,7 +40,7 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
     {
         $loadedItems = [];
         foreach ($reflectionAspect->getMethods() as $aspectMethod) {
-            $methodId   = $reflectionAspect->getName() . '->'. $aspectMethod->getName();
+            $methodId   = $reflectionAspect->getName() . '->' . $aspectMethod->getName();
             $attributes = $aspectMethod->getAttributes();
 
             foreach ($attributes as $reflectionAttribute) {
@@ -70,7 +70,7 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
     protected function getAdvice(
         AbstractInterceptor $interceptorAttribute,
         Aspect $aspect,
-        ReflectionMethod $aspectMethod
+        ReflectionMethod $aspectMethod,
     ): Interceptor {
         if (!$aspectMethod->isPublic()) {
             throw new AspectException("Advice method {$aspectMethod->class}::{$aspectMethod->name}() must be public; first-class advice callables require all advice methods to be public");

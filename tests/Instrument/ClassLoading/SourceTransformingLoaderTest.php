@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -95,7 +95,7 @@ class SourceTransformingLoaderTest extends TestCase
             'containerClass' => Container::class,
         ]);
         $kernel->method('hasFeature')->willReturnCallback(
-            static fn(int $featureToCheck): bool => ($features & $featureToCheck) !== 0
+            static fn(int $featureToCheck): bool => ($features & $featureToCheck) !== 0,
         );
 
         $this->cachePathManager = new CachePathManager($kernel);
@@ -119,7 +119,7 @@ class SourceTransformingLoaderTest extends TestCase
         $content = file_get_contents(
             SourceTransformingLoader::PHP_FILTER_READ
             . SourceTransformingLoader::getId()
-            . '/resource=' . $this->originalFile
+            . '/resource=' . $this->originalFile,
         );
         $this->assertIsString($content);
 
@@ -265,8 +265,7 @@ final class CountingSourceTransformerStub implements SourceTransformer
     public function __construct(
         private readonly TransformerResultEnum $result,
         private readonly ?string $newSource,
-    ) {
-    }
+    ) {}
 
     public function transform(StreamMetaData $metadata): TransformerResultEnum
     {

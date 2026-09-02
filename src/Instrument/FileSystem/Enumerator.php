@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 /*
  * Go! AOP framework
  *
@@ -36,9 +36,8 @@ class Enumerator
     public function __construct(
         private readonly string $rootDirectory,
         private readonly array $includePaths = [],
-        private readonly array $excludePaths = []
-    ) {
-    }
+        private readonly array $excludePaths = [],
+    ) {}
 
     /**
      * Returns an enumerator for files

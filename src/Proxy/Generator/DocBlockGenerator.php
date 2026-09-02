@@ -28,9 +28,8 @@ final class DocBlockGenerator
 
     public function __construct(
         private readonly string $shortDescription = '',
-        private readonly string $longDescription = ''
-    ) {
-    }
+        private readonly string $longDescription = '',
+    ) {}
 
     /**
      * Creates a DocBlockGenerator from an existing raw docblock string.

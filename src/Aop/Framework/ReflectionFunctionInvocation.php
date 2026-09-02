@@ -17,6 +17,7 @@ use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\Interceptor;
 use ReflectionException;
 use ReflectionFunction;
+
 use function array_pop;
 
 /**
@@ -130,7 +131,7 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
     {
         return sprintf(
             'execution(%s())',
-            $this->reflectionFunction->getName()
+            $this->reflectionFunction->getName(),
         );
     }
 }

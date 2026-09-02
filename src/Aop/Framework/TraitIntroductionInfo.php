@@ -28,8 +28,8 @@ final readonly class TraitIntroductionInfo implements IntroductionInfo
      */
     public function __construct(
         private string $introducedTrait,
-        private string $introducedInterface
-    ){}
+        private string $introducedInterface,
+    ) {}
 
     public function getInterface(): string
     {

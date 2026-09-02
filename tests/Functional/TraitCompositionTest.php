@@ -51,7 +51,7 @@ class TraitCompositionTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(
             ClassUsingTrait::class,
             'doSomeTraitBehavior',
-            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterClassUsingTraitMethod'
+            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterClassUsingTraitMethod',
         );
     }
 
@@ -63,7 +63,7 @@ class TraitCompositionTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(
             ClassUsingTrait::class,
             'getProtectedTraitState',
-            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterClassUsingTraitMethod'
+            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterClassUsingTraitMethod',
         );
     }
 
@@ -76,7 +76,7 @@ class TraitCompositionTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(
             ClassUsingTrait::class,
             'ownMethod',
-            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterClassUsingTraitMethod'
+            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterClassUsingTraitMethod',
         );
     }
 
@@ -102,7 +102,7 @@ class TraitCompositionTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(
             ClassWithPrivateMethods::class,
             'doPrivate',
-            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterNonPublicMethod'
+            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterNonPublicMethod',
         );
     }
 
@@ -114,7 +114,7 @@ class TraitCompositionTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(
             ClassWithPrivateMethods::class,
             'doProtected',
-            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterNonPublicMethod'
+            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterNonPublicMethod',
         );
     }
 
@@ -127,7 +127,7 @@ class TraitCompositionTest extends BaseFunctionalTestCase
         $this->assertMethodNotWoven(
             ClassWithPrivateMethods::class,
             'publicEntry',
-            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterNonPublicMethod'
+            'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterNonPublicMethod',
         );
     }
 }

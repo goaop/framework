@@ -18,6 +18,4 @@ use Attribute;
  * Attribute marker class for aspect
  */
 #[Attribute(Attribute::TARGET_CLASS)]
-class Aspect
-{
-}
+class Aspect {}

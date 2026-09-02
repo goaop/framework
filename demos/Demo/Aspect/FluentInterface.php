@@ -15,6 +15,4 @@ namespace Demo\Aspect;
 /**
  * Fluent interface marker
  */
-interface FluentInterface
-{
-}
+interface FluentInterface {}
