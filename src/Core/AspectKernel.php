@@ -14,6 +14,7 @@ namespace Go\Core;
 
 use Go\Aop\AspectException;
 use Go\Aop\Features;
+use Go\Core\Cache\CachedAspectLoader;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;

@@ -12,9 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
-use Go\Core\NotCompilableException;
 use Go\ParserReflection\ReflectionFileNamespace;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
@@ -28,7 +26,7 @@ use ReflectionProperty;
 /**
  * Logical "not" pointcut filter.
  */
-final readonly class NotPointcut implements Pointcut, CompilableToPhp
+final readonly class NotPointcut implements Pointcut
 {
     /**
      * Not constructor
@@ -58,12 +56,6 @@ final readonly class NotPointcut implements Pointcut, CompilableToPhp
 
     public function compileToPhp(): Expr
     {
-        if (!$this->pointcut instanceof CompilableToPhp) {
-            throw new NotCompilableException(
-                'Cannot compile an instance of ' . get_debug_type($this->pointcut) . ' into plain PHP',
-            );
-        }
-
         return new New_(new FullyQualified(self::class), [
             new Arg($this->pointcut->compileToPhp()),
         ]);

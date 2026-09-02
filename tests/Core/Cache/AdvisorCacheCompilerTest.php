@@ -10,11 +10,10 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Core;
+namespace Go\Core\Cache;
 
 use Go\Aop\Advice;
 use Go\Aop\Advisor;
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Framework\AfterInterceptor;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;
@@ -99,22 +98,22 @@ class AdvisorCacheCompilerTest extends TestCase
 
     public function testCompilesRealisticGraphToExpectedPhpFile(): void
     {
-        $content = $this->compiler->compile(DoSomethingAspect::class, $this->createRealisticItems());
+        $content = $this->compiler->compile(DoSomethingAspect::class, ...$this->createRealisticItems());
 
         $this->assertStringEqualsFile(__DIR__ . '/_files/compiled-advisor-cache.php', $content);
     }
 
     public function testCompilationIsByteDeterministic(): void
     {
-        $firstPass  = $this->compiler->compile(DoSomethingAspect::class, $this->createRealisticItems());
-        $secondPass = $this->compiler->compile(DoSomethingAspect::class, $this->createRealisticItems());
+        $firstPass  = $this->compiler->compile(DoSomethingAspect::class, ...$this->createRealisticItems());
+        $secondPass = $this->compiler->compile(DoSomethingAspect::class, ...$this->createRealisticItems());
 
         $this->assertSame($firstPass, $secondPass);
     }
 
     public function testCompilesClassInheritancePointcutWithClassConstFetch(): void
     {
-        $content = $this->compiler->compile(DoSomethingAspect::class, [
+        $content = $this->compiler->compile(DoSomethingAspect::class, ...[
             DoSomethingAspect::class . '->childrenPointcut' => new ClassInheritancePointcut(FooInterface::class),
         ]);
 
@@ -128,7 +127,7 @@ class AdvisorCacheCompilerTest extends TestCase
         // The parent name is a class name by construction, so a ::class fetch is emitted
         // unconditionally - triggering autoloading via class_exists() during compilation
         // is not an option, and ::class on a not-yet-loaded name is a plain compile-time string
-        $content = $this->compiler->compile(DoSomethingAspect::class, [
+        $content = $this->compiler->compile(DoSomethingAspect::class, ...[
             DoSomethingAspect::class . '->childrenPointcut' => new ClassInheritancePointcut('Some\NotYetLoaded\ParentClass'),
         ]);
 
@@ -138,29 +137,57 @@ class AdvisorCacheCompilerTest extends TestCase
 
     public function testCompilesMatchInheritedPointcutWithoutArguments(): void
     {
-        $content = $this->compiler->compile(DoSomethingAspect::class, [
+        $content = $this->compiler->compile(DoSomethingAspect::class, ...[
             DoSomethingAspect::class . '->inheritedPointcut' => new MatchInheritedPointcut(),
         ]);
 
         $this->assertStringContainsString('new MatchInheritedPointcut()', $content);
     }
 
-    public function testCompilesPlainStringAndIntegerLikeAdvisorKeys(): void
+    public function testNeverEmitsUseStatementsForGlobalNames(): void
     {
-        $content = $this->compiler->compile(DoSomethingAspect::class, [
-            // Not of the "Fqcn->member" form, so no ::class concatenation is possible
-            'custom.pointcut.id' => new TruePointcut(),
-            // PHP casts integer-like string keys to int keys
-            '42'                 => new TruePointcut(),
+        $content = $this->compiler->compile(DoSomethingAspect::class, ...[
+            DoSomethingAspect::class . '->introduction' => new GenericPointcutAdvisor(
+                new TruePointcut(Pointcut::KIND_INTRODUCTION),
+                new TraitIntroductionInfo(BehaviorTrait::class, \Stringable::class),
+            ),
         ]);
 
+        // The cache file has no namespace, so a non-compound "use Stringable;" would have
+        // no effect and raise an engine warning on every include - global names stay
+        // fully qualified inline instead
+        $this->assertStringNotContainsString('use Stringable;', $content);
+        $this->assertStringContainsString('\Stringable::class', $content);
+
+        // Including the emitted file must not raise any warning (failOnWarning guards this)
+        $fileName = tempnam(sys_get_temp_dir(), 'goaop-advisor-cache-');
+        $this->assertIsString($fileName);
+        try {
+            file_put_contents($fileName, $content);
+            $loadedData = include $fileName;
+        } finally {
+            unlink($fileName);
+        }
+        $this->assertIsArray($loadedData);
+    }
+
+    public function testCompilesPlainStringAndIntegerLikeAdvisorKeys(): void
+    {
+        $content = $this->compiler->compile(DoSomethingAspect::class, ...[
+            // PHP casts integer-like string keys to int keys, which unpack positionally
+            // (renumbered from zero) and must precede the named items
+            '42'                 => new TruePointcut(),
+            // Not of the "Fqcn->member" form, so no ::class concatenation is possible
+            'custom.pointcut.id' => new TruePointcut(),
+        ]);
+
+        $this->assertStringContainsString('0 => new TruePointcut()', $content);
         $this->assertStringContainsString("'custom.pointcut.id' => new TruePointcut()", $content);
-        $this->assertStringContainsString('42 => new TruePointcut()', $content);
     }
 
     public function testCompilesEmptyItemsToEmptyAdvisorsArray(): void
     {
-        $content = $this->compiler->compile(DoSomethingAspect::class, []);
+        $content = $this->compiler->compile(DoSomethingAspect::class);
 
         $this->assertStringContainsString("'advisors' => []", $content);
     }
@@ -198,18 +225,26 @@ class AdvisorCacheCompilerTest extends TestCase
         $interceptor->compileToPhp();
     }
 
-    public function testThrowsForItemNotImplementingCompilableToPhp(): void
+    public function testThrowsForAdvisorRefusingCompilation(): void
     {
+        // Advisor extends Compilable, so a userland advisor that cannot express itself
+        // statically signals that by throwing from its own compileToPhp()
         $notCompilableAdvisor = new class implements Advisor {
             public function getAdvice(): Advice
             {
                 throw new \LogicException('Not expected to be called');
             }
+
+            public function compileToPhp(): \PhpParser\Node\Expr
+            {
+                throw new NotCompilableException('This advisor deliberately refuses compilation');
+            }
         };
 
         $this->expectException(NotCompilableException::class);
+        $this->expectExceptionMessage('deliberately refuses compilation');
 
-        $this->compiler->compile(DoSomethingAspect::class, [
+        $this->compiler->compile(DoSomethingAspect::class, ...[
             DoSomethingAspect::class . '->custom' => $notCompilableAdvisor,
         ]);
     }
@@ -228,7 +263,7 @@ class AdvisorCacheCompilerTest extends TestCase
         $fileName = tempnam(sys_get_temp_dir(), 'goaop-advisor-cache-');
         $this->assertIsString($fileName);
         try {
-            file_put_contents($fileName, $this->compiler->compile(DoSomethingAspect::class, $items));
+            file_put_contents($fileName, $this->compiler->compile(DoSomethingAspect::class, ...$items));
             $loadedData = include $fileName;
         } finally {
             unlink($fileName);
@@ -259,28 +294,4 @@ class AdvisorCacheCompilerTest extends TestCase
         }
     }
 
-    /**
-     * Every concrete pointcut implementation must know how to compile itself,
-     * otherwise real-world aspects would silently lose advisor caching.
-     */
-    public function testEveryConcretePointcutImplementationIsCompilable(): void
-    {
-        $pointcutSourceFiles = glob(__DIR__ . '/../../src/Aop/Pointcut/*.php');
-        $this->assertNotEmpty($pointcutSourceFiles);
-
-        foreach ($pointcutSourceFiles as $pointcutSourceFile) {
-            $className = 'Go\Aop\Pointcut\\' . basename($pointcutSourceFile, '.php');
-            if (!class_exists($className)) {
-                continue;
-            }
-            $reflectionClass = new ReflectionClass($className);
-            if ($reflectionClass->isAbstract() || !$reflectionClass->implementsInterface(Pointcut::class)) {
-                continue;
-            }
-            $this->assertTrue(
-                $reflectionClass->implementsInterface(CompilableToPhp::class),
-                "Pointcut implementation {$className} must implement CompilableToPhp",
-            );
-        }
-    }
 }

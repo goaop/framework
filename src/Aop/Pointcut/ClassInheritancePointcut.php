@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
 use PhpParser\Node\Arg;
@@ -30,7 +29,7 @@ use function in_array;
 /**
  * Inheritance pointcut that matches any child for given parent or implements given interface
  */
-final readonly class ClassInheritancePointcut implements Pointcut, CompilableToPhp
+final readonly class ClassInheritancePointcut implements Pointcut
 {
     /**
      * Inheritance class matcher constructor

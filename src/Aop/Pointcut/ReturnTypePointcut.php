@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
 use InvalidArgumentException;
@@ -46,7 +45,7 @@ use ReflectionProperty;
  *    member set, regardless of the order of members ('int|string' matches 'string|int').
  *    Each pattern member may still use wildcards ('Some*|null' matches 'SomeClass|null').
  */
-final readonly class ReturnTypePointcut implements Pointcut, CompilableToPhp
+final readonly class ReturnTypePointcut implements Pointcut
 {
     /**
      * Trimmed constructor pattern, retained verbatim for re-emission into compiled advisor caches.

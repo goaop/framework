@@ -16,7 +16,7 @@ use Go\Aop\Advisor;
 use Go\Aop\Framework\AbstractInterceptor;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectContainer;
-use Go\Core\CachedAspectLoader;
+use Go\Core\Cache\CachedAspectLoader;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\ParserReflection\ReflectionFile;
 use InvalidArgumentException;

@@ -10,7 +10,7 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Core;
+namespace Go\Core\Cache;
 
 use Go\Proxy\Generator\GeneratedCodePrinter;
 use PhpParser\Node\Expr;

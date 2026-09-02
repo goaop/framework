@@ -13,7 +13,9 @@ use Go\Aop\AspectException;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
+use LogicException;
 use OutOfBoundsException;
+use PhpParser\Node\Expr;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use stdClass;
@@ -48,6 +50,11 @@ final class TheTest extends TestCase
                 public function getAdvice(): Advice
                 {
                     return new AroundInterceptor($this->advice);
+                }
+
+                public function compileToPhp(): Expr
+                {
+                    throw new LogicException('Not expected to be called');
                 }
             },
         ]);
@@ -108,7 +115,17 @@ final class TheTest extends TestCase
                         {
                             return AdviceTypeEnum::Before;
                         }
+
+                        public function compileToPhp(): Expr
+                        {
+                            throw new LogicException('Not expected to be called');
+                        }
                     };
+                }
+
+                public function compileToPhp(): Expr
+                {
+                    throw new LogicException('Not expected to be called');
                 }
             },
         ]);

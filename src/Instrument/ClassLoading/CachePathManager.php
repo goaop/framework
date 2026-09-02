@@ -14,7 +14,7 @@ namespace Go\Instrument\ClassLoading;
 
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
-use Go\Instrument\FileSystem\CacheFileWriter;
+use Go\Core\Cache\CacheFileWriter;
 use InvalidArgumentException;
 
 /**

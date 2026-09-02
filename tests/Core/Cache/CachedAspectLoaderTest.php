@@ -10,7 +10,7 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Core;
+namespace Go\Core\Cache;
 
 use FilesystemIterator;
 use Go\Aop\Advice;
@@ -18,6 +18,10 @@ use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Features;
 use Go\Aop\Pointcut\TruePointcut;
+use Go\Core\AspectContainer;
+use Go\Core\AspectLoader;
+use Go\Core\AspectLoaderInterface;
+use Go\Core\Container;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -122,30 +126,6 @@ class CachedAspectLoaderTest extends TestCase
         clearstatcache();
     }
 
-    /**
-     * Runs an operation while capturing E_USER_WARNING messages, restoring the error handler afterwards
-     *
-     * @param callable(): mixed $operation
-     *
-     * @return array{mixed, list<string>} Operation result and the captured warning messages
-     */
-    private function runCapturingWarnings(callable $operation): array
-    {
-        $warnings = [];
-        set_error_handler(static function (int $severity, string $message) use (&$warnings): bool {
-            $warnings[] = $message;
-
-            return true;
-        }, E_USER_WARNING);
-        try {
-            $result = $operation();
-        } finally {
-            restore_error_handler();
-        }
-
-        return [$result, $warnings];
-    }
-
     private function validCacheFileContent(): string
     {
         $version = AdvisorCacheCompiler::VERSION;
@@ -166,19 +146,22 @@ class CachedAspectLoaderTest extends TestCase
         $this->assertInstanceOf(TruePointcut::class, $loadedItems['pc']);
     }
 
-    public function testPrebuiltCacheFallsBackToLoaderOnCorruptFileWithoutRewriting(): void
+    public function testPrebuiltCacheCorruptFileThrowsWithoutRewriting(): void
     {
         $loader = $this->createLoader(Features::PREBUILT_CACHE);
         // Truncated PHP raises a ParseError on include
         $this->writeCacheFile('<?php return [', stale: true);
-        $this->innerLoader->expects($this->once())->method('load')->willReturn([]);
+        $this->innerLoader->expects($this->never())->method('load');
 
-        [$loadedItems, $warnings] = $this->runCapturingWarnings(fn() => $loader->load($this->aspect));
+        // A corrupt cache file is external interference and fails loudly - no fallback
+        $thrownError = null;
+        try {
+            $loader->load($this->aspect);
+        } catch (\ParseError $parseError) {
+            $thrownError = $parseError;
+        }
 
-        $this->assertSame([], $loadedItems);
-        // The fallback must shout why the cache file was rejected
-        $this->assertCount(1, $warnings);
-        $this->assertStringContainsString('advisor cache file "' . $this->cacheFileName . '" is unusable', $warnings[0]);
+        $this->assertInstanceOf(\ParseError::class, $thrownError);
         // The file system may be read-only under PREBUILT_CACHE - nothing may be written
         $this->assertSame('<?php return [', file_get_contents($this->cacheFileName));
     }
@@ -190,11 +173,8 @@ class CachedAspectLoaderTest extends TestCase
         $this->writeCacheFile($wrongVersionContent, stale: true);
         $this->innerLoader->expects($this->once())->method('load')->willReturn([]);
 
-        [$loadedItems, $warnings] = $this->runCapturingWarnings(fn() => $loader->load($this->aspect));
-
-        $this->assertSame([], $loadedItems);
-        // A clean version mismatch is the expected upgrade path: silent, no warning
-        $this->assertSame([], $warnings);
+        // A clean version mismatch is the expected upgrade path: silent direct-loader fallback
+        $this->assertSame([], $loader->load($this->aspect));
         $this->assertSame($wrongVersionContent, file_get_contents($this->cacheFileName));
     }
 
@@ -216,23 +196,23 @@ class CachedAspectLoaderTest extends TestCase
         $this->assertInstanceOf(TruePointcut::class, $rewrittenData['advisors']['pointcut.fresh']);
     }
 
-    public function testFreshButCorruptCacheFileIsRebuiltAndRewritten(): void
+    public function testFreshButCorruptCacheFileThrowsWithoutRebuilding(): void
     {
         $loader = $this->createLoader(0);
-        // Fresh by mtime, but not includable
+        // Fresh by mtime, but not includable: writes are atomic, so a corrupt cache file
+        // means external interference and fails loudly instead of being silently rebuilt
         $this->writeCacheFile('<?php return [', stale: false);
-        $freshItems = ['pointcut.fresh' => new TruePointcut()];
-        $this->innerLoader->expects($this->once())->method('load')->willReturn($freshItems);
+        $this->innerLoader->expects($this->never())->method('load');
 
-        [$loadedItems, $warnings] = $this->runCapturingWarnings(fn() => $loader->load($this->aspect));
+        $thrownError = null;
+        try {
+            $loader->load($this->aspect);
+        } catch (\ParseError $parseError) {
+            $thrownError = $parseError;
+        }
 
-        $this->assertSame($freshItems, $loadedItems);
-        $this->assertCount(1, $warnings);
-        $this->assertStringContainsString('advisor cache file "' . $this->cacheFileName . '" is unusable', $warnings[0]);
-
-        $rewrittenData = include $this->cacheFileName;
-        $this->assertIsArray($rewrittenData);
-        $this->assertSame(AdvisorCacheCompiler::VERSION, $rewrittenData['version']);
+        $this->assertInstanceOf(\ParseError::class, $thrownError);
+        $this->assertSame('<?php return [', file_get_contents($this->cacheFileName));
     }
 
     public function testFreshValidCacheFileIsUsedWithoutTouchingTheLoader(): void
@@ -266,7 +246,7 @@ class CachedAspectLoaderTest extends TestCase
         $this->assertInstanceOf(TruePointcut::class, $loadedItems['pc']);
     }
 
-    public function testAspectWithNotCompilableItemsIsNotCachedAtAll(): void
+    public function testAspectWithNotCompilableItemsFailsLoudly(): void
     {
         $loader               = $this->createLoader(0);
         $notCompilableAdvisor = new class implements Advisor {
@@ -274,16 +254,26 @@ class CachedAspectLoaderTest extends TestCase
             {
                 throw new \LogicException('Not expected to be called');
             }
+
+            public function compileToPhp(): \PhpParser\Node\Expr
+            {
+                throw new NotCompilableException('This advisor deliberately refuses compilation');
+            }
         };
         $loadedItems = ['custom.advisor' => $notCompilableAdvisor];
         $this->innerLoader->expects($this->once())->method('load')->willReturn($loadedItems);
 
-        [$loadResult, $warnings] = $this->runCapturingWarnings(fn() => $loader->load($this->aspect));
+        // Such an aspect cannot be used with the advisor cache enabled - the compilation
+        // failure propagates instead of degrading to silent uncached operation
+        $thrownException = null;
+        try {
+            $loader->load($this->aspect);
+        } catch (NotCompilableException $notCompilableException) {
+            $thrownException = $notCompilableException;
+        }
 
-        $this->assertSame($loadedItems, $loadResult);
-        // The skipped write must shout why the aspect cannot be cached
-        $this->assertCount(1, $warnings);
-        $this->assertStringContainsString('Advisors for aspect ' . $this->aspect::class . ' cannot be compiled to the cache', $warnings[0]);
+        $this->assertInstanceOf(NotCompilableException::class, $thrownException);
+        $this->assertStringContainsString('deliberately refuses compilation', $thrownException->getMessage());
         // Never a half-written file: compilation failure must skip the write entirely
         $this->assertFileDoesNotExist($this->cacheFileName);
     }

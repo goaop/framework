@@ -16,13 +16,16 @@ use Go\Aop\AspectException;
 use Go\Aop\Framework\GeneratedInterceptor;
 use PhpParser\Node\Arg;
 use PhpParser\Node\ArrayItem;
+use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\VariadicPlaceholder;
 
 /**
  * Renders generated interceptor descriptors as Interceptor::* factory calls.
@@ -101,7 +104,9 @@ final class InterceptorListGenerator
 
     private static function createCallNode(GeneratedInterceptor $interceptor): StaticCall
     {
-        $args = self::createAdviceArgNodes($interceptor);
+        $args = [
+            new Arg(self::createAdviceAccessorNode($interceptor)),
+        ];
 
         if ($interceptor->order !== 0) {
             $args[] = new Arg(new Int_($interceptor->order), name: new Identifier('order'));
@@ -110,34 +115,33 @@ final class InterceptorListGenerator
         return new StaticCall(new Name('Interceptor'), $interceptor->factoryMethod, $args);
     }
 
-    /**
-     * @return list<Arg>
-     */
-    private static function createAdviceArgNodes(GeneratedInterceptor $interceptor): array
+    private static function createAdviceAccessorNode(GeneratedInterceptor $interceptor): Expr
     {
         if ($interceptor->usesContainerAdvice) {
-            return [
-                new Arg(new StaticCall(
-                    new Name('The'),
-                    'advice',
-                    [
-                        new Arg(new String_($interceptor->advisorId)),
-                    ],
-                )),
-            ];
+            return new StaticCall(
+                new Name('The'),
+                'advice',
+                [
+                    new Arg(new String_($interceptor->advisorId)),
+                ],
+            );
         }
 
         if ($interceptor->aspectClass === null || $interceptor->adviceMethod === null) {
             throw new \LogicException('Aspect-backed interceptor descriptor is incomplete');
         }
 
-        // Static aspect class + method name let the Interceptor facade build a native lazy
-        // proxy: the aspect stays unresolved and no advice closure is created until the
-        // interceptor is really used
-        return [
-            new Arg(new ClassConstFetch(new Name(self::shortClassName($interceptor->aspectClass)), 'class')),
-            new Arg(new String_($interceptor->adviceMethod)),
-        ];
+        // The eager first-class-callable form is deliberate for generated proxies: this code
+        // only runs when the intercepted method/hook is already executing, so the interceptor
+        // is needed right now and a lazy-proxy detour would be pure overhead. Only advisor
+        // cache files use the lazy static-data form of the Interceptor facade.
+        return new MethodCall(
+            new StaticCall(new Name('The'), 'aspect', [
+                new Arg(new ClassConstFetch(new Name(self::shortClassName($interceptor->aspectClass)), 'class')),
+            ]),
+            $interceptor->adviceMethod,
+            [new VariadicPlaceholder()],
+        );
     }
 
     private static function shortClassName(string $className): string

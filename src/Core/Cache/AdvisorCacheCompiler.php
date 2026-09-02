@@ -10,10 +10,10 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Core;
+namespace Go\Core\Cache;
 
 use Go\Aop\Advisor;
-use Go\Aop\CompilableToPhp;
+use Go\Aop\Compilable;
 use Go\Aop\Pointcut;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
@@ -49,21 +49,19 @@ final class AdvisorCacheCompiler
     /**
      * Compiles the loaded items of one aspect into advisor cache file content
      *
-     * @param class-string                      $aspectClassName Aspect the items were loaded from
-     * @param array<array-key, Pointcut|Advisor> $items          Loaded pointcuts and advisors, keyed by advisor id
-     *                                                           (an integer-like string id surfaces as an int key)
+     * Items are passed with their advisor ids as argument names: real advisor ids are
+     * always strings of the "Aspect\ClassName->member" form and survive argument
+     * unpacking as-is. An integer-like id degrades to a positional int key (renumbered
+     * from zero) and would have to precede all named items when unpacking.
+     *
+     * @param class-string $aspectClassName Aspect the items were loaded from
      *
      * @throws NotCompilableException When any item cannot be expressed as plain PHP
      */
-    public function compile(string $aspectClassName, array $items): string
+    public function compile(string $aspectClassName, Pointcut|Advisor ...$items): string
     {
         $advisorItems = [];
         foreach ($items as $itemId => $item) {
-            if (!$item instanceof CompilableToPhp) {
-                throw new NotCompilableException(
-                    'Cannot compile an instance of ' . get_debug_type($item) . ' into plain PHP',
-                );
-            }
             $advisorItems[] = new ArrayItem($item->compileToPhp(), self::compileAdvisorKey($itemId));
         }
 
@@ -99,7 +97,7 @@ final class AdvisorCacheCompiler
      * Trailing arguments holding their declared defaults are omitted entirely; when an
      * earlier default is skipped, the remaining arguments are emitted as named arguments.
      *
-     * @internal Helper for {@see CompilableToPhp} implementations
+     * @internal Helper for {@see Compilable} implementations
      *
      * @param list<array{string, Expr, bool}> $parameters Parameter name, value expression
      *                                                    and whether the value equals the declared default
@@ -157,6 +155,8 @@ final class AdvisorCacheCompiler
      * Replaces fully-qualified class references with short names backed by a sorted "use" block
      *
      * Short names that would collide between different namespaces stay fully qualified inline.
+     * Global (single-part) names are never imported: the cache file has no namespace, so a
+     * non-compound "use" statement would have no effect and raises an engine warning.
      *
      * @return list<string> Printable "use Fqcn;" statements, sorted by class name
      */
@@ -166,7 +166,7 @@ final class AdvisorCacheCompiler
         $namesByShortName = [];
         self::walkClassReferences($payload, function (New_|StaticCall|ClassConstFetch $node) use (&$namesByShortName): void {
             $className = $node->class;
-            if ($className instanceof FullyQualified) {
+            if ($className instanceof FullyQualified && count($className->getParts()) > 1) {
                 $namesByShortName[$className->getLast()][$className->toString()] = true;
             }
         });

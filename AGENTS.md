@@ -31,6 +31,7 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 | `src/Proxy/`      | `src/Proxy/AGENTS.md`      | Proxy generators, code-gen, readonly, hooks, enums            |
 | `src/Aop/`        | `src/Aop/AGENTS.md`        | Interfaces, generics, implementations, pointcuts, attributes  |
 | `src/Core/`       | `src/Core/AGENTS.md`       | Container, aspect loading, advice matching, bridge            |
+| `src/Core/Cache/` | `src/Core/Cache/AGENTS.md` | Compiled advisor cache: compiler, printer, writer, loader     |
 | `tests/`          | `tests/AGENTS.md`          | Test conventions, fixtures, PHPUnit, PHPStan                  |
 
 ## Rules

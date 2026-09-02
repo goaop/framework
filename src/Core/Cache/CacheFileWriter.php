@@ -10,7 +10,7 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Instrument\FileSystem;
+namespace Go\Core\Cache;
 
 use function function_exists;
 

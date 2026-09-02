@@ -15,10 +15,9 @@ namespace Go\Aop\Framework;
 use Closure;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Intercept\Interceptor as InterceptorInterface;
 use Go\Aop\OrderedAdvice;
-use Go\Core\NotCompilableException;
+use Go\Core\Cache\NotCompilableException;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ClassConstFetch;
@@ -55,7 +54,7 @@ use ReflectionFunction;
  *   }
  * </pre>
  */
-abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvice, CompilableToPhp
+abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvice
 {
     /**
      * Order of advice invocation, lower values are invoked first

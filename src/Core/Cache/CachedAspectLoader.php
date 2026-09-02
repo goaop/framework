@@ -10,15 +10,16 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Core;
+namespace Go\Core\Cache;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Features;
 use Go\Aop\Pointcut;
-use Go\Instrument\FileSystem\CacheFileWriter;
+use Go\Core\AspectContainer;
+use Go\Core\AspectKernel;
+use Go\Core\AspectLoaderInterface;
 use ReflectionClass;
-use Throwable;
 
 /**
  * Cached loader is a decorator that is responsible for faster initialization
@@ -182,22 +183,15 @@ class CachedAspectLoader implements AspectLoaderInterface
     /**
      * Loads pointcuts and advisors from the compiled cache file
      *
-     * @return array<string, Pointcut|Advisor> Loaded items, or [] when the file is corrupt or incompatible
+     * A file that cannot be included (corrupt PHP, include error) simply throws: the
+     * cache writes are atomic, so a broken cache file means external interference and
+     * deserves a clear failure instead of silent degradation.
+     *
+     * @return array<string, Pointcut|Advisor> Loaded items, or [] when the file is incompatible
      */
     private function loadFromCache(string $fileName): array
     {
-        try {
-            $cacheData = (static fn(): mixed => include $fileName)();
-        } catch (Throwable $includeError) {
-            // The empty result makes the caller fall back to the direct loader, but a broken
-            // cache file deserves a loud explanation instead of silent degradation
-            trigger_error(
-                'Go! AOP advisor cache file "' . $fileName . '" is unusable: ' . $includeError->getMessage(),
-                E_USER_WARNING,
-            );
-
-            return [];
-        }
+        $cacheData = (static fn(): mixed => include $fileName)();
 
         // A clean version mismatch is the expected upgrade path and rebuilds silently
         if (
@@ -220,24 +214,15 @@ class CachedAspectLoader implements AspectLoaderInterface
     /**
      * Compiles pointcuts and advisors into the cache file
      *
-     * Aspects holding items that cannot be expressed as plain PHP are simply not
-     * cached at all - no file is written and the aspect is loaded directly each time.
-     *
      * @param class-string                    $aspectClassName Aspect the items were loaded from
      * @param array<string, Pointcut|Advisor> $items           Array of items to store
+     *
+     * @throws NotCompilableException When any item cannot be expressed as plain PHP - such
+     *                                an aspect cannot be used with the advisor cache enabled
      */
     private function saveToCache(string $aspectClassName, array $items, string $fileName): void
     {
-        try {
-            $content = $this->advisorCacheCompiler->compile($aspectClassName, $items);
-        } catch (NotCompilableException $compilationError) {
-            trigger_error(
-                'Advisors for aspect ' . $aspectClassName . ' cannot be compiled to the cache: ' . $compilationError->getMessage(),
-                E_USER_WARNING,
-            );
-
-            return;
-        }
+        $content = $this->advisorCacheCompiler->compile($aspectClassName, ...$items);
 
         $this->cacheFileWriter->write($fileName, $content);
     }

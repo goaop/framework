@@ -18,15 +18,20 @@ use Go\Aop\AspectException;
 use ReflectionClass;
 
 /**
- * Factory facade for generated proxy interceptor declarations.
+ * Factory facade for generated interceptor declarations, with two construction modes.
  *
  * Given an aspect class and an advice method name, every factory method returns a native
  * lazy proxy: the interceptor construction, the aspect resolution from the container and
  * the first-class advice callable creation are all deferred until the interceptor is
- * actually used (advice invocation or ordering). Interceptors whose pointcut never
- * matches are therefore never really constructed, and their aspects never instantiated.
+ * actually used (advice invocation or ordering). Compiled advisor cache files use this
+ * form, so including a cache constructs nothing but pointcuts, and interceptors whose
+ * pointcut never matches are never really constructed (their aspects stay uninstantiated).
  *
- * A ready advice closure (e.g. from {@see The::advice()}) constructs the interceptor eagerly.
+ * A ready advice closure (a `The::aspect(X::class)->method(...)` first-class callable or
+ * `The::advice()` lookup) constructs the interceptor eagerly. Generated proxy classes use
+ * this form on purpose: their interceptor lists are built while the intercepted method or
+ * hook is already executing, so the interceptor is needed immediately and a lazy detour
+ * would be pure overhead.
  *
  * @internal Consumed by generated proxy code and compiled advisor caches, free to change between releases
  */

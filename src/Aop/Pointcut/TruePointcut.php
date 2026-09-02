@@ -12,9 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
-use Go\Core\AdvisorCacheCompiler;
+use Go\Core\Cache\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\New_;
@@ -28,7 +27,7 @@ use ReflectionProperty;
 /**
  * Canonical Pointcut instance that always matches.
  */
-final readonly class TruePointcut implements Pointcut, CompilableToPhp
+final readonly class TruePointcut implements Pointcut
 {
     /**
      * Default constructor can be used to specify concrete pointcut kind

@@ -12,9 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
-use Go\Core\AdvisorCacheCompiler;
+use Go\Core\Cache\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\New_;
@@ -42,7 +41,7 @@ use ReflectionProperty;
  *
  * @internal Framework implementation detail of pointcut parsing and caching, free to change between releases
  */
-final readonly class ModifierPointcut implements Pointcut, CompilableToPhp
+final readonly class ModifierPointcut implements Pointcut
 {
     /**
      * Initialize the filter with pre-resolved bit masks

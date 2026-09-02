@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\AspectException;
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -33,7 +32,7 @@ use ReflectionProperty;
  *
  * @internal Framework implementation detail of pointcut parsing and caching, free to change between releases
  */
-final class PointcutReference implements Pointcut, CompilableToPhp
+final class PointcutReference implements Pointcut
 {
     private ?Pointcut $pointcut = null;
 

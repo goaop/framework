@@ -16,6 +16,7 @@ use Closure;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
 use Go\Aop\Pointcut\PointcutGrammar;
+use Go\Core\Cache\CachedAspectLoader;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Instrument\ClassLoading\CachePathManager;

@@ -12,9 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
-use Go\Core\AdvisorCacheCompiler;
+use Go\Core\Cache\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ClassConstFetch;
@@ -36,7 +35,7 @@ use ReflectionProperty;
  * @see https://www.php.net/manual/en/reflectionproperty.getattributes.php
  *
  */
-final readonly class AttributePointcut implements Pointcut, CompilableToPhp
+final readonly class AttributePointcut implements Pointcut
 {
     /**
      * Attribute matcher constructor

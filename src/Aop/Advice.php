@@ -15,9 +15,11 @@ namespace Go\Aop;
 /**
  * Tag interface for Advice. Implementations can be any type of advice, such as Interceptors.
  *
+ * Every advice can compile itself into a plain-PHP expression for the advisor cache.
+ *
  * @api
  */
-interface Advice
+interface Advice extends Compilable
 {
     /**
      * Returns the Advice type

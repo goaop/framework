@@ -9,6 +9,8 @@ use Go\Aop\AdviceTypeEnum;
 use Go\Aop\AspectException;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Stubs\AttributeAspectLoaderExtensionTestPublicAspect;
+use LogicException;
+use PhpParser\Node\Expr;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
@@ -81,6 +83,11 @@ final class GeneratedInterceptorTest extends TestCase
             public function getType(): AdviceTypeEnum
             {
                 return AdviceTypeEnum::Before;
+            }
+
+            public function compileToPhp(): Expr
+            {
+                throw new LogicException('Not expected to be called');
             }
         };
 

@@ -12,9 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
-use Go\Core\AdvisorCacheCompiler;
+use Go\Core\Cache\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ConstFetch;
@@ -31,7 +30,7 @@ use ReflectionProperty;
 /**
  * General name pointcut checks element name to match it
  */
-final readonly class NamePointcut implements Pointcut, CompilableToPhp
+final readonly class NamePointcut implements Pointcut
 {
     /**
      * Regular expression for pattern matching

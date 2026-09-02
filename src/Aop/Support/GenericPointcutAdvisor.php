@@ -13,10 +13,8 @@ declare(strict_types=1);
 namespace Go\Aop\Support;
 
 use Go\Aop\Advice;
-use Go\Aop\CompilableToPhp;
 use Go\Aop\Pointcut;
 use Go\Aop\PointcutAdvisor;
-use Go\Core\NotCompilableException;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\New_;
@@ -28,7 +26,7 @@ use PhpParser\Node\Name\FullyQualified;
  * This is the most commonly used Advisor implementation. It can be used with any pointcut and advice type,
  * including introductions.
  */
-final readonly class GenericPointcutAdvisor implements PointcutAdvisor, CompilableToPhp
+final readonly class GenericPointcutAdvisor implements PointcutAdvisor
 {
     public function __construct(private Pointcut $pointcut, private Advice $advice) {}
 
@@ -44,14 +42,6 @@ final readonly class GenericPointcutAdvisor implements PointcutAdvisor, Compilab
 
     public function compileToPhp(): Expr
     {
-        if (!$this->pointcut instanceof CompilableToPhp || !$this->advice instanceof CompilableToPhp) {
-            $notCompilable = $this->pointcut instanceof CompilableToPhp ? $this->advice : $this->pointcut;
-
-            throw new NotCompilableException(
-                'Cannot compile an instance of ' . get_debug_type($notCompilable) . ' into plain PHP',
-            );
-        }
-
         return new New_(new FullyQualified(self::class), [
             new Arg($this->pointcut->compileToPhp()),
             new Arg($this->advice->compileToPhp()),

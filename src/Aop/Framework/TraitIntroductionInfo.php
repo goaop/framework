@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceTypeEnum;
-use Go\Aop\CompilableToPhp;
 use Go\Aop\IntroductionInfo;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
@@ -24,7 +23,7 @@ use PhpParser\Node\Name\FullyQualified;
 /**
  * Advice for introduction that holds trait and interface for the concrete class
  */
-final readonly class TraitIntroductionInfo implements IntroductionInfo, CompilableToPhp
+final readonly class TraitIntroductionInfo implements IntroductionInfo
 {
     /**
      * Creates a TraitIntroductionInfo with given trait name and interface name.
