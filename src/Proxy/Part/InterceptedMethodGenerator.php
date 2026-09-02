@@ -31,7 +31,7 @@ final class InterceptedMethodGenerator
     public function __construct(ReflectionMethod $reflectionMethod, string $body)
     {
         $this->generator = MethodGenerator::fromReflection($reflectionMethod);
-        $this->generator->setBody($body);
+        $this->generator->body = $body;
     }
 
     public function generate(): string
@@ -41,17 +41,17 @@ final class InterceptedMethodGenerator
 
     public function getBody(): string
     {
-        return $this->generator->getBody();
+        return $this->generator->body;
     }
 
     public function setBody(string $body): void
     {
-        $this->generator->setBody($body);
+        $this->generator->body = $body;
     }
 
     public function getName(): string
     {
-        return $this->generator->getName();
+        return $this->generator->name;
     }
 
     public function getNode(): \PhpParser\Node\Stmt\ClassMethod

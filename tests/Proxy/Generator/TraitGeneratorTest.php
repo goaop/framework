@@ -81,7 +81,7 @@ class TraitGeneratorTest extends TestCase
     public function testGetName(): void
     {
         $gen = new TraitGenerator('MyTrait', null);
-        $this->assertSame('MyTrait', $gen->getName());
+        $this->assertSame('MyTrait', $gen->name);
     }
 
     public function testImplementsGeneratorInterface(): void

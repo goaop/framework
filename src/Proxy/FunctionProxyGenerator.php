@@ -59,7 +59,7 @@ class FunctionProxyGenerator
     ) {
         $this->adviceNames   = $adviceNames;
         $this->fileGenerator = new FileGenerator();
-        $this->fileGenerator->setNamespace($namespace->getName());
+        $this->fileGenerator->namespace = $namespace->getName();
         $this->fileGenerator->addUse(InterceptorInjector::class);
         $this->fileGenerator->addUse(Interceptor::class);
         $this->fileGenerator->addUse(The::class);
@@ -76,11 +76,11 @@ class FunctionProxyGenerator
             $functionReflection = new ReflectionFunction($functionName);
             $functionBody       = $this->getJoinpointInvocationBody($functionReflection);
             $funcGenerator      = FunctionGenerator::fromReflection($functionReflection);
-            $funcGenerator->setBody($functionBody);
+            $funcGenerator->body = $functionBody;
             $functionsContent[] = $funcGenerator->generate();
         }
 
-        $this->fileGenerator->setBody(implode("\n", $functionsContent));
+        $this->fileGenerator->body = implode("\n", $functionsContent);
     }
 
     /**

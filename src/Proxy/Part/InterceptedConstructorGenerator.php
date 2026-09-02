@@ -51,13 +51,13 @@ final class InterceptedConstructorGenerator
                     $constructorCallBody = 'parent::__construct(' . $splatPrefix . $callArguments->generate() . ');';
                 }
                 $generator = MethodGenerator::fromReflection($constructor);
-                $generator->setBody($constructorCallBody);
+                $generator->body = $constructorCallBody;
             } else {
                 $generator = $constructorGenerator->getGenerator();
             }
-            $existingBody = $generator->getBody();
+            $existingBody = $generator->body;
             $combinedBody = ($existingBody !== '' ? "\n" . $existingBody : '');
-            $generator->setBody($combinedBody);
+            $generator->body = $combinedBody;
             $this->constructorGenerator = $generator;
         } else {
             $this->constructorGenerator = new MethodGenerator('__construct');
@@ -71,17 +71,17 @@ final class InterceptedConstructorGenerator
 
     public function getBody(): string
     {
-        return $this->constructorGenerator->getBody();
+        return $this->constructorGenerator->body;
     }
 
     public function setBody(string $body): void
     {
-        $this->constructorGenerator->setBody($body);
+        $this->constructorGenerator->body = $body;
     }
 
     public function getName(): string
     {
-        return $this->constructorGenerator->getName();
+        return $this->constructorGenerator->name;
     }
 
     public function getNode(): ClassMethod

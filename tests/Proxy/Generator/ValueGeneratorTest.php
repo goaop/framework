@@ -82,7 +82,7 @@ class ValueGeneratorTest extends TestCase
     public function testArrayDepthLimitsNesting(): void
     {
         $gen = new ValueGenerator(['method' => ['foo' => ['advisor.Foo->bar']]]);
-        $gen->setArrayDepth(1);
+        $gen->arrayDepth = 1;
         $output = $gen->generate();
         // At depth 1, nested value is truncated to []
         $this->assertStringContainsString('[]', $output);

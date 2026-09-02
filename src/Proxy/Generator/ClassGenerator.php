@@ -47,10 +47,14 @@ final class ClassGenerator implements GeneratorInterface
     /** @var array{trait: string, method: string, alias: string, visibility: Visibility}[] */
     private array $traitAliases = [];
 
-    private ?DocBlockGenerator $docBlock = null;
+    public ?DocBlockGenerator $docBlock = null;
 
-    /** @var AttributeGroup[] */
-    private array $attrGroups = [];
+    /**
+     * Attribute groups to emit on the class declaration.
+     *
+     * @var AttributeGroup[]
+     */
+    public array $attrGroups = [];
 
     /**
      * @param list<ClassModifier>    $modifiers   Class declaration modifiers (final/abstract/readonly)
@@ -59,7 +63,7 @@ final class ClassGenerator implements GeneratorInterface
      * @param MethodGenerator[]      $methods
      */
     public function __construct(
-        private readonly string $name,
+        public readonly string $name,
         private readonly ?string $namespace,
         private readonly array $modifiers,
         private readonly ?string $parentClass,
@@ -109,26 +113,6 @@ final class ClassGenerator implements GeneratorInterface
             'alias'      => $alias,
             'visibility' => $visibility,
         ];
-    }
-
-    public function setDocBlock(DocBlockGenerator $docBlock): void
-    {
-        $this->docBlock = $docBlock;
-    }
-
-    /**
-     * Sets attribute groups to emit on the class declaration.
-     *
-     * @param AttributeGroup[] $attrGroups
-     */
-    public function addAttributeGroups(array $attrGroups): void
-    {
-        $this->attrGroups = $attrGroups;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     /**

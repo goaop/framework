@@ -18,9 +18,9 @@ namespace Go\Proxy\Generator;
 interface GeneratorInterface
 {
     /**
-     * Returns the name of the generated declaration (class/trait/function name).
+     * Name of the generated declaration (class/trait/function name).
      */
-    public function getName(): string;
+    public string $name { get; }
 
     /**
      * Returns the generated PHP source code as a string.
