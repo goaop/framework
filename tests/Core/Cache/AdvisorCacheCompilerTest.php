@@ -29,6 +29,8 @@ use Go\Aop\Pointcut\PointcutReference;
 use Go\Aop\Pointcut\ReturnTypePointcut;
 use Go\Aop\Pointcut\TruePointcut;
 use Go\Aop\Support\GenericPointcutAdvisor;
+use Go\Aop\Support\LazyPointcutAdvisor;
+use Go\Core\Container;
 use Go\Tests\TestProject\Annotation\Loggable;
 use Go\Tests\TestProject\Application\BehaviorTrait;
 use Go\Tests\TestProject\Application\FooInterface;
@@ -142,6 +144,27 @@ class AdvisorCacheCompilerTest extends TestCase
         ]);
 
         $this->assertStringContainsString('new MatchInheritedPointcut()', $content);
+    }
+
+    public function testCompilesLazyPointcutAdvisorToResolvedGenericAdvisor(): void
+    {
+        $aspect        = new DoSomethingAspect();
+        $adviceClosure = new ReflectionMethod(DoSomethingAspect::class, 'afterDoSomething')->getClosure($aspect);
+        $lazyAdvisor   = new LazyPointcutAdvisor(
+            new Container(),
+            'execution(public Go\Tests\TestProject\Application\*->doSomething(*))',
+            new AfterInterceptor($adviceClosure),
+        );
+
+        $content = $this->compiler->compile(DoSomethingAspect::class, ...[
+            DoSomethingAspect::class . '->lazyAdvisor' => $lazyAdvisor,
+        ]);
+
+        // Compilation resolves the parsing laziness away: the cache holds a plain
+        // GenericPointcutAdvisor over the already-parsed pointcut, never the lazy wrapper
+        $this->assertStringContainsString('new GenericPointcutAdvisor(', $content);
+        $this->assertStringNotContainsString('LazyPointcutAdvisor', $content);
+        $this->assertStringContainsString("Interceptor::after(DoSomethingAspect::class, 'afterDoSomething')", $content);
     }
 
     public function testNeverEmitsUseStatementsForGlobalNames(): void
