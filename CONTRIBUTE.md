@@ -45,9 +45,25 @@ $ composer analyze
 $ ./vendor/bin/phpstan analyze --memory-limit=512M
 ```
 
+## Coding Standards
+
+The code base follows [PER-CS](https://www.php-fig.org/per/coding-style/) (plus `declare(strict_types=1)` in every file), enforced by php-cs-fixer. To check for violations:
+
+```bash
+$ composer cs
+# or directly:
+$ ./vendor/bin/php-cs-fixer check --diff
+```
+
+To fix violations automatically:
+
+```bash
+$ composer cs:fix
+```
+
 ## Full Check
 
-To run static analysis and the test suite in one go:
+To run the coding-standards check, static analysis and the test suite in one go:
 
 ```bash
 $ composer check

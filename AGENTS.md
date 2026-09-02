@@ -14,7 +14,9 @@ AOP via source transformation at load time (stream filter, no PECL, no eval).
 | test:file | `./vendor/bin/phpunit tests/Core/ContainerTest.php`                   |
 | test:one  | `./vendor/bin/phpunit --filter testName tests/Core/ContainerTest.php` |
 | analyze   | `composer analyze` (= `./vendor/bin/phpstan analyze --memory-limit=512M`) |
-| check     | `composer check` (analyze + test)                                     |
+| cs        | `composer cs` (= `./vendor/bin/php-cs-fixer check --diff`, PER-CS)    |
+| cs:fix    | `composer cs:fix` (= `./vendor/bin/php-cs-fixer fix`)                 |
+| check     | `composer check` (cs + analyze + test)                                |
 
 ## Architecture overview
 Intercepts PHP class loading pipeline: source stream filter transforms source → injects interception hooks → caches result.

@@ -26,6 +26,7 @@
     },
     "require-dev": {
         "doctrine/orm": "^2.19 || ^3.0",
+        "friendsofphp/php-cs-fixer": "^3.95",
         "goaop/virtual-file-system": "^1.0",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.0",
@@ -81,14 +82,19 @@
     "scripts": {
         "analyze": "phpstan analyze --memory-limit=512M",
         "check": [
+            "@cs",
             "@analyze",
             "@test"
         ],
+        "cs": "php-cs-fixer check --diff",
+        "cs:fix": "php-cs-fixer fix",
         "test": "phpunit"
     },
     "scripts-descriptions": {
         "analyze": "Run PHPStan static analysis (level 10)",
-        "check": "Run static analysis and the test suite",
+        "check": "Run coding-standards check, static analysis and the test suite",
+        "cs": "Check coding standards (PER-CS, php-cs-fixer) without changing files",
+        "cs:fix": "Fix coding-standards violations (PER-CS, php-cs-fixer)",
         "test": "Run the PHPUnit test suite"
     }
 }

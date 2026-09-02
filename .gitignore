@@ -4,3 +4,4 @@ phpunit.xml
 tests/Fixtures/project/var/cache/*
 build/
 /.phpunit.cache/
+/.php-cs-fixer.cache
