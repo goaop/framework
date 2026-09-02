@@ -39,7 +39,7 @@ class PathResolver
         }
 
         if (is_array($somePath)) {
-            return array_values(array_map([self::class, __FUNCTION__], $somePath));
+            return array_values(array_map(self::realpath(...), $somePath));
         }
         // Trick to get scheme name and path in one action. If no scheme, then there will be only one part
         $components = explode('://', $somePath, 2);

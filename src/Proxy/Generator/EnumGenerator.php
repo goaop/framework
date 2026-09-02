@@ -37,7 +37,7 @@ final class EnumGenerator implements GeneratorInterface
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
 
-    private string $name;
+    public readonly string $name;
     private ?string $namespace;
     private ?string $backingType;
 
@@ -130,11 +130,6 @@ final class EnumGenerator implements GeneratorInterface
             'alias'      => $alias,
             'visibility' => $visibility,
         ];
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     /**

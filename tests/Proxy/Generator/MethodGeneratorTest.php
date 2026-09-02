@@ -74,16 +74,14 @@ class MethodGeneratorTest extends TestCase
     public function testSetAndGetBody(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setBody("return 'test';");
-        $body = $gen->getBody();
+        $gen->body = "return 'test';";        $body = $gen->body;
         $this->assertStringContainsString("return 'test'", $body);
     }
 
     public function testSetAndGetStmts(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setBody("return 42;");
-        $stmts = $gen->getStmts();
+        $gen->body = "return 42;";        $stmts = $gen->stmts;
         $this->assertNotNull($stmts);
         $this->assertNotEmpty($stmts);
     }
@@ -91,13 +89,12 @@ class MethodGeneratorTest extends TestCase
     public function testSetStmtsFromArray(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setBody("return 42;");
-        $stmts = $gen->getStmts();
+        $gen->body = "return 42;";        $stmts = $gen->stmts;
 
         $this->assertNotNull($stmts);
         $gen2 = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen2->setStmts($stmts);
-        $this->assertSame($gen->getBody(), $gen2->getBody());
+        $gen2->stmts = $stmts;
+        $this->assertSame($gen->body, $gen2->body);
     }
 
     public function testGetNode(): void
@@ -110,13 +107,13 @@ class MethodGeneratorTest extends TestCase
     public function testGetName(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $this->assertSame('publicMethod', $gen->getName());
+        $this->assertSame('publicMethod', $gen->name);
     }
 
     public function testSetDocBlock(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setDocBlock(new DocBlockGenerator('Test docblock.'));
+        $gen->docBlock = new DocBlockGenerator('Test docblock.');
         $output = $gen->generate();
         $this->assertStringContainsString('Test docblock.', $output);
     }
@@ -124,7 +121,7 @@ class MethodGeneratorTest extends TestCase
     public function testSetVisibility(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setVisibility(Visibility::PROTECTED);
+        $gen->visibility = Visibility::PROTECTED;
         $output = $gen->generate();
         $this->assertStringContainsString('protected', $output);
     }
@@ -132,7 +129,7 @@ class MethodGeneratorTest extends TestCase
     public function testSetStatic(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setStatic(true);
+        $gen->static = true;
         $output = $gen->generate();
         $this->assertStringContainsString('static', $output);
     }
@@ -140,7 +137,7 @@ class MethodGeneratorTest extends TestCase
     public function testSetReturnType(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setReturnType('int');
+        $gen->returnType = 'int';
         $output = $gen->generate();
         $this->assertStringContainsString(': int', $output);
     }
@@ -149,7 +146,7 @@ class MethodGeneratorTest extends TestCase
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
         // stmts not set yet — empty body
-        $this->assertSame('', $gen->getBody());
+        $this->assertSame('', $gen->body);
     }
 
     public function testAddParameter(): void
@@ -164,26 +161,26 @@ class MethodGeneratorTest extends TestCase
     public function testSetAbstract(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setAbstract(true);
+        $gen->abstract = true;
         $output = $gen->generate();
         $this->assertStringContainsString('abstract', $output);
         // Abstract method should have no body
-        $this->assertNull($gen->getStmts());
+        $this->assertNull($gen->stmts);
     }
 
     public function testSetInterface(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setInterface(true);
+        $gen->isInterface = true;
         $output = $gen->generate();
         // Interface method should have no body (no braces)
-        $this->assertNull($gen->getStmts());
+        $this->assertNull($gen->stmts);
     }
 
     public function testSetReturnsReference(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setReturnsReference(true);
+        $gen->returnsRef = true;
         $output = $gen->generate();
         $this->assertStringContainsString('function &publicMethod', $output);
     }
@@ -192,7 +189,7 @@ class MethodGeneratorTest extends TestCase
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
         $typeGen = TypeGenerator::fromTypeString('?Exception');
-        $gen->setReturnType($typeGen);
+        $gen->returnType = $typeGen;
         $output = $gen->generate();
         $this->assertStringContainsString('?\Exception', $output);
     }
@@ -200,9 +197,8 @@ class MethodGeneratorTest extends TestCase
     public function testManualConstructor(): void
     {
         $gen = new MethodGenerator('myMethod');
-        $gen->setVisibility(Visibility::PUBLIC);
-        $gen->setBody("return true;");
-        $output = $gen->generate();
+        $gen->visibility = Visibility::PUBLIC;
+        $gen->body = "return true;";        $output = $gen->generate();
         $this->assertStringContainsString('function myMethod', $output);
         $this->assertStringContainsString('return true', $output);
     }
@@ -210,9 +206,9 @@ class MethodGeneratorTest extends TestCase
     public function testSetBodyEmptyString(): void
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
-        $gen->setBody('');
+        $gen->body = '';
         // Empty body results in empty stmts list
-        $stmts = $gen->getStmts();
+        $stmts = $gen->stmts;
         $this->assertIsArray($stmts);
         $this->assertEmpty($stmts);
     }
@@ -220,7 +216,7 @@ class MethodGeneratorTest extends TestCase
     public function testVisibilityPrivate(): void
     {
         $gen = new MethodGenerator('myMethod');
-        $gen->setVisibility(Visibility::PRIVATE);
+        $gen->visibility = Visibility::PRIVATE;
         $output = $gen->generate();
         $this->assertStringContainsString('private', $output);
     }

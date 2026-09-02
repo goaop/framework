@@ -14,6 +14,7 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Aop\InitializationAware;
+use LogicException;
 use PhpParser\Node\Name;
 use PhpParser\NodeTraverser;
 
@@ -134,7 +135,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
 
         $cachedInvocation = self::$constructorInvocationsCache[$fullClassName];
         if ($cachedInvocation === null) {
-            throw new \LogicException("Cannot instantiate non-existent class: {$fullClassName}");
+            throw new LogicException("Cannot instantiate non-existent class: {$fullClassName}");
         }
 
         return $cachedInvocation->__invoke($arguments);

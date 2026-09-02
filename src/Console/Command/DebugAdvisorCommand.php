@@ -13,14 +13,14 @@ declare(strict_types=1);
 namespace Go\Console\Command;
 
 use Go\Aop\Advisor;
+use Go\Aop\Framework\AbstractInterceptor;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectContainer;
 use Go\Core\CachedAspectLoader;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\ParserReflection\ReflectionFile;
+use InvalidArgumentException;
 use ReflectionClass;
-use ReflectionException;
-use ReflectionProperty;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -75,14 +75,8 @@ EOT
 
         $tableRows = [];
         foreach ($advisors as $id => $advisor) {
-            $advice     = $advisor->getAdvice();
-            $expression = '';
-            try {
-                $pointcutExpression = new ReflectionProperty($advice, 'pointcutExpression');
-                $expression = $pointcutExpression->getValue($advice);
-            } catch (ReflectionException $e) {
-                // nothing here, just ignore
-            }
+            $advice      = $advisor->getAdvice();
+            $expression  = $advice instanceof AbstractInterceptor ? $advice->pointcutExpression : '';
             $tableRows[] = [$id, $expression];
         }
         $io->table(['Id', 'Expression'], $tableRows);
@@ -104,7 +98,7 @@ EOT
 
         $advisor = $aspectContainer->getValue($advisorId);
         if (!$advisor instanceof Advisor) {
-            throw new \InvalidArgumentException("Invalid advisor {$advisorId} given");
+            throw new InvalidArgumentException("Invalid advisor {$advisorId} given");
         }
         $options = $this->aspectKernel->getOptions();
 

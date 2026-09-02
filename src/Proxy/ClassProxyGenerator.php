@@ -156,14 +156,14 @@ class ClassProxyGenerator
         );
 
         if ($originalClass->getDocComment()) {
-            $classGenerator->setDocBlock(DocBlockGenerator::fromDocComment($originalClass->getDocComment()));
+            $classGenerator->docBlock = DocBlockGenerator::fromDocComment($originalClass->getDocComment());
         }
 
         // Copy PHP 8+ attributes from original class to proxy so that runtime
         // attribute inspection on proxy objects returns the same attributes
         $classAttrGroups = AttributeGroupsGenerator::fromReflector($originalClass);
         if (!empty($classAttrGroups)) {
-            $classGenerator->addAttributeGroups($classAttrGroups);
+            $classGenerator->attrGroups = $classAttrGroups;
         }
 
         // Use the short (unqualified) trait name only when the trait and proxy
@@ -241,7 +241,7 @@ class ClassProxyGenerator
         $staticInitializationAdvices = $this->adviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? [];
 
         if ($staticInitializationAdvices !== []) {
-            $classCode .= "\n" . $this->generator->getName() . '::__aop__staticInitialization();';
+            $classCode .= "\n" . $this->generator->name . '::__aop__staticInitialization();';
         }
 
         return $classCode;
@@ -389,16 +389,16 @@ class ClassProxyGenerator
         $advicesCode = (new InterceptorListGenerator($advisorNames))->generate();
 
         $method = new MethodGenerator('__aop__staticInitialization');
-        $method->setStatic(true);
-        $method->setReturnType('void');
-        $method->setBody(<<<BODY
+        $method->static = true;
+        $method->returnType = 'void';
+        $method->body = <<<BODY
         /** @var ClassJoinpoint<self> \$__joinPoint */
         static \$__joinPoint = InterceptorInjector::forStaticInitialization(
             self::class,
             {$advicesCode},
         );
         \$__joinPoint(static::class);
-        BODY);
+        BODY;
 
         return $method;
     }
@@ -411,8 +411,8 @@ class ClassProxyGenerator
         $advicesCode = (new InterceptorListGenerator($advisorNames))->generate();
 
         $method = new MethodGenerator('__aop__initialization');
-        $method->setStatic(true);
-        $method->setReturnType('static');
+        $method->static = true;
+        $method->returnType = 'static';
         $argumentsParameter = new ParameterGenerator(
             'arguments',
             TypeGenerator::fromTypeString('array'),
@@ -421,14 +421,14 @@ class ClassProxyGenerator
             new ValueGenerator([])
         );
         $method->addParameter($argumentsParameter);
-        $method->setBody(<<<BODY
+        $method->body = <<<BODY
         /** @var ConstructorInvocation<self> \$__joinPoint */
         static \$__joinPoint = InterceptorInjector::forInitialization(
             self::class,
             {$advicesCode},
         );
         return \$__joinPoint->__invoke(\$arguments);
-        BODY);
+        BODY;
 
         return $method;
     }

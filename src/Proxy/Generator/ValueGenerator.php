@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
+use InvalidArgumentException;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\ArrayItem;
@@ -27,7 +28,11 @@ final class ValueGenerator
 {
     private static ?Standard $printer = null;
 
-    private int $arrayDepth = 0;
+    /**
+     * Limits array representation to a specific nesting depth.
+     * Depth 0 means unlimited, depth 1 means only top-level keys are preserved.
+     */
+    public int $arrayDepth = 0;
 
     /** Pre-built AST expression node for defaults that can't be represented as PHP scalars. */
     private ?Expr $astNode = null;
@@ -48,15 +53,6 @@ final class ValueGenerator
         $instance->astNode = $node;
 
         return $instance;
-    }
-
-    /**
-     * Limits array representation to a specific nesting depth.
-     * Depth 0 means unlimited, depth 1 means only top-level keys are preserved.
-     */
-    public function setArrayDepth(int $depth): void
-    {
-        $this->arrayDepth = $depth;
     }
 
     /**
@@ -109,7 +105,7 @@ final class ValueGenerator
             return $this->buildArrayNode($value, $currentDepth);
         }
 
-        throw new \InvalidArgumentException('Cannot generate AST node for value of type: ' . get_debug_type($value));
+        throw new InvalidArgumentException('Cannot generate AST node for value of type: ' . get_debug_type($value));
     }
 
     /**

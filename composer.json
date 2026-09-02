@@ -28,7 +28,7 @@
         "symfony/filesystem": "^7.4 || ^8.0",
         "symfony/process": "^7.4 || ^8.0",
         "tracy/tracy": "^2.10",
-        "webmozart/glob": "^4.1"
+        "webmozart/glob": "^4.4"
     },
 
     "suggest": {
@@ -67,6 +67,7 @@
     },
 
     "minimum-stability": "stable",
+    "prefer-stable": true,
     "extra": {
         "branch-alias": {
             "dev-master": "4.0-dev"
@@ -77,5 +78,18 @@
             "phpstan/extension-installer": true
         },
         "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyze": "phpstan analyze --memory-limit=512M",
+        "check": [
+            "@analyze",
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Run the PHPUnit test suite",
+        "analyze": "Run PHPStan static analysis (level 10)",
+        "check": "Run static analysis and the test suite"
     }
 }

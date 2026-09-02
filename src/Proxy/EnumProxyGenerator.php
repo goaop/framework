@@ -59,7 +59,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
      * Built-in enum methods that must never be intercepted.
      * These are synthesised by PHP and cannot be overridden via trait aliasing.
      */
-    private const BUILTIN_ENUM_METHODS = ['cases', 'from', 'tryFrom'];
+    private const array BUILTIN_ENUM_METHODS = ['cases', 'from', 'tryFrom'];
 
     /**
      * Built-in PHP interfaces that are automatically applied to any enum declaration.
@@ -69,7 +69,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
      *    resolved as e.g. `Demo\Example\UnitEnum` instead of the global `\UnitEnum`,
      *    causing a fatal "Interface not found" error.
      */
-    private const BUILTIN_ENUM_INTERFACES = ['UnitEnum', 'BackedEnum'];
+    private const array BUILTIN_ENUM_INTERFACES = ['UnitEnum', 'BackedEnum'];
 
     /**
      * Generates a proxy enum that wraps the original enum body (now a trait) via trait-use.

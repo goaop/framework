@@ -51,6 +51,19 @@ class BaseInterceptorTest extends AbstractInterceptorTestCase
         $this->assertEquals($expected, $result);
     }
 
+    public function testSerializationRoundTripKeepsFalsyValues(): void
+    {
+        $sequence = [];
+        $advice   = $this->getAdvice($sequence);
+        $mock     = new AbstractInterceptorMock($advice, 0, '0');
+
+        $restored = unserialize(serialize($mock));
+
+        $this->assertInstanceOf(AbstractInterceptorMock::class, $restored);
+        $this->assertSame('0', $restored->pointcutExpression);
+        $this->assertSame(0, $restored->getAdviceOrder());
+    }
+
     public function testCanUnserializeInterceptor(): void
     {
         $sequence = [];

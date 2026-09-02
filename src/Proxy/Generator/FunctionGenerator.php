@@ -25,9 +25,9 @@ use ReflectionNamedType;
  * Generates a standalone PHP function declaration as an AST node or PHP string.
  *
  * Function bodies are stored as AST statements, enabling bidirectional conversion:
- *   - {@see setBody()} parses a PHP string into AST stmts
- *   - {@see getBody()} reconstructs the PHP string from AST stmts
- *   - {@see setStmts()} / {@see getStmts()} for direct AST mutation
+ *   - writing {@see self::$body} parses a PHP string into AST stmts
+ *   - reading {@see self::$body} reconstructs the PHP string from AST stmts
+ *   - {@see self::$stmts} for direct AST mutation
  */
 final class FunctionGenerator
 {
@@ -35,20 +35,53 @@ final class FunctionGenerator
     private static ?Parser $parser         = null;
     private static ?BuilderFactory $factory = null;
 
-    private bool $returnsRef = false;
-    private ?TypeGenerator $returnType = null;
-    private ?DocBlockGenerator $docBlock = null;
+    public bool $returnsRef = false;
+
+    /** Return type; a type string (e.g. 'void', '?int') is normalized to a TypeGenerator on write. */
+    public ?TypeGenerator $returnType = null {
+        set(string|TypeGenerator|null $type) {
+            $this->returnType = is_string($type) ? TypeGenerator::fromTypeString($type) : $type;
+        }
+    }
+
+    public ?DocBlockGenerator $docBlock = null;
 
     /** @var ParameterGenerator[] */
     private array $parameters = [];
 
-    /** @var Stmt[] */
-    private array $stmts = [];
+    /**
+     * Underlying AST statements for direct traversal or mutation.
+     *
+     * @var Stmt[]
+     */
+    public array $stmts = [];
 
     /** @var \PhpParser\Node\AttributeGroup[] */
     private array $attributeGroups = [];
 
-    public function __construct(private readonly string $name)
+    /**
+     * Function body as a PHP string, backed by {@see self::$stmts}:
+     * writes are parsed into AST statements (no leading `<?php` needed),
+     * reads reconstruct the PHP source from the stored AST statements.
+     */
+    public string $body {
+        get {
+            if (empty($this->stmts)) {
+                return '';
+            }
+            return self::getPrinter()->prettyPrint($this->stmts);
+        }
+        set {
+            if (trim($value) === '') {
+                $this->stmts = [];
+                return;
+            }
+            $ast = self::getParser()->parse('<?php ' . $value);
+            $this->stmts = $ast ?? [];
+        }
+    }
+
+    public function __construct(public readonly string $name)
     {
     }
 
@@ -59,7 +92,7 @@ final class FunctionGenerator
     {
         $generator = new self($function->getShortName());
 
-        $generator->setReturnsReference($function->returnsReference());
+        $generator->returnsRef = $function->returnsReference();
 
         // Return type
         if ($function->hasReturnType()) {
@@ -67,16 +100,16 @@ final class FunctionGenerator
             if ($reflectionReturnType instanceof ReflectionNamedType) {
                 $typeName = TypeGenerator::resolveReflectionNamedTypeName($reflectionReturnType);
                 $nullable = $reflectionReturnType->allowsNull() && !in_array($typeName, ['mixed', 'null'], true);
-                $generator->setReturnType(TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName));
+                $generator->returnType = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName);
             } else {
-                $generator->setReturnType(TypeGenerator::fromReflectionType($reflectionReturnType));
+                $generator->returnType = TypeGenerator::fromReflectionType($reflectionReturnType);
             }
         }
 
         // Docblock
         $docComment = $function->getDocComment();
         if ($docComment !== false) {
-            $generator->setDocBlock(DocBlockGenerator::fromDocComment($docComment));
+            $generator->docBlock = DocBlockGenerator::fromDocComment($docComment);
         }
 
         // Parameters
@@ -91,80 +124,9 @@ final class FunctionGenerator
         return $generator;
     }
 
-    public function setReturnsReference(bool $returnsRef): void
-    {
-        $this->returnsRef = $returnsRef;
-    }
-
-    public function setReturnType(string|TypeGenerator $type): void
-    {
-        if (is_string($type)) {
-            $type = TypeGenerator::fromTypeString($type);
-        }
-        $this->returnType = $type;
-    }
-
-    public function setDocBlock(DocBlockGenerator $docBlock): void
-    {
-        $this->docBlock = $docBlock;
-    }
-
     public function addParameter(ParameterGenerator $parameter): void
     {
         $this->parameters[] = $parameter;
-    }
-
-    /**
-     * Sets the function body from a PHP string.
-     * The string is parsed into AST statements (no leading `<?php` needed).
-     */
-    public function setBody(string $rawPhp): void
-    {
-        if (trim($rawPhp) === '') {
-            $this->stmts = [];
-            return;
-        }
-        $ast = self::getParser()->parse('<?php ' . $rawPhp);
-        $this->stmts = $ast ?? [];
-    }
-
-    /**
-     * Reconstructs the function body as a PHP string from the stored AST statements.
-     */
-    public function getBody(): string
-    {
-        if (empty($this->stmts)) {
-            return '';
-        }
-        return self::getPrinter()->prettyPrint($this->stmts);
-    }
-
-    /**
-     * Replaces function body statements with pre-built AST nodes.
-     *
-     * @param Stmt[] $stmts
-     */
-    public function setStmts(array $stmts): void
-    {
-        $this->stmts = $stmts;
-    }
-
-    /**
-     * Returns the underlying AST statements for direct traversal or mutation.
-     *
-     * @return Stmt[]
-     */
-    public function getStmts(): array
-    {
-        return $this->stmts;
-    }
-
-    /**
-     * Returns the function name.
-     */
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     /**

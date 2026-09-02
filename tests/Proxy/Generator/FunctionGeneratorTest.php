@@ -62,27 +62,26 @@ class FunctionGeneratorTest extends TestCase
     public function testSetAndGetBody(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $gen->setBody("return 'hello';");
-        $this->assertStringContainsString("return 'hello'", $gen->getBody());
+        $gen->body = "return 'hello';";        $this->assertStringContainsString("return 'hello'", $gen->body);
     }
 
     public function testSetAndGetStmts(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $gen->setBody("return 'x';");
-        $stmts = $gen->getStmts();
+        $gen->body = "return 'x';";
+        $stmts = $gen->stmts;
+        $this->assertNotNull($stmts);
         $this->assertNotEmpty($stmts);
     }
 
     public function testSetStmtsFromArray(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $gen->setBody("return 'original';");
-        $stmts = $gen->getStmts();
+        $gen->body = "return 'original';";        $stmts = $gen->stmts;
 
         $gen2 = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $gen2->setStmts($stmts);
-        $this->assertStringContainsString("return 'original'", $gen2->getBody());
+        $gen2->stmts = $stmts;
+        $this->assertStringContainsString("return 'original'", $gen2->body);
     }
 
     public function testGetNode(): void
@@ -95,13 +94,13 @@ class FunctionGeneratorTest extends TestCase
     public function testGetName(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $this->assertSame('funcGenHelper_simple', $gen->getName());
+        $this->assertSame('funcGenHelper_simple', $gen->name);
     }
 
     public function testSetDocBlock(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $gen->setDocBlock(new DocBlockGenerator('My function.'));
+        $gen->docBlock = new DocBlockGenerator('My function.');
         $output = $gen->generate();
         $this->assertStringContainsString('My function.', $output);
     }
@@ -109,7 +108,7 @@ class FunctionGeneratorTest extends TestCase
     public function testGetBodyEmptyWhenNoStmts(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $this->assertSame('', $gen->getBody());
+        $this->assertSame('', $gen->body);
     }
 
     public function testAddParameter(): void
@@ -124,7 +123,7 @@ class FunctionGeneratorTest extends TestCase
     public function testSetReturnsReference(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $gen->setReturnsReference(true);
+        $gen->returnsRef = true;
         $output = $gen->generate();
         $this->assertStringContainsString('function &funcGenHelper_simple', $output);
     }
@@ -132,8 +131,9 @@ class FunctionGeneratorTest extends TestCase
     public function testSetBodyEmptyString(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $gen->setBody('');
-        $stmts = $gen->getStmts();
+        $gen->body = '';
+        $stmts = $gen->stmts;
+        $this->assertIsArray($stmts);
         $this->assertEmpty($stmts);
     }
 
@@ -141,7 +141,7 @@ class FunctionGeneratorTest extends TestCase
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_void'));
         $typeGen = TypeGenerator::fromTypeString('int');
-        $gen->setReturnType($typeGen);
+        $gen->returnType = $typeGen;
         $output = $gen->generate();
         $this->assertStringContainsString(': int', $output);
     }
@@ -149,8 +149,7 @@ class FunctionGeneratorTest extends TestCase
     public function testManualConstructor(): void
     {
         $gen = new FunctionGenerator('myFunc');
-        $gen->setBody('return 42;');
-        $output = $gen->generate();
+        $gen->body = 'return 42;';        $output = $gen->generate();
         $this->assertStringContainsString('function myFunc', $output);
         $this->assertStringContainsString('return 42', $output);
     }

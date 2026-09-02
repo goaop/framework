@@ -5,6 +5,7 @@ This framework brings **Aspect-Oriented Programming** to PHP — a powerful para
 
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/goaop/framework/phpunit.yml?branch=master)
+[![Code Coverage](https://codecov.io/gh/goaop/framework/graph/badge.svg)](https://codecov.io/gh/goaop/framework)
 ![PHPStan Badge](https://img.shields.io/badge/PHPStan-level%2010-brightgreen.svg?style=flat&link=https%3A%2F%2Fphpstan.org%2Fuser-guide%2Frule-levels)
 [![GitHub release](https://img.shields.io/github/release/goaop/framework.svg)](https://github.com/goaop/framework/releases/latest)
 [![Total Downloads](https://img.shields.io/packagist/dt/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
@@ -332,12 +333,20 @@ and assign for both of them the same metadata, which would mess up the database 
 (see [https://github.com/goaop/framework/issues/327](https://github.com/goaop/framework/issues/327)).
 
 Therefore, a workaround is provided with this library which will sort out
-mapping issue in Doctrine. Workaround is in form of event subscriber,
+mapping issue in Doctrine. Workaround is in form of event listener,
 `Go\Bridge\Doctrine\MetadataLoadInterceptor` which has to be registered
-when Doctrine is bootstraped in your project. For details how to do that,
-see [http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html](http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html).
+when Doctrine is bootstraped in your project:
 
-Event subscriber will modify metadata entity definition for generated Go! Aop proxies
+```php
+use Doctrine\ORM\Events;
+use Go\Bridge\Doctrine\MetadataLoadInterceptor;
+
+$eventManager->addEventListener(Events::loadClassMetadata, new MetadataLoadInterceptor());
+```
+
+For details, see [http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html](http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html).
+
+Event listener will modify metadata entity definition for generated Go! Aop proxies
 as mapped superclass. That would sort out issues on which you may stumble upon when
 weaving Doctrine entities.
 
