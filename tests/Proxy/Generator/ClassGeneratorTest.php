@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Go\Proxy\Generator\Stubs\MethodGeneratorTestStub;
+use Go\Stubs\Generator\MethodGeneratorTestStub;
 use PHPUnit\Framework\TestCase;
 use PhpParser\BuilderFactory;
 use PhpParser\Node\AttributeGroup;
@@ -160,7 +160,6 @@ class ClassGeneratorTest extends TestCase
     {
         $gen = new ClassGenerator('MyClass', null, [], null);
         $node = $gen->getNode();
-        $this->assertInstanceOf(Class_::class, $node);
         $this->assertSame('MyClass', (string) $node->name);
     }
 
@@ -175,7 +174,7 @@ class ClassGeneratorTest extends TestCase
         $gen = new ClassGenerator('MyClass', 'My\NS', [], null);
         $node = $gen->getNode();
         // getNode() should return just the class node, not wrapped in namespace
-        $this->assertInstanceOf(Class_::class, $node);
+        $this->assertSame('MyClass', (string) $node->name);
     }
 
     public function testEmptyTraitSkipped(): void

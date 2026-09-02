@@ -343,7 +343,7 @@ class Container implements AspectContainer
     /**
      * Whether PHP can create a native lazy proxy for the given class
      *
-     * @param ReflectionClass<object> $reflection
+     * @param ReflectionClass<covariant object> $reflection
      */
     private static function isLazyProxyCompatible(ReflectionClass $reflection): bool
     {

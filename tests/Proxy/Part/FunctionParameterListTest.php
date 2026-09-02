@@ -24,7 +24,7 @@ class FunctionParameterListTest extends TestCase
      *
      * @param string $functionName       Function to reflect
      * @param int    $expectedArgsNumber Number of expected arguments
-     * @param array  $checks             List of checks, where key is argument number, starting from 0 and value are getters
+     * @param array<int, array<string, mixed>> $checks List of checks, where key is argument number, starting from 0 and value are getters
      *
      * @throws \ReflectionException if function is not present
      */
@@ -50,6 +50,8 @@ class FunctionParameterListTest extends TestCase
 
     /**
      * Provides list of functions with expected generated args
+     *
+     * @return array<array{string, int, array<int, array<string, mixed>>}>
      */
     public static function dataGenerator(): array
     {

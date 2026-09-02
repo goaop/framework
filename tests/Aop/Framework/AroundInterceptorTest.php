@@ -17,7 +17,7 @@ use Go\Aop\Intercept\Invocation;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class AroundInterceptorTest extends AbstractInterceptorTestCase
 {
-    public function testInvocationIsNotCalledWithoutProceed()
+    public function testInvocationIsNotCalledWithoutProceed(): void
     {
         $sequence   = [];
         $advice     = $this->getAdvice($sequence); // advice will not call Invocation->proceed()
@@ -30,7 +30,7 @@ class AroundInterceptorTest extends AbstractInterceptorTestCase
         $this->assertEquals(['advice'], $sequence, "Only advice should be invoked");
     }
 
-    public function testInvocationIsCalledWithinAdvice()
+    public function testInvocationIsCalledWithinAdvice(): void
     {
         $sequence   = [];
         $advice     = function (Invocation $invocation) use (&$sequence) {

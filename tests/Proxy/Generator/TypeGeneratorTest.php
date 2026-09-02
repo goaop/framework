@@ -18,7 +18,7 @@ use ReflectionFunction;
 
 class TypeGeneratorTest extends TestCase
 {
-    private const STUBS_NS = 'Go\Proxy\Generator\Stubs';
+    private const STUBS_NS = 'Go\Stubs\Generator';
 
     #[DataProvider('fromTypeStringProvider')]
     public function testFromTypeString(string $input, string $expected): void
@@ -27,6 +27,9 @@ class TypeGeneratorTest extends TestCase
         $this->assertSame($expected, $gen->generate());
     }
 
+    /**
+     * @return array<string, array{string, string}>
+     */
     public static function fromTypeStringProvider(): array
     {
         return [
@@ -72,9 +75,12 @@ class TypeGeneratorTest extends TestCase
         $this->assertSame($expected, $gen->generate());
     }
 
+    /**
+     * @return array<string, array{string, string}>
+     */
     public static function fromReflectionTypeProvider(): array
     {
-        $ns = 'Go\Proxy\Generator\Stubs';
+        $ns = 'Go\Stubs\Generator';
         return [
             'int'          => [$ns . '\typeGenHelper_namedInt', 'int'],
             'string'       => [$ns . '\typeGenHelper_namedString', 'string'],
@@ -144,8 +150,9 @@ class TypeGeneratorTest extends TestCase
 
     public function testFromReflectionIntersectionType(): void
     {
-        $param = (new ReflectionFunction(self::STUBS_NS . '\typeGenHelper_intersection'))->getParameters()[0];
-        $gen = TypeGenerator::fromReflectionType($param->getType());
+        $paramType = (new ReflectionFunction(self::STUBS_NS . '\typeGenHelper_intersection'))->getParameters()[0]->getType();
+        $this->assertNotNull($paramType);
+        $gen = TypeGenerator::fromReflectionType($paramType);
         $output = $gen->generate();
         $this->assertStringContainsString('Countable', $output);
         $this->assertStringContainsString('Iterator', $output);

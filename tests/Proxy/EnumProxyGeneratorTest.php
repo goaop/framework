@@ -47,7 +47,7 @@ class EnumProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, $traitName, $classAdvices, false);
+        $generator = new EnumProxyGenerator($reflectionClass, $traitName, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Must emit an enum, not a class or trait
@@ -86,7 +86,7 @@ class EnumProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, $traitName, $classAdvices, false);
+        $generator = new EnumProxyGenerator($reflectionClass, $traitName, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString('__aop__fromLabel', $output);
@@ -108,7 +108,7 @@ class EnumProxyGeneratorTest extends TestCase
             'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices, false);
+        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString("case Active = 'active'", $output);
@@ -133,8 +133,7 @@ class EnumProxyGeneratorTest extends TestCase
         $generator = new EnumProxyGenerator(
             $reflectionClass,
             'Go\\Stubs\\StubConstExprBackedEnum__AopProxied',
-            $classAdvices,
-            false
+            $classAdvices
         );
         $output = "<?php\n" . $generator->generate();
 
@@ -156,7 +155,7 @@ class EnumProxyGeneratorTest extends TestCase
             'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices, false);
+        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // The backed type must appear in the enum declaration
@@ -174,7 +173,7 @@ class EnumProxyGeneratorTest extends TestCase
             'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices, false);
+        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices);
         $output    = $generator->generate();
 
         $this->assertStringNotContainsString('injectJoinPoints', $output);
@@ -197,7 +196,7 @@ class EnumProxyGeneratorTest extends TestCase
             'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices, false);
+        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Extract the implements clause from the enum declaration line and check it directly.
@@ -226,7 +225,7 @@ class EnumProxyGeneratorTest extends TestCase
 
         // Trait in the same namespace as the proxy enum (Go\Stubs)
         $traitFqcn = 'Go\\Stubs\\StubBackedEnum__AopProxied';
-        $generator = new EnumProxyGenerator($reflectionClass, $traitFqcn, $classAdvices, false);
+        $generator = new EnumProxyGenerator($reflectionClass, $traitFqcn, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Must use the short (unqualified) trait name
@@ -250,7 +249,7 @@ class EnumProxyGeneratorTest extends TestCase
 
         // Trait in a different namespace from the proxy enum (proxy is in Go\Stubs)
         $traitFqcn = 'Other\\Namespace\\StubBackedEnum__AopProxied';
-        $generator = new EnumProxyGenerator($reflectionClass, $traitFqcn, $classAdvices, false);
+        $generator = new EnumProxyGenerator($reflectionClass, $traitFqcn, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Must use the FQCN for the trait name
@@ -277,7 +276,7 @@ class EnumProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices, false);
+        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // label is intercepted; built-ins are not

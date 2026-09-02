@@ -104,6 +104,8 @@ class CacheWarmupCommandInProcessTest extends TestCase
 
     public function testCreateCacheWarmerBuildsWarmerForLoadedKernel(): void
     {
+        $this->expectNotToPerformAssertions();
+
         $command = new class () extends CacheWarmupCommand {
             public function exposeCreateCacheWarmer(AspectKernel $kernel): CacheWarmer
             {
@@ -113,9 +115,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
             }
         };
 
-        $warmer = $command->exposeCreateCacheWarmer($this->createStub(AspectKernel::class));
-
-        $this->assertInstanceOf(CacheWarmer::class, $warmer);
+        $command->exposeCreateCacheWarmer($this->createStub(AspectKernel::class));
     }
 
     public function testInterruptedWarmupMapsSignalToExitCode(): void

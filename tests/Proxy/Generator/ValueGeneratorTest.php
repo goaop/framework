@@ -26,6 +26,9 @@ class ValueGeneratorTest extends TestCase
         $this->assertSame($expected, $gen->generate());
     }
 
+    /**
+     * @return array<string, array{mixed, string}>
+     */
     public static function scalarProvider(): array
     {
         return [
@@ -92,7 +95,6 @@ class ValueGeneratorTest extends TestCase
     {
         $gen = new ValueGenerator(42);
         $node = $gen->getNode();
-        $this->assertInstanceOf(Expr::class, $node);
         $this->assertInstanceOf(Scalar\Int_::class, $node);
     }
 
@@ -144,8 +146,8 @@ class ValueGeneratorTest extends TestCase
         $parser = (new \PhpParser\ParserFactory())->createForHostVersion();
         $stmts  = $parser->parse('<?php \strlen(...);');
         $this->assertNotNull($stmts, 'Failed to parse PHP snippet');
+        $this->assertInstanceOf(\PhpParser\Node\Stmt\Expression::class, $stmts[0]);
         $exprNode = $stmts[0]->expr;
-        $this->assertInstanceOf(Expr::class, $exprNode);
 
         $gen = ValueGenerator::fromExprNode($exprNode);
 

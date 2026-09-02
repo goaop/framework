@@ -57,8 +57,8 @@ class ContainerTest extends TestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('lazyInternalServices')]
     public function testAllServicesAreConfigured(string $serviceId): void
     {
-        $service = $this->container->getService($serviceId);
-        $this->assertNotNull($service);
+        $this->expectNotToPerformAssertions();
+        $this->container->getService($serviceId);
     }
 
     /**
@@ -192,13 +192,16 @@ class ContainerTest extends TestCase
 
         // Retrieval hands out a typed, instanceof-correct lazy proxy without running the factory
         $value = $container->getService(PointcutLexer::class);
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check that the lazy proxy reports the right class)
         $this->assertInstanceOf(PointcutLexer::class, $value);
+        // @phpstan-ignore method.alreadyNarrowedType (the flag can be flipped by reference inside the service factory)
         $this->assertFalse($initialized, 'Factory should not run on retrieval');
         $this->assertTrue((new \ReflectionClass(PointcutLexer::class))->isUninitializedLazyObject($value));
         $this->assertSame($value, $container->getService(PointcutLexer::class));
 
         // First real interaction with the object runs the factory exactly once
         $value->lex('public');
+        // @phpstan-ignore method.impossibleType (the flag is flipped by reference inside the service factory)
         $this->assertTrue($initialized, 'Factory should have been called on first use');
         $this->assertFalse((new \ReflectionClass(PointcutLexer::class))->isUninitializedLazyObject($value));
         $this->assertSame($value, $container->getService(PointcutLexer::class));
@@ -214,6 +217,7 @@ class ContainerTest extends TestCase
     {
         $this->expectException(AspectException::class);
         $this->expectExceptionMessageMatches('/Lazy service id must be a valid class name/');
+        // @phpstan-ignore argument.type (the invalid service id is the test subject)
         $this->container->addLazyService('kernel.not-a-class', fn(): PointcutLexer => new PointcutLexer());
     }
 
@@ -234,11 +238,14 @@ class ContainerTest extends TestCase
 
         // Retrieval returns an instanceof-correct lazy object, construction is still deferred
         $aspect = $this->container->getService(LoggingAspect::class);
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check that the lazy proxy reports the right class)
         $this->assertInstanceOf(LoggingAspect::class, $aspect);
+        // @phpstan-ignore method.alreadyNarrowedType (the flag can be flipped by reference inside the service factory)
         $this->assertFalse($constructed, 'Aspect should not have been constructed by retrieval');
 
         // First real interaction with the aspect object triggers the factory
         (new \ReflectionClass(LoggingAspect::class))->initializeLazyObject($aspect);
+        // @phpstan-ignore method.impossibleType (the flag is flipped by reference inside the service factory)
         $this->assertTrue($constructed);
     }
 
@@ -267,6 +274,7 @@ class ContainerTest extends TestCase
         $aspect  = $aspects[StatefulTestAspect::class];
 
         // instanceof is correct before initialization, and the factory has not run yet
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check that the lazy proxy reports the right class)
         $this->assertInstanceOf(Aspect::class, $aspect);
         $this->assertInstanceOf(StatefulTestAspect::class, $aspect);
         $this->assertTrue((new \ReflectionClass(StatefulTestAspect::class))->isUninitializedLazyObject($aspect));
@@ -274,6 +282,7 @@ class ContainerTest extends TestCase
 
         // A real method call transparently initializes the lazy object and delegates to it
         $this->assertSame(42, $aspect->getState());
+        // @phpstan-ignore method.impossibleType (the flag is flipped by reference inside the service factory)
         $this->assertTrue($constructed, 'First method call should construct the aspect');
         $this->assertFalse((new \ReflectionClass(StatefulTestAspect::class))->isUninitializedLazyObject($aspect));
     }
@@ -293,6 +302,7 @@ class ContainerTest extends TestCase
         );
 
         $aspect = $this->container->getService(DoSomethingAspect::class);
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check that the lazy proxy reports the right class)
         $this->assertInstanceOf(DoSomethingAspect::class, $aspect);
         $this->assertTrue($constructed, 'Factory of a property-less service must run at materialization');
     }
@@ -309,6 +319,7 @@ class ContainerTest extends TestCase
 
     public function testLazyAspectMustImplementAspectInterface(): void
     {
+        // @phpstan-ignore argument.type (a non-aspect class is the test subject)
         $this->container->registerAspect(stdClass::class);
 
         $this->expectException(AspectException::class);

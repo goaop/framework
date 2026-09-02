@@ -24,7 +24,7 @@ class ReflectionFilenameTest extends BaseFunctionalTestCase
     {
         $loader = $this->configuration['frontController'];
         $path   = stream_resolve_include_path($loader);
-        if (!is_readable($path)) {
+        if ($path === false || !is_readable($path)) {
             throw new InvalidArgumentException("Invalid loader path: {$loader}");
         }
 
@@ -50,7 +50,7 @@ class ReflectionFilenameTest extends BaseFunctionalTestCase
         $reflectedProperty->setValue(null, null);
     }
 
-    public function testReflectionFilenameIsCorrect()
+    public function testReflectionFilenameIsCorrect(): void
     {
         $filename = (new ParserReflectionClass(Main::class))->getFileName();
         $main     = new Main();

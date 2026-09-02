@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class AbstractMethodInvocationTest extends TestCase
 {
+    /** @var AbstractMethodInvocation<object, mixed> */
     protected AbstractMethodInvocation $invocation;
 
     public function setUp(): void

@@ -83,6 +83,7 @@ class InterceptedFunctionGeneratorTest extends TestCase
         $generatedCode = $generator->generate();
         // Clean PhpDoc comment, @see https://stackoverflow.com/a/4207149/801258
         $generatedCode = preg_replace('#/\*.+?\*/#s', '', $generatedCode);
+        assert($generatedCode !== null);
         // Remove trailing spaces and empty function body
         $generatedCode = trim($generatedCode, "\n{} ");
         $this->assertSame($expectedSignature, $generatedCode);
@@ -93,6 +94,8 @@ class InterceptedFunctionGeneratorTest extends TestCase
      * Signatures follow PhpParser PrettyPrinter format:
      *   - no space after `...` for variadic params
      *   - return type separated by `: ` (colon + one space, no leading space)
+     *
+     * @return array<array{string, string}>
      */
     public static function dataGenerator(): array
     {

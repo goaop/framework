@@ -18,7 +18,7 @@ use ReflectionFunction;
 
 class FunctionGeneratorTest extends TestCase
 {
-    private const STUBS_NS = 'Go\Proxy\Generator\Stubs';
+    private const STUBS_NS = 'Go\Stubs\Generator';
 
     public function testFromReflectionSimple(): void
     {
@@ -68,8 +68,8 @@ class FunctionGeneratorTest extends TestCase
     public function testSetAndGetStmts(): void
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
-        $gen->body = "return 'x';";        $stmts = $gen->stmts;
-        $this->assertNotNull($stmts);
+        $gen->body = "return 'x';";
+        $stmts = $gen->stmts;
         $this->assertNotEmpty($stmts);
     }
 
@@ -87,7 +87,6 @@ class FunctionGeneratorTest extends TestCase
     {
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
         $node = $gen->getNode();
-        $this->assertInstanceOf(Function_::class, $node);
         $this->assertSame('funcGenHelper_simple', (string) $node->name);
     }
 
@@ -133,7 +132,6 @@ class FunctionGeneratorTest extends TestCase
         $gen = FunctionGenerator::fromReflection(new ReflectionFunction(self::STUBS_NS . '\funcGenHelper_simple'));
         $gen->body = '';
         $stmts = $gen->stmts;
-        $this->assertIsArray($stmts);
         $this->assertEmpty($stmts);
     }
 

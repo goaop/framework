@@ -38,6 +38,7 @@ class InterceptedMethodGeneratorTest extends TestCase
         $generatedCode = $generator->generate();
         // Clean PhpDoc comment, @see https://stackoverflow.com/a/4207149/801258
         $generatedCode = preg_replace('#/\*.+?\*/#s', '', $generatedCode);
+        assert($generatedCode !== null);
         // Remove trailing spaces and empty function body
         $generatedCode = trim($generatedCode, "\n{} ");
         $this->assertSame($expectedSignature, $generatedCode);
@@ -45,6 +46,8 @@ class InterceptedMethodGeneratorTest extends TestCase
 
     /**
      * Provides list of methods with expected attributes
+     *
+     * @return array<string, array{class-string, string, string}>
      */
     public static function dataGenerator(): array
     {

@@ -18,8 +18,10 @@ class StreamMetaDataTest extends TestCase
 {
     public function testSourceIsRebuiltFromTokenStream(): void
     {
-        $source   = '<?php echo "hello world"; ?>';
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), $source);
+        $source = '<?php echo "hello world"; ?>';
+        $stream = fopen('php://input', 'rb');
+        assert($stream !== false);
+        $metadata = new StreamMetaData($stream, $source);
 
         $this->assertSame($source, $metadata->source);
 
@@ -32,7 +34,9 @@ class StreamMetaDataTest extends TestCase
 
     public function testSettingSourceIsDeprecatedButRetokenizes(): void
     {
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "old"; ?>');
+        $stream = fopen('php://input', 'rb');
+        assert($stream !== false);
+        $metadata = new StreamMetaData($stream, '<?php echo "old"; ?>');
 
         $deprecations = [];
         set_error_handler(function (int $errno, string $errstr) use (&$deprecations): bool {

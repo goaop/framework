@@ -17,13 +17,14 @@ use Go\Tests\TestProject\Application\Main;
 
 class CacheWarmupCommandTest extends BaseFunctionalTestCase
 {
+    // @phpstan-ignore phpunit.callParent (deliberately skips the parent cache warm-up - warming the cache is the test subject)
     public function setUp(): void
     {
         $this->loadConfiguration();
         $this->clearCache();
     }
 
-    public function testItWarmsUpCache()
+    public function testItWarmsUpCache(): void
     {
         $this->assertFileDoesNotExist($this->configuration['cacheDir']);
         $this->warmUp();

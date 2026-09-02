@@ -15,7 +15,7 @@ namespace Go\Aop\Framework;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class BeforeInterceptorTest extends AbstractInterceptorTestCase
 {
-    public function testAdviceIsCalledBeforeInvocation()
+    public function testAdviceIsCalledBeforeInvocation(): void
     {
         $sequence   = [];
         $advice     = $this->getAdvice($sequence);

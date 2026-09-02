@@ -28,7 +28,7 @@ final class ClassAdvisorIdentifier
     private ?int $index;
 
     public function __construct(
-        $class,
+        object|string $class,
         string $subject,
         string $target,
         ?string $advisorIdentifier = null,

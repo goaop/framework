@@ -40,6 +40,8 @@ class MagicConstantTransformerTest extends TestCase
     /**
      * Returns a mock for kernel
      *
+     * @param array<string, mixed> $options
+     *
      * @return MockObject|AspectKernel
      */
     protected function getKernelMock(array $options): AspectKernel
@@ -56,9 +58,22 @@ class MagicConstantTransformerTest extends TestCase
         return $mock;
     }
 
+    /**
+     * Opens a read-only stream for the given URI
+     *
+     * @return resource
+     */
+    private static function openStream(string $uri)
+    {
+        $stream = fopen($uri, 'rb');
+        assert($stream !== false);
+
+        return $stream;
+    }
+
     public function testTransformerReturnsWithoutMagicConsts(): void
     {
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, no magic constants" ?>');
+        $metadata = new StreamMetaData(self::openStream('php://input'), '<?php echo "simple test, no magic constants" ?>');
         $expected = $metadata->source;
         $this->transformer->transform($metadata);
         $this->assertSame($expected, $metadata->source);
@@ -66,7 +81,7 @@ class MagicConstantTransformerTest extends TestCase
 
     public function testTransformerCanResolveDirMagicConst(): void
     {
-        $metadata = new StreamMetaData(fopen(__FILE__, 'rb'), '<?php echo __DIR__; ?>');
+        $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __DIR__; ?>');
         $expected = '<?php echo \''.__DIR__.'\'; ?>';
         $this->transformer->transform($metadata);
         $this->assertEquals($expected, $metadata->source);
@@ -74,7 +89,7 @@ class MagicConstantTransformerTest extends TestCase
 
     public function testTransformerCanResolveFileMagicConst(): void
     {
-        $metadata = new StreamMetaData(fopen(__FILE__, 'rb'), '<?php echo __FILE__; ?>');
+        $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __FILE__; ?>');
         $expected = '<?php echo \''.__FILE__.'\'; ?>';
         $this->transformer->transform($metadata);
         $this->assertEquals($expected, $metadata->source);
@@ -82,7 +97,7 @@ class MagicConstantTransformerTest extends TestCase
 
     public function testTransformerDoesNotReplaceStringWithConst(): void
     {
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "__FILE__"; ?>');
+        $metadata = new StreamMetaData(self::openStream('php://input'), '<?php echo "__FILE__"; ?>');
         $expected = '<?php echo "__FILE__"; ?>';
         $this->transformer->transform($metadata);
         $this->assertEquals($expected, $metadata->source);
@@ -91,14 +106,13 @@ class MagicConstantTransformerTest extends TestCase
     public function testTransformerWrapsReflectionFileName(): void
     {
         $source   = '<?php $class = new ReflectionClass("stdClass"); echo $class->getFileName(); ?>';
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), $source);
+        $metadata = new StreamMetaData(self::openStream('php://input'), $source);
         $this->transformer->transform($metadata);
         $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $metadata->source);
     }
 
     public function testTransformerResolvesFileName(): void
     {
-        /** @var $class MagicConstantTransformer */
         $class = get_class($this->transformer);
         $this->assertStringStartsWith(dirname(__DIR__), $class::resolveFileName(__FILE__));
     }

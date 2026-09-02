@@ -20,7 +20,7 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
     {
         $invocation = new ReflectionConstructorInvocation([], \Exception::class);
         $result     = $invocation->__invoke();
-        $this->assertInstanceOf(\Exception::class, $result);
+        $this->assertSame(\Exception::class, $result::class);
     }
 
     public function testCanExecuteAdvicesDuringConstruct(): void
@@ -62,8 +62,9 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
     public function testCanCreateAnInstanceEvenWithNonPublicConstructor(): void
     {
         try {
+            // @phpstan-ignore new.privateConstructor (instantiation failure of a private constructor is the test subject)
             $testClassInstance = new class('Test') {
-                public $message;
+                public string $message;
 
                 private function __construct(string $message)
                 {
@@ -81,10 +82,12 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
                 }
             }
         }
+        assert(isset($loadedClass));
         $testClassName = $loadedClass;
         $invocation    = new ReflectionConstructorInvocation([], $testClassName);
         $result        = $invocation->__invoke(['Hello']);
         $this->assertInstanceOf($testClassName, $result);
+        // @phpstan-ignore property.notFound (the anonymous class is only known at runtime)
         $this->assertSame('Hello', $result->message);
     }
 }

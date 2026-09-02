@@ -1,7 +1,30 @@
 includes:
 	- phpstan-baseline.php
+	- phpstan-baseline-tests.php
 
 parameters:
   level: 10
   paths:
     - src
+    - tests
+  excludePaths:
+    # Snapshot fixtures for the weaving transformer: raw inputs plus generated
+    # *-woven.php/*-proxy.php expected outputs (traits/proxies referencing
+    # framework internals out of context) — not meaningful for static analysis.
+    - tests/Instrument/Transformer/_files
+    # Version-specific weaving-input stubs (e.g. FinalPromotedClass85.php uses
+    # PHP 8.5-only syntax): their exact source shape is the test subject and
+    # they cannot even parse under the oldest supported PHP version.
+    - tests/Instrument/Transformer/Stubs
+    # General test stubs: weaving-input classes whose exact source shape
+    # (untyped methods, unused private members, exotic syntax) is what the
+    # weaver is tested against — adding types would change woven/proxy
+    # snapshot output — plus, under Generator/, the reflection targets for the
+    # code generator tests, whose signatures (untyped parameters, variadics,
+    # by-ref args, 8.5-only syntax) are what the generators are asserted
+    # against.
+    - tests/Stubs
+    # Fixture project woven at runtime by the functional tests (inputs under
+    # tests/Fixtures/project/src plus its generated var/ cache) — same
+    # source-shape-under-test reasoning as tests/Stubs.
+    - tests/Fixtures

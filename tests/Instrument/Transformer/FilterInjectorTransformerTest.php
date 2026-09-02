@@ -22,14 +22,14 @@ use TypeError;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class FilterInjectorTransformerTest extends TestCase
 {
-    protected static ?FilterInjectorTransformer $transformer = null;
+    protected static FilterInjectorTransformer $transformer;
 
     /**
      * {@inheritDoc}
      */
     public function setUp(): void
     {
-        if (self::$transformer === null) {
+        if (!isset(self::$transformer)) {
             $kernelMock = $this->getKernelMock(
                 [
                     'cacheDir'      => null,
@@ -49,7 +49,22 @@ class FilterInjectorTransformerTest extends TestCase
     }
 
     /**
+     * Opens a read-only stream for the given URI
+     *
+     * @return resource
+     */
+    private static function openStream(string $uri = 'php://input')
+    {
+        $stream = fopen($uri, 'rb');
+        assert($stream !== false);
+
+        return $stream;
+    }
+
+    /**
      * Returns a mock for kernel
+     *
+     * @param array<string, mixed> $options
      */
     protected function getKernelMock(array $options, AspectContainer $container): AspectKernel
     {
@@ -70,7 +85,7 @@ class FilterInjectorTransformerTest extends TestCase
 
     public function testCanTransformWithoutInclusion(): void
     {
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, include" . $include; ?>');
+        $metadata = new StreamMetaData(self::openStream(), '<?php echo "simple test, include" . $include; ?>');
         $output   = $metadata->source;
         self::$transformer->transform($metadata);
         $this->assertEquals($output, $metadata->source);
@@ -78,7 +93,7 @@ class FilterInjectorTransformerTest extends TestCase
 
     public function testSkipTransformationQuickly(): void
     {
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php echo "simple test, no key words" ?>');
+        $metadata = new StreamMetaData(self::openStream(), '<?php echo "simple test, no key words" ?>');
         $output = $metadata->source;
         self::$transformer->transform($metadata);
         $this->assertEquals($output, $metadata->source);
@@ -86,7 +101,7 @@ class FilterInjectorTransformerTest extends TestCase
 
     public function testCanTransformInclude(): void
     {
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php include $class; ?>');
+        $metadata = new StreamMetaData(self::openStream(), '<?php include $class; ?>');
         self::$transformer->transform($metadata);
         $output = '<?php include \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
@@ -94,7 +109,7 @@ class FilterInjectorTransformerTest extends TestCase
 
     public function testCanTransformIncludeOnce(): void
     {
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php include_once $class; ?>');
+        $metadata = new StreamMetaData(self::openStream(), '<?php include_once $class; ?>');
         self::$transformer->transform($metadata);
         $output = '<?php include_once \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
@@ -102,7 +117,7 @@ class FilterInjectorTransformerTest extends TestCase
 
     public function testCanTransformRequire(): void
     {
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php require $class; ?>');
+        $metadata = new StreamMetaData(self::openStream(), '<?php require $class; ?>');
         self::$transformer->transform($metadata);
         $output = '<?php require \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
@@ -110,7 +125,7 @@ class FilterInjectorTransformerTest extends TestCase
 
     public function testCanTransformRequireOnce(): void
     {
-        $metadata = new StreamMetaData(fopen('php://input', 'rb'), '<?php require_once $class; ?>');
+        $metadata = new StreamMetaData(self::openStream(), '<?php require_once $class; ?>');
         self::$transformer->transform($metadata);
         $output = '<?php require_once \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
@@ -136,6 +151,7 @@ class FilterInjectorTransformerTest extends TestCase
     {
         $this->expectException(TypeError::class);
         $file   = new \SplFileInfo(__FILE__);
+        // @phpstan-ignore argument.type (intentionally passes a non-string to assert the TypeError)
         $actual = FilterInjectorTransformer::rewrite($file);
         $this->assertStringEndsWith(__FILE__, $actual);
     }
@@ -143,7 +159,8 @@ class FilterInjectorTransformerTest extends TestCase
     public function testCanTransformWithBraces(): void
     {
         $fileContent = file_get_contents(__DIR__ . '/_files/yii_style.php');
-        $metadata    = new StreamMetaData(fopen(__DIR__ . '/_files/yii_style.php', 'r'), $fileContent);
+        $this->assertIsString($fileContent);
+        $metadata    = new StreamMetaData(self::openStream(__DIR__ . '/_files/yii_style.php'), $fileContent);
         self::$transformer->transform($metadata);
         $expectedOutput = file_get_contents(__DIR__ . '/_files/yii_style_output.php');
         $this->assertEquals($expectedOutput, $metadata->source);

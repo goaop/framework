@@ -16,7 +16,7 @@ use Go\Functional\BaseFunctionalTestCase;
 
 class DebugWeavingCommandTest extends BaseFunctionalTestCase
 {
-    public function testReportInconsistentWeaving()
+    public function testReportInconsistentWeaving(): void
     {
         $output = str_replace("\n", ' ', $this->execute('debug:weaving', [], false, 1));
 

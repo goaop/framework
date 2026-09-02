@@ -23,13 +23,15 @@ abstract class AbstractInterceptorTestCase extends TestCase implements Aspect
 {
     /**
      * Concrete class name for mock, should be redefined with LSB
+     *
+     * @var class-string<Invocation>
      */
     protected const INVOCATION_CLASS = Invocation::class;
 
     /**
      * Returns a test advice that writes itself to the sequence
      *
-     * @param array $sequenceRecorder
+     * @param array<string> $sequenceRecorder
      */
     protected function getAdvice(array &$sequenceRecorder): Closure
     {
@@ -43,8 +45,8 @@ abstract class AbstractInterceptorTestCase extends TestCase implements Aspect
     /**
      * Returns an empty invocation that can update the sequence on invocation
      *
-     * @param array $sequenceRecorder
-     * @return MockObject|Invocation
+     * @param array<string> $sequenceRecorder
+     * @return Invocation&MockObject
      */
     protected function getInvocation(array &$sequenceRecorder, bool $throwException = false): Invocation
     {

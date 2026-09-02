@@ -57,7 +57,7 @@ final class AttributeGroupsGenerator
      * For native reflection the value-based {@see fromReflectionAttributes} fallback
      * is used instead.
      *
-     * @param ReflectionClass<object>|ReflectionFunctionAbstract|ReflectionParameter|ReflectionProperty $reflection
+     * @param ReflectionClass<covariant object>|ReflectionFunctionAbstract|ReflectionParameter|ReflectionProperty $reflection
      *
      * @return list<AttributeGroup>
      */

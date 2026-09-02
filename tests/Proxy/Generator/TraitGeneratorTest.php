@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Go\Proxy\Generator\Stubs\MethodGeneratorTestStub;
+use Go\Stubs\Generator\MethodGeneratorTestStub;
 use PHPUnit\Framework\TestCase;
 use PhpParser\Node\Stmt\Trait_;
 use ReflectionMethod;
@@ -74,7 +74,6 @@ class TraitGeneratorTest extends TestCase
     {
         $gen = new TraitGenerator('MyTrait', null);
         $node = $gen->getNode();
-        $this->assertInstanceOf(Trait_::class, $node);
         $this->assertSame('MyTrait', (string) $node->name);
     }
 
@@ -87,6 +86,7 @@ class TraitGeneratorTest extends TestCase
     public function testImplementsGeneratorInterface(): void
     {
         $gen = new TraitGenerator('MyTrait', null);
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the implemented interface)
         $this->assertInstanceOf(GeneratorInterface::class, $gen);
     }
 

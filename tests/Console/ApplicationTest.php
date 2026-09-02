@@ -76,9 +76,13 @@ class ApplicationTest extends TestCase
         $this->assertSame(['debug:weaving'], $instantiated, 'Only the requested command must be instantiated');
     }
 
+    /**
+     * @param list<string> $args
+     */
     private function runConsoleCommand(string $command, array $args = []): Process
     {
         $phpExecutable = (new PhpExecutableFinder())->find();
+        assert($phpExecutable !== false);
         $commandLine   = array_merge(
             [$phpExecutable, $this->console, $command],
             $args

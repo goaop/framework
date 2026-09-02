@@ -95,8 +95,10 @@ class CachePathManagerTest extends TestCase
         $known       = self::$appDir . '/src/Untransformed.php';
 
         $writer = $this->createManager();
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
         $writer->registerClassForResource($original, 'App\Some');
         $writer->setCacheState($original, ['filemtime' => 12345, 'cacheUri' => $transformed]);
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
         $writer->registerClassForResource($known, 'App\Untransformed');
         $writer->setCacheState($known, ['filemtime' => 12345, 'cacheUri' => null]);
         $writer->flushCacheState();
@@ -106,7 +108,9 @@ class CachePathManagerTest extends TestCase
 
         $reader = $this->createManager();
         // The runtime class map and skip set are available immediately...
+        // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
         $this->assertSame(['App\Some' => $transformed], $reader->queryClassMap());
+        // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
         $this->assertSame(['App\Untransformed' => true], $reader->querySkippedClasses());
         // ...while the full metadata was not materialized yet (loaded lazily on demand)
         $loadedFlag = new ReflectionProperty(CachePathManager::class, 'cacheStateLoaded');

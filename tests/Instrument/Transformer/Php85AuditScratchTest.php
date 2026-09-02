@@ -117,12 +117,18 @@ class Php85AuditScratchTest extends TestCase
     /**
      * Fixtures currently known to produce a broken weave, keyed to their tracking issue.
      * A fix PR that resolves one of these MUST remove the entry (the test then asserts success).
+     *
+     * @var array<string, string>
      */
     private const KNOWN_GAPS = [
         // All audit gaps (#598-#603, #615, #616) are fixed — every fixture must weave cleanly.
     ];
 
-    /** Fixtures whose KNOWN_GAPS entry applies only on PHP >= 8.5. */
+    /**
+     * Fixtures whose KNOWN_GAPS entry applies only on PHP >= 8.5.
+     *
+     * @var array<string, bool>
+     */
     private const GAP_ONLY_ON_85 = [];
 
     #[DataProvider('fixtureNames')]
@@ -135,11 +141,16 @@ class Php85AuditScratchTest extends TestCase
 
         $problems = $this->weaveAndCollectProblems($name);
 
-        $isKnownGap = isset(self::KNOWN_GAPS[$name])
-            && (!isset(self::GAP_ONLY_ON_85[$name]) || PHP_VERSION_ID >= 80500);
+        /** @var array<string, string> $knownGaps Empty right now, refilled when a new gap is discovered */
+        $knownGaps = self::KNOWN_GAPS;
+        /** @var array<string, bool> $gapsOnlyOn85 Empty right now, refilled when a new gap is discovered */
+        $gapsOnlyOn85 = self::GAP_ONLY_ON_85;
+
+        $issue      = $knownGaps[$name] ?? null;
+        $isKnownGap = $issue !== null
+            && (!isset($gapsOnlyOn85[$name]) || PHP_VERSION_ID >= 80500);
 
         if ($isKnownGap) {
-            $issue = self::KNOWN_GAPS[$name];
             $this->assertNotSame(
                 [],
                 $problems,
@@ -231,6 +242,9 @@ class Php85AuditScratchTest extends TestCase
         return $mock;
     }
 
+    /**
+     * @param array<string, mixed> $options
+     */
     protected function getKernelMock(array $options, AspectContainer $container): AspectKernel
     {
         $mock = $this->getMockBuilder(AspectKernel::class)
@@ -248,7 +262,9 @@ class Php85AuditScratchTest extends TestCase
     {
         $fileName = self::FIXTURE_DIR . '/' . $name . '.php';
         $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
+        assert($stream !== false);
         $source   = file_get_contents($fileName);
+        assert($source !== false);
         $metadata = new StreamMetaData($stream, $source);
         fclose($stream);
 

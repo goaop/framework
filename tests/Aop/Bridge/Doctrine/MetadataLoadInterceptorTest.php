@@ -32,9 +32,6 @@ class MetadataLoadInterceptorTest extends TestCase
         $metadataInterceptor = new MetadataLoadInterceptor();
         $entityManager = $this->createMock(EntityManager::class);
 
-        /**
-         * @var ClassMetadata $metadata
-         */
         foreach ($metadatas as $metadata) {
             $metadata->isMappedSuperclass = false;
             $metadataInterceptor->loadClassMetadata(new LoadClassMetadataEventArgs($metadata, $entityManager));
@@ -83,7 +80,7 @@ class MetadataLoadInterceptorTest extends TestCase
 
 trait SimpleTrait
 {
-    private $mappedField;
+    private mixed $mappedField;
 }
 
 class Entity__AopProxied

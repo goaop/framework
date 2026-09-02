@@ -23,7 +23,7 @@ use ReflectionParameter;
 
 class ParameterGeneratorTest extends TestCase
 {
-    private const STUBS_NS = 'Go\Proxy\Generator\Stubs';
+    private const STUBS_NS = 'Go\Stubs\Generator';
 
     private function getParam(string $func, int $idx = 0): ReflectionParameter
     {
@@ -90,8 +90,9 @@ class ParameterGeneratorTest extends TestCase
     {
         $gen = ParameterGenerator::fromReflection($this->getParam(self::STUBS_NS . '\paramGenHelper_simple', 0));
         $node = $gen->getNode();
-        $this->assertInstanceOf(Node\Param::class, $node);
-        $this->assertSame('name', (string) $node->var->name);
+        $this->assertInstanceOf(Node\Expr\Variable::class, $node->var);
+        $this->assertIsString($node->var->name);
+        $this->assertSame('name', $node->var->name);
     }
 
     public function testConstructorManual(): void
@@ -139,7 +140,7 @@ class ParameterGeneratorTest extends TestCase
         // default path (ValueGenerator::fromExprNode). This test uses a regular
         // integer default to verify the code path is exercised.
         $refFunc = $this->getParserReflectionFunction(
-            __DIR__ . '/Stubs/ParameterGeneratorStubs.php',
+            __DIR__ . '/../../Stubs/Generator/ParameterGeneratorStubs.php',
             'paramGenHelper_simple'
         );
         $param  = $refFunc->getParameters()[1]; // int $count = 0
@@ -151,9 +152,9 @@ class ParameterGeneratorTest extends TestCase
     #[RequiresPhp('>= 8.5.0')]
     public function testFromReflectionWithFccDefault(): void
     {
-        require_once __DIR__ . '/Stubs/ParameterGeneratorFccStubs.php';
+        require_once __DIR__ . '/../../Stubs/Generator/ParameterGeneratorFccStubs.php';
         $refFunc = $this->getParserReflectionFunction(
-            __DIR__ . '/Stubs/ParameterGeneratorFccStubs.php',
+            __DIR__ . '/../../Stubs/Generator/ParameterGeneratorFccStubs.php',
             'paramGenHelper_fcc'
         );
         $param  = $refFunc->getParameters()[0];
@@ -167,8 +168,10 @@ class ParameterGeneratorTest extends TestCase
      */
     private function getParserReflectionFunction(string $filePath, string $functionName): ParserReflectionFunction
     {
-        $parser   = (new ParserFactory())->createForHostVersion();
-        $fileAst  = $parser->parse(file_get_contents($filePath));
+        $stubSource = file_get_contents($filePath);
+        $this->assertIsString($stubSource);
+        $parser  = (new ParserFactory())->createForHostVersion();
+        $fileAst = $parser->parse($stubSource);
         $this->assertNotNull($fileAst, 'Failed to parse stub file');
 
         $fullName = self::STUBS_NS . '\\' . $functionName;
@@ -180,6 +183,8 @@ class ParameterGeneratorTest extends TestCase
 
     /**
      * Walks the AST to find a Function_ node with the given name.
+     *
+     * @param Node\Stmt[] $stmts
      */
     private function findFunctionNode(array $stmts, string $name): ?Function_
     {

@@ -17,7 +17,7 @@ use Go\Instrument\FileSystem\Enumerator;
 
 class DebugAdvisorCommandTest extends BaseFunctionalTestCase
 {
-    public function testItDisplaysAdvisorsDebugInfo()
+    public function testItDisplaysAdvisorsDebugInfo(): void
     {
         $output = $this->execute('debug:advisor');
 
@@ -32,10 +32,12 @@ class DebugAdvisorCommandTest extends BaseFunctionalTestCase
         }
     }
 
-    public function testItDisplaysStatedAdvisorDebugInfo()
+    public function testItDisplaysStatedAdvisorDebugInfo(): void
     {
         $output        = self::execute('debug:advisor', ['--advisor=Go\Tests\TestProject\Aspect\LoggingAspect->beforeMethod']);
-        $enumerator    = new Enumerator(realpath($this->configuration['appDir'].'/src'));
+        $srcDir        = realpath($this->configuration['appDir'] . '/src');
+        assert($srcDir !== false);
+        $enumerator    = new Enumerator($srcDir);
         $srcFilesCount = iterator_count($enumerator->enumerate());
 
         $expected = [

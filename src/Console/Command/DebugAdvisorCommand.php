@@ -122,7 +122,7 @@ class DebugAdvisorCommand extends BaseAspectCommand
     }
 
     /**
-     * @param ReflectionClass<object> $reflectionClass
+     * @param ReflectionClass<covariant object> $reflectionClass
      * @param array<string, array<string, mixed>> $advices
      */
     private function writeInfoAboutAdvices(SymfonyStyle $io, ReflectionClass $reflectionClass, array $advices): void

@@ -46,6 +46,7 @@ class NotPointcutTest extends TestCase
         $falsePointcut = new NotPointcut($truePointcut);
 
         $reflectionClass = new ReflectionClass(FirstStatic::class);
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the conditional return type)
         $this->assertTrue($falsePointcut->matches($reflectionClass));
     }
 }

@@ -15,8 +15,8 @@ class AbstractJoinpointTest extends TestCase
     protected AbstractJoinpoint $joinpoint;
 
     /**
-     * @param array $advices
-     * @param array $order
+     * @param list<Advice> $advices
+     * @param list<AdviceTypeEnum|class-string> $order
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('sortingTestSource')]
     public function testSortingLogic(array $advices, array $order = []): void
@@ -28,11 +28,15 @@ class AbstractJoinpointTest extends TestCase
                 $this->assertInstanceOf(Advice::class, $advice);
                 $this->assertSame($expected, $advice->getType());
             } else {
+                assert($expected !== null);
                 $this->assertInstanceOf($expected, $advice);
             }
         }
     }
 
+    /**
+     * @return array<array{list<Advice>, list<AdviceTypeEnum|class-string>}>
+     */
     public static function sortingTestSource(): array
     {
         $after  = self::makeAdvice(AdviceTypeEnum::After);
@@ -119,6 +123,7 @@ class AbstractJoinpointTest extends TestCase
         $advices = [
             'introduction' => [
                 'root' => [
+                    // @phpstan-ignore argument.type, argument.type (placeholder trait/interface names that are never loaded)
                     '\Some\Interface' => new TraitIntroductionInfo('\Some\Trait', '\Some\Interface'),
                 ],
             ],

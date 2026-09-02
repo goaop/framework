@@ -46,6 +46,9 @@ class EnumeratorTest extends TestCase
         static::$fileSystem->unmount();
     }
 
+    /**
+     * @return array<array{list<string>, list<string>, list<string>}>
+     */
     public static function pathsProvider(): array
     {
         return [
@@ -91,6 +94,9 @@ class EnumeratorTest extends TestCase
     /**
      * Test wildcard path matching for Enumerator.
      *
+     * @param list<string> $expectedPaths
+     * @param list<string> $includePaths
+     * @param list<string> $excludePaths
      *
      * @throws \InvalidArgumentException
      * @throws \LogicException
@@ -101,7 +107,7 @@ class EnumeratorTest extends TestCase
     {
         $testPaths = [];
 
-        /** @var Enumerator $mock */
+        /** @var Enumerator&\PHPUnit\Framework\MockObject\MockObject $mock */
         $mock = $this->getMockBuilder(Enumerator::class)
             ->setConstructorArgs(['vfs://base', $includePaths, $excludePaths])
             ->onlyMethods(['getFileFullPath'])

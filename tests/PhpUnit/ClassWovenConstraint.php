@@ -18,12 +18,18 @@ use Go\ParserReflection\ReflectionClass;
 use PHPUnit\Framework\Constraint\Constraint;
 
 /**
+ * @phpstan-import-type ProjectConfiguration from ProxyClassReflectionHelper
+ *
  * Asserts that class is not woven.
  */
 final class ClassWovenConstraint extends Constraint
 {
+    /** @var ProjectConfiguration */
     private array $configuration;
 
+    /**
+     * @param ProjectConfiguration $configuration
+     */
     public function __construct(array $configuration)
     {
         $this->configuration = $configuration;
@@ -32,10 +38,14 @@ final class ClassWovenConstraint extends Constraint
     /**
      * {@inheritdoc}
      */
-    public function matches($other): bool
+    public function matches(mixed $other): bool
     {
+        assert(is_string($other) || is_object($other));
         $filename = (new ReflectionClass($other))->getFileName();
-        $suffix   = substr($filename, strlen(PathResolver::realpath($this->configuration['appDir'])));
+        assert(is_string($filename));
+        $appDir = PathResolver::realpath($this->configuration['appDir']);
+        assert(is_string($appDir));
+        $suffix = substr($filename, strlen($appDir));
 
         $proxyFileExists       = file_exists($this->configuration['cacheDir'] . $suffix);
         $transformedFileExists = file_exists($this->configuration['cacheDir'] . str_replace('.php', AspectContainer::AOP_PROXIED_SUFFIX . '.php', $suffix));

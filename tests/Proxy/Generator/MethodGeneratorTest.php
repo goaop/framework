@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Go\Proxy\Generator\Stubs\MethodGeneratorTestStub;
+use Go\Stubs\Generator\MethodGeneratorTestStub;
 use PHPUnit\Framework\TestCase;
 use PhpParser\Node\Stmt\ClassMethod;
 use ReflectionMethod;
@@ -91,6 +91,7 @@ class MethodGeneratorTest extends TestCase
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
         $gen->body = "return 42;";        $stmts = $gen->stmts;
 
+        $this->assertNotNull($stmts);
         $gen2 = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
         $gen2->stmts = $stmts;
         $this->assertSame($gen->body, $gen2->body);
@@ -100,7 +101,6 @@ class MethodGeneratorTest extends TestCase
     {
         $gen = MethodGenerator::fromReflection($this->getMethod('publicMethod'));
         $node = $gen->getNode();
-        $this->assertInstanceOf(ClassMethod::class, $node);
         $this->assertSame('publicMethod', (string) $node->name);
     }
 

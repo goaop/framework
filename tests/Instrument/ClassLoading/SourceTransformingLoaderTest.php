@@ -129,27 +129,9 @@ class SourceTransformingLoaderTest extends TestCase
     /**
      * Creates a transformer stub that replaces the source and reports the given result
      */
-    private function createTransformerStub(TransformerResultEnum $result, ?string $newSource = null): SourceTransformer
+    private function createTransformerStub(TransformerResultEnum $result, ?string $newSource = null): CountingSourceTransformerStub
     {
-        return new class ($result, $newSource) implements SourceTransformer {
-            public int $callCount = 0;
-
-            public function __construct(
-                private readonly TransformerResultEnum $result,
-                private readonly ?string $newSource,
-            ) {
-            }
-
-            public function transform(StreamMetaData $metadata): TransformerResultEnum
-            {
-                $this->callCount++;
-                if ($this->newSource !== null) {
-                    $metadata->setTokenStreamFromRawTokens(...PhpToken::tokenize($this->newSource));
-                }
-
-                return $this->result;
-            }
-        };
+        return new CountingSourceTransformerStub($result, $newSource);
     }
 
     public function testFreshTransformedCacheRecordIsServedWithoutAnyTransformer(): void
@@ -270,5 +252,29 @@ class SourceTransformingLoaderTest extends TestCase
         $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
         $this->assertSame(0, $transformer->callCount);
         $this->assertNull($this->cachePathManager->queryCacheState($this->originalFile));
+    }
+}
+
+/**
+ * Transformer stub that replaces the source and counts its invocations
+ */
+final class CountingSourceTransformerStub implements SourceTransformer
+{
+    public int $callCount = 0;
+
+    public function __construct(
+        private readonly TransformerResultEnum $result,
+        private readonly ?string $newSource,
+    ) {
+    }
+
+    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    {
+        $this->callCount++;
+        if ($this->newSource !== null) {
+            $metadata->setTokenStreamFromRawTokens(...PhpToken::tokenize($this->newSource));
+        }
+
+        return $this->result;
     }
 }

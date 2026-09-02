@@ -32,8 +32,12 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertPropertyWoven(Main::class, 'publicClassProperty', 'Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
         $this->assertPropertyWoven(Main::class, 'protectedClassProperty', 'Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
 
-        // it does not weaves Main class private property
-        $this->assertPropertyNotWoven(Main::class, 'privateClassProperty', 'Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
+        // it also weaves the private property declared in Main itself: the pointcut asks for
+        // private|protected|public and ClassProxyGenerator::interceptProperties() includes
+        // IS_PRIVATE for own-class properties (only parent private properties are excluded).
+        // The previous "not woven" expectation only ever passed because ClassAdvisorIdentifier
+        // received its constructor arguments in the wrong order, making the assertion vacuous.
+        $this->assertPropertyWoven(Main::class, 'privateClassProperty', 'Go\\Tests\\TestProject\\Aspect\\PropertyInterceptAspect->interceptClassProperty');
     }
 
     /**
@@ -132,6 +136,7 @@ class ClassWeavingTest extends BaseFunctionalTestCase
             var_export($this->configuration['frontController'], true),
             '\\' . NewInInitializerClass::class
         );
+        assert($phpExecutable !== false);
         $process = new Process(
             [$phpExecutable, '-r', $script],
             null,
