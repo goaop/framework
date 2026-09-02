@@ -12,9 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Bridge\Doctrine;
 
-use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
-use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Go\Core\AspectContainer;
 use InvalidArgumentException;
@@ -25,16 +23,13 @@ use RuntimeException;
  * Class MetadataLoadInterceptor
  *
  * Support for weaving Doctrine entities.
+ *
+ * Register it as a plain event listener when Doctrine is bootstrapped:
+ *
+ *     $eventManager->addEventListener(Events::loadClassMetadata, new MetadataLoadInterceptor());
  */
-final class MetadataLoadInterceptor implements EventSubscriber
+final class MetadataLoadInterceptor
 {
-    public function getSubscribedEvents(): array
-    {
-        return [
-            Events::loadClassMetadata
-        ];
-    }
-
     /**
      * Handles \Doctrine\ORM\Events::loadClassMetadata event by modifying metadata of Go! AOP proxied classes.
      *
