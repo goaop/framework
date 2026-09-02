@@ -43,6 +43,11 @@ use ReflectionProperty;
 final readonly class ReturnTypePointcut implements Pointcut
 {
     /**
+     * Trimmed constructor pattern, retained verbatim for re-emission into compiled advisor caches.
+     */
+    private string $returnTypeName; // @phpstan-ignore property.onlyWritten (consumed by the upcoming advisor cache compilation)
+
+    /**
      * Normalized pattern: list of intersection groups, each group is a list of atomic patterns.
      *
      * @var list<list<string>>
@@ -67,6 +72,7 @@ final readonly class ReturnTypePointcut implements Pointcut
         if (strlen($returnTypeName) === 0) {
             throw new InvalidArgumentException("Return type name must not be empty");
         }
+        $this->returnTypeName        = $returnTypeName;
         $this->patternGroups         = self::normalizeTypeExpression($returnTypeName);
         $this->isSingleAtomicPattern = count($this->patternGroups) === 1 && count($this->patternGroups[0]) === 1;
     }
