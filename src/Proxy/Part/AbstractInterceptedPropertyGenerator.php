@@ -18,6 +18,7 @@ use Go\Proxy\Generator\PropertyModifier;
 use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\TypeGenerator;
 use InvalidArgumentException;
+use LogicException;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Param;
@@ -73,7 +74,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         } elseif ($this->property->hasDefaultValue() && !method_exists($this->property, 'getNode')) {
             $rawDefault = $this->property->getDefaultValue();
             if ($rawDefault instanceof \Closure) {
-                throw new \LogicException(sprintf(
+                throw new LogicException(sprintf(
                     'Cannot generate proxy for property %s::$%s: PHP 8.5 Closure default values '
                     . 'require goaop/parser-reflection for AST access.',
                     $this->property->getDeclaringClass()->getName(),

@@ -25,9 +25,13 @@ use Go\Core\AspectContainer;
 final class LazyPointcutAdvisor implements PointcutAdvisor
 {
     /**
-     * Instance of parsed pointcut, might be uninitialized if not parsed yet
+     * Instance of parsed pointcut, parsed lazily on first access and memoized in the backing store
      */
-    private Pointcut $pointcut;
+    private Pointcut $pointcut {
+        get => $this->pointcut ??= $this->container->getService(PointcutParser::class)->parse(
+            $this->container->getService(PointcutLexer::class)->lex($this->pointcutExpression)
+        );
+    }
 
     /**
      * Creates the LazyPointcutAdvisor by specifying textual pointcut expression and Advice to run when Pointcut matches.
@@ -42,15 +46,6 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
 
     public function getPointcut(): Pointcut
     {
-        if (!isset($this->pointcut)) {
-            // Inject these dependencies and make them lazy!
-            $lexer  = $this->container->getService(PointcutLexer::class);
-            $parser = $this->container->getService(PointcutParser::class);
-
-            $tokenStream    = $lexer->lex($this->pointcutExpression);
-            $this->pointcut = $parser->parse($tokenStream);
-        }
-
         return $this->pointcut;
     }
 

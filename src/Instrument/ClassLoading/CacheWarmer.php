@@ -28,22 +28,15 @@ use function count;
 class CacheWarmer
 {
     /**
-     * Instance of aspect kernel
-     */
-    protected AspectKernel $aspectKernel;
-
-    /**
-     * Output instance
-     */
-    protected OutputInterface $output;
-
-    /**
      * CacheWarmer constructor.
+     *
+     * @param AspectKernel    $aspectKernel Instance of aspect kernel
+     * @param OutputInterface $output       Output instance
      */
-    public function __construct(AspectKernel $aspectKernel, ?OutputInterface $output = null)
-    {
-        $this->aspectKernel = $aspectKernel;
-        $this->output       = $output ?? new NullOutput();
+    public function __construct(
+        protected AspectKernel $aspectKernel,
+        protected OutputInterface $output = new NullOutput(),
+    ) {
     }
 
     /**
@@ -69,7 +62,7 @@ class CacheWarmer
         $this->output->writeln('');
         $iterator->rewind();
 
-        set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+        set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) {
             throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
         });
 

@@ -19,6 +19,7 @@ use Go\Core\AspectContainer;
 use Go\Core\CachedAspectLoader;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\ParserReflection\ReflectionFile;
+use InvalidArgumentException;
 use ReflectionClass;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -97,7 +98,7 @@ EOT
 
         $advisor = $aspectContainer->getValue($advisorId);
         if (!$advisor instanceof Advisor) {
-            throw new \InvalidArgumentException("Invalid advisor {$advisorId} given");
+            throw new InvalidArgumentException("Invalid advisor {$advisorId} given");
         }
         $options = $this->aspectKernel->getOptions();
 

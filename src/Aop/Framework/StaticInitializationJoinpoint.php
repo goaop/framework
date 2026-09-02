@@ -53,8 +53,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
 
     /**
      * Invokes current joinpoint with all interceptors
-     */
-    /**
+     *
      * @param class-string<T>|null $scope Runtime static context, if available
      */
     final public function __invoke(?string $scope = null): void
