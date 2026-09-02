@@ -8,7 +8,7 @@
   <logging>
     <junit outputFile="./build/logs/junit.xml"/>
   </logging>
-  <source ignoreIndirectDeprecations="true" restrictNotices="true" restrictWarnings="true">
+  <source>
     <include>
       <directory>./src/</directory>
     </include>

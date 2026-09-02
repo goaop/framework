@@ -26,7 +26,7 @@
         "symfony/filesystem": "^7.4 || ^8.0",
         "symfony/process": "^7.4 || ^8.0",
         "tracy/tracy": "^2.10",
-        "webmozart/glob": "^4.1"
+        "webmozart/glob": "^4.4"
     },
 
     "suggest": {
