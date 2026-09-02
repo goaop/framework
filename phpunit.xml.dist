@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/13.0/phpunit.xsd" colors="true" bootstrap="./vendor/autoload.php">
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/13.0/phpunit.xsd" colors="true" bootstrap="./vendor/autoload.php" cacheDirectory=".phpunit.cache" failOnWarning="true" failOnNotice="true" failOnDeprecation="true" failOnPhpunitDeprecation="true" failOnRisky="true" beStrictAboutOutputDuringTests="true">
   <testsuites>
     <testsuite name="Go! AOP Test Suite">
       <directory>./tests/</directory>
