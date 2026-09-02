@@ -1,23 +1,31 @@
 {
     "name": "goaop/framework",
     "description": "Framework for aspect-oriented programming in PHP.",
-
-    "type": "library",
-    "keywords": ["library", "aop", "php", "aspect"],
-    "homepage": "http://go.aopphp.com/",
     "license": "MIT",
-
+    "type": "library",
+    "keywords": [
+        "library",
+        "aop",
+        "php",
+        "aspect"
+    ],
+    "authors": [
+        {
+            "name": "Lisachenko Alexander",
+            "homepage": "https://github.com/lisachenko"
+        }
+    ],
+    "homepage": "https://go.aopphp.com/",
     "require": {
         "php": "^8.4.0",
         "ext-tokenizer": "*",
-        "goaop/parser-reflection": "^4.0",
         "goaop/dissect": "^4.0",
+        "goaop/parser-reflection": "^4.0",
         "nikic/php-parser": "^5.0",
         "symfony/finder": "^7.4 || ^8.0"
     },
-
     "require-dev": {
-        "doctrine/orm": "^2.5 || ^3.0",
+        "doctrine/orm": "^2.19 || ^3.0",
         "goaop/virtual-file-system": "^1.0",
         "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^13.0",
@@ -25,22 +33,13 @@
         "symfony/console": "^7.4 || ^8.0",
         "symfony/filesystem": "^7.4 || ^8.0",
         "symfony/process": "^7.4 || ^8.0",
-        "tracy/tracy": "^2.10",
         "webmozart/glob": "^4.4"
     },
-
     "suggest": {
         "symfony/console": "Enables the usage of the command-line tool."
     },
-
-    "bin": ["bin/aspect"],
-    "authors": [
-        {
-            "name": "Lisachenko Alexander",
-            "homepage": "https://github.com/lisachenko"
-        }
-    ],
-
+    "minimum-stability": "stable",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Go\\": "src/"
@@ -63,29 +62,28 @@
             "tests/Proxy/Generator/Stubs/ParameterGeneratorStubs.php"
         ]
     },
-
-    "minimum-stability": "stable",
-    "prefer-stable": true,
+    "bin": [
+        "bin/aspect"
+    ],
+    "config": {
+        "sort-packages": true
+    },
     "extra": {
         "branch-alias": {
             "dev-master": "4.0-dev"
         }
     },
-    "config": {
-        "allow-plugins": {},
-        "sort-packages": true
-    },
     "scripts": {
-        "test": "phpunit",
         "analyze": "phpstan analyze --memory-limit=512M",
         "check": [
             "@analyze",
             "@test"
-        ]
+        ],
+        "test": "phpunit"
     },
     "scripts-descriptions": {
-        "test": "Run the PHPUnit test suite",
         "analyze": "Run PHPStan static analysis (level 10)",
-        "check": "Run static analysis and the test suite"
+        "check": "Run static analysis and the test suite",
+        "test": "Run the PHPUnit test suite"
     }
 }
