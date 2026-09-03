@@ -102,7 +102,6 @@ class BaseAspectCommandTest extends TestCase
         // across all subclasses); temporarily point it at our stand-in kernel and restore it
         // afterward so this test does not leak state into the rest of the suite.
         $instanceProperty = new ReflectionProperty(AspectKernel::class, 'instance');
-        $instanceProperty->setAccessible(true);
         $previousInstance = $instanceProperty->getValue();
         $instanceProperty->setValue(null, $kernel);
 

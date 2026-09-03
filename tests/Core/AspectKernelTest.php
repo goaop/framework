@@ -52,7 +52,6 @@ class AspectKernelTest extends TestCase
     private function invokeProtected(object $object, string $method, array $args = []): mixed
     {
         $reflectionMethod = new ReflectionMethod(AspectKernel::class, $method);
-        $reflectionMethod->setAccessible(true);
 
         return $reflectionMethod->invokeArgs($object, $args);
     }
