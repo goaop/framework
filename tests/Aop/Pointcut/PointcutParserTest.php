@@ -12,10 +12,13 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use ArrayIterator;
 use Dissect\Lexer\Lexer;
+use Dissect\Lexer\TokenStream\TokenStream;
 use Go\Stubs\StubPropertyModifiers;
 use Go\Tests\TestProject\Application\ClassWithComplexTypes;
 use PHPUnit\Framework\TestCase;
+use UnexpectedValueException;
 
 /**
  * Class PointcutParserTest defines common check for valid grammar parsing
@@ -179,5 +182,68 @@ class PointcutParserTest extends TestCase
         $class = new \ReflectionClass(ClassWithComplexTypes::class);
         $this->assertTrue($pointcut->matches($class, $class->getMethod('publicMethodWithIntersectionTypeReturn')));
         $this->assertFalse($pointcut->matches($class, $class->getMethod('publicMethodWithUnionTypeReturn')));
+    }
+
+    /**
+     * If the underlying LALR parser ever finishes a token stream without reaching an
+     * "accept" state (e.g. a stream with no tokens at all, or missing the trailing
+     * $eof token), {@see \Dissect\Parser\LALR1\Parser::parse()} returns `null` instead
+     * of throwing. PointcutParser::parse() guards against that and must reject a
+     * non-Pointcut result.
+     */
+    public function testParseThrowsWhenUnderlyingParserDoesNotProduceAPointcut(): void
+    {
+        $emptyStream = new class implements TokenStream {
+            public function getPosition(): int
+            {
+                return 0;
+            }
+
+            public function getCurrentToken(): \Dissect\Lexer\Token
+            {
+                throw new \OutOfBoundsException('No tokens in stream');
+            }
+
+            public function lookAhead(int $n): \Dissect\Lexer\Token
+            {
+                throw new \OutOfBoundsException('No tokens in stream');
+            }
+
+            public function get(int $n): \Dissect\Lexer\Token
+            {
+                throw new \OutOfBoundsException('No tokens in stream');
+            }
+
+            public function move(int $n): void
+            {
+            }
+
+            public function seek(int $n): void
+            {
+            }
+
+            public function next(): void
+            {
+                throw new \OutOfBoundsException('No tokens in stream');
+            }
+
+            public function count(): int
+            {
+                return 0;
+            }
+
+            /**
+             * @return ArrayIterator<int, \Dissect\Lexer\Token>
+             */
+            public function getIterator(): ArrayIterator
+            {
+                return new ArrayIterator([]);
+            }
+        };
+
+        $this->expectException(UnexpectedValueException::class);
+        $this->expectExceptionMessage('Expected instance of Pointcut to be received during parsing');
+
+        $this->parser->parse($emptyStream);
     }
 }
