@@ -14,7 +14,6 @@ namespace Go\Core;
 
 use Closure;
 use OutOfBoundsException;
-use Go\Aop\Aspect;
 
 /**
  * Aspect container interface
@@ -109,22 +108,20 @@ interface AspectContainer
     public function has(string $id): bool;
 
     /**
-     * Register an aspect in the container
+     * Registers a listener that is called whenever a deferred service whose id is a
+     * subclass of the given interface is added via {@see addLazyService()}.
      *
-     * Passing an aspect instance registers it immediately, exactly as before.
+     * The listener receives the service id (class-name) and the container - never the
+     * service value, so laziness of the registered services is fully preserved. Matching
+     * ids are autoloaded by the is_subclass_of() probe, which is the accepted cost of
+     * arming a listener; with no listeners registered, registration stays autoload-free.
+     * Eagerly added instances ({@see add()}) do not fire listeners - they are already
+     * tagged by their interfaces and tracked as resources at addition time.
      *
-     * Passing a class-name defers construction until the aspect is first needed (first
-     * advice hit, or first real interaction with the lazy object handed out during aspect
-     * enumeration on the weaving path), keeping it off the hot boot path.
-     * An aspect with required constructor arguments must also pass a factory closure that
-     * creates the instance; without a factory the class must be default-constructible,
-     * which is validated when the aspect materializes into its lazy object.
-     *
-     * @param Aspect|class-string<Aspect> $aspectOrClassName Aspect instance or its class-name
-     * @param null|Closure(AspectContainer $container): Aspect $aspectFactory Factory for deferred
-     *        construction (only allowed together with a class-name)
+     * @param class-string $interfaceName Interface the deferred service ids are matched against
+     * @param Closure(class-string $id, AspectContainer $container): void $listener
      */
-    public function registerAspect(Aspect|string $aspectOrClassName, ?Closure $aspectFactory = null): void;
+    public function onRegistration(string $interfaceName, Closure $listener): void;
 
     /**
      * Checks if all tracked file resources are still fresh at the given timestamp
@@ -158,4 +155,15 @@ interface AspectContainer
      * @template T of object
      */
     public function addLazyService(string $id, Closure $lazyInitializationClosure): void;
+
+    /**
+     * Adds a link to the file resource into the container
+     *
+     * This set of resources is used later to check the freshness of cache
+     *
+     * @internal Used by the framework itself (e.g. debug-mode aspect source tracking)
+     *
+     * @param string $resource Path to the resource
+     */
+    public function addResource(string $resource): void;
 }

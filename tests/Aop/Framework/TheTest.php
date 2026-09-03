@@ -143,7 +143,7 @@ final class TheTest extends TestCase
     {
         $kernel = TheTestAspectKernel::getInstance();
         $container = new Container();
-        $container->registerAspect(new TheTestAspect());
+        $container->add(TheTestAspect::class, new TheTestAspect());
         foreach ($values as $id => $value) {
             $container->add($id, $value);
         }
@@ -157,7 +157,7 @@ final class TheTestAspectKernel extends AspectKernel
 {
     protected function configureAop(AspectContainer $container): void
     {
-        $container->registerAspect(new TheTestAspect());
+        $container->add(TheTestAspect::class, new TheTestAspect());
     }
 }
 

@@ -13,16 +13,10 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Closure;
-use Go\Aop\Aspect;
-use Go\Aop\AspectException;
-use Go\Aop\Pointcut\PointcutGrammar;
-use Go\Core\Cache\CachedAspectLoader;
-use Go\Aop\Pointcut\PointcutLexer;
-use Go\Aop\Pointcut\PointcutParser;
-use Go\Instrument\ClassLoading\CachePathManager;
+use InvalidArgumentException;
 use OutOfBoundsException;
-use ReflectionClass;
 use ReflectionObject;
+use UnexpectedValueException;
 
 /**
  * DI-container
@@ -40,10 +34,10 @@ class Container implements AspectContainer
     private array $factories = [];
 
     /**
-     * @var array<class-string, Closure(): void> Optional eager validators for deferred services, run when the
-     *      lazy object is created (first retrieval) - before the factory itself runs (first actual use)
+     * @var array<class-string, list<Closure(class-string, AspectContainer): void>> Registration listeners,
+     *      keyed by the interface their deferred service ids are matched against
      */
-    private array $factoryValidators = [];
+    private array $registrationListeners = [];
 
     /**
      * @var array<class-string, list<string>> Holds information about mapping of interface tags into identifiers
@@ -68,139 +62,11 @@ class Container implements AspectContainer
     public function __construct(array $resources = [])
     {
         $this->resources = array_combine($resources, $resources);
-
-        $this->addLazyService(PointcutLexer::class, fn(): PointcutLexer => new PointcutLexer());
-
-        $this->addLazyService(PointcutParser::class, fn(): PointcutParser => new PointcutParser(
-            new PointcutGrammar(),
-        ));
-
-        $this->addLazyService(AdviceMatcher::class, fn(AspectContainer $container): AdviceMatcher => new AdviceMatcher(
-            (bool) $container->getValue('kernel.interceptFunctions'),
-        ));
-
-        $this->addLazyService(AttributeAspectLoaderExtension::class, fn(AspectContainer $container): AttributeAspectLoaderExtension => new AttributeAspectLoaderExtension(
-            $container->getService(PointcutLexer::class),
-            $container->getService(PointcutParser::class),
-        ));
-
-        $this->addLazyService(IntroductionAspectExtension::class, fn(AspectContainer $container): IntroductionAspectExtension => new IntroductionAspectExtension(
-            $container->getService(PointcutLexer::class),
-            $container->getService(PointcutParser::class),
-        ));
-
-        $this->addLazyService(AspectLoader::class, fn(AspectContainer $container): AspectLoader => new AspectLoader(
-            $container,
-            $container->getService(AttributeAspectLoaderExtension::class),
-            $container->getService(IntroductionAspectExtension::class),
-        ));
-
-        $this->addLazyService(CachedAspectLoader::class, function (AspectContainer $container): CachedAspectLoader {
-            $options = $container->getService(AspectKernel::class)->getOptions();
-
-            return new CachedAspectLoader($container, AspectLoader::class, $options);
-        });
-
-        $this->addLazyService(CachePathManager::class, fn(AspectContainer $container): CachePathManager => new CachePathManager(
-            $container->getService(AspectKernel::class),
-        ));
     }
 
-    final public function registerAspect(Aspect|string $aspectOrClassName, ?Closure $aspectFactory = null): void
+    final public function onRegistration(string $interfaceName, Closure $listener): void
     {
-        if ($aspectOrClassName instanceof Aspect) {
-            $this->add($aspectOrClassName::class, $aspectOrClassName);
-
-            return;
-        }
-
-        // Deferred registration by class-name: the aspect is constructed on first use
-        // (first advice hit, or first real interaction with the lazy object handed out
-        // on the weaving path), so a hot-cache request never pays for aspects it does
-        // not touch.
-        $this->addLazyService($aspectOrClassName, function () use ($aspectOrClassName, $aspectFactory): Aspect {
-            return $this->materializeAspect($aspectOrClassName, $aspectFactory);
-        });
-
-        // Cheap aspect declaration checks (implements Aspect, constructibility) run as soon
-        // as the service materializes into a lazy object, so misconfiguration surfaces on
-        // retrieval - construction itself stays deferred until first actual use.
-        $this->factoryValidators[$aspectOrClassName] = function () use ($aspectOrClassName, $aspectFactory): void {
-            $this->validateAspectRegistration($aspectOrClassName, $aspectFactory);
-        };
-
-        // In debug mode the aspect's source file must be tracked as a resource right away:
-        // SourceTransformingLoader consults resource freshness before any aspect materializes.
-        // Production skips this - its warm path never checks freshness, and a cache miss
-        // materializes every aspect during weaving anyway.
-        if ($this->isDebug()) {
-            if (!is_subclass_of($aspectOrClassName, Aspect::class)) {
-                throw new AspectException("Aspect class $aspectOrClassName must implement " . Aspect::class);
-            }
-            $aspectFileName = (new ReflectionClass($aspectOrClassName))->getFileName();
-            if (is_string($aspectFileName)) {
-                $this->addResource($aspectFileName);
-            }
-        }
-    }
-
-    /**
-     * Constructs a lazily registered aspect, either through its factory or by validated
-     * default construction
-     *
-     * @param null|Closure(AspectContainer): Aspect $aspectFactory
-     */
-    private function materializeAspect(string $aspectClassName, ?Closure $aspectFactory): Aspect
-    {
-        $this->validateAspectRegistration($aspectClassName, $aspectFactory);
-        assert(is_subclass_of($aspectClassName, Aspect::class));
-
-        if ($aspectFactory !== null) {
-            $aspect = $aspectFactory($this);
-            if (!$aspect instanceof $aspectClassName) {
-                throw new AspectException("Aspect factory for $aspectClassName returned an incompatible object");
-            }
-
-            return $aspect;
-        }
-
-        return new $aspectClassName();
-    }
-
-    /**
-     * Validates a deferred aspect registration without constructing the aspect
-     *
-     * @param null|Closure(AspectContainer): Aspect $aspectFactory
-     *
-     * @throws AspectException if the class is not an aspect or cannot be default-constructed
-     */
-    private function validateAspectRegistration(string $aspectClassName, ?Closure $aspectFactory): void
-    {
-        if (!is_subclass_of($aspectClassName, Aspect::class)) {
-            throw new AspectException("Aspect class $aspectClassName must implement " . Aspect::class);
-        }
-        if ($aspectFactory === null) {
-            $constructor = (new ReflectionClass($aspectClassName))->getConstructor();
-            if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
-                throw new AspectException(
-                    "Aspect $aspectClassName has required constructor arguments, "
-                    . "pass a factory closure to registerAspect() to create it",
-                );
-            }
-        }
-    }
-
-    /**
-     * Whether the kernel that owns this container runs in debug mode
-     */
-    private function isDebug(): bool
-    {
-        if (!$this->has('kernel.options')) {
-            return false;
-        }
-        $options = $this->getValue('kernel.options');
-
-        return is_array($options) && ($options['debug'] ?? false) === true;
+        $this->registrationListeners[$interfaceName][] = $listener;
     }
 
     final public function add(string $id, mixed $value): void
@@ -225,25 +91,30 @@ class Container implements AspectContainer
         // keys with is_subclass_of(), so an arbitrary string id must be rejected upfront
         // (checked syntactically to avoid autoloading anything at registration time).
         if (preg_match('/^\\\\?[A-Za-z_\x80-\xff][\w\x80-\xff]*(\\\\[A-Za-z_\x80-\xff][\w\x80-\xff]*)*$/', $id) !== 1) {
-            throw new AspectException("Lazy service id must be a valid class name, \"$id\" given");
+            throw new InvalidArgumentException("Lazy service id must be a valid class name, \"$id\" given");
         }
         $this->factories[$id] = $lazyInitializationClosure;
-        unset($this->factoryValidators[$id]);
+
+        // With no listeners registered (the production configuration) this is a no-op and
+        // nothing below autoloads; a registered listener accepts the is_subclass_of()
+        // autoload of matching ids as its cost.
+        foreach ($this->registrationListeners as $interfaceName => $listeners) {
+            if (is_subclass_of($id, $interfaceName)) {
+                foreach ($listeners as $listener) {
+                    $listener($id, $this);
+                }
+            }
+        }
     }
 
     final public function getService(string $className): object
     {
-        if (!isset($this->values[$className]) && isset($this->factories[$className])) {
-            $this->materializeService($className);
-        }
-        if (!isset($this->values[$className])) {
-            throw new OutOfBoundsException("Value $className is not defined in the container");
-        }
-        if (!$this->values[$className] instanceof $className) {
-            throw new AspectException("Service $className is not properly registered");
+        $service = $this->getValue($className);
+        if (!$service instanceof $className) {
+            throw new UnexpectedValueException("Service $className is not properly registered");
         }
 
-        return $this->values[$className];
+        return $service;
     }
 
     final public function getValue(string $key): mixed
@@ -291,11 +162,10 @@ class Container implements AspectContainer
      * Materializes a deferred service into a container entry and tags it by its interfaces.
      *
      * Where the class supports it, the entry becomes a native lazy proxy
-     * ({@see ReflectionClass::newLazyProxy()}): a typed, instanceof-correct instance of the
-     * service class whose factory only runs on first actual interaction with the object.
-     * Classes that PHP cannot make lazy (internal classes and their non-stdClass subclasses,
-     * abstract classes, enums, readonly classes before PHP 8.5) and ids that are not loadable
-     * classes fall back to invoking the factory eagerly, as before.
+     * ({@see NativeLazyProxy}): a typed, instanceof-correct instance of the service class
+     * whose factory only runs on first actual interaction with the object. Classes that
+     * PHP cannot make lazy and ids that are not loadable classes fall back to invoking
+     * the factory eagerly, as before.
      */
     private function materializeService(string $id): void
     {
@@ -307,10 +177,6 @@ class Container implements AspectContainer
         // Unset before touching the class: autoloading (class_exists/reflection below) or an
         // eager fallback factory can re-enter the container and must not materialize $id twice
         unset($this->factories[$id]);
-
-        $validator = $this->factoryValidators[$id] ?? null;
-        unset($this->factoryValidators[$id]);
-        $validator?->__invoke();
 
         $this->add($id, $this->createLazyService($id, $factory));
     }
@@ -326,56 +192,15 @@ class Container implements AspectContainer
         if (!class_exists($id)) {
             return $factory($this);
         }
-        $reflection = new ReflectionClass($id);
-        if (!self::isLazyProxyCompatible($reflection)) {
-            return $factory($this);
-        }
 
-        return $reflection->newLazyProxy(function () use ($id, $factory): object {
+        return NativeLazyProxy::tryCreate($id, function () use ($id, $factory): object {
             $instance = $factory($this);
             if (!$instance instanceof $id) {
-                throw new AspectException("Service $id is not properly registered");
+                throw new UnexpectedValueException("Service $id is not properly registered");
             }
 
             return $instance;
-        });
-    }
-
-    /**
-     * Whether PHP can create a native lazy proxy for the given class
-     *
-     * @param ReflectionClass<covariant object> $reflection
-     */
-    private static function isLazyProxyCompatible(ReflectionClass $reflection): bool
-    {
-        if ($reflection->isInternal() || $reflection->isAbstract() || $reflection->isEnum()) {
-            return false;
-        }
-        // Lazy objects for readonly classes are only supported since PHP 8.5
-        if (PHP_VERSION_ID < 80500 && $reflection->isReadOnly()) {
-            return false;
-        }
-        // PHP creates lazy objects of classes without instance properties as already
-        // initialized, so the initializer (and with it the service factory) would never
-        // run - such services keep the eager construction path
-        $hasInstanceProperties = false;
-        foreach ($reflection->getProperties() as $property) {
-            if (!$property->isStatic() && !$property->isVirtual()) {
-                $hasInstanceProperties = true;
-                break;
-            }
-        }
-        if (!$hasInstanceProperties) {
-            return false;
-        }
-        // Subclasses of internal classes (other than stdClass) cannot be lazy
-        for ($parent = $reflection->getParentClass(); $parent !== false; $parent = $parent->getParentClass()) {
-            if ($parent->isInternal()) {
-                return $parent->getName() === 'stdClass';
-            }
-        }
-
-        return true;
+        }) ?? $factory($this);
     }
 
     final public function isFreshSince(int $timestamp): bool
@@ -387,14 +212,7 @@ class Container implements AspectContainer
         return $this->cachedMaxTimestamp <= $timestamp;
     }
 
-    /**
-     * Adds a link to the file resource into the container
-     *
-     * This set of resources is used later to check the freshness of cache
-     *
-     * @param string $resource Path to the resource
-     */
-    final protected function addResource(string $resource): void
+    final public function addResource(string $resource): void
     {
         if (!isset($this->resources[$resource]) && is_readable($resource)) {
             $this->resources[$resource] = $resource;

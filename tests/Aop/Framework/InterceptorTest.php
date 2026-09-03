@@ -31,7 +31,7 @@ final class InterceptorTest extends TestCase
     {
         $kernel    = InterceptorTestAspectKernel::getInstance();
         $container = new Container();
-        $container->registerAspect(new InterceptorTestAspect());
+        $container->add(InterceptorTestAspect::class, new InterceptorTestAspect());
 
         $containerProperty = new ReflectionProperty(AspectKernel::class, 'container');
         $containerProperty->setValue($kernel, $container);
@@ -116,7 +116,7 @@ final class InterceptorTestAspectKernel extends AspectKernel
 {
     protected function configureAop(AspectContainer $container): void
     {
-        $container->registerAspect(new InterceptorTestAspect());
+        $container->add(InterceptorTestAspect::class, new InterceptorTestAspect());
     }
 }
 

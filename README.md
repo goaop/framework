@@ -304,7 +304,9 @@ Interceptor::around(The::advice('advisor.Demo\Aspect\DynamicMethodsAspect->aroun
 
 ### 5. Register the aspect in the aspect kernel
 
-To register the aspect just add an instance of it in the `configureAop()` method of the kernel:
+An aspect is a typical container service. Add it in the `configureAop()` method of the
+kernel, either eagerly as an instance or - preferably - as a deferred definition that is
+only constructed when one of its advices actually runs:
 
 ```php
 <?php
@@ -316,7 +318,10 @@ use Aspect\MonitorAspect;
 
     protected function configureAop(AspectContainer $container)
     {
-        $container->registerAspect(new MonitorAspect());
+        // Deferred (recommended): constructed on first use
+        $container->addLazyService(MonitorAspect::class, static fn() => new MonitorAspect());
+
+        // Eager alternative: $container->add(MonitorAspect::class, new MonitorAspect());
     }
 
 //...

@@ -24,15 +24,15 @@ class DefaultAspectKernel extends AspectKernel
      */
     protected function configureAop(AspectContainer $container): void
     {
-        $container->registerAspect(LoggingAspect::class, fn(): LoggingAspect => new LoggingAspect(new NullLogger()));
-        $container->registerAspect(DoSomethingAspect::class);
-        $container->registerAspect(ArrayPropertyInterceptAspect::class);
-        $container->registerAspect(PropertyInterceptAspect::class);
-        $container->registerAspect(PromotedPropertyInterceptAspect::class);
-        $container->registerAspect(Issue293Aspect::class);
-        $container->registerAspect(InitializationAspect::class);
-        $container->registerAspect(WeavingAspect::class);
-        $container->registerAspect(TraitCompositionAspect::class);
-        $container->registerAspect(EnumMethodAspect::class);
+        $container->addLazyService(LoggingAspect::class, fn(): LoggingAspect => new LoggingAspect(new NullLogger()));
+        $container->addLazyService(DoSomethingAspect::class, fn(): DoSomethingAspect => new DoSomethingAspect());
+        $container->addLazyService(ArrayPropertyInterceptAspect::class, fn(): ArrayPropertyInterceptAspect => new ArrayPropertyInterceptAspect());
+        $container->addLazyService(PropertyInterceptAspect::class, fn(): PropertyInterceptAspect => new PropertyInterceptAspect());
+        $container->addLazyService(PromotedPropertyInterceptAspect::class, fn(): PromotedPropertyInterceptAspect => new PromotedPropertyInterceptAspect());
+        $container->addLazyService(Issue293Aspect::class, fn(): Issue293Aspect => new Issue293Aspect());
+        $container->addLazyService(InitializationAspect::class, fn(): InitializationAspect => new InitializationAspect());
+        $container->addLazyService(WeavingAspect::class, fn(): WeavingAspect => new WeavingAspect());
+        $container->addLazyService(TraitCompositionAspect::class, fn(): TraitCompositionAspect => new TraitCompositionAspect());
+        $container->addLazyService(EnumMethodAspect::class, fn(): EnumMethodAspect => new EnumMethodAspect());
     }
 }

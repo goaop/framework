@@ -14,7 +14,6 @@ namespace Go\Core;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
@@ -22,9 +21,7 @@ use Go\Core\Cache\CachedAspectLoader;
 use Go\Stubs\First;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
-use Go\Tests\TestProject\Aspect\LoggingAspect;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
 use stdClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -49,6 +46,7 @@ class ContainerTest extends TestCase
         $this->container->add(AspectKernel::class, $mockKernel);
         $this->container->add('kernel.options', ['cacheDir' => '/tmp']);
         $this->container->add('kernel.interceptFunctions', false);
+        FrameworkServices::register($this->container);
     }
 
     /**
@@ -107,14 +105,14 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * Tests that aspect can be registered and accessed
+     * Tests that an aspect registered as a plain eager service is tagged as an aspect
      */
     public function testAspectCanBeRegisteredAndReceived(): void
     {
         $aspect      = $this->createMock(Aspect::class);
         $aspectClass = $aspect::class;
 
-        $this->container->registerAspect($aspect);
+        $this->container->add($aspectClass, $aspect);
 
         $this->assertSame($aspect, $this->container->getService($aspectClass));
         // Verify that tag is working
@@ -170,7 +168,7 @@ class ContainerTest extends TestCase
 
     public function testGetServiceEnsuresThatKeyAndReturnedTypeMatches(): void
     {
-        $this->expectException(AspectException::class);
+        $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Service ' . First::class . ' is not properly registered');
 
         // Emulation of incorrect types
@@ -216,43 +214,54 @@ class ContainerTest extends TestCase
 
     public function testLazyServiceRejectsNonClassNameId(): void
     {
-        $this->expectException(AspectException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessageMatches('/Lazy service id must be a valid class name/');
         // @phpstan-ignore argument.type (the invalid service id is the test subject)
         $this->container->addLazyService('kernel.not-a-class', fn(): PointcutLexer => new PointcutLexer());
     }
 
+    public function testLazyServiceFactoryReturningWrongTypeFailsOnFirstUse(): void
+    {
+        $this->container->addLazyService(StatefulTestAspect::class, fn(): object => new stdClass());
+
+        $aspect = $this->container->getService(StatefulTestAspect::class);
+
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Service ' . StatefulTestAspect::class . ' is not properly registered');
+        (new \ReflectionClass(StatefulTestAspect::class))->initializeLazyObject($aspect);
+    }
+
     public function testAspectRegisteredByClassNameIsConstructedOnFirstUse(): void
     {
         $constructed = false;
-        $this->container->registerAspect(
-            LoggingAspect::class,
-            function () use (&$constructed): LoggingAspect {
+        $this->container->addLazyService(
+            StatefulTestAspect::class,
+            function () use (&$constructed): StatefulTestAspect {
                 $constructed = true;
 
-                return new LoggingAspect(new NullLogger());
+                return new StatefulTestAspect(42);
             },
         );
 
-        $this->assertTrue($this->container->has(LoggingAspect::class));
+        $this->assertTrue($this->container->has(StatefulTestAspect::class));
         $this->assertFalse($constructed, 'Aspect should not have been constructed at registration');
 
         // Retrieval returns an instanceof-correct lazy object, construction is still deferred
-        $aspect = $this->container->getService(LoggingAspect::class);
+        $aspect = $this->container->getService(StatefulTestAspect::class);
         // @phpstan-ignore method.alreadyNarrowedType (runtime double-check that the lazy proxy reports the right class)
-        $this->assertInstanceOf(LoggingAspect::class, $aspect);
+        $this->assertInstanceOf(StatefulTestAspect::class, $aspect);
         // @phpstan-ignore method.alreadyNarrowedType (the flag can be flipped by reference inside the service factory)
         $this->assertFalse($constructed, 'Aspect should not have been constructed by retrieval');
 
         // First real interaction with the aspect object triggers the factory
-        (new \ReflectionClass(LoggingAspect::class))->initializeLazyObject($aspect);
+        (new \ReflectionClass(StatefulTestAspect::class))->initializeLazyObject($aspect);
         // @phpstan-ignore method.impossibleType (the flag is flipped by reference inside the service factory)
         $this->assertTrue($constructed);
     }
 
     public function testLazyAspectAppearsInAspectInterfaceQuery(): void
     {
-        $this->container->registerAspect(DoSomethingAspect::class);
+        $this->container->addLazyService(DoSomethingAspect::class, fn(): DoSomethingAspect => new DoSomethingAspect());
 
         $aspects = $this->container->getServicesByInterface(Aspect::class);
         $this->assertArrayHasKey(DoSomethingAspect::class, $aspects);
@@ -262,7 +271,7 @@ class ContainerTest extends TestCase
     public function testLazyAspectEnumerationHandsOutUninitializedLazyObjects(): void
     {
         $constructed = false;
-        $this->container->registerAspect(
+        $this->container->addLazyService(
             StatefulTestAspect::class,
             function () use (&$constructed): StatefulTestAspect {
                 $constructed = true;
@@ -293,7 +302,7 @@ class ContainerTest extends TestCase
         // PHP creates lazy objects of property-less classes as already initialized,
         // which would silently skip the factory - the container must construct these eagerly
         $constructed = false;
-        $this->container->registerAspect(
+        $this->container->addLazyService(
             DoSomethingAspect::class,
             function () use (&$constructed): DoSomethingAspect {
                 $constructed = true;
@@ -308,32 +317,12 @@ class ContainerTest extends TestCase
         $this->assertTrue($constructed, 'Factory of a property-less service must run at materialization');
     }
 
-    public function testLazyAspectWithRequiredConstructorArgsNeedsFactory(): void
-    {
-        // LoggingAspect requires a LoggerInterface constructor argument
-        $this->container->registerAspect(LoggingAspect::class);
-
-        $this->expectException(AspectException::class);
-        $this->expectExceptionMessageMatches('/pass a factory closure/');
-        $this->container->getService(LoggingAspect::class);
-    }
-
-    public function testLazyAspectMustImplementAspectInterface(): void
-    {
-        // @phpstan-ignore argument.type (a non-aspect class is the test subject)
-        $this->container->registerAspect(stdClass::class);
-
-        $this->expectException(AspectException::class);
-        $this->expectExceptionMessageMatches('/must implement/');
-        $this->container->getService(stdClass::class);
-    }
-
     public function testReRegisteringPendingFactoryKeepsTagOrderAndReplacesFactory(): void
     {
         // Downstream kernels replace built-in pipeline services by re-registering the
         // same id; the replacement must keep the id's position in the chain order
-        $this->container->registerAspect(DoSomethingAspect::class);
-        $this->container->registerAspect(EnumMethodAspect::class);
+        $this->container->addLazyService(DoSomethingAspect::class, fn(): DoSomethingAspect => new DoSomethingAspect());
+        $this->container->addLazyService(EnumMethodAspect::class, fn(): EnumMethodAspect => new EnumMethodAspect());
 
         $replaced = false;
         $this->container->addLazyService(DoSomethingAspect::class, function () use (&$replaced): DoSomethingAspect {
@@ -354,7 +343,7 @@ class ContainerTest extends TestCase
         // A factory that re-enters getServicesByInterface() consumes other pending
         // factories from under the outer materialization loop (this also happens
         // implicitly when an aspect class is autoloaded through the weaving pipeline)
-        $this->container->registerAspect(
+        $this->container->addLazyService(
             DoSomethingAspect::class,
             function (AspectContainer $container): DoSomethingAspect {
                 $container->getServicesByInterface(Aspect::class);
@@ -362,11 +351,53 @@ class ContainerTest extends TestCase
                 return new DoSomethingAspect();
             },
         );
-        $this->container->registerAspect(EnumMethodAspect::class);
+        $this->container->addLazyService(EnumMethodAspect::class, fn(): EnumMethodAspect => new EnumMethodAspect());
 
         $aspects = $this->container->getServicesByInterface(Aspect::class);
         $this->assertArrayHasKey(DoSomethingAspect::class, $aspects);
         $this->assertArrayHasKey(EnumMethodAspect::class, $aspects);
+    }
+
+    public function testRegistrationListenerFiresForMatchingLazyIdsOnly(): void
+    {
+        $seen = [];
+        $this->container->onRegistration(Aspect::class, function (string $id, AspectContainer $container) use (&$seen): void {
+            $seen[] = $id;
+            $this->assertSame($this->container, $container);
+        });
+
+        $constructed = false;
+        $this->container->addLazyService(StatefulTestAspect::class, function () use (&$constructed): StatefulTestAspect {
+            $constructed = true;
+
+            return new StatefulTestAspect(1);
+        });
+        // A non-aspect deferred service must not fire the aspect listener
+        $this->container->addLazyService(PointcutLexer::class, fn(): PointcutLexer => new PointcutLexer());
+
+        $this->assertSame([StatefulTestAspect::class], $seen);
+        // The listener operates on ids only - the factory must not have run
+        $this->assertFalse($constructed, 'Registration listener must not defeat laziness');
+    }
+
+    public function testRegistrationListenerEnablesDebugResourceTracking(): void
+    {
+        // Emulates the debug-mode listener armed by AspectKernel::init(): every lazily
+        // registered aspect's source file becomes a tracked resource at registration time
+        $this->container->onRegistration(Aspect::class, function (string $id, AspectContainer $container): void {
+            $fileName = (new \ReflectionClass($id))->getFileName();
+            if (is_string($fileName)) {
+                $container->addResource($fileName);
+            }
+        });
+
+        $this->container->addLazyService(DoSomethingAspect::class, fn(): DoSomethingAspect => new DoSomethingAspect());
+
+        $fileName = (new \ReflectionClass(DoSomethingAspect::class))->getFileName();
+        $this->assertNotFalse($fileName);
+        $realMtime = filemtime($fileName);
+        $this->assertNotFalse($realMtime);
+        $this->assertFalse($this->container->isFreshSince($realMtime - 3600), 'Aspect file must be tracked before materialization');
     }
 }
 

@@ -31,6 +31,7 @@ use Go\Aop\Pointcut\TruePointcut;
 use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\Aop\Support\LazyPointcutAdvisor;
 use Go\Core\Container;
+use Go\Core\FrameworkServices;
 use Go\Tests\TestProject\Annotation\Loggable;
 use Go\Tests\TestProject\Application\BehaviorTrait;
 use Go\Tests\TestProject\Application\FooInterface;
@@ -168,8 +169,10 @@ class AdvisorCacheCompilerTest extends TestCase
     {
         $aspect        = new DoSomethingAspect();
         $adviceClosure = new ReflectionMethod(DoSomethingAspect::class, 'afterDoSomething')->getClosure($aspect);
+        $container     = new Container();
+        FrameworkServices::register($container);
         $lazyAdvisor   = new LazyPointcutAdvisor(
-            new Container(),
+            $container,
             'execution(public Go\Tests\TestProject\Application\*->doSomething(*))',
             new AfterInterceptor($adviceClosure),
         );
