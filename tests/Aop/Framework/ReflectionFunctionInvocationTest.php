@@ -100,4 +100,49 @@ class ReflectionFunctionInvocationTest extends TestCase
         // @phpstan-ignore method.impossibleType ($matches is filled by reference inside the invocation)
         $this->assertSame(['123', '123'], $matches);
     }
+
+    /**
+     * getFunction() exposes the underlying ReflectionFunction instance.
+     */
+    public function testGetFunctionReturnsReflectionFunction(): void
+    {
+        $invocation = new ReflectionFunctionInvocation([], 'strlen', \strlen(...));
+
+        $this->assertSame('strlen', $invocation->getFunction()->getName());
+    }
+
+    /**
+     * __toString() produces a friendly `execution(functionName())` description.
+     */
+    public function testToStringDescribesFunctionExecution(): void
+    {
+        $invocation = new ReflectionFunctionInvocation([], 'strlen', \strlen(...));
+
+        $this->assertSame('execution(strlen())', (string) $invocation);
+    }
+
+    /**
+     * Recursive invocations (the callable calling the same joinpoint again) must push
+     * the current arguments/cursor onto a stack and restore them once the nested call
+     * unwinds, so the outer call resumes with its own arguments intact.
+     */
+    public function testRecursiveInvocationPreservesOuterStackFrame(): void
+    {
+        $invocation = null;
+        $callable   = static function (int $n) use (&$invocation): int {
+            if ($n <= 0) {
+                return 0;
+            }
+
+            /** @var ReflectionFunctionInvocation $invocation */
+            return $n + $invocation([$n - 1]);
+        };
+        $invocation = new ReflectionFunctionInvocation([], 'strlen', $callable);
+
+        $result = $invocation([3]);
+
+        $this->assertSame(6, $result);
+        // Outer call's arguments must be restored after the nested recursive calls unwind.
+        $this->assertSame([3], $invocation->getArguments());
+    }
 }
