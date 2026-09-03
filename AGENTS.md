@@ -5,6 +5,7 @@ AOP via source transformation at load time (stream filter, no PECL, no eval).
 ## Agent gate
 - PHP 8.4+ required. If PHP 8.3 or less → STOP, report can't run tests/phpstan.
 - Gate: `composer analyze` before commit (phpstan level 10).
+- Remote session (Claude Code on the web): `composer install` dies on phpstan/phpstan and Functional tests fail under PHP 8.5 JIT → recipes in `tests/AGENTS.md` § Remote sessions.
 
 ## Commands
 | Action    | Command                                                               |
