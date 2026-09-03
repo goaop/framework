@@ -27,21 +27,41 @@
 ## Remote sessions (Claude Code on the web) — install and gate pitfalls
 Diagnosed 2026-09-03; both symptoms hit every fresh remote session of this repo.
 
-### `composer install` dies with "Could not authenticate against github.com" on phpstan/phpstan
-- Cause 1: the session's egress proxy serves GitHub HTTPS only for repos attached to the session
-  (this repo). Every other `api.github.com/repos/<vendor>/<pkg>/zipball/...` (and codeload / archive URLs)
-  answers `403 "GitHub access to this repository is not enabled for this session"` — also with a token.
-  Composer then falls back to `source` (a `git clone`), and anonymous git reads of public repos DO pass
-  the proxy, so every other package installs (slowly: ~80 failed dist attempts, some as "Proxy CONNECT
-  aborted due to timeout").
-- Cause 2: phpstan/phpstan ships dist only. Its packagist metadata and composer.lock entry have
-  `"source": null` (the repo's composer.json even declares an empty `source` block on purpose; the
-  code lives in phpstan/phpstan-src, the package is just the phar). No fallback → the whole install aborts.
-- Neither `add_repo` (read = git only, API stays closed) nor `COMPOSER_AUTH`/`GITHUB_TOKEN` helps.
-- Fix: seed composer's dist cache with a zip built from a shallow git clone of the release tag.
-  Composer looks up `<cache-files-dir>/phpstan/phpstan/<sha1(dist url)>.zip` and, since the lock carries
-  no shasum for it, uses the file as-is. Then install with `--prefer-source` so the other packages skip
-  the doomed dist attempts.
+### `composer install` is slow (everything from source) and dies on phpstan/phpstan
+What blocks dist installs:
+- The session's GitHub proxy serves `api.github.com` / `codeload.github.com` / `github.com/*/archive` only
+  for repos attached to the session (this one). Every other package's zipball answers
+  `403 "GitHub access to this repository is not enabled for this session"` — with or without a token,
+  so no `COMPOSER_AUTH`/`github-oauth` setting and no composer option can fix it. `add_repo` does not
+  open it either (read = git only; API needs an attached repo with credentials, refused cross-owner).
+- Composer then falls back to `source` per package (full `git clone` into ~/.cache/composer/vcs):
+  anonymous git reads of public repos DO pass the proxy, so it works, but ~80 failed dist attempts
+  (some as "Proxy CONNECT aborted due to timeout") plus 80 clones take 70–85 s instead of ~30 s.
+- phpstan/phpstan has no `source` at all: packagist metadata and composer.lock say `"source": null`
+  (its composer.json declares an empty `source` block on purpose; the code lives in phpstan/phpstan-src,
+  the package is just the phar). Nothing to fall back to → the whole install aborts with
+  "Could not authenticate against github.com".
+
+Fix A (recommended, dist for everything, ~30 s): point composer at a packagist mirror that hosts its own
+dist zips. Non-GitHub hosts are not gated by the proxy. Verified: mirrors.cloud.tencent.com rewrites
+every dist URL to its own host, is up to date with packagist (same-day releases), and its zips are
+byte-identical to the GitHub tags (checked phpstan.phar sha256 against the git tag and the release
+asset). Not usable: mirrors.aliyun.com (declares dist mirrors but serves 404), mirrors.huaweicloud.com
+(rewrites URLs, serves 404), packagist.jp (metadata only, dists stay on GitHub).
+
+```bash
+# global (session-local) composer config, composer.json stays untouched; composer.lock is gitignored,
+# so remove a stale lock (it would pin api.github.com dist URLs) and let install resolve via the mirror
+COMPOSER_ALLOW_SUPERUSER=1 composer config -g repos.packagist composer https://mirrors.cloud.tencent.com/composer
+rm -f composer.lock
+COMPOSER_ALLOW_SUPERUSER=1 composer install --no-interaction     # 83 × "Extracting archive", 0 fallbacks
+./vendor/bin/phpstan --version                                   # → PHPStan 2.x
+```
+
+Fix B (fallback when the mirror is unreachable): seed composer's dist cache for phpstan/phpstan with a
+zip built from a shallow git clone of the release tag. Composer looks up
+`<cache-files-dir>/phpstan/phpstan/<sha1(dist url)>.zip` and, since the lock carries no shasum for it,
+uses the file as-is. `--prefer-source` makes the other packages skip the doomed dist attempts.
 
 ```bash
 # composer.lock is gitignored: resolve it first, without downloading (packagist metadata is reachable)
