@@ -12,8 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Go\Proxy\Generator\MethodGenerator;
 use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
+use PhpParser\Node\Stmt\ClassMethod;
 use ReflectionMethod;
 
 use function preg_replace;
@@ -41,6 +43,24 @@ class InterceptedMethodGeneratorTest extends TestCase
         // Remove trailing spaces and empty function body
         $generatedCode = trim($generatedCode, "\n{} ");
         $this->assertSame($expectedSignature, $generatedCode);
+    }
+
+    public function testAccessorsExposeUnderlyingGeneratorState(): void
+    {
+        $reflectionMethod = new ReflectionMethod(First::class, 'privateMethod');
+        $generator         = new InterceptedMethodGenerator($reflectionMethod, 'return 1;');
+
+        $this->assertSame('privateMethod', $generator->getName());
+        $this->assertSame('return 1;', $generator->getBody());
+
+        $generator->setBody('return 2;');
+        $this->assertSame('return 2;', $generator->getBody());
+
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
+        $this->assertInstanceOf(ClassMethod::class, $generator->getNode());
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
+        $this->assertInstanceOf(MethodGenerator::class, $generator->getGenerator());
+        $this->assertStringContainsString('return 2;', $generator->generate());
     }
 
     /**

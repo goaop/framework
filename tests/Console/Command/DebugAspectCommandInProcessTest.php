@@ -12,10 +12,16 @@ declare(strict_types=1);
 
 namespace Go\Console\Command;
 
+use Go\Aop\Advisor;
 use Go\Aop\Aspect;
+use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Core\AspectLoader;
+use Go\Tests\TestProject\Aspect\LoggingAspect;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use stdClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -50,7 +56,77 @@ class DebugAspectCommandInProcessTest extends TestCase
         $kernel = $this->createStub(AspectKernel::class);
         $kernel->method('getContainer')->willReturn($container);
 
-        $command = new class ($kernel) extends DebugAspectCommand {
+        $command = $this->makeCommandWithKernel($kernel);
+
+        $tester   = new CommandTester($command);
+        $exitCode = $tester->execute(['loader' => 'unused.php']);
+
+        $this->assertSame(Command::SUCCESS, $exitCode);
+        $this->assertStringContainsString('Aspect debug information', $tester->getDisplay());
+        $this->assertStringContainsString('has following enabled aspects', $tester->getDisplay());
+    }
+
+    public function testExecuteWithUnknownAspectOptionShowsNoAspects(): void
+    {
+        $container = $this->createStub(AspectContainer::class);
+
+        $kernel = $this->createStub(AspectKernel::class);
+        $kernel->method('getContainer')->willReturn($container);
+
+        $command = $this->makeCommandWithKernel($kernel);
+
+        $tester   = new CommandTester($command);
+        $exitCode = $tester->execute(['loader' => 'unused.php', '--aspect' => 'Not\\An\\Aspect']);
+
+        $this->assertSame(Command::SUCCESS, $exitCode);
+        $this->assertStringContainsString('Aspect debug information', $tester->getDisplay());
+        $this->assertStringNotContainsString('has following enabled aspects', $tester->getDisplay());
+    }
+
+    public function testExecuteFiltersByAspectOptionAndShowsPointcutsAndAdvisors(): void
+    {
+        $logger = $this->createStub(LoggerInterface::class);
+        $aspect = new LoggingAspect($logger);
+
+        $aspectLoader = $this->createStub(AspectLoader::class);
+        $aspectLoader->method('load')->willReturn([
+            'a.pointcut' => $this->createStub(Pointcut::class),
+            'a.advisor'  => $this->createStub(Advisor::class),
+            'a.unknown'  => new stdClass(),
+        ]);
+
+        $container = $this->createStub(AspectContainer::class);
+        $container->method('getService')->willReturnMap([
+            [AspectLoader::class, $aspectLoader],
+            [LoggingAspect::class, $aspect],
+        ]);
+
+        $kernel = $this->createStub(AspectKernel::class);
+        $kernel->method('getContainer')->willReturn($container);
+
+        $command = $this->makeCommandWithKernel($kernel);
+
+        $tester   = new CommandTester($command);
+        $exitCode = $tester->execute(['loader' => 'unused.php', '--aspect' => LoggingAspect::class]);
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(Command::SUCCESS, $exitCode);
+        $this->assertStringContainsString(LoggingAspect::class, $display);
+        $this->assertStringContainsString('Defined in:', $display);
+        $this->assertStringContainsString('Application logging aspect', $display);
+        $this->assertStringContainsString('Pointcuts and advices', $display);
+        $this->assertStringContainsString('Pointcut', $display);
+        $this->assertStringContainsString('a.pointcut', $display);
+        $this->assertStringContainsString('Advisor', $display);
+        $this->assertStringContainsString('a.advisor', $display);
+        $this->assertStringContainsString('Unknown', $display);
+        $this->assertStringContainsString('a.unknown', $display);
+    }
+
+    private function makeCommandWithKernel(AspectKernel $kernel): DebugAspectCommand
+    {
+        return new class ($kernel) extends DebugAspectCommand {
             public function __construct(private readonly AspectKernel $kernel)
             {
                 parent::__construct();
@@ -61,12 +137,5 @@ class DebugAspectCommandInProcessTest extends TestCase
                 $this->aspectKernel = $this->kernel;
             }
         };
-
-        $tester   = new CommandTester($command);
-        $exitCode = $tester->execute(['loader' => 'unused.php']);
-
-        $this->assertSame(Command::SUCCESS, $exitCode);
-        $this->assertStringContainsString('Aspect debug information', $tester->getDisplay());
-        $this->assertStringContainsString('has following enabled aspects', $tester->getDisplay());
     }
 }
