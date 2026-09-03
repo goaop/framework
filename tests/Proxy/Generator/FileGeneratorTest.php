@@ -51,4 +51,29 @@ class FileGeneratorTest extends TestCase
         $output = $gen->generate();
         $this->assertStringContainsString('declare(strict_types=1)', $output);
     }
+
+    public function testAddUseWithoutAlias(): void
+    {
+        $gen = new FileGenerator();
+        $gen->addUse('My\Namespace\Foo');
+        $output = $gen->generate();
+        $this->assertStringContainsString('use My\Namespace\Foo;', $output);
+        $this->assertStringNotContainsString(' as ', $output);
+    }
+
+    public function testAddUseWithAlias(): void
+    {
+        $gen = new FileGenerator();
+        $gen->addUse('My\Namespace\Foo', 'Bar');
+        $output = $gen->generate();
+        $this->assertStringContainsString('use My\Namespace\Foo as Bar;', $output);
+    }
+
+    public function testEmptyStringNamespaceIsTreatedAsNoNamespace(): void
+    {
+        $gen = new FileGenerator();
+        $gen->namespace = '';
+        $output = $gen->generate();
+        $this->assertStringNotContainsString('namespace', $output);
+    }
 }

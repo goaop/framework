@@ -754,6 +754,382 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * Traits keep the legacy weaving strategy: the original trait is renamed to
+     * <Name>__AopProxied in place (adjustOriginalTrait) and TraitProxyGenerator emits a child
+     * trait with the original name. Intercepted properties are commented out of the original
+     * trait body — the child trait re-declares them with interception hooks.
+     */
+    public function testWeaverForTraitRenamesOriginalTraitAndMovesInterceptedProperties(): void
+    {
+        $classFqn    = Stubs\WeavingTraitStub::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::PROPERTY_PREFIX => [
+                'interceptedProperty' => ["advisor.{$classFqn}->interceptedProperty" => new BeforeInterceptor(static function (): void {})],
+            ],
+            AspectContainer::METHOD_PREFIX => [
+                'traitMethod' => ["advisor.{$classFqn}->traitMethod" => new BeforeInterceptor(static function (): void {})],
+            ],
+            AspectContainer::STATIC_METHOD_PREFIX => [
+                'traitStaticMethod' => ["advisor.{$classFqn}->traitStaticMethod" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('WeavingTraitStub');
+        $transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+
+        // The trait keyword stays a trait, only the name gets the __AopProxied suffix
+        $this->assertStringContainsString('trait WeavingTraitStub__AopProxied', $actual);
+        $this->assertStringNotContainsString('trait WeavingTraitStub' . PHP_EOL, $actual);
+
+        // Intercepted property is commented out, the untouched one survives verbatim
+        $this->assertStringContainsString(
+            "// public string \$interceptedProperty = 'initial'; // Moved by weaving interceptor to the {@see {$classFqn}->interceptedProperty}",
+            $actual,
+        );
+        $this->assertStringContainsString('protected int $plainProperty = 0;', $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+
+        // The generated child trait keeps the original short name and uses the renamed trait
+        $this->assertStringContainsString('trait WeavingTraitStub', $proxyContent);
+        $this->assertStringContainsString('WeavingTraitStub__AopProxied', $proxyContent);
+        $this->assertStringContainsString('__aop__traitMethod', $proxyContent);
+        $this->assertStringContainsString('__aop__traitStaticMethod', $proxyContent);
+        $this->assertStringContainsString('$interceptedProperty', $proxyContent);
+    }
+
+    /**
+     * `abstract` is a class-only modifier — convertClassToTrait() must drop it, otherwise the
+     * woven file would contain the invalid `abstract trait ...` declaration. Abstract *methods*
+     * remain legal inside the trait and must be kept.
+     */
+    public function testWeaverStripsAbstractModifierFromWovenTrait(): void
+    {
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'concreteMethod' => ['advisor.Test\ns1\TestAbstractClass->concreteMethod' => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadTestMetadata('abstract-class');
+        $transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+
+        $this->assertStringContainsString('trait TestAbstractClass__AopProxied', $actual);
+        $this->assertStringNotContainsString('abstract trait', $actual);
+        $this->assertStringNotContainsString('abstract class', $actual);
+        // Abstract methods are legal in traits and must survive untouched
+        $this->assertStringContainsString('abstract public function abstractMethod(): string;', $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+        $this->assertStringContainsString('abstract class TestAbstractClass', $proxyContent);
+    }
+
+    /**
+     * When the trait-incompatible marker is the last entry of a grouped attribute
+     * (`#[\FakeMarkerAttr, \Attribute]`) there is no trailing comma to remove, so the
+     * *leading* comma has to be dropped instead — otherwise the woven trait would carry
+     * the syntactically invalid `#[\FakeMarkerAttr, ]`.
+     */
+    public function testWeaverRemovesLeadingCommaWhenIncompatibleAttributeIsLastInGroup(): void
+    {
+        $metadata = $this->loadTestMetadata('php80-attribute-class-last');
+        $this->transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+
+        $this->assertStringContainsString('#[\FakeMarkerAttr]', $actual);
+        $this->assertStringNotContainsString('\Attribute', $actual);
+        $this->assertStringNotContainsString('#[\FakeMarkerAttr,', $actual);
+        $this->assertStringContainsString('trait TestLastGroupedAttributeClass__AopProxied', $actual);
+
+        // The woven trait must still be parseable PHP after the comma surgery
+        $parser = (new \PhpParser\ParserFactory())->createForHostVersion();
+        $traitSource = preg_replace('/^include_once AOP_CACHE_DIR.*$/m', '', $metadata->source);
+        $this->assertNotNull($parser->parse((string) $traitSource));
+
+        // ...and the proxy class keeps the original attribute group untouched
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertStringContainsString('#[\Attribute]', $proxyContent);
+    }
+
+    /**
+     * Attribute groups around a promoted constructor property must be skipped as a whole while
+     * the property is demoted to a plain parameter (issue #599): their arguments may contain
+     * arbitrary nested brackets, and the attributes themselves have to stay on the parameter.
+     * The same applies to the attribute group in front of the `function` keyword when the
+     * injected assignment position (constructor body brace) is located.
+     */
+    public function testWeaverDemotesPromotedPropertyWithAttributes(): void
+    {
+        $classFqn    = Stubs\AttributedPromotedClass::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::PROPERTY_PREFIX => [
+                'name' => ["advisor.{$classFqn}->name" => new BeforeInterceptor(static function (): void {})],
+            ],
+            AspectContainer::METHOD_PREFIX => [
+                '__construct' => ["advisor.{$classFqn}->__construct" => new BeforeInterceptor(static function (): void {})],
+                'getName' => ["advisor.{$classFqn}->getName" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('AttributedPromotedClass');
+        $transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+
+        // Both attribute groups survive verbatim...
+        $this->assertStringContainsString('#[MarkerAttribute([1, 2])]', $actual);
+        $this->assertStringContainsString("#[MarkerAttribute(['a' => ['b']])]", $actual);
+        // ...while the promotion modifier is gone and the parameter keeps type + default
+        $this->assertStringNotContainsString("private string \$name = 'initial'", $actual);
+        $this->assertStringContainsString("string \$name = 'initial'", $actual);
+        // The assignment is injected right after the constructor body brace
+        $this->assertStringContainsString('$this->name = $name;', $actual);
+
+        $parser = (new \PhpParser\ParserFactory())->createForHostVersion();
+        $traitSource = preg_replace('/^include_once AOP_CACHE_DIR.*$/m', '', $metadata->source);
+        $this->assertNotNull($parser->parse((string) $traitSource));
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertStringContainsString("private string \$name = 'initial' {", $proxyContent);
+        $this->assertNotNull($parser->parse($proxyContent));
+    }
+
+    /**
+     * Advices matching members that the woven class only inherits must not be looked up in the
+     * woven trait tokens — those declarations live in the parent file, not in the converted
+     * class body. The proxy dispatches the inherited method through the `parent::method(...)`
+     * first-class callable instead of a trait alias.
+     */
+    public function testWeaverInterceptsInheritedMembersWithoutTouchingTraitBody(): void
+    {
+        $classFqn    = Stubs\InheritedMethodChild::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::PROPERTY_PREFIX => [
+                'inheritedProperty' => ["advisor.{$classFqn}->inheritedProperty" => new BeforeInterceptor(static function (): void {})],
+            ],
+            AspectContainer::METHOD_PREFIX => [
+                'inheritedMethod' => ["advisor.{$classFqn}->inheritedMethod" => new BeforeInterceptor(static function (): void {})],
+                'ownMethod' => ["advisor.{$classFqn}->ownMethod" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('InheritedMethodChild');
+        $transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+
+        $this->assertStringContainsString('trait InheritedMethodChild__AopProxied', $actual);
+        // The `extends` clause is moved from the trait to the proxy
+        $this->assertStringNotContainsString('extends InheritedMethodBase', $actual);
+        // Nothing of the parent declarations may be commented out in the child's trait body
+        $this->assertStringNotContainsString('Moved by weaving interceptor', $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+
+        $this->assertStringContainsString(
+            'class InheritedMethodChild extends \Go\Instrument\Transformer\Stubs\InheritedMethodBase',
+            $proxyContent,
+        );
+        // Own method is aliased in the trait-use block, inherited one goes through parent::
+        $this->assertStringContainsString('as private __aop__ownMethod;', $proxyContent);
+        $this->assertStringNotContainsString('__aop__inheritedMethod', $proxyContent);
+        $this->assertStringContainsString('parent::inheritedMethod(...)', $proxyContent);
+    }
+
+    /**
+     * Global functions called from a namespace are woven into a per-namespace proxy file placed
+     * in the `_functions/` cache sub-directory, and the original file receives an include_once
+     * appended to the last token of the namespace.
+     *
+     * The proxy file itself is only (re)built when it is older than the aspect container — an
+     * up-to-date cache file is reused as is, and the include_once is still emitted.
+     */
+    public function testWeaverIncludesFunctionProxyAndReusesFreshCacheFile(): void
+    {
+        $container = $this->createMock(AspectContainer::class);
+        $container
+            ->method('getServicesByInterface')
+            ->willReturnMap([[Advisor::class, []]]);
+        $container
+            ->method('isFreshSince')
+            ->willReturn(true);
+
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher->method('getAdvicesForClass')->willReturn([]);
+        $adviceMatcher->method('getAdvicesForFunctions')->willReturn([
+            AspectContainer::FUNCTION_PREFIX => [
+                'array_product' => ['advisor.functions' => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $kernel = $this->getKernelMock(
+            [
+                'appDir'        => dirname(__DIR__),
+                'cacheDir'      => 'vfs://',
+                'cacheFileMode' => 0770,
+                'includePaths'  => [],
+                'excludePaths'  => [],
+            ],
+            $container,
+        );
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$container])
+            ->getMock();
+        $transformer = new WeavingTransformer(
+            $kernel,
+            $adviceMatcher,
+            new CachePathManager($kernel),
+            $loader,
+        );
+
+        // Pre-create the cache file so that its mtime is compared against the container
+        if (!file_exists('vfs:///_functions/Test')) {
+            mkdir('vfs:///_functions/Test', 0770, true);
+        }
+        file_put_contents('vfs:///_functions/Test/ns1.php', '<?php // already generated');
+
+        $metadata = $this->loadTestMetadata('functions-weaving');
+        $result   = $transformer->transform($metadata);
+
+        $this->assertSame(TransformerResultEnum::RESULT_TRANSFORMED, $result);
+        $this->assertStringContainsString(
+            "include_once AOP_CACHE_DIR . '/_functions/Test/ns1.php';",
+            $this->normalizeWhitespaces($metadata->source),
+        );
+        // The up-to-date file was not regenerated
+        $this->assertSame('<?php // already generated', file_get_contents('vfs:///_functions/Test/ns1.php'));
+    }
+
+    /**
+     * With no cache file yet (or a stale one), processFunctions() must generate and write the
+     * function proxy file itself. The cache dir lives on the vfs:// stream wrapper, and PHP core
+     * rejects the LOCK_EX flag for any non-"file://" stream - file_put_contents() must skip it
+     * there just like saveProxyToCache() already does for the class proxy file.
+     */
+    public function testWeaverGeneratesFunctionProxyCacheFileOnFirstWeave(): void
+    {
+        $container = $this->createMock(AspectContainer::class);
+        $container
+            ->method('getServicesByInterface')
+            ->willReturnMap([[Advisor::class, []]]);
+        $container
+            ->method('isFreshSince')
+            ->willReturn(false);
+
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher->method('getAdvicesForClass')->willReturn([]);
+        $adviceMatcher->method('getAdvicesForFunctions')->willReturn([
+            AspectContainer::FUNCTION_PREFIX => [
+                'array_product' => ['advisor.functions' => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $kernel = $this->getKernelMock(
+            [
+                'appDir'        => dirname(__DIR__),
+                'cacheDir'      => 'vfs://',
+                'cacheFileMode' => 0770,
+                'includePaths'  => [],
+                'excludePaths'  => [],
+            ],
+            $container,
+        );
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$container])
+            ->getMock();
+        $transformer = new WeavingTransformer(
+            $kernel,
+            $adviceMatcher,
+            new CachePathManager($kernel),
+            $loader,
+        );
+
+        // Other tests in this class share the same vfs:// mount and the same fixture namespace;
+        // make sure no stale cache file from a previous test is left over.
+        if (file_exists('vfs:///_functions/Test/ns1.php')) {
+            unlink('vfs:///_functions/Test/ns1.php');
+        }
+
+        $metadata = $this->loadTestMetadata('functions-weaving');
+        $result   = $transformer->transform($metadata);
+
+        $this->assertSame(TransformerResultEnum::RESULT_TRANSFORMED, $result);
+        $this->assertStringContainsString(
+            "include_once AOP_CACHE_DIR . '/_functions/Test/ns1.php';",
+            $this->normalizeWhitespaces($metadata->source),
+        );
+        $this->assertFileExists('vfs:///_functions/Test/ns1.php');
+        $this->assertStringContainsString('array_product', (string) file_get_contents('vfs:///_functions/Test/ns1.php'));
+    }
+
+    /**
+     * Without a cache directory there is nowhere to put the generated proxy, so the class is
+     * still converted to a trait but no include_once is appended and no function proxy is written.
+     */
+    public function testWeaverWithoutCacheDirectoryEmitsNoIncludes(): void
+    {
+        $container = $this->getContainerMock();
+        $kernel    = $this->getKernelMock(
+            [
+                'appDir'        => dirname(__DIR__),
+                'cacheDir'      => null,
+                'cacheFileMode' => 0770,
+                'includePaths'  => [],
+                'excludePaths'  => [],
+            ],
+            $container,
+        );
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher
+            ->method('getAdvicesForClass')
+            ->willReturn([
+                AspectContainer::METHOD_PREFIX => [
+                    'concreteMethod' => ['advisor.Test\ns1\TestAbstractClass->concreteMethod' => new BeforeInterceptor(static function (): void {})],
+                ],
+            ]);
+        $adviceMatcher->method('getAdvicesForFunctions')->willReturn([
+            AspectContainer::FUNCTION_PREFIX => [
+                'array_sum' => ['advisor.functions' => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$container])
+            ->getMock();
+        $transformer = new WeavingTransformer(
+            $kernel,
+            $adviceMatcher,
+            new CachePathManager($kernel),
+            $loader,
+        );
+
+        $metadata = $this->loadTestMetadata('abstract-class');
+        $result   = $transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+        $this->assertSame(TransformerResultEnum::RESULT_TRANSFORMED, $result);
+        $this->assertStringContainsString('trait TestAbstractClass__AopProxied', $actual);
+        $this->assertStringNotContainsString('AOP_CACHE_DIR', $actual);
+    }
+
+    /**
      * Creates a WeavingTransformer whose advice matcher returns the given advices for any class.
      */
     /**
@@ -777,6 +1153,7 @@ class WeavingTransformerTest extends TestCase
             $loader,
         );
     }
+
 
     /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)
@@ -852,6 +1229,28 @@ class WeavingTransformerTest extends TestCase
             });
 
         return $mock;
+    }
+
+    /**
+     * Loads an autoloadable weaving stub from tests/Instrument/Transformer/Stubs/
+     *
+     * Stubs (unlike the _files fixtures) live in the Go\Instrument\Transformer\Stubs namespace,
+     * so parser-reflection can locate them — required whenever weaving needs property or
+     * parent-class reflection for the woven class.
+     *
+     * @param string $name Short class name of the stub to load
+     */
+    private function loadStubMetadata(string $name): StreamMetaData
+    {
+        $fileName = __DIR__ . '/Stubs/' . $name . '.php';
+        $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
+        assert($stream !== false);
+        $source   = file_get_contents($fileName);
+        assert($source !== false);
+        $metadata = new StreamMetaData($stream, $source);
+        fclose($stream);
+
+        return $metadata;
     }
 
     /**

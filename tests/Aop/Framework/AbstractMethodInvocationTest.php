@@ -61,4 +61,79 @@ class AbstractMethodInvocationTest extends TestCase
         $result = $o->proceed();
         $this->assertEquals('testInstanceIsInitialized', $result);
     }
+
+    public function testToStringForInstanceMethodUsesArrowNotation(): void
+    {
+        $o = new class extends AbstractMethodInvocation {
+            public function __construct()
+            {
+                parent::__construct([], AbstractMethodInvocationTest::class, 'testToStringForInstanceMethodUsesArrowNotation', static fn() => null);
+            }
+
+            public function isDynamic(): bool
+            {
+                return true;
+            }
+
+            public function getThis(): object
+            {
+                return $this;
+            }
+
+            public function getScope(): string
+            {
+                return self::class;
+            }
+
+            public function proceed(): mixed
+            {
+                return null;
+            }
+        };
+
+        $this->assertSame(
+            sprintf('execution(%s->testToStringForInstanceMethodUsesArrowNotation())', $o->getScope()),
+            (string) $o,
+        );
+    }
+
+    public function testToStringForStaticMethodUsesDoubleColonNotation(): void
+    {
+        $o = new class extends AbstractMethodInvocation {
+            public function __construct()
+            {
+                parent::__construct([], StaticHelperForAbstractMethodInvocationTest::class, 'staticMethod', static fn() => null);
+            }
+
+            public function isDynamic(): bool
+            {
+                return false;
+            }
+
+            public function getThis(): ?object
+            {
+                return null;
+            }
+
+            public function getScope(): string
+            {
+                return self::class;
+            }
+
+            public function proceed(): mixed
+            {
+                return null;
+            }
+        };
+
+        $this->assertSame(
+            sprintf('execution(%s::staticMethod())', $o->getScope()),
+            (string) $o,
+        );
+    }
+}
+
+class StaticHelperForAbstractMethodInvocationTest
+{
+    public static function staticMethod(): void {}
 }

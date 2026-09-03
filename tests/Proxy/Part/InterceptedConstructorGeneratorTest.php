@@ -129,4 +129,39 @@ class InterceptedConstructorGeneratorTest extends TestCase
             'When constructor is private, must not throw exception',
         );
     }
+
+    public function testGeneratesEmptyConstructorWhenNoneGiven(): void
+    {
+        $generator = new InterceptedConstructorGenerator();
+
+        $this->assertStringContainsString('function __construct()', $generator->generate());
+    }
+
+    public function testReusesProvidedConstructorGenerator(): void
+    {
+        $reflectionConstructor  = (new ReflectionClass(ClassWithOptionalArgsConstructor::class))->getConstructor();
+        $this->assertNotNull($reflectionConstructor);
+        $intercepted            = new InterceptedMethodGenerator($reflectionConstructor, 'echo "custom body";');
+
+        $generator = new InterceptedConstructorGenerator($reflectionConstructor, $intercepted);
+
+        $this->assertStringContainsString('echo "custom body";', $generator->generate());
+    }
+
+    public function testAccessorsExposeUnderlyingGeneratorState(): void
+    {
+        $reflectionConstructor = (new ReflectionClass(ClassWithOptionalArgsConstructor::class))->getConstructor();
+        $generator              = new InterceptedConstructorGenerator($reflectionConstructor);
+
+        $this->assertSame('__construct', $generator->getName());
+        $this->assertStringContainsString('parent::__construct', $generator->getBody());
+
+        $generator->setBody('parent::__construct();');
+        $this->assertSame('parent::__construct();', $generator->getBody());
+
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
+        $this->assertInstanceOf(\PhpParser\Node\Stmt\ClassMethod::class, $generator->getNode());
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
+        $this->assertInstanceOf(\Go\Proxy\Generator\MethodGenerator::class, $generator->getGenerator());
+    }
 }
