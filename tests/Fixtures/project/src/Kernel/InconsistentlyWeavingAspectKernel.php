@@ -21,11 +21,11 @@ class InconsistentlyWeavingAspectKernel extends AspectKernel
      */
     protected function configureAop(AspectContainer $container): void
     {
-        $container->registerAspect(LoggingAspect::class, fn(): LoggingAspect => new LoggingAspect(new NullLogger()));
+        $container->addLazyService(LoggingAspect::class, fn(): LoggingAspect => new LoggingAspect(new NullLogger()));
         // Deliberately eager (instance) registration: the inconsistent-weaving scenario this
         // kernel exists to reproduce requires the application class to be loaded through the
         // AOP loader before weaving starts, which only happens when the aspect is constructed
         // during configureAop() rather than lazily on first use.
-        $container->registerAspect(new InconsistentlyWeavingAspect(new InconsistentlyWeavedClass()));
+        $container->add(InconsistentlyWeavingAspect::class, new InconsistentlyWeavingAspect(new InconsistentlyWeavedClass()));
     }
 }

@@ -25,13 +25,13 @@ class AwesomeAspectKernel extends AspectKernel
      */
     protected function configureAop(AspectContainer $container): void
     {
-        $container->registerAspect(CachingAspect::class);
-        $container->registerAspect(LoggingAspect::class);
-        $container->registerAspect(IntroductionAspect::class);
-        $container->registerAspect(PropertyInterceptorAspect::class);
-        $container->registerAspect(FunctionInterceptorAspect::class);
-        $container->registerAspect(FluentInterfaceAspect::class);
-        $container->registerAspect(HealthyLiveAspect::class);
-        $container->registerAspect(DynamicMethodsAspect::class);
+        $container->addLazyService(CachingAspect::class, static fn(): CachingAspect => new CachingAspect());
+        $container->addLazyService(LoggingAspect::class, static fn(): LoggingAspect => new LoggingAspect());
+        $container->addLazyService(IntroductionAspect::class, static fn(): IntroductionAspect => new IntroductionAspect());
+        $container->addLazyService(PropertyInterceptorAspect::class, static fn(): PropertyInterceptorAspect => new PropertyInterceptorAspect());
+        $container->addLazyService(FunctionInterceptorAspect::class, static fn(): FunctionInterceptorAspect => new FunctionInterceptorAspect());
+        $container->addLazyService(FluentInterfaceAspect::class, static fn(): FluentInterfaceAspect => new FluentInterfaceAspect());
+        $container->addLazyService(HealthyLiveAspect::class, static fn(): HealthyLiveAspect => new HealthyLiveAspect());
+        $container->addLazyService(DynamicMethodsAspect::class, static fn(): DynamicMethodsAspect => new DynamicMethodsAspect());
     }
 }

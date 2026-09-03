@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
+use Go\Aop\Aspect;
 use Go\Aop\AspectException;
 use Go\Aop\Features;
 use Go\Core\Cache\CachedAspectLoader;
@@ -23,6 +24,7 @@ use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
+use ReflectionClass;
 use RuntimeException;
 
 use function define;
@@ -137,6 +139,10 @@ abstract class AspectKernel
         $container->add('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
         $container->add('kernel.options', $this->options);
 
+        // The framework's own services are deferred definitions registered through the
+        // generic lazy container API - the container itself knows nothing about them.
+        FrameworkServices::register($container);
+
         // The whole transformer pipeline (and the stream filter itself) is only needed on
         // a cache miss, so every transformer is registered as a typical deferred container
         // service and brought up by SourceTransformingLoader::ensureRegistered() from the
@@ -146,6 +152,21 @@ abstract class AspectKernel
         $this->registerTransformerServices($container);
 
         AopComposerLoader::init($this->options, $container);
+
+        // In debug mode every lazily registered aspect's source file must be tracked as a
+        // resource right away: SourceTransformingLoader consults resource freshness before
+        // any aspect materializes. Production arms no listener - registration stays a pure
+        // array write, its warm path never checks freshness, and a cache miss materializes
+        // every aspect during weaving anyway. Armed after the framework/transformer
+        // services above, so only aspects from configureAop() pass through it.
+        if ($this->options['debug']) {
+            $container->onRegistration(Aspect::class, static function (string $aspectClassName) use ($container): void {
+                $aspectFileName = (new ReflectionClass($aspectClassName))->getFileName();
+                if (is_string($aspectFileName)) {
+                    $container->addResource($aspectFileName);
+                }
+            });
+        }
 
         // Register all AOP configuration in the container
         $this->configureAop($container);

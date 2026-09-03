@@ -1,8 +1,10 @@
 # src/Core — Container and aspect loading
 
 ## Container (Container.php)
-- DI container: add(by class-string|key), getService(), addLazyService(Closure)
-- Automatic tagging by interface
+- Generic, AOP-unaware DI container: add(by class-string|key), getService(), getValue(), addLazyService(Closure), onRegistration(interfaceFQCN, listener), addResource()
+- Automatic tagging by interface; deferred services materialize as native lazy proxies via NativeLazyProxy (engine probe, no userland compatibility predicate)
+- Aspects are typical services — no registerAspect(); the kernel arms a debug-only Aspect::class onRegistration listener for resource tracking and registers framework services via FrameworkServices::register()
+- Throws SPL exceptions only (InvalidArgumentException, UnexpectedValueException, OutOfBoundsException)
 
 ## Aspect loading
 - AspectLoader — scans aspect classes for pointcut/advice attributes → Advisor[]; CachedAspectLoader decorates it (both implement AspectLoaderInterface)
