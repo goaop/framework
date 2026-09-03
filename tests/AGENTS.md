@@ -24,8 +24,8 @@
 - Mandatory before commit
 - `./vendor/bin/phpstan analyze --memory-limit=512M`
 - If phpstan fails: fix errors before offering to commit
-## Remote sessions (Claude Code on the web) — install and gate pitfalls
-Diagnosed 2026-09-03; both symptoms hit every fresh remote session of this repo.
+## Remote sessions (Claude Code on the web) — installing phpstan
+Diagnosed 2026-09-03; hits every fresh remote session of this repo.
 
 ### `composer install` is slow (everything from source) and dies on phpstan/phpstan
 What blocks dist installs:
@@ -81,18 +81,4 @@ git -C "$TMP/phpstan" archive --format=zip --prefix="phpstan-phpstan-${REF:0:7}/
 # phpstan comes from the cache, everything else from git; ALLOW_SUPERUSER keeps phpstan/extension-installer active
 COMPOSER_ALLOW_SUPERUSER=1 composer install --prefer-source --no-interaction
 ./vendor/bin/phpstan --version   # → PHPStan 2.x
-```
-
-### 32 Functional failures under PHP 8.5 ("Unexpected token Go ... Expected one of: ..., namePart")
-- The environment's `/etc/php/8.5/cli/conf.d/99-agent.ini` turns on `opcache.enable_cli=1` +
-  `opcache.jit=tracing`. Under PHP 8.5.10 the tracing JIT miscompiles the LALR parser loop in
-  goaop/dissect (`isset($table[$state][$type])` misses a key that is present), so every pointcut of the
-  fixture project fails to parse in the spawned `bin/console cache:warmup:aop` process. Same code,
-  same input: fine with JIT off, fine on PHP 8.4, fine on CI (setup-php leaves CLI opcache off).
-- `php -d opcache.jit=0 vendor/bin/phpunit` is NOT enough: BaseFunctionalTestCase spawns plain
-  `php` subprocesses. Append an ini dir instead (the leading `:` keeps the default scan dir):
-
-```bash
-mkdir -p /tmp/php-ini && printf 'opcache.jit=0\n' > /tmp/php-ini/zz-nojit.ini
-PHP_INI_SCAN_DIR=":/tmp/php-ini" ./vendor/bin/phpunit      # → OK (2666 tests)
 ```
