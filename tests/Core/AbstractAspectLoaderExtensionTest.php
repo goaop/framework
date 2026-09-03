@@ -42,6 +42,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
 
         $pointcut = $this->extension->doParsePointcut($aspect, $reflection, 'execution(public Foo->bar(*))');
 
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertInstanceOf(Pointcut::class, $pointcut);
     }
 
@@ -57,6 +58,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
             'execution(public $this->someMethod(*))',
         );
 
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertInstanceOf(Pointcut::class, $pointcut);
     }
 
@@ -137,6 +139,10 @@ final class AbstractAspectLoaderExtensionTestExtension extends AbstractAspectLoa
         return [];
     }
 
+    /**
+     * @template T of Aspect
+     * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
+     */
     public function doParsePointcut(
         Aspect $aspect,
         ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
@@ -148,7 +154,7 @@ final class AbstractAspectLoaderExtensionTestExtension extends AbstractAspectLoa
 
 final class AbstractAspectLoaderExtensionTestAspect implements Aspect
 {
-    public $someProperty;
+    public mixed $someProperty = null;
 
     public function someMethod(): void
     {

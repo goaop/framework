@@ -13,18 +13,22 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Go\Aop\Advice;
+use Go\Aop\Framework\TraitIntroductionInfo;
+use Go\Aop\IntroductionInfo;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\TruePointcut;
 use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\ParserReflection\Locator\ComposerLocator;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
+use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Stubs\First;
 use Go\Stubs\PropertyHookSupport;
 use Go\Stubs\PropertyHookSupportPromoted;
 use Go\Stubs\PropertyInheritanceChild;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionProperty;
 
@@ -292,4 +296,283 @@ class AdviceMatcherTest extends TestCase
 
         $this->assertArrayHasKey('childFinal', $propertyAdvices);
     }
+
+    /**
+     * Verifies that a final method inherited from a parent class cannot be woven and is skipped.
+     */
+    public function testParentFinalMethodIsNotMatched(): void
+    {
+        $child           = new class extends First {}; // publicFinalMethod is final in First
+        $reflectionClass = new ReflectionClass($child);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+
+        $methodAdvices = $advices[AspectContainer::METHOD_PREFIX] ?? [];
+        $this->assertArrayNotHasKey('publicFinalMethod', $methodAdvices);
+    }
+
+    /**
+     * Verifies that abstract methods cannot be woven and are skipped.
+     */
+    public function testAbstractMethodIsNotMatched(): void
+    {
+        $reflectionClass = new ReflectionClass(AdviceMatcherTestAbstractClass::class);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+
+        $methodAdvices = $advices[AspectContainer::METHOD_PREFIX] ?? [];
+        $this->assertArrayNotHasKey('abstractMethod', $methodAdvices);
+        $this->assertArrayHasKey('concreteMethod', $methodAdvices);
+    }
+
+    /**
+     * Verifies that when a class' parent is an AOP-proxied trait-holder (name contains the
+     * __AopProxied suffix), advice matching resolves methods against that original parent class
+     * instead of the (proxy) class passed in - private methods declared directly on the original
+     * class must still be matched.
+     */
+    public function testResolvesOriginalClassWhenParentIsAopProxied(): void
+    {
+        $reflectionClass = new ReflectionClass(AdviceMatcherTestProxyChild::class);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+
+        $methodAdvices = $advices[AspectContainer::METHOD_PREFIX] ?? [];
+        // privateOriginal is declared directly on the __AopProxied parent, so it is matched
+        // only if the original (parent) class was used for the declaring-class comparison.
+        $this->assertArrayHasKey('privateOriginal', $methodAdvices);
+    }
+
+    /**
+     * Verifies dynamic (KIND_INIT) class-level advice is collected.
+     */
+    public function testGetAdvicesForClassCollectsInitAdvice(): void
+    {
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INIT);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]);
+
+        $this->assertSame($advice, $advices[AspectContainer::INIT_PREFIX]['root']['advisor'] ?? null);
+    }
+
+    /**
+     * Verifies static (KIND_STATIC_INIT) class-level advice is collected.
+     */
+    public function testGetAdvicesForClassCollectsStaticInitAdvice(): void
+    {
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_STATIC_INIT);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]);
+
+        $this->assertSame($advice, $advices[AspectContainer::STATIC_INIT_PREFIX]['root']['advisor'] ?? null);
+    }
+
+    /**
+     * Verifies introduction (KIND_INTRODUCTION) advice adds both trait and interface entries.
+     */
+    public function testGetAdvicesForClassCollectsIntroductionAdviceWithTraitAndInterface(): void
+    {
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INTRODUCTION);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = new TraitIntroductionInfo(AdviceMatcherTestIntroducedTrait::class, AdviceMatcherTestIntroducedInterface::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]);
+
+        $this->assertSame(
+            $advice,
+            $advices[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root']['\\' . AdviceMatcherTestIntroducedTrait::class] ?? null,
+        );
+        $this->assertSame(
+            $advice,
+            $advices[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root']['\\' . AdviceMatcherTestIntroducedInterface::class] ?? null,
+        );
+    }
+
+    /**
+     * Verifies that an introduction advice with only an interface (no trait) yields only the
+     * interface entry.
+     */
+    public function testGetAdvicesForClassCollectsIntroductionAdviceWithOnlyInterface(): void
+    {
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INTRODUCTION);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice = $this->createMock(IntroductionInfo::class);
+        $advice->method('getTrait')->willReturn('');
+        $advice->method('getInterface')->willReturn(AdviceMatcherTestIntroducedInterface::class);
+
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]);
+
+        $this->assertArrayNotHasKey(AspectContainer::INTRODUCTION_TRAIT_PREFIX, $advices);
+        $this->assertSame(
+            $advice,
+            $advices[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root']['\\' . AdviceMatcherTestIntroducedInterface::class] ?? null,
+        );
+    }
+
+    /**
+     * Verifies introduction advice is skipped entirely when matched against a trait (traits
+     * cannot receive introductions).
+     */
+    public function testIntroductionAdviceIsSkippedForTraitContext(): void
+    {
+        $reflectionClass = new ReflectionClass(AdviceMatcherTestIntroducedTrait::class);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INTRODUCTION);
+        $pointcut->method('matches')->willReturn(true);
+
+        $advice  = new TraitIntroductionInfo(AdviceMatcherTestIntroducedTrait::class, AdviceMatcherTestIntroducedInterface::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
+
+        $this->assertArrayNotHasKey(AspectContainer::INTRODUCTION_TRAIT_PREFIX, $advices);
+        $this->assertArrayNotHasKey(AspectContainer::INTRODUCTION_INTERFACE_PREFIX, $advices);
+    }
+
+    /**
+     * Verifies that getAdvicesForFunctions() short-circuits to an empty array when function
+     * interception is not enabled.
+     */
+    public function testGetAdvicesForFunctionsReturnsEmptyArrayWhenFeatureDisabled(): void
+    {
+        $adviceMatcher = new AdviceMatcher(isInterceptFunctions: false);
+
+        $reflectionFile = new ReflectionFile(__FILE__);
+        $namespace      = $reflectionFile->getFileNamespace(__NAMESPACE__);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->expects($this->never())->method('getKind');
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $adviceMatcher->getAdvicesForFunctions($namespace, ['advisor' => $advisor]);
+
+        $this->assertSame([], $advices);
+    }
+
+    /**
+     * Verifies that getAdvicesForFunctions() matches an internal PHP function by name when
+     * function interception is enabled.
+     */
+    public function testGetAdvicesForFunctionsMatchesInternalFunction(): void
+    {
+        $adviceMatcher = new AdviceMatcher(isInterceptFunctions: true);
+
+        $reflectionFile = new ReflectionFile(__FILE__);
+        $namespace      = $reflectionFile->getFileNamespace(__NAMESPACE__);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_FUNCTION);
+        $pointcut->method('matches')->willReturnCallback(
+            static fn(ReflectionClass|ReflectionFileNamespace $context, ?ReflectionFunction $reflector = null): bool
+                => $reflector === null || $reflector->name === 'strlen',
+        );
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $adviceMatcher->getAdvicesForFunctions($namespace, ['advisor' => $advisor]);
+
+        $this->assertSame(
+            $advice,
+            $advices[AspectContainer::FUNCTION_PREFIX]['strlen']['advisor'] ?? null,
+        );
+    }
+
+    /**
+     * Verifies that getAdvicesForFunctions() skips non-function-kind advisors and advisors whose
+     * namespace-level match fails, so no functions are collected.
+     */
+    public function testGetAdvicesForFunctionsSkipsNonMatchingNamespace(): void
+    {
+        $adviceMatcher = new AdviceMatcher(isInterceptFunctions: true);
+
+        $reflectionFile = new ReflectionFile(__FILE__);
+        $namespace      = $reflectionFile->getFileNamespace(__NAMESPACE__);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_FUNCTION);
+        $pointcut->method('matches')->willReturn(false);
+
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $advices = $adviceMatcher->getAdvicesForFunctions($namespace, ['advisor' => $advisor]);
+
+        $this->assertSame([], $advices);
+    }
+}
+
+abstract class AdviceMatcherTestAbstractClass
+{
+    abstract public function abstractMethod(): void;
+
+    public function concreteMethod(): void
+    {
+    }
+}
+
+class AdviceMatcherTestFoo__AopProxied
+{
+    // @phpstan-ignore method.unused (only ever reached via reflection in AdviceMatcher, never called directly)
+    private function privateOriginal(): void
+    {
+    }
+}
+
+class AdviceMatcherTestProxyChild extends AdviceMatcherTestFoo__AopProxied
+{
+}
+
+trait AdviceMatcherTestIntroducedTrait
+{
+}
+
+interface AdviceMatcherTestIntroducedInterface
+{
+}
+
+final class AdviceMatcherTestIntroducedTraitConsumer
+{
+    use AdviceMatcherTestIntroducedTrait;
 }
