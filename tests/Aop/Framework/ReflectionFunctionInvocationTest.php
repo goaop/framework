@@ -135,7 +135,9 @@ class ReflectionFunctionInvocationTest extends TestCase
             }
 
             /** @var ReflectionFunctionInvocation $invocation */
-            return $n + $invocation([$n - 1]);
+            $nested = $invocation([$n - 1]);
+            // @phpstan-ignore cast.int (FunctionInvocation's generic V is unresolved here; the wrapped callable is declared `: int`)
+            return $n + (int) $nested;
         };
         $invocation = new ReflectionFunctionInvocation([], 'strlen', $callable);
 

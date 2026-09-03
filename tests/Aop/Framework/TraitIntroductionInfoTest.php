@@ -20,21 +20,21 @@ class TraitIntroductionInfoTest extends TestCase
 {
     public function testGetTraitReturnsTraitPassedToConstructor(): void
     {
-        $info = new TraitIntroductionInfo('\Some\Trait', '\Some\Interface');
+        $info = new TraitIntroductionInfo(SampleIntroducedTrait::class, SampleIntroducedInterface::class);
 
-        $this->assertSame('\Some\Trait', $info->getTrait());
+        $this->assertSame(SampleIntroducedTrait::class, $info->getTrait());
     }
 
     public function testGetInterfaceReturnsInterfacePassedToConstructor(): void
     {
-        $info = new TraitIntroductionInfo('\Some\Trait', '\Some\Interface');
+        $info = new TraitIntroductionInfo(SampleIntroducedTrait::class, SampleIntroducedInterface::class);
 
-        $this->assertSame('\Some\Interface', $info->getInterface());
+        $this->assertSame(SampleIntroducedInterface::class, $info->getInterface());
     }
 
     public function testGetTypeIsAlwaysIntroduction(): void
     {
-        $info = new TraitIntroductionInfo('\Some\Trait', '\Some\Interface');
+        $info = new TraitIntroductionInfo(SampleIntroducedTrait::class, SampleIntroducedInterface::class);
 
         $this->assertSame(AdviceTypeEnum::Introduction, $info->getType());
     }
@@ -66,4 +66,9 @@ trait SampleIntroducedTrait
 
 interface SampleIntroducedInterface
 {
+}
+
+final class SampleIntroducedTraitConsumer
+{
+    use SampleIntroducedTrait;
 }

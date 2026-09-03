@@ -75,7 +75,7 @@ class AbstractMethodInvocationTest extends TestCase
                 return true;
             }
 
-            public function getThis(): ?object
+            public function getThis(): object
             {
                 return $this;
             }

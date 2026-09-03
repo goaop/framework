@@ -28,6 +28,7 @@ class StaticInitializationJoinpointTest extends TestCase
     {
         $joinPoint = new StaticInitializationJoinpoint([], self::class);
 
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertNull($joinPoint->getThis());
     }
 
@@ -35,6 +36,7 @@ class StaticInitializationJoinpointTest extends TestCase
     {
         $joinPoint = new StaticInitializationJoinpoint([], self::class);
 
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertFalse($joinPoint->isDynamic());
     }
 
@@ -51,8 +53,10 @@ class StaticInitializationJoinpointTest extends TestCase
     {
         $joinPoint = new StaticInitializationJoinpoint([], self::class);
 
+        // @phpstan-ignore argument.type (deliberately a different class-string than the joinpoint's own T, to exercise the scope override)
         $joinPoint(AbstractInvocationTest::class);
 
+        // @phpstan-ignore method.impossibleType (the override above changes the runtime scope even though T stays fixed to self)
         $this->assertSame(AbstractInvocationTest::class, $joinPoint->getScope());
     }
 
@@ -85,10 +89,10 @@ class StaticInitializationJoinpointTest extends TestCase
 
     public function testProceedIsNoOpWithoutInterceptors(): void
     {
+        $this->expectNotToPerformAssertions();
+
         $joinPoint = new StaticInitializationJoinpoint([], self::class);
 
-        $result = $joinPoint->proceed();
-
-        $this->assertNull($result);
+        $joinPoint->proceed();
     }
 }

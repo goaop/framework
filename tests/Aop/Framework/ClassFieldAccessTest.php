@@ -82,6 +82,7 @@ class ClassFieldAccessTest extends TestCase
 
     public function testIsDynamicReturnsTrue(): void
     {
+        // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertTrue($this->classField->isDynamic());
     }
 
