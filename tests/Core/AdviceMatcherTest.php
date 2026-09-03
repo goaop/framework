@@ -547,30 +547,20 @@ abstract class AdviceMatcherTestAbstractClass
 {
     abstract public function abstractMethod(): void;
 
-    public function concreteMethod(): void
-    {
-    }
+    public function concreteMethod(): void {}
 }
 
 class AdviceMatcherTestFoo__AopProxied
 {
     // @phpstan-ignore method.unused (only ever reached via reflection in AdviceMatcher, never called directly)
-    private function privateOriginal(): void
-    {
-    }
+    private function privateOriginal(): void {}
 }
 
-class AdviceMatcherTestProxyChild extends AdviceMatcherTestFoo__AopProxied
-{
-}
+class AdviceMatcherTestProxyChild extends AdviceMatcherTestFoo__AopProxied {}
 
-trait AdviceMatcherTestIntroducedTrait
-{
-}
+trait AdviceMatcherTestIntroducedTrait {}
 
-interface AdviceMatcherTestIntroducedInterface
-{
-}
+interface AdviceMatcherTestIntroducedInterface {}
 
 final class AdviceMatcherTestIntroducedTraitConsumer
 {

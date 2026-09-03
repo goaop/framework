@@ -96,8 +96,7 @@ class IntroductionAspectExtensionTest extends TestCase
         $aspect     = new IntroductionAspectExtensionTestAspect();
         $reflection = new ReflectionProperty($aspect, 'introduction');
 
-        $unsupportedAttribute = new class extends AbstractAttribute {
-        };
+        $unsupportedAttribute = new class extends AbstractAttribute {};
 
         $this->expectException(UnexpectedValueException::class);
         $this->expectExceptionMessage('Unsupported attribute class: ' . $unsupportedAttribute::class);
@@ -106,13 +105,9 @@ class IntroductionAspectExtensionTest extends TestCase
     }
 }
 
-trait IntroductionAspectExtensionTestTrait
-{
-}
+trait IntroductionAspectExtensionTestTrait {}
 
-interface IntroductionAspectExtensionTestInterface
-{
-}
+interface IntroductionAspectExtensionTestInterface {}
 
 final class IntroductionAspectExtensionTestTraitConsumer
 {
@@ -135,9 +130,7 @@ final class IntroductionAspectExtensionTestEmptyAspect implements Aspect
 }
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
-final class IntroductionAspectExtensionTestUnsupportedAttribute
-{
-}
+final class IntroductionAspectExtensionTestUnsupportedAttribute {}
 
 final class IntroductionAspectExtensionTestInvalidAspect implements Aspect
 {

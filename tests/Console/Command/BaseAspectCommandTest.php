@@ -32,9 +32,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 final class BaseAspectCommandTestKernelStub extends AspectKernel
 {
-    protected function configureAop(AspectContainer $container): void
-    {
-    }
+    protected function configureAop(AspectContainer $container): void {}
 }
 
 /**

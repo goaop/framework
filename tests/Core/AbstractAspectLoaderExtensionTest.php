@@ -156,7 +156,5 @@ final class AbstractAspectLoaderExtensionTestAspect implements Aspect
 {
     public mixed $someProperty = null;
 
-    public function someMethod(): void
-    {
-    }
+    public function someMethod(): void {}
 }

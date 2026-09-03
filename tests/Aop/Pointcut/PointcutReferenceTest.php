@@ -99,7 +99,5 @@ class PointcutReferenceTest extends TestCase
 
 final class PointcutReferenceTestAspectKernel extends AspectKernel
 {
-    protected function configureAop(AspectContainer $container): void
-    {
-    }
+    protected function configureAop(AspectContainer $container): void {}
 }

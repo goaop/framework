@@ -135,7 +135,5 @@ class AbstractMethodInvocationTest extends TestCase
 
 class StaticHelperForAbstractMethodInvocationTest
 {
-    public static function staticMethod(): void
-    {
-    }
+    public static function staticMethod(): void {}
 }

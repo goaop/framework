@@ -113,10 +113,6 @@ class AspectLoaderTest extends TestCase
     }
 }
 
-final class AspectLoaderTestAspectOne implements Aspect
-{
-}
+final class AspectLoaderTestAspectOne implements Aspect {}
 
-final class AspectLoaderTestAspectTwo implements Aspect
-{
-}
+final class AspectLoaderTestAspectTwo implements Aspect {}

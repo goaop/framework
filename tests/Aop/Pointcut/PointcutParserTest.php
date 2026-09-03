@@ -214,13 +214,9 @@ class PointcutParserTest extends TestCase
                 throw new \OutOfBoundsException('No tokens in stream');
             }
 
-            public function move(int $n): void
-            {
-            }
+            public function move(int $n): void {}
 
-            public function seek(int $n): void
-            {
-            }
+            public function seek(int $n): void {}
 
             public function next(): void
             {

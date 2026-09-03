@@ -58,13 +58,9 @@ class DeclareParentsTest extends TestCase
     }
 }
 
-trait DeclareParentsTestTrait
-{
-}
+trait DeclareParentsTestTrait {}
 
-interface DeclareParentsTestInterface
-{
-}
+interface DeclareParentsTestInterface {}
 
 final class DeclareParentsTestTraitConsumer
 {

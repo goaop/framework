@@ -26,7 +26,7 @@ class InterceptorInjectorTest extends TestCase
      */
     private function noopInterceptors(): array
     {
-        return [Interceptor::before(static fn () => null)];
+        return [Interceptor::before(static fn() => null)];
     }
 
     public function testForMethodBuildsDynamicTraitAliasMethodInvocation(): void

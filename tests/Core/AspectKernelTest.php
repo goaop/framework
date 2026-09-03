@@ -349,7 +349,5 @@ class AspectKernelTest extends TestCase
 
 final class AspectKernelTestConcreteKernel extends AspectKernel
 {
-    protected function configureAop(AspectContainer $container): void
-    {
-    }
+    protected function configureAop(AspectContainer $container): void {}
 }

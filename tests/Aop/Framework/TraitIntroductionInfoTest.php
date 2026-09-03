@@ -60,13 +60,9 @@ class TraitIntroductionInfoTest extends TestCase
     }
 }
 
-trait SampleIntroducedTrait
-{
-}
+trait SampleIntroducedTrait {}
 
-interface SampleIntroducedInterface
-{
-}
+interface SampleIntroducedInterface {}
 
 final class SampleIntroducedTraitConsumer
 {
