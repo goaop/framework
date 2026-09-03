@@ -1017,6 +1017,69 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * With no cache file yet (or a stale one), processFunctions() must generate and write the
+     * function proxy file itself. The cache dir lives on the vfs:// stream wrapper, and PHP core
+     * rejects the LOCK_EX flag for any non-"file://" stream - file_put_contents() must skip it
+     * there just like saveProxyToCache() already does for the class proxy file.
+     */
+    public function testWeaverGeneratesFunctionProxyCacheFileOnFirstWeave(): void
+    {
+        $container = $this->createMock(AspectContainer::class);
+        $container
+            ->method('getServicesByInterface')
+            ->willReturnMap([[Advisor::class, []]]);
+        $container
+            ->method('isFreshSince')
+            ->willReturn(false);
+
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher->method('getAdvicesForClass')->willReturn([]);
+        $adviceMatcher->method('getAdvicesForFunctions')->willReturn([
+            AspectContainer::FUNCTION_PREFIX => [
+                'array_product' => ['advisor.functions' => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $kernel = $this->getKernelMock(
+            [
+                'appDir'        => dirname(__DIR__),
+                'cacheDir'      => 'vfs://',
+                'cacheFileMode' => 0770,
+                'includePaths'  => [],
+                'excludePaths'  => [],
+            ],
+            $container,
+        );
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$container])
+            ->getMock();
+        $transformer = new WeavingTransformer(
+            $kernel,
+            $adviceMatcher,
+            new CachePathManager($kernel),
+            $loader,
+        );
+
+        // Other tests in this class share the same vfs:// mount and the same fixture namespace;
+        // make sure no stale cache file from a previous test is left over.
+        if (file_exists('vfs:///_functions/Test/ns1.php')) {
+            unlink('vfs:///_functions/Test/ns1.php');
+        }
+
+        $metadata = $this->loadTestMetadata('functions-weaving');
+        $result   = $transformer->transform($metadata);
+
+        $this->assertSame(TransformerResultEnum::RESULT_TRANSFORMED, $result);
+        $this->assertStringContainsString(
+            "include_once AOP_CACHE_DIR . '/_functions/Test/ns1.php';",
+            $this->normalizeWhitespaces($metadata->source),
+        );
+        $this->assertFileExists('vfs:///_functions/Test/ns1.php');
+        $this->assertStringContainsString('array_product', (string) file_get_contents('vfs:///_functions/Test/ns1.php'));
+    }
+
+    /**
      * Without a cache directory there is nowhere to put the generated proxy, so the class is
      * still converted to a trait but no include_once is appended and no function proxy is written.
      */

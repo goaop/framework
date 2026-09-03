@@ -976,7 +976,10 @@ class WeavingTransformer extends BaseSourceTransformer
                     mkdir($dirname, $this->options['cacheFileMode'], true);
                 }
                 $generator = new FunctionProxyGenerator($namespace, $functionAdvices);
-                file_put_contents($functionFileName, $generator->generate(), LOCK_EX);
+                // PHP core refuses the LOCK_EX flag for any non-"file://" stream wrapper path,
+                // see saveProxyToCache() below.
+                $isStreamPath = str_contains($functionFileName, '://');
+                file_put_contents($functionFileName, $generator->generate(), $isStreamPath ? 0 : LOCK_EX);
                 // For cache files we don't want executable bits by default
                 chmod($functionFileName, $this->options['cacheFileMode'] & (~0111));
             }
