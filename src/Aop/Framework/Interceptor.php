@@ -15,7 +15,7 @@ namespace Go\Aop\Framework;
 use Closure;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
-use ReflectionClass;
+use Go\Core\NativeLazyProxy;
 
 /**
  * Factory facade for generated interceptor declarations, with two construction modes.
@@ -93,7 +93,10 @@ final class Interceptor
             throw new AspectException('Advice method name is required when an aspect class name is given');
         }
 
-        return new ReflectionClass($interceptorClass)->newLazyProxy(
+        // Interceptor classes are framework-owned and lazy-compatible by construction,
+        // so they take the probe-free trusted path.
+        return NativeLazyProxy::create(
+            $interceptorClass,
             static fn(): AbstractInterceptor => new $interceptorClass(
                 The::aspect($aspectClassOrAdvice)->$methodName(...),
                 $order,
