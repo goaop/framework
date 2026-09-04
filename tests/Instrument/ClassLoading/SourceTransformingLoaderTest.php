@@ -64,7 +64,12 @@ class SourceTransformingLoaderTest extends TestCase
         // Deletes only the exact files this test writes, never a glob/recursive sweep:
         // a wrong directory value must not be able to erase anything else
         $this->assertStringStartsWith(sys_get_temp_dir() . '/goaop-stl-', $this->cacheDir);
-        foreach ([$this->cacheDir . '/src/Some.php', $this->originalFile] as $knownFile) {
+        $knownFiles = [
+            $this->cacheDir . '/src/Some.php',
+            $this->cacheDir . '/src/Some' . AspectContainer::AOP_PROXIED_SUFFIX . '.php',
+            $this->originalFile,
+        ];
+        foreach ($knownFiles as $knownFile) {
             if (is_file($knownFile)) {
                 unlink($knownFile);
             }
@@ -175,6 +180,42 @@ class SourceTransformingLoaderTest extends TestCase
         $cacheFile = $this->cacheDir . '/src/Some.php';
         $this->assertFileExists($cacheFile);
         $this->assertSame(self::WOVEN_SOURCE, file_get_contents($cacheFile));
+        $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
+        $this->assertNotNull($cacheState);
+        $this->assertSame($cacheFile, $cacheState['cacheUri']);
+    }
+
+    public function testWovenBodyTraitIsCachedUnderTheProxiedSuffix(): void
+    {
+        $wovenSource = "<?php\ntrait Some" . AspectContainer::AOP_PROXIED_SUFFIX . " { }\n";
+        $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, $wovenSource);
+        $this->registerLoader([$transformer]);
+
+        $this->assertSame($wovenSource, $this->filterOriginalFile());
+
+        // The generated proxy claims the plain name in the cache, so the original body
+        // trait has to move aside to its own sibling file
+        $cacheFile = $this->cacheDir . '/src/Some' . AspectContainer::AOP_PROXIED_SUFFIX . '.php';
+        $this->assertFileExists($cacheFile);
+        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
+        $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
+        $this->assertNotNull($cacheState);
+        $this->assertSame($cacheFile, $cacheState['cacheUri']);
+    }
+
+    public function testTransformedSourceMerelyMentioningTheSuffixKeepsItsCacheFileName(): void
+    {
+        // Only a `trait <Name>Original` declaration marks a woven body; a class that just
+        // carries the suffix word in its own name must not be moved aside
+        $wovenSource = "<?php\nclass " . AspectContainer::AOP_PROXIED_SUFFIX . "Request { }\n";
+        $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, $wovenSource);
+        $this->registerLoader([$transformer]);
+
+        $this->assertSame($wovenSource, $this->filterOriginalFile());
+
+        $cacheFile = $this->cacheDir . '/src/Some.php';
+        $this->assertFileExists($cacheFile);
+        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some' . AspectContainer::AOP_PROXIED_SUFFIX . '.php');
         $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
         $this->assertNotNull($cacheState);
         $this->assertSame($cacheFile, $cacheState['cacheUri']);

@@ -27,10 +27,10 @@ use ReflectionMethod;
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation
 {
     /**
-     * Prefix used for trait method aliases that back the original method body.
-     * The proxy class aliases each intercepted method as `private __aop__<method>` in the trait-use block.
+     * Suffix used for trait method aliases that back the original method body.
+     * The proxy class aliases each intercepted method as `private <method>Original` in the trait-use block.
      */
-    public const string TRAIT_ALIAS_PREFIX = '__aop__';
+    public const string TRAIT_ALIAS_SUFFIX = 'Original';
 
     protected readonly ReflectionMethod $reflectionMethod;
 

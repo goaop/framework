@@ -94,7 +94,7 @@ class TraitCompositionTest extends BaseFunctionalTestCase
 
     /**
      * Private method interception: the trait-based engine can intercept private methods
-     * by aliasing them as `private __aop__<method>` in the proxy trait-use block.
+     * by aliasing them as `private <method>Original` in the proxy trait-use block.
      * This was impossible with the old extend-based engine.
      */
     public function testPrivateMethodIsWoven(): void

@@ -32,7 +32,7 @@ final class InterceptorInjector
      * @param non-empty-string $methodName
      * @param non-empty-list<Interceptor> $interceptors
      * @param Closure $closureToCall First-class callable to the original method body,
-     *                               e.g. `$this->__aop__method(...)` for trait-aliased methods or
+     *                               e.g. `$this->methodOriginal(...)` for trait-aliased methods or
      *                               `parent::method(...)` for inherited methods.
      * @return DynamicMethodInvocation<T>
      */
@@ -52,7 +52,7 @@ final class InterceptorInjector
      * @param non-empty-string $methodName
      * @param non-empty-list<Interceptor> $interceptors
      * @param Closure $closureToCall First-class callable to the original static method body,
-     *                               e.g. `self::__aop__method(...)` for trait-aliased methods or
+     *                               e.g. `self::methodOriginal(...)` for trait-aliased methods or
      *                               `parent::method(...)` for inherited methods.
      * @return StaticMethodInvocation<T>
      */

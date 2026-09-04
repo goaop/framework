@@ -5,7 +5,7 @@ namespace Test\ns1;
 /**
  * PHP 8.1 backed enum whose case values are constant expressions, not plain literals (issue #600).
  */
-trait ConstExprStatus__AopProxied 
+trait ConstExprStatusOriginal 
 {
     private const int SHIFT = 2;
 

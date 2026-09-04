@@ -32,7 +32,7 @@ class EnumProxyGeneratorTest extends TestCase
     /**
      * A proxy for an intercepted instance method on an enum must:
      * - declare an enum (not a class or trait)
-     * - alias the intercepted method as private __aop__<method>
+     * - alias the intercepted method as private <method>Original
      * - override the method with a per-method static joinpoint dispatch body
      * - call InterceptorInjector for per-method joinpoint resolution
      * - dispatch via __invoke($this, ...) for instance methods
@@ -40,7 +40,7 @@ class EnumProxyGeneratorTest extends TestCase
     public function testGenerateProxyEnumMethod(): void
     {
         $reflectionClass = new ReflectionClass(StubBackedEnum::class);
-        $traitName       = 'Go\\Stubs\\StubBackedEnum__AopProxied';
+        $traitName       = 'Go\\Stubs\\StubBackedEnumOriginal';
         $classAdvices    = [
             'method' => [
                 'label' => [self::testAdvice('advisor.StubBackedEnum->label')],
@@ -59,8 +59,8 @@ class EnumProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('\Go\Aop\Proxy', $output);
 
         // Trait use block with alias must be present
-        $this->assertStringContainsString('StubBackedEnum__AopProxied', $output);
-        $this->assertStringContainsString('__aop__label', $output);
+        $this->assertStringContainsString('StubBackedEnumOriginal', $output);
+        $this->assertStringContainsString('labelOriginal', $output);
 
         // Per-method static joinpoint caching
         $this->assertStringContainsString('static $__joinPoint', $output);
@@ -79,7 +79,7 @@ class EnumProxyGeneratorTest extends TestCase
     public function testGenerateProxyEnumWithStaticMethod(): void
     {
         $reflectionClass = new ReflectionClass(StubBackedEnum::class);
-        $traitName       = 'Go\\Stubs\\StubBackedEnum__AopProxied';
+        $traitName       = 'Go\\Stubs\\StubBackedEnumOriginal';
         $classAdvices    = [
             'static' => [
                 'fromLabel' => [self::testAdvice('advisor.StubBackedEnum->fromLabel')],
@@ -89,7 +89,7 @@ class EnumProxyGeneratorTest extends TestCase
         $generator = new EnumProxyGenerator($reflectionClass, $traitName, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
-        $this->assertStringContainsString('__aop__fromLabel', $output);
+        $this->assertStringContainsString('fromLabelOriginal', $output);
         $this->assertStringContainsString("'fromLabel'", $output);
 
         // Static dispatch: static::class as the first argument
@@ -108,7 +108,7 @@ class EnumProxyGeneratorTest extends TestCase
             'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices);
+        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnumOriginal', $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString("case Active = 'active'", $output);
@@ -132,7 +132,7 @@ class EnumProxyGeneratorTest extends TestCase
 
         $generator = new EnumProxyGenerator(
             $reflectionClass,
-            'Go\\Stubs\\StubConstExprBackedEnum__AopProxied',
+            'Go\\Stubs\\StubConstExprBackedEnumOriginal',
             $classAdvices,
         );
         $output = "<?php\n" . $generator->generate();
@@ -155,7 +155,7 @@ class EnumProxyGeneratorTest extends TestCase
             'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices);
+        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnumOriginal', $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // The backed type must appear in the enum declaration
@@ -173,7 +173,7 @@ class EnumProxyGeneratorTest extends TestCase
             'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices);
+        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnumOriginal', $classAdvices);
         $output    = $generator->generate();
 
         $this->assertStringNotContainsString('injectJoinPoints', $output);
@@ -196,12 +196,12 @@ class EnumProxyGeneratorTest extends TestCase
             'method' => ['label' => [self::testAdvice('advisor')]],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices);
+        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnumOriginal', $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Extract the implements clause from the enum declaration line and check it directly.
         // We cannot do a plain assertStringNotContains('BackedEnum') because 'BackedEnum' is
-        // also a substring of the stub class name 'StubBackedEnum__AopProxied'.
+        // also a substring of the stub class name 'StubBackedEnumOriginal'.
         preg_match('/^enum\s+\w+\s*(?::\s*\w+\s*)?implements\s+([^{]+)/m', $output, $matches);
         $implementsClause = $matches[1] ?? '';
 
@@ -224,14 +224,14 @@ class EnumProxyGeneratorTest extends TestCase
         ];
 
         // Trait in the same namespace as the proxy enum (Go\Stubs)
-        $traitFqcn = 'Go\\Stubs\\StubBackedEnum__AopProxied';
+        $traitFqcn = 'Go\\Stubs\\StubBackedEnumOriginal';
         $generator = new EnumProxyGenerator($reflectionClass, $traitFqcn, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Must use the short (unqualified) trait name
-        $this->assertStringContainsString('use StubBackedEnum__AopProxied {', $output);
-        $this->assertStringContainsString('StubBackedEnum__AopProxied::label as private __aop__label', $output);
-        $this->assertStringNotContainsString('\\Go\\Stubs\\StubBackedEnum__AopProxied', $output);
+        $this->assertStringContainsString('use StubBackedEnumOriginal {', $output);
+        $this->assertStringContainsString('StubBackedEnumOriginal::label as private labelOriginal', $output);
+        $this->assertStringNotContainsString('\\Go\\Stubs\\StubBackedEnumOriginal', $output);
     }
 
     /**
@@ -248,14 +248,14 @@ class EnumProxyGeneratorTest extends TestCase
         ];
 
         // Trait in a different namespace from the proxy enum (proxy is in Go\Stubs)
-        $traitFqcn = 'Other\\Namespace\\StubBackedEnum__AopProxied';
+        $traitFqcn = 'Other\\Namespace\\StubBackedEnumOriginal';
         $generator = new EnumProxyGenerator($reflectionClass, $traitFqcn, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Must use the FQCN for the trait name
-        $this->assertStringContainsString('use \\Other\\Namespace\\StubBackedEnum__AopProxied {', $output);
-        $this->assertStringContainsString('\\Other\\Namespace\\StubBackedEnum__AopProxied::label as private __aop__label', $output);
-        $this->assertStringNotContainsString('use StubBackedEnum__AopProxied {', $output);
+        $this->assertStringContainsString('use \\Other\\Namespace\\StubBackedEnumOriginal {', $output);
+        $this->assertStringContainsString('\\Other\\Namespace\\StubBackedEnumOriginal::label as private labelOriginal', $output);
+        $this->assertStringNotContainsString('use StubBackedEnumOriginal {', $output);
     }
 
     /**
@@ -276,14 +276,14 @@ class EnumProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnum__AopProxied', $classAdvices);
+        $generator = new EnumProxyGenerator($reflectionClass, 'Go\\Stubs\\StubBackedEnumOriginal', $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // label is intercepted; built-ins are not
-        $this->assertStringContainsString('__aop__label', $output);
-        $this->assertStringNotContainsString('__aop__cases', $output);
-        $this->assertStringNotContainsString('__aop__from', $output);
-        $this->assertStringNotContainsString('__aop__tryFrom', $output);
+        $this->assertStringContainsString('labelOriginal', $output);
+        $this->assertStringNotContainsString('casesOriginal', $output);
+        $this->assertStringNotContainsString('fromOriginal', $output);
+        $this->assertStringNotContainsString('tryFromOriginal', $output);
     }
 
     private static function testAdvice(string $advisorId): GeneratedInterceptor

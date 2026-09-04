@@ -27,8 +27,8 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 ## Implementations (src/Aop/Framework/)
 | Class                             | Implements              | Key behavior                                                                                                           |
 |-----------------------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------|
-| AbstractMethodInvocation          | MethodInvocation        | Base; protected readonly Closure $closureToCall (FCC); TRAIT_ALIAS_PREFIX='__aop__'; keeps method reflection           |
-| DynamicTraitAliasMethodInvocation | DynamicMethodInvocation | receives $this->__aop__m(...) or parent::m(...); proceed() via ReflectionMethod::invokeArgs (handles by-ref correctly) |
+| AbstractMethodInvocation          | MethodInvocation        | Base; protected readonly Closure $closureToCall (FCC); TRAIT_ALIAS_SUFFIX='Original'; keeps method reflection           |
+| DynamicTraitAliasMethodInvocation | DynamicMethodInvocation | receives $this->mOriginal(...) or parent::m(...); proceed() via ReflectionMethod::invokeArgs (handles by-ref correctly) |
 | StaticTraitAliasMethodInvocation  | StaticMethodInvocation  | FCC shim: static fn(array $args) => forward_static_call_array(...); bindTo(null, $scope) per call                      |
 | ReflectionConstructorInvocation   | ConstructorInvocation   | newInstanceWithoutConstructor() then call constructor (requires INTERCEPT_INITIALIZATIONS feature)                     |
 | ReflectionFunctionInvocation      | FunctionInvocation      | receives FCC to global fn (e.g. \strlen(...) with leading \ to avoid recursive proxy call)                             |

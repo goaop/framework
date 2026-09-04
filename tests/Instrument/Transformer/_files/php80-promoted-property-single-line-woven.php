@@ -7,7 +7,7 @@ namespace Go\Tests\TestProject\Application;
  * Class with a promoted constructor property in a single-line constructor used for
  * testing interception of promoted properties (issue #599).
  */
-trait SingleLinePromotedClass__AopProxied
+trait SingleLinePromotedClassOriginal
 {
     public function __construct(string $tag = 'default') { $this->tag = $tag;}
 }

@@ -7,7 +7,7 @@ namespace Go\Tests\TestProject\Application;
  * Class with promoted constructor properties (multi-line constructor) used for
  * testing interception of promoted properties (issue #599).
  */
-trait PromotedPropertyClass__AopProxied
+trait PromotedPropertyClassOriginal
 {
     public function __construct(
         string $name = 'initial',

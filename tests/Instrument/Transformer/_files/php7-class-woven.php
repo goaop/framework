@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-trait TestPhp7Class__AopProxied
+trait TestPhp7ClassOriginal
 {
     public function stringSth(string $arg) {}
     public function floatSth(float $arg) {}

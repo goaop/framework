@@ -114,11 +114,11 @@ final class EnumGenerator implements GeneratorInterface
     }
 
     /**
-     * Adds a trait with method aliases (e.g. `use FooTrait { greet as private __aop__greet; }`).
+     * Adds a trait with method aliases (e.g. `use FooTrait { greet as private greetOriginal; }`).
      *
      * @param string     $traitFqcn  Fully-qualified trait name (leading backslash ok)
      * @param string     $methodName Original method name in the trait
-     * @param string     $alias      New alias (e.g. '__aop__greet')
+     * @param string     $alias      New alias (e.g. 'greetOriginal')
      * @param Visibility $visibility Visibility of the aliased method
      */
     public function addTraitAlias(string $traitFqcn, string $methodName, string $alias, Visibility $visibility): void

@@ -25,7 +25,7 @@ class RichValueAttr
     }
 }
 
-trait TestAttributeArgsClass__AopProxied
+trait TestAttributeArgsClassOriginal
 {
     #[RichValueAttr(AttrStatus::Disabled, PHP_INT_MAX)]
     public function tagged(#[RichValueAttr(AttrStatus::Active)] int $x = 8): int

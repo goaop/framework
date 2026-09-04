@@ -12,7 +12,7 @@ Several of the limitations below are actively being worked on — they are phras
 ### Pipe operator `|>`
 
 The [pipe operator](https://wiki.php.net/rfc/pipe-operator-v3) works inside woven method bodies.
-Method bodies are moved verbatim into the `__AopProxied` trait, so any PHP 8.5 expression syntax
+Method bodies are moved verbatim into the `<Class>Original` body trait, so any PHP 8.5 expression syntax
 inside them is preserved.
 
 ### `clone with`

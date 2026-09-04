@@ -69,11 +69,11 @@ class ClassProxyGenerator
      *
      * The original class has been converted to a trait named $traitName by WeavingTransformer.
      * The proxy class re-exposes the same name, parent, and interfaces as the original, uses
-     * that trait, and aliases each intercepted method as `private __aop__<method>` so the
+     * that trait, and aliases each intercepted method as `private <method>Original` so the
      * overriding method body can delegate to the original via a Closure::bind proceed closure.
      *
      * @param ReflectionClass<covariant object> $originalClass    Original class reflection (before transformation)
-     * @param string                  $traitName        FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
+     * @param string                  $traitName        FQCN of the generated trait (e.g. Ns\FooOriginal)
      * @param array<string, array<string, list<string|GeneratedInterceptor>>> $classAdviceNames List of advices for class
      */
     public function __construct(
@@ -178,14 +178,14 @@ class ClassProxyGenerator
         // explicit addTraits call only matters when $interceptedMethods is empty.
         $classGenerator->addTraits([$effectiveTraitName]);
 
-        // Alias each intercepted method as private __aop__<name>
+        // Alias each intercepted method as private <name>Original
         foreach ($interceptedMethods as $methodName) {
             $reflectionMethod = $originalClass->getMethod($methodName);
             if ($reflectionMethod->class !== $originalClass->name) {
                 continue;
             }
 
-            $classGenerator->addTraitAlias($effectiveTraitName, $methodName, AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName, Visibility::PRIVATE);
+            $classGenerator->addTraitAlias($effectiveTraitName, $methodName, $methodName . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX, Visibility::PRIVATE);
         }
         // Add any AOP-introduced traits
         $classGenerator->addTraits($introducedTraits);
@@ -241,7 +241,7 @@ class ClassProxyGenerator
         $staticInitializationAdvices = $this->adviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? [];
 
         if ($staticInitializationAdvices !== []) {
-            $classCode .= "\n" . $this->generator->name . '::__aop__staticInitialization();';
+            $classCode .= "\n" . $this->generator->name . '::__staticInitialization();';
         }
 
         return $classCode;
@@ -346,7 +346,7 @@ class ClassProxyGenerator
 
         // Determine the first-class callable expression for the original method.
         //
-        // Methods declared in the proxied class have a private `__aop__<method>` alias in the
+        // Methods declared in the proxied class have a private `<method>Original` alias in the
         // proxy's trait-use block.  These first-class callables are rebound per-call.
         //
         // Inherited methods have no such alias.  For static calls, `parent::method(...)` is used
@@ -357,8 +357,8 @@ class ClassProxyGenerator
         $hasTraitAlias = $originalClass !== null && ($method->class === $originalClass->name);
         if ($hasTraitAlias) {
             $callableExpression = $isStatic
-                ? 'self::' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)'
-                : '$this->' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)';
+                ? 'self::' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)'
+                : '$this->' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)';
         } else {
             // Inherited method (no trait alias): use parent:: first-class callable for both static and dynamic.
             // DynamicTraitAliasMethodInvocation uses ReflectionMethod internally, so the callable is stored
@@ -388,7 +388,7 @@ class ClassProxyGenerator
     {
         $advicesCode = (new InterceptorListGenerator($advisorNames))->generate();
 
-        $method = new MethodGenerator('__aop__staticInitialization');
+        $method = new MethodGenerator('__staticInitialization');
         $method->static = true;
         $method->returnType = 'void';
         $method->body = <<<BODY
@@ -410,7 +410,7 @@ class ClassProxyGenerator
     {
         $advicesCode = (new InterceptorListGenerator($advisorNames))->generate();
 
-        $method = new MethodGenerator('__aop__initialization');
+        $method = new MethodGenerator('__initialization');
         $method->static = true;
         $method->returnType = 'static';
         $argumentsParameter = new ParameterGenerator(

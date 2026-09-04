@@ -116,4 +116,26 @@ class MagicConstantTransformerTest extends TestCase
         $class = get_class($this->transformer);
         $this->assertStringStartsWith(dirname(__DIR__), $class::resolveFileName(__FILE__));
     }
+
+    public function testTransformerDropsProxiedSuffixFromWovenBodyFileName(): void
+    {
+        $class = get_class($this->transformer);
+
+        $this->assertSame(
+            dirname(__DIR__) . '/Some.php',
+            $class::resolveFileName(__DIR__ . '/Some' . AspectContainer::AOP_PROXIED_SUFFIX . '.php'),
+        );
+    }
+
+    public function testTransformerKeepsFileNameThatOnlyContainsProxiedSuffix(): void
+    {
+        $class = get_class($this->transformer);
+
+        // The marker is only meaningful at the very end of the file name: a class that happens
+        // to carry the suffix word inside its own name must keep it
+        $this->assertSame(
+            dirname(__DIR__) . '/' . AspectContainer::AOP_PROXIED_SUFFIX . 'Request.php',
+            $class::resolveFileName(__DIR__ . '/' . AspectContainer::AOP_PROXIED_SUFFIX . 'Request.php'),
+        );
+    }
 }

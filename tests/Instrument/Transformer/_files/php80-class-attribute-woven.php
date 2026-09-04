@@ -10,7 +10,7 @@ namespace Test\ns1;
  * invalid on traits and are removed from the woven trait (issue #615).
  */
 #[\FakeMarkerAttr]
-trait TestClassWithPlainAttribute__AopProxied
+trait TestClassWithPlainAttributeOriginal
 {
     public function doSomething(): int
     {
@@ -21,7 +21,7 @@ include_once AOP_CACHE_DIR . '/Transformer/_files/php80-class-attribute.php';
 
 
 #[\FakeMarkerAttr]
-trait TestClassWithArgumentAttribute__AopProxied
+trait TestClassWithArgumentAttributeOriginal
 {
     public function doSomethingElse(): string
     {

@@ -5,9 +5,9 @@ namespace Test\ns1;
 /**
  * PHP 8.3 — class with #[\Override] on an intercepted method.
  * WeavingTransformer must strip the attribute from the generated trait so that
- * the proxy's __aop__overriddenMethod alias does not trigger a fatal error.
+ * the proxy's overriddenMethodOriginal alias does not trigger a fatal error.
  */
-trait TestClassWithOverride__AopProxied
+trait TestClassWithOverrideOriginal
 {
     public function overriddenMethod(): string
     {

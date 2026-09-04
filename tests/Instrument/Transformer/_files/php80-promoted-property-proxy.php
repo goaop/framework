@@ -14,9 +14,9 @@ use Go\Aop\Intercept\FieldAccessType;
  */
 class PromotedPropertyClass implements \Go\Aop\Proxy
 {
-    use PromotedPropertyClass__AopProxied {
-        PromotedPropertyClass__AopProxied::__construct as private __aop____construct;
-        PromotedPropertyClass__AopProxied::getName as private __aop__getName;
+    use PromotedPropertyClassOriginal {
+        PromotedPropertyClassOriginal::__construct as private __constructOriginal;
+        PromotedPropertyClassOriginal::getName as private getNameOriginal;
     }
     private string $name = 'initial' {
         get {
@@ -75,7 +75,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->__construct')),
             ],
-            $this->__aop____construct(...),
+            $this->__constructOriginal(...),
         );
         return $__joinPoint->__invoke($this, \array_slice([$name, $counter, $bag], 0, \func_num_args()));
     }
@@ -88,7 +88,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->getName')),
             ],
-            $this->__aop__getName(...),
+            $this->getNameOriginal(...),
         );
         return $__joinPoint->__invoke($this);
     }

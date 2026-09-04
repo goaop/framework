@@ -2,7 +2,7 @@
 declare(strict_types = 1);
 namespace Test\ns1;
 
-trait TestClass__AopProxied {
+trait TestClassOriginal {
 
     public function publicMethod() {}
 
