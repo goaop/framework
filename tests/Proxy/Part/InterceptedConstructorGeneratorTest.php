@@ -86,8 +86,8 @@ class InterceptedConstructorGeneratorTest extends TestCase
 
     /**
      * When the constructor belongs to the class being proxied (trait-based engine), it is placed in the
-     * trait body and aliased as __constructOriginal. The generated constructor must call
-     * $this->__constructOriginal() rather than parent::__construct(), which would fail because the new
+     * trait body and aliased as __constructOriginalAlias. The generated constructor must call
+     * $this->__constructOriginalAlias() rather than parent::__construct(), which would fail because the new
      * proxy class has no parent.
      */
     public function testGenerateWithConstructorInTrait(): void
@@ -102,9 +102,9 @@ class InterceptedConstructorGeneratorTest extends TestCase
         $generatedCode = $generator->generate();
 
         $this->assertStringContainsString(
-            '$this->__constructOriginal(',
+            '$this->__constructOriginalAlias(',
             $generatedCode,
-            'When constructorIsInTrait=true, must call $this->__constructOriginal() instead of parent::__construct()',
+            'When constructorIsInTrait=true, must call $this->__constructOriginalAlias() instead of parent::__construct()',
         );
         $this->assertStringNotContainsString(
             'parent::__construct',

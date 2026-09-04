@@ -43,7 +43,7 @@ class MetadataLoadInterceptorTest extends TestCase
 
     public function testItWillModifyClassMetadataForNonProxiedClasses(): void
     {
-        $metadata = new ClassMetadata(EntityOriginal::class);
+        $metadata = new ClassMetadata(EntityOriginalTrait::class);
         $metadataInterceptor = new MetadataLoadInterceptor();
         $entityManager = $this->createMock(EntityManager::class);
 
@@ -84,7 +84,7 @@ trait SimpleTrait
     private mixed $mappedField;
 }
 
-class EntityOriginal
+class EntityOriginalTrait
 {
     use SimpleTrait;
 }

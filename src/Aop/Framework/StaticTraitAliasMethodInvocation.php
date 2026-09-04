@@ -21,7 +21,7 @@ use Go\Aop\Intercept\StaticMethodInvocation;
  * that is rebound to each caller's late-static-binding scope on invocation.
  *
  * The callable is provided by the generated proxy code and points to the original method body:
- *  - For methods declared in the proxied class: `self::<method>Original(...)` — the private
+ *  - For methods declared in the proxied class: `self::<method>OriginalAlias(...)` — the private
  *    alias created in the proxy's trait-use block.
  *  - For inherited methods (no trait alias): `parent::<method>(...)`.
  *
@@ -57,7 +57,7 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
      * @param class-string<T>    $className     Class, containing method to invoke
      * @param non-empty-string   $methodName    Name of the method to invoke
      * @param Closure            $closureToCall First-class callable to the original static method body,
-     *                                          e.g. `self::methodOriginal(...)` or `parent::method(...)`.
+     *                                          e.g. `self::methodOriginalAlias(...)` or `parent::method(...)`.
      */
     public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)
     {

@@ -1,6 +1,6 @@
 <?php
 
-trait TestClassTypehintOriginal {
+trait TestClassTypehintOriginalTrait {
 
     public function publicMethodFixedArguments(Exception $a, $b, $c = null) {}
 }

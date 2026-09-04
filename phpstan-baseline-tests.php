@@ -6,7 +6,7 @@
 $ignoreErrors = [];
 
 // MetadataLoadInterceptorTest deliberately builds Doctrine ClassMetadata for
-// fake "Original" class names with intentionally malformed mapping data,
+// fake "OriginalTrait" class names with intentionally malformed mapping data,
 // and then asserts that MetadataLoadInterceptor::loadClassMetadata() reset it
 // at runtime. Static analysis can neither accept the fake class-strings nor
 // see the interceptor's mutations, so every finding below is a false positive
@@ -18,31 +18,31 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/tests/Aop/Bridge/Doctrine/MetadataLoadInterceptorTest.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Parameter \\#1 \\$name of class Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata constructor expects class\\-string\\<Original\\\\Some\\\\Class\\\\Name\\>, string given\\.$#',
+	'message' => '#^Parameter \\#1 \\$name of class Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata constructor expects class\\-string\\<OriginalTrait\\\\Some\\\\Class\\\\Name\\>, string given\\.$#',
 	'identifier' => 'argument.type',
 	'count' => 1,
 	'path' => __DIR__ . '/tests/Aop/Bridge/Doctrine/MetadataLoadInterceptorTest.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Parameter \\#1 \\$name of class Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata constructor expects class\\-string\\<Original\\>, string given\\.$#',
+	'message' => '#^Parameter \\#1 \\$name of class Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata constructor expects class\\-string\\<OriginalTrait\\>, string given\\.$#',
 	'identifier' => 'argument.type',
 	'count' => 1,
 	'path' => __DIR__ . '/tests/Aop/Bridge/Doctrine/MetadataLoadInterceptorTest.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Property Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata\\<Go\\\\Aop\\\\Bridge\\\\Doctrine\\\\EntityOriginal\\>\\:\\:\\$table \\(array\\{name\\: string, schema\\?\\: string, indexes\\?\\: array, uniqueConstraints\\?\\: array, options\\?\\: array\\<string, mixed\\>, quoted\\?\\: bool\\}\\) does not accept array\\{\'table_name\'\\}\\.$#',
+	'message' => '#^Property Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata\\<Go\\\\Aop\\\\Bridge\\\\Doctrine\\\\EntityOriginalTrait\\>\\:\\:\\$table \\(array\\{name\\: string, schema\\?\\: string, indexes\\?\\: array, uniqueConstraints\\?\\: array, options\\?\\: array\\<string, mixed\\>, quoted\\?\\: bool\\}\\) does not accept array\\{\'table_name\'\\}\\.$#',
 	'identifier' => 'assign.propertyType',
 	'count' => 1,
 	'path' => __DIR__ . '/tests/Aop/Bridge/Doctrine/MetadataLoadInterceptorTest.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Property Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata\\<Go\\\\Aop\\\\Bridge\\\\Doctrine\\\\EntityOriginal\\>\\:\\:\\$customRepositoryClassName \\(class\\-string\\<Doctrine\\\\ORM\\\\EntityRepository\\>\\|null\\) does not accept string\\.$#',
+	'message' => '#^Property Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata\\<Go\\\\Aop\\\\Bridge\\\\Doctrine\\\\EntityOriginalTrait\\>\\:\\:\\$customRepositoryClassName \\(class\\-string\\<Doctrine\\\\ORM\\\\EntityRepository\\>\\|null\\) does not accept string\\.$#',
 	'identifier' => 'assign.propertyType',
 	'count' => 1,
 	'path' => __DIR__ . '/tests/Aop/Bridge/Doctrine/MetadataLoadInterceptorTest.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Property Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata\\<Go\\\\Aop\\\\Bridge\\\\Doctrine\\\\EntityOriginal\\>\\:\\:\\$fieldMappings \\(array\\<string, Doctrine\\\\ORM\\\\Mapping\\\\FieldMapping\\>\\) does not accept array\\<string, array\\<string, string\\>\\|Doctrine\\\\ORM\\\\Mapping\\\\FieldMapping\\>\\.$#',
+	'message' => '#^Property Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata\\<Go\\\\Aop\\\\Bridge\\\\Doctrine\\\\EntityOriginalTrait\\>\\:\\:\\$fieldMappings \\(array\\<string, Doctrine\\\\ORM\\\\Mapping\\\\FieldMapping\\>\\) does not accept array\\<string, array\\<string, string\\>\\|Doctrine\\\\ORM\\\\Mapping\\\\FieldMapping\\>\\.$#',
 	'identifier' => 'assign.propertyType',
 	'count' => 1,
 	'path' => __DIR__ . '/tests/Aop/Bridge/Doctrine/MetadataLoadInterceptorTest.php',

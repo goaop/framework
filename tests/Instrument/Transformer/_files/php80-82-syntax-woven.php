@@ -14,7 +14,7 @@ enum SyntaxPriority: int
  * default, named arguments, match expression, nullsafe operator, enum usage,
  * readonly property, first-class callable and a typed class constant.
  */
-trait TestPhp80To82SyntaxClassOriginal
+trait TestPhp80To82SyntaxClassOriginalTrait
 {
     public const int LIMIT = 10;
 

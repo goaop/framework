@@ -34,7 +34,7 @@ final class InterceptedConstructorGenerator
      * @param InterceptedMethodGenerator|null $constructorGenerator  Constructor body generator (if present)
      * @param bool                            $constructorIsInTrait  True when the original constructor is in the trait
      *                                                               (i.e. defined in the class itself, not inherited);
-     *                                                               in that case the alias __constructOriginal is used
+     *                                                               in that case the alias __constructOriginalAlias is used
      *                                                               instead of parent::__construct
      */
     public function __construct(

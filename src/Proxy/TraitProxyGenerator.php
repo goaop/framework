@@ -122,7 +122,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
     /**
      * Creates string definition for trait method body by method reflection
      *
-     * In a trait proxy, all intercepted methods always have a private Original-suffixed alias in the
+     * In a trait proxy, all intercepted methods always have a private `<method>OriginalAlias` alias in the
      * trait-use block (from the parent trait). So the callable always references the alias.
      */
     protected function getJoinpointInvocationBody(ReflectionMethod $method, ?ReflectionClass $originalClass = null): string
@@ -162,7 +162,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
             ? 'StaticMethodInvocation<self' . $returnTypeString . '>'
             : 'DynamicMethodInvocation<self' . $returnTypeString . '>';
 
-        // All intercepted methods in a trait proxy have Original-suffixed aliases from the parent trait.
+        // All intercepted methods in a trait proxy have `<method>OriginalAlias` aliases from the parent trait.
         $callableExpression = $isStatic
             ? 'self::' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)'
             : '$this->' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)';

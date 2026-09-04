@@ -19,7 +19,7 @@ WeavingTransformer converts original class to trait + proxy class. Two generated
 
 ### Woven file (replaces original in php stream filtering)
 ```php
-trait FooOriginal { /* original methods verbatim */ }
+trait FooOriginalTrait { /* original methods verbatim */ }
 include_once AOP_CACHE_DIR . '/Foo.php';
 ```
 
@@ -27,8 +27,8 @@ include_once AOP_CACHE_DIR . '/Foo.php';
 ```php
 class Foo extends OriginalParent implements OriginalInterfaces, \Go\Aop\Proxy
 {
-    use \Ns\FooOriginal {
-        \Ns\FooOriginal::interceptedMethod as private interceptedMethodOriginal;
+    use \Ns\FooOriginalTrait {
+        \Ns\FooOriginalTrait::interceptedMethod as private interceptedMethodOriginalAlias;
     }
     public function interceptedMethod(ArgType $arg): ReturnType {
         /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, ReturnType> $__joinPoint */
@@ -38,7 +38,7 @@ class Foo extends OriginalParent implements OriginalInterfaces, \Go\Aop\Proxy
             [
                 Interceptor::before(The::aspect(SomeAspect::class)->adviceMethod(...)),
             ],
-            $this->interceptedMethodOriginal(...),
+            $this->interceptedMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -54,8 +54,8 @@ GeneratedInterceptor descriptors (string advisor ids are rejected).
 - self:: in trait body → proxy class (no rewrite needed)
 - Private methods interceptable (impossible with old extend-based engine)
 - FCC 4th arg to InterceptorInjector:
-  - `$this->mOriginal(...)` — own dynamic methods
-  - `self::mOriginal(...)` — own static methods
+  - `$this->mOriginalAlias(...)` — own dynamic methods
+  - `self::mOriginalAlias(...)` — own static methods
   - `parent::m(...)` — inherited methods (no trait alias)
   - `\fn(...)` — function proxies
 

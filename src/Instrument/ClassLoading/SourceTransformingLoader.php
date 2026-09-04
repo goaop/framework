@@ -287,9 +287,9 @@ class SourceTransformingLoader extends PhpStreamFilter
         }
 
         if ($result === TransformerResultEnum::RESULT_TRANSFORMED) {
-            // A woven source carries the original class body as a `trait <Name>Original`
+            // A woven source carries the original class body as a `trait <Name>OriginalTrait`
             // declaration and is cached next to the generated proxy, under the same marker.
-            // Both checks are anchored so that a class merely named `...Original` is not
+            // Both checks are anchored so that a class merely named `...OriginalTrait` is not
             // mistaken for a woven body.
             $originalBodyTrait = '/\btrait\s+\w+' . preg_quote(AspectContainer::AOP_PROXIED_SUFFIX, '/') . '\b/';
             if (!str_ends_with($cacheUri, AspectContainer::AOP_PROXIED_SUFFIX . '.php')

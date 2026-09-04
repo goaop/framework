@@ -55,7 +55,7 @@ class ClassProxyGeneratorTest extends TestCase
 
         // Proxy uses a trait alias for each intercepted method
         $this->assertStringContainsString(
-            "{$methodName}Original",
+            "{$methodName}OriginalAlias",
             $proxyFileContent,
             'Proxy must contain trait alias for intercepted method',
         );
@@ -301,7 +301,7 @@ class ClassProxyGeneratorTest extends TestCase
     /**
      * Tests that private instance and static methods are intercepted correctly:
      * - The proxy overrides them with the same `private` visibility
-     * - The trait-use block aliases each as `private <method>Original`
+     * - The trait-use block aliases each as `private <method>OriginalAlias`
      * - The method body delegates to the join-point chain
      *
      * This is a new capability in the trait-based engine; the old extend-based engine
@@ -325,8 +325,8 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         // Trait alias must exist for each private method
-        $this->assertStringContainsString('privateMethodOriginal', $proxyFileContent);
-        $this->assertStringContainsString('staticSelfPrivateOriginal', $proxyFileContent);
+        $this->assertStringContainsString('privateMethodOriginalAlias', $proxyFileContent);
+        $this->assertStringContainsString('staticSelfPrivateOriginalAlias', $proxyFileContent);
 
         // Proxy methods must keep private visibility
         $this->assertStringContainsString('private function privateMethod(', $proxyFileContent);
@@ -369,7 +369,7 @@ class ClassProxyGeneratorTest extends TestCase
      * methods correctly intercepted in the generated proxy.
      *
      * When WeavingTransformer converts a class to a trait, the `use SomeTrait` statement moves
-     * into the `Original` trait body. The proxy class itself only uses `Original`, so
+     * into the `<Class>OriginalTrait` body. The proxy class itself only uses that trait, so
      * it is unaware of the original trait — but it must still alias and override every method
      * regardless of whether it came from a used trait or was directly declared.
      *
@@ -387,12 +387,12 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator        = new ClassProxyGenerator($reflectionClass, 'ClassWithMixedSourcesOriginal', $classAdvices);
+        $generator        = new ClassProxyGenerator($reflectionClass, 'ClassWithMixedSourcesOriginalTrait', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
 
         // Both trait-defined and own methods must have trait aliases
-        $this->assertStringContainsString('publicMethodOriginal', $proxyFileContent);
-        $this->assertStringContainsString('ownPublicMethodOriginal', $proxyFileContent);
+        $this->assertStringContainsString('publicMethodOriginalAlias', $proxyFileContent);
+        $this->assertStringContainsString('ownPublicMethodOriginalAlias', $proxyFileContent);
 
         // Both must delegate to the join-point chain
         $this->assertStringContainsString("InterceptorInjector::forMethod(", $proxyFileContent);
@@ -417,18 +417,18 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator        = new ClassProxyGenerator($reflectionClass, 'FirstStaticOriginal', $classAdvices);
+        $generator        = new ClassProxyGenerator($reflectionClass, 'FirstStaticOriginalTrait', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
 
         $this->assertStringNotContainsString(
-            'FirstStaticOriginal::publicMethod as private publicMethodOriginal',
+            'FirstStaticOriginalTrait::publicMethod as private publicMethodOriginalAlias',
             $proxyFileContent,
         );
         $this->assertStringContainsString(
             "InterceptorInjector::forMethod(",
             $proxyFileContent,
         );
-        // Inherited instance method must use parent:: first-class callable (no Original-suffixed alias available)
+        // Inherited instance method must use parent:: first-class callable (no `<method>OriginalAlias` available)
         $this->assertStringContainsString(
             "parent::publicMethod(...)",
             $proxyFileContent,
@@ -453,12 +453,12 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $generator        = new ClassProxyGenerator($reflectionClass, 'FirstStaticOriginal', $classAdvices);
+        $generator        = new ClassProxyGenerator($reflectionClass, 'FirstStaticOriginalTrait', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $generator->generate();
 
         // No trait alias for inherited static method
         $this->assertStringNotContainsString(
-            'staticSelfPublicOriginal',
+            'staticSelfPublicOriginalAlias',
             $proxyFileContent,
             'Inherited static method must not produce a trait alias',
         );
@@ -539,14 +539,14 @@ class ClassProxyGeneratorTest extends TestCase
         ];
 
         // Trait in the same namespace as the proxy (Go\Stubs)
-        $traitFqcn = 'Go\\Stubs\\FirstOriginal';
+        $traitFqcn = 'Go\\Stubs\\FirstOriginalTrait';
         $generator = new ClassProxyGenerator($reflectionClass, $traitFqcn, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Must use the short (unqualified) trait name
-        $this->assertStringContainsString('use FirstOriginal {', $output);
-        $this->assertStringContainsString('FirstOriginal::publicMethod as private publicMethodOriginal', $output);
-        $this->assertStringNotContainsString('\\Go\\Stubs\\FirstOriginal', $output);
+        $this->assertStringContainsString('use FirstOriginalTrait {', $output);
+        $this->assertStringContainsString('FirstOriginalTrait::publicMethod as private publicMethodOriginalAlias', $output);
+        $this->assertStringNotContainsString('\\Go\\Stubs\\FirstOriginalTrait', $output);
     }
 
     /**
@@ -565,14 +565,14 @@ class ClassProxyGeneratorTest extends TestCase
         ];
 
         // Trait in a different namespace from the proxy (proxy is in Go\Stubs)
-        $traitFqcn = 'Other\\Namespace\\FirstOriginal';
+        $traitFqcn = 'Other\\Namespace\\FirstOriginalTrait';
         $generator = new ClassProxyGenerator($reflectionClass, $traitFqcn, $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
         // Must use the FQCN for the trait name
-        $this->assertStringContainsString('use \\Other\\Namespace\\FirstOriginal {', $output);
-        $this->assertStringContainsString('\\Other\\Namespace\\FirstOriginal::publicMethod as private publicMethodOriginal', $output);
-        $this->assertStringNotContainsString('use FirstOriginal {', $output);
+        $this->assertStringContainsString('use \\Other\\Namespace\\FirstOriginalTrait {', $output);
+        $this->assertStringContainsString('\\Other\\Namespace\\FirstOriginalTrait::publicMethod as private publicMethodOriginalAlias', $output);
+        $this->assertStringNotContainsString('use FirstOriginalTrait {', $output);
     }
 
     private static function testAdvice(): GeneratedInterceptor

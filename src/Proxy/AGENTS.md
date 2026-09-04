@@ -2,7 +2,7 @@
 
 ## Proxy generators
 - ClassProxyGenerator — trait-based proxy for regular classes
-  - Constructor takes $traitName (FooOriginal FQCN) as 2nd arg
+  - Constructor takes $traitName (FooOriginalTrait FQCN) as 2nd arg
   - Always emits `use $traitName` (even for introduction-only aspects)
 - FunctionProxyGenerator — function wrappers
 - TraitProxyGenerator — trait proxies
@@ -11,7 +11,7 @@
 ## Proxy parts (src/Proxy/Part/)
 - InterceptedMethodGenerator — wraps a method with join-point dispatch
 - InterceptedConstructorGenerator — wraps constructor
-  - Calls `$this->__constructOriginal()` when constructor is in trait, `parent::__construct()` otherwise
+  - Calls `$this->__constructOriginalAlias()` when constructor is in trait, `parent::__construct()` otherwise
 - InterceptedPropertyGenerator — re-declares properties with native get/set hooks → ClassFieldAccess
 
 ## Generators (src/Proxy/Generator/)

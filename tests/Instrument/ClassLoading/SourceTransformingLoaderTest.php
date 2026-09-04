@@ -205,7 +205,7 @@ class SourceTransformingLoaderTest extends TestCase
 
     public function testTransformedSourceMerelyMentioningTheSuffixKeepsItsCacheFileName(): void
     {
-        // Only a `trait <Name>Original` declaration marks a woven body; a class that just
+        // Only a `trait <Name>OriginalTrait` declaration marks a woven body; a class that just
         // carries the suffix word in its own name must not be moved aside
         $wovenSource = "<?php\nclass " . AspectContainer::AOP_PROXIED_SUFFIX . "Request { }\n";
         $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, $wovenSource);

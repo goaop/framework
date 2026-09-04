@@ -69,11 +69,11 @@ class ClassProxyGenerator
      *
      * The original class has been converted to a trait named $traitName by WeavingTransformer.
      * The proxy class re-exposes the same name, parent, and interfaces as the original, uses
-     * that trait, and aliases each intercepted method as `private <method>Original` so the
+     * that trait, and aliases each intercepted method as `private <method>OriginalAlias` so the
      * overriding method body can delegate to the original via a Closure::bind proceed closure.
      *
      * @param ReflectionClass<covariant object> $originalClass    Original class reflection (before transformation)
-     * @param string                  $traitName        FQCN of the generated trait (e.g. Ns\FooOriginal)
+     * @param string                  $traitName        FQCN of the generated trait (e.g. Ns\FooOriginalTrait)
      * @param array<string, array<string, list<string|GeneratedInterceptor>>> $classAdviceNames List of advices for class
      */
     public function __construct(
@@ -178,7 +178,7 @@ class ClassProxyGenerator
         // explicit addTraits call only matters when $interceptedMethods is empty.
         $classGenerator->addTraits([$effectiveTraitName]);
 
-        // Alias each intercepted method as private <name>Original
+        // Alias each intercepted method as private <name>OriginalAlias
         foreach ($interceptedMethods as $methodName) {
             $reflectionMethod = $originalClass->getMethod($methodName);
             if ($reflectionMethod->class !== $originalClass->name) {
@@ -346,7 +346,7 @@ class ClassProxyGenerator
 
         // Determine the first-class callable expression for the original method.
         //
-        // Methods declared in the proxied class have a private `<method>Original` alias in the
+        // Methods declared in the proxied class have a private `<method>OriginalAlias` alias in the
         // proxy's trait-use block.  These first-class callables are rebound per-call.
         //
         // Inherited methods have no such alias.  For static calls, `parent::method(...)` is used

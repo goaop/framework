@@ -22,7 +22,7 @@ use ReflectionMethod;
  * Dynamic trait-alias method invocation calls instance methods via reflection.
  *
  * The callable is provided by the generated proxy code and points to the original method body:
- *  - For methods declared in the proxied class: `$this-><method>Original(...)` — the private
+ *  - For methods declared in the proxied class: `$this-><method>OriginalAlias(...)` — the private
  *    alias created in the proxy's trait-use block.
  *  - For inherited methods (no trait alias): `parent::<method>(...)`.
  *
@@ -54,7 +54,7 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
 
     /**
      * ReflectionMethod pointing to the original method body:
-     *  - For methods with a trait alias: the private `<method>Original` alias.
+     *  - For methods with a trait alias: the private `<method>OriginalAlias` alias.
      *  - For inherited methods without a trait alias: the prototype method from the parent class.
      */
     private readonly ReflectionMethod $originalMethodToCall;
@@ -64,7 +64,7 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
      * @param class-string<T>    $className     Class, containing method to invoke
      * @param non-empty-string   $methodName    Name of the method to invoke
      * @param Closure            $closureToCall First-class callable to the original method body,
-     *                                          e.g. `$this->methodOriginal(...)` for trait-aliased
+     *                                          e.g. `$this->methodOriginalAlias(...)` for trait-aliased
      *                                          methods or `parent::method(...)` for inherited ones.
      */
     public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)

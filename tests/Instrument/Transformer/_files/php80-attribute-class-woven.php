@@ -10,7 +10,7 @@ namespace Test\ns1;
  * The proxy class copies the original attribute groups from the AST and keeps them.
  */
 #[\FakeMarkerAttr]
-trait TestGroupedAttributeClassOriginal
+trait TestGroupedAttributeClassOriginalTrait
 {
     public function name(): string
     {
@@ -20,7 +20,7 @@ trait TestGroupedAttributeClassOriginal
 include_once AOP_CACHE_DIR . '/Transformer/_files/php80-attribute-class.php';
 
 
-trait TestDynamicPropertiesClassOriginal
+trait TestDynamicPropertiesClassOriginalTrait
 {
     public function touch(): bool
     {
@@ -30,7 +30,7 @@ trait TestDynamicPropertiesClassOriginal
 include_once AOP_CACHE_DIR . '/Transformer/_files/php80-attribute-class.php';
 
 
-trait TestCustomAttributeOriginal
+trait TestCustomAttributeOriginalTrait
 {
     public function __construct(private string $reason = 'none')
     {

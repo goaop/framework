@@ -7,24 +7,24 @@ use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 class TestPhp7Class implements \Go\Aop\Proxy
 {
-    use TestPhp7ClassOriginal {
-        TestPhp7ClassOriginal::stringSth as private stringSthOriginal;
-        TestPhp7ClassOriginal::floatSth as private floatSthOriginal;
-        TestPhp7ClassOriginal::boolSth as private boolSthOriginal;
-        TestPhp7ClassOriginal::intSth as private intSthOriginal;
-        TestPhp7ClassOriginal::callableSth as private callableSthOriginal;
-        TestPhp7ClassOriginal::arraySth as private arraySthOriginal;
-        TestPhp7ClassOriginal::variadicStringSthByRef as private variadicStringSthByRefOriginal;
-        TestPhp7ClassOriginal::exceptionArg as private exceptionArgOriginal;
-        TestPhp7ClassOriginal::stringRth as private stringRthOriginal;
-        TestPhp7ClassOriginal::floatRth as private floatRthOriginal;
-        TestPhp7ClassOriginal::boolRth as private boolRthOriginal;
-        TestPhp7ClassOriginal::intRth as private intRthOriginal;
-        TestPhp7ClassOriginal::callableRth as private callableRthOriginal;
-        TestPhp7ClassOriginal::arrayRth as private arrayRthOriginal;
-        TestPhp7ClassOriginal::exceptionRth as private exceptionRthOriginal;
-        TestPhp7ClassOriginal::noRth as private noRthOriginal;
-        TestPhp7ClassOriginal::returnSelf as private returnSelfOriginal;
+    use TestPhp7ClassOriginalTrait {
+        TestPhp7ClassOriginalTrait::stringSth as private stringSthOriginalAlias;
+        TestPhp7ClassOriginalTrait::floatSth as private floatSthOriginalAlias;
+        TestPhp7ClassOriginalTrait::boolSth as private boolSthOriginalAlias;
+        TestPhp7ClassOriginalTrait::intSth as private intSthOriginalAlias;
+        TestPhp7ClassOriginalTrait::callableSth as private callableSthOriginalAlias;
+        TestPhp7ClassOriginalTrait::arraySth as private arraySthOriginalAlias;
+        TestPhp7ClassOriginalTrait::variadicStringSthByRef as private variadicStringSthByRefOriginalAlias;
+        TestPhp7ClassOriginalTrait::exceptionArg as private exceptionArgOriginalAlias;
+        TestPhp7ClassOriginalTrait::stringRth as private stringRthOriginalAlias;
+        TestPhp7ClassOriginalTrait::floatRth as private floatRthOriginalAlias;
+        TestPhp7ClassOriginalTrait::boolRth as private boolRthOriginalAlias;
+        TestPhp7ClassOriginalTrait::intRth as private intRthOriginalAlias;
+        TestPhp7ClassOriginalTrait::callableRth as private callableRthOriginalAlias;
+        TestPhp7ClassOriginalTrait::arrayRth as private arrayRthOriginalAlias;
+        TestPhp7ClassOriginalTrait::exceptionRth as private exceptionRthOriginalAlias;
+        TestPhp7ClassOriginalTrait::noRth as private noRthOriginalAlias;
+        TestPhp7ClassOriginalTrait::returnSelf as private returnSelfOriginalAlias;
     }
     public function stringSth(string $arg)
     {
@@ -35,7 +35,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->stringSth')),
             ],
-            $this->stringSthOriginal(...),
+            $this->stringSthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -48,7 +48,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->floatSth')),
             ],
-            $this->floatSthOriginal(...),
+            $this->floatSthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -61,7 +61,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->boolSth')),
             ],
-            $this->boolSthOriginal(...),
+            $this->boolSthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -74,7 +74,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->intSth')),
             ],
-            $this->intSthOriginal(...),
+            $this->intSthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -87,7 +87,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->callableSth')),
             ],
-            $this->callableSthOriginal(...),
+            $this->callableSthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -100,7 +100,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->arraySth')),
             ],
-            $this->arraySthOriginal(...),
+            $this->arraySthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -113,7 +113,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->variadicStringSthByRef')),
             ],
-            $this->variadicStringSthByRefOriginal(...),
+            $this->variadicStringSthByRefOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, $args);
     }
@@ -126,7 +126,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->exceptionArg')),
             ],
-            $this->exceptionArgOriginal(...),
+            $this->exceptionArgOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$exception, $localException]);
     }
@@ -139,7 +139,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->stringRth')),
             ],
-            $this->stringRthOriginal(...),
+            $this->stringRthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -152,7 +152,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->floatRth')),
             ],
-            $this->floatRthOriginal(...),
+            $this->floatRthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -165,7 +165,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->boolRth')),
             ],
-            $this->boolRthOriginal(...),
+            $this->boolRthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -178,7 +178,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->intRth')),
             ],
-            $this->intRthOriginal(...),
+            $this->intRthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -191,7 +191,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->callableRth')),
             ],
-            $this->callableRthOriginal(...),
+            $this->callableRthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -204,7 +204,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->arrayRth')),
             ],
-            $this->arrayRthOriginal(...),
+            $this->arrayRthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
@@ -217,7 +217,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->exceptionRth')),
             ],
-            $this->exceptionRthOriginal(...),
+            $this->exceptionRthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$exception]);
     }
@@ -230,7 +230,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->noRth')),
             ],
-            $this->noRthOriginal(...),
+            $this->noRthOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$exception]);
     }
@@ -243,7 +243,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp7Class->returnSelf')),
             ],
-            $this->returnSelfOriginal(...),
+            $this->returnSelfOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }

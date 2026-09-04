@@ -28,9 +28,9 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
 {
     /**
      * Suffix used for trait method aliases that back the original method body.
-     * The proxy class aliases each intercepted method as `private <method>Original` in the trait-use block.
+     * The proxy class aliases each intercepted method as `private <method>OriginalAlias` in the trait-use block.
      */
-    public const string TRAIT_ALIAS_SUFFIX = 'Original';
+    public const string TRAIT_ALIAS_SUFFIX = 'OriginalAlias';
 
     protected readonly ReflectionMethod $reflectionMethod;
 

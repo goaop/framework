@@ -8,8 +8,8 @@ use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 enum ConstExprStatus : int implements \Go\Aop\Proxy
 {
-    use ConstExprStatusOriginal {
-        ConstExprStatusOriginal::describe as private describeOriginal;
+    use ConstExprStatusOriginalTrait {
+        ConstExprStatusOriginalTrait::describe as private describeOriginalAlias;
     }
     case Negative = -1;
     case Shifted = 1 << 2;
@@ -23,7 +23,7 @@ enum ConstExprStatus : int implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\ConstExprStatus->describe')),
             ],
-            $this->describeOriginal(...),
+            $this->describeOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }

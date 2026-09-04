@@ -5,7 +5,7 @@ namespace Test\ns1;
 /**
  * PHP 8.1 backed enum — woven by extracting methods into a trait and re-declaring cases in the proxy enum.
  */
-trait TestStatusOriginal
+trait TestStatusOriginalTrait
 {
 
 

@@ -550,13 +550,13 @@ abstract class AdviceMatcherTestAbstractClass
     public function concreteMethod(): void {}
 }
 
-class AdviceMatcherTestFooOriginal
+class AdviceMatcherTestFooOriginalTrait
 {
     // @phpstan-ignore method.unused (only ever reached via reflection in AdviceMatcher, never called directly)
     private function privateOriginal(): void {}
 }
 
-class AdviceMatcherTestProxyChild extends AdviceMatcherTestFooOriginal {}
+class AdviceMatcherTestProxyChild extends AdviceMatcherTestFooOriginalTrait {}
 
 trait AdviceMatcherTestIntroducedTrait {}
 

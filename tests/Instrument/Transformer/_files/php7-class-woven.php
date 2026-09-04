@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-trait TestPhp7ClassOriginal
+trait TestPhp7ClassOriginalTrait
 {
     public function stringSth(string $arg) {}
     public function floatSth(float $arg) {}

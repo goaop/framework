@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
 class StaticTraitAliasMethodInvocationTest extends TestCase
 {
     /**
-     * Verifies that invoking routes through <method>Original (the trait alias),
+     * Verifies that invoking routes through <method>OriginalAlias (the trait alias),
      * not through the overridden static method that returns the sentinel -1.
      */
     public function testStaticMethodInvocation(): void

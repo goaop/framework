@@ -21,7 +21,7 @@ use PHPUnit\Framework\TestCase;
 class DynamicTraitAliasMethodInvocationTest extends TestCase
 {
     /**
-     * Verifies that invoking routes through <method>Original (the trait alias),
+     * Verifies that invoking routes through <method>OriginalAlias (the trait alias),
      * not through the overridden public method that returns the sentinel -1.
      */
     /**
@@ -146,7 +146,7 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
     {
         return [
             // publicMethod is overridden in TraitAliasProxy to return -1;
-            // the invocation must go through publicMethodOriginal which returns T_PUBLIC.
+            // the invocation must go through publicMethodOriginalAlias which returns T_PUBLIC.
             ['publicMethod',    T_PUBLIC],
             ['protectedMethod', T_PROTECTED],
         ];

@@ -350,8 +350,8 @@ class WeavingTransformerTest extends TestCase
     /**
      * PHP 8.3 #[\Override] attribute must be stripped from intercepted methods.
      *
-     * When a method is aliased in the proxy's trait-use block (e.g. overriddenMethodOriginal),
-     * PHP copies attributes to the alias. Since overriddenMethodOriginal has no matching parent
+     * When a method is aliased in the proxy's trait-use block (e.g. overriddenMethodOriginalAlias),
+     * PHP copies attributes to the alias. Since overriddenMethodOriginalAlias has no matching parent
      * method, #[\Override] would cause a fatal error — so WeavingTransformer must remove it.
      */
     public function testWeaverStripsOverrideAttributeFromInterceptedMethods(): void
@@ -453,7 +453,7 @@ class WeavingTransformerTest extends TestCase
      * Class-level attributes (with and without arguments) must survive the class→trait
      * conversion untouched (issue #598). Previously the first token inside `#[...]` was
      * renamed to the trait name and the rest of the attribute plus the real class header
-     * was deleted, producing a parse error like `#[FooOriginal {`.
+     * was deleted, producing a parse error like `#[FooOriginalTrait {`.
      */
     public function testWeaverKeepsClassLevelAttributesOnWovenTrait(): void
     {
@@ -780,7 +780,7 @@ class WeavingTransformerTest extends TestCase
         $actual = $this->normalizeWhitespaces($metadata->source);
 
         // The trait keyword stays a trait, only the name gets the Original suffix
-        $this->assertStringContainsString('trait WeavingTraitStubOriginal', $actual);
+        $this->assertStringContainsString('trait WeavingTraitStubOriginalTrait', $actual);
         $this->assertStringNotContainsString('trait WeavingTraitStub' . PHP_EOL, $actual);
 
         // Intercepted property is commented out, the untouched one survives verbatim
@@ -796,9 +796,9 @@ class WeavingTransformerTest extends TestCase
 
         // The generated child trait keeps the original short name and uses the renamed trait
         $this->assertStringContainsString('trait WeavingTraitStub', $proxyContent);
-        $this->assertStringContainsString('WeavingTraitStubOriginal', $proxyContent);
-        $this->assertStringContainsString('traitMethodOriginal', $proxyContent);
-        $this->assertStringContainsString('traitStaticMethodOriginal', $proxyContent);
+        $this->assertStringContainsString('WeavingTraitStubOriginalTrait', $proxyContent);
+        $this->assertStringContainsString('traitMethodOriginalAlias', $proxyContent);
+        $this->assertStringContainsString('traitStaticMethodOriginalAlias', $proxyContent);
         $this->assertStringContainsString('$interceptedProperty', $proxyContent);
     }
 
@@ -820,7 +820,7 @@ class WeavingTransformerTest extends TestCase
 
         $actual = $this->normalizeWhitespaces($metadata->source);
 
-        $this->assertStringContainsString('trait TestAbstractClassOriginal', $actual);
+        $this->assertStringContainsString('trait TestAbstractClassOriginalTrait', $actual);
         $this->assertStringNotContainsString('abstract trait', $actual);
         $this->assertStringNotContainsString('abstract class', $actual);
         // Abstract methods are legal in traits and must survive untouched
@@ -848,7 +848,7 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringContainsString('#[\FakeMarkerAttr]', $actual);
         $this->assertStringNotContainsString('\Attribute', $actual);
         $this->assertStringNotContainsString('#[\FakeMarkerAttr,', $actual);
-        $this->assertStringContainsString('trait TestLastGroupedAttributeClassOriginal', $actual);
+        $this->assertStringContainsString('trait TestLastGroupedAttributeClassOriginalTrait', $actual);
 
         // The woven trait must still be parseable PHP after the comma surgery
         $parser = (new \PhpParser\ParserFactory())->createForHostVersion();
@@ -931,7 +931,7 @@ class WeavingTransformerTest extends TestCase
 
         $actual = $this->normalizeWhitespaces($metadata->source);
 
-        $this->assertStringContainsString('trait InheritedMethodChildOriginal', $actual);
+        $this->assertStringContainsString('trait InheritedMethodChildOriginalTrait', $actual);
         // The `extends` clause is moved from the trait to the proxy
         $this->assertStringNotContainsString('extends InheritedMethodBase', $actual);
         // Nothing of the parent declarations may be commented out in the child's trait body
@@ -946,8 +946,8 @@ class WeavingTransformerTest extends TestCase
             $proxyContent,
         );
         // Own method is aliased in the trait-use block, inherited one goes through parent::
-        $this->assertStringContainsString('as private ownMethodOriginal;', $proxyContent);
-        $this->assertStringNotContainsString('inheritedMethodOriginal', $proxyContent);
+        $this->assertStringContainsString('as private ownMethodOriginalAlias;', $proxyContent);
+        $this->assertStringNotContainsString('inheritedMethodOriginalAlias', $proxyContent);
         $this->assertStringContainsString('parent::inheritedMethod(...)', $proxyContent);
     }
 
@@ -1125,7 +1125,7 @@ class WeavingTransformerTest extends TestCase
 
         $actual = $this->normalizeWhitespaces($metadata->source);
         $this->assertSame(TransformerResultEnum::RESULT_TRANSFORMED, $result);
-        $this->assertStringContainsString('trait TestAbstractClassOriginal', $actual);
+        $this->assertStringContainsString('trait TestAbstractClassOriginalTrait', $actual);
         $this->assertStringNotContainsString('AOP_CACHE_DIR', $actual);
     }
 

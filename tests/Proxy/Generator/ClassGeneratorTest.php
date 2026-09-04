@@ -95,12 +95,12 @@ class ClassGeneratorTest extends TestCase
     public function testUsesExplicitlyRootedGlobalTraitStaysFullyQualified(): void
     {
         $gen = new ClassGenerator('MyClass', 'My\Namespace', [], null);
-        $gen->addTraits(['\GlobalHelperTrait', 'MyClassOriginal']);
+        $gen->addTraits(['\GlobalHelperTrait', 'MyClassOriginalTrait']);
         $output = $gen->generate();
         $this->assertStringContainsString('\GlobalHelperTrait', $output);
         // Deliberate short names keep referring to the class' own namespace
-        $this->assertStringContainsString('MyClassOriginal', $output);
-        $this->assertStringNotContainsString('\MyClassOriginal', $output);
+        $this->assertStringContainsString('MyClassOriginalTrait', $output);
+        $this->assertStringNotContainsString('\MyClassOriginalTrait', $output);
     }
 
     public function testWithMethod(): void

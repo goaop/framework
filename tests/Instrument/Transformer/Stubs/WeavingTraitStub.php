@@ -14,7 +14,7 @@ namespace Go\Instrument\Transformer\Stubs;
 
 /**
  * Trait weaving input: traits keep the legacy weaving strategy — the original trait is
- * renamed to <Name>Original in place and TraitProxyGenerator emits a child trait
+ * renamed to <Name>OriginalTrait in place and TraitProxyGenerator emits a child trait
  * with the original name. Intercepted properties are commented out of the original body.
  */
 trait WeavingTraitStub

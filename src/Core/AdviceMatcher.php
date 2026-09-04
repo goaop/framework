@@ -166,7 +166,7 @@ class AdviceMatcher implements AdviceMatcherInterface
         // Check methods in class only for method filters
         if (($pointcutKind & Pointcut::KIND_METHOD) !== 0) {
             // Private methods are supported by the trait-based proxy engine: the original private method
-            // body lives in the trait and is aliased as <method>Original; the proxy overrides it with the
+            // body lives in the trait and is aliased as <method>OriginalAlias; the proxy overrides it with the
             // same private visibility so the join-point chain is invoked on every in-class call.
             $mask = ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED | ReflectionMethod::IS_PRIVATE;
             foreach ($class->getMethods($mask) as $method) {

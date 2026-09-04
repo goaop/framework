@@ -85,7 +85,7 @@ final class TraitGenerator implements GeneratorInterface
      * Adds an alias adaptation for a used trait's method.
      *
      * @param string     $traitAndMethod  e.g. "ParentTrait::methodName"
-     * @param string     $alias           e.g. "methodNameOriginal"
+     * @param string     $alias           e.g. "methodNameOriginalAlias"
      * @param Visibility $visibility      Visibility of the aliased method
      */
     public function addTraitAlias(string $traitAndMethod, string $alias, Visibility $visibility): void
