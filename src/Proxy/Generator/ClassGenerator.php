@@ -97,11 +97,11 @@ final class ClassGenerator implements GeneratorInterface
     }
 
     /**
-     * Adds a trait with method aliases (e.g. `use FooTrait { greet as private __aop__greet; }`).
+     * Adds a trait with method aliases (e.g. `use FooTrait { greet as private greetOriginalAlias; }`).
      *
      * @param string     $traitFqcn  Fully-qualified trait name (leading backslash ok)
      * @param string     $methodName Original method name in the trait
-     * @param string     $alias      New alias (e.g. '__aop__greet')
+     * @param string     $alias      New alias (e.g. 'greetOriginalAlias')
      * @param Visibility $visibility Visibility of the aliased method
      */
     public function addTraitAlias(string $traitFqcn, string $methodName, string $alias, Visibility $visibility): void
@@ -120,7 +120,7 @@ final class ClassGenerator implements GeneratorInterface
      * trait, alias) with a single universal rule: explicitly rooted
      * ("\Stringable") and multi-segment names are fully qualified; a bare
      * short name resolves in the generated class's own namespace (e.g. the
-     * Foo__AopProxied body trait). Global-namespace names coming from
+     * FooOriginalTrait body trait). Global-namespace names coming from
      * ::class constants are rooted upstream (AdviceMatcher, proxy generators)
      * before they reach this generator.
      */

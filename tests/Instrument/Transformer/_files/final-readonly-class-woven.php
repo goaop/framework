@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace Test\ns1;
 
-trait TestReadonlyClass__AopProxied
+trait TestReadonlyClassOriginalTrait
 {
     public function publicMethod(): string
     {

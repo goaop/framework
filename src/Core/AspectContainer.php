@@ -63,7 +63,7 @@ interface AspectContainer
     /**
      * Suffix, that will be added to all proxied class names
      */
-    public const string AOP_PROXIED_SUFFIX = '__AopProxied';
+    public const string AOP_PROXIED_SUFFIX = 'OriginalTrait';
 
     /**
      * Returns a service from the container.

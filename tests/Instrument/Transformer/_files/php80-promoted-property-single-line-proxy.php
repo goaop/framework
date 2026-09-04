@@ -14,8 +14,8 @@ use Go\Aop\Intercept\FieldAccessType;
  */
 class SingleLinePromotedClass implements \Go\Aop\Proxy
 {
-    use SingleLinePromotedClass__AopProxied {
-        SingleLinePromotedClass__AopProxied::__construct as private __aop____construct;
+    use SingleLinePromotedClassOriginalTrait {
+        SingleLinePromotedClassOriginalTrait::__construct as private __constructOriginalAlias;
     }
     public string $tag = 'default' {
         get {
@@ -50,7 +50,7 @@ class SingleLinePromotedClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->__construct')),
             ],
-            $this->__aop____construct(...),
+            $this->__constructOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, \array_slice([$tag], 0, \func_num_args()));
     }

@@ -7,8 +7,8 @@ use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 enum TestStatus : string implements \Go\Aop\Proxy
 {
-    use TestStatus__AopProxied {
-        TestStatus__AopProxied::label as private __aop__label;
+    use TestStatusOriginalTrait {
+        TestStatusOriginalTrait::label as private labelOriginalAlias;
     }
     case Active = 'active';
     case Inactive = 'inactive';
@@ -21,7 +21,7 @@ enum TestStatus : string implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestStatus->label')),
             ],
-            $this->__aop__label(...),
+            $this->labelOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }

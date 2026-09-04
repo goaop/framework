@@ -8,10 +8,10 @@ use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\StaticMethodInvocation;
 final readonly class TestReadonlyClass implements \Go\Aop\Proxy
 {
-    use TestReadonlyClass__AopProxied {
-        TestReadonlyClass__AopProxied::publicMethod as private __aop__publicMethod;
-        TestReadonlyClass__AopProxied::anotherMethod as private __aop__anotherMethod;
-        TestReadonlyClass__AopProxied::staticMethod as private __aop__staticMethod;
+    use TestReadonlyClassOriginalTrait {
+        TestReadonlyClassOriginalTrait::publicMethod as private publicMethodOriginalAlias;
+        TestReadonlyClassOriginalTrait::anotherMethod as private anotherMethodOriginalAlias;
+        TestReadonlyClassOriginalTrait::staticMethod as private staticMethodOriginalAlias;
     }
     public function publicMethod(): string
     {
@@ -22,7 +22,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->publicMethod')),
             ],
-            $this->__aop__publicMethod(...),
+            $this->publicMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }
@@ -35,7 +35,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->anotherMethod')),
             ],
-            $this->__aop__anotherMethod(...),
+            $this->anotherMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$x]);
     }
@@ -48,7 +48,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->staticMethod')),
             ],
-            self::__aop__staticMethod(...),
+            self::staticMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke(static::class);
     }

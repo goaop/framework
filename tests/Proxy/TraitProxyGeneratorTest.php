@@ -25,8 +25,8 @@ use ReflectionClass;
  *
  * Unlike ClassProxyGenerator which generates a proxy *class*, TraitProxyGenerator
  * generates a child *trait* that:
- *  - uses the renamed original trait (Foo__AopProxied)
- *  - aliases each intercepted method as private __aop__<method>
+ *  - uses the renamed original trait (FooOriginalTrait)
+ *  - aliases each intercepted method as private <method>OriginalAlias
  *  - overrides each intercepted method with a per-method static joinpoint dispatch
  */
 class TraitProxyGeneratorTest extends TestCase
@@ -34,7 +34,7 @@ class TraitProxyGeneratorTest extends TestCase
     /**
      * A trait proxy for an intercepted instance method must:
      * - declare a trait (not a class)
-     * - alias the intercepted method as private __aop__<method>
+     * - alias the intercepted method as private <method>OriginalAlias
      * - override the method with a per-method static $__joinPoint body
      * - call InterceptorInjector (not ClassProxyGenerator::injectJoinPoints)
      * - dispatch via __invoke($this, ...) for instance methods
@@ -50,7 +50,7 @@ class TraitProxyGeneratorTest extends TestCase
 
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
-            'Go\\Stubs\\TraitAliasProxied__AopProxied',
+            'Go\\Stubs\\TraitAliasProxiedOriginalTrait',
             $traitAdvices,
         );
 
@@ -61,8 +61,8 @@ class TraitProxyGeneratorTest extends TestCase
         $this->assertStringNotContainsString('class TraitAliasProxied', $output);
 
         // Parent trait and private alias must appear in the use block
-        $this->assertStringContainsString('TraitAliasProxied__AopProxied', $output);
-        $this->assertStringContainsString('__aop__publicMethod', $output);
+        $this->assertStringContainsString('TraitAliasProxiedOriginalTrait', $output);
+        $this->assertStringContainsString('publicMethodOriginalAlias', $output);
 
         // Method body must use per-method static joinpoint caching
         $this->assertStringContainsString('static $__joinPoint', $output);
@@ -89,14 +89,14 @@ class TraitProxyGeneratorTest extends TestCase
 
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
-            'Go\\Stubs\\TraitAliasProxied__AopProxied',
+            'Go\\Stubs\\TraitAliasProxiedOriginalTrait',
             $traitAdvices,
         );
 
         $output = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString('trait TraitAliasProxied', $output);
-        $this->assertStringContainsString('__aop__staticPublicMethod', $output);
+        $this->assertStringContainsString('staticPublicMethodOriginalAlias', $output);
 
         $this->assertStringContainsString("'staticPublicMethod'", $output);
 
@@ -123,15 +123,15 @@ class TraitProxyGeneratorTest extends TestCase
 
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
-            'Go\\Stubs\\TraitAliasProxied__AopProxied',
+            'Go\\Stubs\\TraitAliasProxiedOriginalTrait',
             $traitAdvices,
         );
 
         $output = "<?php\n" . $generator->generate();
 
-        $this->assertStringContainsString('__aop__publicMethod', $output);
-        $this->assertStringContainsString('__aop__protectedMethod', $output);
-        $this->assertStringContainsString('__aop__staticPublicMethod', $output);
+        $this->assertStringContainsString('publicMethodOriginalAlias', $output);
+        $this->assertStringContainsString('protectedMethodOriginalAlias', $output);
+        $this->assertStringContainsString('staticPublicMethodOriginalAlias', $output);
 
         // Three separate injector calls (one per intercepted method)
         $this->assertSame(2, substr_count($output, 'InterceptorInjector::forMethod'));
@@ -154,7 +154,7 @@ class TraitProxyGeneratorTest extends TestCase
 
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
-            'Go\\Stubs\\TraitAliasProxied__AopProxied',
+            'Go\\Stubs\\TraitAliasProxiedOriginalTrait',
             $traitAdvices,
         );
 
@@ -178,7 +178,7 @@ class TraitProxyGeneratorTest extends TestCase
 
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
-            'Go\\Stubs\\TraitAliasProxied__AopProxied',
+            'Go\\Stubs\\TraitAliasProxiedOriginalTrait',
             $traitAdvices,
         );
 
@@ -203,7 +203,7 @@ class TraitProxyGeneratorTest extends TestCase
 
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
-            'Go\\Stubs\\TraitAliasProxied__AopProxied',
+            'Go\\Stubs\\TraitAliasProxiedOriginalTrait',
             $traitAdvices,
         );
 
@@ -228,7 +228,7 @@ class TraitProxyGeneratorTest extends TestCase
 
         $generator = new TraitProxyGenerator(
             $reflectionTrait,
-            'Go\\Stubs\\TraitWithClassTypedProperty__AopProxied',
+            'Go\\Stubs\\TraitWithClassTypedPropertyOriginalTrait',
             $traitAdvices,
         );
 
@@ -254,14 +254,14 @@ class TraitProxyGeneratorTest extends TestCase
         ];
 
         // Parent trait in the same namespace as the proxy trait (Go\Stubs)
-        $parentTraitFqcn = 'Go\\Stubs\\TraitAliasProxied__AopProxied';
+        $parentTraitFqcn = 'Go\\Stubs\\TraitAliasProxiedOriginalTrait';
         $generator       = new TraitProxyGenerator($reflectionTrait, $parentTraitFqcn, $traitAdvices);
         $output          = "<?php\n" . $generator->generate();
 
         // Must use the short (unqualified) parent trait name
-        $this->assertStringContainsString('use TraitAliasProxied__AopProxied {', $output);
-        $this->assertStringContainsString('TraitAliasProxied__AopProxied::publicMethod as private __aop__publicMethod', $output);
-        $this->assertStringNotContainsString('\\Go\\Stubs\\TraitAliasProxied__AopProxied', $output);
+        $this->assertStringContainsString('use TraitAliasProxiedOriginalTrait {', $output);
+        $this->assertStringContainsString('TraitAliasProxiedOriginalTrait::publicMethod as private publicMethodOriginalAlias', $output);
+        $this->assertStringNotContainsString('\\Go\\Stubs\\TraitAliasProxiedOriginalTrait', $output);
     }
 
     /**
@@ -278,14 +278,14 @@ class TraitProxyGeneratorTest extends TestCase
         ];
 
         // Parent trait in a different namespace from the proxy trait (proxy is in Go\Stubs)
-        $parentTraitFqcn = 'Other\\Namespace\\TraitAliasProxied__AopProxied';
+        $parentTraitFqcn = 'Other\\Namespace\\TraitAliasProxiedOriginalTrait';
         $generator       = new TraitProxyGenerator($reflectionTrait, $parentTraitFqcn, $traitAdvices);
         $output          = "<?php\n" . $generator->generate();
 
         // Must use the FQCN for the parent trait name
-        $this->assertStringContainsString('use \\Other\\Namespace\\TraitAliasProxied__AopProxied {', $output);
-        $this->assertStringContainsString('\\Other\\Namespace\\TraitAliasProxied__AopProxied::publicMethod as private __aop__publicMethod', $output);
-        $this->assertStringNotContainsString('use TraitAliasProxied__AopProxied {', $output);
+        $this->assertStringContainsString('use \\Other\\Namespace\\TraitAliasProxiedOriginalTrait {', $output);
+        $this->assertStringContainsString('\\Other\\Namespace\\TraitAliasProxiedOriginalTrait::publicMethod as private publicMethodOriginalAlias', $output);
+        $this->assertStringNotContainsString('use TraitAliasProxiedOriginalTrait {', $output);
     }
 
     private static function testAdvice(string $advisorId): GeneratedInterceptor

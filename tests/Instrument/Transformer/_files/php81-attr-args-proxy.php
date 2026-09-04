@@ -8,9 +8,9 @@ use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 class TestAttributeArgsClass implements \Go\Aop\Proxy
 {
-    use TestAttributeArgsClass__AopProxied {
-        TestAttributeArgsClass__AopProxied::tagged as private __aop__tagged;
-        TestAttributeArgsClass__AopProxied::collected as private __aop__collected;
+    use TestAttributeArgsClassOriginalTrait {
+        TestAttributeArgsClassOriginalTrait::tagged as private taggedOriginalAlias;
+        TestAttributeArgsClassOriginalTrait::collected as private collectedOriginalAlias;
     }
     #[\Test\ns1\RichValueAttr(\Test\ns1\AttrStatus::Disabled, PHP_INT_MAX)]
     public function tagged(
@@ -25,7 +25,7 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestAttributeArgsClass->tagged')),
             ],
-            $this->__aop__tagged(...),
+            $this->taggedOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, \array_slice([$x], 0, \func_num_args()));
     }
@@ -39,7 +39,7 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestAttributeArgsClass->collected')),
             ],
-            $this->__aop__collected(...),
+            $this->collectedOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }

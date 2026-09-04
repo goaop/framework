@@ -49,7 +49,7 @@ use ReflectionNamedType;
  * enum declaration that:
  *   - Declares the same backed type (string|int) or is a pure unit enum
  *   - Implements the same interfaces as the original plus \Go\Aop\Proxy
- *   - Uses the trait and aliases each intercepted method as `private __aop__<method>`
+ *   - Uses the trait and aliases each intercepted method as `private <method>OriginalAlias`
  *   - Re-declares all enum cases (they cannot live in traits)
  *   - Overrides each intercepted method with per-method lazy joinpoint dispatch
  */
@@ -80,7 +80,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
      * API for each case.
      *
      * @param ReflectionClass<covariant object> $originalClass        Original enum reflection (before transformation)
-     * @param string                  $traitName            FQCN of the generated trait (e.g. Ns\Foo__AopProxied)
+     * @param string                  $traitName            FQCN of the generated trait (e.g. Ns\FooOriginalTrait)
      * @param array<string, array<string, list<string|GeneratedInterceptor>>> $classAdviceNames List of advices for enum
      */
     public function __construct(
@@ -154,12 +154,12 @@ class EnumProxyGenerator extends ClassProxyGenerator
         // Always include the original enum body trait
         $enumGenerator->addTraits([$effectiveTraitName]);
 
-        // Alias each intercepted method as private __aop__<name>
+        // Alias each intercepted method as private <name>OriginalAlias
         foreach ($interceptedMethods as $methodName) {
             $enumGenerator->addTraitAlias(
                 $effectiveTraitName,
                 $methodName,
-                AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $methodName,
+                $methodName . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX,
                 Visibility::PRIVATE,
             );
         }
@@ -213,7 +213,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
      * This mirrors TraitProxyGenerator::getJoinpointInvocationBody() because enums,
      * like traits, cannot hold a class-level $__joinPoints property.
      *
-     * All intercepted enum methods have __aop__ aliases from the enum's trait-use block.
+     * All intercepted enum methods have `<method>OriginalAlias` aliases from the enum's trait-use block.
      */
     protected function getJoinpointInvocationBody(ReflectionMethod $method, ?ReflectionClass $originalClass = null): string
     {
@@ -251,10 +251,10 @@ class EnumProxyGenerator extends ClassProxyGenerator
             ? 'StaticMethodInvocation<self' . $returnTypeString . '>'
             : 'DynamicMethodInvocation<self' . $returnTypeString . '>';
 
-        // All intercepted enum methods have __aop__ aliases from the enum's trait-use block.
+        // All intercepted enum methods have `<method>OriginalAlias` aliases from the enum's trait-use block.
         $callableExpression = $isStatic
-            ? 'self::' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)'
-            : '$this->' . AbstractMethodInvocation::TRAIT_ALIAS_PREFIX . $method->name . '(...)';
+            ? 'self::' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)'
+            : '$this->' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)';
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */

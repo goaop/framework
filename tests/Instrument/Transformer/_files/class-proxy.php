@@ -8,14 +8,14 @@ use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\StaticMethodInvocation;
 class TestClass implements \Go\Aop\Proxy
 {
-    use TestClass__AopProxied {
-        TestClass__AopProxied::publicMethod as private __aop__publicMethod;
-        TestClass__AopProxied::protectedMethod as private __aop__protectedMethod;
-        TestClass__AopProxied::publicStaticMethod as private __aop__publicStaticMethod;
-        TestClass__AopProxied::protectedStaticMethod as private __aop__protectedStaticMethod;
-        TestClass__AopProxied::publicMethodDynamicArguments as private __aop__publicMethodDynamicArguments;
-        TestClass__AopProxied::publicMethodFixedArguments as private __aop__publicMethodFixedArguments;
-        TestClass__AopProxied::methodWithSpecialTypeArguments as private __aop__methodWithSpecialTypeArguments;
+    use TestClassOriginalTrait {
+        TestClassOriginalTrait::publicMethod as private publicMethodOriginalAlias;
+        TestClassOriginalTrait::protectedMethod as private protectedMethodOriginalAlias;
+        TestClassOriginalTrait::publicStaticMethod as private publicStaticMethodOriginalAlias;
+        TestClassOriginalTrait::protectedStaticMethod as private protectedStaticMethodOriginalAlias;
+        TestClassOriginalTrait::publicMethodDynamicArguments as private publicMethodDynamicArgumentsOriginalAlias;
+        TestClassOriginalTrait::publicMethodFixedArguments as private publicMethodFixedArgumentsOriginalAlias;
+        TestClassOriginalTrait::methodWithSpecialTypeArguments as private methodWithSpecialTypeArgumentsOriginalAlias;
     }
     public function publicMethod()
     {
@@ -26,7 +26,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethod')),
             ],
-            $this->__aop__publicMethod(...),
+            $this->publicMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }
@@ -39,7 +39,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->protectedMethod')),
             ],
-            $this->__aop__protectedMethod(...),
+            $this->protectedMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }
@@ -52,7 +52,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicStaticMethod')),
             ],
-            self::__aop__publicStaticMethod(...),
+            self::publicStaticMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke(static::class);
     }
@@ -65,7 +65,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->protectedStaticMethod')),
             ],
-            self::__aop__protectedStaticMethod(...),
+            self::protectedStaticMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke(static::class);
     }
@@ -78,7 +78,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethodDynamicArguments')),
             ],
-            $this->__aop__publicMethodDynamicArguments(...),
+            $this->publicMethodDynamicArgumentsOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$a, &$b]);
     }
@@ -91,7 +91,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethodFixedArguments')),
             ],
-            $this->__aop__publicMethodFixedArguments(...),
+            $this->publicMethodFixedArgumentsOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, \array_slice([$a, $b, $c], 0, \func_num_args()));
     }
@@ -104,7 +104,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->methodWithSpecialTypeArguments')),
             ],
-            $this->__aop__methodWithSpecialTypeArguments(...),
+            $this->methodWithSpecialTypeArgumentsOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, [$instance]);
     }

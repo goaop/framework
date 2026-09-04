@@ -8,13 +8,13 @@ use Go\Aop\Intercept\DynamicMethodInvocation;
 /**
  * PHP 8.3 — class with #[\Override] on an intercepted method.
  * WeavingTransformer must strip the attribute from the generated trait so that
- * the proxy's __aop__overriddenMethod alias does not trigger a fatal error.
+ * the proxy's overriddenMethodOriginalAlias alias does not trigger a fatal error.
  */
 class TestClassWithOverride implements \Go\Aop\Proxy
 {
-    use TestClassWithOverride__AopProxied {
-        TestClassWithOverride__AopProxied::overriddenMethod as private __aop__overriddenMethod;
-        TestClassWithOverride__AopProxied::normalMethod as private __aop__normalMethod;
+    use TestClassWithOverrideOriginalTrait {
+        TestClassWithOverrideOriginalTrait::overriddenMethod as private overriddenMethodOriginalAlias;
+        TestClassWithOverrideOriginalTrait::normalMethod as private normalMethodOriginalAlias;
     }
     #[\Override]
     public function overriddenMethod(): string
@@ -26,7 +26,7 @@ class TestClassWithOverride implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClassWithOverride->overriddenMethod')),
             ],
-            $this->__aop__overriddenMethod(...),
+            $this->overriddenMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }
@@ -39,7 +39,7 @@ class TestClassWithOverride implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClassWithOverride->normalMethod')),
             ],
-            $this->__aop__normalMethod(...),
+            $this->normalMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }

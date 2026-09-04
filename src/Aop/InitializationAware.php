@@ -23,5 +23,5 @@ interface InitializationAware
      * @param list<mixed> $arguments
      * @return T
      */
-    public static function __aop__initialization(array $arguments = []): object;
+    public static function __initialization(array $arguments = []): object;
 }

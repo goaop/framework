@@ -87,7 +87,12 @@ class MagicConstantTransformer extends BaseSourceTransformer
         }
         if (self::$rewriteToPath !== '' && str_starts_with($fileName, self::$rewriteToPath)) {
             $fileName = str_replace(self::$rewriteToPath, self::$rootPath, $fileName);
-            $fileName = str_replace(AspectContainer::AOP_PROXIED_SUFFIX . '.php', '.php', $fileName);
+            // Only the trailing marker of the woven-body file is dropped, so a class that simply
+            // carries the suffix word in its own name (e.g. `OriginalTraitRegistry.php`) keeps its name
+            $proxiedFileSuffix = AspectContainer::AOP_PROXIED_SUFFIX . '.php';
+            if (str_ends_with($fileName, $proxiedFileSuffix)) {
+                $fileName = substr($fileName, 0, -strlen($proxiedFileSuffix)) . '.php';
+            }
         }
 
         return $fileName;

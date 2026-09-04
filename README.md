@@ -285,7 +285,7 @@ static $__joinPoint = InterceptorInjector::forMethod(
     [
         Interceptor::before(The::aspect(MonitorAspect::class)->beforeMethodExecution(...)),
     ],
-    $this->__aop__doSomething(...),
+    $this->doSomethingOriginalAlias(...),
 );
 ```
 

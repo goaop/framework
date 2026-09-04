@@ -130,7 +130,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
 
         if (is_subclass_of($fullClassName, InitializationAware::class)) {
             /** @var class-string<InitializationAware<object>> $fullClassName */
-            return $fullClassName::__aop__initialization($arguments);
+            return $fullClassName::__initialization($arguments);
         }
 
         $cachedInvocation = self::$constructorInvocationsCache[$fullClassName];

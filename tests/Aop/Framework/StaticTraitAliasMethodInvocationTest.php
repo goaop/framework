@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
 class StaticTraitAliasMethodInvocationTest extends TestCase
 {
     /**
-     * Verifies that invoking routes through __aop__<method> (the trait alias),
+     * Verifies that invoking routes through <method>OriginalAlias (the trait alias),
      * not through the overridden static method that returns the sentinel -1.
      */
     public function testStaticMethodInvocation(): void
@@ -112,7 +112,7 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
     /**
      * Regression: when a subclass of the proxy is used as the static scope (LSB — e.g. via
      * static::class in the generated override method), the joinpoint must still route through
-     * the private __aop__ alias defined on the parent proxy class and execute the original
+     * the private Original-suffixed alias defined on the parent proxy class and execute the original
      * method body correctly.
      */
     public function testLateStaticBindingWithSubclassScope(): void

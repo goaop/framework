@@ -341,7 +341,7 @@ class AdviceMatcherTest extends TestCase
 
     /**
      * Verifies that when a class' parent is an AOP-proxied trait-holder (name contains the
-     * __AopProxied suffix), advice matching resolves methods against that original parent class
+     * Original suffix), advice matching resolves methods against that original parent class
      * instead of the (proxy) class passed in - private methods declared directly on the original
      * class must still be matched.
      */
@@ -359,7 +359,7 @@ class AdviceMatcherTest extends TestCase
         $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
 
         $methodAdvices = $advices[AspectContainer::METHOD_PREFIX] ?? [];
-        // privateOriginal is declared directly on the __AopProxied parent, so it is matched
+        // privateOriginal is declared directly on the Original parent, so it is matched
         // only if the original (parent) class was used for the declaring-class comparison.
         $this->assertArrayHasKey('privateOriginal', $methodAdvices);
     }
@@ -550,13 +550,13 @@ abstract class AdviceMatcherTestAbstractClass
     public function concreteMethod(): void {}
 }
 
-class AdviceMatcherTestFoo__AopProxied
+class AdviceMatcherTestFooOriginalTrait
 {
     // @phpstan-ignore method.unused (only ever reached via reflection in AdviceMatcher, never called directly)
     private function privateOriginal(): void {}
 }
 
-class AdviceMatcherTestProxyChild extends AdviceMatcherTestFoo__AopProxied {}
+class AdviceMatcherTestProxyChild extends AdviceMatcherTestFooOriginalTrait {}
 
 trait AdviceMatcherTestIntroducedTrait {}
 

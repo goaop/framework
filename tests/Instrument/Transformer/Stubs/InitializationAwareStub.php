@@ -17,7 +17,7 @@ use Go\Aop\InitializationAware;
 /**
  * Stand-in for a woven proxy that exposes the initialization interceptor entry point.
  *
- * ConstructorExecutionTransformer must delegate instantiation to __aop__initialization()
+ * ConstructorExecutionTransformer must delegate instantiation to __initialization()
  * for such classes instead of building its own ReflectionConstructorInvocation.
  *
  * @implements InitializationAware<self>
@@ -25,7 +25,7 @@ use Go\Aop\InitializationAware;
 class InitializationAwareStub implements InitializationAware
 {
     /**
-     * Arguments the last __aop__initialization() call received
+     * Arguments the last __initialization() call received
      *
      * @var list<mixed>
      */
@@ -34,7 +34,7 @@ class InitializationAwareStub implements InitializationAware
     /**
      * @param list<mixed> $arguments
      */
-    public static function __aop__initialization(array $arguments = []): object
+    public static function __initialization(array $arguments = []): object
     {
         $instance = new self();
         $instance->receivedArguments = $arguments;

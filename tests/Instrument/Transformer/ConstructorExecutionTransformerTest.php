@@ -108,7 +108,7 @@ class ConstructorExecutionTransformerTest extends TestCase
     }
 
     /**
-     * Classes woven with an initialization advice expose __aop__initialization(); instantiation
+     * Classes woven with an initialization advice expose __initialization(); instantiation
      * has to be delegated to it instead of going through a ReflectionConstructorInvocation.
      */
     public function testInitializationAwareClassIsCreatedThroughItsEntryPoint(): void

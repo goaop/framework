@@ -17,5 +17,5 @@ namespace Go\Aop;
  */
 interface StaticInitializationAware
 {
-    public static function __aop__staticInitialization(): void;
+    public static function __staticInitialization(): void;
 }

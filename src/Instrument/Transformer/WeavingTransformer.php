@@ -247,7 +247,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * Performs the following token-stream modifications in-place:
      *  - Removes 'final' and 'abstract' modifiers from the class keyword
      *  - Changes 'class' keyword text to 'trait'
-     *  - Renames the class to $newClassName (__AopProxied suffix)
+     *  - Renames the class to $newClassName (OriginalTrait suffix)
      *  - Removes the 'extends X' and 'implements Y, Z' clauses (moved to the proxy class)
      *
      * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices List of class advices
@@ -321,7 +321,7 @@ class WeavingTransformer extends BaseSourceTransformer
         } while (true);
 
         // Strip #[\Override] from intercepted methods.
-        // PHP copies attributes to alias names (e.g. __aop__foo). Since __aop__foo has no parent
+        // PHP copies attributes to alias names (e.g. fooOriginalAlias). Since fooOriginalAlias has no parent
         // match, PHP would raise a fatal error if #[\Override] were present on the alias.
         $this->commentOutInterceptedPropertiesInTraitBody($class, $advices, $streamMetaData);
         $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
@@ -445,7 +445,7 @@ class WeavingTransformer extends BaseSourceTransformer
      *
      * Performs the following token-stream modifications in-place:
      *  - Changes 'enum' keyword text to 'trait'
-     *  - Renames the enum to $newClassName (__AopProxied suffix)
+     *  - Renames the enum to $newClassName (OriginalTrait suffix)
      *  - Removes the backed type (': string' / ': int') and any 'implements ...' clause
      *  - Removes all enum case declarations from the body (cases live in the proxy enum instead)
      *
@@ -524,7 +524,7 @@ class WeavingTransformer extends BaseSourceTransformer
         }
 
         // Strip #[\Override] from intercepted methods to prevent fatal errors on the alias.
-        // PHP copies attributes to alias names (e.g. __aop__label), and since __aop__label has
+        // PHP copies attributes to alias names (e.g. labelOriginalAlias), and since labelOriginalAlias has
         // no matching parent method, #[\Override] on the alias would be a fatal error.
         $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
     }
@@ -533,7 +533,7 @@ class WeavingTransformer extends BaseSourceTransformer
      * Removes #[\Override] attribute groups from all intercepted methods in the token stream.
      *
      * When a class method is aliased in the proxy trait-use block (e.g.
-     * `SomeTrait::method as private __aop__method`), PHP copies the method's attributes to
+     * `SomeTrait::method as private methodOriginalAlias`), PHP copies the method's attributes to
      * the alias. If the original method had `#[\Override]`, the alias name has no matching
      * parent method → fatal error. We strip the attribute only from methods that will be aliased
      * (those with dynamic or static method advices).

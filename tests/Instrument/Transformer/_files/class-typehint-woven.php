@@ -1,6 +1,6 @@
 <?php
 
-trait TestClassTypehint__AopProxied {
+trait TestClassTypehintOriginalTrait {
 
     public function publicMethodFixedArguments(Exception $a, $b, $c = null) {}
 }

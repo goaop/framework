@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Proxy\Generator\MethodGenerator;
 use LogicException;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -33,7 +34,7 @@ final class InterceptedConstructorGenerator
      * @param InterceptedMethodGenerator|null $constructorGenerator  Constructor body generator (if present)
      * @param bool                            $constructorIsInTrait  True when the original constructor is in the trait
      *                                                               (i.e. defined in the class itself, not inherited);
-     *                                                               in that case the alias __aop____construct is used
+     *                                                               in that case the alias __constructOriginalAlias is used
      *                                                               instead of parent::__construct
      */
     public function __construct(
@@ -46,7 +47,8 @@ final class InterceptedConstructorGenerator
                 $callArguments = new FunctionCallArgumentListGenerator($constructor);
                 $splatPrefix   = $constructor->getNumberOfParameters() > 0 ? '...' : '';
                 if ($constructorIsInTrait) {
-                    $constructorCallBody = '$this->__aop____construct(' . $splatPrefix . $callArguments->generate() . ');';
+                    $constructorAlias    = '__construct' . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX;
+                    $constructorCallBody = '$this->' . $constructorAlias . '(' . $splatPrefix . $callArguments->generate() . ');';
                 } else {
                     $constructorCallBody = 'parent::__construct(' . $splatPrefix . $callArguments->generate() . ');';
                 }
