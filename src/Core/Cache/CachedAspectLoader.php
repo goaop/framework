@@ -98,7 +98,7 @@ class CachedAspectLoader implements AspectLoaderInterface
         $refAspect      = new ReflectionClass($aspect);
         $aspectFileName = $refAspect->getFileName();
         $cacheFileName  = $aspectFileName !== false ? $this->resolveCacheFileName($aspectFileName) : null;
-        if ($cacheFileName === null || $aspectFileName === false) {
+        if ($aspectFileName === false || $cacheFileName === null) {
             // Aspects without a resolvable source file below the application root are not cached
             return $this->loader->load($aspect);
         }
