@@ -148,7 +148,7 @@ class WeavingTransformer extends BaseSourceTransformer
         // For enums: convert the enum body to a trait (cases extracted to proxy enum by EnumProxyGenerator).
         // For classes: convert the class body to a trait (new trait-based engine).
         if ($class->isTrait()) {
-            $this->commentOutInterceptedPropertiesInTraitBody($class, $advices, $metadata);
+            $this->removeInterceptedPropertiesFromTraitBody($class, $advices, $metadata);
             $this->adjustOriginalTrait($class, $metadata, $newClassName);
             $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices);
         } elseif ($class->isEnum()) {
@@ -323,7 +323,7 @@ class WeavingTransformer extends BaseSourceTransformer
         // Strip #[\Override] from intercepted methods.
         // PHP copies attributes to alias names (e.g. fooOriginalAlias). Since fooOriginalAlias has no parent
         // match, PHP would raise a fatal error if #[\Override] were present on the alias.
-        $this->commentOutInterceptedPropertiesInTraitBody($class, $advices, $streamMetaData);
+        $this->removeInterceptedPropertiesFromTraitBody($class, $advices, $streamMetaData);
         $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
         $this->stripTraitIncompatibleClassAttributes($classNode, $streamMetaData);
     }
@@ -673,12 +673,14 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * Removes intercepted property declarations from the woven trait body.
      *
-     * The proxy class re-declares these properties with native PHP 8.4 hooks. Tokens are neutralised
-     * (not deleted) to preserve original line numbers for debugger mapping.
+     * The proxy class re-declares these properties with native PHP 8.4 hooks. Tokens are blanked
+     * (not deleted) and every newline is kept, so original line numbers survive for debugger mapping,
+     * whatever the declaration spans: multi-line defaults, attributes on their own lines or several
+     * properties declared in one statement.
      *
      * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices
      */
-    private function commentOutInterceptedPropertiesInTraitBody(
+    private function removeInterceptedPropertiesFromTraitBody(
         ReflectionClass $class,
         array $advices,
         StreamMetaData $streamMetaData,
@@ -689,30 +691,14 @@ class WeavingTransformer extends BaseSourceTransformer
         }
         $interceptedProperties = array_flip($interceptedProperties);
 
-        if ($class->isTrait()) {
-            $classNode = $class->getNode();
-            foreach ($classNode->stmts as $statement) {
-                if (!$statement instanceof Property) {
-                    continue;
-                }
-                $statementContainsInterceptedProperty = false;
-                foreach ($statement->props as $propertyNode) {
-                    if (isset($interceptedProperties[$propertyNode->name->name])) {
-                        $statementContainsInterceptedProperty = true;
-                        break;
-                    }
-                }
-                if (!$statementContainsInterceptedProperty) {
-                    continue;
-                }
-                $start = $statement->getAttribute('startTokenPos');
-                $end = $statement->getAttribute('endTokenPos');
-                if (!is_int($start) || !is_int($end)) {
-                    continue;
-                }
-                $this->commentOutMovedPropertyTokenRange($class->name, $statement->props[0]->name->name, $start, $end, $streamMetaData);
+        // Plain property declarations are taken from the AST of this class/trait, so only its
+        // own declarations are touched and a grouped declaration is handled once, per item
+        foreach ($class->getNode()->stmts as $statement) {
+            if ($statement instanceof Property) {
+                $this->removeInterceptedPropertyItems($class->name, $statement, $interceptedProperties, $streamMetaData);
             }
-
+        }
+        if ($class->isTrait()) {
             return;
         }
 
@@ -727,24 +713,14 @@ class WeavingTransformer extends BaseSourceTransformer
             }
 
             $propertyNode = $property->getTypeNode();
-            if (!is_object($propertyNode) || !method_exists($propertyNode, 'getAttribute')) {
-                continue;
-            }
             if ($propertyNode instanceof Param) {
-                // Promoted constructor property (issue #599): the declaration cannot be commented
-                // out — it doubles as the constructor parameter. Demote it to a plain parameter
-                // instead and assign it to the (proxy-declared) property in the constructor body.
+                // Promoted constructor property (issue #599): the declaration cannot be removed,
+                // it doubles as the constructor parameter. Demote it to a plain parameter instead
+                // and assign it to the (proxy-declared) property in the constructor body.
                 $this->demotePromotedPropertyParameter($propertyNode, $streamMetaData);
                 $propertyName          = $property->getName();
                 $promotedAssignments[] = sprintf('$this->%1$s = $%1$s;', $propertyName);
-                continue;
             }
-            $start = $propertyNode->getAttribute('startTokenPos');
-            $end   = $propertyNode->getAttribute('endTokenPos');
-            if (!is_int($start) || !is_int($end)) {
-                continue;
-            }
-            $this->commentOutMovedPropertyTokenRange($class->name, $property->getName(), $start, $end, $streamMetaData);
         }
 
         if ($promotedAssignments !== []) {
@@ -891,63 +867,92 @@ class WeavingTransformer extends BaseSourceTransformer
         }
     }
 
-    private function commentOutMovedPropertyTokenRange(
+    /**
+     * Removes the intercepted items of one property declaration statement from the trait body.
+     *
+     * When every item of the statement is intercepted, the whole statement (attributes, modifiers,
+     * type, items and the semicolon) is blanked. Otherwise, only the intercepted items are blanked
+     * together with the commas that separated them, so the remaining items keep their shared
+     * attributes, modifiers and type: `public int $a = 1, $b;` with `$a` intercepted keeps
+     * `public int $b;` in the trait. A newline-free marker comment is left in place of every
+     * removed item.
+     *
+     * @param array<string, int> $interceptedProperties Intercepted property names as keys
+     */
+    private function removeInterceptedPropertyItems(
         string $className,
-        string $propertyName,
-        int $start,
-        int $end,
+        Property $statement,
+        array $interceptedProperties,
         StreamMetaData $streamMetaData,
     ): void {
-        $firstTokenPosition = $start;
-        while ($firstTokenPosition <= $end && !isset($streamMetaData->tokenStream[$firstTokenPosition])) {
-            ++$firstTokenPosition;
+        $items       = [];
+        $isRemoved   = [];
+        $markers     = [];
+        foreach ($statement->props as $index => $item) {
+            $start = $item->getAttribute('startTokenPos');
+            $end   = $item->getAttribute('endTokenPos');
+            if (!is_int($start) || !is_int($end)) {
+                return;
+            }
+            $items[$index]     = [$start, $end];
+            $propertyName      = $item->name->name;
+            $isRemoved[$index] = isset($interceptedProperties[$propertyName]);
+            if ($isRemoved[$index]) {
+                $markers[$index] = sprintf('/* Moved by weaving interceptor to the {@see %s->%s} */', $className, $propertyName);
+            }
         }
-        $lastTokenPosition = $end;
-        while ($lastTokenPosition >= $start && !isset($streamMetaData->tokenStream[$lastTokenPosition])) {
-            --$lastTokenPosition;
-        }
-        if (!isset($streamMetaData->tokenStream[$firstTokenPosition], $streamMetaData->tokenStream[$lastTokenPosition])) {
+        if ($markers === []) {
             return;
         }
 
-        $streamMetaData->tokenStream[$firstTokenPosition]->text = '// ' . $streamMetaData->tokenStream[$firstTokenPosition]->text;
+        if (count($markers) === count($items)) {
+            $start = $statement->getAttribute('startTokenPos');
+            $end   = $statement->getAttribute('endTokenPos');
+            if (!is_int($start) || !is_int($end)) {
+                return;
+            }
+            $this->blankTokenRangePreservingNewlines($start, $end, $streamMetaData);
+            $this->prependToFirstToken($start, $end, implode(' ', $markers), $streamMetaData);
 
-        $suffix = sprintf(
-            ' // Moved by weaving interceptor to the {@see %s->%s}',
-            $className,
-            $propertyName,
-        );
-        $lastTokenText = $streamMetaData->tokenStream[$lastTokenPosition]->text;
-        $newLine = $this->findLastNewlinePosition($lastTokenText);
-        if ($newLine !== null) {
-            $streamMetaData->tokenStream[$lastTokenPosition]->text = substr($lastTokenText, 0, $newLine['position'])
-                . $suffix
-                . substr($lastTokenText, $newLine['position'], $newLine['length'])
-                . substr($lastTokenText, $newLine['position'] + $newLine['length']);
-        } else {
-            $streamMetaData->tokenStream[$lastTokenPosition]->text .= $suffix;
+            return;
+        }
+
+        $lastIndex = array_key_last($items);
+        foreach ($items as $index => [$start, $end]) {
+            if ($isRemoved[$index]) {
+                $this->blankTokenRangePreservingNewlines($start, $end, $streamMetaData);
+                $this->prependToFirstToken($start, $end, $markers[$index], $streamMetaData);
+            }
+            if ($index === $lastIndex) {
+                break;
+            }
+            // Exactly one comma separates two items; it survives only between two kept items:
+            // it follows a kept item and another kept item comes later in the statement
+            $keepsComma = !$isRemoved[$index] && in_array(false, array_slice($isRemoved, $index + 1), true);
+            if ($keepsComma) {
+                continue;
+            }
+            for ($position = $end + 1; $position < $items[$index + 1][0]; ++$position) {
+                if (isset($streamMetaData->tokenStream[$position]) && $streamMetaData->tokenStream[$position]->text === ',') {
+                    $streamMetaData->tokenStream[$position]->text = '';
+                    break;
+                }
+            }
         }
     }
 
     /**
-     * @return array{position: int, length: int}|null
+     * Prepends a text to the first token of the [$start, $end] range that is still present
      */
-    private function findLastNewlinePosition(string $text): ?array
+    private function prependToFirstToken(int $start, int $end, string $text, StreamMetaData $streamMetaData): void
     {
-        $position = strrpos($text, "\r\n");
-        if ($position !== false) {
-            return ['position' => $position, 'length' => 2];
-        }
-        $position = strrpos($text, "\n");
-        if ($position !== false) {
-            return ['position' => $position, 'length' => 1];
-        }
-        $position = strrpos($text, "\r");
-        if ($position !== false) {
-            return ['position' => $position, 'length' => 1];
-        }
+        for ($position = $start; $position <= $end; ++$position) {
+            if (isset($streamMetaData->tokenStream[$position])) {
+                $streamMetaData->tokenStream[$position]->text = $text . $streamMetaData->tokenStream[$position]->text;
 
-        return null;
+                return;
+            }
+        }
     }
 
     /**

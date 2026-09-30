@@ -57,6 +57,7 @@ short name to unrelated classes (issue #668).
 - Proxy re-inherits parent+interfaces via reflection (not from woven source)
 - self:: in trait body → proxy class (no rewrite needed)
 - Private methods interceptable (impossible with old extend-based engine)
+- Intercepted properties are REMOVED from the trait body per PropertyItem (removeInterceptedPropertyItems): whole statement blanked when all items move, else only the item + its separating comma; blanked tokens keep their newlines (line numbers), a newline-free `/* Moved by weaving interceptor … */` marker is left; never use a `//` prefix (multi-line declarations would stay live, issue #669)
 - FCC 4th arg to InterceptorInjector:
   - `$this->mOriginalAlias(...)` — own dynamic methods
   - `self::mOriginalAlias(...)` — own static methods
