@@ -13,120 +13,53 @@ declare(strict_types=1);
 namespace Go\Bridge\Doctrine;
 
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
-use Doctrine\ORM\Mapping\ClassMetadata;
-use Go\Core\AspectContainer;
-use InvalidArgumentException;
-use ReflectionClass;
+use Go\Aop\Proxy;
 use RuntimeException;
 
 /**
- * Class MetadataLoadInterceptor
+ * Validates the Doctrine configuration for woven entities.
  *
- * Support for weaving Doctrine entities.
+ * Woven entities need no metadata changes: the woven class keeps its name and all mapping
+ * attributes, and the original class body lives in a trait that Doctrine never maps. An
+ * intercepted property, however, is re-declared by the proxy with native PHP property hooks,
+ * which Doctrine ORM only supports with native lazy objects. This listener reports such a
+ * configuration when the metadata is loaded, instead of a failure on the first lazy proxy.
  *
  * Register it as a plain event listener when Doctrine is bootstrapped:
  *
  *     $eventManager->addEventListener(Events::loadClassMetadata, new MetadataLoadInterceptor());
+ *
+ * Use WovenEntityClassLocator for the mapping driver so that entity discovery loads the woven classes.
  */
 final class MetadataLoadInterceptor
 {
     /**
-     * Handles \Doctrine\ORM\Events::loadClassMetadata event by modifying metadata of Go! AOP proxied classes.
+     * Handles \Doctrine\ORM\Events::loadClassMetadata event
      *
-     * This method intercepts loaded metadata of Doctrine's entities which are weaved by Go! AOP,
-     * and denotes them as mapped superclass. If weaved entities uses mappings from traits
-     * (such as Timestampable, Blameable, etc... from https://github.com/Atlantic18/DoctrineExtensions),
-     * it will remove all mappings from proxied class for fields inherited from traits in order to prevent
-     * collision with concrete subclass of weaved entity. Fields from trait will be present in concrete subclass
-     * of weaved entitites.
-     *
-     * @see http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/inheritance-mapping.html#mapped-superclasses
-     * @see https://github.com/Atlantic18/DoctrineExtensions
+     * @throws RuntimeException When a mapped property of a woven entity is intercepted while native
+     *                          lazy objects are disabled
      */
     public function loadClassMetadata(LoadClassMetadataEventArgs $args): void
     {
-        $metadata = $args->getClassMetadata();
-
-        if (1 === preg_match(sprintf('/.+(%s)$/', AspectContainer::AOP_PROXIED_SUFFIX), $metadata->name)) {
-            $metadata->isMappedSuperclass        = true;
-            $metadata->isEmbeddedClass           = false;
-            $metadata->table                     = [];
-            $metadata->customRepositoryClassName = null;
-
-            $this->removeMappingsFromTraits($metadata);
+        $metadata        = $args->getClassMetadata();
+        $reflectionClass = $metadata->getReflectionClass();
+        if (!$reflectionClass->implementsInterface(Proxy::class)) {
+            return;
         }
-    }
+        if ($args->getObjectManager()->getConfiguration()->isNativeLazyObjectsEnabled()) {
+            return;
+        }
 
-    /**
-     * Remove fields in Go! AOP proxied class metadata that are inherited
-     * from traits.
-     *
-     * @param ClassMetadata<object> $metadata
-     */
-    private function removeMappingsFromTraits(ClassMetadata $metadata): void
-    {
-        $traits = $this->getTraits($metadata->name);
-
-        foreach ($traits as $trait) {
-            if (!trait_exists($trait)) {
-                continue;
-            }
-            $trait = new ReflectionClass($trait);
-
-            foreach ($trait->getProperties() as $property) {
-                $name = $property->getName();
-
-                if (isset($metadata->fieldMappings[$name])) {
-                    $columnName = $metadata->getColumnName($name);
-
-                    unset(
-                        $metadata->fieldMappings[$name],
-                        $metadata->fieldNames[$columnName],
-                        $metadata->columnNames[$name],
-                    );
-                }
+        $mappedProperties = [...array_keys($metadata->fieldMappings), ...array_keys($metadata->associationMappings)];
+        foreach ($mappedProperties as $propertyName) {
+            if ($reflectionClass->hasProperty($propertyName) && $reflectionClass->getProperty($propertyName)->hasHooks()) {
+                throw new RuntimeException(sprintf(
+                    'Mapped property %s::$%s of a woven entity is intercepted by an aspect, which requires '
+                    . 'Doctrine native lazy objects: call $configuration->enableNativeLazyObjects(true).',
+                    $metadata->getName(),
+                    $propertyName,
+                ));
             }
         }
-    }
-
-    /**
-     * Get ALL traits used by one class.
-     *
-     * This method is copied from
-     * https://github.com/RunOpenCode/traitor-bundle/blob/master/src/RunOpenCode/Bundle/Traitor/Utils/ClassUtils.php
-     *
-     * @param class-string $className FQCN
-     * @param bool         $autoload  Weather to autoload class.
-     *
-     * @return string[]
-     * @throws InvalidArgumentException
-     * @throws RuntimeException
-     */
-    private function getTraits(string $className, bool $autoload = true): array
-    {
-        if (!class_exists($className)) {
-            throw new RuntimeException(sprintf('Class "%s" does not exists or it can not be autoloaded.', $className));
-        }
-
-        $traits = [];
-        // Get traits of all parent classes
-        do {
-            $traits    = array_merge(class_uses($className, $autoload) ?: [], $traits);
-            $className = get_parent_class($className);
-        } while ($className);
-
-        $traitsToSearch = $traits;
-
-        while (count($traitsToSearch) > 0) {
-            $newTraits      = class_uses(array_pop($traitsToSearch), $autoload) ?: [];
-            $traits         = array_merge($newTraits, $traits);
-            $traitsToSearch = array_merge($newTraits, $traitsToSearch);
-        }
-
-        foreach ($traits as $trait => $same) {
-            $traits = array_merge(class_uses($trait, $autoload) ?: [], $traits);
-        }
-
-        return array_values(array_unique(array_map(fn(string $fqcn) => ltrim($fqcn, '\\'), $traits)));
     }
 }

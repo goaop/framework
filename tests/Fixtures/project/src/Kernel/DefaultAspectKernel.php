@@ -9,6 +9,7 @@ use Go\Tests\TestProject\Aspect\Alpha\CollisionAspect as AlphaCollisionAspect;
 use Go\Tests\TestProject\Aspect\ArrayPropertyInterceptAspect;
 use Go\Tests\TestProject\Aspect\Beta\CollisionAspect as BetaCollisionAspect;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
+use Go\Tests\TestProject\Aspect\EntityFieldAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use Go\Tests\TestProject\Aspect\InitializationAspect;
 use Go\Tests\TestProject\Aspect\Issue293Aspect;
@@ -36,6 +37,7 @@ class DefaultAspectKernel extends AspectKernel
         $container->addLazyService(WeavingAspect::class, fn(): WeavingAspect => new WeavingAspect());
         $container->addLazyService(TraitCompositionAspect::class, fn(): TraitCompositionAspect => new TraitCompositionAspect());
         $container->addLazyService(EnumMethodAspect::class, fn(): EnumMethodAspect => new EnumMethodAspect());
+        $container->addLazyService(EntityFieldAspect::class, fn(): EntityFieldAspect => new EntityFieldAspect());
         $container->addLazyService(AlphaCollisionAspect::class, fn(): AlphaCollisionAspect => new AlphaCollisionAspect());
         $container->addLazyService(BetaCollisionAspect::class, fn(): BetaCollisionAspect => new BetaCollisionAspect());
     }
