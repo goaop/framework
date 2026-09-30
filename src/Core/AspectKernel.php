@@ -208,7 +208,8 @@ abstract class AspectKernel
      *   debug    - boolean Determines whether or not kernel is in debug mode
      *   appDir   - string Path to the application root directory.
      *   cacheDir - string Path to the cache directory where compiled classes will be stored
-     *   cacheFileMode - integer Binary mask of permission bits that is set to cache files
+     *   cacheFileMode - integer Binary mask of permission bits that is set to cache files (0600..0777, owner must
+     *                   be able to read and write; directories get the matching search bits)
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
@@ -251,7 +252,16 @@ abstract class AspectKernel
         $excludePaths[]  = __DIR__ . '/../';
 
         $appDir        = is_string($merged['appDir'] ?? null) ? $merged['appDir'] : '';
-        $cacheFileMode = is_int($merged['cacheFileMode'] ?? null) ? $merged['cacheFileMode'] : (0770 & ~umask());
+        $cacheFileMode = $merged['cacheFileMode'] ?? null;
+        if ($cacheFileMode === null) {
+            $cacheFileMode = 0770 & ~umask();
+        } elseif (!is_int($cacheFileMode) || $cacheFileMode < 0 || $cacheFileMode > 0777 || ($cacheFileMode & 0600) !== 0600) {
+            throw new RuntimeException(sprintf(
+                'Option "cacheFileMode" must be an integer permission mask between 0600 and 0777 '
+                . 'that grants the owner read and write access, got %s.',
+                is_int($cacheFileMode) ? sprintf('0%o', $cacheFileMode) : get_debug_type($cacheFileMode),
+            ));
+        }
         $features      = is_int($merged['features'] ?? null) ? $merged['features'] : 0;
         $rawIncludePaths = is_array($merged['includePaths'] ?? null) ? $merged['includePaths'] : [];
         $includePaths    = array_values(array_filter($rawIncludePaths, is_string(...)));

@@ -121,7 +121,7 @@ class CachePathManager
                             Parent directory {$cacheRootDir} is not writable or not exist.",
                         );
                     }
-                    mkdir($this->cacheDir, $this->fileMode, true);
+                    mkdir($this->cacheDir, CacheFileWriter::directoryModeFor($this->fileMode), true);
                 }
                 if (!is_writable($this->cacheDir)) {
                     throw new InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
@@ -223,6 +223,14 @@ class CachePathManager
     public function getCacheDir(): ?string
     {
         return $this->cacheDir;
+    }
+
+    /**
+     * Returns the writer that every cache artefact must be written through (atomic, opcache-aware)
+     */
+    public function getCacheFileWriter(): CacheFileWriter
+    {
+        return $this->cacheFileWriter;
     }
 
     /**

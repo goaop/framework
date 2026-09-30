@@ -971,17 +971,8 @@ class WeavingTransformer extends BaseSourceTransformer
             $filemtime = file_exists($functionFileName) ? filemtime($functionFileName) : false;
             if ($filemtime === false || !$this->container->isFreshSince($filemtime)) {
                 $functionAdvices = AbstractJoinpoint::flatAndSortAdvices($functionAdvices);
-                $dirname         = dirname($functionFileName);
-                if (!file_exists($dirname)) {
-                    mkdir($dirname, $this->options['cacheFileMode'], true);
-                }
-                $generator = new FunctionProxyGenerator($namespace, $functionAdvices);
-                // PHP core refuses the LOCK_EX flag for any non-"file://" stream wrapper path,
-                // see saveProxyToCache() below.
-                $isStreamPath = str_contains($functionFileName, '://');
-                file_put_contents($functionFileName, $generator->generate(), $isStreamPath ? 0 : LOCK_EX);
-                // For cache files we don't want executable bits by default
-                chmod($functionFileName, $this->options['cacheFileMode'] & (~0111));
+                $generator       = new FunctionProxyGenerator($namespace, $functionAdvices);
+                $this->cachePathManager->getCacheFileWriter()->write($functionFileName, $generator->generate());
             }
             $content = 'include_once AOP_CACHE_DIR . ' . var_export(self::FUNCTIONS_CACHE_SUFFIX . $fileName, true) . ';';
 
@@ -1009,19 +1000,9 @@ class WeavingTransformer extends BaseSourceTransformer
         $relativePath      = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $classFileName);
         $proxyRelativePath = str_replace('\\', '/', $relativePath);
         $proxyFileName     = $cacheRootDir . '/' . $proxyRelativePath;
-        $dirname           = dirname($proxyFileName);
-        if (!file_exists($dirname)) {
-            mkdir($dirname, $this->options['cacheFileMode'], true);
-        }
 
-        $body = '<?php' . PHP_EOL . $childCode;
-
-        // PHP core refuses the LOCK_EX flag for any non-"file://" stream wrapper path,
-        // so it can not be used when the cache is placed on a virtual filesystem
-        $isStreamPath = str_contains($proxyFileName, '://');
-        file_put_contents($proxyFileName, $body, $isStreamPath ? 0 : LOCK_EX);
-        // For cache files we don't want executable bits by default
-        chmod($proxyFileName, $this->options['cacheFileMode'] & (~0111));
+        // Atomic write: a concurrent request including the proxy never sees a partial file
+        $this->cachePathManager->getCacheFileWriter()->write($proxyFileName, '<?php' . PHP_EOL . $childCode);
 
         return 'include_once AOP_CACHE_DIR . ' . var_export('/' . $proxyRelativePath, true) . ';';
     }

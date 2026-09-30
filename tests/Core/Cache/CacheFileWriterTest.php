@@ -14,6 +14,7 @@ namespace Go\Core\Cache;
 
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 class CacheFileWriterTest extends TestCase
 {
@@ -79,5 +80,36 @@ class CacheFileWriterTest extends TestCase
         $directoryEntries = scandir($this->baseDir);
         $this->assertIsArray($directoryEntries);
         $this->assertSame(['cache.php'], array_values(array_diff($directoryEntries, ['.', '..'])));
+    }
+
+    public function testCreatesTraversableDirectoriesForReadableFileMode(): void
+    {
+        $writer   = new CacheFileWriter(0644);
+        $fileName = $this->baseDir . '/nested/cache.php';
+
+        $writer->write($fileName, 'content');
+
+        // Read access for a group implies the search bit for the directory, otherwise nobody could enter it
+        $this->assertSame(0755, fileperms($this->baseDir . '/nested') & 0777);
+        $this->assertSame(0644, fileperms($fileName) & 0777);
+    }
+
+    public function testDirectoryModeAddsSearchBitsWhereReadIsGranted(): void
+    {
+        $this->assertSame(0755, CacheFileWriter::directoryModeFor(0644));
+        $this->assertSame(0750, CacheFileWriter::directoryModeFor(0640));
+        $this->assertSame(0700, CacheFileWriter::directoryModeFor(0600));
+        $this->assertSame(0770, CacheFileWriter::directoryModeFor(0770));
+    }
+
+    public function testThrowsWhenDirectoryCanNotBeCreated(): void
+    {
+        $writer = new CacheFileWriter(0770);
+        $writer->write($this->baseDir . '/blocker', 'plain file in the way');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unable to create cache directory');
+
+        $writer->write($this->baseDir . '/blocker/cache.php', 'content');
     }
 }

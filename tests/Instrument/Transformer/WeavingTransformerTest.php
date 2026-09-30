@@ -1018,9 +1018,8 @@ class WeavingTransformerTest extends TestCase
 
     /**
      * With no cache file yet (or a stale one), processFunctions() must generate and write the
-     * function proxy file itself. The cache dir lives on the vfs:// stream wrapper, and PHP core
-     * rejects the LOCK_EX flag for any non-"file://" stream - file_put_contents() must skip it
-     * there just like saveProxyToCache() already does for the class proxy file.
+     * function proxy file itself, through the atomic CacheFileWriter. The cache dir lives on the
+     * vfs:// stream wrapper, so this also proves the writer works on stream wrapper paths.
      */
     public function testWeaverGeneratesFunctionProxyCacheFileOnFirstWeave(): void
     {

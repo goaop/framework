@@ -76,12 +76,6 @@ class SourceTransformingLoader extends PhpStreamFilter
     private static ?CachePathManager $cachePathManager = null;
 
     /**
-     * Mask of permission bits for cache files.
-     * By default, permissions are affected by the umask system setting
-     */
-    private static int $cacheFileMode = 0770;
-
-    /**
      * Mask of enabled kernel features (see Features enumeration)
      */
     private static int $features = 0;
@@ -121,7 +115,6 @@ class SourceTransformingLoader extends PhpStreamFilter
 
             self::$container        = $container;
             self::$cachePathManager = $container->getService(CachePathManager::class);
-            self::$cacheFileMode    = $kernelOptions['cacheFileMode'];
             self::$features         = $kernelOptions['features'];
         }
     }
@@ -297,13 +290,8 @@ class SourceTransformingLoader extends PhpStreamFilter
             ) {
                 $cacheUri = str_replace('.php', AspectContainer::AOP_PROXIED_SUFFIX . '.php', $cacheUri);
             }
-            $parentCacheDir = dirname($cacheUri);
-            if (!is_dir($parentCacheDir)) {
-                mkdir($parentCacheDir, self::$cacheFileMode, true);
-            }
-            file_put_contents($cacheUri, $transformedSource, LOCK_EX);
-            // For cache files we don't want executable bits by default
-            chmod($cacheUri, self::$cacheFileMode & (~0111));
+            // Atomic write: a concurrent request including this file never sees a partial source
+            self::$cachePathManager->getCacheFileWriter()->write($cacheUri, $transformedSource);
         }
 
         self::$cachePathManager->setCacheState(
