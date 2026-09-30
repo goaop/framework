@@ -238,6 +238,18 @@ class AspectKernelTest extends TestCase
         yield 'string' => ['0644'];
     }
 
+    public function testNormalizeOptionsDerivesCacheFileModeFromUmaskWhenNotSet(): void
+    {
+        $kernel = $this->makeKernel();
+
+        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [[
+            'cacheDir'      => '/some/cache/dir',
+            'cacheFileMode' => null,
+        ]]);
+
+        $this->assertSame(0770 & ~umask(), $normalized['cacheFileMode']);
+    }
+
     #[DataProvider('invalidCacheFileModes')]
     public function testNormalizeOptionsRejectsInvalidCacheFileMode(mixed $cacheFileMode): void
     {

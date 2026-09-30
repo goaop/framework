@@ -65,16 +65,15 @@ final readonly class CacheFileWriter
         // becomes visible atomically through the same-directory rename. One universal code
         // path for plain files and stream wrapper paths (virtual file systems) alike.
         $temporaryName = $directoryName . '/' . basename($fileName) . '.' . bin2hex(random_bytes(8)) . '.tmp';
-        if (@file_put_contents($temporaryName, $content) !== strlen($content)) {
+        $isWritten = @file_put_contents($temporaryName, $content) === strlen($content);
+        if ($isWritten) {
+            // For cache files we don't want executable bits by default. Permissions are applied
+            // before the rename, so the file never becomes visible with the default mode.
+            @chmod($temporaryName, $this->fileMode & (~0111));
+        }
+        if (!$isWritten || !@rename($temporaryName, $fileName)) {
             @unlink($temporaryName);
             throw new RuntimeException(sprintf('Unable to write cache file "%s".', $fileName));
-        }
-        // For cache files we don't want executable bits by default. Permissions are applied
-        // before the rename, so the file never becomes visible with the default mode.
-        @chmod($temporaryName, $this->fileMode & (~0111));
-        if (!@rename($temporaryName, $fileName)) {
-            @unlink($temporaryName);
-            throw new RuntimeException(sprintf('Unable to move cache file into place "%s".', $fileName));
         }
 
         if (function_exists('opcache_invalidate')) {

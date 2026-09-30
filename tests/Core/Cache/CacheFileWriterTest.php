@@ -112,4 +112,23 @@ class CacheFileWriterTest extends TestCase
 
         $writer->write($this->baseDir . '/blocker/cache.php', 'content');
     }
+
+    public function testThrowsAndCleansUpWhenFileCanNotBeMovedIntoPlace(): void
+    {
+        $writer = new CacheFileWriter(0770);
+        // A directory occupies the target name, so the final rename fails
+        mkdir($this->baseDir . '/occupied', 0770, true);
+
+        try {
+            $writer->write($this->baseDir . '/occupied', 'content');
+            $this->fail('Writing over a directory must fail');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('Unable to write cache file', $exception->getMessage());
+        }
+
+        // The temporary file is removed again
+        $directoryEntries = scandir($this->baseDir);
+        $this->assertIsArray($directoryEntries);
+        $this->assertSame(['occupied'], array_values(array_diff($directoryEntries, ['.', '..'])));
+    }
 }
