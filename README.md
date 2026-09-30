@@ -155,6 +155,8 @@ Go! AOP framework can be installed with composer. Installation is quite easy:
 4. Create an aspect
 5. Register the aspect in the aspect kernel
 
+Step 0 is optional: it lets you try the demo examples first.
+
 ### Step 0 (optional): Try demo examples in the framework
 
 Ask composer to create a new project in empty directory:
@@ -207,21 +209,22 @@ class ApplicationAspectKernel extends AspectKernel
 }
 ```
 
-### 3. Configure the aspect kernel in the front controller
+### Step 3: Configure the aspect kernel in the front controller
 
 To configure the aspect kernel, call `init()` method of kernel instance.
 
 ```php
 <?php
+// public/index.php
 
-include __DIR__ . '/vendor/autoload.php'; // use composer
+include __DIR__ . '/../vendor/autoload.php'; // use composer
 
 // Initialize an application aspect container
 $applicationAspectKernel = ApplicationAspectKernel::getInstance();
 $applicationAspectKernel->init([
     'debug'        => true, // use 'false' for production mode
     'appDir'       => __DIR__ . '/..', // Application root directory
-    'cacheDir'     => __DIR__ . '/path/to/cache/for/aop', // Cache directory
+    'cacheDir'     => __DIR__ . '/../var/cache/aop', // Cache directory
     // Include paths restricts the directories where aspects should be applied, or empty for all source files
     'includePaths' => [
         __DIR__ . '/../src/'
@@ -229,7 +232,7 @@ $applicationAspectKernel->init([
 ]);
 ```
 
-### 4. Create an aspect
+### Step 4: Create an aspect
 
 Aspect is the key element of AOP philosophy. Go! AOP framework just uses simple PHP classes for declaring aspects, which makes it possible to use all features of OOP for aspect classes.
 Advices are declared as **public methods** of the aspect — the framework weaves them into your code as [first-class callables](https://www.php.net/manual/en/functions.first_class_callable_syntax.php), so every advice must be callable on the aspect instance from the outside (a `protected` or `private` advice method is rejected during aspect loading).
@@ -256,7 +259,7 @@ class MonitorAspect implements Aspect
      * Method that will be called before real method
      */
     #[Before("execution(public Example->*(*))")]
-    public function beforeMethodExecution(MethodInvocation $invocation)
+    public function beforeMethodExecution(MethodInvocation $invocation): void
     {
         echo 'Calling Before Interceptor for: ',
             $invocation,
@@ -307,7 +310,7 @@ its identifier and unwraps it down to the raw advice closure:
 ),
 ```
 
-### 5. Register the aspect in the aspect kernel
+### Step 5: Register the aspect in the aspect kernel
 
 An aspect is a typical container service. Add it in the `configureAop()` method of the
 kernel, either eagerly as an instance or - preferably - as a deferred definition that is
@@ -318,10 +321,11 @@ only constructed when one of its advices actually runs:
 // app/ApplicationAspectKernel.php
 
 use Aspect\MonitorAspect;
+use Go\Core\AspectContainer;
 
 //...
 
-    protected function configureAop(AspectContainer $container)
+    protected function configureAop(AspectContainer $container): void
     {
         // Deferred (recommended): constructed on first use
         $container->addLazyService(MonitorAspect::class, static fn() => new MonitorAspect());
@@ -332,9 +336,9 @@ use Aspect\MonitorAspect;
 //...
 ```
 
-### 6. Optional configurations
+### Optional configurations
 
-#### 6.1 Weaving Doctrine entities
+#### Weaving Doctrine entities
 
 Doctrine ORM (3.6+) maps a woven entity as is: the woven class keeps its name and all mapping
 attributes, and the original class body lives in a trait that Doctrine never maps. Two things
@@ -371,6 +375,6 @@ $eventManager->addEventListener(Events::loadClassMetadata, new MetadataLoadInter
 Doctrine reads and writes the raw property values while hydrating and flushing, so property
 advices only run for accesses made by your own code, never for Doctrine's internal ones.
 
-### 7. Contribution
+### Contribution
 
 To contribute changes, see the [Contribute Readme](CONTRIBUTE.md)
