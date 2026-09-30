@@ -14,6 +14,9 @@ namespace Go\Proxy;
 
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\PhpUnit\AssertsCompilablePhp;
+use Go\Stubs\Collision\A\SameNameAspect as AspectA;
+use Go\Stubs\Collision\B\SameNameAspect as AspectB;
 use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
@@ -28,6 +31,8 @@ use ReflectionException;
  */
 class ClassProxyGeneratorTest extends TestCase
 {
+    use AssertsCompilablePhp;
+
     /**
      * Test proxy generation for class method
      *
@@ -69,6 +74,44 @@ class ClassProxyGeneratorTest extends TestCase
     }
 
     /**
+     * Imports copied from the original file may bind the short names the generated code uses
+     * (Interceptor, The, InterceptorInjector, aspect short names) to unrelated classes, and
+     * two aspects may share a short name: the proxy must compile and reference each class
+     * unambiguously in every case (issue #668).
+     *
+     * @throws ReflectionException
+     */
+    public function testGeneratedProxyIsIndependentOfCopiedImports(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $classAdvices    = [
+            'method' => [
+                'publicMethod' => [
+                    GeneratedInterceptor::fromAdvice('a', new BeforeInterceptor(new AspectA()->beforeMethod(...))),
+                    GeneratedInterceptor::fromAdvice('b', new BeforeInterceptor(new AspectB()->beforeMethod(...))),
+                ],
+            ],
+            'prop' => [
+                'public' => [self::testAdvice()],
+            ],
+        ];
+
+        $childGenerator = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
+        // What WeavingTransformer copies from a user file importing colliding names
+        $childGenerator->addUse('App\Log\Interceptor');
+        $childGenerator->addUse('App\Log\The');
+        $childGenerator->addUse('App\Log\SameNameAspect');
+        $childGenerator->addUse('Go\Aop\Framework\InterceptorInjector', 'Injector');
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString('\\' . AspectA::class . '::class', $proxyFileContent);
+        $this->assertStringContainsString('\\' . AspectB::class . '::class', $proxyFileContent);
+        $this->assertStringContainsString('\\Go\\Aop\\Framework\\InterceptorInjector::forProperty(', $proxyFileContent);
+        $this->assertStringNotContainsString('use Go\\Aop\\Framework\\Interceptor;', $proxyFileContent);
+        $this->assertPhpCompiles($proxyFileContent);
+    }
+
+    /**
      * @throws ReflectionException
      */
     public function testGenerateWithPropertyInterception(): void
@@ -91,12 +134,12 @@ class ClassProxyGeneratorTest extends TestCase
         );
         $this->assertStringContainsString("InterceptorInjector::forProperty(", $proxyFileContent);
         $this->assertStringContainsString(
-            "/** @var FieldAccess<self, int> \$__joinPoint */",
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$__joinPoint */",
             $proxyFileContent,
             'Proxy with property advices must route writes through join points in property hooks',
         );
         $this->assertStringContainsString(
-            "set {\n            /** @var FieldAccess<self, int> \$__joinPoint */\n            static \$__joinPoint = InterceptorInjector::forProperty(",
+            "set {\n            /** @var \\Go\\Aop\\Intercept\\FieldAccess<self, int> \$__joinPoint */\n            static \$__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forProperty(",
             $proxyFileContent,
         );
     }
@@ -146,7 +189,7 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
-            "/** @var FieldAccess<self, \\Exception> \$__joinPoint */",
+            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception> \$__joinPoint */",
             $proxyFileContent,
         );
     }
@@ -253,7 +296,7 @@ class ClassProxyGeneratorTest extends TestCase
             $proxyFileContent,
         );
         $this->assertStringContainsString(
-            "return \$__joinPoint->__invoke(\$this, FieldAccessType::READ);",
+            "return \$__joinPoint->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::READ);",
             $proxyFileContent,
         );
         $this->assertStringContainsString(
@@ -261,11 +304,11 @@ class ClassProxyGeneratorTest extends TestCase
             $proxyFileContent,
         );
         $this->assertStringContainsString(
-            "if (\$__joinPoint->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, FieldAccessType::WRITE, \$value, \$this->uninitialized);",
+            "if (\$__joinPoint->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$value, \$this->uninitialized);",
             $proxyFileContent,
         );
         $this->assertStringContainsString(
-            "} else {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, FieldAccessType::WRITE, \$value);",
+            "} else {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, \\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$value);",
             $proxyFileContent,
         );
     }
@@ -295,7 +338,7 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertMatchesRegularExpression('/&get\s*\\{/', $proxyFileContent);
-        $this->assertStringNotContainsString("FieldAccessType::WRITE, \$this->items, \$value", $proxyFileContent);
+        $this->assertStringNotContainsString("\\Go\\Aop\\Intercept\\FieldAccessType::WRITE, \$this->items, \$value", $proxyFileContent);
     }
 
     /**

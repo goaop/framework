@@ -1,11 +1,6 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
-use Go\Aop\Framework\InterceptorInjector;
-use Go\Aop\Framework\Interceptor;
-use Go\Aop\Framework\The;
-use Go\Aop\Intercept\DynamicMethodInvocation;
-use Go\Aop\Intercept\StaticMethodInvocation;
 final readonly class TestReadonlyClass implements \Go\Aop\Proxy
 {
     use TestReadonlyClassOriginalTrait {
@@ -15,12 +10,12 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
     }
     public function publicMethod(): string
     {
-        /** @var DynamicMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, string> $__joinPoint */
+        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
             self::class,
             'publicMethod',
             [
-                Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->publicMethod')),
+                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestReadonlyClass->publicMethod')),
             ],
             $this->publicMethodOriginalAlias(...),
         );
@@ -28,12 +23,12 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
     }
     public function anotherMethod(int $x): int
     {
-        /** @var DynamicMethodInvocation<self, int> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forMethod(
+        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, int> $__joinPoint */
+        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
             self::class,
             'anotherMethod',
             [
-                Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->anotherMethod')),
+                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestReadonlyClass->anotherMethod')),
             ],
             $this->anotherMethodOriginalAlias(...),
         );
@@ -41,12 +36,12 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
     }
     public static function staticMethod(): string
     {
-        /** @var StaticMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = InterceptorInjector::forStaticMethod(
+        /** @var \Go\Aop\Intercept\StaticMethodInvocation<self, string> $__joinPoint */
+        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forStaticMethod(
             self::class,
             'staticMethod',
             [
-                Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->staticMethod')),
+                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestReadonlyClass->staticMethod')),
             ],
             self::staticMethodOriginalAlias(...),
         );

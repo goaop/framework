@@ -36,7 +36,7 @@ class Foo extends OriginalParent implements OriginalInterfaces, \Go\Aop\Proxy
             self::class,
             'interceptedMethod',
             [
-                Interceptor::before(The::aspect(SomeAspect::class)->adviceMethod(...)),
+                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::aspect(\Ns\SomeAspect::class)->adviceMethod(...)),
             ],
             $this->interceptedMethodOriginalAlias(...),
         );
@@ -48,6 +48,10 @@ Interceptor list entries are first-class advice callables on the aspect instance
 (`The::aspect(X::class)->m(...)`); container-backed closure advices use
 `The::advice('advisorId')` instead. Emitted by InterceptorListGenerator from
 GeneratedInterceptor descriptors (string advisor ids are rejected).
+ALL framework/aspect class references in generated code are fully qualified (Name\FullyQualified or
+'\\' . X::class in heredocs) and generators add NO use-imports of their own: the proxy only carries the
+original file's imports (copied by WeavingTransformer for parameter defaults/types), which may bind any
+short name to unrelated classes (issue #668).
 
 ### Key invariants
 - Proxy re-inherits parent+interfaces via reflection (not from woven source)

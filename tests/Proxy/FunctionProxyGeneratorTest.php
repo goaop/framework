@@ -16,7 +16,9 @@ use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Core\AspectContainer;
 use Go\ParserReflection\ReflectionFileNamespace;
-use Go\Stubs\AttributeAspectLoaderExtensionTestPublicAspect;
+use Go\PhpUnit\AssertsCompilablePhp;
+use Go\Stubs\Collision\A\SameNameAspect as AspectA;
+use Go\Stubs\Collision\B\SameNameAspect as AspectB;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,6 +26,8 @@ use PHPUnit\Framework\TestCase;
  */
 class FunctionProxyGeneratorTest extends TestCase
 {
+    use AssertsCompilablePhp;
+
     private const string STUBS_FILE = __DIR__ . '/../Stubs/Generator/FunctionGeneratorStubs.php';
     private const string STUBS_NS   = 'Go\Stubs\Generator';
 
@@ -34,10 +38,8 @@ class FunctionProxyGeneratorTest extends TestCase
         $code = $generator->generate();
 
         $this->assertStringContainsString('namespace Go\Stubs\Generator;', $code);
-        $this->assertStringContainsString('use Go\Aop\Framework\InterceptorInjector;', $code);
-        $this->assertStringContainsString('use Go\Aop\Framework\Interceptor;', $code);
-        $this->assertStringContainsString('use Go\Aop\Framework\The;', $code);
-        $this->assertStringContainsString('use Go\Aop\Intercept\FunctionInvocation;', $code);
+        // Framework classes are referenced fully qualified, never imported (see use-collision tests)
+        $this->assertStringNotContainsString('use Go\\Aop\\', $code);
         $this->assertStringNotContainsString('function funcGenHelper_', $code);
     }
 
@@ -62,10 +64,14 @@ class FunctionProxyGeneratorTest extends TestCase
             $code,
         );
         $this->assertStringContainsString(
-            "InterceptorInjector::forFunction(\n        'Go\\Stubs\\Generator\\funcGenHelper_simple',",
+            "\\Go\\Aop\\Framework\\InterceptorInjector::forFunction(\n        'Go\\Stubs\\Generator\\funcGenHelper_simple',",
             $code,
         );
-        $this->assertStringContainsString('Interceptor::before(The::advice(\'manual.before\'))', $code);
+        $this->assertStringContainsString(
+            '\\Go\\Aop\\Framework\\Interceptor::before(\\Go\\Aop\\Framework\\The::advice(\'manual.before\'))',
+            $code,
+        );
+        $this->assertPhpCompiles($code);
         $this->assertStringContainsString('\Go\Stubs\Generator\funcGenHelper_simple(...)', $code);
         // Non-void return type: the joinpoint invocation result must be returned.
         $this->assertStringContainsString('return $__joinPoint->__invoke(', $code);
@@ -93,27 +99,25 @@ class FunctionProxyGeneratorTest extends TestCase
         $this->assertStringNotContainsString('return $__joinPoint->__invoke()', $code);
     }
 
-    public function testGenerateImportsAspectClassOfBoundAdvice(): void
+    public function testGenerateReferencesAspectClassesFullyQualified(): void
     {
-        $aspect = new AttributeAspectLoaderExtensionTestPublicAspect();
-        $advice = GeneratedInterceptor::fromAdvice(
-            'manual.before.aspect',
-            new BeforeInterceptor($aspect->publicAdvice(...)),
-        );
-
+        // Two aspects sharing one short name: importing them would be a compile-time fatal error
         $adviceNames = [
             AspectContainer::FUNCTION_PREFIX => [
-                'Go\Stubs\Generator\funcGenHelper_noAttr' => [$advice],
+                'Go\Stubs\Generator\funcGenHelper_noAttr' => [
+                    GeneratedInterceptor::fromAdvice('a', new BeforeInterceptor(new AspectA()->beforeMethod(...))),
+                    GeneratedInterceptor::fromAdvice('b', new BeforeInterceptor(new AspectB()->beforeMethod(...))),
+                ],
             ],
         ];
 
         $generator = new FunctionProxyGenerator($this->getStubsNamespace(), $adviceNames);
         $code      = $generator->generate();
 
-        $this->assertStringContainsString(
-            'use ' . AttributeAspectLoaderExtensionTestPublicAspect::class . ';',
-            $code,
-        );
+        $this->assertStringContainsString('\\' . AspectA::class . '::class', $code);
+        $this->assertStringContainsString('\\' . AspectB::class . '::class', $code);
+        $this->assertStringNotContainsString('use Go\\Stubs', $code);
+        $this->assertPhpCompiles($code);
     }
 
     private function getStubsNamespace(): ReflectionFileNamespace

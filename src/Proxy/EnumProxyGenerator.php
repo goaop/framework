@@ -14,9 +14,7 @@ namespace Go\Proxy;
 
 use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Aop\Framework\GeneratedInterceptor;
-use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\InterceptorInjector;
-use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\StaticMethodInvocation;
 use Go\Aop\Proxy;
@@ -164,25 +162,6 @@ class EnumProxyGenerator extends ClassProxyGenerator
             );
         }
 
-        // Register use-imports for AOP classes referenced in generated method bodies.
-        // Determine needed invocation types from actual method signatures, not advice
-        // category keys, because callers may place static-method advices under METHOD_PREFIX.
-        $enumGenerator->addUse(InterceptorInjector::class);
-        $enumGenerator->addUse(Interceptor::class);
-        $enumGenerator->addUse(The::class);
-        foreach ($this->collectAspectClasses($classAdviceNames) as $aspectClass) {
-            if (str_contains($aspectClass, '\\')) {
-                $enumGenerator->addUse($aspectClass);
-            }
-        }
-        foreach ($interceptedMethods as $methodName) {
-            if ($originalClass->hasMethod($methodName) && $originalClass->getMethod($methodName)->isStatic()) {
-                $enumGenerator->addUse(StaticMethodInvocation::class);
-            } else {
-                $enumGenerator->addUse(DynamicMethodInvocation::class);
-            }
-        }
-
         $this->generator = $enumGenerator;
     }
 
@@ -248,8 +227,9 @@ class EnumProxyGenerator extends ClassProxyGenerator
             }
         }
         $joinPointType = $isStatic
-            ? 'StaticMethodInvocation<self' . $returnTypeString . '>'
-            : 'DynamicMethodInvocation<self' . $returnTypeString . '>';
+            ? '\\' . StaticMethodInvocation::class . '<self' . $returnTypeString . '>'
+            : '\\' . DynamicMethodInvocation::class . '<self' . $returnTypeString . '>';
+        $injector = '\\' . InterceptorInjector::class;
 
         // All intercepted enum methods have `<method>OriginalAlias` aliases from the enum's trait-use block.
         $callableExpression = $isStatic
@@ -258,7 +238,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(
+        static \$__joinPoint = {$injector}::{$injectorMethod}(
             self::class,
             '{$method->name}',
             {$advicesCode},

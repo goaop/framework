@@ -21,12 +21,15 @@ use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\MockObject\MockObject;
+use Go\PhpUnit\AssertsCompilablePhp;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class WeavingTransformerTest extends TestCase
 {
+    use AssertsCompilablePhp;
+
     protected static FileSystem $fileSystem;
 
     protected WeavingTransformer $transformer;
@@ -219,6 +222,29 @@ class WeavingTransformerTest extends TestCase
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
+    }
+
+    /**
+     * The original file imports classes named like the ones generated code relies on, and aliases a
+     * framework class. The imports are copied into the proxy (parameter defaults and types need them),
+     * so the generated code must reference every framework class fully qualified (issue #668).
+     */
+    public function testWeaverProxyDoesNotCollideWithOriginalImports(): void
+    {
+        $metadata = $this->loadTestMetadata('import-collision');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('import-collision-woven')->source);
+        $this->assertEquals($expected, $actual);
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('import-collision-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
     }
 
     /**

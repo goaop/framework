@@ -14,6 +14,8 @@ namespace Go\Proxy\Generator;
 
 use Go\Aop\AspectException;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\The;
 use PhpParser\Node\Arg;
 use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
@@ -22,13 +24,17 @@ use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
-use PhpParser\Node\Name;
+use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\Int_;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\VariadicPlaceholder;
 
 /**
  * Renders generated interceptor descriptors as Interceptor::* factory calls.
+ *
+ * Every class reference is emitted fully qualified, so the rendered code never depends on
+ * the `use` imports of the file it is embedded into (those are copied from user code and
+ * may bind the same short names to unrelated classes).
  *
  * @internal
  */
@@ -66,23 +72,6 @@ final class InterceptorListGenerator
         $this->interceptors = $descriptors;
     }
 
-    /**
-     * @param list<GeneratedInterceptor> $interceptors
-     * @return list<string>
-     */
-    public static function aspectClasses(array $interceptors): array
-    {
-        $classes = [];
-        foreach ($interceptors as $interceptor) {
-            if ($interceptor->aspectClass === null) {
-                continue;
-            }
-            $classes[$interceptor->aspectClass] = $interceptor->aspectClass;
-        }
-
-        return array_values($classes);
-    }
-
     public function generate(string $indent = self::JOINPOINT_ARGUMENT_INDENT): string
     {
         if ($this->interceptors === []) {
@@ -112,14 +101,14 @@ final class InterceptorListGenerator
             $args[] = new Arg(new Int_($interceptor->order), name: new Identifier('order'));
         }
 
-        return new StaticCall(new Name('Interceptor'), $interceptor->factoryMethod, $args);
+        return new StaticCall(new FullyQualified(Interceptor::class), $interceptor->factoryMethod, $args);
     }
 
     private static function createAdviceAccessorNode(GeneratedInterceptor $interceptor): Expr
     {
         if ($interceptor->usesContainerAdvice) {
             return new StaticCall(
-                new Name('The'),
+                new FullyQualified(The::class),
                 'advice',
                 [
                     new Arg(new String_($interceptor->advisorId)),
@@ -136,18 +125,11 @@ final class InterceptorListGenerator
         // is needed right now and a lazy-proxy detour would be pure overhead. Only advisor
         // cache files use the lazy static-data form of the Interceptor facade.
         return new MethodCall(
-            new StaticCall(new Name('The'), 'aspect', [
-                new Arg(new ClassConstFetch(new Name(self::shortClassName($interceptor->aspectClass)), 'class')),
+            new StaticCall(new FullyQualified(The::class), 'aspect', [
+                new Arg(new ClassConstFetch(new FullyQualified($interceptor->aspectClass), 'class')),
             ]),
             $interceptor->adviceMethod,
             [new VariadicPlaceholder()],
         );
-    }
-
-    private static function shortClassName(string $className): string
-    {
-        $lastSeparator = strrpos($className, '\\');
-
-        return $lastSeparator === false ? $className : substr($className, $lastSeparator + 1);
     }
 }

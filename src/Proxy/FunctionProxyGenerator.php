@@ -13,9 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy;
 
 use Go\Aop\Framework\GeneratedInterceptor;
-use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\InterceptorInjector;
-use Go\Aop\Framework\The;
 use Go\Aop\Intercept\FunctionInvocation;
 use Go\Core\AspectContainer;
 use Go\ParserReflection\ReflectionFileNamespace;
@@ -60,16 +58,6 @@ class FunctionProxyGenerator
         $this->adviceNames   = $adviceNames;
         $this->fileGenerator = new FileGenerator();
         $this->fileGenerator->namespace = $namespace->getName();
-        $this->fileGenerator->addUse(InterceptorInjector::class);
-        $this->fileGenerator->addUse(Interceptor::class);
-        $this->fileGenerator->addUse(The::class);
-        $this->fileGenerator->addUse(FunctionInvocation::class);
-        foreach ($this->collectAspectClasses($adviceNames) as $aspectClass) {
-            if (str_contains($aspectClass, '\\')) {
-                $this->fileGenerator->addUse($aspectClass);
-            }
-        }
-
         $functionsContent = [];
         $functionAdvices  = $adviceNames[AspectContainer::FUNCTION_PREFIX] ?? [];
         foreach (array_keys($functionAdvices) as $functionName) {
@@ -119,35 +107,17 @@ class FunctionProxyGenerator
         // Use a fully-qualified (global) callable so proceed() calls the original built-in
         // function rather than the proxy defined in this namespace.
         $callableExpression = '\\' . $function->getName() . '(...)';
+        $injector           = '\\' . InterceptorInjector::class;
+        $joinPoint          = '\\' . FunctionInvocation::class;
 
         return <<<BODY
-        /** @var FunctionInvocation{$returnTypeString} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::forFunction(
+        /** @var {$joinPoint}{$returnTypeString} \$__joinPoint */
+        static \$__joinPoint = {$injector}::forFunction(
             '{$function->name}',
             {$advicesCode},
             {$callableExpression},
         );
         {$return}\$__joinPoint->__invoke($argumentCode);
         BODY;
-    }
-
-    /**
-     * @param array<string, array<string, array<GeneratedInterceptor|string>>> $adviceNames
-     * @return list<string>
-     */
-    private function collectAspectClasses(array $adviceNames): array
-    {
-        $interceptors = [];
-        foreach ($adviceNames as $typedAdvices) {
-            foreach ($typedAdvices as $concreteAdvices) {
-                foreach ($concreteAdvices as $advice) {
-                    if ($advice instanceof GeneratedInterceptor) {
-                        $interceptors[] = $advice;
-                    }
-                }
-            }
-        }
-
-        return InterceptorListGenerator::aspectClasses($interceptors);
     }
 }

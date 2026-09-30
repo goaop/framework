@@ -279,17 +279,20 @@ generates a plain, debuggable interceptor chain in which each advice is referenc
 **closure created with first-class callable syntax** right on the aspect instance:
 
 ```php
-static $__joinPoint = InterceptorInjector::forMethod(
+static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
     self::class,
     'doSomething',
     [
-        Interceptor::before(The::aspect(MonitorAspect::class)->beforeMethodExecution(...)),
+        \Go\Aop\Framework\Interceptor::before(
+            \Go\Aop\Framework\The::aspect(\Aspect\MonitorAspect::class)->beforeMethodExecution(...)
+        ),
     ],
     $this->doSomethingOriginalAlias(...),
 );
 ```
 
-`The::aspect()` fetches the aspect instance from the aspect container, and
+Generated code always references classes by their fully qualified names, so it never clashes
+with the `use` imports of your original file. `The::aspect()` fetches the aspect instance from the aspect container, and
 `->beforeMethodExecution(...)` is the very advice method you wrote above — you can
 Ctrl-click it in your IDE, set a breakpoint inside it, and step through the woven code as if
 it were handwritten. This direct wiring is the main way advices are applied.
@@ -299,7 +302,9 @@ are woven through the lazy `The::advice()` accessor instead, which resolves the 
 its identifier and unwraps it down to the raw advice closure:
 
 ```php
-Interceptor::around(The::advice('advisor.Demo\Aspect\DynamicMethodsAspect->aroundMagicMethods')),
+\Go\Aop\Framework\Interceptor::around(
+    \Go\Aop\Framework\The::advice('advisor.Demo\Aspect\DynamicMethodsAspect->aroundMagicMethods')
+),
 ```
 
 ### 5. Register the aspect in the aspect kernel
