@@ -147,6 +147,8 @@ Unlike frameworks requiring special compilation steps, Go! AOP performs **runtim
 Installation
 ------------
 
+> Upgrading from 3.x? Follow the [upgrade guide](UPGRADE-4.0.md).
+
 Go! AOP framework can be installed with composer. Installation is quite easy:
 
 1. Download the framework using composer
