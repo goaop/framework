@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
-use Go\Aop\Intercept\FieldAccess;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\PropertyGenerator;
 use Go\Proxy\Generator\PropertyModifier;
@@ -152,7 +151,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     protected function createFieldAccessDocComment(string $variableName = 'fieldAccess', bool $isNullable = false): Doc
     {
         $nullableSuffix = $isNullable ? '|null' : '';
-        return new Doc('/** @var \\' . FieldAccess::class . '<self, ' . $this->getPropertyTypeForPhpDoc() . '>' . $nullableSuffix . ' $' . $variableName . ' */');
+        return new Doc('/** @var FieldAccess<self, ' . $this->getPropertyTypeForPhpDoc() . '>' . $nullableSuffix . ' $' . $variableName . ' */');
     }
 
     private function getPropertyTypeForPhpDoc(): string

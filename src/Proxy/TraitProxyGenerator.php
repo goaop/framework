@@ -14,8 +14,12 @@ namespace Go\Proxy;
 
 use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
+use Go\Aop\Intercept\FieldAccess;
+use Go\Aop\Intercept\FieldAccessType;
 use Go\Aop\Intercept\StaticMethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Proxy\Generator\DocBlockGenerator;
@@ -87,6 +91,30 @@ class TraitProxyGenerator extends ClassProxyGenerator
             $traitGenerator->addTraitAlias($fullName, $methodName . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX, Visibility::PRIVATE);
         }
 
+        // Register use-imports for AOP classes referenced in generated method bodies.
+        // Determine needed invocation types from actual method signatures, not advice
+        // category keys, because callers may place static-method advices under METHOD_PREFIX.
+        $traitGenerator->addUse(InterceptorInjector::class);
+        $traitGenerator->addUse(Interceptor::class);
+        $traitGenerator->addUse(The::class);
+        foreach ($this->collectAspectClasses($traitAdviceNames) as $aspectClass) {
+            if (str_contains($aspectClass, '\\')) {
+                $traitGenerator->addUse($aspectClass);
+            }
+        }
+        foreach ($interceptedMethods as $methodName) {
+            if ($originalTrait->hasMethod($methodName) && $originalTrait->getMethod($methodName)->isStatic()) {
+                $traitGenerator->addUse(StaticMethodInvocation::class);
+            } else {
+                $traitGenerator->addUse(DynamicMethodInvocation::class);
+            }
+        }
+        $propertyAdvices = $traitAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
+        if (!empty($propertyAdvices)) {
+            $traitGenerator->addUse(FieldAccess::class);
+            $traitGenerator->addUse(FieldAccessType::class);
+        }
+
         // Store generator instance for compatibility with parent generate() call
         $this->generator = $traitGenerator;
     }
@@ -131,9 +159,8 @@ class TraitProxyGenerator extends ClassProxyGenerator
             }
         }
         $joinPointType = $isStatic
-            ? '\\' . StaticMethodInvocation::class . '<self' . $returnTypeString . '>'
-            : '\\' . DynamicMethodInvocation::class . '<self' . $returnTypeString . '>';
-        $injector = '\\' . InterceptorInjector::class;
+            ? 'StaticMethodInvocation<self' . $returnTypeString . '>'
+            : 'DynamicMethodInvocation<self' . $returnTypeString . '>';
 
         // All intercepted methods in a trait proxy have `<method>OriginalAlias` aliases from the parent trait.
         $callableExpression = $isStatic
@@ -142,7 +169,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = {$injector}::{$injectorMethod}(
+        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(
             self::class,
             '{$method->name}',
             {$advicesCode},

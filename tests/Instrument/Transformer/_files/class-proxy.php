@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
+use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\The;
+use Go\Aop\Intercept\DynamicMethodInvocation;
+use Go\Aop\Intercept\StaticMethodInvocation;
 class TestClass implements \Go\Aop\Proxy
 {
     use TestClassOriginalTrait {
@@ -14,12 +19,12 @@ class TestClass implements \Go\Aop\Proxy
     }
     public function publicMethod()
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
+        /** @var DynamicMethodInvocation<self> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(
             self::class,
             'publicMethod',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestClass->publicMethod')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethod')),
             ],
             $this->publicMethodOriginalAlias(...),
         );
@@ -27,12 +32,12 @@ class TestClass implements \Go\Aop\Proxy
     }
     protected function protectedMethod()
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
+        /** @var DynamicMethodInvocation<self> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(
             self::class,
             'protectedMethod',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestClass->protectedMethod')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->protectedMethod')),
             ],
             $this->protectedMethodOriginalAlias(...),
         );
@@ -40,12 +45,12 @@ class TestClass implements \Go\Aop\Proxy
     }
     public static function publicStaticMethod()
     {
-        /** @var \Go\Aop\Intercept\StaticMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forStaticMethod(
+        /** @var StaticMethodInvocation<self> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forStaticMethod(
             self::class,
             'publicStaticMethod',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestClass->publicStaticMethod')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicStaticMethod')),
             ],
             self::publicStaticMethodOriginalAlias(...),
         );
@@ -53,12 +58,12 @@ class TestClass implements \Go\Aop\Proxy
     }
     protected static function protectedStaticMethod()
     {
-        /** @var \Go\Aop\Intercept\StaticMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forStaticMethod(
+        /** @var StaticMethodInvocation<self> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forStaticMethod(
             self::class,
             'protectedStaticMethod',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestClass->protectedStaticMethod')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->protectedStaticMethod')),
             ],
             self::protectedStaticMethodOriginalAlias(...),
         );
@@ -66,12 +71,12 @@ class TestClass implements \Go\Aop\Proxy
     }
     public function publicMethodDynamicArguments($a, &$b)
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
+        /** @var DynamicMethodInvocation<self> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(
             self::class,
             'publicMethodDynamicArguments',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestClass->publicMethodDynamicArguments')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethodDynamicArguments')),
             ],
             $this->publicMethodDynamicArgumentsOriginalAlias(...),
         );
@@ -79,12 +84,12 @@ class TestClass implements \Go\Aop\Proxy
     }
     public function publicMethodFixedArguments($a, $b, $c = null)
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
+        /** @var DynamicMethodInvocation<self> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(
             self::class,
             'publicMethodFixedArguments',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestClass->publicMethodFixedArguments')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethodFixedArguments')),
             ],
             $this->publicMethodFixedArgumentsOriginalAlias(...),
         );
@@ -92,12 +97,12 @@ class TestClass implements \Go\Aop\Proxy
     }
     public function methodWithSpecialTypeArguments(self $instance)
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
+        /** @var DynamicMethodInvocation<self> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(
             self::class,
             'methodWithSpecialTypeArguments',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestClass->methodWithSpecialTypeArguments')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->methodWithSpecialTypeArguments')),
             ],
             $this->methodWithSpecialTypeArgumentsOriginalAlias(...),
         );

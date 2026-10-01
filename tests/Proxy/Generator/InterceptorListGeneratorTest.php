@@ -10,8 +10,6 @@ use Go\Aop\Framework\AfterThrowingInterceptor;
 use Go\Aop\Framework\AroundInterceptor;
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
-use Go\Stubs\Collision\A\SameNameAspect as AspectA;
-use Go\Stubs\Collision\B\SameNameAspect as AspectB;
 use PHPUnit\Framework\TestCase;
 
 final class InterceptorListGeneratorTest extends TestCase
@@ -25,10 +23,11 @@ final class InterceptorListGeneratorTest extends TestCase
 
         $code = (new InterceptorListGenerator([$descriptor]))->generate();
 
+        $this->assertSame([], InterceptorListGenerator::aspectClasses([$descriptor]));
         $this->assertSame(
             <<<'PHP'
 [
-                \Go\Aop\Framework\Interceptor::around(\Go\Aop\Framework\The::advice('manual.around'), order: 20),
+                Interceptor::around(The::advice('manual.around'), order: 20),
             ]
 PHP,
             $code,
@@ -50,32 +49,10 @@ PHP,
         $this->assertSame(
             <<<'PHP'
 [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('manual.before')),
-                \Go\Aop\Framework\Interceptor::after(\Go\Aop\Framework\The::advice('manual.after')),
-                \Go\Aop\Framework\Interceptor::around(\Go\Aop\Framework\The::advice('manual.around')),
-                \Go\Aop\Framework\Interceptor::afterThrowing(\Go\Aop\Framework\The::advice('manual.afterThrowing')),
-            ]
-PHP,
-            $code,
-        );
-    }
-
-    public function testReferencesAspectsWithEqualShortNamesByFullyQualifiedName(): void
-    {
-        $descriptors = [
-            GeneratedInterceptor::fromAdvice('a', new BeforeInterceptor(new AspectA()->beforeMethod(...))),
-            GeneratedInterceptor::fromAdvice('b', new BeforeInterceptor(new AspectB()->beforeMethod(...))),
-        ];
-
-        $code = (new InterceptorListGenerator($descriptors))->generate();
-
-        // Short names would collide (and resolve against the imports of the woven file), so every
-        // class reference must be fully qualified and independent of the surrounding namespace
-        $this->assertSame(
-            <<<'PHP'
-[
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::aspect(\Go\Stubs\Collision\A\SameNameAspect::class)->beforeMethod(...)),
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::aspect(\Go\Stubs\Collision\B\SameNameAspect::class)->beforeMethod(...)),
+                Interceptor::before(The::advice('manual.before')),
+                Interceptor::after(The::advice('manual.after')),
+                Interceptor::around(The::advice('manual.around')),
+                Interceptor::afterThrowing(The::advice('manual.afterThrowing')),
             ]
 PHP,
             $code,

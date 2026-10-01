@@ -210,10 +210,10 @@ class TraitProxyGeneratorTest extends TestCase
         $output = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString('public int $public = 326 {', $output);
-        $this->assertStringContainsString('static $__joinPoint = \\Go\\Aop\\Framework\\InterceptorInjector::forProperty', $output);
+        $this->assertStringContainsString('static $__joinPoint = InterceptorInjector::forProperty', $output);
         $this->assertStringContainsString("InterceptorInjector::forProperty(", $output);
-        $this->assertStringContainsString('\\Go\\Aop\\Intercept\\FieldAccessType::READ', $output);
-        $this->assertStringContainsString('\\Go\\Aop\\Intercept\\FieldAccessType::WRITE', $output);
+        $this->assertStringContainsString('FieldAccessType::READ', $output);
+        $this->assertStringContainsString('FieldAccessType::WRITE', $output);
         $this->assertStringNotContainsString('$__joinPoints[', $output);
     }
 
@@ -235,7 +235,7 @@ class TraitProxyGeneratorTest extends TestCase
         $output = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString(
-            "/** @var \\Go\\Aop\\Intercept\\FieldAccess<self, \\Exception> \$__joinPoint */",
+            "/** @var FieldAccess<self, \\Exception> \$__joinPoint */",
             $output,
         );
     }

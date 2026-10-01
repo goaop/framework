@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
+use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\The;
+use Go\Aop\Intercept\DynamicMethodInvocation;
 /**
  * PHP 8.3 — class with #[\Override] on an intercepted method.
  * WeavingTransformer must strip the attribute from the generated trait so that
@@ -15,12 +19,12 @@ class TestClassWithOverride implements \Go\Aop\Proxy
     #[\Override]
     public function overriddenMethod(): string
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
+        /** @var DynamicMethodInvocation<self, string> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(
             self::class,
             'overriddenMethod',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestClassWithOverride->overriddenMethod')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClassWithOverride->overriddenMethod')),
             ],
             $this->overriddenMethodOriginalAlias(...),
         );
@@ -28,12 +32,12 @@ class TestClassWithOverride implements \Go\Aop\Proxy
     }
     public function normalMethod(): int
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, int> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
+        /** @var DynamicMethodInvocation<self, int> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(
             self::class,
             'normalMethod',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestClassWithOverride->normalMethod')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClassWithOverride->normalMethod')),
             ],
             $this->normalMethodOriginalAlias(...),
         );

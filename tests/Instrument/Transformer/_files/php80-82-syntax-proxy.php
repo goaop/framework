@@ -2,6 +2,10 @@
 declare(strict_types=1);
 namespace Test\ns1;
 
+use Go\Aop\Framework\InterceptorInjector;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\The;
+use Go\Aop\Intercept\DynamicMethodInvocation;
 /**
  * Compact class covering general PHP 8.0-8.3 syntax through the weaver:
  * constructor promotion (non-intercepted property), new-in-initializer parameter
@@ -16,12 +20,12 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
     }
     public function __construct(string $label = 'default', \ArrayObject $items = new \ArrayObject([1, 2, 3]))
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
+        /** @var DynamicMethodInvocation<self> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(
             self::class,
             '__construct',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestPhp80To82SyntaxClass->__construct')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp80To82SyntaxClass->__construct')),
             ],
             $this->__constructOriginalAlias(...),
         );
@@ -29,12 +33,12 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
     }
     public function describe(?\ArrayObject $extra = null): string
     {
-        /** @var \Go\Aop\Intercept\DynamicMethodInvocation<self, string> $__joinPoint */
-        static $__joinPoint = \Go\Aop\Framework\InterceptorInjector::forMethod(
+        /** @var DynamicMethodInvocation<self, string> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(
             self::class,
             'describe',
             [
-                \Go\Aop\Framework\Interceptor::before(\Go\Aop\Framework\The::advice('advisor.Test\ns1\TestPhp80To82SyntaxClass->describe')),
+                Interceptor::before(The::advice('advisor.Test\ns1\TestPhp80To82SyntaxClass->describe')),
             ],
             $this->describeOriginalAlias(...),
         );

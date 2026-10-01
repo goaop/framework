@@ -12,8 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Go\Aop\Framework\Interceptor;
-use Go\Aop\Framework\InterceptorInjector;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
@@ -46,7 +44,7 @@ class GeneratedCodePrinter extends Standard
 
     protected function pExpr_StaticCall(Expr\StaticCall $node): string
     {
-        if ($node->class instanceof Name && $node->class->toString() === InterceptorInjector::class) {
+        if ($node->class instanceof Name && str_ends_with($node->class->toString(), 'InterceptorInjector')) {
             $name = $node->name instanceof Identifier ? $node->name->toString() : $this->p($node->name);
 
             return $this->pStaticDereferenceLhs($node->class) . '::' . $name
@@ -63,7 +61,7 @@ class GeneratedCodePrinter extends Standard
                 return false;
             }
             $call = $item->value;
-            if (!$call->class instanceof Name || $call->class->toString() !== Interceptor::class) {
+            if (!$call->class instanceof Name || !str_ends_with($call->class->toString(), 'Interceptor')) {
                 return false;
             }
         }
