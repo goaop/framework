@@ -226,6 +226,29 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * The original file imports classes named like the ones generated code uses and aliases a framework
+     * class. The proxy keeps the original imports (parameter defaults and types rely on them) and aliases
+     * only its own colliding imports, so it compiles and stays readable (issue #668).
+     */
+    public function testWeaverAliasesProxyImportsCollidingWithOriginalImports(): void
+    {
+        $metadata = $this->loadTestMetadata('import-collision');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('import-collision-woven')->source);
+        $this->assertEquals($expected, $actual);
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('import-collision-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
+    }
+
+    /**
      * PHP 8.1 backed enums must be woven: methods go into a trait, cases are re-declared in the proxy enum.
      */
     public function testWeaverForEnum(): void

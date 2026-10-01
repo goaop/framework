@@ -144,28 +144,27 @@ class WeavingTransformer extends BaseSourceTransformer
         $newClassName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
         $newFqcn      = ($class->getNamespaceName() !== '' ? $class->getNamespaceName() . '\\' : '') . $newClassName;
 
+        $classFileName = $class->getFileName();
+        if ($classFileName === false) {
+            return false;
+        }
+        // Imports of the original file are copied into the proxy (parameter defaults and types rely on
+        // them); the generators reserve their names and alias their own imports around them
+        $originalImports = new ReflectionFileNamespace($classFileName, $class->getNamespaceName())->getNamespaceAliases();
+
         // For traits: rename the trait (legacy approach, TraitProxyGenerator generates a child trait).
         // For enums: convert the enum body to a trait (cases extracted to proxy enum by EnumProxyGenerator).
         // For classes: convert the class body to a trait (new trait-based engine).
         if ($class->isTrait()) {
             $this->removeInterceptedPropertiesFromTraitBody($class, $advices, $metadata);
             $this->adjustOriginalTrait($class, $metadata, $newClassName);
-            $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices);
+            $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices, $originalImports);
         } elseif ($class->isEnum()) {
             $this->convertEnumToTrait($class, $advices, $metadata, $newClassName);
-            $childProxyGenerator = new EnumProxyGenerator($class, $newFqcn, $advices);
+            $childProxyGenerator = new EnumProxyGenerator($class, $newFqcn, $advices, $originalImports);
         } else {
             $this->convertClassToTrait($class, $advices, $metadata, $newClassName);
-            $childProxyGenerator = new ClassProxyGenerator($class, $newFqcn, $advices);
-        }
-
-        $classFileName = $class->getFileName();
-        if ($classFileName === false) {
-            return false;
-        }
-        $refNamespace = new ReflectionFileNamespace($classFileName, $class->getNamespaceName());
-        foreach ($refNamespace->getNamespaceAliases() as $fqdn => $alias) {
-            $childProxyGenerator->addUse($fqdn, $alias);
+            $childProxyGenerator = new ClassProxyGenerator($class, $newFqcn, $advices, $originalImports);
         }
 
         $childCode = $childProxyGenerator->generate();

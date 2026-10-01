@@ -14,6 +14,8 @@ namespace Go\Proxy\Generator;
 
 use Go\Aop\AspectException;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Framework\The;
 use PhpParser\Node\Arg;
 use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr;
@@ -51,8 +53,10 @@ final class InterceptorListGenerator
     /**
      * @param array<GeneratedInterceptor|string> $interceptors Only generated interceptor descriptors are
      *                                                         accepted, string entries are rejected loudly
+     * @param ProxyImports|null                  $imports      Imports of the generated file; short class names
+     *                                                         are emitted when omitted
      */
-    public function __construct(array $interceptors)
+    public function __construct(array $interceptors, private readonly ?ProxyImports $imports = null)
     {
         $descriptors = [];
         foreach ($interceptors as $interceptor) {
@@ -97,29 +101,29 @@ final class InterceptorListGenerator
     public function getNode(): Array_
     {
         return new Array_(array_map(
-            static fn(GeneratedInterceptor $interceptor): ArrayItem => new ArrayItem(self::createCallNode($interceptor)),
+            fn(GeneratedInterceptor $interceptor): ArrayItem => new ArrayItem($this->createCallNode($interceptor)),
             $this->interceptors,
         ), ['kind' => Array_::KIND_SHORT]);
     }
 
-    private static function createCallNode(GeneratedInterceptor $interceptor): StaticCall
+    private function createCallNode(GeneratedInterceptor $interceptor): StaticCall
     {
         $args = [
-            new Arg(self::createAdviceAccessorNode($interceptor)),
+            new Arg($this->createAdviceAccessorNode($interceptor)),
         ];
 
         if ($interceptor->order !== 0) {
             $args[] = new Arg(new Int_($interceptor->order), name: new Identifier('order'));
         }
 
-        return new StaticCall(new Name('Interceptor'), $interceptor->factoryMethod, $args);
+        return new StaticCall($this->className(Interceptor::class), $interceptor->factoryMethod, $args);
     }
 
-    private static function createAdviceAccessorNode(GeneratedInterceptor $interceptor): Expr
+    private function createAdviceAccessorNode(GeneratedInterceptor $interceptor): Expr
     {
         if ($interceptor->usesContainerAdvice) {
             return new StaticCall(
-                new Name('The'),
+                $this->className(The::class),
                 'advice',
                 [
                     new Arg(new String_($interceptor->advisorId)),
@@ -136,12 +140,20 @@ final class InterceptorListGenerator
         // is needed right now and a lazy-proxy detour would be pure overhead. Only advisor
         // cache files use the lazy static-data form of the Interceptor facade.
         return new MethodCall(
-            new StaticCall(new Name('The'), 'aspect', [
-                new Arg(new ClassConstFetch(new Name(self::shortClassName($interceptor->aspectClass)), 'class')),
+            new StaticCall($this->className(The::class), 'aspect', [
+                new Arg(new ClassConstFetch($this->className($interceptor->aspectClass), 'class')),
             ]),
             $interceptor->adviceMethod,
             [new VariadicPlaceholder()],
         );
+    }
+
+    /**
+     * Returns the name node generated code uses for the class: its alias in the file imports
+     */
+    private function className(string $className): Name
+    {
+        return new Name($this->imports?->import($className) ?? self::shortClassName($className));
     }
 
     private static function shortClassName(string $className): string

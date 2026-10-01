@@ -10,6 +10,8 @@ use Go\Aop\Framework\AfterThrowingInterceptor;
 use Go\Aop\Framework\AroundInterceptor;
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Stubs\Collision\A\SameNameAspect as AspectA;
+use Go\Stubs\Collision\B\SameNameAspect as AspectB;
 use PHPUnit\Framework\TestCase;
 
 final class InterceptorListGeneratorTest extends TestCase
@@ -53,6 +55,28 @@ PHP,
                 Interceptor::after(The::advice('manual.after')),
                 Interceptor::around(The::advice('manual.around')),
                 Interceptor::afterThrowing(The::advice('manual.afterThrowing')),
+            ]
+PHP,
+            $code,
+        );
+    }
+
+    public function testUsesImportAliasesOfTheGeneratedFile(): void
+    {
+        $descriptors = [
+            GeneratedInterceptor::fromAdvice('a', new BeforeInterceptor(new AspectA()->beforeMethod(...))),
+            GeneratedInterceptor::fromAdvice('b', new BeforeInterceptor(new AspectB()->beforeMethod(...))),
+        ];
+        // The file already imports another Interceptor, and both aspects share one short name
+        $imports = new ProxyImports('App', ['App\\Log\\Interceptor' => 'Interceptor']);
+
+        $code = (new InterceptorListGenerator($descriptors, $imports))->generate();
+
+        $this->assertSame(
+            <<<'PHP'
+[
+                AopInterceptor::before(The::aspect(SameNameAspect::class)->beforeMethod(...)),
+                AopInterceptor::before(The::aspect(BSameNameAspect::class)->beforeMethod(...)),
             ]
 PHP,
             $code,

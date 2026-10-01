@@ -12,10 +12,12 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Go\Aop\Intercept\FieldAccess;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\PropertyGenerator;
 use Go\Proxy\Generator\PropertyModifier;
 use Go\Proxy\Generator\PropertyNodeProvider;
+use Go\Proxy\Generator\ProxyImports;
 use Go\Proxy\Generator\TypeGenerator;
 use InvalidArgumentException;
 use LogicException;
@@ -33,8 +35,13 @@ use ReflectionUnionType;
 
 abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvider
 {
-    public function __construct(protected readonly ReflectionProperty $property)
-    {
+    /**
+     * @param ProxyImports|null $imports Imports of the generated file; short class names are emitted when omitted
+     */
+    public function __construct(
+        protected readonly ReflectionProperty $property,
+        protected readonly ?ProxyImports $imports = null,
+    ) {
         if ($this->property->isStatic() || $this->property->isReadOnly() || $this->property->hasHooks()) {
             // Properties with existing hooks cannot be intercepted. The framework converts
             // the original class to a trait and redeclares intercepted properties with
@@ -151,7 +158,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     protected function createFieldAccessDocComment(string $variableName = 'fieldAccess', bool $isNullable = false): Doc
     {
         $nullableSuffix = $isNullable ? '|null' : '';
-        return new Doc('/** @var FieldAccess<self, ' . $this->getPropertyTypeForPhpDoc() . '>' . $nullableSuffix . ' $' . $variableName . ' */');
+        return new Doc('/** @var ' . $this->importedName(FieldAccess::class) . '<self, ' . $this->getPropertyTypeForPhpDoc() . '>' . $nullableSuffix . ' $' . $variableName . ' */');
     }
 
     private function getPropertyTypeForPhpDoc(): string
@@ -230,5 +237,18 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         }
 
         return $modifiers;
+    }
+
+    /**
+     * Returns the name generated code uses for the class: its alias in the file imports
+     */
+    protected function importedName(string $className): string
+    {
+        if ($this->imports !== null) {
+            return $this->imports->import($className);
+        }
+        $lastSeparator = strrpos($className, '\\');
+
+        return $lastSeparator === false ? $className : substr($className, $lastSeparator + 1);
     }
 }

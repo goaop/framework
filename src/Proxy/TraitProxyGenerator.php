@@ -24,6 +24,7 @@ use Go\Aop\Intercept\StaticMethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Proxy\Generator\DocBlockGenerator;
 use Go\Proxy\Generator\InterceptorListGenerator;
+use Go\Proxy\Generator\ProxyImports;
 use Go\Proxy\Generator\TraitGenerator;
 use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\Generator\Visibility;
@@ -45,22 +46,49 @@ class TraitProxyGenerator extends ClassProxyGenerator
      * @param ReflectionClass<covariant object> $originalTrait    Original class reflection
      * @param string                  $parentTraitName  Parent trait name to use
      * @param array<string, array<string, list<string|GeneratedInterceptor>>> $traitAdviceNames List of advices for class
+     * @param array<string, string|null> $originalImports Imports of the original file: class name => alias
      */
     public function __construct(
         ReflectionClass $originalTrait,
         string $parentTraitName,
         array $traitAdviceNames,
+        array $originalImports = [],
     ) {
         $this->adviceNames = $traitAdviceNames;
 
         $dynamicMethodAdvices = $traitAdviceNames[AspectContainer::METHOD_PREFIX] ?? [];
         $staticMethodAdvices  = $traitAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
         $interceptedMethods   = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
+        $propertyAdvices      = $traitAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
+
+        // Register the imports up front, so that every generated reference below uses the final alias.
+        // Determine needed invocation types from actual method signatures, not advice
+        // category keys, because callers may place static-method advices under METHOD_PREFIX.
+        $this->imports = ProxyImports::forClass($originalTrait, $originalImports);
+        $this->imports->reserve(self::shortClassName($parentTraitName));
+        $this->imports->import(InterceptorInjector::class);
+        $this->imports->import(Interceptor::class);
+        $this->imports->import(The::class);
+        foreach ($this->collectAspectClasses($traitAdviceNames) as $aspectClass) {
+            $this->imports->import($aspectClass);
+        }
+        foreach ($interceptedMethods as $methodName) {
+            if ($originalTrait->hasMethod($methodName) && $originalTrait->getMethod($methodName)->isStatic()) {
+                $this->imports->import(StaticMethodInvocation::class);
+            } else {
+                $this->imports->import(DynamicMethodInvocation::class);
+            }
+        }
+        if (!empty($propertyAdvices)) {
+            $this->imports->import(FieldAccess::class);
+            $this->imports->import(FieldAccessType::class);
+        }
+
         $generatedMethods     = $this->interceptMethods($originalTrait, $interceptedMethods);
         $generatedProperties  = [];
-        foreach ($traitAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [] as $propertyName => $adviceNames) {
+        foreach ($propertyAdvices as $propertyName => $adviceNames) {
             $property = $originalTrait->getProperty($propertyName);
-            $generatedProperties[] = (new TraitInterceptedPropertyGenerator($property, $adviceNames))->getNode();
+            $generatedProperties[] = (new TraitInterceptedPropertyGenerator($property, $adviceNames, $this->imports))->getNode();
         }
 
         $docComment = $originalTrait->getDocComment();
@@ -91,28 +119,8 @@ class TraitProxyGenerator extends ClassProxyGenerator
             $traitGenerator->addTraitAlias($fullName, $methodName . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX, Visibility::PRIVATE);
         }
 
-        // Register use-imports for AOP classes referenced in generated method bodies.
-        // Determine needed invocation types from actual method signatures, not advice
-        // category keys, because callers may place static-method advices under METHOD_PREFIX.
-        $traitGenerator->addUse(InterceptorInjector::class);
-        $traitGenerator->addUse(Interceptor::class);
-        $traitGenerator->addUse(The::class);
-        foreach ($this->collectAspectClasses($traitAdviceNames) as $aspectClass) {
-            if (str_contains($aspectClass, '\\')) {
-                $traitGenerator->addUse($aspectClass);
-            }
-        }
-        foreach ($interceptedMethods as $methodName) {
-            if ($originalTrait->hasMethod($methodName) && $originalTrait->getMethod($methodName)->isStatic()) {
-                $traitGenerator->addUse(StaticMethodInvocation::class);
-            } else {
-                $traitGenerator->addUse(DynamicMethodInvocation::class);
-            }
-        }
-        $propertyAdvices = $traitAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
-        if (!empty($propertyAdvices)) {
-            $traitGenerator->addUse(FieldAccess::class);
-            $traitGenerator->addUse(FieldAccessType::class);
+        foreach ($this->imports->getUses() as $className => $alias) {
+            $traitGenerator->addUse($className, $alias);
         }
 
         // Store generator instance for compatibility with parent generate() call
@@ -147,7 +155,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         $adviceNames = $this->adviceNames[$prefix][$method->name]
             ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
-        $advicesCode = (new InterceptorListGenerator($adviceNames))->generate();
+        $advicesCode = (new InterceptorListGenerator($adviceNames, $this->imports))->generate();
         $returnTypeString = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
         // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
         // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.
@@ -159,8 +167,9 @@ class TraitProxyGenerator extends ClassProxyGenerator
             }
         }
         $joinPointType = $isStatic
-            ? 'StaticMethodInvocation<self' . $returnTypeString . '>'
-            : 'DynamicMethodInvocation<self' . $returnTypeString . '>';
+            ? $this->imports->import(StaticMethodInvocation::class) . '<self' . $returnTypeString . '>'
+            : $this->imports->import(DynamicMethodInvocation::class) . '<self' . $returnTypeString . '>';
+        $injector = $this->imports->import(InterceptorInjector::class);
 
         // All intercepted methods in a trait proxy have `<method>OriginalAlias` aliases from the parent trait.
         $callableExpression = $isStatic
@@ -169,7 +178,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::{$injectorMethod}(
+        static \$__joinPoint = {$injector}::{$injectorMethod}(
             self::class,
             '{$method->name}',
             {$advicesCode},

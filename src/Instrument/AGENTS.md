@@ -48,6 +48,9 @@ Interceptor list entries are first-class advice callables on the aspect instance
 (`The::aspect(X::class)->m(...)`); container-backed closure advices use
 `The::advice('advisorId')` instead. Emitted by InterceptorListGenerator from
 GeneratedInterceptor descriptors (string advisor ids are rejected).
+Short names above are `use` aliases managed by ProxyImports: a name colliding with the original
+file's imports or body gets an adjusted alias (e.g. `use Go\Aop\Framework\Interceptor as AopInterceptor;`),
+see src/Proxy/AGENTS.md. WeavingTransformer passes the original imports to the proxy generator constructors.
 
 ### Key invariants
 - Proxy re-inherits parent+interfaces via reflection (not from woven source)

@@ -16,7 +16,10 @@ use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Core\AspectContainer;
 use Go\ParserReflection\ReflectionFileNamespace;
+use Go\PhpUnit\AssertsCompilablePhp;
 use Go\Stubs\AttributeAspectLoaderExtensionTestPublicAspect;
+use Go\Stubs\Collision\A\SameNameAspect as AspectA;
+use Go\Stubs\Collision\B\SameNameAspect as AspectB;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,6 +27,8 @@ use PHPUnit\Framework\TestCase;
  */
 class FunctionProxyGeneratorTest extends TestCase
 {
+    use AssertsCompilablePhp;
+
     private const string STUBS_FILE = __DIR__ . '/../Stubs/Generator/FunctionGeneratorStubs.php';
     private const string STUBS_NS   = 'Go\Stubs\Generator';
 
@@ -114,6 +119,26 @@ class FunctionProxyGeneratorTest extends TestCase
             'use ' . AttributeAspectLoaderExtensionTestPublicAspect::class . ';',
             $code,
         );
+    }
+
+    public function testGenerateAliasesAspectsSharingShortName(): void
+    {
+        $adviceNames = [
+            AspectContainer::FUNCTION_PREFIX => [
+                'Go\Stubs\Generator\funcGenHelper_noAttr' => [
+                    GeneratedInterceptor::fromAdvice('a', new BeforeInterceptor(new AspectA()->beforeMethod(...))),
+                    GeneratedInterceptor::fromAdvice('b', new BeforeInterceptor(new AspectB()->beforeMethod(...))),
+                ],
+            ],
+        ];
+
+        $code = new FunctionProxyGenerator($this->getStubsNamespace(), $adviceNames)->generate();
+
+        $this->assertStringContainsString('use ' . AspectA::class . ';', $code);
+        $this->assertStringContainsString('use ' . AspectB::class . ' as BSameNameAspect;', $code);
+        $this->assertStringContainsString('The::aspect(SameNameAspect::class)', $code);
+        $this->assertStringContainsString('The::aspect(BSameNameAspect::class)', $code);
+        $this->assertPhpCompiles($code);
     }
 
     private function getStubsNamespace(): ReflectionFileNamespace
