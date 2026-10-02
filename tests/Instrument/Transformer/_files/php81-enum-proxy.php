@@ -21,7 +21,7 @@ enum TestStatus : string implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestStatus->label')),
             ],
-            [self::class, 'labelOriginalAlias'],
+            $this->labelOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }

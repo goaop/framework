@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
 use ReflectionMethod;
@@ -34,15 +35,25 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     protected readonly ReflectionMethod $reflectionMethod;
 
     /**
+     * First-class callable pointing to the original method.
+     * May be wrapped or rebound if needed in child classes or during the {@see proceed()} call.
+     *
+     * @link https://www.php.net/manual/en/functions.first_class_callable_syntax.php
+     */
+    protected readonly Closure $closureToCall;
+
+    /**
      * Constructor for method invocation
      *
      * @param array<Interceptor> $advices        List of advices for this invocation
      * @param class-string<T>    $className      Class, containing method to invoke
      * @param non-empty-string   $methodName     Name of the method to invoke
+     * @param Closure            $closureToCall  First-class callable to the original method body.
      */
-    public function __construct(array $advices, string $className, string $methodName)
+    public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)
     {
         parent::__construct($advices);
+        $this->closureToCall    = $closureToCall;
         $this->reflectionMethod = new ReflectionMethod($className, $methodName);
     }
 

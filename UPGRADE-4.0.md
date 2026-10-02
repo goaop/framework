@@ -117,9 +117,8 @@ deferred registrations of services implementing an interface.
 - The `AdviceBefore`, `AdviceAfter` and `AdviceAround` marker interfaces are removed. `Advice`
   requires `getType(): AdviceTypeEnum` (`Before`, `After`, `AfterThrowing`, `Around`,
   `Introduction`).
-- `DynamicTraitAliasMethodInvocation` and `InterceptorInjector::forMethod()` take the original
-  method as `[class, method]` (e.g. `[self::class, 'fooOriginalAlias']`) instead of a closure.
-  `StaticTraitAliasMethodInvocation` and `ReflectionFunctionInvocation` require a non-nullable
+- The invocation constructors (`DynamicTraitAliasMethodInvocation`,
+  `StaticTraitAliasMethodInvocation`, `ReflectionFunctionInvocation`) require a non-nullable
   `Closure $closureToCall`.
 - `DeclareError` (the attribute, `DeclareErrorInterceptor` and `PointcutBuilder::declareError()`) is
   removed. Emit warnings or throw exceptions from a `#[Before]` or `#[Around]` advice instead.

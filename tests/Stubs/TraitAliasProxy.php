@@ -69,19 +69,6 @@ class TraitAliasProxy
     }
 
     /**
-     * Names the private `<method>OriginalAlias` of an instance method, as generated proxies pass it to
-     * InterceptorInjector::forMethod()
-     *
-     * @param non-empty-string $method
-     *
-     * @return array{class-string, non-empty-string}
-     */
-    public static function originalMethodFor(string $method): array
-    {
-        return [self::class, $method . 'OriginalAlias'];
-    }
-
-    /**
      * Returns a first-class callable to the private `<method>OriginalAlias` for the given instance method.
      * Used by unit tests to provide the required callable argument to invocation constructors.
      */

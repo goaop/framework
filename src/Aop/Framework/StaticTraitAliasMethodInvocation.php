@@ -44,11 +44,6 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     private string $scope;
 
     /**
-     * Shim forwarding to the original static method body, rebound to the late-static-binding scope on every call
-     */
-    private readonly Closure $closureToCall;
-
-    /**
      * Stack frames to work with recursive calls or with cross-calls inside object
      *
      * @var array<int, StaticMethodInvocationFrame>
@@ -70,8 +65,8 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
         // forward_static_call_array will use $scope as the late-static-binding class.
         // We cannot rebind $closureToCall directly because first-class callables from static
         // methods have a fixed scope.
-        $this->closureToCall = static fn(array $argumentsToCall): mixed => forward_static_call_array($closureToCall, $argumentsToCall);
-        parent::__construct($advices, $className, $methodName);
+        $shim = static fn(array $argumentsToCall): mixed => forward_static_call_array($closureToCall, $argumentsToCall);
+        parent::__construct($advices, $className, $methodName, $shim);
     }
 
     /**

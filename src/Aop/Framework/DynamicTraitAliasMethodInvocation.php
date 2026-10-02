@@ -12,17 +12,20 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
+use Go\Aop\AspectException;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\Interceptor;
+use ReflectionFunction;
 use ReflectionMethod;
 
 /**
  * Dynamic trait-alias method invocation calls instance methods via reflection.
  *
- * The generated proxy code names the original method body:
- *  - For methods declared in the proxied class: `[self::class, '<method>OriginalAlias']` — the private
+ * The callable is provided by the generated proxy code and points to the original method body:
+ *  - For methods declared in the proxied class: `$this-><method>OriginalAlias(...)` — the private
  *    alias created in the proxy's trait-use block.
- *  - For inherited methods (no trait alias): `[parent::class, '<method>']`.
+ *  - For inherited methods (no trait alias): `parent::<method>(...)`.
  *
  * Note: `ReflectionMethod::invokeArgs()` is used in {@see proceed()} because it is faster than
  * `Closure::call()` (see https://3v4l.org/DYj84) and reliably handles pass-by-reference
@@ -61,16 +64,24 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
      * @param array<Interceptor> $advices       List of advices for this invocation
      * @param class-string<T>    $className     Class, containing method to invoke
      * @param non-empty-string   $methodName    Name of the method to invoke
-     * @param array{class-string, non-empty-string} $originalMethod Class and name of the original method body:
-     *                                          `[self::class, 'methodOriginalAlias']` for trait-aliased methods,
-     *                                          `[parent::class, 'method']` for inherited ones. Names, not a
-     *                                          closure: a closure would bind and keep alive the first instance
-     *                                          that calls the method, as the joinpoint lives for the process.
+     * @param Closure            $closureToCall First-class callable to the original method body,
+     *                                          e.g. `$this->methodOriginalAlias(...)` for trait-aliased
+     *                                          methods or `parent::method(...)` for inherited ones.
      */
-    public function __construct(array $advices, string $className, string $methodName, array $originalMethod)
+    public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)
     {
-        parent::__construct($advices, $className, $methodName);
-        $this->originalMethodToCall = new ReflectionMethod($originalMethod[0], $originalMethod[1]);
+        parent::__construct($advices, $className, $methodName, $closureToCall);
+
+        // Logic with reflection is used as workaround for PHP bug https://bugs.php.net/bug.php?id=72326
+        $reflectionClosure = new ReflectionFunction($closureToCall);
+        $closureScopeClass = $reflectionClosure->getClosureScopeClass();
+        if ($closureScopeClass === null) {
+            throw new AspectException('Cannot determine the scope class of the closure');
+        }
+        $this->originalMethodToCall = new ReflectionMethod(
+            $closureScopeClass->getName(),
+            $reflectionClosure->getName(),
+        );
     }
 
     /**

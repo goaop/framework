@@ -262,7 +262,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
         // All intercepted enum methods have `<method>OriginalAlias` aliases from the enum's trait-use block.
         $callableExpression = $isStatic
             ? 'self::' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)'
-            : "[self::class, '" . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . "']";
+            : '$this->' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)';
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */

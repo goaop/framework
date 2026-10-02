@@ -27,7 +27,7 @@ class ImportCollisionClass implements \Go\Aop\Proxy
             [
                 AopInterceptor::before(AopThe::advice('advisor.Test\ns1\ImportCollisionClass->log')),
             ],
-            [self::class, 'logOriginalAlias'],
+            $this->logOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, \array_slice([$level, $target], 0, \func_num_args()));
     }
@@ -40,7 +40,7 @@ class ImportCollisionClass implements \Go\Aop\Proxy
             [
                 AopInterceptor::before(AopThe::advice('advisor.Test\ns1\ImportCollisionClass->injector')),
             ],
-            [self::class, 'injectorOriginalAlias'],
+            $this->injectorOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }

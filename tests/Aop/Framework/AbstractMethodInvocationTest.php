@@ -15,7 +15,7 @@ class AbstractMethodInvocationTest extends TestCase
     public function setUp(): void
     {
         $this->invocation = $this->getMockBuilder(AbstractMethodInvocation::class)
-            ->setConstructorArgs([[], self::class, __FUNCTION__])
+            ->setConstructorArgs([[], self::class, __FUNCTION__, static fn() => null])
             ->onlyMethods(['proceed', 'isDynamic', 'getThis', 'getScope'])
             ->getMock();
     }
@@ -34,7 +34,7 @@ class AbstractMethodInvocationTest extends TestCase
         $o = new class extends AbstractMethodInvocation {
             public function __construct()
             {
-                parent::__construct([new AroundInterceptor(function () {})], AbstractMethodInvocationTest::class, 'testInstanceIsInitialized');
+                parent::__construct([new AroundInterceptor(function () {})], AbstractMethodInvocationTest::class, 'testInstanceIsInitialized', static fn() => null);
             }
 
             public function isDynamic(): bool
@@ -67,7 +67,7 @@ class AbstractMethodInvocationTest extends TestCase
         $o = new class extends AbstractMethodInvocation {
             public function __construct()
             {
-                parent::__construct([], AbstractMethodInvocationTest::class, 'testToStringForInstanceMethodUsesArrowNotation');
+                parent::__construct([], AbstractMethodInvocationTest::class, 'testToStringForInstanceMethodUsesArrowNotation', static fn() => null);
             }
 
             public function isDynamic(): bool
@@ -102,7 +102,7 @@ class AbstractMethodInvocationTest extends TestCase
         $o = new class extends AbstractMethodInvocation {
             public function __construct()
             {
-                parent::__construct([], StaticHelperForAbstractMethodInvocationTest::class, 'staticMethod');
+                parent::__construct([], StaticHelperForAbstractMethodInvocationTest::class, 'staticMethod', static fn() => null);
             }
 
             public function isDynamic(): bool

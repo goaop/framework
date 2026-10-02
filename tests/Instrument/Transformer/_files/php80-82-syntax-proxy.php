@@ -27,7 +27,7 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp80To82SyntaxClass->__construct')),
             ],
-            [self::class, '__constructOriginalAlias'],
+            $this->__constructOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, \array_slice([$label, $items], 0, \func_num_args()));
     }
@@ -40,7 +40,7 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestPhp80To82SyntaxClass->describe')),
             ],
-            [self::class, 'describeOriginalAlias'],
+            $this->describeOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this, \array_slice([$extra], 0, \func_num_args()));
     }

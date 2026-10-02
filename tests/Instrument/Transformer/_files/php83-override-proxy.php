@@ -26,7 +26,7 @@ class TestClassWithOverride implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClassWithOverride->overriddenMethod')),
             ],
-            [self::class, 'overriddenMethodOriginalAlias'],
+            $this->overriddenMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }
@@ -39,7 +39,7 @@ class TestClassWithOverride implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClassWithOverride->normalMethod')),
             ],
-            [self::class, 'normalMethodOriginalAlias'],
+            $this->normalMethodOriginalAlias(...),
         );
         return $__joinPoint->__invoke($this);
     }

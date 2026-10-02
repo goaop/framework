@@ -1012,8 +1012,8 @@ class WeavingTransformerTest extends TestCase
     /**
      * Advices matching members that the woven class only inherits must not be looked up in the
      * woven trait tokens — those declarations live in the parent file, not in the converted
-     * class body. The proxy dispatches the inherited method through the parent method,
-     * `[parent::class, 'method']`, instead of a trait alias.
+     * class body. The proxy dispatches the inherited method through the `parent::method(...)`
+     * first-class callable instead of a trait alias.
      */
     public function testWeaverInterceptsInheritedMembersWithoutTouchingTraitBody(): void
     {
@@ -1050,7 +1050,7 @@ class WeavingTransformerTest extends TestCase
         // Own method is aliased in the trait-use block, inherited one goes through parent::
         $this->assertStringContainsString('as private ownMethodOriginalAlias;', $proxyContent);
         $this->assertStringNotContainsString('inheritedMethodOriginalAlias', $proxyContent);
-        $this->assertStringContainsString("[parent::class, 'inheritedMethod']", $proxyContent);
+        $this->assertStringContainsString('parent::inheritedMethod(...)', $proxyContent);
     }
 
     /**

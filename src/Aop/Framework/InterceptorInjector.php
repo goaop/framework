@@ -31,18 +31,18 @@ final class InterceptorInjector
      * @param class-string<T> $className
      * @param non-empty-string $methodName
      * @param non-empty-list<Interceptor> $interceptors
-     * @param array{class-string, non-empty-string} $originalMethod Class and name of the original method body,
-     *                               e.g. `[self::class, 'methodOriginalAlias']` for trait-aliased methods or
-     *                               `[parent::class, 'method']` for inherited methods
+     * @param Closure $closureToCall First-class callable to the original method body,
+     *                               e.g. `$this->methodOriginalAlias(...)` for trait-aliased methods or
+     *                               `parent::method(...)` for inherited methods.
      * @return DynamicMethodInvocation<T>
      */
-    public static function forMethod(string $className, string $methodName, array $interceptors, array $originalMethod): DynamicMethodInvocation
+    public static function forMethod(string $className, string $methodName, array $interceptors, Closure $closureToCall): DynamicMethodInvocation
     {
         return new DynamicTraitAliasMethodInvocation(
             $interceptors,
             $className,
             $methodName,
-            $originalMethod,
+            $closureToCall,
         );
     }
 

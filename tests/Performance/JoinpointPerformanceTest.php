@@ -51,7 +51,7 @@ final class JoinpointPerformanceTest extends TestCase
         foreach (['no advice' => [], 'around advice' => $around] as $adviceName => $advices) {
             $instance       = new TraitAliasProxy();
             $methodCallable = $instance->getCallableFor('publicMethod');
-            $method         = new DynamicTraitAliasMethodInvocation($advices, TraitAliasProxy::class, 'publicMethod', TraitAliasProxy::originalMethodFor('publicMethod'));
+            $method         = new DynamicTraitAliasMethodInvocation($advices, TraitAliasProxy::class, 'publicMethod', $methodCallable);
             yield "method, {$adviceName}" => [
                 static fn(): mixed => $methodCallable(),
                 static fn(): mixed => $method($instance),

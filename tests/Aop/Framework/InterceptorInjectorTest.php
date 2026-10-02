@@ -32,7 +32,8 @@ class InterceptorInjectorTest extends TestCase
     public function testForMethodBuildsDynamicTraitAliasMethodInvocation(): void
     {
         $instance   = new TraitAliasProxy();
-        $invocation = InterceptorInjector::forMethod(TraitAliasProxy::class, 'publicMethod', $this->noopInterceptors(), TraitAliasProxy::originalMethodFor('publicMethod'));
+        $callable   = $instance->getCallableFor('publicMethod');
+        $invocation = InterceptorInjector::forMethod(TraitAliasProxy::class, 'publicMethod', $this->noopInterceptors(), $callable);
 
         $this->assertInstanceOf(DynamicTraitAliasMethodInvocation::class, $invocation);
         $result = $invocation($instance);
