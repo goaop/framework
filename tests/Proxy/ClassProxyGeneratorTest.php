@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\PhpUnit\AssertsCompilablePhp;
@@ -21,7 +22,6 @@ use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
 use Go\Stubs\PropertyInheritanceChild;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
@@ -229,7 +229,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(WeavingException::class);
         new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
     }
 

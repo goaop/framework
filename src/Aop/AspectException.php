@@ -12,9 +12,12 @@ declare(strict_types=1);
 
 namespace Go\Aop;
 
+use Go\Aop\Exception\ExceptionInterface;
 use RuntimeException;
 
 /**
- * Superclass for all AOP infrastructure exceptions
+ * Invalid aspect definitions and failures of the AOP runtime
+ *
+ * Catch {@see ExceptionInterface} to handle every exception thrown by the framework.
  */
-class AspectException extends RuntimeException {}
+class AspectException extends RuntimeException implements ExceptionInterface {}

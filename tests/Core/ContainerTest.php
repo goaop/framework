@@ -14,6 +14,7 @@ namespace Go\Core;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
@@ -168,7 +169,7 @@ class ContainerTest extends TestCase
 
     public function testGetServiceEnsuresThatKeyAndReturnedTypeMatches(): void
     {
-        $this->expectException(\UnexpectedValueException::class);
+        $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage('Service ' . First::class . ' is not properly registered');
 
         // Emulation of incorrect types
@@ -226,7 +227,7 @@ class ContainerTest extends TestCase
 
         $aspect = $this->container->getService(StatefulTestAspect::class);
 
-        $this->expectException(\UnexpectedValueException::class);
+        $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage('Service ' . StatefulTestAspect::class . ' is not properly registered');
         (new \ReflectionClass(StatefulTestAspect::class))->initializeLazyObject($aspect);
     }

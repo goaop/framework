@@ -5,7 +5,7 @@
 - AdvisorCacheCompiler — renders loaded items into includable plain-PHP cache file content (VERSION const)
 - AdvisorCachePrinter — pretty-printer (extends Proxy\Generator\GeneratedCodePrinter; multiline arrays/news)
 - CacheFileWriter — mkdir-recursive, ATOMIC same-dir tmp+rename writes (one universal path, no LOCK_EX: the unique tmp name makes locking redundant, and the same code runs on stream wrapper paths - tests use goaop/virtual-file-system), chmod before rename (exec bits stripped), directories get search bits matching read bits (directoryModeFor()), every failure throws RuntimeException, opcache_invalidate; the ONLY way cache artefacts are written: woven sources (SourceTransformingLoader) and class/function proxies (WeavingTransformer) via CachePathManager::getCacheFileWriter(), metadata maps (CachePathManager), advisor caches (CachedAspectLoader)
-- NotCompilableException — see src/Aop/AGENTS.md (Compilable section)
+- NotCompilableException (Go\Aop\Exception, public) — see src/Aop/AGENTS.md (Compilable section)
 
 ## Format & naming
 - File returns `['version' => AdvisorCacheCompiler::VERSION, 'advisors' => [...]]`; the graph is nested static constructor expressions (Compilable, see src/Aop/AGENTS.md); byte-deterministic output (DebugWeavingCommand double-warmup must stay diff-free)

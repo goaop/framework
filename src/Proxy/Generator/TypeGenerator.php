@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use InvalidArgumentException;
+use Go\Aop\Exception\WeavingException;
 use PhpParser\Node\ComplexType;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\IntersectionType;
@@ -317,7 +317,7 @@ final class TypeGenerator
                 // Intersection group
                 $closeParen = strpos($remaining, ')');
                 if ($closeParen === false) {
-                    throw new InvalidArgumentException("Malformed DNF type: $typeStr");
+                    throw new WeavingException("Malformed DNF type: $typeStr");
                 }
                 $inner = substr($remaining, 1, $closeParen - 1);
                 /** @var list<Identifier|Name> $intersectionParts */

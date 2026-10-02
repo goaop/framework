@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Console\Command;
 
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CacheWarmer;
-use InvalidArgumentException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -46,11 +46,11 @@ abstract class BaseAspectCommand extends Command
     {
         $loader = $input->getArgument('loader');
         if (!is_string($loader)) {
-            throw new InvalidArgumentException('Loader argument must be a string');
+            throw new InvalidConfigurationException('Loader argument must be a string');
         }
         $path = stream_resolve_include_path($loader);
         if ($path === false || !is_readable($path)) {
-            throw new InvalidArgumentException("Invalid loader path: {$loader}");
+            throw new InvalidConfigurationException("Invalid loader path: {$loader}");
         }
 
         ob_start();
@@ -59,7 +59,7 @@ abstract class BaseAspectCommand extends Command
 
         if (!class_exists(AspectKernel::class, false)) {
             $message = "Kernel was not initialized yet, please configure it in the {$path}";
-            throw new InvalidArgumentException($message);
+            throw new InvalidConfigurationException($message);
         }
 
         $this->aspectKernel = AspectKernel::getInstance();

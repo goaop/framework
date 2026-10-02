@@ -172,6 +172,22 @@ Kernel and transformers
   `SourceTransformingLoader::addTransformer()` is removed, and `transformCode()` returns the overall
   `TransformerResultEnum`.
 
+Exceptions
+----------
+
+Every exception thrown by the framework implements `Go\Aop\Exception\ExceptionInterface`, so one `catch` handles
+any Go! AOP failure. Several throw sites changed their type:
+
+| Situation                                                        | 3.x                                                    | 4.0 |
+|------------------------------------------------------------------|--------------------------------------------------------|-----|
+| Invalid kernel options, container registrations, console input  | `RuntimeException`, `InvalidArgumentException`, `UnexpectedValueException` | `InvalidConfigurationException` (an `InvalidArgumentException`) |
+| Invalid pointcut expression                                      | `UnexpectedValueException`, `InvalidArgumentException` | `PointcutSyntaxException` (an `AspectException`) |
+| Unknown container id                                             | `OutOfBoundsException`                                 | `ServiceNotFoundException` (an `OutOfBoundsException`) |
+| Weaving, proxy generation, cache writes                          | `RuntimeException`, `LogicException`, `InvalidArgumentException` | `WeavingException` (a `RuntimeException`) |
+| Advisor that can not be cached                                   | `Go\Core\Cache\NotCompilableException`               | `Go\Aop\Exception\NotCompilableException` |
+
+**Action:** catch `ExceptionInterface` or the new types where you caught the SPL types listed above.
+
 Doctrine bridge
 ---------------
 

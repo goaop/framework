@@ -14,6 +14,7 @@ namespace Go\Core;
 
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
 use Go\Core\Cache\CachedAspectLoader;
 use Go\Instrument\ClassLoading\AopComposerLoader;
@@ -25,7 +26,6 @@ use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use ReflectionClass;
-use RuntimeException;
 
 use function define;
 
@@ -131,7 +131,7 @@ abstract class AspectKernel
         }
 
         if (!is_subclass_of($this->options['containerClass'], AspectContainer::class)) {
-            throw new AspectException("Invalid aspect container class");
+            throw new InvalidConfigurationException("Invalid aspect container class");
         }
 
         $container = $this->container = new $this->options['containerClass']($resourcesToTrack);
@@ -179,6 +179,10 @@ abstract class AspectKernel
      */
     public function getContainer(): AspectContainer
     {
+        if (!isset($this->container)) {
+            throw new AspectException(static::class . ' is not initialized yet, call init() first');
+        }
+
         return $this->container;
     }
 
@@ -243,7 +247,7 @@ abstract class AspectKernel
 
         $cacheDir = is_string($merged['cacheDir'] ?? null) ? $merged['cacheDir'] : null;
         if (empty($cacheDir)) {
-            throw new RuntimeException('You need to provide valid cache directory for Go! AOP framework.');
+            throw new InvalidConfigurationException('You need to provide valid cache directory for Go! AOP framework.');
         }
 
         $rawExcludePaths = is_array($merged['excludePaths'] ?? null) ? $merged['excludePaths'] : [];
@@ -256,7 +260,7 @@ abstract class AspectKernel
         if ($cacheFileMode === null) {
             $cacheFileMode = 0770 & ~umask();
         } elseif (!is_int($cacheFileMode) || $cacheFileMode < 0 || $cacheFileMode > 0777 || ($cacheFileMode & 0600) !== 0600) {
-            throw new RuntimeException(sprintf(
+            throw new InvalidConfigurationException(sprintf(
                 'Option "cacheFileMode" must be an integer permission mask between 0600 and 0777 '
                 . 'that grants the owner read and write access, got %s.',
                 is_int($cacheFileMode) ? sprintf('0%o', $cacheFileMode) : get_debug_type($cacheFileMode),
@@ -271,7 +275,7 @@ abstract class AspectKernel
         $containerClassOption = $merged['containerClass'] ?? null;
         if (is_string($containerClassOption) && class_exists($containerClassOption)) {
             if (!is_a($containerClassOption, AspectContainer::class, true)) {
-                throw new RuntimeException(sprintf(
+                throw new InvalidConfigurationException(sprintf(
                     'Container class "%s" must extend %s.',
                     $containerClassOption,
                     AspectContainer::class,

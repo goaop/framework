@@ -15,10 +15,10 @@ namespace Go\Aop\Pointcut;
 use ArrayIterator;
 use Dissect\Lexer\Lexer;
 use Dissect\Lexer\TokenStream\TokenStream;
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Stubs\StubPropertyModifiers;
 use Go\Tests\TestProject\Application\ClassWithComplexTypes;
 use PHPUnit\Framework\TestCase;
-use UnexpectedValueException;
 
 /**
  * Class PointcutParserTest defines common check for valid grammar parsing
@@ -237,7 +237,7 @@ class PointcutParserTest extends TestCase
             }
         };
 
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessage('Expected instance of Pointcut to be received during parsing');
 
         $this->parser->parse($emptyStream);

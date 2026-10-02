@@ -14,9 +14,9 @@ namespace Go\Aop\Pointcut;
 
 use Dissect\Lexer\TokenStream\TokenStream;
 use Dissect\Parser\LALR1\Parser;
+use Go\Aop\Exception\PointcutSyntaxException;
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Pointcut;
-use RuntimeException;
-use UnexpectedValueException;
 
 /**
  * Pointcut parser extends the default parser with parse table and strict typehint for grammar
@@ -27,7 +27,7 @@ final class PointcutParser extends Parser
     {
         $parseTable = include __DIR__ . '/PointcutParseTable.php';
         if (!is_array($parseTable)) {
-            throw new RuntimeException('Invalid PointcutParseTable format');
+            throw new WeavingException('Invalid PointcutParseTable format');
         }
         /** @var array{action: array<int, array<string, int>>, goto: array<int, array<string, int>>} $parseTable */
         parent::__construct($grammar, $parseTable);
@@ -40,7 +40,7 @@ final class PointcutParser extends Parser
     {
         $result = parent::parse($stream);
         if (!$result instanceof Pointcut) {
-            throw new UnexpectedValueException("Expected instance of Pointcut to be received during parsing");
+            throw new PointcutSyntaxException("Expected instance of Pointcut to be received during parsing");
         }
 
         return $result;

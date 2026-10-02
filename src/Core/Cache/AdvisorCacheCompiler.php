@@ -14,6 +14,7 @@ namespace Go\Core\Cache;
 
 use Go\Aop\Advisor;
 use Go\Aop\Compilable;
+use Go\Aop\Exception\NotCompilableException;
 use Go\Aop\Pointcut;
 use PhpParser\Node;
 use PhpParser\Node\Arg;

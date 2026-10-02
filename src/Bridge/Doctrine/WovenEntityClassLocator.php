@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace Go\Bridge\Doctrine;
 
 use Doctrine\Persistence\Mapping\Driver\ClassLocator;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\ParserReflection\ReflectionFile;
-use InvalidArgumentException;
 use PhpParser\Node\Stmt\Class_;
 use SplFileInfo;
 use Symfony\Component\Finder\Finder;
@@ -56,7 +56,7 @@ final readonly class WovenEntityClassLocator implements ClassLocator
     ): self {
         foreach ($directories as $directory) {
             if (!is_dir($directory)) {
-                throw new InvalidArgumentException(sprintf('Entity directory "%s" does not exist.', $directory));
+                throw new InvalidConfigurationException(sprintf('Entity directory "%s" does not exist.', $directory));
             }
         }
         $finder = new Finder()

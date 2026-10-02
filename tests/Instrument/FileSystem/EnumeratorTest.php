@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\FileSystem;
 
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
 use SplFileInfo;
@@ -144,7 +145,7 @@ class EnumeratorTest extends TestCase
     {
         $enumerator = new Enumerator('/base', ['/somewhere/base/other']);
 
-        $this->expectException(\UnexpectedValueException::class);
+        $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage('Path /somewhere/base/other is not in /base');
         $enumerator->enumerate();
     }

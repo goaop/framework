@@ -77,7 +77,7 @@ final class PointcutReference implements Pointcut
         if (!isset($this->pointcut)) {
             $pointcutValue = $this->container->getValue($this->pointcutId);
             if (!$pointcutValue instanceof Pointcut) {
-                throw new AspectException("Reference {$this->pointcutId} points not to a Pointcut.");
+                throw new AspectException("Pointcut reference {$this->pointcutId} resolves to " . get_debug_type($pointcutValue) . ', not to a pointcut');
             }
             $this->pointcut = $pointcutValue;
         }

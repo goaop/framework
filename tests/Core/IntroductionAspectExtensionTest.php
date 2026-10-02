@@ -15,6 +15,7 @@ namespace Go\Core;
 use Attribute;
 use Go\Aop\Advice;
 use Go\Aop\Aspect;
+use Go\Aop\AspectException;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutGrammar;
@@ -26,7 +27,6 @@ use Go\Lang\Attribute\DeclareParents;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionProperty;
-use UnexpectedValueException;
 
 class IntroductionAspectExtensionTest extends TestCase
 {
@@ -67,7 +67,7 @@ class IntroductionAspectExtensionTest extends TestCase
     {
         $aspect = new IntroductionAspectExtensionTestInvalidAspect();
 
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(AspectException::class);
         $this->expectExceptionMessage('Unsupported attribute class: ' . IntroductionAspectExtensionTestUnsupportedAttribute::class);
 
         $this->extension->load($aspect, new ReflectionClass($aspect));
@@ -98,7 +98,7 @@ class IntroductionAspectExtensionTest extends TestCase
 
         $unsupportedAttribute = new class extends AbstractAttribute {};
 
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(AspectException::class);
         $this->expectExceptionMessage('Unsupported attribute class: ' . $unsupportedAttribute::class);
 
         $extension->doGetAdvice($unsupportedAttribute, $aspect, $reflection);

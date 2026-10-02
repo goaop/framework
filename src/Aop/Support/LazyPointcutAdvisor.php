@@ -12,7 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Aop\Support;
 
+use Dissect\Lexer\Exception\RecognitionException;
+use Dissect\Parser\Exception\UnexpectedTokenException;
 use Go\Aop\Advice;
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
@@ -32,9 +35,7 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
      * Instance of parsed pointcut, parsed lazily on first access and memoized in the backing store
      */
     private Pointcut $pointcut {
-        get => $this->pointcut ??= $this->container->getService(PointcutParser::class)->parse(
-            $this->container->getService(PointcutLexer::class)->lex($this->pointcutExpression),
-        );
+        get => $this->pointcut ??= $this->parsePointcut();
     }
 
     /**
@@ -47,6 +48,24 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
         private readonly string          $pointcutExpression,
         private readonly Advice          $advice,
     ) {}
+
+    /**
+     * Parses the pointcut expression, naming it in the error when it is invalid
+     */
+    private function parsePointcut(): Pointcut
+    {
+        try {
+            return $this->container->getService(PointcutParser::class)->parse(
+                $this->container->getService(PointcutLexer::class)->lex($this->pointcutExpression),
+            );
+        } catch (RecognitionException|UnexpectedTokenException $exception) {
+            throw new PointcutSyntaxException(
+                "Invalid pointcut expression `{$this->pointcutExpression}`: {$exception->getMessage()}",
+                0,
+                $exception,
+            );
+        }
+    }
 
     public function getPointcut(): Pointcut
     {

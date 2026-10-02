@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
+use Go\Aop\Exception\WeavingException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
@@ -143,7 +144,7 @@ class TypeGeneratorTest extends TestCase
 
     public function testFromTypeStringThrowsOnMalformedDnf(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(WeavingException::class);
         $this->expectExceptionMessage('Malformed DNF type');
         TypeGenerator::fromTypeString('(Countable&Iterator|null');
     }

@@ -14,10 +14,9 @@ namespace Go\Aop\Framework;
 
 use Closure;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\NotCompilableException;
 use Go\Aop\Intercept\Interceptor as InterceptorInterface;
 use Go\Aop\OrderedAdvice;
-use Go\Core\Cache\NotCompilableException;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ClassConstFetch;
@@ -108,7 +107,7 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
         $reflectionAdvice     = new ReflectionFunction($this->adviceMethod);
         $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
         if (!isset($scopeReflectionClass) || !is_subclass_of($scopeReflectionClass->name, Aspect::class)) {
-            throw new AspectException('Could not compile an interceptor without valid aspect');
+            throw new NotCompilableException('Could not compile an interceptor without valid aspect');
         }
 
         $factoryMethod = match ($this::class) {

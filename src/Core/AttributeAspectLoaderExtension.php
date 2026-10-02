@@ -53,7 +53,7 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
 
                     $loadedItems[$methodId] = new GenericPointcutAdvisor($pointcut, $interceptor);
                 } else {
-                    throw new UnexpectedValueException('Unsupported attribute class: ' . $attribute::class);
+                    throw new AspectException('Unsupported attribute class: ' . $attribute::class);
                 }
             }
         }
@@ -84,7 +84,7 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
             $interceptorAttribute instanceof After => new AfterInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
             $interceptorAttribute instanceof Around => new AroundInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
             $interceptorAttribute instanceof AfterThrowing => new AfterThrowingInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
-            default => throw new UnexpectedValueException('Unsupported method meta class: ' . $interceptorAttribute::class),
+            default => throw new AspectException('Unsupported method meta class: ' . $interceptorAttribute::class),
         };
     }
 }

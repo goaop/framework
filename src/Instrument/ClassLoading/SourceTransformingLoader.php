@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -88,12 +89,12 @@ class SourceTransformingLoader extends PhpStreamFilter
     public static function register(string $filterId = self::FILTER_IDENTIFIER): void
     {
         if (!empty(self::$filterId)) {
-            throw new RuntimeException('Stream filter already registered');
+            throw new WeavingException('Stream filter already registered');
         }
 
         $result = stream_filter_register($filterId, self::class);
         if ($result === false) {
-            throw new RuntimeException('Stream filter was not registered');
+            throw new WeavingException('Stream filter was not registered');
         }
         self::$filterId = $filterId;
     }
@@ -127,7 +128,7 @@ class SourceTransformingLoader extends PhpStreamFilter
     public static function getId(): string
     {
         if (empty(self::$filterId)) {
-            throw new RuntimeException('Stream filter was not registered');
+            throw new WeavingException('Stream filter was not registered');
         }
 
         return self::$filterId;

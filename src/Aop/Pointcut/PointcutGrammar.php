@@ -15,6 +15,7 @@ namespace Go\Aop\Pointcut;
 use Closure;
 use Dissect\Lexer\Token;
 use Dissect\Parser\Grammar;
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
 use ReflectionMethod;
 use ReflectionProperty;
@@ -372,7 +373,7 @@ final class PointcutGrammar extends Grammar
         return function (Token $token) {
             $value = $token->getValue();
             if (!is_string($value)) {
-                throw new \InvalidArgumentException('Token value must be a string');
+                throw new PointcutSyntaxException('Token value must be a string');
             }
             $name = strtoupper($value);
 

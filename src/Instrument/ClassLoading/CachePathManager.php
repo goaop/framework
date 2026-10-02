@@ -12,11 +12,11 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use Go\Core\Cache\CacheFileWriter;
 use Go\Instrument\PathResolver;
-use InvalidArgumentException;
 
 /**
  * Class that manages real-code to cached-code paths mapping.
@@ -117,7 +117,7 @@ class CachePathManager
                 if (!is_dir($this->cacheDir)) {
                     $cacheRootDir = dirname($this->cacheDir);
                     if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
-                        throw new InvalidArgumentException(
+                        throw new InvalidConfigurationException(
                             "Can not create a directory {$this->cacheDir} for the cache.
                             Parent directory {$cacheRootDir} is not writable or not exist.",
                         );
@@ -125,7 +125,7 @@ class CachePathManager
                     mkdir($this->cacheDir, CacheFileWriter::directoryModeFor($this->fileMode), true);
                 }
                 if (!is_writable($this->cacheDir)) {
-                    throw new InvalidArgumentException("Cache directory {$this->cacheDir} is not writable");
+                    throw new InvalidConfigurationException("Cache directory {$this->cacheDir} is not writable");
                 }
             }
 

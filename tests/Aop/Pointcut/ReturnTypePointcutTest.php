@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Pointcut;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Stubs\First;
 use Go\Tests\TestProject\Application\ClassWithComplexTypes;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionFunction;
@@ -110,7 +110,7 @@ final class ReturnTypePointcutTest extends TestCase
 
     public function testThrowsInvalidArgumentExceptionForEmptyType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(PointcutSyntaxException::class);
 
         new ReturnTypePointcut('');
     }

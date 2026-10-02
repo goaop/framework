@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\PropertyGenerator;
@@ -19,8 +20,6 @@ use Go\Proxy\Generator\PropertyModifier;
 use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\ProxyImports;
 use Go\Proxy\Generator\TypeGenerator;
-use InvalidArgumentException;
-use LogicException;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Param;
@@ -52,7 +51,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             // helper methods is theoretically possible but would break the woven-file line
             // number invariant required for XDebug compatibility and adds disproportionate
             // complexity for a niche use case. See https://github.com/goaop/framework/issues/561
-            throw new InvalidArgumentException(sprintf(
+            throw new WeavingException(sprintf(
                 'Property %s::$%s cannot be intercepted with native hooks',
                 $this->property->getDeclaringClass()->getName(),
                 $this->property->getName(),
@@ -81,7 +80,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         } elseif ($this->property->hasDefaultValue() && !method_exists($this->property, 'getNode')) {
             $rawDefault = $this->property->getDefaultValue();
             if ($rawDefault instanceof \Closure) {
-                throw new LogicException(sprintf(
+                throw new WeavingException(sprintf(
                     'Cannot generate proxy for property %s::$%s: PHP 8.5 Closure default values '
                     . 'require goaop/parser-reflection for AST access.',
                     $this->property->getDeclaringClass()->getName(),

@@ -10,7 +10,7 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Core\Cache;
+namespace Go\Aop\Exception;
 
 use Go\Aop\AspectException;
 
@@ -25,7 +25,5 @@ use Go\Aop\AspectException;
  *
  * The exception propagates out of the cache writer: such an aspect cannot be used with
  * the advisor cache enabled - fix the item or run without a cache directory.
- *
- * @internal
  */
 final class NotCompilableException extends AspectException {}

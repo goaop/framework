@@ -16,6 +16,7 @@ use Dissect\Lexer\Exception\RecognitionException;
 use Dissect\Lexer\TokenStream\TokenStream;
 use Dissect\Parser\Exception\UnexpectedTokenException;
 use Go\Aop\Aspect;
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
@@ -81,7 +82,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                     : $reflection->getFileName(),
                 $reflection instanceof ReflectionProperty ? 0 : $reflection->getStartLine(),
             );
-            throw new UnexpectedValueException($message, 0, $e);
+            throw new PointcutSyntaxException($message, 0, $e);
         }
 
         return $stream;
@@ -117,7 +118,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
                 $reflection instanceof ReflectionProperty ? 0 : $reflection->getStartLine(),
                 implode(', ', $e->getExpected()),
             );
-            throw new UnexpectedValueException($message, 0, $e);
+            throw new PointcutSyntaxException($message, 0, $e);
         }
 
         return $pointcut;

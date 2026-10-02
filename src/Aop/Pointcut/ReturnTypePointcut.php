@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
 use Go\ParserReflection\ReflectionFileNamespace;
-use InvalidArgumentException;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\New_;
@@ -75,7 +75,7 @@ final readonly class ReturnTypePointcut implements Pointcut
     {
         $returnTypeName = trim($returnTypeName, " \t\\");
         if (strlen($returnTypeName) === 0) {
-            throw new InvalidArgumentException("Return type name must not be empty");
+            throw new PointcutSyntaxException("Return type name must not be empty");
         }
         $this->returnTypeName        = $returnTypeName;
         $this->patternGroups         = self::normalizeTypeExpression($returnTypeName);

@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Go\Aop\Aspect;
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutLexer;
@@ -21,7 +22,6 @@ use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
-use UnexpectedValueException;
 
 class AbstractAspectLoaderExtensionTest extends TestCase
 {
@@ -67,7 +67,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $aspect     = new AbstractAspectLoaderExtensionTestAspect();
         $reflection = new ReflectionMethod($aspect, 'someMethod');
 
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Can not recognize the lexical structure/');
 
         $this->extension->doParsePointcut($aspect, $reflection, 'execution(public Foo->@#$%^bar(*))');
@@ -78,7 +78,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $aspect     = new AbstractAspectLoaderExtensionTestAspect();
         $reflection = new ReflectionProperty($aspect, 'someProperty');
 
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Can not recognize the lexical structure/');
 
         $this->extension->doParsePointcut($aspect, $reflection, 'execution(public Foo->@#$%^bar(*))');
@@ -89,7 +89,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $aspect     = new AbstractAspectLoaderExtensionTestAspect();
         $reflection = new ReflectionClass($aspect);
 
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Can not recognize the lexical structure/');
 
         $this->extension->doParsePointcut($aspect, $reflection, 'execution(public Foo->@#$%^bar(*))');
@@ -100,7 +100,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $aspect     = new AbstractAspectLoaderExtensionTestAspect();
         $reflection = new ReflectionMethod($aspect, 'someMethod');
 
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Unexpected token/');
 
         $this->extension->doParsePointcut($aspect, $reflection, 'public execution(*)');
@@ -111,7 +111,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $aspect     = new AbstractAspectLoaderExtensionTestAspect();
         $reflection = new ReflectionProperty($aspect, 'someProperty');
 
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Unexpected token/');
 
         $this->extension->doParsePointcut($aspect, $reflection, 'public execution(*)');
@@ -122,7 +122,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $aspect     = new AbstractAspectLoaderExtensionTestAspect();
         $reflection = new ReflectionClass($aspect);
 
-        $this->expectException(UnexpectedValueException::class);
+        $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Unexpected token/');
 
         $this->extension->doParsePointcut($aspect, $reflection, 'public execution(*)');
