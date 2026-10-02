@@ -16,6 +16,17 @@
         }
     ],
     "homepage": "https://go.aopphp.com/",
+    "support": {
+        "issues": "https://github.com/goaop/framework/issues",
+        "source": "https://github.com/goaop/framework",
+        "docs": "https://github.com/goaop/framework/tree/master/docs"
+    },
+    "funding": [
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/lisachenko"
+        }
+    ],
     "require": {
         "php": "^8.4.0",
         "ext-tokenizer": "*",
@@ -39,20 +50,17 @@
         "webmozart/glob": "^4.4"
     },
     "suggest": {
-        "symfony/console": "Enables the usage of the command-line tool."
+        "doctrine/orm": "Maps woven entities through Go\\Bridge\\Doctrine\\WovenEntityClassLocator (ORM ^3.6).",
+        "symfony/console": "Enables the bin/aspect command-line tool (^7.4 || ^8.0)."
     },
-    "minimum-stability": "stable",
-    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Go\\": "src/"
         }
     },
     "autoload-dev": {
-        "psr-0": {
-            "Demo\\": "demos/"
-        },
         "psr-4": {
+            "Demo\\": "demos/Demo/",
             "Go\\": "tests/",
             "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
         },
@@ -89,13 +97,19 @@
         "cs": "php-cs-fixer check --diff",
         "cs:fix": "php-cs-fixer fix",
         "test": "phpunit",
-        "test:performance": "phpunit --group performance"
+        "test:performance": "phpunit --group performance",
+        "regenerate:parse-table": [
+            "dissect Go/Aop/Pointcut/PointcutGrammar",
+            "@php -r \"rename('src/Aop/Pointcut/parse_table.php', 'src/Aop/Pointcut/PointcutParseTable.php');\""
+        ]
     },
     "scripts-descriptions": {
         "analyze": "Run PHPStan static analysis (level 10)",
         "check": "Run coding-standards check, static analysis and the test suite",
         "cs": "Check coding standards (PER-CS, php-cs-fixer) without changing files",
         "cs:fix": "Fix coding-standards violations (PER-CS, php-cs-fixer)",
-        "test": "Run the PHPUnit test suite"
+        "test": "Run the PHPUnit test suite",
+        "regenerate:parse-table": "Regenerate the pointcut parse table after a change of PointcutGrammar",
+        "test:performance": "Run the joinpoint hot-path performance group"
     }
 }

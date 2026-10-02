@@ -1,6 +1,11 @@
+# Development files are left out of the package archive (composer dist installs)
+/.editorconfig export-ignore
 /.git* export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/CODE_OF_CONDUCT.md export-ignore
+/CONTRIBUTING.md export-ignore
 /demos export-ignore
-/tests export-ignore
+/phpstan* export-ignore
 /phpunit.xml.dist export-ignore
-
-
+/tests export-ignore
+AGENTS.md export-ignore
