@@ -147,6 +147,8 @@ Unlike frameworks requiring special compilation steps, Go! AOP performs **runtim
 Installation
 ------------
 
+> Upgrading from 3.x? Follow the [upgrade guide](UPGRADE-4.0.md).
+
 Go! AOP framework can be installed with composer. Installation is quite easy:
 
 1. Download the framework using composer
@@ -154,6 +156,8 @@ Go! AOP framework can be installed with composer. Installation is quite easy:
 3. Configure the aspect kernel in the front controller
 4. Create an aspect
 5. Register the aspect in the aspect kernel
+
+Step 0 is optional: it lets you try the demo examples first.
 
 ### Step 0 (optional): Try demo examples in the framework
 
@@ -207,21 +211,22 @@ class ApplicationAspectKernel extends AspectKernel
 }
 ```
 
-### 3. Configure the aspect kernel in the front controller
+### Step 3: Configure the aspect kernel in the front controller
 
 To configure the aspect kernel, call `init()` method of kernel instance.
 
 ```php
 <?php
+// public/index.php
 
-include __DIR__ . '/vendor/autoload.php'; // use composer
+include __DIR__ . '/../vendor/autoload.php'; // use composer
 
 // Initialize an application aspect container
 $applicationAspectKernel = ApplicationAspectKernel::getInstance();
 $applicationAspectKernel->init([
     'debug'        => true, // use 'false' for production mode
     'appDir'       => __DIR__ . '/..', // Application root directory
-    'cacheDir'     => __DIR__ . '/path/to/cache/for/aop', // Cache directory
+    'cacheDir'     => __DIR__ . '/../var/cache/aop', // Cache directory
     // Include paths restricts the directories where aspects should be applied, or empty for all source files
     'includePaths' => [
         __DIR__ . '/../src/'
@@ -229,7 +234,7 @@ $applicationAspectKernel->init([
 ]);
 ```
 
-### 4. Create an aspect
+### Step 4: Create an aspect
 
 Aspect is the key element of AOP philosophy. Go! AOP framework just uses simple PHP classes for declaring aspects, which makes it possible to use all features of OOP for aspect classes.
 Advices are declared as **public methods** of the aspect — the framework weaves them into your code as [first-class callables](https://www.php.net/manual/en/functions.first_class_callable_syntax.php), so every advice must be callable on the aspect instance from the outside (a `protected` or `private` advice method is rejected during aspect loading).
@@ -256,7 +261,7 @@ class MonitorAspect implements Aspect
      * Method that will be called before real method
      */
     #[Before("execution(public Example->*(*))")]
-    public function beforeMethodExecution(MethodInvocation $invocation)
+    public function beforeMethodExecution(MethodInvocation $invocation): void
     {
         echo 'Calling Before Interceptor for: ',
             $invocation,
@@ -302,7 +307,7 @@ its identifier and unwraps it down to the raw advice closure:
 Interceptor::around(The::advice('advisor.Demo\Aspect\DynamicMethodsAspect->aroundMagicMethods')),
 ```
 
-### 5. Register the aspect in the aspect kernel
+### Step 5: Register the aspect in the aspect kernel
 
 An aspect is a typical container service. Add it in the `configureAop()` method of the
 kernel, either eagerly as an instance or - preferably - as a deferred definition that is
@@ -313,10 +318,11 @@ only constructed when one of its advices actually runs:
 // app/ApplicationAspectKernel.php
 
 use Aspect\MonitorAspect;
+use Go\Core\AspectContainer;
 
 //...
 
-    protected function configureAop(AspectContainer $container)
+    protected function configureAop(AspectContainer $container): void
     {
         // Deferred (recommended): constructed on first use
         $container->addLazyService(MonitorAspect::class, static fn() => new MonitorAspect());
@@ -327,34 +333,45 @@ use Aspect\MonitorAspect;
 //...
 ```
 
-### 6. Optional configurations
+### Optional configurations
 
-#### 6.1 Support for weaving Doctrine entities (experimental, alpha)
+#### Weaving Doctrine entities
 
-Weaving Doctrine entities cannot be supported out of the box due to the fact
-that Go! AOP generates two sets of classes for each woven entity, a concrete class and
-proxy with pointcuts. Doctrine will interpret both of those classes as concrete entities
-and assign for both of them the same metadata, which would mess up the database and relations
-(see [https://github.com/goaop/framework/issues/327](https://github.com/goaop/framework/issues/327)).
+Doctrine ORM (3.6+) maps a woven entity as is: the woven class keeps its name and all mapping
+attributes, and the original class body lives in a trait that Doctrine never maps. Two things
+need to be configured.
 
-Therefore, a workaround is provided with this library which will sort out
-mapping issue in Doctrine. Workaround is in form of event listener,
-`Go\Bridge\Doctrine\MetadataLoadInterceptor` which has to be registered
-when Doctrine is bootstraped in your project:
+**Entity discovery.** Given plain directories, Doctrine includes the entity source files directly,
+which bypasses the weaver (the entity loses its aspects), and it misses entities that were already
+loaded through the autoloader. Let the mapping driver discover entities through
+`Go\Bridge\Doctrine\WovenEntityClassLocator` instead: it reads class names from the source files
+and loads each class through the autoloader, which serves the woven version.
+
+```php
+use Doctrine\ORM\Mapping\Driver\AttributeDriver;
+use Go\Bridge\Doctrine\WovenEntityClassLocator;
+
+$configuration->setMetadataDriverImpl(
+    new AttributeDriver(WovenEntityClassLocator::createFromDirectories([__DIR__ . '/src/Entity'])),
+);
+```
+
+**Intercepted properties.** An intercepted property is re-declared with native property hooks,
+which Doctrine supports only with native lazy objects. Enable them and, optionally, register
+`Go\Bridge\Doctrine\MetadataLoadInterceptor`, which reports a woven entity with intercepted mapped
+properties when native lazy objects are off, instead of failing on the first lazy proxy:
 
 ```php
 use Doctrine\ORM\Events;
 use Go\Bridge\Doctrine\MetadataLoadInterceptor;
 
+$configuration->enableNativeLazyObjects(true);
 $eventManager->addEventListener(Events::loadClassMetadata, new MetadataLoadInterceptor());
 ```
 
-For details, see [http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html](http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html).
+Doctrine reads and writes the raw property values while hydrating and flushing, so property
+advices only run for accesses made by your own code, never for Doctrine's internal ones.
 
-Event listener will modify metadata entity definition for generated Go! Aop proxies
-as mapped superclass. That would sort out issues on which you may stumble upon when
-weaving Doctrine entities.
-
-### 7. Contribution
+### Contribution
 
 To contribute changes, see the [Contribute Readme](CONTRIBUTE.md)

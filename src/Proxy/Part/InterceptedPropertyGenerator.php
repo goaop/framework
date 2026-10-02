@@ -13,9 +13,11 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Intercept\FieldAccessType;
 use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\PropertyNodeProvider;
+use Go\Proxy\Generator\ProxyImports;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\ClassConstFetch;
@@ -81,12 +83,14 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
 {
     /**
      * @param list<GeneratedInterceptor|string> $adviceNames
+     * @param ProxyImports|null                 $imports     Imports of the generated file
      */
     public function __construct(
         ReflectionProperty $property,
         private readonly array $adviceNames,
+        ?ProxyImports $imports = null,
     ) {
-        parent::__construct($property);
+        parent::__construct($property, $imports);
     }
 
     public function getNode(): PropertyNode
@@ -148,12 +152,12 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
         $propertyName = $this->property->getName();
         $readInvokeWithValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name('FieldAccessType'), 'READ')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'READ')),
             new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
         $readInvokeWithoutValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name('FieldAccessType'), 'READ')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'READ')),
         ]);
         $fieldAccessExpression = $this->createFieldAccessInitializationExpression($propertyName);
 
@@ -213,13 +217,13 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
 
         $writeInvokeWithBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name('FieldAccessType'), 'WRITE')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'WRITE')),
             new Arg(new Variable('value')),
             new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
         $writeInvokeWithoutBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name('FieldAccessType'), 'WRITE')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'WRITE')),
             new Arg(new Variable('value')),
         ]);
 
@@ -274,12 +278,12 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
     private function createFieldAccessInitializationExpression(string $propertyName): StaticCall
     {
         return new StaticCall(
-            new Name('InterceptorInjector'),
+            new Name($this->importedName(InterceptorInjector::class)),
             'forProperty',
             [
                 new Arg(new ClassConstFetch(new Name('self'), 'class')),
                 new Arg(new String_($propertyName)),
-                new Arg((new InterceptorListGenerator($this->adviceNames))->getNode()),
+                new Arg((new InterceptorListGenerator($this->adviceNames, $this->imports))->getNode()),
             ],
         );
     }

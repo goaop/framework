@@ -17,6 +17,7 @@ use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -223,6 +224,44 @@ class AspectKernelTest extends TestCase
         ]]);
 
         $this->assertSame(Container::class, $normalized['containerClass']);
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function invalidCacheFileModes(): iterable
+    {
+        yield 'zero' => [0];
+        yield 'no owner write' => [0444];
+        yield 'out of range' => [01777];
+        yield 'negative' => [-1];
+        yield 'string' => ['0644'];
+    }
+
+    public function testNormalizeOptionsDerivesCacheFileModeFromUmaskWhenNotSet(): void
+    {
+        $kernel = $this->makeKernel();
+
+        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [[
+            'cacheDir'      => '/some/cache/dir',
+            'cacheFileMode' => null,
+        ]]);
+
+        $this->assertSame(0770 & ~umask(), $normalized['cacheFileMode']);
+    }
+
+    #[DataProvider('invalidCacheFileModes')]
+    public function testNormalizeOptionsRejectsInvalidCacheFileMode(mixed $cacheFileMode): void
+    {
+        $kernel = $this->makeKernel();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Option "cacheFileMode" must be an integer permission mask');
+
+        $this->invokeProtectedArray($kernel, 'normalizeOptions', [[
+            'cacheDir'      => '/some/cache/dir',
+            'cacheFileMode' => $cacheFileMode,
+        ]]);
     }
 
     public function testNormalizeOptionsResolvesAndMergesGivenOptions(): void

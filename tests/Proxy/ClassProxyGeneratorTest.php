@@ -14,6 +14,9 @@ namespace Go\Proxy;
 
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\PhpUnit\AssertsCompilablePhp;
+use Go\Stubs\Collision\A\SameNameAspect as AspectA;
+use Go\Stubs\Collision\B\SameNameAspect as AspectB;
 use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
@@ -28,6 +31,8 @@ use ReflectionException;
  */
 class ClassProxyGeneratorTest extends TestCase
 {
+    use AssertsCompilablePhp;
+
     /**
      * Test proxy generation for class method
      *
@@ -66,6 +71,48 @@ class ClassProxyGeneratorTest extends TestCase
             $proxyFileContent,
             'Proxy method body must delegate to the join-point invocation chain',
         );
+    }
+
+    /**
+     * Imports of the original file may bind short names the generated code needs (Interceptor, The,
+     * InterceptorInjector) and two aspects may share a short name: the proxy keeps readable short
+     * imports and aliases only the colliding ones, so it still compiles (issue #668).
+     *
+     * @throws ReflectionException
+     */
+    public function testGeneratedProxyAliasesImportsCollidingWithOriginalImports(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $classAdvices    = [
+            'method' => [
+                'publicMethod' => [
+                    GeneratedInterceptor::fromAdvice('a', new BeforeInterceptor(new AspectA()->beforeMethod(...))),
+                    GeneratedInterceptor::fromAdvice('b', new BeforeInterceptor(new AspectB()->beforeMethod(...))),
+                ],
+            ],
+            'prop' => [
+                'public' => [self::testAdvice()],
+            ],
+        ];
+        $originalImports = [
+            'App\\Log\\Interceptor'                     => 'Interceptor',
+            'App\\Log\\The'                             => 'The',
+            'App\\Log\\SameNameAspect'                  => 'SameNameAspect',
+            'Go\\Aop\\Framework\\InterceptorInjector' => 'Injector',
+        ];
+
+        $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices, $originalImports);
+        $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
+
+        $this->assertStringContainsString('use Go\\Aop\\Framework\\Interceptor as AopInterceptor;', $proxyFileContent);
+        $this->assertStringContainsString('use Go\\Aop\\Framework\\The as AopThe;', $proxyFileContent);
+        $this->assertStringContainsString('use Go\\Stubs\\Collision\\A\\SameNameAspect as ASameNameAspect;', $proxyFileContent);
+        $this->assertStringContainsString('use Go\\Stubs\\Collision\\B\\SameNameAspect as BSameNameAspect;', $proxyFileContent);
+        $this->assertStringContainsString('static $__joinPoint = Injector::forMethod(', $proxyFileContent);
+        $this->assertStringContainsString('static $__joinPoint = Injector::forProperty(', $proxyFileContent);
+        $this->assertStringContainsString('AopInterceptor::before(AopThe::aspect(ASameNameAspect::class)', $proxyFileContent);
+        $this->assertStringContainsString('AopInterceptor::before(AopThe::aspect(BSameNameAspect::class)', $proxyFileContent);
+        $this->assertPhpCompiles($proxyFileContent);
     }
 
     /**

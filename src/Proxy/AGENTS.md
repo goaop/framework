@@ -8,6 +8,21 @@
 - TraitProxyGenerator — trait proxies
 - EnumProxyGenerator — enum proxies (trait extraction + case re-declaration)
 
+## Imports in generated code (issue #668)
+- Generated code stays clean and readable: framework and aspect classes are referenced through short `use` aliases
+  (`Interceptor::before(The::aspect(LoggingAspect::class)->...)`); NEVER fall back to fully-qualified names
+- ProxyImports (src/Proxy/Generator/) is the single source of these aliases, one instance per generated file:
+  - reserves the original file imports (passed by WeavingTransformer as the generators' `$originalImports`), the class
+    short name, the original trait name and every unqualified/qualified name used in the original class AST
+  - `import(FQCN)` returns the alias to emit: the short name when free, else `Aop<Short>` for `Go\Aop\*` classes or
+    `<NamespaceSegment><Short>` for others (aspects sharing a short name), then a numeric suffix; reuses the alias of
+    an original import of the same class
+  - generators register all their imports up front (stable order = output identical to the pre-alias generators when
+    nothing collides), pass the instance to InterceptorListGenerator and the property generators, interpolate aliases
+    in heredoc bodies / `@var` docblocks, and finally add `getUses()` (generated imports first, original ones after)
+- GeneratedCodePrinter recognizes InterceptorInjector/Interceptor factory calls by method name too, so aliased
+  names keep the multi-line layout
+
 ## Proxy parts (src/Proxy/Part/)
 - InterceptedMethodGenerator — wraps a method with join-point dispatch
 - InterceptedConstructorGenerator — wraps constructor

@@ -21,12 +21,16 @@ use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\MockObject\MockObject;
+use Go\Instrument\Transformer\Stubs\MultiLinePropertiesClass;
+use Go\PhpUnit\AssertsCompilablePhp;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class WeavingTransformerTest extends TestCase
 {
+    use AssertsCompilablePhp;
+
     protected static FileSystem $fileSystem;
 
     protected WeavingTransformer $transformer;
@@ -219,6 +223,29 @@ class WeavingTransformerTest extends TestCase
             $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('final-readonly-class-proxy')->source);
             $this->assertEquals($expectedProxyContent, $actualProxyContent);
         }
+    }
+
+    /**
+     * The original file imports classes named like the ones generated code uses and aliases a framework
+     * class. The proxy keeps the original imports (parameter defaults and types rely on them) and aliases
+     * only its own colliding imports, so it compiles and stays readable (issue #668).
+     */
+    public function testWeaverAliasesProxyImportsCollidingWithOriginalImports(): void
+    {
+        $metadata = $this->loadTestMetadata('import-collision');
+        $this->transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('import-collision-woven')->source);
+        $this->assertEquals($expected, $actual);
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('import-collision-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
     }
 
     /**
@@ -519,6 +546,74 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * Intercepted properties whose declaration spans several lines (multi-line array or heredoc
+     * default, attributes on their own lines) or shares one statement with other properties must be
+     * removed from the trait completely, keep the other items of a grouped declaration, and keep
+     * every line number of the file intact (issue #669).
+     */
+    public function testWeaverRemovesMultiLineAndGroupedPropertyDeclarations(): void
+    {
+        $className   = MultiLinePropertiesClass::class;
+        $intercepted = ['list', 'text', 'attributed', 'twoGroups', 'movedB', 'movedD', 'movedE', 'movedF'];
+        $propertyAdvices = [];
+        foreach ($intercepted as $propertyName) {
+            $propertyAdvices[$propertyName] = [
+                "advisor.{$className}->{$propertyName}" => new BeforeInterceptor(static function (): void {}),
+            ];
+        }
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher
+            ->method('getAdvicesForClass')
+            ->willReturn([AspectContainer::PROPERTY_PREFIX => $propertyAdvices]);
+        $adviceMatcher
+            ->method('getAdvicesForFunctions')
+            ->willReturn([]);
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$this->getContainerMock()])
+            ->getMock();
+        $transformer = new WeavingTransformer($this->kernel, $adviceMatcher, $this->cachePathManager, $loader);
+
+        $metadata       = $this->loadStubMetadata('MultiLinePropertiesClass');
+        $originalSource = (string) $metadata->source;
+        $transformer->transform($metadata);
+        $wovenSource = (string) $metadata->source;
+
+        // The trait must compile: no orphan line of a removed declaration may survive
+        $this->assertPhpCompiles($wovenSource);
+        foreach ($intercepted as $propertyName) {
+            $this->assertStringNotContainsString('$' . $propertyName . ' =', $wovenSource);
+            $this->assertStringContainsString("{@see {$className}->{$propertyName}} */", $wovenSource);
+        }
+        $this->assertStringNotContainsString("'first',", $wovenSource);
+        $this->assertStringNotContainsString('multi', $wovenSource);
+        $this->assertStringNotContainsString("#[StubAttribute('own-line')]", $wovenSource);
+        $this->assertStringNotContainsString('#[RichAttr]', $wovenSource);
+        $this->assertStringNotContainsString('private int', $wovenSource);
+
+        // Kept items of grouped declarations keep their modifiers, type and defaults
+        $withoutMarkers = (string) preg_replace(['#/\* Moved by .*? \*/#', '/\s+/'], ['', ' '], $wovenSource);
+        $this->assertStringContainsString('public int $keptA = 1, $keptC = 3;', $withoutMarkers);
+        $this->assertStringContainsString('public int $keptG = 7;', $withoutMarkers);
+
+        // Every line keeps its number: the woven source only gains the trailing include line
+        $this->assertSame(substr_count($originalSource, "\n") + 1, substr_count($wovenSource, "\n"));
+        $this->assertSame(
+            $this->findLineOf('public function marker(): int', $originalSource),
+            $this->findLineOf('public function marker(): int', $wovenSource),
+        );
+
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $wovenSource, $matches));
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertPhpCompiles($proxyContent);
+        foreach ($intercepted as $propertyName) {
+            $this->assertStringContainsString('$' . $propertyName, $proxyContent);
+        }
+        $this->assertStringNotContainsString('$keptA', $proxyContent);
+        $this->assertStringNotContainsString('$keptG', $proxyContent);
+    }
+
+    /**
      * Attribute classes must be weavable (issue #615): #[\Attribute] and
      * #[\AllowDynamicProperties] are compile-time invalid on traits, so they must be removed
      * from the woven trait tokens. In a grouped attribute only the incompatible entry is
@@ -584,13 +679,15 @@ class WeavingTransformerTest extends TestCase
 
         $actualWoven = $this->normalizeWhitespaces($metadata->source);
         $this->assertStringContainsString(
-            "// public string \$value = 'test'; // Moved by weaving interceptor to the {@see Go\\Tests\\TestProject\\Application\\Php84PropertyHooksClass->value}",
+            "/* Moved by weaving interceptor to the {@see Go\\Tests\\TestProject\\Application\\Php84PropertyHooksClass->value} */",
             $actualWoven,
         );
         $this->assertStringContainsString(
-            "// public protected(set) string \$limited = 'limited'; // Moved by weaving interceptor to the {@see Go\\Tests\\TestProject\\Application\\Php84PropertyHooksClass->limited}",
+            "/* Moved by weaving interceptor to the {@see Go\\Tests\\TestProject\\Application\\Php84PropertyHooksClass->limited} */",
             $actualWoven,
         );
+        $this->assertStringNotContainsString("\$value = 'test'", $actualWoven);
+        $this->assertStringNotContainsString("\$limited = 'limited'", $actualWoven);
         $this->assertStringContainsString("public string \$plain = 'plain';", $actualWoven);
 
         $matches = [];
@@ -783,11 +880,12 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringContainsString('trait WeavingTraitStubOriginalTrait', $actual);
         $this->assertStringNotContainsString('trait WeavingTraitStub' . PHP_EOL, $actual);
 
-        // Intercepted property is commented out, the untouched one survives verbatim
+        // Intercepted property is removed (marker left), the untouched one survives verbatim
         $this->assertStringContainsString(
-            "// public string \$interceptedProperty = 'initial'; // Moved by weaving interceptor to the {@see {$classFqn}->interceptedProperty}",
+            "/* Moved by weaving interceptor to the {@see {$classFqn}->interceptedProperty} */",
             $actual,
         );
+        $this->assertStringNotContainsString("\$interceptedProperty = 'initial'", $actual);
         $this->assertStringContainsString('protected int $plainProperty = 0;', $actual);
 
         $matches = [];
@@ -1018,9 +1116,8 @@ class WeavingTransformerTest extends TestCase
 
     /**
      * With no cache file yet (or a stale one), processFunctions() must generate and write the
-     * function proxy file itself. The cache dir lives on the vfs:// stream wrapper, and PHP core
-     * rejects the LOCK_EX flag for any non-"file://" stream - file_put_contents() must skip it
-     * there just like saveProxyToCache() already does for the class proxy file.
+     * function proxy file itself, through the atomic CacheFileWriter. The cache dir lives on the
+     * vfs:// stream wrapper, so this also proves the writer works on stream wrapper paths.
      */
     public function testWeaverGeneratesFunctionProxyCacheFileOnFirstWeave(): void
     {
@@ -1166,6 +1263,17 @@ class WeavingTransformerTest extends TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-classes-woven')->source);
         $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Returns the 1-based line number of the first occurrence of the needle
+     */
+    private function findLineOf(string $needle, string $source): int
+    {
+        $position = strpos($source, $needle);
+        $this->assertIsInt($position, "'{$needle}' is not found");
+
+        return substr_count($source, "\n", 0, $position) + 1;
     }
 
     /**

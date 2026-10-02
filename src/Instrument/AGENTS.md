@@ -48,11 +48,15 @@ Interceptor list entries are first-class advice callables on the aspect instance
 (`The::aspect(X::class)->m(...)`); container-backed closure advices use
 `The::advice('advisorId')` instead. Emitted by InterceptorListGenerator from
 GeneratedInterceptor descriptors (string advisor ids are rejected).
+Short names above are `use` aliases managed by ProxyImports: a name colliding with the original
+file's imports or body gets an adjusted alias (e.g. `use Go\Aop\Framework\Interceptor as AopInterceptor;`),
+see src/Proxy/AGENTS.md. WeavingTransformer passes the original imports to the proxy generator constructors.
 
 ### Key invariants
 - Proxy re-inherits parent+interfaces via reflection (not from woven source)
 - self:: in trait body → proxy class (no rewrite needed)
 - Private methods interceptable (impossible with old extend-based engine)
+- Intercepted properties are REMOVED from the trait body per PropertyItem (removeInterceptedPropertyItems): whole statement blanked when all items move, else only the item + its separating comma; blanked tokens keep their newlines (line numbers), a newline-free `/* Moved by weaving interceptor … */` marker is left; never use a `//` prefix (multi-line declarations would stay live, issue #669)
 - FCC 4th arg to InterceptorInjector:
   - `$this->mOriginalAlias(...)` — own dynamic methods
   - `self::mOriginalAlias(...)` — own static methods

@@ -25,6 +25,18 @@ use PhpParser\PrettyPrinter\Standard;
  */
 class GeneratedCodePrinter extends Standard
 {
+    /**
+     * Factory methods of InterceptorInjector: their calls start a joinpoint initialization
+     */
+    private const array INJECTOR_METHODS = [
+        'forMethod', 'forStaticMethod', 'forProperty', 'forFunction', 'forStaticInitialization', 'forInitialization',
+    ];
+
+    /**
+     * Factory methods of the Interceptor facade: their calls form an interceptor list
+     */
+    private const array INTERCEPTOR_METHODS = ['before', 'after', 'around', 'afterThrowing'];
+
     protected function pExpr_Array(Expr\Array_ $node): string
     {
         if (empty($node->items)) {
@@ -44,7 +56,8 @@ class GeneratedCodePrinter extends Standard
 
     protected function pExpr_StaticCall(Expr\StaticCall $node): string
     {
-        if ($node->class instanceof Name && str_ends_with($node->class->toString(), 'InterceptorInjector')) {
+        // The class may be imported under any alias (see ProxyImports), so calls are also recognized by method name
+        if ($node->class instanceof Name && $this->isCallOf($node, 'InterceptorInjector', self::INJECTOR_METHODS)) {
             $name = $node->name instanceof Identifier ? $node->name->toString() : $this->p($node->name);
 
             return $this->pStaticDereferenceLhs($node->class) . '::' . $name
@@ -60,12 +73,24 @@ class GeneratedCodePrinter extends Standard
             if (!$item->value instanceof Expr\StaticCall) {
                 return false;
             }
-            $call = $item->value;
-            if (!$call->class instanceof Name || !str_ends_with($call->class->toString(), 'Interceptor')) {
+            if (!$this->isCallOf($item->value, 'Interceptor', self::INTERCEPTOR_METHODS)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * @param list<string> $methodNames
+     */
+    private function isCallOf(Expr\StaticCall $call, string $classShortName, array $methodNames): bool
+    {
+        if (!$call->class instanceof Name) {
+            return false;
+        }
+
+        return str_ends_with($call->class->toString(), $classShortName)
+            || ($call->name instanceof Identifier && in_array($call->name->toString(), $methodNames, true));
     }
 }

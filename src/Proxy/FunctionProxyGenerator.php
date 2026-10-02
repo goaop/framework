@@ -22,6 +22,7 @@ use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Proxy\Generator\FileGenerator;
 use Go\Proxy\Generator\FunctionGenerator;
 use Go\Proxy\Generator\InterceptorListGenerator;
+use Go\Proxy\Generator\ProxyImports;
 use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use ReflectionException;
@@ -46,6 +47,11 @@ class FunctionProxyGenerator
     protected FileGenerator $fileGenerator;
 
     /**
+     * Imports of the generated file: generated code references classes through their aliases
+     */
+    protected ProxyImports $imports;
+
+    /**
      * Constructs functions stub class from namespace Reflection
      *
      * @param ReflectionFileNamespace $namespace   Reflection of namespace
@@ -60,14 +66,16 @@ class FunctionProxyGenerator
         $this->adviceNames   = $adviceNames;
         $this->fileGenerator = new FileGenerator();
         $this->fileGenerator->namespace = $namespace->getName();
-        $this->fileGenerator->addUse(InterceptorInjector::class);
-        $this->fileGenerator->addUse(Interceptor::class);
-        $this->fileGenerator->addUse(The::class);
-        $this->fileGenerator->addUse(FunctionInvocation::class);
+        $this->imports = new ProxyImports($namespace->getName());
+        $this->imports->import(InterceptorInjector::class);
+        $this->imports->import(Interceptor::class);
+        $this->imports->import(The::class);
+        $this->imports->import(FunctionInvocation::class);
         foreach ($this->collectAspectClasses($adviceNames) as $aspectClass) {
-            if (str_contains($aspectClass, '\\')) {
-                $this->fileGenerator->addUse($aspectClass);
-            }
+            $this->imports->import($aspectClass);
+        }
+        foreach ($this->imports->getUses() as $className => $alias) {
+            $this->fileGenerator->addUse($className, $alias);
         }
 
         $functionsContent = [];
@@ -113,16 +121,18 @@ class FunctionProxyGenerator
         }
 
         $functionAdvices = $this->adviceNames[AspectContainer::FUNCTION_PREFIX][$function->name];
-        $advicesCode = (new InterceptorListGenerator(array_values($functionAdvices)))->generate();
+        $advicesCode = (new InterceptorListGenerator(array_values($functionAdvices), $this->imports))->generate();
         $returnTypeString = $function->hasReturnType() ? '<' . TypeGenerator::renderTypeForPhpDoc($function->getReturnType()) . '>' : '';
 
         // Use a fully-qualified (global) callable so proceed() calls the original built-in
         // function rather than the proxy defined in this namespace.
         $callableExpression = '\\' . $function->getName() . '(...)';
+        $injector           = $this->imports->import(InterceptorInjector::class);
+        $joinPoint          = $this->imports->import(FunctionInvocation::class);
 
         return <<<BODY
-        /** @var FunctionInvocation{$returnTypeString} \$__joinPoint */
-        static \$__joinPoint = InterceptorInjector::forFunction(
+        /** @var {$joinPoint}{$returnTypeString} \$__joinPoint */
+        static \$__joinPoint = {$injector}::forFunction(
             '{$function->name}',
             {$advicesCode},
             {$callableExpression},

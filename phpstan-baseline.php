@@ -1,12 +1,6 @@
 <?php declare(strict_types = 1);
 
 $ignoreErrors = [];
-$ignoreErrors[] = [
-	'message' => '#^Property Doctrine\\\\ORM\\\\Mapping\\\\ClassMetadata\\<object\\>\\:\\:\\$table \\(array\\{name\\: string, schema\\?\\: string, indexes\\?\\: array, uniqueConstraints\\?\\: array, options\\?\\: array\\<string, mixed\\>, quoted\\?\\: bool\\}\\) does not accept array\\{\\}\\.$#',
-	'identifier' => 'assign.propertyType',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Bridge/Doctrine/MetadataLoadInterceptor.php',
-];
 
 // CachePathManager: the cache file loaded via `include` returns `mixed` at compile time.
 // After is_array() narrowing, PHPStan gives array<mixed, mixed> (losing the string key type).
