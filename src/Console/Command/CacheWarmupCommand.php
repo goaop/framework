@@ -17,6 +17,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\SignalableCommandInterface;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -30,6 +31,10 @@ Initializes the kernel and, if successful, warm up the cache for PHP
 files under the application directory.
 
 By default, the cache directory is taken from configured AspectKernel class.
+
+The command fails when a file cannot be woven, so a deploy never ships an
+incomplete prebuilt cache. Errors are written to stderr; use --fail-fast to
+stop at the first one.
 EOT,
 )]
 class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandInterface
@@ -44,12 +49,18 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
      */
     private ?CacheWarmer $cacheWarmer = null;
 
+    protected function configure(): void
+    {
+        parent::configure();
+        $this->addOption('fail-fast', null, InputOption::VALUE_NONE, 'Stop after the first file that fails to weave');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);
 
-        $this->cacheWarmer = $this->createCacheWarmer($output);
-        $this->cacheWarmer->warmUp();
+        $this->cacheWarmer = $this->createCacheWarmer($output, (bool) $input->getOption('fail-fast'));
+        $errors            = $this->cacheWarmer->warmUp();
 
         if ($this->receivedSignal !== null) {
             $output->writeln('<comment>Cache warmup was interrupted by a signal.</comment>');
@@ -57,7 +68,7 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
             return 128 + $this->receivedSignal;
         }
 
-        return Command::SUCCESS;
+        return $errors > 0 ? Command::FAILURE : Command::SUCCESS;
     }
 
     /**

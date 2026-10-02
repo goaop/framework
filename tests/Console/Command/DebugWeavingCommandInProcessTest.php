@@ -135,9 +135,11 @@ class DebugWeavingCommandInProcessTest extends TestCase
                 $this->warmUpCallback = $warmUpCallback;
             }
 
-            public function warmUp(): void
+            public function warmUp(): int
             {
                 ($this->warmUpCallback)();
+
+                return 0;
             }
         };
 
@@ -154,7 +156,7 @@ class DebugWeavingCommandInProcessTest extends TestCase
                 $this->aspectKernel = $this->kernel;
             }
 
-            protected function createCacheWarmer(OutputInterface $output): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
             {
                 return $this->warmer;
             }

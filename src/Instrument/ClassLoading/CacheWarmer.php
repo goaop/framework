@@ -17,6 +17,8 @@ use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use InvalidArgumentException;
+use Symfony\Component\Console\Formatter\OutputFormatter;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
@@ -37,11 +39,13 @@ class CacheWarmer
      * CacheWarmer constructor.
      *
      * @param AspectKernel    $aspectKernel Instance of aspect kernel
-     * @param OutputInterface $output       Output instance
+     * @param OutputInterface $output       Output instance, errors go to its error output when it has one
+     * @param bool            $failFast     Whether to stop after the first file that fails to process
      */
     public function __construct(
         protected AspectKernel $aspectKernel,
         protected OutputInterface $output = new NullOutput(),
+        protected bool $failFast = false,
     ) {}
 
     /**
@@ -54,8 +58,10 @@ class CacheWarmer
 
     /**
      * Warms up cache
+     *
+     * @return int Number of files that failed to process
      */
-    public function warmUp(): void
+    public function warmUp(): int
     {
         $options = $this->aspectKernel->getOptions();
 
@@ -75,50 +81,57 @@ class CacheWarmer
         $this->output->writeln('');
         $iterator->rewind();
 
-        set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) {
-            throw new ErrorException($errstr, $errno, 0, $errfile, $errline);
-        });
+        $errorOutput = $this->output instanceof ConsoleOutputInterface ? $this->output->getErrorOutput() : $this->output;
 
         $errors    = [];
         $processed = 0;
 
-        $displayException = function (Throwable $exception, string $path) use (&$errors) {
-            $this->output->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: %s', $path));
-            $errors[$path] = $exception->getMessage();
-        };
-
-        foreach ($iterator as $file) {
-            if ($this->interrupted) {
-                $this->output->writeln('<comment>[STOP]: Warmup was interrupted, stopping...</comment>');
-                break;
+        // Warnings raised while weaving fail the file, unless they are silenced by error_reporting() or `@`
+        set_error_handler(static function (int $errno, string $errstr, string $errfile, int $errline): bool {
+            if ((error_reporting() & $errno) === 0) {
+                return false;
             }
+            throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
+        });
 
-            $path = $file->getRealPath();
-            $processed++;
+        try {
+            foreach ($iterator as $file) {
+                if ($this->interrupted) {
+                    $this->output->writeln('<comment>[STOP]: Warmup was interrupted, stopping...</comment>');
+                    break;
+                }
 
-            try {
-                // This will trigger creation of cache
-                file_get_contents(
-                    FilterInjectorTransformer::PHP_FILTER_READ
-                    . SourceTransformingLoader::FILTER_IDENTIFIER
-                    . '/resource=' . $path,
-                );
+                $path = $file->getRealPath();
+                $processed++;
 
-                $this->output->writeln(sprintf('<fg=green;options=bold>[OK]</>: <comment>%s</comment>', $path));
-            } catch (Throwable $e) {
-                $displayException($e, $path);
+                try {
+                    // This will trigger creation of cache
+                    file_get_contents(
+                        FilterInjectorTransformer::PHP_FILTER_READ
+                        . SourceTransformingLoader::FILTER_IDENTIFIER
+                        . '/resource=' . $path,
+                    );
+
+                    $this->output->writeln(sprintf('<fg=green;options=bold>[OK]</>: <comment>%s</comment>', $path));
+                } catch (Throwable $e) {
+                    $errors[$path] = $e->getMessage();
+                    $errorOutput->writeln(sprintf(
+                        '<fg=white;bg=red;options=bold>[ERR]</>: %s: %s',
+                        $path,
+                        OutputFormatter::escape($e->getMessage()),
+                    ));
+                    if ($this->failFast) {
+                        $this->interrupt();
+                    }
+                }
             }
-        }
-
-        restore_error_handler();
-
-        if ($this->output->isVerbose()) {
-            foreach ($errors as $path => $error) {
-                $this->output->writeln(sprintf('<fg=white;bg=red;options=bold>[ERR]</>: File "%s" is not processed correctly due to exception: "%s".', $path, $error));
-            }
+        } finally {
+            restore_error_handler();
         }
 
         $this->output->writeln('');
         $this->output->writeln(sprintf('<fg=green;>[DONE]</>: Total processed %s, %s errors.', $processed, count($errors)));
+
+        return count($errors);
     }
 }
