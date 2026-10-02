@@ -50,7 +50,7 @@ when `$level > 0` and pops it in `finally`. Check every change with `composer te
 
 ## Pointcuts (src/Aop/Pointcut/)
 - LALR grammar: PointcutGrammar (@internal, no ctor deps), PointcutParser, PointcutLexer, PointcutParseTable
-- PointcutParseTable.php is generated: after every PointcutGrammar change run `composer regenerate:parse-table`; PointcutParseTableTest fails while the table is stale
+- PointcutParseTable.php is generated: after every PointcutGrammar change run `composer regenerate:parse-table` (Dissect's own `vendor/bin/dissect` CLI); PointcutParseTableTest fails while the table is stale
 - Combinators: AndPointcut, OrPointcut, NotPointcut, NamePointcut, AttributePointcut, ClassInheritancePointcut, MatchInheritedPointcut, ModifierPointcut, ReturnTypePointcut, TruePointcut
 - PointcutReference (@internal; ctor takes pointcut id only, container resolved lazily from AspectKernel::getInstance()), ClassMemberReference
 - ModifierPointcut is @internal final readonly: ctor (andMask, orMask, notMask); andMatch/orMatch/notMatch are withers returning new self
