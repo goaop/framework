@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
-use Closure;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
 use Go\Aop\Framework\AfterInterceptor;
@@ -27,34 +26,52 @@ use Go\Lang\Attribute\AfterThrowing;
 use Go\Lang\Attribute\Around;
 use Go\Lang\Attribute\AbstractInterceptor;
 use Go\Lang\Attribute\Before;
+use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionMethod;
-use UnexpectedValueException;
 
 /**
  * Attribute aspect loader add common support for general advices, declared as attributes
  */
 class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
 {
+    /**
+     * Suffix of the advisor id when the advice method also declares a #[Pointcut], which keeps the plain method id
+     * so that pointcut references (`$this->method`) resolve to it
+     */
+    public const string ADVISOR_ID_SUFFIX = '.advice';
+
     public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
     {
         $loadedItems = [];
         foreach ($reflectionAspect->getMethods() as $aspectMethod) {
-            $methodId   = $reflectionAspect->getName() . '->' . $aspectMethod->getName();
-            $attributes = $aspectMethod->getAttributes();
+            $methodId = $reflectionAspect->getName() . '->' . $aspectMethod->getName();
 
-            foreach ($attributes as $reflectionAttribute) {
+            // Only the framework's own attributes are interpreted, others (#[\Override], DI attributes...) are ignored
+            $pointcutAttributes = $aspectMethod->getAttributes(Attribute\Pointcut::class);
+            $adviceAttributes   = $aspectMethod->getAttributes(AbstractInterceptor::class, ReflectionAttribute::IS_INSTANCEOF);
+            if (count($adviceAttributes) > 1) {
+                throw new AspectException(sprintf(
+                    'Advice method %s::%s() declares %d advice attributes, only one is supported per method (%s:%d)',
+                    $aspectMethod->class,
+                    $aspectMethod->name,
+                    count($adviceAttributes),
+                    $aspectMethod->getFileName(),
+                    $aspectMethod->getStartLine(),
+                ));
+            }
+
+            foreach ($pointcutAttributes as $reflectionAttribute) {
                 $attribute = $reflectionAttribute->newInstance();
-                if ($attribute instanceof Attribute\Pointcut) {
-                    $loadedItems[$methodId] = $this->parsePointcut($aspect, $reflectionAspect, $attribute->expression);
-                } elseif ($attribute instanceof Attribute\AbstractInterceptor) {
-                    $pointcut    = $this->parsePointcut($aspect, $reflectionAspect, $attribute->expression);
-                    $interceptor = $this->getAdvice($attribute, $aspect, $aspectMethod);
+                $loadedItems[$methodId] = $this->parsePointcut($aspect, $aspectMethod, $attribute->expression);
+            }
+            foreach ($adviceAttributes as $reflectionAttribute) {
+                $attribute   = $reflectionAttribute->newInstance();
+                $pointcut    = $this->parsePointcut($aspect, $aspectMethod, $attribute->expression);
+                $interceptor = $this->getAdvice($attribute, $aspect, $aspectMethod);
+                $advisorId   = $pointcutAttributes === [] ? $methodId : $methodId . self::ADVISOR_ID_SUFFIX;
 
-                    $loadedItems[$methodId] = new GenericPointcutAdvisor($pointcut, $interceptor);
-                } else {
-                    throw new AspectException('Unsupported attribute class: ' . $attribute::class);
-                }
+                $loadedItems[$advisorId] = new GenericPointcutAdvisor($pointcut, $interceptor);
             }
         }
 
@@ -64,8 +81,7 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
     /**
      * Returns an advice (interceptor) instance by meta-type attribute and closure
      *
-     * @throws UnexpectedValueException For unsupported annotations
-     * @throws AspectException If the advice method is not public
+     * @throws AspectException If the advice method is not public or the attribute is unsupported
      */
     protected function getAdvice(
         AbstractInterceptor $interceptorAttribute,

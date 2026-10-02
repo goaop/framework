@@ -74,6 +74,12 @@ protected function beforeMethod(MethodInvocation $invocation): void {}
 public function beforeMethod(MethodInvocation $invocation): void {}
 ```
 
+### One advice attribute per method
+
+An aspect method carries at most one of `#[Before]`, `#[After]`, `#[Around]` and `#[AfterThrowing]`; a second one
+throws an `AspectException`. Split such a method into one method per advice. `#[Pointcut]` may still be combined with
+an advice on the same method, and attributes that do not belong to the framework are ignored.
+
 ### Registering aspects
 
 `AspectContainer::registerAspect()` is removed. Aspects are ordinary container services:

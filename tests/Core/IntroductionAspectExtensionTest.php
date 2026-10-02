@@ -23,6 +23,7 @@ use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\Lang\Attribute\AbstractAttribute;
+use Go\Lang\Attribute\Before;
 use Go\Lang\Attribute\DeclareParents;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -63,12 +64,22 @@ class IntroductionAspectExtensionTest extends TestCase
         $this->assertSame(IntroductionAspectExtensionTestInterface::class, $advice->getInterface());
     }
 
-    public function testThrowsForUnsupportedAttributeOnProperty(): void
+    public function testForeignAttributeOnPropertyIsIgnored(): void
+    {
+        $aspect = new IntroductionAspectExtensionTestForeignAttributeAspect();
+
+        $this->assertSame([], $this->extension->load($aspect, new ReflectionClass($aspect)));
+    }
+
+    public function testThrowsForAdviceAttributeOnProperty(): void
     {
         $aspect = new IntroductionAspectExtensionTestInvalidAspect();
 
         $this->expectException(AspectException::class);
-        $this->expectExceptionMessage('Unsupported attribute class: ' . IntroductionAspectExtensionTestUnsupportedAttribute::class);
+        $this->expectExceptionMessage(
+            'Attribute ' . Before::class . ' is not supported on aspect property '
+            . IntroductionAspectExtensionTestInvalidAspect::class . '::$invalidIntroduction',
+        );
 
         $this->extension->load($aspect, new ReflectionClass($aspect));
     }
@@ -132,8 +143,15 @@ final class IntroductionAspectExtensionTestEmptyAspect implements Aspect
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final class IntroductionAspectExtensionTestUnsupportedAttribute {}
 
-final class IntroductionAspectExtensionTestInvalidAspect implements Aspect
+final class IntroductionAspectExtensionTestForeignAttributeAspect implements Aspect
 {
     #[IntroductionAspectExtensionTestUnsupportedAttribute]
+    public mixed $foreignAttribute = null;
+}
+
+final class IntroductionAspectExtensionTestInvalidAspect implements Aspect
+{
+    /** @phpstan-ignore attribute.target (an advice attribute on a property is the test subject) */
+    #[Before('within(Foo)')]
     public mixed $invalidIntroduction = null;
 }

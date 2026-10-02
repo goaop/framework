@@ -45,7 +45,7 @@ final class AdvisorCacheCompiler
     /**
      * Version of the compiled advisor cache format
      */
-    public const int VERSION = 1;
+    public const int VERSION = 2;
 
     /**
      * Compiles the loaded items of one aspect into advisor cache file content
