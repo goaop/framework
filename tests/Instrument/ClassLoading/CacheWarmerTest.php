@@ -15,6 +15,7 @@ namespace Go\Instrument\ClassLoading;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
+use Go\PhpUnit\UsesTemporaryDirectory;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -28,21 +29,18 @@ use Symfony\Component\Console\Output\BufferedOutput;
 #[AllowMockObjectsWithoutExpectations]
 class CacheWarmerTest extends TestCase
 {
+    use UsesTemporaryDirectory;
+
     private string $appDir;
     private string $cacheDir;
     private string $sourceFile;
 
     protected function setUp(): void
     {
-        $this->appDir   = sys_get_temp_dir() . '/goaop-warmer-app';
-        $this->cacheDir = sys_get_temp_dir() . '/goaop-warmer-cache';
-        foreach ([$this->appDir . '/src', $this->cacheDir] as $directory) {
-            if (!is_dir($directory)) {
-                mkdir($directory, 0777, true);
-            }
-        }
-        $this->appDir   = (string) realpath($this->appDir);
-        $this->cacheDir = (string) realpath($this->cacheDir);
+        // Real directories: warming up includes woven sources through the stream filter
+        $this->appDir   = self::createTemporaryDirectory('warmer-app');
+        $this->cacheDir = self::createTemporaryDirectory('warmer-cache');
+        mkdir($this->appDir . '/src');
 
         $this->sourceFile = $this->appDir . '/src/Some.php';
         file_put_contents($this->sourceFile, "<?php echo 'original';\n");
@@ -50,17 +48,8 @@ class CacheWarmerTest extends TestCase
 
     protected function tearDown(): void
     {
-        // Deletes only the exact files this test writes, never a glob/recursive sweep
-        $this->assertStringStartsWith(sys_get_temp_dir() . '/goaop-warmer-', $this->cacheDir);
-        foreach ([$this->cacheDir . '/src/Some.php', $this->sourceFile] as $knownFile) {
-            if (is_file($knownFile)) {
-                unlink($knownFile);
-            }
-        }
-        @rmdir($this->cacheDir . '/src');
-        @rmdir($this->cacheDir);
-        @rmdir($this->appDir . '/src');
-        @rmdir($this->appDir);
+        self::removeTemporaryDirectory($this->cacheDir);
+        self::removeTemporaryDirectory($this->appDir);
     }
 
     /**

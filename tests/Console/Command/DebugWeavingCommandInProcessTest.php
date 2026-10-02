@@ -16,6 +16,7 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\CacheWarmer;
+use Go\VirtualFileSystem\FileSystem;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -35,6 +36,8 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 class DebugWeavingCommandInProcessTest extends TestCase
 {
+    private ?FileSystem $fileSystem = null;
+
     public function testMetadataIsDefinedByAttribute(): void
     {
         $command = new DebugWeavingCommand();
@@ -160,22 +163,25 @@ class DebugWeavingCommandInProcessTest extends TestCase
 
     private function createEmptyCacheDir(): string
     {
-        $cacheDir = sys_get_temp_dir() . '/goaop-debug-weaving-cache';
-        if (!is_dir($cacheDir)) {
-            mkdir($cacheDir, 0777, true);
-        }
-        $this->cleanCacheDir($cacheDir);
+        $this->fileSystem = FileSystem::mount('debugweavingvfs');
+        $cacheDir         = $this->fileSystem->path('/cache');
+        mkdir($cacheDir, 0777, true);
 
-        return (string) realpath($cacheDir);
+        return $cacheDir;
     }
 
     private function cleanCacheDir(string $cacheDir): void
     {
-        // Deletes only the exact files this test writes, never a glob/recursive sweep
         foreach (['/Foo.php', '/Foo' . AspectContainer::AOP_PROXIED_SUFFIX . '.php'] as $knownFile) {
             if (is_file($cacheDir . $knownFile)) {
                 unlink($cacheDir . $knownFile);
             }
         }
+    }
+
+    protected function tearDown(): void
+    {
+        $this->fileSystem?->unmount();
+        $this->fileSystem = null;
     }
 }
