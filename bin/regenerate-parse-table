@@ -1,0 +1,69 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2026, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
+/**
+ * Regenerates src/Aop/Pointcut/PointcutParseTable.php from PointcutGrammar
+ *
+ * Run it after every change of the pointcut grammar: composer regenerate:parse-table
+ * PointcutParseTableTest fails while the checked-in table does not match the grammar.
+ */
+
+use Dissect\Parser\LALR1\Analysis\Analyzer;
+use Go\Aop\Pointcut\PointcutGrammar;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+$table = (new Analyzer())->analyze(new PointcutGrammar())->getParseTable();
+
+/**
+ * @param array<int, array<string, int>> $states
+ */
+$dumpStates = static function (array $states): string {
+    $code = '';
+    foreach ($states as $state => $transitions) {
+        $code .= $state . ' => [';
+        foreach ($transitions as $symbol => $target) {
+            $code .= var_export($symbol, true) . ' => ' . $target . ', ';
+        }
+        $code = rtrim($code, ' ') . '], ';
+    }
+
+    return rtrim($code, ' ');
+};
+
+$header = <<<'PHP'
+    <?php
+
+    declare(strict_types=1);
+    /*
+     * Go! AOP framework
+     *
+     * @copyright Copyright 2024, Lisachenko Alexander <lisachenko.it@gmail.com>
+     *
+     * This source file is subject to the license that is bundled
+     * with this source code in the file LICENSE.
+     */
+
+    /**
+     * This table was generated for production use, do not touch it
+     */
+
+    PHP;
+
+$fileName = __DIR__ . '/../src/Aop/Pointcut/PointcutParseTable.php';
+file_put_contents(
+    $fileName,
+    $header . "return ['action' => [" . $dumpStates($table['action']) . "], 'goto' => [" . $dumpStates($table['goto']) . "],];\n",
+);
+
+echo 'Regenerated ', realpath($fileName), PHP_EOL;

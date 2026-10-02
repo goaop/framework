@@ -25,6 +25,7 @@ $finder = Finder::create()
     ])
     ->append([
         __DIR__ . '/bin/aspect',
+        __DIR__ . '/bin/regenerate-parse-table',
     ]);
 
 return (new Config())
