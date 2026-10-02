@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\ClassLoading;
 
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use Go\Core\Cache\CacheFileWriter;
@@ -35,6 +36,12 @@ class CachePathManager
      * Name of the file with the minimal runtime include map (originalPath => cacheUri|null)
      */
     private const string INCLUDE_MAP_FILE_NAME = '/_include.cache';
+
+    /**
+     * Version of the metadata format of both files, a file of another version is ignored (or rejected with a
+     * prebuilt cache, which must never be rebuilt at runtime)
+     */
+    public const int FORMAT_VERSION = 2;
 
     /** @phpstan-var KernelOptions */
     protected array $options;
@@ -131,7 +138,11 @@ class CachePathManager
 
             if (file_exists($this->cacheDir . self::INCLUDE_MAP_FILE_NAME)) {
                 $includeData = include $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
-                if (is_array($includeData)) {
+                if (!$this->isCurrentFormat($includeData)) {
+                    $this->rejectOutdatedFormat();
+                    // Outdated format: everything re-weaves once and both files are rewritten
+                    $this->cacheStateLoaded = true;
+                } elseif (is_array($includeData)) {
                     $rawClassMap = is_array($includeData['map'] ?? null) ? $includeData['map'] : [];
                     foreach ($rawClassMap as $className => $cacheUri) {
                         if (is_string($className) && is_string($cacheUri)) {
@@ -152,6 +163,7 @@ class CachePathManager
                 // no class names, so the cache cannot serve the class map. Treat the whole
                 // cache as stale - everything re-weaves once and both files are rewritten
                 // in the new format (or run `cache:warmup:aop` at deploy time).
+                $this->rejectOutdatedFormat();
                 $this->cacheStateLoaded = true;
             }
         }
@@ -174,9 +186,33 @@ class CachePathManager
 
         if ($this->cacheDir !== null && file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
             $cacheData = include $this->cacheDir . self::CACHE_FILE_NAME;
-            if (is_array($cacheData)) {
-                $this->cacheState = $cacheData;
+            if (!$this->isCurrentFormat($cacheData)) {
+                $this->rejectOutdatedFormat();
+            } elseif (is_array($cacheData) && is_array($cacheData['files'] ?? null)) {
+                $this->cacheState = $cacheData['files'];
             }
+        }
+    }
+
+    /**
+     * Checks that the data loaded from a metadata file has the current format version
+     */
+    private function isCurrentFormat(mixed $cacheData): bool
+    {
+        return is_array($cacheData) && ($cacheData['version'] ?? null) === self::FORMAT_VERSION;
+    }
+
+    /**
+     * A prebuilt cache is never rebuilt at runtime, so metadata of another format is a deployment error
+     */
+    private function rejectOutdatedFormat(): void
+    {
+        if ($this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
+            throw new WeavingException(sprintf(
+                'The AOP cache in %s was built by another version of the framework, '
+                . 'rebuild it with `bin/aspect cache:warmup:aop` before using Features::PREBUILT_CACHE',
+                $this->cacheDir,
+            ));
         }
     }
 
@@ -377,8 +413,11 @@ class CachePathManager
                 }
             }
 
-            $this->writeCacheFile(self::CACHE_FILE_NAME, $fullCacheMap);
-            $this->writeCacheFile(self::INCLUDE_MAP_FILE_NAME, ['map' => $classMap, 'skip' => $skippedClasses]);
+            $this->writeCacheFile(self::CACHE_FILE_NAME, ['version' => self::FORMAT_VERSION, 'files' => $fullCacheMap]);
+            $this->writeCacheFile(
+                self::INCLUDE_MAP_FILE_NAME,
+                ['version' => self::FORMAT_VERSION, 'map' => $classMap, 'skip' => $skippedClasses],
+            );
 
             $this->cacheState     = $fullCacheMap;
             $this->classMap       = $classMap;

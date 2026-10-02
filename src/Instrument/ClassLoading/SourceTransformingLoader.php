@@ -244,13 +244,13 @@ class SourceTransformingLoader extends PhpStreamFilter
         $isTrustedCacheRecord = (self::$features & Features::PREBUILT_CACHE) !== 0;
 
         if (!$isTrustedCacheRecord) {
-            $lastModified   = filemtime($originalUri) ?: 0;
-            $cacheFilemtime = $cacheState['filemtime'] ?? 0;
-            $cacheModified  = is_int($cacheFilemtime) ? $cacheFilemtime : 0;
-
-            $isStale = $cacheModified < $lastModified
+            // The record keeps the size and mtime of the source it was woven from: any difference, also an older
+            // mtime restored by a deployment (rsync -t, checkout of an older revision), means the source changed
+            $cachedAt = $cacheState['cachedAt'] ?? 0;
+            $isStale  = ($cacheState['filemtime'] ?? null) !== filemtime($originalUri)
+                || ($cacheState['filesize'] ?? null) !== filesize($originalUri)
                 || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)
-                || !(self::$container?->isFreshSince($cacheModified) ?? false);
+                || !(self::$container?->isFreshSince(is_int($cachedAt) ? $cachedAt : 0) ?? false);
             if ($isStale) {
                 return null;
             }
@@ -299,7 +299,10 @@ class SourceTransformingLoader extends PhpStreamFilter
         self::$cachePathManager->setCacheState(
             $originalUri,
             [
-                'filemtime' => $_SERVER['REQUEST_TIME'] ?? time(),
+                'filemtime' => filemtime($originalUri),
+                'filesize'  => filesize($originalUri),
+                // Weaving time, compared with the tracked resources (kernel and aspect files)
+                'cachedAt'  => $_SERVER['REQUEST_TIME'] ?? time(),
                 'cacheUri'  => ($result === TransformerResultEnum::RESULT_TRANSFORMED) ? $cacheUri : null,
             ],
         );

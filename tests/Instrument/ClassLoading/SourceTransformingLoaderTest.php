@@ -130,10 +130,7 @@ class SourceTransformingLoaderTest extends TestCase
         $cacheFile = $this->cacheDir . '/src/Some.php';
         mkdir(dirname($cacheFile), 0777, true);
         file_put_contents($cacheFile, self::WOVEN_SOURCE);
-        $this->cachePathManager->setCacheState($this->originalFile, [
-            'filemtime' => (int) filemtime($this->originalFile) + 10,
-            'cacheUri'  => $cacheFile,
-        ]);
+        $this->cachePathManager->setCacheState($this->originalFile, $this->freshRecord($cacheFile));
 
         $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
     }
@@ -144,10 +141,7 @@ class SourceTransformingLoaderTest extends TestCase
         $this->container->expects($this->never())->method('getServicesByInterface');
         $this->container->method('isFreshSince')->willReturn(true);
 
-        $this->cachePathManager->setCacheState($this->originalFile, [
-            'filemtime' => (int) filemtime($this->originalFile) + 10,
-            'cacheUri'  => null,
-        ]);
+        $this->cachePathManager->setCacheState($this->originalFile, $this->freshRecord(null));
 
         $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
     }
@@ -201,6 +195,55 @@ class SourceTransformingLoaderTest extends TestCase
         $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
         $this->assertNotNull($cacheState);
         $this->assertSame($cacheFile, $cacheState['cacheUri']);
+    }
+
+    /**
+     * Cache record matching the current original file
+     *
+     * @return array{filemtime: int|false, filesize: int|false, cachedAt: int, cacheUri: string|null}
+     */
+    private function freshRecord(?string $cacheUri): array
+    {
+        clearstatcache();
+
+        return [
+            'filemtime' => filemtime($this->originalFile),
+            'filesize'  => filesize($this->originalFile),
+            'cachedAt'  => time(),
+            'cacheUri'  => $cacheUri,
+        ];
+    }
+
+    public function testSourceWithAnOlderMtimeIsWovenAgain(): void
+    {
+        $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer]);
+        $this->container->method('isFreshSince')->willReturn(true);
+        $this->cachePathManager->setCacheState($this->originalFile, $this->freshRecord(null));
+
+        // A deployment restores an older mtime of a changed source (rsync -t, checkout of an older revision)
+        touch($this->originalFile, (int) filemtime($this->originalFile) - 3600);
+        clearstatcache();
+
+        $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
+        $this->assertSame(1, $transformer->callCount);
+    }
+
+    public function testSourceWithAnotherSizeIsWovenAgain(): void
+    {
+        $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer]);
+        $this->container->method('isFreshSince')->willReturn(true);
+        $record = $this->freshRecord(null);
+        $this->cachePathManager->setCacheState($this->originalFile, $record);
+
+        // Same mtime, different content length
+        file_put_contents($this->originalFile, self::ORIGINAL_SOURCE . "// changed\n");
+        touch($this->originalFile, (int) $record['filemtime']);
+        clearstatcache();
+
+        $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
+        $this->assertSame(1, $transformer->callCount);
     }
 
     public function testStaleCacheRecordFallsBackToTransformerChain(): void

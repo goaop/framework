@@ -46,6 +46,9 @@ Every cache format changed, and no 3.x cache file is reused:
 **Action:** delete the cache directory when upgrading. On a read-only production file system, build
 the cache at deploy time with `bin/aspect cache:warmup:aop` before switching traffic.
 
+The metadata files carry a format version. With `Features::PREBUILT_CACHE`, a cache built by another framework
+version is rejected with an exception instead of being rebuilt at runtime.
+
 `Features::PREBUILT_CACHE` now trusts the cache completely. Directory and writability probes,
 `filemtime` comparisons, tracked-resource checks and advisor cache freshness checks are all
 skipped. Rebuilding the cache on deploy is the deployer's responsibility.
