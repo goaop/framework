@@ -14,6 +14,7 @@ namespace Go\Instrument\Transformer;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Instrument\PathResolver;
 use PhpParser\Node;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Scalar\MagicConst;
@@ -70,7 +71,10 @@ class MagicConstantTransformer extends BaseSourceTransformer
         $this->replaceMagicDirFileConstants($metadata);
         $this->wrapReflectionGetFileName($metadata);
 
-        // We should always vote abstain, because if there is only changes for magic constants, we can drop them
+        // Always abstain: the rewrite only matters for sources executed from the cache directory, which other
+        // transformers produce. A source served unchanged runs from its original location, and PHP resolves the
+        // magic constants of a `php://filter/.../resource=<path>` include to <path> itself, so they stay correct
+        // on cache hits too (see the functional MagicConstantTest)
         return TransformerResultEnum::RESULT_ABSTAIN;
     }
 
@@ -85,8 +89,11 @@ class MagicConstantTransformer extends BaseSourceTransformer
         if (self::$rootPath === '') {
             self::configurePaths(AspectKernel::getInstance()->getOptions());
         }
-        if (self::$rewriteToPath !== '' && str_starts_with($fileName, self::$rewriteToPath)) {
-            $fileName = str_replace(self::$rewriteToPath, self::$rootPath, $fileName);
+        $rebasedFileName = self::$rewriteToPath !== ''
+            ? PathResolver::rebase($fileName, self::$rewriteToPath, self::$rootPath)
+            : null;
+        if ($rebasedFileName !== null) {
+            $fileName = $rebasedFileName;
             // Only the trailing marker of the woven-body file is dropped, so a class that simply
             // carries the suffix word in its own name (e.g. `OriginalTraitRegistry.php`) keeps its name
             $proxiedFileSuffix = AspectContainer::AOP_PROXIED_SUFFIX . '.php';

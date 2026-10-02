@@ -28,7 +28,7 @@ class EnumeratorTest extends TestCase
      */
     public static function setUpBeforeClass(): void
     {
-        static::$fileSystem = FileSystem::mount('vfs');
+        static::$fileSystem = FileSystem::mount('enumeratorvfs');
 
         $testPaths = [
             '/base/sub/test',
@@ -54,38 +54,38 @@ class EnumeratorTest extends TestCase
         return [
             [
                 // No include or exclude, every folder should be there
-                ['vfs://base/sub/test', 'vfs://base/sub/sub/test'],
+                ['enumeratorvfs://base/sub/test', 'enumeratorvfs://base/sub/sub/test'],
                 [],
                 [],
             ],
             [
                 // Exclude double sub folder
-                ['vfs://base/sub/test'],
+                ['enumeratorvfs://base/sub/test'],
                 [],
-                ['vfs://base/sub/sub/test'],
+                ['enumeratorvfs://base/sub/sub/test'],
             ],
             [
                 // Exclude double sub folder just by base path
-                ['vfs://base/sub/test'],
+                ['enumeratorvfs://base/sub/test'],
                 [],
-                ['vfs://base/sub/sub'],
+                ['enumeratorvfs://base/sub/sub'],
             ],
             [
                 // Exclude all, expected shout be empty
                 [],
                 [],
-                ['vfs://base/sub/test', 'vfs://base/sub/sub/test'],
+                ['enumeratorvfs://base/sub/test', 'enumeratorvfs://base/sub/sub/test'],
             ],
             [
                 // Exclude all sub using wildcard
                 [],
                 [],
-                ['vfs://base/*/test'],
+                ['enumeratorvfs://base/*/test'],
             ],
             [
                 // Includepath using wildcard should not break
-                ['vfs://base/sub/test', 'vfs://base/sub/sub/test'],
-                ['vfs://base/*'],
+                ['enumeratorvfs://base/sub/test', 'enumeratorvfs://base/sub/sub/test'],
+                ['enumeratorvfs://base/*'],
                 [],
             ],
         ];
@@ -109,7 +109,7 @@ class EnumeratorTest extends TestCase
 
         /** @var Enumerator&\PHPUnit\Framework\MockObject\MockObject $mock */
         $mock = $this->getMockBuilder(Enumerator::class)
-            ->setConstructorArgs(['vfs://base', $includePaths, $excludePaths])
+            ->setConstructorArgs(['enumeratorvfs://base', $includePaths, $excludePaths])
             ->onlyMethods(['getFileFullPath'])
             ->getMock();
 
@@ -155,7 +155,7 @@ class EnumeratorTest extends TestCase
      */
     public function testIncludePathBelowRootDirectoryPassesTheRootCheck(): void
     {
-        $enumerator = new Enumerator('vfs://base', ['vfs://base/sub']);
+        $enumerator = new Enumerator('enumeratorvfs://base', ['enumeratorvfs://base/sub']);
 
         $files = iterator_to_array($enumerator->enumerate());
         $this->assertNotEmpty($files);

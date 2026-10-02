@@ -224,4 +224,25 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
         $this->assertSame(T_PUBLIC, $resultFirst);
         $this->assertSame(T_PUBLIC, $resultSecond);
     }
+
+    public function testNestedInvocationFromAdviceRestoresOuterState(): void
+    {
+        $outer    = new TraitAliasProxy();
+        $inner    = new TraitAliasProxy();
+        $observed = [];
+        $around   = new AroundInterceptor(static function (DynamicTraitAliasMethodInvocation $invocation) use ($outer, $inner, &$observed): mixed {
+            if ($invocation->getThis() === $outer) {
+                // The advice calls the same method of another object through the shared joinpoint
+                $observed['nested'] = $invocation($inner, ['in', 'ner']);
+                $observed['this']   = $invocation->getThis() === $outer;
+                $observed['args']   = $invocation->getArguments();
+            }
+
+            return $invocation->proceed();
+        });
+        $invocation = new DynamicTraitAliasMethodInvocation([$around], TraitAliasProxy::class, 'variadicArgsTest', $outer->getCallableFor('variadicArgsTest'));
+
+        $this->assertSame('outer', $invocation($outer, ['out', 'er']));
+        $this->assertSame(['nested' => 'inner', 'this' => true, 'args' => ['out', 'er']], $observed);
+    }
 }

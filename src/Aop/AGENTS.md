@@ -35,6 +35,12 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 | ClassFieldAccess                  | FieldAccess             | Property interception via native get/set hooks on proxied properties                                                   |
 | StaticInitializationJoinpoint     | ClassJoinpoint          | Fired once after proxy class loaded via injectJoinPoints()                                                             |
 
+HOT PATH: `__invoke()`/`proceed()` of these classes run on every intercepted call. Code there is embedded on purpose:
+never extract parts into methods or a base class, never add object allocations, reflection or extra method calls
+(copy-paste of the frame handling across the classes is intentional). Joinpoint objects are shared by every call of
+their member (`static $__joinPoint`), so each `__invoke()` pushes the outer call state onto its own `$stackFrames`
+when `$level > 0` and pops it in `finally`. Check every change with `composer test:performance` (before/after).
+
 ## Advice wiring (src/Aop/Framework/)
 - The — proxy-code accessor: aspect(X::class) fetches aspect from container; advice('advisorId') resolves container-backed closure advice (unwraps Advisor/AbstractInterceptor to raw Closure)
 - Interceptor — @internal factory facade with TWO construction modes: before()/after()/around()/afterThrowing(class-string<Aspect>|Closure, ?string $methodName=null, int $order=0, string $expression=''). With aspect class + method name it returns a native PHP 8.4 lazy proxy (via Go\Core\NativeLazyProxy::create) — interceptor construction, The::aspect() resolution and FCC creation all defer until first real use (invocation/ordering), so unmatched advices never instantiate their aspect; ONLY compiled advisor cache files use this lazy form. A ready Closure constructs eagerly, and generated PROXY classes deliberately use the eager `The::aspect(X::class)->method(...)` FCC form (InterceptorListGenerator): the proxy method/hook is already executing, so the interceptor is needed right now and a lazy detour would be pure overhead; The::advice('<id>') stays eager too. Free to change between releases

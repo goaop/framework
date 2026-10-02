@@ -75,7 +75,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream('php://input'), '<?php echo "simple test, no magic constants" ?>');
         $expected = $metadata->source;
-        $this->transformer->transform($metadata);
+        $this->assertSame(TransformerResultEnum::RESULT_ABSTAIN, $this->transformer->transform($metadata));
         $this->assertSame($expected, $metadata->source);
     }
 
@@ -83,7 +83,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __DIR__; ?>');
         $expected = '<?php echo \'' . __DIR__ . '\'; ?>';
-        $this->transformer->transform($metadata);
+        $this->assertSame(TransformerResultEnum::RESULT_ABSTAIN, $this->transformer->transform($metadata));
         $this->assertEquals($expected, $metadata->source);
     }
 
@@ -91,7 +91,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __FILE__; ?>');
         $expected = '<?php echo \'' . __FILE__ . '\'; ?>';
-        $this->transformer->transform($metadata);
+        $this->assertSame(TransformerResultEnum::RESULT_ABSTAIN, $this->transformer->transform($metadata));
         $this->assertEquals($expected, $metadata->source);
     }
 
@@ -99,7 +99,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream('php://input'), '<?php echo "__FILE__"; ?>');
         $expected = '<?php echo "__FILE__"; ?>';
-        $this->transformer->transform($metadata);
+        $this->assertSame(TransformerResultEnum::RESULT_ABSTAIN, $this->transformer->transform($metadata));
         $this->assertEquals($expected, $metadata->source);
     }
 
@@ -107,7 +107,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $source   = '<?php $class = new ReflectionClass("stdClass"); echo $class->getFileName(); ?>';
         $metadata = new StreamMetaData(self::openStream('php://input'), $source);
-        $this->transformer->transform($metadata);
+        $this->assertSame(TransformerResultEnum::RESULT_ABSTAIN, $this->transformer->transform($metadata));
         $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $metadata->source);
     }
 
@@ -137,5 +137,16 @@ class MagicConstantTransformerTest extends TestCase
             dirname(__DIR__) . '/' . AspectContainer::AOP_PROXIED_SUFFIX . 'Request.php',
             $class::resolveFileName(__DIR__ . '/' . AspectContainer::AOP_PROXIED_SUFFIX . 'Request.php'),
         );
+    }
+
+    public function testTransformerKeepsFileNameWithoutCacheDirectory(): void
+    {
+        $transformer = new MagicConstantTransformer($this->getKernelMock([
+            'cacheDir' => null,
+            'appDir'   => dirname(__DIR__),
+        ]));
+        $class = get_class($transformer);
+
+        $this->assertSame(__FILE__, $class::resolveFileName(__FILE__));
     }
 }

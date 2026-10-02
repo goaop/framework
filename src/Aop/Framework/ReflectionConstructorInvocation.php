@@ -36,6 +36,13 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
     private ?object $instance = null;
 
     /**
+     * Stack frames of the outer constructions interrupted by a nested `new` of the same class
+     *
+     * @var array<int, array{list<mixed>, T|null, int}>
+     */
+    private array $stackFrames = [];
+
+    /**
      * Instance of reflection constructor for class (if present)
      */
     private readonly ?ReflectionMethod $constructor;
@@ -57,6 +64,10 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
     /**
      * @phpstan-return T
      * @throws \ReflectionException If class is internal and cannot be created without constructor
+     *
+     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
      */
     final public function proceed(): object
     {
@@ -69,12 +80,14 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
             return $result;
         }
 
-        $this->instance = $this->class->newInstanceWithoutConstructor();
+        // A nested `new` of the same class inside the constructor replaces $this->instance until it returns,
+        // so the created object is kept locally
+        $instance = $this->instance = $this->class->newInstanceWithoutConstructor();
 
         // Null-safe invocation of constructor with constructor arguments
-        $this->getConstructor()?->invoke($this->instance, ...$this->arguments);
+        $this->getConstructor()?->invoke($instance, ...$this->arguments);
 
-        return $this->instance;
+        return $instance;
     }
 
     public function getConstructor(): ?ReflectionMethod
@@ -97,13 +110,33 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      *
      * @param list<mixed> $arguments Arguments for constructor invocation
      * @phpstan-return T Instance of object
+     *
+     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
      */
     final public function __invoke(array $arguments = []): object
     {
-        $this->current   = 0;
-        $this->arguments = $arguments;
+        if ($this->level > 0) {
+            $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
+        }
+        try {
+            ++$this->level;
+            $this->current   = 0;
+            $this->arguments = $arguments;
+            $this->instance  = null;
 
-        return $this->proceed();
+            return $this->proceed();
+        } finally {
+            --$this->level;
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
+                [$this->arguments, $this->instance, $this->current] = $stackFrame;
+            } else {
+                // The shared invocation must not keep the created object alive
+                $this->instance  = null;
+                $this->arguments = [];
+            }
+        }
     }
 
     /**

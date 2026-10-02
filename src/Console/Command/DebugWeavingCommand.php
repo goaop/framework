@@ -15,6 +15,7 @@ namespace Go\Console\Command;
 use FilesystemIterator;
 use Go\Core\AspectContainer;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\Instrument\PathResolver;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -117,7 +118,7 @@ class DebugWeavingCommand extends BaseAspectCommand
                 continue;
             }
             // Only collect proxy files: they have a sibling `<Class>OriginalTrait.php` file
-            $traitSibling = str_replace('.php', AspectContainer::AOP_PROXIED_SUFFIX . '.php', $pathname);
+            $traitSibling = PathResolver::withSuffixBeforeExtension($pathname, AspectContainer::AOP_PROXIED_SUFFIX);
             if (!file_exists($traitSibling)) {
                 continue;
             }

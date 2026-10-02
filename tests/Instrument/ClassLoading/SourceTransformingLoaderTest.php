@@ -19,6 +19,7 @@ use Go\Core\Container;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResultEnum;
+use Go\PhpUnit\UsesTemporaryDirectory;
 use PhpToken;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -29,6 +30,8 @@ use PHPUnit\Framework\TestCase;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class SourceTransformingLoaderTest extends TestCase
 {
+    use UsesTemporaryDirectory;
+
     private const ORIGINAL_SOURCE = "<?php echo 'original';\n";
     private const WOVEN_SOURCE    = "<?php echo 'woven';\n";
 
@@ -43,17 +46,11 @@ class SourceTransformingLoaderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->appDir   = sys_get_temp_dir() . '/goaop-stl-app';
-        $this->cacheDir = sys_get_temp_dir() . '/goaop-stl-cache';
-        foreach ([$this->appDir . '/src', $this->cacheDir] as $directory) {
-            if (!is_dir($directory)) {
-                mkdir($directory, 0777, true);
-            }
-        }
-        // The loader resolves the streamed path via realpath(), so the cache state
-        // must be keyed by the resolved paths to match
-        $this->appDir   = (string) realpath($this->appDir);
-        $this->cacheDir = (string) realpath($this->cacheDir);
+        // Real directories: the stream filter includes woven sources and the loader resolves the
+        // streamed path via realpath(), neither of which works on the virtual file system
+        $this->appDir   = self::createTemporaryDirectory('stl-app');
+        $this->cacheDir = self::createTemporaryDirectory('stl-cache');
+        mkdir($this->appDir . '/src');
 
         $this->originalFile = $this->appDir . '/src/Some.php';
         file_put_contents($this->originalFile, self::ORIGINAL_SOURCE);
@@ -61,23 +58,8 @@ class SourceTransformingLoaderTest extends TestCase
 
     protected function tearDown(): void
     {
-        // Deletes only the exact files this test writes, never a glob/recursive sweep:
-        // a wrong directory value must not be able to erase anything else
-        $this->assertStringStartsWith(sys_get_temp_dir() . '/goaop-stl-', $this->cacheDir);
-        $knownFiles = [
-            $this->cacheDir . '/src/Some.php',
-            $this->cacheDir . '/src/Some' . AspectContainer::AOP_PROXIED_SUFFIX . '.php',
-            $this->originalFile,
-        ];
-        foreach ($knownFiles as $knownFile) {
-            if (is_file($knownFile)) {
-                unlink($knownFile);
-            }
-        }
-        @rmdir($this->cacheDir . '/src');
-        @rmdir($this->cacheDir);
-        @rmdir($this->appDir . '/src');
-        @rmdir($this->appDir);
+        self::removeTemporaryDirectory($this->cacheDir);
+        self::removeTemporaryDirectory($this->appDir);
     }
 
     /**
@@ -262,6 +244,21 @@ class SourceTransformingLoaderTest extends TestCase
         $this->assertSame(0, $neverCalled->callCount);
 
         $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
+    }
+
+    public function testAbortedChainRevertsChangesOfEarlierTransformers(): void
+    {
+        $transforming = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, self::WOVEN_SOURCE);
+        $aborting     = $this->createTransformerStub(TransformerResultEnum::RESULT_ABORTED);
+        $this->registerLoader([$transforming, $aborting]);
+
+        $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
+        $this->assertSame(1, $aborting->callCount);
+
+        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
+        $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
+        $this->assertNotNull($cacheState);
+        $this->assertNull($cacheState['cacheUri']);
     }
 
     public function testPrebuiltCacheTrustsStaleRecordWithoutFreshnessChecks(): void

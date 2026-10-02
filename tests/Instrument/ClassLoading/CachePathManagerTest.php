@@ -14,6 +14,7 @@ namespace Go\Instrument\ClassLoading;
 
 use Go\Core\AspectKernel;
 use Go\Core\Container;
+use Go\PhpUnit\UsesTemporaryDirectory;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
@@ -23,51 +24,28 @@ use ReflectionProperty;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class CachePathManagerTest extends TestCase
 {
+    use UsesTemporaryDirectory;
+
     private static string $appDir;
     private static string $cacheDir;
 
     public static function setUpBeforeClass(): void
     {
-        // The cache files reference these constants for path portability, so they must
-        // match the directories used by every test in this class exactly
-        self::$appDir   = sys_get_temp_dir() . '/goaop-cpm-app';
-        self::$cacheDir = sys_get_temp_dir() . '/goaop-cpm-cache';
+        // Real directories: the cache files are loaded with include and reference the AOP_ROOT_DIR and
+        // AOP_CACHE_DIR constants, which must match the directories of every test in this class exactly
+        // (each test runs in its own process, so the constants are defined once per process)
+        self::$appDir   = self::createTemporaryDirectory('cpm-app');
+        self::$cacheDir = self::createTemporaryDirectory('cpm-cache');
         if (!defined('AOP_ROOT_DIR')) {
             define('AOP_ROOT_DIR', self::$appDir);
             define('AOP_CACHE_DIR', self::$cacheDir);
-        }
-        if (!is_dir(self::$appDir)) {
-            mkdir(self::$appDir, 0777, true);
-        }
-        if (!is_dir(self::$cacheDir)) {
-            mkdir(self::$cacheDir, 0777, true);
         }
     }
 
     public static function tearDownAfterClass(): void
     {
-        self::removeKnownCacheFiles();
-        @rmdir(self::$cacheDir);
-        @rmdir(self::$appDir);
-    }
-
-    protected function setUp(): void
-    {
-        self::removeKnownCacheFiles();
-    }
-
-    /**
-     * Deletes only the exact files this test writes, never a glob/recursive sweep:
-     * a wrong directory value must not be able to erase anything else
-     */
-    private static function removeKnownCacheFiles(): void
-    {
-        self::assertStringStartsWith(sys_get_temp_dir() . '/goaop-cpm-', self::$cacheDir);
-        foreach (['/_transformation.cache', '/_include.cache'] as $knownFile) {
-            if (is_file(self::$cacheDir . $knownFile)) {
-                unlink(self::$cacheDir . $knownFile);
-            }
-        }
+        self::removeTemporaryDirectory(self::$cacheDir);
+        self::removeTemporaryDirectory(self::$appDir);
     }
 
     private function createManager(): CachePathManager
@@ -139,5 +117,20 @@ class CachePathManagerTest extends TestCase
         $this->assertSame([], $reader->queryClassMap());
         $this->assertSame([], $reader->querySkippedClasses());
         $this->assertNull($reader->queryCacheState($original));
+    }
+
+    public function testCachePathReplacesOnlyTheLeadingApplicationDirectory(): void
+    {
+        $manager = $this->createManager();
+
+        // A nested directory repeating the application path keeps its name
+        $nested = self::$appDir . '/vendor' . self::$appDir . '/Foo.php';
+        $this->assertSame(
+            self::$cacheDir . '/vendor' . self::$appDir . '/Foo.php',
+            $manager->getCachePathForResource($nested),
+        );
+        // A sibling sharing the name prefix of the application directory is not below it
+        $sibling = self::$appDir . '-old/Foo.php';
+        $this->assertSame($sibling, $manager->getCachePathForResource($sibling));
     }
 }

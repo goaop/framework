@@ -52,11 +52,66 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
 
     public function testReturnsThis(): void
     {
-        $invocation = new ReflectionConstructorInvocation([], \Exception::class);
-        $instance   = $invocation->getThis();
-        $this->assertNull($instance);
+        $observed   = [];
+        $around     = new AroundInterceptor(static function (ReflectionConstructorInvocation $invocation) use (&$observed): object {
+            $observed['before'] = $invocation->getThis();
+            $object             = $invocation->proceed();
+            $observed['after']  = $invocation->getThis();
+
+            return $object;
+        });
+        $invocation = new ReflectionConstructorInvocation([$around], \Exception::class);
+        $this->assertNull($invocation->getThis());
+
         $object = $invocation->__invoke(['Some error', 100]);
-        $this->assertEquals($object, $invocation->getThis());
+
+        $this->assertNull($observed['before']);
+        $this->assertSame($object, $observed['after']);
+        // The shared invocation does not keep the created object after the call
+        $this->assertNull($invocation->getThis());
+    }
+
+    public function testBeforeAdviceSeesNoInstanceOnRepeatedConstruction(): void
+    {
+        $observed   = [];
+        $before     = new BeforeInterceptor(static function (ReflectionConstructorInvocation $invocation) use (&$observed): void {
+            $observed[] = $invocation->getThis();
+        });
+        $invocation = new ReflectionConstructorInvocation([$before], \Exception::class);
+
+        $invocation->__invoke(['first']);
+        $invocation->__invoke(['second']);
+
+        $this->assertSame([null, null], $observed);
+    }
+
+    public function testInvocationDoesNotRetainCreatedInstance(): void
+    {
+        $invocation = new ReflectionConstructorInvocation([], \ArrayObject::class);
+        $reference  = \WeakReference::create($invocation->__invoke([[1, 2, 3]]));
+
+        $this->assertNull($reference->get());
+    }
+
+    public function testNestedConstructionRestoresOuterState(): void
+    {
+        $observed   = [];
+        $around     = new AroundInterceptor(static function (ReflectionConstructorInvocation $invocation) use (&$observed): object {
+            $object = $invocation->proceed();
+            // The nested construction of the same class has completed inside proceed()
+            $observed[] = [$invocation->getArguments(), $invocation->getThis() === $object];
+
+            return $object;
+        });
+        $invocation = new ReflectionConstructorInvocation([$around], NestedConstructionFixture::class);
+        NestedConstructionFixture::$invocation = $invocation;
+
+        $outer = $invocation->__invoke([1]);
+
+        $this->assertSame(1, $outer->depth);
+        $this->assertInstanceOf(NestedConstructionFixture::class, $outer->child);
+        $this->assertSame(0, $outer->child->depth);
+        $this->assertSame([[[0], true], [[1], true]], $observed);
     }
 
     public function testCanCreateAnInstanceEvenWithNonPublicConstructor(): void
@@ -89,5 +144,25 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
         $this->assertInstanceOf($testClassName, $result);
         // @phpstan-ignore property.notFound (the anonymous class is only known at runtime)
         $this->assertSame('Hello', $result->message);
+    }
+}
+
+/**
+ * Creates a child of the same class through the shared constructor invocation from its own constructor
+ */
+class NestedConstructionFixture
+{
+    /**
+     * @var ReflectionConstructorInvocation<NestedConstructionFixture>
+     */
+    public static ReflectionConstructorInvocation $invocation;
+
+    public ?self $child = null;
+
+    public function __construct(public readonly int $depth)
+    {
+        if ($depth > 0) {
+            $this->child = self::$invocation->__invoke([$depth - 1]);
+        }
     }
 }

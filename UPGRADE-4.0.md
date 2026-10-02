@@ -201,4 +201,6 @@ Console
 
 The commands declare their names with `#[AsCommand]` and are loaded lazily by `bin/aspect`. Every
 command returns `Command::SUCCESS` or `Command::FAILURE`. In 3.x `debug:weaving` returned the raw
-error count, so check the exit code instead if a script relied on that number.
+error count, so check the exit code instead if a script relied on that number. `cache:warmup:aop`
+fails when a file cannot be woven (add `--fail-fast` to stop at the first error), so a deploy script
+that ignored warmup errors now stops there.

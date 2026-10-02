@@ -88,4 +88,53 @@ class PathResolver
 
         return $path;
     }
+
+    /**
+     * Moves a path from one base directory to another
+     *
+     * Only a leading $fromDirectory followed by a directory separator (or the end of the path) is replaced:
+     * occurrences of the directory elsewhere in the path and siblings sharing a name prefix (`/var/www-old`
+     * for `/var/www`) are left alone.
+     *
+     * @return string|null The rebased path, or null when the path is not below $fromDirectory
+     */
+    public static function rebase(string $path, string $fromDirectory, string $toDirectory): ?string
+    {
+        if ($fromDirectory === '') {
+            return null;
+        }
+        // The file-system root `/` becomes an empty prefix: every absolute path lies below it
+        $fromDirectory = rtrim($fromDirectory, '/\\');
+        if (!str_starts_with($path, $fromDirectory)) {
+            return null;
+        }
+        $relativePart = substr($path, strlen($fromDirectory));
+        if ($relativePart !== '' && $relativePart[0] !== '/' && $relativePart[0] !== '\\') {
+            return null;
+        }
+
+        return rtrim($toDirectory, '/\\') . $relativePart;
+    }
+
+    /**
+     * Checks that the path is the directory itself or lies below it
+     */
+    public static function isBelow(string $path, string $directory): bool
+    {
+        return self::rebase($path, $directory, '') !== null;
+    }
+
+    /**
+     * Inserts a suffix in front of the file extension: `Foo.php` becomes `FooOriginalTrait.php`
+     *
+     * Only the trailing extension is touched, so directories like `lib.php/` keep their names.
+     */
+    public static function withSuffixBeforeExtension(string $path, string $suffix, string $extension = '.php'): string
+    {
+        if (!str_ends_with($path, $extension)) {
+            return $path . $suffix;
+        }
+
+        return substr($path, 0, -strlen($extension)) . $suffix . $extension;
+    }
 }

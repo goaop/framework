@@ -15,6 +15,7 @@ namespace Go\Instrument\ClassLoading;
 use Go\Aop\Features;
 use Go\Core\AspectKernel;
 use Go\Core\Cache\CacheFileWriter;
+use Go\Instrument\PathResolver;
 use InvalidArgumentException;
 
 /**
@@ -255,8 +256,9 @@ class CachePathManager
             return $cacheState['cacheUri'];
         }
 
+        // Resources outside the application root map to themselves (they are never woven)
         return $this->appDir !== null
-            ? str_replace($this->appDir, $this->cacheDir, $resource)
+            ? (PathResolver::rebase($resource, $this->appDir, $this->cacheDir) ?? $resource)
             : $resource;
     }
 

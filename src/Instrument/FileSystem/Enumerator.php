@@ -14,6 +14,7 @@ namespace Go\Instrument\FileSystem;
 
 use ArrayIterator;
 use Closure;
+use Go\Instrument\PathResolver;
 use InvalidArgumentException;
 use Iterator;
 use LogicException;
@@ -81,7 +82,7 @@ class Enumerator
 
             $fullPath = $this->getFileFullPath($file);
             // Do not touch files that not under rootDirectory
-            if (!str_starts_with($fullPath, $this->rootDirectory)) {
+            if (!PathResolver::isBelow($fullPath, $this->rootDirectory)) {
                 return false;
             }
 
@@ -120,7 +121,7 @@ class Enumerator
         foreach ($this->includePaths as $path) {
             // Include paths must be below the root directory: this is a prefix check,
             // a path merely containing the root somewhere else must be rejected
-            if (!str_starts_with($path, $this->rootDirectory)) {
+            if (!PathResolver::isBelow($path, $this->rootDirectory)) {
                 throw new UnexpectedValueException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
             }
 

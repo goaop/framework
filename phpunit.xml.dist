@@ -5,6 +5,12 @@
       <directory>./tests/</directory>
     </testsuite>
   </testsuites>
+  <groups>
+    <exclude>
+      <!-- Timing-based, run on demand: composer test:performance -->
+      <group>performance</group>
+    </exclude>
+  </groups>
   <source>
     <include>
       <directory>./src/</directory>

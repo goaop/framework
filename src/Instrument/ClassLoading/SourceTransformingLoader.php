@@ -166,7 +166,8 @@ class SourceTransformingLoader extends PhpStreamFilter
             // Cache miss: parse the source, run the transformer chain and persist the result
             $metadata = new StreamMetaData($this->stream, $this->data);
             $result   = self::transformCode($metadata);
-            $source   = $metadata->source;
+            // An aborted chain reverts every change: the original source is served and recorded as untransformed
+            $source   = $result === TransformerResultEnum::RESULT_ABORTED ? $this->data : $metadata->source;
             self::saveToCache($originalUri, $cacheUri, $source, $result);
 
             stream_bucket_append($out, stream_bucket_new($this->stream, $source));
@@ -288,7 +289,7 @@ class SourceTransformingLoader extends PhpStreamFilter
             if (!str_ends_with($cacheUri, AspectContainer::AOP_PROXIED_SUFFIX . '.php')
                 && preg_match($originalBodyTrait, $transformedSource) === 1
             ) {
-                $cacheUri = str_replace('.php', AspectContainer::AOP_PROXIED_SUFFIX . '.php', $cacheUri);
+                $cacheUri = PathResolver::withSuffixBeforeExtension($cacheUri, AspectContainer::AOP_PROXIED_SUFFIX);
             }
             // Atomic write: a concurrent request including this file never sees a partial source
             self::$cachePathManager->getCacheFileWriter()->write($cacheUri, $transformedSource);

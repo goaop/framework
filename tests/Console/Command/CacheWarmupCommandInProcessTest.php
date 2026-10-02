@@ -81,7 +81,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
             {
                 return new class extends CacheWarmer {
                     public function __construct()
@@ -89,9 +89,10 @@ class CacheWarmupCommandInProcessTest extends TestCase
                         // Deliberately skips the parent constructor: no kernel is involved
                     }
 
-                    public function warmUp(): void
+                    public function warmUp(): int
                     {
                         // Simulates a warmup that completes without being interrupted
+                        return 0;
                     }
                 };
             }
@@ -126,7 +127,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
             {
                 return new class ($this) extends CacheWarmer {
                     public function __construct(private readonly CacheWarmupCommand $command)
@@ -134,10 +135,12 @@ class CacheWarmupCommandInProcessTest extends TestCase
                         // Deliberately skips the parent constructor: no kernel is involved
                     }
 
-                    public function warmUp(): void
+                    public function warmUp(): int
                     {
                         // Simulates SIGINT delivered while the warmup loop is running
                         $this->command->handleSignal(SIGINT);
+
+                        return 0;
                     }
                 };
             }
@@ -148,5 +151,40 @@ class CacheWarmupCommandInProcessTest extends TestCase
 
         $this->assertSame(128 + SIGINT, $exitCode);
         $this->assertStringContainsString('interrupted by a signal', $tester->getDisplay());
+    }
+
+    public function testWarmupWithErrorsReturnsFailureAndPassesFailFast(): void
+    {
+        $command = new class extends CacheWarmupCommand {
+            public ?bool $failFast = null;
+
+            protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
+            {
+                // No-op: kernel is not needed, warmup below is simulated
+            }
+
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
+            {
+                $this->failFast = $failFast;
+
+                return new class extends CacheWarmer {
+                    public function __construct()
+                    {
+                        // Deliberately skips the parent constructor: no kernel is involved
+                    }
+
+                    public function warmUp(): int
+                    {
+                        // Simulates a warmup where one file failed to weave
+                        return 1;
+                    }
+                };
+            }
+        };
+
+        $tester = new CommandTester($command);
+
+        $this->assertSame(Command::FAILURE, $tester->execute(['loader' => 'unused.php', '--fail-fast' => true]));
+        $this->assertTrue($command->failFast);
     }
 }

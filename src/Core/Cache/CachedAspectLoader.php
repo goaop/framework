@@ -19,6 +19,7 @@ use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoaderInterface;
+use Go\Instrument\PathResolver;
 use ReflectionClass;
 
 /**
@@ -104,22 +105,19 @@ class CachedAspectLoader implements AspectLoaderInterface
         }
 
         // With a prebuilt cache an existing advisor cache file is trusted without any
-        // freshness checks; on a corrupt/incompatible/empty file fall back to the direct
+        // freshness checks; on a missing or incompatible file fall back to the direct
         // loader WITHOUT writing (the file system may be read-only).
-        if ($this->isPrebuiltCache && file_exists($cacheFileName)) {
-            $loadedItems = $this->loadFromCache($cacheFileName);
-            if ($loadedItems !== []) {
-                return $loadedItems;
-            }
+        if ($this->isPrebuiltCache) {
+            $loadedItems = file_exists($cacheFileName) ? $this->loadFromCache($cacheFileName) : null;
 
-            return $this->loader->load($aspect);
+            return $loadedItems ?? $this->loader->load($aspect);
         }
 
-        // A fresh cache file is used only when it yields a usable result; a corrupt or
-        // wrong-version file is rebuilt through the direct loader and rewritten below
+        // A fresh cache file is used when it is compatible, even when it holds no items (an aspect
+        // with pointcuts only); an incompatible file is rebuilt through the direct loader and rewritten below
         if (file_exists($cacheFileName) && filemtime($cacheFileName) >= filemtime($aspectFileName)) {
             $loadedItems = $this->loadFromCache($cacheFileName);
-            if ($loadedItems !== []) {
+            if ($loadedItems !== null) {
                 return $loadedItems;
             }
         }
@@ -168,8 +166,8 @@ class CachedAspectLoader implements AspectLoaderInterface
     private function resolveCacheFileName(string $aspectFileName): ?string
     {
         assert($this->cacheDir !== null);
-        $shadowFileName = str_replace($this->appDir, $this->cacheDir, $aspectFileName);
-        if ($shadowFileName === $aspectFileName) {
+        $shadowFileName = PathResolver::rebase($aspectFileName, $this->appDir, $this->cacheDir);
+        if ($shadowFileName === null) {
             return null;
         }
 
@@ -187,9 +185,9 @@ class CachedAspectLoader implements AspectLoaderInterface
      * cache writes are atomic, so a broken cache file means external interference and
      * deserves a clear failure instead of silent degradation.
      *
-     * @return array<string, Pointcut|Advisor> Loaded items, or [] when the file is incompatible
+     * @return array<string, Pointcut|Advisor>|null Loaded items (possibly none), or null when the file is incompatible
      */
-    private function loadFromCache(string $fileName): array
+    private function loadFromCache(string $fileName): ?array
     {
         $cacheData = (static fn(): mixed => include $fileName)();
 
@@ -199,16 +197,19 @@ class CachedAspectLoader implements AspectLoaderInterface
             || ($cacheData['version'] ?? null) !== AdvisorCacheCompiler::VERSION
             || !is_array($cacheData['advisors'] ?? null)
         ) {
-            return [];
+            return null;
         }
 
-        /** @var array<string, Pointcut|Advisor> $filtered */
-        $filtered = array_filter(
-            $cacheData['advisors'],
-            fn($item) => $item instanceof Pointcut || $item instanceof Advisor,
-        );
+        // A single invalid entry makes the whole payload incompatible: using the valid rest would lose advices
+        $items = [];
+        foreach ($cacheData['advisors'] as $itemId => $item) {
+            if (!is_string($itemId) || !($item instanceof Pointcut || $item instanceof Advisor)) {
+                return null;
+            }
+            $items[$itemId] = $item;
+        }
 
-        return $filtered;
+        return $items;
     }
 
     /**

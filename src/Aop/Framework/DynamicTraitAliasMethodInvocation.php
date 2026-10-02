@@ -83,6 +83,11 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
         );
     }
 
+    /**
+     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
+     */
     final public function __invoke(object $instance, array $arguments = [], array $variadicArguments = []): mixed
     {
         if ($this->level > 0) {
@@ -110,6 +115,10 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
 
     /**
      * @return V Covariant, always mixed
+     *
+     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
      */
     public function proceed(): mixed
     {

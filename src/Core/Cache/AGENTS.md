@@ -15,6 +15,6 @@
 - `use` block: single unambiguous short names imported, collisions stay FQ inline, global (single-part) names never imported (namespace-less file)
 
 ## Error handling — throw, never warn (maintainer rule: no catch + trigger_error)
-- loadFromCache: bare include (scope-isolated static closure); a corrupt/not-includable file THROWS (ParseError etc.) — writes are atomic, so corruption means external interference; clean version/shape mismatch → silent [] → rebuild (normal) / direct-loader fallback (prebuilt) — the expected upgrade path
+- loadFromCache: bare include (scope-isolated static closure); a corrupt/not-includable file THROWS (ParseError etc.) — writes are atomic, so corruption means external interference; returns ?array: null = miss/incompatible, [] = valid empty result (aspect with pointcuts only, never rewritten); clean version/shape mismatch or ANY invalid entry (non-string id, not Pointcut/Advisor) → null → rebuild (normal) / direct-loader fallback (prebuilt) — the expected upgrade path; never filter a payload partially
 - saveToCache: NotCompilableException PROPAGATES (no file written, never a half file) — such an aspect cannot run with the advisor cache enabled
-- PREBUILT_CACHE: existing file trusted without freshness checks; wrong version/shape → direct loader, NEVER writes (read-only FS safe); a corrupt file still throws
+- PREBUILT_CACHE: existing file trusted without freshness checks; missing file or wrong version/shape → direct loader, NEVER writes (read-only FS safe); a corrupt file still throws

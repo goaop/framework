@@ -15,12 +15,19 @@ namespace Go\Instrument\ClassLoading;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
+use Go\Instrument\Transformer\SourceTransformer;
+use Go\Instrument\Transformer\StreamMetaData;
+use Go\Instrument\Transformer\TransformerResultEnum;
+use Go\PhpUnit\UsesTemporaryDirectory;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Console\Output\StreamOutput;
 
 // Separate processes: warming up registers the process-wide source transforming
 // stream filter, which must not leak into the rest of the PHPUnit process
@@ -28,21 +35,18 @@ use Symfony\Component\Console\Output\BufferedOutput;
 #[AllowMockObjectsWithoutExpectations]
 class CacheWarmerTest extends TestCase
 {
+    use UsesTemporaryDirectory;
+
     private string $appDir;
     private string $cacheDir;
     private string $sourceFile;
 
     protected function setUp(): void
     {
-        $this->appDir   = sys_get_temp_dir() . '/goaop-warmer-app';
-        $this->cacheDir = sys_get_temp_dir() . '/goaop-warmer-cache';
-        foreach ([$this->appDir . '/src', $this->cacheDir] as $directory) {
-            if (!is_dir($directory)) {
-                mkdir($directory, 0777, true);
-            }
-        }
-        $this->appDir   = (string) realpath($this->appDir);
-        $this->cacheDir = (string) realpath($this->cacheDir);
+        // Real directories: warming up includes woven sources through the stream filter
+        $this->appDir   = self::createTemporaryDirectory('warmer-app');
+        $this->cacheDir = self::createTemporaryDirectory('warmer-cache');
+        mkdir($this->appDir . '/src');
 
         $this->sourceFile = $this->appDir . '/src/Some.php';
         file_put_contents($this->sourceFile, "<?php echo 'original';\n");
@@ -50,26 +54,19 @@ class CacheWarmerTest extends TestCase
 
     protected function tearDown(): void
     {
-        // Deletes only the exact files this test writes, never a glob/recursive sweep
-        $this->assertStringStartsWith(sys_get_temp_dir() . '/goaop-warmer-', $this->cacheDir);
-        foreach ([$this->cacheDir . '/src/Some.php', $this->sourceFile] as $knownFile) {
-            if (is_file($knownFile)) {
-                unlink($knownFile);
-            }
-        }
-        @rmdir($this->cacheDir . '/src');
-        @rmdir($this->cacheDir);
-        @rmdir($this->appDir . '/src');
-        @rmdir($this->appDir);
+        self::removeTemporaryDirectory($this->cacheDir);
+        self::removeTemporaryDirectory($this->appDir);
     }
 
     /**
      * Creates a kernel mock wired to a container mock, mirroring what the cache
      * warmer receives from a real aspect kernel
      *
+     * @param list<SourceTransformer> $transformers
+     *
      * @return AspectKernel&MockObject
      */
-    private function createKernel(?string $cacheDir): AspectKernel
+    private function createKernel(?string $cacheDir, array $transformers = []): AspectKernel
     {
         $kernel = $this->createMock(AspectKernel::class);
         $kernel->method('getOptions')->willReturn([
@@ -88,8 +85,8 @@ class CacheWarmerTest extends TestCase
             [AspectKernel::class, $kernel],
             [CachePathManager::class, new CachePathManager($kernel)],
         ]);
-        // No transformers: streamed files pass through the filter untransformed
-        $container->method('getServicesByInterface')->willReturn([]);
+        // Without transformers, streamed files pass through the filter untransformed
+        $container->method('getServicesByInterface')->willReturn($transformers);
         $kernel->method('getContainer')->willReturn($container);
 
         return $kernel;
@@ -130,5 +127,106 @@ class CacheWarmerTest extends TestCase
         $this->assertStringContainsString('[STOP]: Warmup was interrupted, stopping...', $display);
         $this->assertStringNotContainsString('[OK]', $display);
         $this->assertStringContainsString('[DONE]: Total processed 0, 0 errors.', $display);
+    }
+
+    /**
+     * Fails files containing `broken`, raises a warning for `warning` and a silenced one for `silenced`
+     */
+    private function createFailingTransformer(): SourceTransformer
+    {
+        return new class implements SourceTransformer {
+            public function transform(StreamMetaData $metadata): TransformerResultEnum
+            {
+                if (str_contains($metadata->source, 'broken')) {
+                    throw new RuntimeException('Cannot weave <broken> file');
+                }
+                if (str_contains($metadata->source, 'warning')) {
+                    trigger_error('Weaving warning', E_USER_WARNING);
+                }
+                if (str_contains($metadata->source, 'silenced')) {
+                    @trigger_error('Silenced warning', E_USER_WARNING);
+                }
+
+                return TransformerResultEnum::RESULT_ABSTAIN;
+            }
+        };
+    }
+
+    private function createMemoryOutput(): StreamOutput
+    {
+        $stream = fopen('php://memory', 'w+');
+        assert($stream !== false);
+
+        return new StreamOutput($stream);
+    }
+
+    /**
+     * Console output writing both standard and error output to memory, to inspect them separately
+     */
+    private function createConsoleOutput(StreamOutput $errorOutput): ConsoleOutput
+    {
+        $output = new ConsoleOutput();
+        $outputStream = new \ReflectionProperty(StreamOutput::class, 'stream');
+        $outputStream->setValue($output, $this->createMemoryOutput()->getStream());
+        $output->setErrorOutput($errorOutput);
+
+        return $output;
+    }
+
+    private function readStream(StreamOutput $output): string
+    {
+        rewind($output->getStream());
+
+        return (string) stream_get_contents($output->getStream());
+    }
+
+    public function testWarmUpReportsErrorsToErrorOutputAndReturnsTheirCount(): void
+    {
+        file_put_contents($this->appDir . '/src/Broken.php', "<?php // broken\n");
+        file_put_contents($this->appDir . '/src/Warning.php', "<?php // warning\n");
+        file_put_contents($this->appDir . '/src/Silenced.php', "<?php // silenced\n");
+
+        $errorOutput = $this->createMemoryOutput();
+        $output      = $this->createConsoleOutput($errorOutput);
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir, [$this->createFailingTransformer()]), $output);
+
+        $previousHandler = static fn(): bool => false;
+        set_error_handler($previousHandler);
+        // PHPUnit lowers error_reporting() while a test runs, the warmer honours the application's level
+        $previousLevel = error_reporting(E_ALL);
+        try {
+            $errors = $warmer->warmUp();
+        } finally {
+            error_reporting($previousLevel);
+            $currentHandler = set_error_handler(null);
+            restore_error_handler();
+            restore_error_handler();
+        }
+
+        $this->assertSame(2, $errors);
+        $this->assertSame($previousHandler, $currentHandler, 'The warmer must restore the previous error handler');
+
+        $errorDisplay = $this->readStream($errorOutput);
+        $this->assertStringContainsString('Broken.php: Cannot weave <broken> file', $errorDisplay);
+        $this->assertStringContainsString('Warning.php: Weaving warning', $errorDisplay);
+        $this->assertStringNotContainsString('Silenced', $errorDisplay);
+
+        $display = $this->readStream($output);
+        $this->assertStringContainsString('Silenced.php', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 4, 2 errors.', $display);
+    }
+
+    public function testFailFastStopsAfterFirstError(): void
+    {
+        // Two broken files: whichever comes first, the warmer stops before the second one
+        file_put_contents($this->appDir . '/src/Broken.php', "<?php // broken\n");
+        file_put_contents($this->appDir . '/src/AlsoBroken.php', "<?php // broken\n");
+
+        $output = new BufferedOutput();
+        $kernel = $this->createKernel($this->cacheDir, [$this->createFailingTransformer()]);
+        $warmer = new CacheWarmer($kernel, $output, failFast: true);
+
+        $this->assertSame(1, $warmer->warmUp());
+        $this->assertStringContainsString('1 errors.', $output->fetch());
     }
 }

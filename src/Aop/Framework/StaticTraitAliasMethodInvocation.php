@@ -77,6 +77,10 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
      * @param list<mixed>             $variadicArguments  Additional list of variadic arguments
      *
      * @return V Templated return type (mixed by default)
+     *
+     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
      */
     final public function __invoke(string $scope, array $arguments = [], array $variadicArguments = []): mixed
     {
@@ -105,6 +109,10 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
 
     /**
      * @return V Covariant, always mixed
+     *
+     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
      */
     public function proceed(): mixed
     {

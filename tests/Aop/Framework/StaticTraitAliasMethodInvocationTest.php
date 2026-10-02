@@ -197,4 +197,24 @@ class StaticTraitAliasMethodInvocationTest extends TestCase
         // @phpstan-ignore method.impossibleType ($value is set to null by reference inside the invocation)
         $this->assertNull($value);
     }
+
+    public function testNestedInvocationFromAdviceRestoresOuterState(): void
+    {
+        $observed = [];
+        $around   = new AroundInterceptor(static function (StaticTraitAliasMethodInvocation $invocation) use (&$observed): mixed {
+            if ($invocation->getArguments() === ['out', 'er']) {
+                // The advice calls the same static method again through the shared joinpoint
+                $observed['nested'] = $invocation(TraitAliasProxy::class, ['in', 'ner']);
+                $observed['args']   = $invocation->getArguments();
+                $observed['scope']  = $invocation->getScope();
+            }
+
+            return $invocation->proceed();
+        });
+        $callable   = TraitAliasProxy::getStaticCallableFor('staticVariadicArgsTest');
+        $invocation = new StaticTraitAliasMethodInvocation([$around], TraitAliasProxy::class, 'staticVariadicArgsTest', $callable);
+
+        $this->assertSame('outer', $invocation(TraitAliasProxy::class, ['out', 'er']));
+        $this->assertSame(['nested' => 'inner', 'args' => ['out', 'er'], 'scope' => TraitAliasProxy::class], $observed);
+    }
 }

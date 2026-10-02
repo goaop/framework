@@ -345,9 +345,13 @@ class WeavingTransformerTest extends TestCase
         // The woven trait source, without the include_once tail (the proxy is included manually)
         $traitSource = preg_replace('/^include_once AOP_CACHE_DIR.*$/m', '', $metadata->source);
 
-        $tempDir   = sys_get_temp_dir();
-        $traitFile = tempnam($tempDir, 'aop_enum_trait_');
-        $proxyFile = tempnam($tempDir, 'aop_enum_proxy_');
+        // The virtual file system supports include, so the woven code runs without touching the disk
+        $runtimeDir = static::$fileSystem->path('/runtime');
+        if (!is_dir($runtimeDir)) {
+            mkdir($runtimeDir, 0777, true);
+        }
+        $traitFile = $runtimeDir . '/aop_enum_trait.php';
+        $proxyFile = $runtimeDir . '/aop_enum_proxy.php';
         try {
             file_put_contents($traitFile, $traitSource);
             file_put_contents($proxyFile, $proxyContent);
