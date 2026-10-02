@@ -167,7 +167,7 @@ that relied on that inheritance layer:
 
 - The proxy has no renamed parent class any more. `get_parent_class()`, `parent::` inside the
   class and `instanceof` checks see the original parent.
-- `AspectContainer::AOP_PROXIED_SUFFIX` is deprecated: use `ORIGINAL_TRAIT_SUFFIX` (`'OriginalTrait'`) or
+- `AspectContainer::AOP_PROXIED_SUFFIX` is removed: use `ORIGINAL_TRAIT_SUFFIX` (`'OriginalTrait'`) or
   `ORIGINAL_TRAIT_FILE_SUFFIX` (`'OriginalTrait.php'`).
 - `AbstractMethodInvocation::TRAIT_ALIAS_PREFIX` is replaced by `TRAIT_ALIAS_SUFFIX`
   (`'OriginalAlias'`).
@@ -187,7 +187,7 @@ Renamed enums and constants
 | `TransformerResultEnum::RESULT_ABSTAIN`       | `TransformerResult::Abstain` |
 | `TransformerResultEnum::RESULT_ABORTED`       | `TransformerResult::Aborted` |
 | `FieldAccessType::READ` / `WRITE`             | `FieldAccessType::Read` / `Write` |
-| `AspectContainer::AOP_PROXIED_SUFFIX`         | `AspectContainer::ORIGINAL_TRAIT_SUFFIX` (old name deprecated) |
+| `AspectContainer::AOP_PROXIED_SUFFIX`         | `AspectContainer::ORIGINAL_TRAIT_SUFFIX` |
 
 The `Go\Proxy\Generator` enums (`Visibility`, `PropertyModifier`, `ClassModifier`) use PascalCase cases as well.
 Custom source transformers return `TransformerResult` cases, and advices comparing `getAccessType()` use the new

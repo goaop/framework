@@ -71,12 +71,6 @@ interface AspectContainer
     public const string ORIGINAL_TRAIT_FILE_SUFFIX = self::ORIGINAL_TRAIT_SUFFIX . '.php';
 
     /**
-     * @deprecated since 4.0, use {@see ORIGINAL_TRAIT_SUFFIX}
-     */
-    #[\Deprecated('use AspectContainer::ORIGINAL_TRAIT_SUFFIX', since: '4.0')]
-    public const string AOP_PROXIED_SUFFIX = self::ORIGINAL_TRAIT_SUFFIX;
-
-    /**
      * Returns a service from the container.
      *
      * Services registered via addLazyService() are returned as typed, instanceof-correct
