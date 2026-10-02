@@ -19,6 +19,7 @@ use Go\Aop\Intercept\Interceptor;
  * Static initialization joinpoint is invoked after class is loaded into memory
  *
  * @template T of object = object
+ * @extends AbstractJoinpoint<array{class-string<T>, int}>
  * @implements ClassJoinpoint<T>
  */
 class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJoinpoint
@@ -58,12 +59,32 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
      */
     final public function __invoke(?string $scope = null): void
     {
-        if ($scope !== null) {
-            $this->scope = $scope;
+        $this->enterFrame();
+        try {
+            if ($scope !== null) {
+                $this->scope = $scope;
+            }
+            $this->current = 0;
+            $this->proceed();
+        } finally {
+            $this->leaveFrame();
         }
-        $this->current = 0;
-        $this->proceed();
     }
+
+    protected function saveFrame(): array
+    {
+        return [$this->scope, $this->current];
+    }
+
+    protected function restoreFrame(array $frame): void
+    {
+        [$this->scope, $this->current] = $frame;
+    }
+
+    /**
+     * The scope is kept: it is the class this joinpoint was created for unless a runtime scope overrides it
+     */
+    protected function releaseFrame(): void {}
 
     /**
      * @return null Covariance, always null for static initialization

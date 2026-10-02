@@ -35,6 +35,11 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 | ClassFieldAccess                  | FieldAccess             | Property interception via native get/set hooks on proxied properties                                                   |
 | StaticInitializationJoinpoint     | ClassJoinpoint          | Fired once after proxy class loaded via injectJoinPoints()                                                             |
 
+Joinpoint objects are shared by every call of their member (`static $__joinPoint`), so every `__invoke()` runs between
+`AbstractJoinpoint::enterFrame()` and `leaveFrame()` (in `finally`): a nested call of the same joinpoint saves the outer
+call state (`saveFrame()`/`restoreFrame()`, typed by the `TFrame` template), and the outermost call ends with
+`releaseFrame()`. New joinpoint types must implement the three hooks; never keep per-call state outside them.
+
 ## Advice wiring (src/Aop/Framework/)
 - The — proxy-code accessor: aspect(X::class) fetches aspect from container; advice('advisorId') resolves container-backed closure advice (unwraps Advisor/AbstractInterceptor to raw Closure)
 - Interceptor — @internal factory facade with TWO construction modes: before()/after()/around()/afterThrowing(class-string<Aspect>|Closure, ?string $methodName=null, int $order=0, string $expression=''). With aspect class + method name it returns a native PHP 8.4 lazy proxy (via Go\Core\NativeLazyProxy::create) — interceptor construction, The::aspect() resolution and FCC creation all defer until first real use (invocation/ordering), so unmatched advices never instantiate their aspect; ONLY compiled advisor cache files use this lazy form. A ready Closure constructs eagerly, and generated PROXY classes deliberately use the eager `The::aspect(X::class)->method(...)` FCC form (InterceptorListGenerator): the proxy method/hook is already executing, so the interceptor is needed right now and a lazy detour would be pure overhead; The::advice('<id>') stays eager too. Free to change between releases

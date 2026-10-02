@@ -33,20 +33,11 @@ use ReflectionMethod;
  *
  * @template T of object = object Declares the instance type of the method invocation.
  * @template V = mixed Declares the generic return type of the method invocation.
- * @extends AbstractMethodInvocation<T, V>
+ * @extends AbstractMethodInvocation<T, V, array{list<mixed>, T, int}>
  * @implements DynamicMethodInvocation<T, V>
- *
- * @phpstan-type DynamicMethodInvocationFrame array{list<mixed>, T, int}
  */
 final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation implements DynamicMethodInvocation
 {
-    /**
-     * Stack frames to work with recursive calls or with cross-calls inside object
-     *
-     * @var array<int, DynamicMethodInvocationFrame>
-     */
-    private array $stackFrames = [];
-
     /**
      * @phpstan-var T Instance of object for invoking
      */
@@ -85,27 +76,34 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
 
     final public function __invoke(object $instance, array $arguments = [], array $variadicArguments = []): mixed
     {
-        if ($this->level > 0) {
-            $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
-        }
         if ($variadicArguments !== []) {
             $arguments = [...$arguments, ...$variadicArguments];
         }
+        $this->enterFrame();
         try {
-            ++$this->level;
             $this->current   = 0;
             $this->arguments = $arguments;
             $this->instance  = $instance;
             return $this->proceed();
         } finally {
-            --$this->level;
-            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
-                [$this->arguments, $this->instance, $this->current] = $stackFrame;
-            } else {
-                unset($this->instance);
-                $this->arguments = [];
-            }
+            $this->leaveFrame();
         }
+    }
+
+    protected function saveFrame(): array
+    {
+        return [$this->arguments, $this->instance, $this->current];
+    }
+
+    protected function restoreFrame(array $frame): void
+    {
+        [$this->arguments, $this->instance, $this->current] = $frame;
+    }
+
+    protected function releaseFrame(): void
+    {
+        unset($this->instance);
+        $this->arguments = [];
     }
 
     /**

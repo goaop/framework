@@ -31,10 +31,8 @@ use Go\Aop\Intercept\StaticMethodInvocation;
  *
  * @template T of object = object Declares the instance type of the method invocation.
  * @template V = mixed Declares the generic return type of the method invocation.
- * @extends AbstractMethodInvocation<T, V>
+ * @extends AbstractMethodInvocation<T, V, array{list<mixed>, class-string<T>, int}>
  * @implements StaticMethodInvocation<T, V>
- *
- * @phpstan-type StaticMethodInvocationFrame array{list<mixed>, class-string<T>, int}
  */
 final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation implements StaticMethodInvocation
 {
@@ -42,13 +40,6 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
      * @var class-string<T> Class name scope for static invocation
      */
     private string $scope;
-
-    /**
-     * Stack frames to work with recursive calls or with cross-calls inside object
-     *
-     * @var array<int, StaticMethodInvocationFrame>
-     */
-    private array $stackFrames = [];
 
     /**
      * Constructor for static method invocation.
@@ -80,27 +71,34 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
      */
     final public function __invoke(string $scope, array $arguments = [], array $variadicArguments = []): mixed
     {
-        if ($this->level > 0) {
-            $this->stackFrames[] = [$this->arguments, $this->scope, $this->current];
-        }
         if ($variadicArguments !== []) {
             $arguments = [...$arguments, ...$variadicArguments];
         }
+        $this->enterFrame();
         try {
-            ++$this->level;
             $this->current   = 0;
             $this->arguments = $arguments;
             $this->scope     = $scope;
             return $this->proceed();
         } finally {
-            --$this->level;
-            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
-                [$this->arguments, $this->scope, $this->current] = $stackFrame;
-            } else {
-                unset($this->scope);
-                $this->arguments = [];
-            }
+            $this->leaveFrame();
         }
+    }
+
+    protected function saveFrame(): array
+    {
+        return [$this->arguments, $this->scope, $this->current];
+    }
+
+    protected function restoreFrame(array $frame): void
+    {
+        [$this->arguments, $this->scope, $this->current] = $frame;
+    }
+
+    protected function releaseFrame(): void
+    {
+        unset($this->scope);
+        $this->arguments = [];
     }
 
     /**

@@ -132,4 +132,48 @@ class ClassFieldAccessTest extends TestCase
         $this->assertSame('intercepted', $result);
         $this->assertSame([FieldAccessType::READ], $calls);
     }
+
+    public function testNestedAccessFromAdviceRestoresOuterState(): void
+    {
+        $other    = new self('other');
+        $observed = [];
+        $around   = new AroundInterceptor(function (ClassFieldAccess $access) use (&$observed, $other): mixed {
+            if ($access->getThis() === $this) {
+                // The advice reads the same property of another object through the shared joinpoint
+                $otherValue = 'other value';
+                $observed['nested'] = $access->__invoke($other, FieldAccessType::READ, $otherValue);
+                $observed['this']   = $access->getThis() === $this;
+                $observed['value']  = $access->getValue();
+            }
+
+            return $access->proceed();
+        });
+        $fieldAccess = new ClassFieldAccess([$around], self::class, 'classField');
+
+        $value  = 'outer value';
+        $result = $fieldAccess->__invoke($this, FieldAccessType::READ, $value);
+
+        $this->assertSame('outer value', $result);
+        $this->assertSame(['nested' => 'other value', 'this' => true, 'value' => 'outer value'], $observed);
+    }
+
+    public function testNestedWriteFromAdviceKeepsOuterValueReference(): void
+    {
+        $other       = new self('other');
+        $around      = new AroundInterceptor(function (ClassFieldAccess $access) use ($other): mixed {
+            if ($access->getThis() === $this) {
+                $otherNewValue = 'other new value';
+                $access->__invoke($other, FieldAccessType::WRITE, $otherNewValue);
+            }
+
+            return $access->proceed();
+        });
+        $fieldAccess = new ClassFieldAccess([$around], self::class, 'classField');
+
+        $newValue = 'outer new value';
+        $result   = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $newValue);
+
+        $this->assertSame('outer new value', $result);
+        $this->assertSame('outer new value', $fieldAccess->getValueToSet());
+    }
 }

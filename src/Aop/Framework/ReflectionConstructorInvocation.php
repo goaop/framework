@@ -21,6 +21,7 @@ use ReflectionMethod;
  * Reflection constructor invocation implementation
  *
  * @template T of object = object
+ * @extends AbstractInvocation<array{list<mixed>, T|null, int}>
  * @implements ConstructorInvocation<T>
  */
 final class ReflectionConstructorInvocation extends AbstractInvocation implements ConstructorInvocation
@@ -69,12 +70,15 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
             return $result;
         }
 
-        $this->instance = $this->class->newInstanceWithoutConstructor();
+        // A nested `new` of the same class inside the constructor replaces $this->instance until it returns,
+        // so the created object is kept locally
+        $instance       = $this->class->newInstanceWithoutConstructor();
+        $this->instance = $instance;
 
         // Null-safe invocation of constructor with constructor arguments
-        $this->getConstructor()?->invoke($this->instance, ...$this->arguments);
+        $this->getConstructor()?->invoke($instance, ...$this->arguments);
 
-        return $this->instance;
+        return $instance;
     }
 
     public function getConstructor(): ?ReflectionMethod
@@ -100,10 +104,32 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      */
     final public function __invoke(array $arguments = []): object
     {
-        $this->current   = 0;
-        $this->arguments = $arguments;
+        $this->enterFrame();
+        try {
+            $this->current   = 0;
+            $this->arguments = $arguments;
+            $this->instance  = null;
 
-        return $this->proceed();
+            return $this->proceed();
+        } finally {
+            $this->leaveFrame();
+        }
+    }
+
+    protected function saveFrame(): array
+    {
+        return [$this->arguments, $this->instance, $this->current];
+    }
+
+    protected function restoreFrame(array $frame): void
+    {
+        [$this->arguments, $this->instance, $this->current] = $frame;
+    }
+
+    protected function releaseFrame(): void
+    {
+        $this->instance  = null;
+        $this->arguments = [];
     }
 
     /**

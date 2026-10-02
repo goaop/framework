@@ -16,7 +16,7 @@ class AbstractMethodInvocationTest extends TestCase
     {
         $this->invocation = $this->getMockBuilder(AbstractMethodInvocation::class)
             ->setConstructorArgs([[], self::class, __FUNCTION__, static fn() => null])
-            ->onlyMethods(['proceed', 'isDynamic', 'getThis', 'getScope'])
+            ->onlyMethods(['proceed', 'isDynamic', 'getThis', 'getScope', 'saveFrame', 'restoreFrame', 'releaseFrame'])
             ->getMock();
     }
 
@@ -32,6 +32,8 @@ class AbstractMethodInvocationTest extends TestCase
     public function testInstanceIsInitialized(): void
     {
         $o = new class extends AbstractMethodInvocation {
+            use StatelessFramesTrait;
+
             public function __construct()
             {
                 parent::__construct([new AroundInterceptor(function () {})], AbstractMethodInvocationTest::class, 'testInstanceIsInitialized', static fn() => null);
@@ -65,6 +67,8 @@ class AbstractMethodInvocationTest extends TestCase
     public function testToStringForInstanceMethodUsesArrowNotation(): void
     {
         $o = new class extends AbstractMethodInvocation {
+            use StatelessFramesTrait;
+
             public function __construct()
             {
                 parent::__construct([], AbstractMethodInvocationTest::class, 'testToStringForInstanceMethodUsesArrowNotation', static fn() => null);
@@ -100,6 +104,8 @@ class AbstractMethodInvocationTest extends TestCase
     public function testToStringForStaticMethodUsesDoubleColonNotation(): void
     {
         $o = new class extends AbstractMethodInvocation {
+            use StatelessFramesTrait;
+
             public function __construct()
             {
                 parent::__construct([], StaticHelperForAbstractMethodInvocationTest::class, 'staticMethod', static fn() => null);

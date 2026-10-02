@@ -22,6 +22,8 @@ use ReflectionMethod;
  *
  * @template T of object Declares the instance type of the method invocation.
  * @template V Declares the generic return type of the method invocation.
+ * @template TFrame of array<mixed> = array<mixed>
+ * @extends AbstractInvocation<TFrame>
  * @implements MethodInvocation<T, V>
  */
 abstract class AbstractMethodInvocation extends AbstractInvocation implements MethodInvocation

@@ -23,6 +23,7 @@ use ReflectionProperty;
  *
  * @template T of object = object
  * @template V of mixed = mixed
+ * @extends AbstractJoinpoint<array{instance: T, accessType: FieldAccessType, current: int, value?: V, newValue?: V}>
  * @implements FieldAccess<T,V>
  */
 final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
@@ -144,27 +145,67 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     final public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed
     {
-        $this->current    = 0;
-        $this->instance   = $instance;
-        $this->accessType = $accessType;
-        unset($this->value, $this->newValue);
+        $this->enterFrame();
+        try {
+            $this->current    = 0;
+            $this->instance   = $instance;
+            $this->accessType = $accessType;
+            unset($this->value, $this->newValue);
 
-        // $values[0] - either we have a reference to the original property for READ
-        // OR reference to the new value for WRITE.
-        // Can be unset only for READ operation when property is not initialized yet
-        if (isset($values[0])) {
-            $this->{self::$propertyMap[$accessType->name]} = &$values[0];
+            // $values[0] - either we have a reference to the original property for READ
+            // OR reference to the new value for WRITE.
+            // Can be unset only for READ operation when property is not initialized yet
+            if (isset($values[0])) {
+                $this->{self::$propertyMap[$accessType->name]} = &$values[0];
+            }
+            // $values[1] - either we have a reference to the original property for WRITE
+            // OR can be unset for WRITE operation when property is not initialized yet
+            if (isset($values[1])) {
+                $this->value = &$values[1];
+            }
+
+            $this->{self::$propertyMap[$accessType->name]} = $this->proceed();
+
+            return $this->{self::$propertyMap[$accessType->name]};
+        } finally {
+            $this->leaveFrame();
         }
-        // $values[1] - either we have a reference to the original property for WRITE
-        // OR can be unset for WRITE operation when property is not initialized yet
-        if (isset($values[1])) {
-            $this->value = &$values[1];
-        }
-
-        $this->{self::$propertyMap[$accessType->name]} = $this->proceed();
-
-        return $this->{self::$propertyMap[$accessType->name]};
     }
+
+    /**
+     * Keeps the value references of the outer call, an uninitialized value stays uninitialized
+     */
+    protected function saveFrame(): array
+    {
+        $frame = ['instance' => $this->instance, 'accessType' => $this->accessType, 'current' => $this->current];
+        if (new ReflectionProperty($this, 'value')->isInitialized($this)) {
+            $frame['value'] = &$this->value;
+        }
+        if (new ReflectionProperty($this, 'newValue')->isInitialized($this)) {
+            $frame['newValue'] = &$this->newValue;
+        }
+
+        return $frame;
+    }
+
+    protected function restoreFrame(array $frame): void
+    {
+        $this->instance   = $frame['instance'];
+        $this->accessType = $frame['accessType'];
+        $this->current    = $frame['current'];
+        unset($this->value, $this->newValue);
+        if (array_key_exists('value', $frame)) {
+            $this->value = &$frame['value'];
+        }
+        if (array_key_exists('newValue', $frame)) {
+            $this->newValue = &$frame['newValue'];
+        }
+    }
+
+    /**
+     * The state of the last access stays readable after it returns
+     */
+    protected function releaseFrame(): void {}
 
     final public function getThis(): object
     {
