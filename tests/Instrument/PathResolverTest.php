@@ -87,4 +87,53 @@ class PathResolverTest extends TestCase
             ['phar://go.phar/some/../relative.file' , 'phar://go.phar/relative.file'],
         ];
     }
+
+    /**
+     * @return array<string, array{string, string, string, string|null}>
+     */
+    public static function rebaseExamples(): array
+    {
+        return [
+            'file below directory'            => ['/app/src/Foo.php', '/app', '/cache', '/cache/src/Foo.php'],
+            'trailing separator on directory' => ['/app/src/Foo.php', '/app/', '/cache/', '/cache/src/Foo.php'],
+            'directory itself'                => ['/app', '/app', '/cache', '/cache'],
+            'nested repeat of directory name' => ['/app/src/app/Foo.php', '/app', '/cache', '/cache/src/app/Foo.php'],
+            'sibling sharing a name prefix'   => ['/var/www-old/Foo.php', '/var/www', '/cache', null],
+            'directory in the middle'         => ['/srv/app/Foo.php', '/app', '/cache', null],
+            'empty directory'                 => ['/app/Foo.php', '', '/cache', null],
+            'file-system root'                => ['/app/Foo.php', '/', '/cache', '/cache/app/Foo.php'],
+            'windows separators'              => ['C:\\app\\Foo.php', 'C:\\app', 'C:\\cache', 'C:\\cache\\Foo.php'],
+            'empty target'                    => ['/app/src/Foo.php', '/app', '', '/src/Foo.php'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('rebaseExamples')]
+    public function testRebaseReplacesOnlyTheLeadingDirectory(
+        string $path,
+        string $fromDirectory,
+        string $toDirectory,
+        ?string $expected,
+    ): void {
+        $this->assertSame($expected, PathResolver::rebase($path, $fromDirectory, $toDirectory));
+        $this->assertSame($expected !== null, PathResolver::isBelow($path, $fromDirectory));
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function suffixExamples(): array
+    {
+        return [
+            'plain file'                => ['/cache/src/Foo.php', '/cache/src/FooOriginalTrait.php'],
+            'directory named like file' => ['/cache/lib.php/Foo.php', '/cache/lib.php/FooOriginalTrait.php'],
+            '.php inside the file name' => ['/cache/Foo.phpBar.php', '/cache/Foo.phpBarOriginalTrait.php'],
+            'no extension'              => ['/cache/Foo', '/cache/FooOriginalTrait'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('suffixExamples')]
+    public function testWithSuffixBeforeExtensionTouchesOnlyTheExtension(string $path, string $expected): void
+    {
+        $this->assertSame($expected, PathResolver::withSuffixBeforeExtension($path, 'OriginalTrait'));
+    }
 }

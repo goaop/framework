@@ -118,4 +118,19 @@ class CachePathManagerTest extends TestCase
         $this->assertSame([], $reader->querySkippedClasses());
         $this->assertNull($reader->queryCacheState($original));
     }
+
+    public function testCachePathReplacesOnlyTheLeadingApplicationDirectory(): void
+    {
+        $manager = $this->createManager();
+
+        // A nested directory repeating the application path keeps its name
+        $nested = self::$appDir . '/vendor' . self::$appDir . '/Foo.php';
+        $this->assertSame(
+            self::$cacheDir . '/vendor' . self::$appDir . '/Foo.php',
+            $manager->getCachePathForResource($nested),
+        );
+        // A sibling sharing the name prefix of the application directory is not below it
+        $sibling = self::$appDir . '-old/Foo.php';
+        $this->assertSame($sibling, $manager->getCachePathForResource($sibling));
+    }
 }

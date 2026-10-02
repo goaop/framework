@@ -19,6 +19,7 @@ use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoaderInterface;
+use Go\Instrument\PathResolver;
 use ReflectionClass;
 
 /**
@@ -168,8 +169,8 @@ class CachedAspectLoader implements AspectLoaderInterface
     private function resolveCacheFileName(string $aspectFileName): ?string
     {
         assert($this->cacheDir !== null);
-        $shadowFileName = str_replace($this->appDir, $this->cacheDir, $aspectFileName);
-        if ($shadowFileName === $aspectFileName) {
+        $shadowFileName = PathResolver::rebase($aspectFileName, $this->appDir, $this->cacheDir);
+        if ($shadowFileName === null) {
             return null;
         }
 

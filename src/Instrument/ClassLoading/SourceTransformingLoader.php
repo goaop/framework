@@ -288,7 +288,7 @@ class SourceTransformingLoader extends PhpStreamFilter
             if (!str_ends_with($cacheUri, AspectContainer::AOP_PROXIED_SUFFIX . '.php')
                 && preg_match($originalBodyTrait, $transformedSource) === 1
             ) {
-                $cacheUri = str_replace('.php', AspectContainer::AOP_PROXIED_SUFFIX . '.php', $cacheUri);
+                $cacheUri = PathResolver::withSuffixBeforeExtension($cacheUri, AspectContainer::AOP_PROXIED_SUFFIX);
             }
             // Atomic write: a concurrent request including this file never sees a partial source
             self::$cachePathManager->getCacheFileWriter()->write($cacheUri, $transformedSource);

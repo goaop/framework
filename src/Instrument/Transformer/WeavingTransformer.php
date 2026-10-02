@@ -21,6 +21,7 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoaderInterface;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionFile;
 use Go\ParserReflection\ReflectionFileNamespace;
@@ -1001,7 +1002,8 @@ class WeavingTransformer extends BaseSourceTransformer
         if ($classFileName === false) {
             return '';
         }
-        $relativePath      = str_replace($this->options['appDir'] . DIRECTORY_SEPARATOR, '', $classFileName);
+        // Classes outside the application root keep their absolute path below the cache root
+        $relativePath      = ltrim(PathResolver::rebase($classFileName, $this->options['appDir'], '') ?? $classFileName, '/\\');
         $proxyRelativePath = str_replace('\\', '/', $relativePath);
         $proxyFileName     = $cacheRootDir . '/' . $proxyRelativePath;
 
