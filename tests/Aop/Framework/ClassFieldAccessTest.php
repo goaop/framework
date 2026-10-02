@@ -170,10 +170,12 @@ class ClassFieldAccessTest extends TestCase
         });
         $fieldAccess = new ClassFieldAccess([$around], self::class, 'classField');
 
-        $newValue = 'outer new value';
-        $result   = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $newValue);
+        $newValue      = 'outer new value';
+        $originalValue = 'outer original value';
+        $result        = $fieldAccess->__invoke($this, FieldAccessType::WRITE, $newValue, $originalValue);
 
         $this->assertSame('outer new value', $result);
         $this->assertSame('outer new value', $fieldAccess->getValueToSet());
+        $this->assertSame('outer original value', $fieldAccess->getValue());
     }
 }
