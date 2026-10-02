@@ -19,7 +19,7 @@ use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
-use Go\Instrument\Transformer\TransformerResultEnum;
+use Go\Instrument\Transformer\TransformerResult;
 use php_user_filter as PhpStreamFilter;
 use RuntimeException;
 
@@ -148,7 +148,7 @@ class SourceTransformingLoader extends PhpStreamFilter
             $cacheUri    = self::$cachePathManager?->getCachePathForResource($originalUri);
 
             // Guard to disable overwriting of original files or when cache is unavailable:
-            // the source passes through untouched (previously RESULT_ABORTED in the wrapper)
+            // the source passes through untouched (previously an aborted result in the wrapper)
             if ($cacheUri === null || $cacheUri === $originalUri) {
                 stream_bucket_append($out, stream_bucket_new($this->stream, $this->data));
 
@@ -168,7 +168,7 @@ class SourceTransformingLoader extends PhpStreamFilter
             $metadata = new StreamMetaData($this->stream, $this->data);
             $result   = self::transformCode($metadata);
             // An aborted chain reverts every change: the original source is served and recorded as untransformed
-            $source   = $result === TransformerResultEnum::RESULT_ABORTED ? $this->data : $metadata->source;
+            $source   = $result === TransformerResult::Aborted ? $this->data : $metadata->source;
             self::saveToCache($originalUri, $cacheUri, $source, $result);
 
             stream_bucket_append($out, stream_bucket_new($this->stream, $source));
@@ -182,23 +182,23 @@ class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Transforms source code by passing it through all transformers
      *
-     * @return TransformerResultEnum Overall result: RESULT_TRANSFORMED if at least one
-     *         transformer transformed the source, RESULT_ABORTED if the chain was
-     *         terminated, RESULT_ABSTAIN otherwise
+     * @return TransformerResult Overall result: Transformed if at least one
+     *         transformer transformed the source, Aborted if the chain was
+     *         terminated, Abstain otherwise
      */
-    public static function transformCode(StreamMetaData $metadata): TransformerResultEnum
+    public static function transformCode(StreamMetaData $metadata): TransformerResult
     {
-        $overallResult = TransformerResultEnum::RESULT_ABSTAIN;
+        $overallResult = TransformerResult::Abstain;
         foreach (self::getTransformers() as $transformer) {
             $transformationResult = $transformer->transform($metadata);
-            if ($overallResult === TransformerResultEnum::RESULT_ABSTAIN
-                && $transformationResult === TransformerResultEnum::RESULT_TRANSFORMED
+            if ($overallResult === TransformerResult::Abstain
+                && $transformationResult === TransformerResult::Transformed
             ) {
-                $overallResult = TransformerResultEnum::RESULT_TRANSFORMED;
+                $overallResult = TransformerResult::Transformed;
             }
             // transformer reported about termination, next transformers will be skipped
-            if ($transformationResult === TransformerResultEnum::RESULT_ABORTED) {
-                $overallResult = TransformerResultEnum::RESULT_ABORTED;
+            if ($transformationResult === TransformerResult::Aborted) {
+                $overallResult = TransformerResult::Aborted;
                 break;
             }
         }
@@ -275,22 +275,22 @@ class SourceTransformingLoader extends PhpStreamFilter
         string $originalUri,
         string $cacheUri,
         string $transformedSource,
-        TransformerResultEnum $result,
+        TransformerResult $result,
     ): void {
         if (self::$cachePathManager === null) {
             return;
         }
 
-        if ($result === TransformerResultEnum::RESULT_TRANSFORMED) {
+        if ($result === TransformerResult::Transformed) {
             // A woven source carries the original class body as a `trait <Name>OriginalTrait`
             // declaration and is cached next to the generated proxy, under the same marker.
             // Both checks are anchored so that a class merely named `...OriginalTrait` is not
             // mistaken for a woven body.
-            $originalBodyTrait = '/\btrait\s+\w+' . preg_quote(AspectContainer::AOP_PROXIED_SUFFIX, '/') . '\b/';
-            if (!str_ends_with($cacheUri, AspectContainer::AOP_PROXIED_SUFFIX . '.php')
+            $originalBodyTrait = '/\btrait\s+\w+' . preg_quote(AspectContainer::ORIGINAL_TRAIT_SUFFIX, '/') . '\b/';
+            if (!str_ends_with($cacheUri, AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX)
                 && preg_match($originalBodyTrait, $transformedSource) === 1
             ) {
-                $cacheUri = PathResolver::withSuffixBeforeExtension($cacheUri, AspectContainer::AOP_PROXIED_SUFFIX);
+                $cacheUri = PathResolver::withSuffixBeforeExtension($cacheUri, AspectContainer::ORIGINAL_TRAIT_SUFFIX);
             }
             // Atomic write: a concurrent request including this file never sees a partial source
             self::$cachePathManager->getCacheFileWriter()->write($cacheUri, $transformedSource);
@@ -303,7 +303,7 @@ class SourceTransformingLoader extends PhpStreamFilter
                 'filesize'  => filesize($originalUri),
                 // Weaving time, compared with the tracked resources (kernel and aspect files)
                 'cachedAt'  => $_SERVER['REQUEST_TIME'] ?? time(),
-                'cacheUri'  => ($result === TransformerResultEnum::RESULT_TRANSFORMED) ? $cacheUri : null,
+                'cacheUri'  => ($result === TransformerResult::Transformed) ? $cacheUri : null,
             ],
         );
     }

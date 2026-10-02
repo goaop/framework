@@ -182,7 +182,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
                 $effectiveTraitName,
                 $methodName,
                 $methodName . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX,
-                Visibility::PRIVATE,
+                Visibility::Private,
             );
         }
 

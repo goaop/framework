@@ -28,7 +28,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name')),
                 ],
             );
-            return $__joinPoint->__invoke($this, FieldAccessType::READ, $this->name);
+            return $__joinPoint->__invoke($this, FieldAccessType::Read, $this->name);
         }
         set {
             /** @var FieldAccess<self, string> $__joinPoint */
@@ -39,7 +39,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name')),
                 ],
             );
-            $this->name = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this->name);
+            $this->name = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this->name);
         }
     }
     final public private(set) int $counter = 1 {
@@ -52,7 +52,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter')),
                 ],
             );
-            return $__joinPoint->__invoke($this, FieldAccessType::READ, $this->counter);
+            return $__joinPoint->__invoke($this, FieldAccessType::Read, $this->counter);
         }
         set {
             /** @var FieldAccess<self, int> $__joinPoint */
@@ -63,7 +63,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter')),
                 ],
             );
-            $this->counter = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this->counter);
+            $this->counter = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this->counter);
         }
     }
     public function __construct(string $name = 'initial', int $counter = 1, ?\ArrayObject $bag = null)

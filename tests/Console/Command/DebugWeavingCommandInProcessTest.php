@@ -91,7 +91,7 @@ class DebugWeavingCommandInProcessTest extends TestCase
         $warmUp = static function () use (&$calls, $cacheDir): void {
             if (++$calls === 2) {
                 file_put_contents($cacheDir . '/Foo.php', '<?php // proxy');
-                file_put_contents($cacheDir . '/Foo' . AspectContainer::AOP_PROXIED_SUFFIX . '.php', '<?php // trait');
+                file_put_contents($cacheDir . '/Foo' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX, '<?php // trait');
             }
         };
         $tester = new CommandTester($this->createCommandWithFakedKernel($cacheDir, $warmUp));
@@ -174,7 +174,7 @@ class DebugWeavingCommandInProcessTest extends TestCase
 
     private function cleanCacheDir(string $cacheDir): void
     {
-        foreach (['/Foo.php', '/Foo' . AspectContainer::AOP_PROXIED_SUFFIX . '.php'] as $knownFile) {
+        foreach (['/Foo.php', '/Foo' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX] as $knownFile) {
             if (is_file($cacheDir . $knownFile)) {
                 unlink($cacheDir . $knownFile);
             }

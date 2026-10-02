@@ -27,7 +27,7 @@ class SingleLinePromotedClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->tag')),
                 ],
             );
-            return $__joinPoint->__invoke($this, FieldAccessType::READ, $this->tag);
+            return $__joinPoint->__invoke($this, FieldAccessType::Read, $this->tag);
         }
         set {
             /** @var FieldAccess<self, string> $__joinPoint */
@@ -38,7 +38,7 @@ class SingleLinePromotedClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->tag')),
                 ],
             );
-            $this->tag = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this->tag);
+            $this->tag = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this->tag);
         }
     }
     public function __construct(string $tag = 'default')

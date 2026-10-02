@@ -167,7 +167,8 @@ that relied on that inheritance layer:
 
 - The proxy has no renamed parent class any more. `get_parent_class()`, `parent::` inside the
   class and `instanceof` checks see the original parent.
-- `AspectContainer::AOP_PROXIED_SUFFIX` is `'OriginalTrait'`.
+- `AspectContainer::AOP_PROXIED_SUFFIX` is deprecated: use `ORIGINAL_TRAIT_SUFFIX` (`'OriginalTrait'`) or
+  `ORIGINAL_TRAIT_FILE_SUFFIX` (`'OriginalTrait.php'`).
 - `AbstractMethodInvocation::TRAIT_ALIAS_PREFIX` is replaced by `TRAIT_ALIAS_SUFFIX`
   (`'OriginalAlias'`).
 - The hooks of `InitializationAware` and `StaticInitializationAware` are named
@@ -176,6 +177,21 @@ that relied on that inheritance layer:
   `SelfValueVisitor` are removed.
 - `Features::PARAMETER_WIDENING` is removed. Delete the flag from your kernel options if you
   passed it.
+
+Renamed enums and constants
+---------------------------
+
+| 3.x / earlier 4.0 development                 | 4.0 |
+|-----------------------------------------------|-----|
+| `TransformerResultEnum::RESULT_TRANSFORMED`   | `TransformerResult::Transformed` |
+| `TransformerResultEnum::RESULT_ABSTAIN`       | `TransformerResult::Abstain` |
+| `TransformerResultEnum::RESULT_ABORTED`       | `TransformerResult::Aborted` |
+| `FieldAccessType::READ` / `WRITE`             | `FieldAccessType::Read` / `Write` |
+| `AspectContainer::AOP_PROXIED_SUFFIX`         | `AspectContainer::ORIGINAL_TRAIT_SUFFIX` (old name deprecated) |
+
+The `Go\Proxy\Generator` enums (`Visibility`, `PropertyModifier`, `ClassModifier`) use PascalCase cases as well.
+Custom source transformers return `TransformerResult` cases, and advices comparing `getAccessType()` use the new
+case names.
 
 Kernel and transformers
 -----------------------
@@ -186,7 +202,7 @@ Kernel and transformers
   one with `$container->addLazyService(MyTransformer::class, ...)` from `configureAop()`.
 - `CachingTransformer` is removed: the cache decision lives in `SourceTransformingLoader`.
   `SourceTransformingLoader::addTransformer()` is removed, and `transformCode()` returns the overall
-  `TransformerResultEnum`.
+  `TransformerResult`.
 
 Exceptions
 ----------

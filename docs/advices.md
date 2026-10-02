@@ -66,7 +66,7 @@ use Go\Aop\Intercept\FieldAccessType;
 #[Around('access(public App\Entity\User->email)')]
 public function normalizeEmail(FieldAccess $access): mixed
 {
-    if ($access->getAccessType() === FieldAccessType::WRITE) {
+    if ($access->getAccessType() === FieldAccessType::Write) {
         return strtolower($access->proceed());
     }
 

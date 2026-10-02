@@ -49,16 +49,16 @@ class ConstructorExecutionTransformerTest extends TestCase
     public function testTransformReportsTransformedOnlyForRewrittenExpressions(): void
     {
         $this->assertSame(
-            TransformerResultEnum::RESULT_TRANSFORMED,
+            TransformerResult::Transformed,
             self::$transformer->transform($this->createMetadata('<?php $a = new \stdClass();')),
         );
         $this->assertSame(
-            TransformerResultEnum::RESULT_ABSTAIN,
+            TransformerResult::Abstain,
             self::$transformer->transform($this->createMetadata('<?php $a = 42;')),
         );
         // `new` in a constant-expression context is skipped, so nothing is left to rewrite
         $this->assertSame(
-            TransformerResultEnum::RESULT_ABSTAIN,
+            TransformerResult::Abstain,
             self::$transformer->transform($this->createMetadata('<?php const SERVICE = new \stdClass;')),
         );
     }

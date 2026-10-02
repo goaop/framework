@@ -1109,7 +1109,7 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('functions-weaving');
         $result   = $transformer->transform($metadata);
 
-        $this->assertSame(TransformerResultEnum::RESULT_TRANSFORMED, $result);
+        $this->assertSame(TransformerResult::Transformed, $result);
         $this->assertStringContainsString(
             "include_once AOP_CACHE_DIR . '/_functions/Test/ns1.php';",
             $this->normalizeWhitespaces($metadata->source),
@@ -1171,7 +1171,7 @@ class WeavingTransformerTest extends TestCase
         $metadata = $this->loadTestMetadata('functions-weaving');
         $result   = $transformer->transform($metadata);
 
-        $this->assertSame(TransformerResultEnum::RESULT_TRANSFORMED, $result);
+        $this->assertSame(TransformerResult::Transformed, $result);
         $this->assertStringContainsString(
             "include_once AOP_CACHE_DIR . '/_functions/Test/ns1.php';",
             $this->normalizeWhitespaces($metadata->source),
@@ -1225,7 +1225,7 @@ class WeavingTransformerTest extends TestCase
         $result   = $transformer->transform($metadata);
 
         $actual = $this->normalizeWhitespaces($metadata->source);
-        $this->assertSame(TransformerResultEnum::RESULT_TRANSFORMED, $result);
+        $this->assertSame(TransformerResult::Transformed, $result);
         $this->assertStringContainsString('trait TestAbstractClassOriginalTrait', $actual);
         $this->assertStringNotContainsString('AOP_CACHE_DIR', $actual);
     }

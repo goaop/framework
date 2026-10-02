@@ -37,7 +37,7 @@ final class MethodGenerator
     private static ?Parser $parser    = null;
     private static ?BuilderFactory $factory = null;
 
-    public Visibility $visibility = Visibility::PUBLIC;
+    public Visibility $visibility = Visibility::Public;
     public bool $static     = false;
     public bool $final      = false;
     public bool $returnsRef = false;
@@ -183,9 +183,9 @@ final class MethodGenerator
         $builder = self::getFactory()->method($this->name);
 
         match ($this->visibility) {
-            Visibility::PUBLIC    => $builder->makePublic(),
-            Visibility::PROTECTED => $builder->makeProtected(),
-            Visibility::PRIVATE   => $builder->makePrivate(),
+            Visibility::Public    => $builder->makePublic(),
+            Visibility::Protected => $builder->makeProtected(),
+            Visibility::Private   => $builder->makePrivate(),
         };
 
         if ($this->static) {

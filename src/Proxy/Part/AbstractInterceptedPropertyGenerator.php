@@ -219,20 +219,20 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     {
         $modifiers = [];
         if ($this->property->isPrivate()) {
-            $modifiers[] = PropertyModifier::PRIVATE;
+            $modifiers[] = PropertyModifier::Private;
         } elseif ($this->property->isProtected()) {
-            $modifiers[] = PropertyModifier::PROTECTED;
+            $modifiers[] = PropertyModifier::Protected;
         } else {
-            $modifiers[] = PropertyModifier::PUBLIC;
+            $modifiers[] = PropertyModifier::Public;
         }
         if ($this->property->isFinal()) {
-            $modifiers[] = PropertyModifier::FINAL;
+            $modifiers[] = PropertyModifier::Final;
         }
 
         if ($this->property->isPrivateSet()) {
-            $modifiers[] = PropertyModifier::PRIVATE_SET;
+            $modifiers[] = PropertyModifier::PrivateSet;
         } elseif ($this->property->isProtectedSet()) {
-            $modifiers[] = PropertyModifier::PROTECTED_SET;
+            $modifiers[] = PropertyModifier::ProtectedSet;
         }
 
         return $modifiers;

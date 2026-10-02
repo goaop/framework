@@ -84,7 +84,7 @@ class AdviceMatcher implements AdviceMatcherInterface
         $parentClass  = $class->getParentClass();
 
         $originalClass = $class;
-        if ($parentClass && str_ends_with($parentClass->name, AspectContainer::AOP_PROXIED_SUFFIX)) {
+        if ($parentClass && str_ends_with($parentClass->name, AspectContainer::ORIGINAL_TRAIT_SUFFIX)) {
             $originalClass = $parentClass;
         }
 

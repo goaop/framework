@@ -20,5 +20,5 @@ interface SourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum;
+    public function transform(StreamMetaData $metadata): TransformerResult;
 }

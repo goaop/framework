@@ -48,7 +48,7 @@ final class ClassWovenConstraint extends Constraint
         $suffix = substr($filename, strlen($appDir));
 
         $proxyFileExists       = file_exists($this->configuration['cacheDir'] . $suffix);
-        $transformedFileExists = file_exists($this->configuration['cacheDir'] . str_replace('.php', AspectContainer::AOP_PROXIED_SUFFIX . '.php', $suffix));
+        $transformedFileExists = file_exists($this->configuration['cacheDir'] . str_replace('.php', AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX, $suffix));
 
         // if any of files is missing, assert has to fail
         return $transformedFileExists && $proxyFileExists;
