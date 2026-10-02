@@ -21,8 +21,6 @@ class AbstractInvocationTest extends TestCase
     protected function setUp(): void
     {
         $this->invocation = new class ([]) extends AbstractInvocation {
-            use StatelessFramesTrait;
-
             public function proceed(): mixed
             {
                 return null;

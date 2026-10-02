@@ -19,8 +19,6 @@ use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\OrderedAdvice;
 
-use function array_pop;
-
 /**
  *  Abstract joinpoint for framework
  *
@@ -30,8 +28,6 @@ use function array_pop;
  * of a crosscutting concern.
  *
  * @link http://en.wikipedia.org/wiki/Aspect-oriented_software_development#Join_point_model
- *
- * @template TFrame of array<mixed> = array<mixed> State of one call, saved while a nested call of the same joinpoint runs
  */
 abstract class AbstractJoinpoint implements Joinpoint
 {
@@ -46,67 +42,11 @@ abstract class AbstractJoinpoint implements Joinpoint
     protected int $level = 0;
 
     /**
-     * States of the outer calls interrupted by a nested call, see {@see enterFrame()}
-     *
-     * @var list<TFrame>
-     */
-    private array $stackFrames = [];
-
-    /**
      * Initializes list of advices for current joinpoint
      *
      * @param array<Interceptor> $advices List of advices (interceptors)
      */
     public function __construct(protected readonly array $advices = []) {}
-
-    /**
-     * Enters a call of this joinpoint
-     *
-     * A joinpoint object is shared by every call of its member, so a nested call (an advice calling the member
-     * again, a nested `new` of the same class, an advice touching the same property of another object) first
-     * saves the state of the running outer call. Every enterFrame() must be paired with leaveFrame() in `finally`.
-     */
-    final protected function enterFrame(): void
-    {
-        if ($this->level > 0) {
-            $this->stackFrames[] = $this->saveFrame();
-        }
-        ++$this->level;
-    }
-
-    /**
-     * Leaves a call of this joinpoint: restores the state of the outer call, or releases the state of the
-     * outermost one so that the shared joinpoint does not keep its arguments and instance alive
-     */
-    final protected function leaveFrame(): void
-    {
-        --$this->level;
-        $outerFrame = $this->level > 0 ? array_pop($this->stackFrames) : null;
-        if ($outerFrame !== null) {
-            $this->restoreFrame($outerFrame);
-        } else {
-            $this->releaseFrame();
-        }
-    }
-
-    /**
-     * Captures the state of the running call
-     *
-     * @return TFrame
-     */
-    abstract protected function saveFrame(): array;
-
-    /**
-     * Restores the state of a call captured by {@see saveFrame()}
-     *
-     * @param TFrame $frame
-     */
-    abstract protected function restoreFrame(array $frame): void;
-
-    /**
-     * Releases the state of the finished outermost call
-     */
-    abstract protected function releaseFrame(): void;
 
     /**
      * Sorts advices by priority

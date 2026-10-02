@@ -35,10 +35,11 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 | ClassFieldAccess                  | FieldAccess             | Property interception via native get/set hooks on proxied properties                                                   |
 | StaticInitializationJoinpoint     | ClassJoinpoint          | Fired once after proxy class loaded via injectJoinPoints()                                                             |
 
-Joinpoint objects are shared by every call of their member (`static $__joinPoint`), so every `__invoke()` runs between
-`AbstractJoinpoint::enterFrame()` and `leaveFrame()` (in `finally`): a nested call of the same joinpoint saves the outer
-call state (`saveFrame()`/`restoreFrame()`, typed by the `TFrame` template), and the outermost call ends with
-`releaseFrame()`. New joinpoint types must implement the three hooks; never keep per-call state outside them.
+HOT PATH: `__invoke()`/`proceed()` of these classes run on every intercepted call. Code there is embedded on purpose:
+never extract parts into methods or a base class, never add object allocations, reflection or extra method calls
+(copy-paste of the frame handling across the classes is intentional). Joinpoint objects are shared by every call of
+their member (`static $__joinPoint`), so each `__invoke()` pushes the outer call state onto its own `$stackFrames`
+when `$level > 0` and pops it in `finally`. Check every change with `composer test:performance` (before/after).
 
 ## Advice wiring (src/Aop/Framework/)
 - The — proxy-code accessor: aspect(X::class) fetches aspect from container; advice('advisorId') resolves container-backed closure advice (unwraps Advisor/AbstractInterceptor to raw Closure)

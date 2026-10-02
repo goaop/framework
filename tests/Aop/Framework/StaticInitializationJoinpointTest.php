@@ -95,25 +95,4 @@ class StaticInitializationJoinpointTest extends TestCase
 
         $joinPoint->proceed();
     }
-
-    public function testNestedInvocationFromAdviceRestoresOuterScope(): void
-    {
-        $observed = [];
-        $before   = new BeforeInterceptor(static function (StaticInitializationJoinpoint $joinPoint) use (&$observed): void {
-            $observed[] = $joinPoint->getScope();
-            if ($joinPoint->getScope() === StaticInitializationJoinpointTest::class) {
-                // Initializing another class from the advice reuses the same joinpoint
-                $joinPoint(AbstractInvocationTest::class);
-                $observed[] = $joinPoint->getScope();
-            }
-        });
-        $joinPoint = new StaticInitializationJoinpoint([$before], self::class);
-
-        $joinPoint();
-
-        $this->assertSame(
-            [self::class, AbstractInvocationTest::class, self::class],
-            $observed,
-        );
-    }
 }

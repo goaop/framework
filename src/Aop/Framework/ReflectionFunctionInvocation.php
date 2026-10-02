@@ -18,6 +18,8 @@ use Go\Aop\Intercept\Interceptor;
 use ReflectionException;
 use ReflectionFunction;
 
+use function array_pop;
+
 /**
  * Function invocation implementation
  *
@@ -30,11 +32,17 @@ use ReflectionFunction;
  * file, which would call the proxy itself and cause infinite recursion.
  *
  * @template V = mixed Declares the generic return type of the result.
- * @extends AbstractInvocation<array{list<mixed>, int}>
  * @implements FunctionInvocation<V>
  */
 final class ReflectionFunctionInvocation extends AbstractInvocation implements FunctionInvocation
 {
+    /**
+     * Stack frames to work with recursive calls or with cross-calls inside object
+     *
+     * @var array<int, array{list<mixed>, int}>
+     */
+    private array $stackFrames = [];
+
     /**
      * Instance of reflection function
      */
@@ -63,6 +71,10 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
 
     /**
      * @return V Covariant, always mixed
+     *
+     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
      */
     public function proceed(): mixed
     {
@@ -87,38 +99,38 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
      * @param list<mixed> $variadicArguments Additional list of variadic arguments
      *
      * @return V Templated return type (mixed by default)
+     *
+     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
      */
     final public function __invoke(array $arguments = [], array $variadicArguments = []): mixed
     {
+        if ($this->level > 0) {
+            $this->stackFrames[] = [$this->arguments, $this->current];
+        }
+
         if (!empty($variadicArguments)) {
             $arguments = [...$arguments, ...$variadicArguments];
         }
 
-        $this->enterFrame();
         try {
+            ++$this->level;
+
             $this->current   = 0;
             $this->arguments = $arguments;
 
-            return $this->proceed();
+            $result = $this->proceed();
         } finally {
-            $this->leaveFrame();
+            --$this->level;
+
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
+                [$this->arguments, $this->current] = $stackFrame;
+            }
         }
-    }
 
-    protected function saveFrame(): array
-    {
-        return [$this->arguments, $this->current];
+        return $result;
     }
-
-    protected function restoreFrame(array $frame): void
-    {
-        [$this->arguments, $this->current] = $frame;
-    }
-
-    /**
-     * The arguments of the last call stay readable after it returns
-     */
-    protected function releaseFrame(): void {}
 
     /**
      * Returns a friendly description of current joinpoint

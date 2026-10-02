@@ -16,9 +16,6 @@ use Go\Aop\Intercept\Invocation;
 
 /**
  * Abstract class for all invocations joinpoints
- *
- * @template TFrame of array<mixed> = array<mixed>
- * @extends AbstractJoinpoint<TFrame>
  */
 abstract class AbstractInvocation extends AbstractJoinpoint implements Invocation
 {

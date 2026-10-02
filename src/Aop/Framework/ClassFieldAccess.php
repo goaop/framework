@@ -23,7 +23,6 @@ use ReflectionProperty;
  *
  * @template T of object = object
  * @template V of mixed = mixed
- * @extends AbstractJoinpoint<array{instance: T, accessType: FieldAccessType, current: int, value?: V, newValue?: V}>
  * @implements FieldAccess<T,V>
  */
 final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
@@ -71,6 +70,13 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Access type for field access
      */
     private FieldAccessType $accessType;
+
+    /**
+     * Stack frames of the outer accesses interrupted by a nested access (an advice touching the same property)
+     *
+     * @var array<int, array{T, FieldAccessType, int, V, V}>
+     */
+    private array $stackFrames = [];
 
     /**
      * Constructor for field access
@@ -121,6 +127,11 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         return $this->newValue;
     }
 
+    /**
+     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
+     */
     final public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
@@ -142,11 +153,20 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * @phpstan-param V ...$values Original value of property + new value (for write operation)
      *
      * @phpstan-return V Templated return type of property
+     *
+     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
      */
     final public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed
     {
-        $this->enterFrame();
+        if ($this->level > 0) {
+            // Nested access: keep the outer state and value references. No initialization checks on purpose:
+            // referencing an uninitialized value initializes it with null for the outer access
+            $this->stackFrames[] = [$this->instance, $this->accessType, $this->current, &$this->value, &$this->newValue];
+        }
         try {
+            ++$this->level;
             $this->current    = 0;
             $this->instance   = $instance;
             $this->accessType = $accessType;
@@ -168,44 +188,14 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
             return $this->{self::$propertyMap[$accessType->name]};
         } finally {
-            $this->leaveFrame();
+            --$this->level;
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
+                [$this->instance, $this->accessType, $this->current] = $stackFrame;
+                $this->value    = &$stackFrame[3];
+                $this->newValue = &$stackFrame[4];
+            }
         }
     }
-
-    /**
-     * Keeps the value references of the outer call, an uninitialized value stays uninitialized
-     */
-    protected function saveFrame(): array
-    {
-        $frame = ['instance' => $this->instance, 'accessType' => $this->accessType, 'current' => $this->current];
-        if (new ReflectionProperty($this, 'value')->isInitialized($this)) {
-            $frame['value'] = &$this->value;
-        }
-        if (new ReflectionProperty($this, 'newValue')->isInitialized($this)) {
-            $frame['newValue'] = &$this->newValue;
-        }
-
-        return $frame;
-    }
-
-    protected function restoreFrame(array $frame): void
-    {
-        $this->instance   = $frame['instance'];
-        $this->accessType = $frame['accessType'];
-        $this->current    = $frame['current'];
-        unset($this->value, $this->newValue);
-        if (array_key_exists('value', $frame)) {
-            $this->value = &$frame['value'];
-        }
-        if (array_key_exists('newValue', $frame)) {
-            $this->newValue = &$frame['newValue'];
-        }
-    }
-
-    /**
-     * The state of the last access stays readable after it returns
-     */
-    protected function releaseFrame(): void {}
 
     final public function getThis(): object
     {
