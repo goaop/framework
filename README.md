@@ -161,12 +161,15 @@ Step 0 is optional: it lets you try the demo examples first.
 
 ### Step 0 (optional): Try demo examples in the framework
 
-Ask composer to create a new project in empty directory:
+The demos are not part of the composer package, so clone the repository and install its dependencies:
 
 ```bash
-composer create-project goaop/framework
+git clone https://github.com/goaop/framework.git
+cd framework
+composer install
+php -S localhost:8080 -t demos
 ```
-After that configure your web server to `demos/` folder and open it in your browser. Then you can look at some demo examples before going deeper into installing it in your project.
+Then open http://localhost:8080 in your browser and look at the demo examples before installing the framework in your project.
 
 ### Step 1: Download the library using composer
 
