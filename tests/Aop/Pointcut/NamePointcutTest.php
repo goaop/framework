@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
 use Go\Stubs\First;
 use PHPUnit\Framework\TestCase;
@@ -137,5 +138,19 @@ class NamePointcutTest extends TestCase
     {
         $pointcut = new NamePointcut(Pointcut::KIND_METHOD, '*Method');
         $this->assertSame(Pointcut::KIND_METHOD, $pointcut->getKind());
+    }
+
+    public function testRegexpFailureIsReportedAsSyntaxError(): void
+    {
+        $pointcut = new NamePointcut(Pointcut::KIND_METHOD, 'pub*Meth*d');
+
+        $backtrackLimit = ini_set('pcre.backtrack_limit', '1');
+        try {
+            $this->expectException(PointcutSyntaxException::class);
+            $this->expectExceptionMessage('Name pattern `pub*Meth*d` can not be matched');
+            $pointcut->matches(new ReflectionClass(First::class), new ReflectionMethod(First::class, 'publicMethod'));
+        } finally {
+            ini_set('pcre.backtrack_limit', (string) $backtrackLimit);
+        }
     }
 }

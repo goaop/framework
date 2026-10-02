@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\WeavingException;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
@@ -49,13 +50,13 @@ class CachePathManagerTest extends TestCase
         self::removeTemporaryDirectory(self::$appDir);
     }
 
-    private function createManager(bool $prebuiltCache = false): CachePathManager
+    private function createManager(bool $prebuiltCache = false, ?string $cacheDir = null): CachePathManager
     {
         $kernel = $this->createMock(AspectKernel::class);
         $kernel->method('getOptions')->willReturn([
             'debug'          => false,
             'appDir'         => self::$appDir,
-            'cacheDir'       => self::$cacheDir,
+            'cacheDir'       => $cacheDir ?? self::$cacheDir,
             'cacheFileMode'  => 0770,
             'features'       => 0,
             'includePaths'   => [],
@@ -153,6 +154,31 @@ class CachePathManagerTest extends TestCase
         $this->expectExceptionMessage('rebuild it with `bin/aspect cache:warmup:aop`');
 
         $this->createManager(prebuiltCache: true);
+    }
+
+    public function testPrebuiltCacheRejectsTransformationMetadataOfAnotherFormatVersion(): void
+    {
+        $original = self::$appDir . '/src/Outdated.php';
+        $writer   = $this->createManager();
+        $writer->setCacheState($original, ['filemtime' => 1, 'cacheUri' => null]);
+        $writer->flushCacheState();
+        file_put_contents(self::$cacheDir . '/_transformation.cache', "<?php return ['" . $original . "' => ['cacheUri' => 'x']];");
+
+        // The class map is current, so the outdated full metadata is only detected once it is loaded on demand
+        $reader = $this->createManager(prebuiltCache: true);
+
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('rebuild it with `bin/aspect cache:warmup:aop`');
+
+        $reader->queryCacheState($original);
+    }
+
+    public function testCacheDirectoryWithMissingParentIsRejected(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('Can not create a directory');
+
+        $this->createManager(cacheDir: self::$appDir . '/missing/parent/cache');
     }
 
     public function testCachePathReplacesOnlyTheLeadingApplicationDirectory(): void

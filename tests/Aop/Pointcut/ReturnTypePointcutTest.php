@@ -122,4 +122,21 @@ final class ReturnTypePointcutTest extends TestCase
         $this->assertTrue(($pointcut->getKind() & Pointcut::KIND_FUNCTION) > 0, 'Pointcut should be for functions');
         $this->assertTrue(($pointcut->getKind() & Pointcut::KIND_METHOD) > 0, 'Pointcut should be for methods');
     }
+
+    public function testRegexpFailureIsReportedAsSyntaxError(): void
+    {
+        $pointcut = new ReturnTypePointcut('Arr*It*r');
+
+        $backtrackLimit = ini_set('pcre.backtrack_limit', '1');
+        try {
+            $this->expectException(PointcutSyntaxException::class);
+            $this->expectExceptionMessage('Return type pattern `Arr*It*r` can not be matched');
+            $pointcut->matches(
+                new ReflectionClass(self::class),
+                new ReflectionFunction(static fn(): \ArrayIterator => new \ArrayIterator()),
+            );
+        } finally {
+            ini_set('pcre.backtrack_limit', (string) $backtrackLimit);
+        }
+    }
 }

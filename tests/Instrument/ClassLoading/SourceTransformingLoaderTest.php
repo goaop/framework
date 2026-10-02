@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -119,6 +120,34 @@ class SourceTransformingLoaderTest extends TestCase
     private function createTransformerStub(TransformerResult $result, ?string $newSource = null): CountingSourceTransformerStub
     {
         return new CountingSourceTransformerStub($result, $newSource);
+    }
+
+    public function testFilterIdIsNotAvailableBeforeRegistration(): void
+    {
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('Stream filter was not registered');
+
+        SourceTransformingLoader::getId();
+    }
+
+    public function testFilterCanNotBeRegisteredTwice(): void
+    {
+        $this->registerLoader([]);
+
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('Stream filter already registered');
+
+        SourceTransformingLoader::register();
+    }
+
+    public function testFilterNameTakenByAnotherFilterIsReported(): void
+    {
+        stream_filter_register('go.aop.taken', \php_user_filter::class);
+
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('Stream filter was not registered');
+
+        SourceTransformingLoader::register('go.aop.taken');
     }
 
     public function testFreshTransformedCacheRecordIsServedWithoutAnyTransformer(): void
