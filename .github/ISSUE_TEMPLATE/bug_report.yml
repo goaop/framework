@@ -1,0 +1,62 @@
+name: Bug report
+description: Report a bug in Go! AOP
+labels: ["Bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please clear the AOP cache directory and check that the problem
+        still happens before you submit.
+  - type: input
+    id: framework-version
+    attributes:
+      label: Framework version
+      placeholder: "4.0.0"
+    validations:
+      required: true
+  - type: input
+    id: php-version
+    attributes:
+      label: PHP version
+      placeholder: "8.4.12"
+    validations:
+      required: true
+  - type: dropdown
+    id: debug
+    attributes:
+      label: Debug mode
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: textarea
+    id: kernel-options
+    attributes:
+      label: Kernel options and features
+      description: The options passed to `AspectKernel::init()`, including the `features` flags.
+      render: php
+  - type: textarea
+    id: pointcut
+    attributes:
+      label: Aspect and pointcut
+      description: The advice attribute and pointcut expression involved.
+      render: php
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened
+      description: What you expected, what happened instead, and any error message or stack trace.
+    validations:
+      required: true
+  - type: textarea
+    id: proxy
+    attributes:
+      label: Generated proxy excerpt
+      description: The relevant part of the woven file or proxy from the cache directory, if it helps.
+      render: php
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: A minimal class and aspect that reproduce the problem.

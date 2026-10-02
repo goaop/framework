@@ -377,4 +377,4 @@ advices only run for accesses made by your own code, never for Doctrine's intern
 
 ### Contribution
 
-To contribute changes, see the [Contribute Readme](CONTRIBUTE.md)
+To contribute changes, see the [contributing guide](CONTRIBUTING.md)
