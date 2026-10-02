@@ -63,6 +63,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 
 **Internal**
 * [Internal] Tooling: PHPUnit 13 with strict flags, PHPStan 2 at level 10 over `src/` and `tests/`, php-cs-fixer with the PER-CS rule set, and `composer test`/`analyze`/`cs`/`check` scripts.
+* [Internal] Performance test group (`composer test:performance`, excluded from the default run) checks the per-call overhead of the core joinpoints against plain calls.
 
 3.1.1 (April 1, 2026)
 * Allow goaop/parser-reflection 3.x so the 3.x branch keeps working on PHP 8.2

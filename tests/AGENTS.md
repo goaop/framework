@@ -23,6 +23,8 @@
 ## PHPUnit
 - Mandatory before commit
 - Version: 13+
+- Performance group (tests/Performance/, `#[Group('performance')]`): timing-based checks of the core joinpoint hot path,
+  excluded from the default run; `composer test:performance` before and after touching src/Aop/Framework `__invoke()`/`proceed()`
 - If phpstan fails: fix errors before offering to commit
 
 ## PHPStan gate

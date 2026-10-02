@@ -88,7 +88,8 @@
         ],
         "cs": "php-cs-fixer check --diff",
         "cs:fix": "php-cs-fixer fix",
-        "test": "phpunit"
+        "test": "phpunit",
+        "test:performance": "phpunit --group performance"
     },
     "scripts-descriptions": {
         "analyze": "Run PHPStan static analysis (level 10)",
