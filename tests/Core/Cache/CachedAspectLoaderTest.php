@@ -218,23 +218,48 @@ class CachedAspectLoaderTest extends TestCase
         $this->assertInstanceOf(TruePointcut::class, $loadedItems['pc']);
     }
 
-    public function testEntriesThatAreNeitherPointcutNorAdvisorAreFilteredOut(): void
+    public function testPayloadWithAnInvalidEntryIsRejectedAsAWhole(): void
     {
         $loader  = $this->createLoader(0);
         $version = AdvisorCacheCompiler::VERSION;
         $content = "<?php return ['version' => {$version}, 'advisors' => ["
             . "'pc' => new \\Go\\Aop\\Pointcut\\TruePointcut(), "
-            . "'junk' => 'some string', "
-            . "'number' => 42,"
+            . "'junk' => 'some string',"
             . "]];";
         $this->writeCacheFile($content, stale: false);
-        $this->innerLoader->expects($this->never())->method('load');
+        $freshItems = ['pointcut.fresh' => new TruePointcut()];
+        $this->innerLoader->expects($this->once())->method('load')->willReturn($freshItems);
 
-        $loadedItems = $loader->load($this->aspect);
+        // Using the valid rest would silently lose advices: the file is rebuilt instead
+        $this->assertSame($freshItems, $loader->load($this->aspect));
+        $this->assertStringContainsString('pointcut.fresh', (string) file_get_contents($this->cacheFileName));
+    }
 
-        $this->assertCount(1, $loadedItems);
-        $this->assertArrayHasKey('pc', $loadedItems);
-        $this->assertInstanceOf(TruePointcut::class, $loadedItems['pc']);
+    public function testAspectWithoutItemsIsWrittenOnceAndThenOnlyRead(): void
+    {
+        $loader = $this->createLoader(0);
+        $this->innerLoader->expects($this->once())->method('load')->willReturn([]);
+
+        $this->assertSame([], $loader->load($this->aspect));
+        $this->assertFileExists($this->cacheFileName);
+        $cacheModificationTime = filemtime($this->cacheFileName);
+
+        // An empty compatible cache is a hit: the loader is not called again and nothing is rewritten
+        $this->assertSame([], $loader->load($this->aspect));
+        clearstatcache();
+        $this->assertSame($cacheModificationTime, filemtime($this->cacheFileName));
+    }
+
+    public function testPrebuiltCacheWithMissingFileLoadsDirectlyWithoutWriting(): void
+    {
+        $loader = $this->createLoader(Features::PREBUILT_CACHE);
+        // Read-only cache directory: any write attempt would fail
+        $this->fileSystem->find('/cache')?->chmod(0o555);
+        $freshItems = ['pointcut.fresh' => new TruePointcut()];
+        $this->innerLoader->expects($this->once())->method('load')->willReturn($freshItems);
+
+        $this->assertSame($freshItems, $loader->load($this->aspect));
+        $this->assertFileDoesNotExist($this->cacheFileName);
     }
 
     public function testAspectWithNotCompilableItemsFailsLoudly(): void
