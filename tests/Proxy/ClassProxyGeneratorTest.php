@@ -450,7 +450,7 @@ class ClassProxyGeneratorTest extends TestCase
      * Regression: inherited methods should still be intercepted, but must not be aliased from the
      * woven trait because the trait only contains methods declared directly in the target class.
      *
-     * The generated proxy must use `parent::method(...)` as the first-class callable so that
+     * The generated proxy must name the parent method, `[parent::class, 'method']`, so that
      * {@see DynamicTraitAliasMethodInvocation} can resolve the prototype via reflection.
      *
      * @throws ReflectionException
@@ -475,11 +475,11 @@ class ClassProxyGeneratorTest extends TestCase
             "InterceptorInjector::forMethod(",
             $proxyFileContent,
         );
-        // Inherited instance method must use parent:: first-class callable (no `<method>OriginalAlias` available)
+        // Inherited instance method names the parent method (no `<method>OriginalAlias` available)
         $this->assertStringContainsString(
-            "parent::publicMethod(...)",
+            "[parent::class, 'publicMethod']",
             $proxyFileContent,
-            'Inherited instance method must use parent::method(...) as first-class callable',
+            'Inherited instance method must name the parent method',
         );
     }
 

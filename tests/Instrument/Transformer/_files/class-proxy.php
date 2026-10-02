@@ -26,7 +26,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethod')),
             ],
-            $this->publicMethodOriginalAlias(...),
+            [self::class, 'publicMethodOriginalAlias'],
         );
         return $__joinPoint->__invoke($this);
     }
@@ -39,7 +39,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->protectedMethod')),
             ],
-            $this->protectedMethodOriginalAlias(...),
+            [self::class, 'protectedMethodOriginalAlias'],
         );
         return $__joinPoint->__invoke($this);
     }
@@ -78,7 +78,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethodDynamicArguments')),
             ],
-            $this->publicMethodDynamicArgumentsOriginalAlias(...),
+            [self::class, 'publicMethodDynamicArgumentsOriginalAlias'],
         );
         return $__joinPoint->__invoke($this, [$a, &$b]);
     }
@@ -91,7 +91,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->publicMethodFixedArguments')),
             ],
-            $this->publicMethodFixedArgumentsOriginalAlias(...),
+            [self::class, 'publicMethodFixedArgumentsOriginalAlias'],
         );
         return $__joinPoint->__invoke($this, \array_slice([$a, $b, $c], 0, \func_num_args()));
     }
@@ -104,7 +104,7 @@ class TestClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestClass->methodWithSpecialTypeArguments')),
             ],
-            $this->methodWithSpecialTypeArgumentsOriginalAlias(...),
+            [self::class, 'methodWithSpecialTypeArgumentsOriginalAlias'],
         );
         return $__joinPoint->__invoke($this, [$instance]);
     }

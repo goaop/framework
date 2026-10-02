@@ -22,7 +22,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->publicMethod')),
             ],
-            $this->publicMethodOriginalAlias(...),
+            [self::class, 'publicMethodOriginalAlias'],
         );
         return $__joinPoint->__invoke($this);
     }
@@ -35,7 +35,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->anotherMethod')),
             ],
-            $this->anotherMethodOriginalAlias(...),
+            [self::class, 'anotherMethodOriginalAlias'],
         );
         return $__joinPoint->__invoke($this, [$x]);
     }

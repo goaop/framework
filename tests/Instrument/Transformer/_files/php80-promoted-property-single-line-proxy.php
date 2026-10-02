@@ -50,7 +50,7 @@ class SingleLinePromotedClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->__construct')),
             ],
-            $this->__constructOriginalAlias(...),
+            [self::class, '__constructOriginalAlias'],
         );
         return $__joinPoint->__invoke($this, \array_slice([$tag], 0, \func_num_args()));
     }

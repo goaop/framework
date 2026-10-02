@@ -25,7 +25,7 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestAttributeArgsClass->tagged')),
             ],
-            $this->taggedOriginalAlias(...),
+            [self::class, 'taggedOriginalAlias'],
         );
         return $__joinPoint->__invoke($this, \array_slice([$x], 0, \func_num_args()));
     }
@@ -39,7 +39,7 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\TestAttributeArgsClass->collected')),
             ],
-            $this->collectedOriginalAlias(...),
+            [self::class, 'collectedOriginalAlias'],
         );
         return $__joinPoint->__invoke($this);
     }

@@ -174,7 +174,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
         // All intercepted methods in a trait proxy have `<method>OriginalAlias` aliases from the parent trait.
         $callableExpression = $isStatic
             ? 'self::' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)'
-            : '$this->' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)';
+            : "[self::class, '" . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . "']";
 
         return <<<BODY
         /** @var {$joinPointType} \$__joinPoint */

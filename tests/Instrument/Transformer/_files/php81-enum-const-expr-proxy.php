@@ -23,7 +23,7 @@ enum ConstExprStatus : int implements \Go\Aop\Proxy
             [
                 Interceptor::before(The::advice('advisor.Test\ns1\ConstExprStatus->describe')),
             ],
-            $this->describeOriginalAlias(...),
+            [self::class, 'describeOriginalAlias'],
         );
         return $__joinPoint->__invoke($this);
     }

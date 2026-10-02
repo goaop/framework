@@ -32,6 +32,18 @@ class InheritedMethodProxy extends InheritedMethodParent
     }
 
     /**
+     * Names the parent method of an inherited instance method, as ClassProxyGenerator generates it
+     *
+     * @param non-empty-string $method
+     *
+     * @return array{class-string, non-empty-string}
+     */
+    public static function inheritedOriginalMethod(string $method): array
+    {
+        return [parent::class, $method];
+    }
+
+    /**
      * Returns a first-class callable to the given inherited instance method using parent:: syntax.
      * This mirrors what ClassProxyGenerator generates for inherited dynamic methods.
      */

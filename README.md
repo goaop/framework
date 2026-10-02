@@ -293,7 +293,7 @@ static $__joinPoint = InterceptorInjector::forMethod(
     [
         Interceptor::before(The::aspect(MonitorAspect::class)->beforeMethodExecution(...)),
     ],
-    $this->doSomethingOriginalAlias(...),
+    [self::class, 'doSomethingOriginalAlias'],
 );
 ```
 
