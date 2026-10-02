@@ -314,15 +314,23 @@ final class PointcutGrammar extends Grammar
             ->is('returnTypeMember')
             ->is('returnTypePattern', '|', 'returnTypeMember')
             ->call(fn(string $left, mixed $_0, string $right) => "{$left}|{$right}")
+            ->is('?', 'namespaceName')
+            ->call(fn(mixed $_0, string $typeName) => "?{$typeName}")
         ;
 
+        // Space-separated modifier groups must all match, '|' alternatives inside a group bind tighter:
+        // 'final public|protected' is final AND (public OR protected)
         $this('memberModifiers')
-            ->is('memberModifier', '|', 'memberModifiers')
-            ->call(fn(int $modifier, mixed $_0, ModifierPointcut $matcher) => $matcher->orMatch($modifier))
-            ->is('memberModifier', 'memberModifiers')
-            ->call(fn(int $modifier, ModifierPointcut $matcher) => $matcher->andMatch($modifier))
+            ->is('modifierGroup', 'memberModifiers')
+            ->call(fn(int $group, ModifierPointcut $matcher) => self::addModifierGroup($matcher, $group))
+            ->is('modifierGroup')
+            ->call(fn(int $group) => self::addModifierGroup(new ModifierPointcut(), $group))
+        ;
+
+        $this('modifierGroup')
+            ->is('memberModifier', '|', 'modifierGroup')
+            ->call(fn(int $modifier, mixed $_0, int $group) => $modifier | $group)
             ->is('memberModifier')
-            ->call(fn(int $modifier) => new ModifierPointcut($modifier))
         ;
 
         $converter = $this->getModifierConverter();
@@ -344,6 +352,21 @@ final class PointcutGrammar extends Grammar
         ;
 
         $this->start('pointcutExpression');
+    }
+
+    /**
+     * Adds one modifier group: a single modifier is required, alternatives need any of their bits
+     */
+    private static function addModifierGroup(ModifierPointcut $matcher, int $group): ModifierPointcut
+    {
+        if (($group & ($group - 1)) === 0) {
+            return $matcher->andMatch($group);
+        }
+        if ($matcher->hasAlternatives()) {
+            throw new PointcutSyntaxException('Only one group of modifier alternatives (a|b) is supported per member pattern');
+        }
+
+        return $matcher->orMatch($group);
     }
 
     /**

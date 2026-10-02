@@ -22,6 +22,7 @@ use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\Int_;
+use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -70,7 +71,8 @@ final readonly class AttributePointcut implements Pointcut
         }
 
         // Final static matching by checking attributes for given reflector
-        return count($instanceToCheck->getAttributes($this->attributeClassName)) > 0;
+        // Subclasses of the attribute match as well
+        return count($instanceToCheck->getAttributes($this->attributeClassName, ReflectionAttribute::IS_INSTANCEOF)) > 0;
     }
 
     public function getKind(): int

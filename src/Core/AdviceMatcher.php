@@ -142,7 +142,7 @@ class AdviceMatcher implements AdviceMatcherInterface
         }
         // Introduction which can add interfaces or traits
         if (($pointcutKind & Pointcut::KIND_INTRODUCTION) !== 0 && $advice instanceof IntroductionInfo && !$class->isTrait()) {
-            $classAdvices = [...$this->getIntroductionAdvices($advice)];
+            $classAdvices = [...$classAdvices, ...$this->getIntroductionAdvices($advice)];
         }
 
         return $classAdvices;

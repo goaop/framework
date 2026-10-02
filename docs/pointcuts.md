@@ -30,7 +30,7 @@ The argument list is always `(*)`: arguments are not matched.
 | `*`           | Any part of a name, e.g. `get*`, `*Service`, `App\*\Controller` |
 | `**`          | Any namespace depth: `App\**` is every class below `App`, `**->*(*)` is every method |
 | `a\|b`        | Alternatives within one name part, e.g. `get*\|is*` |
-| `Foo+`        | Subclasses of `Foo` and classes implementing the interface `Foo` |
+| `Foo+`        | `Foo` itself, its subclasses and implementers, and classes that use the trait `Foo` (directly or through a parent class) |
 
 Names are matched case-sensitively. Write namespaces with a single backslash; in a PHP string with single quotes
 no escaping is needed.
@@ -41,13 +41,17 @@ Method and property pointcuts accept `public`, `protected`, `private`, `final`, 
 visibility modifiers `private(set)` and `protected(set)`. Combine alternatives with `|`:
 `execution(public|protected App\Service->*(*))`.
 
+Modifiers separated by spaces must all be present, and `|` binds tighter than the space:
+`final public|protected` matches final methods that are public or protected. One group of alternatives is supported
+per pattern.
+
 Static properties are never intercepted, and neither are readonly properties or properties that already have hooks.
 See [PHP 8.4 limitations](php84-limitations.md).
 
 ## Return types
 
 A method or function pattern can restrict the declared return type: `execution(public App\Repo->find*(*): App\Entity|null)`.
-Union types use `|`, intersection types `&`.
+Union types use `|`, intersection types `&`, and `?Foo` is the same as `Foo|null`.
 
 ## Combining pointcuts
 

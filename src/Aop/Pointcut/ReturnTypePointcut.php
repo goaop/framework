@@ -219,7 +219,12 @@ final readonly class ReturnTypePointcut implements Pointcut
             '\\*' => '[^\\\\]+',
         ]) . ')$/';
 
-        return (bool) preg_match($regexp, $actual);
+        $isMatched = preg_match($regexp, $actual);
+        if ($isMatched === false) {
+            throw new PointcutSyntaxException("Return type pattern `{$pattern}` can not be matched: " . preg_last_error_msg());
+        }
+
+        return $isMatched === 1;
     }
 
     /**

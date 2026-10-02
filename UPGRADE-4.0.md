@@ -144,6 +144,12 @@ Pointcuts
       return $invocation->proceed();
   }
   ```
+- **Modifier precedence.** Space-separated modifiers must all be present and `|` binds tighter:
+  `final public|protected` means final AND (public OR protected). In 3.x it also matched every non-final public
+  method.
+- **`Foo+` includes `Foo`.** It now also matches the class or interface `Foo` itself and classes that use the trait
+  `Foo`. Add `&& !within(Foo)` to exclude the type itself.
+- **Attribute pointcuts match subclasses.** `@execution(Attr)` and friends also match attributes extending `Attr`.
 - **`ModifierPointcut` is final and immutable.** The masks are constructor arguments, and
   `andMatch()`, `orMatch()` and `notMatch()` return a new instance.
 
