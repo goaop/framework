@@ -375,6 +375,17 @@ $eventManager->addEventListener(Events::loadClassMetadata, new MetadataLoadInter
 Doctrine reads and writes the raw property values while hydrating and flushing, so property
 advices only run for accesses made by your own code, never for Doctrine's internal ones.
 
+Documentation
+-------------
+
+- [Configuration and deployment](docs/configuration.md): kernel options, `Features` flags, the `bin/aspect` console
+  commands and the production deployment recipe
+- [Pointcut syntax](docs/pointcuts.md): every pointcut type, wildcards, modifiers, return types and operators
+- [Advices](docs/advices.md): advice types, joinpoints, property interception, introductions, function and
+  object-creation interception
+- [PHP 8.4 limitations](docs/php84-limitations.md) and [PHP 8.5 limitations](docs/php85-limitations.md)
+- [Upgrading from 3.x](UPGRADE-4.0.md) and the [changelog](CHANGELOG.md)
+
 ### Contribution
 
 To contribute changes, see the [contributing guide](CONTRIBUTING.md)
