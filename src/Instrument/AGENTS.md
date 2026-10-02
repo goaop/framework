@@ -7,12 +7,12 @@
 4. Caching lives in SourceTransformingLoader::filter() — cache hit → cached content emitted as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → write cache
 
 ## Transformer chain (order matters)
-Applied per loaded file. Each returns TransformerResultEnum: RESULT_TRANSFORMED|RESULT_ABSTAIN|RESULT_ABORTED.
+Applied per loaded file. Each returns TransformerResultEnum: RESULT_TRANSFORMED|RESULT_ABSTAIN|RESULT_ABORTED (skips the rest of the chain, reverts to the original source, recorded as untransformed).
 
 1. ConstructorExecutionTransformer — new expressions (works only if INTERCEPT_INITIALIZATIONS enabled)
 2. FilterInjectorTransformer — include/require (works only if INTERCEPT_INCLUDES enabled)
 3. WeavingTransformer — main; AdviceMatcher + CachedAspectLoader → proxy generators
-4. MagicConstantTransformer — `__FILE__`/`__DIR__` → original paths
+4. MagicConstantTransformer — `__FILE__`/`__DIR__` → original paths; always ABSTAINS (only cache-dir files need it; PHP resolves magic constants of a `php://filter/.../resource=<path>` include to <path>)
 
 ## Trait-based proxy engine (4.0)
 WeavingTransformer converts original class to trait + proxy class. Two generated files for class Ns\Foo:

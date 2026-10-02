@@ -166,7 +166,8 @@ class SourceTransformingLoader extends PhpStreamFilter
             // Cache miss: parse the source, run the transformer chain and persist the result
             $metadata = new StreamMetaData($this->stream, $this->data);
             $result   = self::transformCode($metadata);
-            $source   = $metadata->source;
+            // An aborted chain reverts every change: the original source is served and recorded as untransformed
+            $source   = $result === TransformerResultEnum::RESULT_ABORTED ? $this->data : $metadata->source;
             self::saveToCache($originalUri, $cacheUri, $source, $result);
 
             stream_bucket_append($out, stream_bucket_new($this->stream, $source));

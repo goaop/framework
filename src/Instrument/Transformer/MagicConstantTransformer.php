@@ -71,7 +71,10 @@ class MagicConstantTransformer extends BaseSourceTransformer
         $this->replaceMagicDirFileConstants($metadata);
         $this->wrapReflectionGetFileName($metadata);
 
-        // We should always vote abstain, because if there is only changes for magic constants, we can drop them
+        // Always abstain: the rewrite only matters for sources executed from the cache directory, which other
+        // transformers produce. A source served unchanged runs from its original location, and PHP resolves the
+        // magic constants of a `php://filter/.../resource=<path>` include to <path> itself, so they stay correct
+        // on cache hits too (see the functional MagicConstantTest)
         return TransformerResultEnum::RESULT_ABSTAIN;
     }
 

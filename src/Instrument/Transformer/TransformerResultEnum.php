@@ -18,7 +18,8 @@ namespace Go\Instrument\Transformer;
 enum TransformerResultEnum: string
 {
     /**
-     * Transformer decided to stop whole transformation process, all changes should be reverted
+     * Transformer decided to stop whole transformation process: the remaining transformers are skipped,
+     * changes of the whole chain are reverted and the original source is served
      */
     case RESULT_ABORTED = 'aborted';
 

@@ -246,6 +246,21 @@ class SourceTransformingLoaderTest extends TestCase
         $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
     }
 
+    public function testAbortedChainRevertsChangesOfEarlierTransformers(): void
+    {
+        $transforming = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, self::WOVEN_SOURCE);
+        $aborting     = $this->createTransformerStub(TransformerResultEnum::RESULT_ABORTED);
+        $this->registerLoader([$transforming, $aborting]);
+
+        $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
+        $this->assertSame(1, $aborting->callCount);
+
+        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
+        $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
+        $this->assertNotNull($cacheState);
+        $this->assertNull($cacheState['cacheUri']);
+    }
+
     public function testPrebuiltCacheTrustsStaleRecordWithoutFreshnessChecks(): void
     {
         $this->registerLoader([], Features::PREBUILT_CACHE);
