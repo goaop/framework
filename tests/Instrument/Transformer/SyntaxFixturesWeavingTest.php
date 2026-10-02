@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 /*
- * PHP 8.5 AUDIT HARNESS (temporary, lives only on the audit branch).
- * Weaves PHP 8.1-8.5 feature fixtures from _files/audit through the real
- * WeavingTransformer and validates that both the woven trait and the
- * generated proxy still lint and preserve the feature under test.
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2026, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
  */
 
 namespace Go\Instrument\Transformer;
@@ -17,18 +19,25 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\PhpUnit\AssertsCompilablePhp;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
+/**
+ * Weaves PHP 8.0-8.5 syntax fixtures with every method and property intercepted, and checks that
+ * both the woven trait and the generated proxy compile.
+ */
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
-class Php85AuditScratchTest extends TestCase
+class SyntaxFixturesWeavingTest extends TestCase
 {
-    private const FIXTURE_DIR = __DIR__ . '/../../Stubs';
+    use AssertsCompilablePhp;
 
-    /** Audit fixture stubs living in tests/Stubs alongside the general-purpose stubs. */
-    private const AUDIT_FIXTURES = [
+    private const string FIXTURE_DIR = __DIR__ . '/../../Stubs';
+
+    /** Syntax fixture stubs living in tests/Stubs alongside the general-purpose stubs. */
+    private const array FIXTURES = [
         'Collaborator',
         'ConstAttr',
         'ExprAttr',
@@ -57,15 +66,7 @@ class Php85AuditScratchTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        static::$fileSystem = FileSystem::mount('vfs');
-        if (!is_dir(self::outDir())) {
-            mkdir(self::outDir(), 0777, true);
-        }
-    }
-
-    private static function outDir(): string
-    {
-        return sys_get_temp_dir() . '/php85-audit-out';
+        static::$fileSystem = FileSystem::mount('syntaxweavingvfs');
     }
 
     public static function tearDownAfterClass(): void
@@ -84,7 +85,7 @@ class Php85AuditScratchTest extends TestCase
         $this->kernel = $this->getKernelMock(
             [
                 'appDir'        => dirname(__DIR__),
-                'cacheDir'      => 'vfs://',
+                'cacheDir'      => 'syntaxweavingvfs://',
                 'cacheFileMode' => 0770,
                 'includePaths'  => [],
                 'excludePaths'  => [],
@@ -107,107 +108,32 @@ class Php85AuditScratchTest extends TestCase
     public static function fixtureNames(): array
     {
         $names = [];
-        foreach (self::AUDIT_FIXTURES as $name) {
+        foreach (self::FIXTURES as $name) {
             $names[$name] = [$name];
         }
 
         return $names;
     }
 
-    /**
-     * Fixtures currently known to produce a broken weave, keyed to their tracking issue.
-     * A fix PR that resolves one of these MUST remove the entry (the test then asserts success).
-     *
-     * @var array<string, string>
-     */
-    private const KNOWN_GAPS = [
-        // All audit gaps (#598-#603, #615, #616) are fixed — every fixture must weave cleanly.
-    ];
-
-    /**
-     * Fixtures whose KNOWN_GAPS entry applies only on PHP >= 8.5.
-     *
-     * @var array<string, bool>
-     */
-    private const GAP_ONLY_ON_85 = [];
-
     #[DataProvider('fixtureNames')]
-    public function testWeaveAndLint(string $name): void
+    public function testWovenTraitAndProxyCompile(string $name): void
     {
-        // 8.5-only syntax cannot lint (nor natively reflect) on older runtimes
+        // 8.5-only syntax cannot compile (nor natively reflect) on older runtimes
         if (str_starts_with($name, 'Php85') && PHP_VERSION_ID < 80500) {
             $this->markTestSkipped('Fixture uses PHP 8.5 syntax');
         }
 
-        $problems = $this->weaveAndCollectProblems($name);
+        $metadata = $this->loadFixtureMetadata($name);
+        $this->transformer->transform($metadata);
 
-        /** @var array<string, string> $knownGaps Empty right now, refilled when a new gap is discovered */
-        $knownGaps = self::KNOWN_GAPS;
-        /** @var array<string, bool> $gapsOnlyOn85 Empty right now, refilled when a new gap is discovered */
-        $gapsOnlyOn85 = self::GAP_ONLY_ON_85;
+        $woven = (string) $metadata->source;
+        $this->assertPhpCompiles($woven, "$name woven trait");
 
-        $issue      = $knownGaps[$name] ?? null;
-        $isKnownGap = $issue !== null
-            && (!isset($gapsOnlyOn85[$name]) || PHP_VERSION_ID >= 80500);
-
-        if ($isKnownGap) {
-            $this->assertNotSame(
-                [],
-                $problems,
-                "$name weaves cleanly now — the gap tracked in $issue looks fixed. "
-                . 'Remove it from KNOWN_GAPS so this stays asserted.',
-            );
-            $this->addToAssertionCount(1);
-
-            return;
+        $this->assertGreaterThan(0, preg_match_all("/AOP_CACHE_DIR . '(.+)';$/m", $woven, $matches));
+        foreach ($matches[1] as $proxyPath) {
+            $proxy = (string) file_get_contents('syntaxweavingvfs://' . $proxyPath);
+            $this->assertPhpCompiles($proxy, "$name proxy $proxyPath");
         }
-
-        $this->assertSame([], $problems, "$name should weave cleanly:\n" . implode("\n---\n", $problems));
-    }
-
-    /**
-     * @return list<string> Problems encountered (transform exception or lint failures); empty = clean weave
-     */
-    private function weaveAndCollectProblems(string $name): array
-    {
-        $metadata = $this->loadAuditMetadata($name);
-
-        try {
-            $this->transformer->transform($metadata);
-        } catch (\Throwable $e) {
-            file_put_contents(self::outDir() . "/$name.ERROR.txt", (string) $e);
-
-            return ["TRANSFORM ERROR: {$e->getMessage()}"];
-        }
-
-        $problems = [];
-        $woven    = $metadata->source;
-        file_put_contents(self::outDir() . "/$name-woven.php", $woven);
-        $problems = [...$problems, ...$this->lintProblems(self::outDir() . "/$name-woven.php", "$name woven trait")];
-
-        if (preg_match_all("/AOP_CACHE_DIR . '(.+)';$/m", $woven, $matches)) {
-            foreach ($matches[1] as $i => $proxyPath) {
-                $proxyContent = (string) file_get_contents('vfs://' . $proxyPath);
-                $suffix       = $i > 0 ? "-$i" : '';
-                file_put_contents(self::outDir() . "/$name-proxy$suffix.php", $proxyContent);
-                $problems = [...$problems, ...$this->lintProblems(self::outDir() . "/$name-proxy$suffix.php", "$name proxy #$i")];
-            }
-        }
-
-        return $problems;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function lintProblems(string $file, string $label): array
-    {
-        exec(escapeshellarg(PHP_BINARY) . ' -l ' . escapeshellarg($file) . ' 2>&1', $output, $code);
-        if ($code !== 0) {
-            return ["$label does not lint:\n" . implode("\n", $output)];
-        }
-
-        return [];
     }
 
     private function getInterceptEverythingMatcher(): AdviceMatcherInterface
@@ -258,7 +184,7 @@ class Php85AuditScratchTest extends TestCase
         return $mock;
     }
 
-    private function loadAuditMetadata(string $name): StreamMetaData
+    private function loadFixtureMetadata(string $name): StreamMetaData
     {
         $fileName = self::FIXTURE_DIR . '/' . $name . '.php';
         $stream   = fopen('php://filter/string.tolower/resource=' . $fileName, 'r');
