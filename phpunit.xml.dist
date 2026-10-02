@@ -7,7 +7,12 @@
   </testsuites>
   <groups>
     <exclude>
-      <!-- Timing-based, run on demand: composer test:performance -->
+      <!--
+        Timing-based checks of the joinpoint hot path, excluded from the default run.
+        Run `composer test:performance` before and after every change of __invoke()/proceed() in
+        src/Aop/Framework (ClassFieldAccess, DynamicTraitAliasMethodInvocation, StaticTraitAliasMethodInvocation,
+        ReflectionFunctionInvocation, ReflectionConstructorInvocation) and keep the ratios from growing.
+      -->
       <group>performance</group>
     </exclude>
   </groups>
