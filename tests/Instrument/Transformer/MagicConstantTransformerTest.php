@@ -138,4 +138,15 @@ class MagicConstantTransformerTest extends TestCase
             $class::resolveFileName(__DIR__ . '/' . AspectContainer::AOP_PROXIED_SUFFIX . 'Request.php'),
         );
     }
+
+    public function testTransformerKeepsFileNameWithoutCacheDirectory(): void
+    {
+        $transformer = new MagicConstantTransformer($this->getKernelMock([
+            'cacheDir' => null,
+            'appDir'   => dirname(__DIR__),
+        ]));
+        $class = get_class($transformer);
+
+        $this->assertSame(__FILE__, $class::resolveFileName(__FILE__));
+    }
 }
