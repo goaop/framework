@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\FileSystem;
 
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\PhpUnit\UsesTemporaryDirectory;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
 use SplFileInfo;
@@ -20,6 +21,8 @@ use SplFileInfo;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class EnumeratorTest extends TestCase
 {
+    use UsesTemporaryDirectory;
+
     protected static FileSystem $fileSystem;
 
     /**
@@ -160,5 +163,34 @@ class EnumeratorTest extends TestCase
 
         $files = iterator_to_array($enumerator->enumerate());
         $this->assertNotEmpty($files);
+    }
+
+    public function testFilterAcceptsStreamWrapperPathsWithoutRealPath(): void
+    {
+        $isAllowed = new Enumerator('enumeratorvfs://base')->getFilter();
+
+        $this->assertTrue($isAllowed(new SplFileInfo('enumeratorvfs://base/sub/test/TestClass.php')));
+    }
+
+    public function testExcludePathsAreLiteralPrefixesWithWildcardsOnly(): void
+    {
+        $root = self::createTemporaryDirectory('enumerator-literal');
+        try {
+            foreach (['lib[1]+(x)', 'lib1x', 'app/Windows'] as $directory) {
+                mkdir("{$root}/{$directory}", 0777, true);
+                touch("{$root}/{$directory}/Service.php");
+            }
+            // Regex metacharacters are literal, and a backslash-separated pattern matches a slash-separated path
+            $enumerator = new Enumerator($root, [], [$root . '/lib[1]+(x)', str_replace('/', '\\', $root . '/app/Win*')]);
+
+            $found = [];
+            foreach ($enumerator->enumerate() as $file) {
+                $found[] = basename($file->getPath());
+            }
+
+            $this->assertSame(['lib1x'], $found);
+        } finally {
+            self::removeTemporaryDirectory($root);
+        }
     }
 }
