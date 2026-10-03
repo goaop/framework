@@ -1,3 +1,6 @@
+# Sources and fixtures keep LF line endings on every platform: tests compare generated code byte by byte
+* text=auto eol=lf
+
 # Development files are left out of the package archive (composer dist installs)
 /.editorconfig export-ignore
 /.git* export-ignore

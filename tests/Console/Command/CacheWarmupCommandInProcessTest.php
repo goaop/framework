@@ -15,6 +15,7 @@ namespace Go\Console\Command;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CacheWarmer;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\RuntimeException;
@@ -63,11 +64,13 @@ class CacheWarmupCommandInProcessTest extends TestCase
         $tester->execute([]);
     }
 
+    #[RequiresPhpExtension('pcntl')]
     public function testSubscribesToTerminationSignals(): void
     {
         $this->assertSame([SIGINT, SIGTERM], (new CacheWarmupCommand())->getSubscribedSignals());
     }
 
+    #[RequiresPhpExtension('pcntl')]
     public function testHandleSignalDefersShutdownToWarmupLoop(): void
     {
         $this->assertFalse((new CacheWarmupCommand())->handleSignal(SIGINT));
@@ -119,6 +122,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
         $command->exposeCreateCacheWarmer($this->createStub(AspectKernel::class));
     }
 
+    #[RequiresPhpExtension('pcntl')]
     public function testInterruptedWarmupMapsSignalToExitCode(): void
     {
         $command = new class extends CacheWarmupCommand {

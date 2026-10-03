@@ -47,8 +47,11 @@ trait UsesTemporaryDirectory
         if ($realDirectory === false || !is_dir($realDirectory)) {
             return;
         }
-        // Refuse to touch anything that was not created by createTemporaryDirectory()
-        if (!str_starts_with($realDirectory, self::temporaryDirectoryRoot() . '/' . self::TEMPORARY_DIRECTORY_PREFIX)) {
+        // Refuse to touch anything that was not created by createTemporaryDirectory(); realpath()
+        // uses the native directory separator, so the path is compared by its parts
+        if (dirname($realDirectory) !== self::temporaryDirectoryRoot()
+            || !str_starts_with(basename($realDirectory), self::TEMPORARY_DIRECTORY_PREFIX)
+        ) {
             throw new RuntimeException("Refusing to remove {$realDirectory}: not a test temporary directory");
         }
 
