@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
+use Composer\InstalledVersions;
 use Go\Aop\Aspect;
 use Go\Aop\AspectException;
 use Go\Aop\Exception\InvalidConfigurationException;
@@ -55,6 +56,16 @@ use function define;
  */
 abstract class AspectKernel
 {
+    /**
+     * Composer packages the framework runs on during weaving, always excluded from weaving
+     */
+    private const array RUNTIME_DEPENDENCIES = [
+        'goaop/dissect',
+        'goaop/parser-reflection',
+        'nikic/php-parser',
+        'symfony/finder',
+    ];
+
     /**
      * Kernel options
      *
@@ -254,6 +265,14 @@ abstract class AspectKernel
         $excludePaths    = array_values(array_filter($rawExcludePaths, is_string(...)));
         $excludePaths[]  = $cacheDir;
         $excludePaths[]  = __DIR__ . '/../';
+        foreach (self::RUNTIME_DEPENDENCIES as $dependency) {
+            // The weaver must never weave the code it runs on: exclude the installed runtime dependencies
+            $installPath = InstalledVersions::isInstalled($dependency) ? InstalledVersions::getInstallPath($dependency) : null;
+            $installPath = $installPath !== null ? realpath($installPath) : false;
+            if ($installPath !== false) {
+                $excludePaths[] = $installPath;
+            }
+        }
 
         $appDir        = is_string($merged['appDir'] ?? null) ? $merged['appDir'] : '';
         $cacheFileMode = $merged['cacheFileMode'] ?? null;

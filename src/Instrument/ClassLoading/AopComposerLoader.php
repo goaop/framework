@@ -72,17 +72,8 @@ class AopComposerLoader
         AspectContainer $container,
         protected readonly array $options,
     ) {
-        $prefixes     = $original->getPrefixes();
-        $excludePaths = $options['excludePaths'];
-
-        if (!empty($prefixes)) {
-            // Let's exclude core dependencies from that list
-            if (isset($prefixes['Dissect'])) {
-                $excludePaths[] = $prefixes['Dissect'][0];
-            }
-        }
-
-        $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $excludePaths);
+        // The framework itself and its runtime dependencies are already part of excludePaths (see AspectKernel)
+        $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
         $this->fileEnumerator = $fileEnumerator;
 
         $cachePathManager     = $container->getService(CachePathManager::class);
