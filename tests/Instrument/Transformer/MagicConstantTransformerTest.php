@@ -21,7 +21,7 @@ use ReflectionProperty;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class MagicConstantTransformerTest extends TestCase
 {
-    protected MagicConstantTransformer $transformer;
+    protected SyntaxTreeRewriter $rewriter;
 
     protected ?StreamMetaData $metadata;
 
@@ -30,11 +30,13 @@ class MagicConstantTransformerTest extends TestCase
     */
     public function setUp(): void
     {
-        $this->transformer = new MagicConstantTransformer(
-            $this->getKernelMock([
-                'cacheDir' => __DIR__,
-                'appDir'   => dirname(__DIR__),
-            ]),
+        $this->rewriter = new SyntaxTreeRewriter(
+            new MagicConstantTransformer(
+                $this->getKernelMock([
+                    'cacheDir' => __DIR__,
+                    'appDir'   => dirname(__DIR__),
+                ]),
+            ),
         );
     }
 
@@ -76,7 +78,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream('php://input'), '<?php echo "simple test, no magic constants" ?>');
         $expected = $metadata->source;
-        $this->assertSame(TransformerResult::Abstain, $this->transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Abstain, $this->rewriter->transform($metadata));
         $this->assertSame($expected, $metadata->source);
     }
 
@@ -84,7 +86,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __DIR__; ?>');
         $expected = '<?php echo \'' . __DIR__ . '\'; ?>';
-        $this->assertSame(TransformerResult::Abstain, $this->transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Abstain, $this->rewriter->transform($metadata));
         $this->assertEquals($expected, $metadata->source);
     }
 
@@ -92,7 +94,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __FILE__; ?>');
         $expected = '<?php echo \'' . __FILE__ . '\'; ?>';
-        $this->assertSame(TransformerResult::Abstain, $this->transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Abstain, $this->rewriter->transform($metadata));
         $this->assertEquals($expected, $metadata->source);
     }
 
@@ -100,7 +102,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream('php://input'), '<?php echo "__FILE__"; ?>');
         $expected = '<?php echo "__FILE__"; ?>';
-        $this->assertSame(TransformerResult::Abstain, $this->transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Abstain, $this->rewriter->transform($metadata));
         $this->assertEquals($expected, $metadata->source);
     }
 
@@ -108,19 +110,19 @@ class MagicConstantTransformerTest extends TestCase
     {
         $source   = '<?php $class = new ReflectionClass("stdClass"); echo $class->getFileName(); ?>';
         $metadata = new StreamMetaData(self::openStream('php://input'), $source);
-        $this->assertSame(TransformerResult::Abstain, $this->transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Abstain, $this->rewriter->transform($metadata));
         $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $metadata->source);
     }
 
     public function testTransformerResolvesFileName(): void
     {
-        $class = get_class($this->transformer);
+        $class = MagicConstantTransformer::class;
         $this->assertStringStartsWith(dirname(__DIR__), $class::resolveFileName(__FILE__));
     }
 
     public function testTransformerDropsProxiedSuffixFromWovenBodyFileName(): void
     {
-        $class = get_class($this->transformer);
+        $class = MagicConstantTransformer::class;
 
         $this->assertSame(
             dirname(__DIR__) . '/Some.php',
@@ -130,7 +132,7 @@ class MagicConstantTransformerTest extends TestCase
 
     public function testTransformerKeepsFileNameThatOnlyContainsProxiedSuffix(): void
     {
-        $class = get_class($this->transformer);
+        $class = MagicConstantTransformer::class;
 
         // The marker is only meaningful at the very end of the file name: a class that happens
         // to carry the suffix word inside its own name must keep it

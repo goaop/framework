@@ -18,6 +18,7 @@ use Go\Aop\Features;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
+use Go\Instrument\Transformer\SyntaxTreeRewriter;
 use Go\Instrument\Transformer\WeavingTransformer;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -473,6 +474,7 @@ class AspectKernelTest extends TestCase
 
         $this->assertTrue($container->has(WeavingTransformer::class));
         $this->assertTrue($container->has(MagicConstantTransformer::class));
+        $this->assertTrue($container->has(SyntaxTreeRewriter::class));
         $this->assertFalse($container->has(ConstructorExecutionTransformer::class));
         $this->assertFalse($container->has(FilterInjectorTransformer::class));
     }
