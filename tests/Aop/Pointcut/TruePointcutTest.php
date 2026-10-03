@@ -21,7 +21,6 @@ class TruePointcutTest extends TestCase
 {
     protected TruePointcut $pointcut;
 
-    #[\Override]
     public function setUp(): void
     {
         $this->pointcut = new TruePointcut();

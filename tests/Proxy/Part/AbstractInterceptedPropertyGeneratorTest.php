@@ -25,7 +25,6 @@ use ReflectionProperty;
  */
 final class AbstractInterceptedPropertyGeneratorTestSubject extends AbstractInterceptedPropertyGenerator
 {
-    #[\Override]
     public function getNode(): PropertyNode
     {
         return $this->createBasePropertyGenerator()->getNode();

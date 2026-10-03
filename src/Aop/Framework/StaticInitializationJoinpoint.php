@@ -43,7 +43,6 @@ final class StaticInitializationJoinpoint extends AbstractJoinpoint implements C
     /**
      * @return void Covariant, as static initialization could not return anything
      */
-    #[\Override]
     public function proceed(): void
     {
         if (isset($this->advices[$this->current])) {
@@ -69,7 +68,6 @@ final class StaticInitializationJoinpoint extends AbstractJoinpoint implements C
     /**
      * @return null Covariance, always null for static initialization
      */
-    #[\Override]
     public function getThis(): null
     {
         return null;
@@ -78,13 +76,11 @@ final class StaticInitializationJoinpoint extends AbstractJoinpoint implements C
     /**
      * @return false Covariance, always false for static method calls
      */
-    #[\Override]
     public function isDynamic(): false
     {
         return false;
     }
 
-    #[\Override]
     public function getScope(): string
     {
         return $this->scope;
@@ -93,7 +89,6 @@ final class StaticInitializationJoinpoint extends AbstractJoinpoint implements C
     /**
      * Returns a friendly description of current joinpoint
      */
-    #[\Override]
     public function __toString(): string
     {
         return sprintf(

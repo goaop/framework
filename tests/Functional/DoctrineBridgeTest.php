@@ -64,7 +64,6 @@ class DoctrineBridgeTest extends BaseFunctionalTestCase
         $this->assertSame(3, $result['counter']);
     }
 
-    #[\Override]
     protected function getConfigurationName(): string
     {
         return 'default';

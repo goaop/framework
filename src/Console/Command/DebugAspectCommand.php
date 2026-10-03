@@ -36,14 +36,12 @@ EOT,
 )]
 class DebugAspectCommand extends BaseAspectCommand
 {
-    #[\Override]
     protected function configure(): void
     {
         parent::configure();
         $this->addOption('aspect', null, InputOption::VALUE_OPTIONAL, 'Optional aspect name to filter');
     }
 
-    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);

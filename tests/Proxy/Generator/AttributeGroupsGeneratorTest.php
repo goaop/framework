@@ -27,7 +27,6 @@ class AttributeGroupsGeneratorTest extends TestCase
 
     private static Standard $printer;
 
-    #[\Override]
     public static function setUpBeforeClass(): void
     {
         self::$printer = new Standard(['shortArraySyntax' => true]);

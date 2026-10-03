@@ -60,7 +60,6 @@ final readonly class NamePointcut implements Pointcut
         ) . ')$/';
     }
 
-    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
@@ -88,13 +87,11 @@ final readonly class NamePointcut implements Pointcut
         return $isMatched === 1;
     }
 
-    #[\Override]
     public function getKind(): int
     {
         return $this->pointcutKind;
     }
 
-    #[\Override]
     public function compileToPhp(): Expr
     {
         return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([

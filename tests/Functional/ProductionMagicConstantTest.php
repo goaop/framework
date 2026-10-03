@@ -17,7 +17,6 @@ namespace Go\Functional;
  */
 class ProductionMagicConstantTest extends MagicConstantTest
 {
-    #[\Override]
     protected function getConfigurationName(): string
     {
         return 'production';

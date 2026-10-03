@@ -155,13 +155,11 @@ class AbstractJoinpointTest extends TestCase
         return new class ($type) implements Advice {
             public function __construct(private readonly AdviceTypeEnum $type) {}
 
-            #[\Override]
             public function getType(): AdviceTypeEnum
             {
                 return $this->type;
             }
 
-            #[\Override]
             public function compileToPhp(): Expr
             {
                 throw new LogicException('Not expected to be called');
@@ -174,19 +172,16 @@ class AbstractJoinpointTest extends TestCase
         return new class ($order) implements OrderedAdvice {
             public function __construct(private readonly int $order) {}
 
-            #[\Override]
             public function getAdviceOrder(): int
             {
                 return $this->order;
             }
 
-            #[\Override]
             public function getType(): AdviceTypeEnum
             {
                 return AdviceTypeEnum::Introduction;
             }
 
-            #[\Override]
             public function compileToPhp(): Expr
             {
                 throw new LogicException('Not expected to be called');

@@ -85,13 +85,11 @@ interface FieldAccess extends ClassJoinpoint
     /**
      * @phpstan-return T Covariant, always instance of object, can not be null
      */
-    #[\Override]
     public function getThis(): object;
 
     /**
      * @return true Covariance, always true for class properties
      */
-    #[\Override]
     public function isDynamic(): true;
 
     /**

@@ -37,13 +37,11 @@ interface DynamicMethodInvocation extends MethodInvocation
     /**
      * @phpstan-return T Covariance, always instance of object
      */
-    #[\Override]
     public function getThis(): object;
 
     /**
      * @return true Covariance, always true for dynamic method calls
      */
-    #[\Override]
     public function isDynamic(): true;
 
     /**

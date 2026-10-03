@@ -36,7 +36,6 @@ final class PointcutParser extends Parser
     /**
      * @return Pointcut Covariant, always {@see Pointcut}
      */
-    #[\Override]
     public function parse(TokenStream $stream): Pointcut
     {
         $result = parent::parse($stream);

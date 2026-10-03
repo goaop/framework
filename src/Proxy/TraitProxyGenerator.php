@@ -133,7 +133,6 @@ final class TraitProxyGenerator extends ClassProxyGenerator
      * In a trait proxy, all intercepted methods always have a private `<method>OriginalAlias` alias in the
      * trait-use block (from the parent trait). So the callable always references the alias.
      */
-    #[\Override]
     protected function getJoinpointInvocationBody(ReflectionMethod $method, ?ReflectionClass $originalClass = null): string
     {
         $isStatic = $method->isStatic();
@@ -189,7 +188,6 @@ final class TraitProxyGenerator extends ClassProxyGenerator
         BODY;
     }
 
-    #[\Override]
     public function addUse(string $use, ?string $useAlias = null): void
     {
         if ($use !== '' && $this->generator instanceof TraitGenerator) {
@@ -197,7 +195,6 @@ final class TraitProxyGenerator extends ClassProxyGenerator
         }
     }
 
-    #[\Override]
     public function generate(): string
     {
         return $this->generator->generate();

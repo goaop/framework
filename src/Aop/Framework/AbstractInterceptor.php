@@ -79,7 +79,6 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
         $this->pointcutExpression = $pointcutExpression;
     }
 
-    #[\Override]
     public function getAdviceOrder(): int
     {
         return $this->adviceOrder;
@@ -103,7 +102,6 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
      * `Interceptor::after(SomeAspect::class, 'afterMethod')` - the facade defers aspect
      * resolution and advice closure creation behind a native lazy proxy.
      */
-    #[\Override]
     final public function compileToPhp(): Expr
     {
         $reflectionAdvice     = new ReflectionFunction($this->adviceMethod);

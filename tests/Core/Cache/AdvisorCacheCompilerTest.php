@@ -46,7 +46,6 @@ class AdvisorCacheCompilerTest extends TestCase
 {
     private AdvisorCacheCompiler $compiler;
 
-    #[\Override]
     protected function setUp(): void
     {
         $this->compiler = new AdvisorCacheCompiler();
@@ -248,13 +247,11 @@ class AdvisorCacheCompilerTest extends TestCase
         $adviceClosure = new ReflectionMethod(DoSomethingAspect::class, 'afterDoSomething')->getClosure($aspect);
         // A custom interceptor subclass has no known factory facade counterpart
         $interceptor = new class ($adviceClosure) extends \Go\Aop\Framework\AbstractInterceptor {
-            #[\Override]
             public function invoke(\Go\Aop\Intercept\Joinpoint $joinpoint): mixed
             {
                 return $joinpoint->proceed();
             }
 
-            #[\Override]
             public function getType(): \Go\Aop\AdviceTypeEnum
             {
                 return \Go\Aop\AdviceTypeEnum::Around;
@@ -271,13 +268,11 @@ class AdvisorCacheCompilerTest extends TestCase
         // Advisor extends Compilable, so a userland advisor that cannot express itself
         // statically signals that by throwing from its own compileToPhp()
         $notCompilableAdvisor = new class implements Advisor {
-            #[\Override]
             public function getAdvice(): Advice
             {
                 throw new \LogicException('Not expected to be called');
             }
 
-            #[\Override]
             public function compileToPhp(): \PhpParser\Node\Expr
             {
                 throw new NotCompilableException('This advisor deliberately refuses compilation');

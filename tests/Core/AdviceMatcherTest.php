@@ -42,13 +42,11 @@ class AdviceMatcherTest extends TestCase
     /**
      * @inheritDoc
      */
-    #[\Override]
     public static function setUpBeforeClass(): void
     {
         ReflectionEngine::init(new ComposerLocator());
     }
 
-    #[\Override]
     protected function setUp(): void
     {
         $this->adviceMatcher = new AdviceMatcher();

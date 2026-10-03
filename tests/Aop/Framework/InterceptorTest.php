@@ -20,7 +20,6 @@ use ReflectionProperty;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class InterceptorTest extends TestCase
 {
-    #[\Override]
     protected function tearDown(): void
     {
         $instance = new ReflectionProperty(AspectKernel::class, 'instance');
@@ -115,7 +114,6 @@ final class InterceptorTest extends TestCase
 
 final class InterceptorTestAspectKernel extends AspectKernel
 {
-    #[\Override]
     protected function configureAop(AspectContainer $container): void
     {
         $container->add(InterceptorTestAspect::class, new InterceptorTestAspect());

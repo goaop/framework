@@ -206,7 +206,6 @@ final class EnumGenerator implements GeneratorInterface
     /**
      * Generates the full PHP source: namespace declaration, use statements, and enum.
      */
-    #[\Override]
     public function generate(): string
     {
         $stmts = [];

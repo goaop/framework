@@ -25,7 +25,6 @@ class CachePortabilityTest extends BaseFunctionalTestCase
 {
     private string $movedCacheDir;
 
-    #[\Override]
     public function setUp(): void
     {
         parent::setUp();
@@ -33,7 +32,6 @@ class CachePortabilityTest extends BaseFunctionalTestCase
         (new Filesystem())->remove($this->movedCacheDir);
     }
 
-    #[\Override]
     public function tearDown(): void
     {
         (new Filesystem())->remove($this->movedCacheDir);
@@ -64,7 +62,6 @@ class CachePortabilityTest extends BaseFunctionalTestCase
         $this->assertDirectoryDoesNotExist($this->configuration['cacheDir'], 'Nothing may be woven again');
     }
 
-    #[\Override]
     protected function getConfigurationName(): string
     {
         return 'production';

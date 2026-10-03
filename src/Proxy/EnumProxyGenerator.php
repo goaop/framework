@@ -195,7 +195,6 @@ final class EnumProxyGenerator extends ClassProxyGenerator
     /**
      * {@inheritDoc}
      */
-    #[\Override]
     public function addUse(string $use, ?string $useAlias = null): void
     {
         if ($use !== '' && $this->generator instanceof EnumGenerator) {
@@ -206,7 +205,6 @@ final class EnumProxyGenerator extends ClassProxyGenerator
     /**
      * Generates the enum proxy source code.
      */
-    #[\Override]
     public function generate(): string
     {
         return $this->generator->generate();
@@ -220,7 +218,6 @@ final class EnumProxyGenerator extends ClassProxyGenerator
      *
      * All intercepted enum methods have `<method>OriginalAlias` aliases from the enum's trait-use block.
      */
-    #[\Override]
     protected function getJoinpointInvocationBody(ReflectionMethod $method, ?ReflectionClass $originalClass = null): string
     {
         $isStatic = $method->isStatic();

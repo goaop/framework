@@ -67,13 +67,11 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
         }
     }
 
-    #[\Override]
     public function getPointcut(): Pointcut
     {
         return $this->pointcut;
     }
 
-    #[\Override]
     public function getAdvice(): Advice
     {
         return $this->advice;
@@ -83,7 +81,6 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
      * Compiles into a generic advisor over the parsed pointcut: the compiled cache
      * resolves the parsing laziness away, so including it never needs the container
      */
-    #[\Override]
     public function compileToPhp(): Expr
     {
         return new New_(new FullyQualified(GenericPointcutAdvisor::class), [

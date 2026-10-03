@@ -30,7 +30,6 @@ class ContainerTest extends TestCase
 {
     protected AspectContainer $container;
 
-    #[\Override]
     protected function setUp(): void
     {
         $this->container = new Container();

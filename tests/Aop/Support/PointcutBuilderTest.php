@@ -26,7 +26,6 @@ class PointcutBuilderTest extends TestCase
 
     private PointcutBuilder $builder;
 
-    #[\Override]
     protected function setUp(): void
     {
         $this->container = new Container();

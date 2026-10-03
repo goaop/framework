@@ -69,7 +69,6 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    #[\Override]
     public function proceed(): object
     {
         if (isset($this->advices[$this->current])) {
@@ -91,7 +90,6 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
         return $instance;
     }
 
-    #[\Override]
     public function getConstructor(): ?ReflectionMethod
     {
         return $this->constructor;
@@ -102,7 +100,6 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      *
      * @phpstan-return T|null Instance of object or null if object hasn't been created yet (Before)
      */
-    #[\Override]
     public function getThis(): ?object
     {
         return $this->instance;
@@ -118,7 +115,6 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    #[\Override]
     public function __invoke(array $arguments = []): object
     {
         if ($this->level > 0) {
@@ -146,13 +142,11 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
     /**
      * @return true Covariance, always true for new object creation
      */
-    #[\Override]
     public function isDynamic(): true
     {
         return true;
     }
 
-    #[\Override]
     public function getScope(): string
     {
         return $this->class->getName();
@@ -161,7 +155,6 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
     /**
      * Returns a friendly description of current joinpoint
      */
-    #[\Override]
     public function __toString(): string
     {
         return sprintf(

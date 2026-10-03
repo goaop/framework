@@ -41,7 +41,6 @@ final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
      */
     public const string ADVISOR_ID_SUFFIX = '.advice';
 
-    #[\Override]
     public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
     {
         $loadedItems = [];

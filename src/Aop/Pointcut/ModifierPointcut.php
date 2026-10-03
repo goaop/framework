@@ -59,7 +59,6 @@ final readonly class ModifierPointcut implements Pointcut
     /**
      * @return ($reflector is null ? true : bool)
      */
-    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
@@ -114,13 +113,11 @@ final readonly class ModifierPointcut implements Pointcut
         return new self($this->andMask, $this->orMask, $this->notMask | $bitMask);
     }
 
-    #[\Override]
     public function getKind(): int
     {
         return Pointcut::KIND_ALL;
     }
 
-    #[\Override]
     public function compileToPhp(): Expr
     {
         return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([

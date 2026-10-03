@@ -27,7 +27,6 @@ class AopComposerLoaderTest extends TestCase
 
     private string $appDir;
 
-    #[\Override]
     protected function setUp(): void
     {
         // Real directory: the file enumerator resolves candidate files with realpath()
@@ -38,7 +37,6 @@ class AopComposerLoaderTest extends TestCase
         touch($this->appDir . '/src/Service.php');
     }
 
-    #[\Override]
     protected function tearDown(): void
     {
         self::removeTemporaryDirectory($this->appDir);

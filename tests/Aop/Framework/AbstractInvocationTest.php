@@ -18,17 +18,14 @@ class AbstractInvocationTest extends TestCase
 {
     private AbstractInvocation $invocation;
 
-    #[\Override]
     protected function setUp(): void
     {
         $this->invocation = new class ([]) extends AbstractInvocation {
-            #[\Override]
             public function proceed(): mixed
             {
                 return null;
             }
 
-            #[\Override]
             public function __toString(): string
             {
                 return 'test-invocation';

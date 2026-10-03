@@ -22,7 +22,6 @@ use Go\Aop\Intercept\Joinpoint;
  */
 final class BeforeInterceptor extends AbstractInterceptor
 {
-    #[\Override]
     public function invoke(Joinpoint $joinpoint): mixed
     {
         ($this->adviceMethod)($joinpoint);
@@ -30,7 +29,6 @@ final class BeforeInterceptor extends AbstractInterceptor
         return $joinpoint->proceed();
     }
 
-    #[\Override]
     public function getType(): AdviceTypeEnum
     {
         return AdviceTypeEnum::Before;

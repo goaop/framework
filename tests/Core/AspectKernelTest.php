@@ -28,7 +28,6 @@ use RuntimeException;
 
 class AspectKernelTest extends TestCase
 {
-    #[\Override]
     protected function tearDown(): void
     {
         // AspectKernel::$instance is a single process-wide static shared by every subclass
@@ -412,6 +411,5 @@ class AspectKernelTest extends TestCase
 
 final class AspectKernelTestConcreteKernel extends AspectKernel
 {
-    #[\Override]
     protected function configureAop(AspectContainer $container): void {}
 }

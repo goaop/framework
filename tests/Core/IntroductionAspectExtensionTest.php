@@ -33,7 +33,6 @@ class IntroductionAspectExtensionTest extends TestCase
 {
     private IntroductionAspectExtension $extension;
 
-    #[\Override]
     protected function setUp(): void
     {
         $this->extension = new IntroductionAspectExtension(

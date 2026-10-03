@@ -133,7 +133,6 @@ final class SourceTransformingLoader extends PhpStreamFilter
         return self::$filterId;
     }
 
-    #[\Override]
     public function filter($in, $out, &$consumed, $closing): int
     {
         while ($bucket = stream_bucket_make_writeable($in)) {

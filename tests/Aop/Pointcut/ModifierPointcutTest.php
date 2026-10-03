@@ -25,7 +25,6 @@ class ModifierPointcutTest extends TestCase
 {
     private ModifierPointcut $pointcut;
 
-    #[\Override]
     protected function setUp(): void
     {
         $this->pointcut = new ModifierPointcut();

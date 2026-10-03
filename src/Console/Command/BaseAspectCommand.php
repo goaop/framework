@@ -30,7 +30,6 @@ abstract class BaseAspectCommand extends Command
      */
     protected AspectKernel $aspectKernel;
 
-    #[\Override]
     protected function configure(): void
     {
         $this->addArgument('loader', InputArgument::REQUIRED, 'Path to the aspect loader file');

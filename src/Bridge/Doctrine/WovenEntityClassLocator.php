@@ -93,7 +93,6 @@ final readonly class WovenEntityClassLocator implements ClassLocator
     /**
      * @return list<class-string>
      */
-    #[\Override]
     public function getClassNames(): array
     {
         $classNames = [];

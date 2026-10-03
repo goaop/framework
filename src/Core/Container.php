@@ -63,13 +63,11 @@ final class Container implements AspectContainer
         $this->resources = array_combine($resources, $resources);
     }
 
-    #[\Override]
     public function onRegistration(string $interfaceName, Closure $listener): void
     {
         $this->registrationListeners[$interfaceName][] = $listener;
     }
 
-    #[\Override]
     public function add(string $id, mixed $value): void
     {
         $this->values[$id] = $value;
@@ -86,7 +84,6 @@ final class Container implements AspectContainer
         }
     }
 
-    #[\Override]
     public function addLazyService(string $id, Closure $lazyInitializationClosure): void
     {
         // Only class-names are acceptable ids here: getServicesByInterface() probes these
@@ -109,7 +106,6 @@ final class Container implements AspectContainer
         }
     }
 
-    #[\Override]
     public function getService(string $className): object
     {
         $service = $this->getValue($className);
@@ -120,7 +116,6 @@ final class Container implements AspectContainer
         return $service;
     }
 
-    #[\Override]
     public function getValue(string $key): mixed
     {
         // isset() first for speed, array_key_exists() keeps a stored null value retrievable
@@ -135,13 +130,11 @@ final class Container implements AspectContainer
         return $this->values[$key];
     }
 
-    #[\Override]
     public function has(string $id): bool
     {
         return isset($this->values[$id]) || array_key_exists($id, $this->values) || isset($this->factories[$id]);
     }
 
-    #[\Override]
     public function getServicesByInterface(string $interfaceTagClassName): array
     {
         // Deferred services are only tagged once materialized (as lazy objects), so
@@ -210,7 +203,6 @@ final class Container implements AspectContainer
         }) ?? $factory($this);
     }
 
-    #[\Override]
     public function isFreshSince(int $timestamp): bool
     {
         if (!isset($this->cachedMaxTimestamp)) {
@@ -220,7 +212,6 @@ final class Container implements AspectContainer
         return $this->cachedMaxTimestamp <= $timestamp;
     }
 
-    #[\Override]
     public function addResource(string $resource): void
     {
         if (!isset($this->resources[$resource]) && is_readable($resource)) {

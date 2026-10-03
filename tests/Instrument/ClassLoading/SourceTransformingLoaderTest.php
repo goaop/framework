@@ -45,7 +45,6 @@ class SourceTransformingLoaderTest extends TestCase
 
     private CachePathManager $cachePathManager;
 
-    #[\Override]
     protected function setUp(): void
     {
         // Real directories: the stream filter includes woven sources and the loader resolves the
@@ -58,7 +57,6 @@ class SourceTransformingLoaderTest extends TestCase
         file_put_contents($this->originalFile, self::ORIGINAL_SOURCE);
     }
 
-    #[\Override]
     protected function tearDown(): void
     {
         self::removeTemporaryDirectory($this->cacheDir);
@@ -379,7 +377,6 @@ final class CountingSourceTransformerStub implements SourceTransformer
         private readonly ?string $newSource,
     ) {}
 
-    #[\Override]
     public function transform(StreamMetaData $metadata): TransformerResult
     {
         $this->callCount++;

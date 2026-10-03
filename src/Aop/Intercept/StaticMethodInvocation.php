@@ -26,13 +26,11 @@ interface StaticMethodInvocation extends MethodInvocation
     /**
      * @phpstan-return null Covariance, always null for static method calls
      */
-    #[\Override]
     public function getThis(): null;
 
     /**
      * @return false Covariance, always false for static method calls
      */
-    #[\Override]
     public function isDynamic(): false;
 
     /**

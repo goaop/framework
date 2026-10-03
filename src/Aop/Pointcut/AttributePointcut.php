@@ -50,7 +50,6 @@ final readonly class AttributePointcut implements Pointcut
         private bool   $useContextForMatching = false,
     ) {}
 
-    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
@@ -76,13 +75,11 @@ final readonly class AttributePointcut implements Pointcut
         return count($instanceToCheck->getAttributes($this->attributeClassName, ReflectionAttribute::IS_INSTANCEOF)) > 0;
     }
 
-    #[\Override]
     public function getKind(): int
     {
         return $this->pointcutKind;
     }
 
-    #[\Override]
     public function compileToPhp(): Expr
     {
         // The attribute class name comes from existing code, so a ::class fetch is always safe

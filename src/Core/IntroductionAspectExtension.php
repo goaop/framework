@@ -29,7 +29,6 @@ use ReflectionProperty;
  */
 class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 {
-    #[\Override]
     public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
     {
         $loadedItems = [];

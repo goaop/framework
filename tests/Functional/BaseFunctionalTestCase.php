@@ -42,7 +42,6 @@ abstract class BaseFunctionalTestCase extends TestCase
     /**
      * {@inheritdoc}
      */
-    #[\Override]
     public function setUp(): void
     {
         $this->loadConfiguration();
@@ -53,7 +52,6 @@ abstract class BaseFunctionalTestCase extends TestCase
     /**
      * {@inheritdoc}
      */
-    #[\Override]
     public function tearDown(): void
     {
         $this->clearCache();

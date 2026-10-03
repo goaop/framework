@@ -133,7 +133,6 @@ final class FilterInjectorTransformer implements SourceTransformer
     /**
      * Wrap all includes into rewrite filter
      */
-    #[\Override]
     public function transform(StreamMetaData $metadata): TransformerResult
     {
         $includeExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof Include_);
