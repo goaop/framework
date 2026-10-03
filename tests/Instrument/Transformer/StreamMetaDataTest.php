@@ -39,8 +39,9 @@ class StreamMetaDataTest extends TestCase
         assert($stream !== false);
         $metadata = new StreamMetaData($stream, '<?php echo "old"; ?>');
 
+        // The wording differs between PHP versions ("is read-only" / "get-only virtual property")
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage('is read-only');
+        $this->expectExceptionMessage('StreamMetaData::$source');
 
         // @phpstan-ignore assign.propertyReadOnly (writing is exactly what is under test)
         $metadata->source = '<?php echo "new"; ?>';
