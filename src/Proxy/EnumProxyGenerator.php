@@ -53,7 +53,7 @@ use ReflectionNamedType;
  *   - Re-declares all enum cases (they cannot live in traits)
  *   - Overrides each intercepted method with per-method lazy joinpoint dispatch
  */
-class EnumProxyGenerator extends ClassProxyGenerator
+final class EnumProxyGenerator extends ClassProxyGenerator
 {
     /**
      * Built-in enum methods that must never be intercepted.

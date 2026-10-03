@@ -40,5 +40,6 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 - Use targeted edits (Edit tool) over full-file rewrites.
 - No filler words ("let me", "carefully", "I'll now").
 - Before commit: phpunit and phpstan must pass. Fix errors before offering to commit.
+- New classes are `final` unless they are meant to be extended.
 - Commit messages and PR titles must follow Conventional Commits (`type(scope): summary`, e.g. `fix(proxy): ...`).
 - Generated code (proxies, woven traits, advisor caches) must stay clean and readable: reference classes through short `use` aliases, never replace them with fully-qualified names. Name collisions are detected and resolved by adjusting the imports automatically (`Go\Proxy\Generator\ProxyImports`, see `src/Proxy/AGENTS.md`).

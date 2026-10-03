@@ -18,4 +18,4 @@ use Attribute;
  * Around advice attribute
  */
 #[Attribute(Attribute::TARGET_METHOD)]
-class Around extends AbstractInterceptor {}
+final class Around extends AbstractInterceptor {}

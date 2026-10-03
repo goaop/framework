@@ -18,8 +18,15 @@ use function is_array;
  * Resolves paths for different file systems and stream wrappers without touching the disk,
  * which native realpath() can not do for stream wrapper (e.g. phar://, vfs://) paths
  */
-class PathResolver
+final class PathResolver
 {
+    /**
+     * Static facade, never instantiated
+     *
+     * @codeCoverageIgnore
+     */
+    private function __construct() {}
+
     /**
      * Custom replacement for realpath() and stream_resolve_include_path()
      *

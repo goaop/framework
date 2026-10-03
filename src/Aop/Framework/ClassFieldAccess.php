@@ -143,7 +143,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    final public function proceed(): mixed
+    public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current++];
@@ -169,7 +169,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    final public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed
+    public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed
     {
         if ($this->level > 0) {
             // Nested access: keep the outer state and value references. No initialization checks on purpose:
@@ -210,17 +210,17 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         }
     }
 
-    final public function getThis(): object
+    public function getThis(): object
     {
         return $this->instance;
     }
 
-    final public function isDynamic(): true
+    public function isDynamic(): true
     {
         return true;
     }
 
-    final public function getScope(): string
+    public function getScope(): string
     {
         return $this->instance::class;
     }
@@ -228,7 +228,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Returns a friendly description of current joinpoint
      */
-    final public function __toString(): string
+    public function __toString(): string
     {
         return sprintf(
             '%s(%s->%s)',

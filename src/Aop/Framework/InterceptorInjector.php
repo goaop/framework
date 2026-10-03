@@ -23,9 +23,18 @@ use Go\Aop\Intercept\StaticMethodInvocation;
 
 /**
  * Central factory for creating concrete joinpoint implementations.
+ *
+ * @internal Called by generated proxy code only
  */
 final class InterceptorInjector
 {
+    /**
+     * Static facade, never instantiated
+     *
+     * @codeCoverageIgnore
+     */
+    private function __construct() {}
+
     /**
      * @template T of object
      * @param class-string<T> $className

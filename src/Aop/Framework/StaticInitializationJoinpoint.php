@@ -21,7 +21,7 @@ use Go\Aop\Intercept\Interceptor;
  * @template T of object = object
  * @implements ClassJoinpoint<T>
  */
-class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJoinpoint
+final class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJoinpoint
 {
     /**
      * @var class-string<T>
@@ -56,7 +56,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
      *
      * @param class-string<T>|null $scope Runtime static context, if available
      */
-    final public function __invoke(?string $scope = null): void
+    public function __invoke(?string $scope = null): void
     {
         if ($scope !== null) {
             $this->scope = $scope;
@@ -89,7 +89,7 @@ class StaticInitializationJoinpoint extends AbstractJoinpoint implements ClassJo
     /**
      * Returns a friendly description of current joinpoint
      */
-    final public function __toString(): string
+    public function __toString(): string
     {
         return sprintf(
             'staticinitialization(%s)',

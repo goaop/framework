@@ -36,7 +36,7 @@ use function strlen;
  *
  * @phpstan-property resource $stream Inherited from php_user_filter; typed here for static analysis
  */
-class SourceTransformingLoader extends PhpStreamFilter
+final class SourceTransformingLoader extends PhpStreamFilter
 {
     /**
      * Php filter definition

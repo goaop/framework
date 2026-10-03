@@ -19,6 +19,8 @@ use ReflectionClass;
 
 /**
  * Loader of aspects into the container
+ *
+ * @internal Framework service, not a public extension point
  */
 class AspectLoader implements AspectLoaderInterface
 {

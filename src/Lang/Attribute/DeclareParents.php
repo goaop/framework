@@ -18,7 +18,7 @@ use Attribute;
  * Declare parents attribute
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-class DeclareParents extends AbstractAttribute
+final class DeclareParents extends AbstractAttribute
 {
     /**
      * @param class-string $interfaceName Interface name to add

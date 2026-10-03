@@ -26,7 +26,7 @@ use PhpParser\NodeVisitor\FindingVisitor;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-class FilterInjectorTransformer implements SourceTransformer
+final class FilterInjectorTransformer implements SourceTransformer
 {
     /**
      * Php filter definition
