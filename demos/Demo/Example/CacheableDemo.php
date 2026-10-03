@@ -22,7 +22,7 @@ class CacheableDemo
     /**
      * Returns a report and explicitly cache a result for future use
      *
-     * In this example we use "Cacheable" annotation to explicit mark a method
+     * In this example we use the #[Cacheable] attribute to explicitly mark a method
      */
     #[Cacheable(time: 10)]
     public function getReport(string $from): string
