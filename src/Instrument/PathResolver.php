@@ -24,6 +24,8 @@ final class PathResolver
 {
     /**
      * Static facade, never instantiated
+     *
+     * @codeCoverageIgnore
      */
     private function __construct() {}
 

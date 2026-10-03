@@ -28,6 +28,8 @@ final class The
 {
     /**
      * Static facade, never instantiated
+     *
+     * @codeCoverageIgnore
      */
     private function __construct() {}
 

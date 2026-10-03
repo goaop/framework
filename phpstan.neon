@@ -32,3 +32,5 @@ parameters:
   ignoreErrors:
     # #[\Override] on properties needs PHP 8.5, the framework still supports 8.4
     - identifier: property.missingOverride
+      # reported only when analysing with PHP 8.5+
+      reportUnmatched: false
