@@ -15,6 +15,8 @@ namespace Go\Aop\Pointcut;
 use Attribute;
 use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
+use Go\Stubs\ByReferenceStub;
+use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -101,6 +103,26 @@ final class PointcutSemanticsTest extends TestCase
 
         $this->assertTrue($pointcut->matches($class, $class->getMethod('plainPublic')));
         $this->assertFalse($pointcut->matches($class, $class->getMethod('finalPublic')));
+    }
+
+    public function testMethodsReturningByReferenceCanBeFilteredOut(): void
+    {
+        $class    = new ReflectionClass(ByReferenceStub::class);
+        $pointcut = self::parse('execution(public ' . ByReferenceStub::class . '->*(*)) && !matchReturningByReference()');
+
+        $this->assertFalse($pointcut->matches($class, $class->getMethod('items')));
+        $this->assertTrue($pointcut->matches($class, $class->getMethod('count')));
+
+        $byReference = self::parse('matchReturningByReference()');
+        $this->assertInstanceOf(MatchReturningByReferencePointcut::class, $byReference);
+        $this->assertTrue($byReference->matches($class, $class->getMethod('items')));
+        $this->assertTrue($byReference->matches($class), 'Without a member the class context must stay open');
+        $this->assertFalse($byReference->matches($class, $class->getProperty('items')), 'Properties never return by reference');
+        $this->assertSame(Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION, $byReference->getKind());
+        $this->assertSame(
+            'new \\' . MatchReturningByReferencePointcut::class . '()',
+            new Standard()->prettyPrintExpr($byReference->compileToPhp()),
+        );
     }
 
     public function testNullableReturnTypeMarker(): void
