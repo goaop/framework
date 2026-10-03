@@ -57,13 +57,6 @@ The `cacheFileMode` option is validated. It must be an integer between `0600` an
 the owner read and write access. Directories get search permissions matching the read bits of the
 mode.
 
-The other kernel options are validated as well, and invalid values throw an `InvalidConfigurationException`
-instead of being ignored:
-- An unknown option key, such as a typo or an application-specific setting, is rejected. Pass only kernel
-  options to `init()`.
-- A `containerClass` that does not exist is rejected instead of falling back to `Go\Core\Container`.
-- `features` must be an integer made of `Go\Aop\Features` constants. Unknown bits are rejected.
-
 Aspects
 -------
 
