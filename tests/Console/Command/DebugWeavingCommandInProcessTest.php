@@ -44,7 +44,14 @@ class DebugWeavingCommandInProcessTest extends TestCase
 
         $this->assertSame('debug:weaving', $command->getName());
         $this->assertSame('Checks consistency in weaving process', $command->getDescription());
-        $this->assertStringContainsString('consistency of weaving process', $command->getHelp());
+        $this->assertStringContainsString('compares the generated proxies', $command->getHelp());
+    }
+
+    public function testDiffShowsRemovedAndAddedLines(): void
+    {
+        $diff = new \ReflectionMethod(DebugWeavingCommand::class, 'diffLines')->invoke(null, "a\nb\nc", "a\nx\nc\nd");
+
+        $this->assertSame(['<fg=red>- b</>', '<info>+ x</info>', '<info>+ d</info>'], $diff);
     }
 
     public function testFailsForInvalidLoaderPath(): void
@@ -105,6 +112,34 @@ class DebugWeavingCommandInProcessTest extends TestCase
         $this->assertSame(Command::FAILURE, $exitCode);
         $this->assertStringContainsString('generated on second "warmup" pass', $display);
         $this->assertStringContainsString('Weaving is unstable', $display);
+    }
+
+    public function testVerboseOutputShowsTheDifferenceAndTheStableProxies(): void
+    {
+        $cacheDir = $this->createEmptyCacheDir();
+        $calls    = 0;
+        // Foo is woven differently on the second pass, Bar the same on both
+        $warmUp = static function () use (&$calls, $cacheDir): void {
+            ++$calls;
+            file_put_contents($cacheDir . '/Foo.php', "<?php\n// pass {$calls}\n");
+            file_put_contents($cacheDir . '/Foo' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX, '<?php // trait');
+            file_put_contents($cacheDir . '/Bar.php', '<?php // stable');
+            file_put_contents($cacheDir . '/Bar' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX, '<?php // trait');
+        };
+        $tester = new CommandTester($this->createCommandWithFakedKernel($cacheDir, $warmUp));
+
+        $exitCode = $tester->execute(['loader' => 'unused.php'], ['verbosity' => OutputInterface::VERBOSITY_VERY_VERBOSE]);
+        foreach (['/Bar.php', '/Bar' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX] as $file) {
+            unlink($cacheDir . $file);
+        }
+        $this->cleanCacheDir($cacheDir);
+
+        $display = (string) preg_replace('/\s+/', ' ', $tester->getDisplay());
+
+        $this->assertSame(Command::FAILURE, $exitCode);
+        $this->assertStringContainsString('is weaved differently on second "warmup" pass', $display);
+        $this->assertStringContainsString('- // pass 1 + // pass 2', $display);
+        $this->assertStringContainsString('Bar.php" is consistently', $display);
     }
 
     /**

@@ -31,7 +31,13 @@ use Symfony\Component\Console\Style\SymfonyStyle;
     name: 'debug:aspect',
     description: 'Provides an interface for querying the information about aspects',
     help: <<<EOT
-Allows to query an information about enabled aspects.
+Lists the aspects registered in the aspect kernel, with the pointcuts and advisors declared by each of them.
+
+  <info>%command.full_name% web/index.php</info>
+  <info>%command.full_name% web/index.php --aspect='App\Aspect\LoggingAspect'</info>
+
+The loader file is executed to boot the kernel, so pass a file that initializes the kernel without handling
+a request. With <comment>--aspect</comment> only that aspect is shown; an unknown aspect is reported as an error.
 EOT,
 )]
 class DebugAspectCommand extends BaseAspectCommand
@@ -39,7 +45,7 @@ class DebugAspectCommand extends BaseAspectCommand
     protected function configure(): void
     {
         parent::configure();
-        $this->addOption('aspect', null, InputOption::VALUE_OPTIONAL, 'Optional aspect name to filter');
+        $this->addOption('aspect', null, InputOption::VALUE_REQUIRED, 'Show only this aspect (class name)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -53,12 +59,18 @@ class DebugAspectCommand extends BaseAspectCommand
         $io->title('Aspect debug information');
 
         $aspectName = $input->getOption('aspect');
-        if (!$aspectName) {
+        if (!is_string($aspectName) || $aspectName === '') {
             $io->text('<info>' . $this->aspectKernel::class . '</info> has following enabled aspects:');
             $aspects = $container->getServicesByInterface(Aspect::class);
-        } elseif (is_string($aspectName) && is_subclass_of($aspectName, Aspect::class)) {
-            $aspect    = $container->getService($aspectName);
-            $aspects[] = $aspect;
+        } else {
+            $aspectName = ltrim($aspectName, '\\');
+            if (!$container->has($aspectName) || !is_subclass_of($aspectName, Aspect::class)) {
+                $registeredAspects = array_keys($container->getServicesByInterface(Aspect::class));
+                $io->error(sprintf('Aspect "%s" is not registered in the kernel.', $aspectName) . self::suggestAlternative($aspectName, $registeredAspects));
+
+                return Command::FAILURE;
+            }
+            $aspects[] = $container->getService($aspectName);
         }
         $this->showRegisteredAspectsInfo($io, $aspects);
 

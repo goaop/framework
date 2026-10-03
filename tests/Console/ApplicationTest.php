@@ -12,13 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Console;
 
-use Go\Console\Command\CacheWarmupCommand;
-use Go\Console\Command\DebugAdvisorCommand;
-use Go\Console\Command\DebugAspectCommand;
 use Go\Console\Command\DebugWeavingCommand;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
-use Symfony\Component\Console\CommandLoader\FactoryCommandLoader;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 
@@ -53,27 +50,30 @@ class ApplicationTest extends TestCase
     public function testCommandsAreRegisteredAndInstantiatedLazily(): void
     {
         $instantiated = [];
-        $factory      = function (string $name, string $class) use (&$instantiated): callable {
-            return static function () use (&$instantiated, $name, $class): object {
-                $instantiated[] = $name;
 
-                return new $class();
-            };
-        };
+        // The same loader as bin/aspect, recording which commands get instantiated
+        $commandLoader = CommandLoader::create(
+            static function (string $commandClass) use (&$instantiated): Command {
+                $instantiated[] = $commandClass;
 
-        // Mirrors the wiring of bin/aspect
+                return new $commandClass();
+            },
+        );
         $application = new Application('Go! AOP');
-        $application->setCommandLoader(new FactoryCommandLoader([
-            'cache:warmup:aop' => $factory('cache:warmup:aop', CacheWarmupCommand::class),
-            'debug:aspect'     => $factory('debug:aspect', DebugAspectCommand::class),
-            'debug:advisor'    => $factory('debug:advisor', DebugAdvisorCommand::class),
-            'debug:weaving'    => $factory('debug:weaving', DebugWeavingCommand::class),
-        ]));
+        $application->setCommandLoader($commandLoader);
 
+        $this->assertSame(['cache:warmup:aop', 'debug:aspect', 'debug:advisor', 'debug:weaving'], $commandLoader->getNames());
         $command = $application->find('debug:weaving');
 
         $this->assertSame('debug:weaving', $command->getName());
-        $this->assertSame(['debug:weaving'], $instantiated, 'Only the requested command must be instantiated');
+        $this->assertSame([DebugWeavingCommand::class], $instantiated, 'Only the requested command must be instantiated');
+    }
+
+    public function testDefaultLoaderInstantiatesTheCommands(): void
+    {
+        $commandLoader = CommandLoader::create();
+
+        $this->assertInstanceOf(DebugWeavingCommand::class, $commandLoader->get('debug:weaving'));
     }
 
     /**

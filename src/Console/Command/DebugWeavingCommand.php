@@ -33,8 +33,14 @@ use Symfony\Component\Console\Style\SymfonyStyle;
     name: 'debug:weaving',
     description: 'Checks consistency in weaving process',
     help: <<<EOT
-Allows to check consistency of weaving process, detects circular references and mutual dependencies between
-subjects of weaving and aspects.
+Weaves the whole application twice and compares the generated proxies: a proxy that only appears, or looks
+different, on the second pass reveals circular references and mutual dependencies between woven classes and
+aspects (for example an aspect that depends on a class it advises).
+
+  <info>%command.full_name% web/index.php</info>
+  <info>%command.full_name% web/index.php -v</info>   also prints the difference of each unstable proxy
+
+The loader file is executed to boot the kernel, and the cache directory of the kernel is rewritten.
 EOT,
 )]
 class DebugWeavingCommand extends BaseAspectCommand
@@ -67,11 +73,16 @@ class DebugWeavingCommand extends BaseAspectCommand
 
             if ($proxies[$path] !== $content) {
                 $io->error(sprintf('Proxy on path "%s" is weaved differently on second "warmup" pass.', $path));
+                if ($output->isVerbose()) {
+                    $io->writeln(self::diffLines($proxies[$path], $content));
+                }
                 $errors++;
                 continue;
             }
 
-            $io->note(sprintf('Proxy  on path "%s" is consistently weaved.', $path));
+            if ($output->isVeryVerbose()) {
+                $io->note(sprintf('Proxy on path "%s" is consistently weaved.', $path));
+            }
         }
 
         if ($errors > 0) {
@@ -83,6 +94,43 @@ class DebugWeavingCommand extends BaseAspectCommand
         $io->success('Weaving is stable, there are no errors reported.');
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Returns a line diff of two proxy versions: removed lines are prefixed with "-", added lines with "+"
+     *
+     * @return list<string>
+     */
+    private static function diffLines(string $first, string $second): array
+    {
+        $firstLines  = explode("\n", $first);
+        $secondLines = explode("\n", $second);
+        $firstCount  = count($firstLines);
+        $secondCount = count($secondLines);
+
+        // Longest common subsequence table, proxies are small enough for the quadratic approach
+        $lengths = array_fill(0, $firstCount + 1, array_fill(0, $secondCount + 1, 0));
+        for ($i = $firstCount - 1; $i >= 0; $i--) {
+            for ($j = $secondCount - 1; $j >= 0; $j--) {
+                $lengths[$i][$j] = $firstLines[$i] === $secondLines[$j]
+                    ? $lengths[$i + 1][$j + 1] + 1
+                    : max($lengths[$i + 1][$j], $lengths[$i][$j + 1]);
+            }
+        }
+
+        $diff = [];
+        [$i, $j] = [0, 0];
+        while ($i < $firstCount || $j < $secondCount) {
+            if ($i < $firstCount && $j < $secondCount && $firstLines[$i] === $secondLines[$j]) {
+                [$i, $j] = [$i + 1, $j + 1];
+            } elseif ($i < $firstCount && ($j === $secondCount || $lengths[$i + 1][$j] >= $lengths[$i][$j + 1])) {
+                $diff[] = '<fg=red>- ' . $firstLines[$i++] . '</>';
+            } else {
+                $diff[] = '<info>+ ' . $secondLines[$j++] . '</info>';
+            }
+        }
+
+        return $diff;
     }
 
     /**

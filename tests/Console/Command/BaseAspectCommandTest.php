@@ -126,4 +126,13 @@ class BaseAspectCommandTest extends TestCase
             }
         }
     }
+
+    public function testSuggestionIsOnlyGivenForCloseNames(): void
+    {
+        $suggest = new \ReflectionMethod(BaseAspectCommand::class, 'suggestAlternative');
+
+        $this->assertSame(' Did you mean "App\\LoggingAspect"?', $suggest->invoke(null, 'App\\LogingAspect', ['App\\LoggingAspect', 'App\\Other']));
+        $this->assertSame('', $suggest->invoke(null, 'Totally\\Different', ['App\\LoggingAspect']));
+        $this->assertSame('', $suggest->invoke(null, 'Anything', []));
+    }
 }
