@@ -92,8 +92,8 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/src/Core/AdviceMatcher.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
-	'identifier' => 'empty.notAllowed',
+	'message' => '#^Casting to string something that\'s already string\\.$#',
+	'identifier' => 'cast.useless',
 	'count' => 1,
 	'path' => __DIR__ . '/src/Core/AspectKernel.php',
 ];
@@ -218,8 +218,8 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/src/Instrument/Transformer/FilterInjectorTransformer.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Only booleans are allowed in &&, int\\|false given on the right side\\.$#',
-	'identifier' => 'booleanAnd.rightNotBoolean',
+	'message' => '#^Only booleans are allowed in an if condition, int\\|false given\\.$#',
+	'identifier' => 'if.condNotBoolean',
 	'count' => 1,
 	'path' => __DIR__ . '/src/Instrument/Transformer/StreamMetaData.php',
 ];
@@ -458,7 +458,7 @@ $ignoreErrors[] = [
 	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
 https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'identifier' => 'method.deprecated',
-	'count' => 5,
+	'count' => 10,
 	'path' => __DIR__ . '/tests/Core/AspectKernelTest.php',
 ];
 $ignoreErrors[] = [
@@ -553,7 +553,7 @@ $ignoreErrors[] = [
 	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
 https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'identifier' => 'method.deprecated',
-	'count' => 2,
+	'count' => 3,
 	'path' => __DIR__ . '/tests/Instrument/Transformer/StreamMetaDataTest.php',
 ];
 $ignoreErrors[] = [
