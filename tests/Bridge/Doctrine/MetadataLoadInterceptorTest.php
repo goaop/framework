@@ -17,9 +17,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Persistence\Mapping\RuntimeReflectionService;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Proxy;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 class MetadataLoadInterceptorTest extends TestCase
 {
@@ -27,7 +27,7 @@ class MetadataLoadInterceptorTest extends TestCase
     {
         $event = $this->createEvent(WovenHookedEntityStub::class, nativeLazyObjects: false);
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage('WovenHookedEntityStub::$name of a woven entity is intercepted');
 
         new MetadataLoadInterceptor()->loadClassMetadata($event);

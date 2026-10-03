@@ -13,10 +13,10 @@ declare(strict_types=1);
 namespace Go\Instrument\ClassLoading;
 
 use ErrorException;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
-use InvalidArgumentException;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\NullOutput;
@@ -66,7 +66,7 @@ class CacheWarmer
         $options = $this->aspectKernel->getOptions();
 
         if (empty($options['cacheDir'])) {
-            throw new InvalidArgumentException('Cache warmer require the `cacheDir` options to be configured');
+            throw new InvalidConfigurationException('Cache warmer require the `cacheDir` options to be configured');
         }
 
         // The transformation pipeline is registered lazily; the filter URIs built below

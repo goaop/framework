@@ -46,6 +46,9 @@ Every cache format changed, and no 3.x cache file is reused:
 **Action:** delete the cache directory when upgrading. On a read-only production file system, build
 the cache at deploy time with `bin/aspect cache:warmup:aop` before switching traffic.
 
+The metadata files carry a format version. With `Features::PREBUILT_CACHE`, a cache built by another framework
+version is rejected with an exception instead of being rebuilt at runtime.
+
 `Features::PREBUILT_CACHE` now trusts the cache completely. Directory and writability probes,
 `filemtime` comparisons, tracked-resource checks and advisor cache freshness checks are all
 skipped. Rebuilding the cache on deploy is the deployer's responsibility.
@@ -73,6 +76,12 @@ protected function beforeMethod(MethodInvocation $invocation): void {}
 #[Before('execution(public Example->*(*))')]
 public function beforeMethod(MethodInvocation $invocation): void {}
 ```
+
+### One advice attribute per method
+
+An aspect method carries at most one of `#[Before]`, `#[After]`, `#[Around]` and `#[AfterThrowing]`; a second one
+throws an `AspectException`. Split such a method into one method per advice. `#[Pointcut]` may still be combined with
+an advice on the same method, and attributes that do not belong to the framework are ignored.
 
 ### Registering aspects
 
@@ -138,6 +147,12 @@ Pointcuts
       return $invocation->proceed();
   }
   ```
+- **Modifier precedence.** Space-separated modifiers must all be present and `|` binds tighter:
+  `final public|protected` means final AND (public OR protected). In 3.x it also matched every non-final public
+  method.
+- **`Foo+` includes `Foo`.** It now also matches the class or interface `Foo` itself and classes that use the trait
+  `Foo`. Add `&& !within(Foo)` to exclude the type itself.
+- **Attribute pointcuts match subclasses.** `@execution(Attr)` and friends also match attributes extending `Attr`.
 - **`ModifierPointcut` is final and immutable.** The masks are constructor arguments, and
   `andMatch()`, `orMatch()` and `notMatch()` return a new instance.
 
@@ -151,7 +166,8 @@ that relied on that inheritance layer:
 
 - The proxy has no renamed parent class any more. `get_parent_class()`, `parent::` inside the
   class and `instanceof` checks see the original parent.
-- `AspectContainer::AOP_PROXIED_SUFFIX` is `'OriginalTrait'`.
+- `AspectContainer::AOP_PROXIED_SUFFIX` is removed: use `ORIGINAL_TRAIT_SUFFIX` (`'OriginalTrait'`) or
+  `ORIGINAL_TRAIT_FILE_SUFFIX` (`'OriginalTrait.php'`).
 - `AbstractMethodInvocation::TRAIT_ALIAS_PREFIX` is replaced by `TRAIT_ALIAS_SUFFIX`
   (`'OriginalAlias'`).
 - The hooks of `InitializationAware` and `StaticInitializationAware` are named
@@ -160,6 +176,21 @@ that relied on that inheritance layer:
   `SelfValueVisitor` are removed.
 - `Features::PARAMETER_WIDENING` is removed. Delete the flag from your kernel options if you
   passed it.
+
+Renamed enums and constants
+---------------------------
+
+| 3.x / earlier 4.0 development                 | 4.0 |
+|-----------------------------------------------|-----|
+| `TransformerResultEnum::RESULT_TRANSFORMED`   | `TransformerResult::Transformed` |
+| `TransformerResultEnum::RESULT_ABSTAIN`       | `TransformerResult::Abstain` |
+| `TransformerResultEnum::RESULT_ABORTED`       | `TransformerResult::Aborted` |
+| `FieldAccessType::READ` / `WRITE`             | `FieldAccessType::Read` / `Write` |
+| `AspectContainer::AOP_PROXIED_SUFFIX`         | `AspectContainer::ORIGINAL_TRAIT_SUFFIX` |
+
+The `Go\Proxy\Generator` enums (`Visibility`, `PropertyModifier`, `ClassModifier`) use PascalCase cases as well.
+Custom source transformers return `TransformerResult` cases, and advices comparing `getAccessType()` use the new
+case names.
 
 Kernel and transformers
 -----------------------
@@ -170,7 +201,23 @@ Kernel and transformers
   one with `$container->addLazyService(MyTransformer::class, ...)` from `configureAop()`.
 - `CachingTransformer` is removed: the cache decision lives in `SourceTransformingLoader`.
   `SourceTransformingLoader::addTransformer()` is removed, and `transformCode()` returns the overall
-  `TransformerResultEnum`.
+  `TransformerResult`.
+
+Exceptions
+----------
+
+Every exception thrown by the framework implements `Go\Aop\Exception\ExceptionInterface`, so one `catch` handles
+any Go! AOP failure. Several throw sites changed their type:
+
+| Situation                                                        | 3.x                                                    | 4.0 |
+|------------------------------------------------------------------|--------------------------------------------------------|-----|
+| Invalid kernel options, container registrations, console input  | `RuntimeException`, `InvalidArgumentException`, `UnexpectedValueException` | `InvalidConfigurationException` (an `InvalidArgumentException`) |
+| Invalid pointcut expression                                      | `UnexpectedValueException`, `InvalidArgumentException` | `PointcutSyntaxException` (an `AspectException`) |
+| Unknown container id                                             | `OutOfBoundsException`                                 | `ServiceNotFoundException` (an `OutOfBoundsException`) |
+| Weaving, proxy generation, cache writes                          | `RuntimeException`, `LogicException`, `InvalidArgumentException` | `WeavingException` (a `RuntimeException`) |
+| Advisor that can not be cached                                   | `Go\Core\Cache\NotCompilableException`               | `Go\Aop\Exception\NotCompilableException` |
+
+**Action:** catch `ExceptionInterface` or the new types where you caught the SPL types listed above.
 
 Doctrine bridge
 ---------------

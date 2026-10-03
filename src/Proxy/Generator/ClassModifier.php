@@ -20,7 +20,7 @@ namespace Go\Proxy\Generator;
  */
 enum ClassModifier: int
 {
-    case FINAL    = 0b001;
-    case ABSTRACT = 0b010;
-    case READONLY = 0b100;
+    case Final    = 0b001;
+    case Abstract = 0b010;
+    case Readonly = 0b100;
 }

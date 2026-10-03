@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionEngine;
 use InvalidArgumentException;
@@ -114,7 +115,7 @@ class StreamMetaData
     public function __construct($stream, ?string $source = null)
     {
         if (!is_resource($stream)) {
-            throw new InvalidArgumentException('Stream should be valid resource');
+            throw new WeavingException('Stream should be valid resource');
         }
         $metadata = stream_get_meta_data($stream);
         if (isset($metadata['uri']) && preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {

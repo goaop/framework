@@ -14,6 +14,7 @@ namespace Go\Core\Cache;
 
 use Go\Aop\Advice;
 use Go\Aop\Advisor;
+use Go\Aop\Exception\NotCompilableException;
 use Go\Aop\Framework\AfterInterceptor;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;

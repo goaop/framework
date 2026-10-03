@@ -15,6 +15,7 @@ namespace Go\Core\Cache;
 use Go\Aop\Advice;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
+use Go\Aop\Exception\NotCompilableException;
 use Go\Aop\Features;
 use Go\Aop\Pointcut\TruePointcut;
 use Go\Core\AspectContainer;

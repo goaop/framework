@@ -116,7 +116,7 @@ class TraitProxyGenerator extends ClassProxyGenerator
 
         foreach ($interceptedMethods as $methodName) {
             $fullName = $parentNormalizedName . '::' . $methodName;
-            $traitGenerator->addTraitAlias($fullName, $methodName . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX, Visibility::PRIVATE);
+            $traitGenerator->addTraitAlias($fullName, $methodName . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX, Visibility::Private);
         }
 
         foreach ($this->imports->getUses() as $className => $alias) {

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
 use Go\Core\Cache\AdvisorCacheCompiler;
 use Go\ParserReflection\ReflectionFileNamespace;
@@ -74,7 +75,16 @@ final readonly class NamePointcut implements Pointcut
         }
 
         // Perform static check to ensure that we match our name statically
-        return ($instanceToMatch->getName() === $this->name) || preg_match($this->regexp, $instanceToMatch->getName());
+        $name = $instanceToMatch->getName();
+        if ($name === $this->name) {
+            return true;
+        }
+        $isMatched = preg_match($this->regexp, $name);
+        if ($isMatched === false) {
+            throw new PointcutSyntaxException("Name pattern `{$this->name}` can not be matched: " . preg_last_error_msg());
+        }
+
+        return $isMatched === 1;
     }
 
     public function getKind(): int

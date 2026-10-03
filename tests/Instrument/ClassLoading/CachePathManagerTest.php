@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\WeavingException;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
 use Go\PhpUnit\UsesTemporaryDirectory;
@@ -48,20 +50,20 @@ class CachePathManagerTest extends TestCase
         self::removeTemporaryDirectory(self::$appDir);
     }
 
-    private function createManager(): CachePathManager
+    private function createManager(bool $prebuiltCache = false, ?string $cacheDir = null): CachePathManager
     {
         $kernel = $this->createMock(AspectKernel::class);
         $kernel->method('getOptions')->willReturn([
             'debug'          => false,
             'appDir'         => self::$appDir,
-            'cacheDir'       => self::$cacheDir,
+            'cacheDir'       => $cacheDir ?? self::$cacheDir,
             'cacheFileMode'  => 0770,
             'features'       => 0,
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
         ]);
-        $kernel->method('hasFeature')->willReturn(false);
+        $kernel->method('hasFeature')->willReturn($prebuiltCache);
 
         return new CachePathManager($kernel);
     }
@@ -117,6 +119,66 @@ class CachePathManagerTest extends TestCase
         $this->assertSame([], $reader->queryClassMap());
         $this->assertSame([], $reader->querySkippedClasses());
         $this->assertNull($reader->queryCacheState($original));
+    }
+
+    public function testMetadataFilesCarryTheFormatVersion(): void
+    {
+        $writer = $this->createManager();
+        $writer->setCacheState(self::$appDir . '/src/Versioned.php', ['filemtime' => 1, 'cacheUri' => null]);
+        $writer->flushCacheState();
+
+        foreach (['/_transformation.cache', '/_include.cache'] as $fileName) {
+            $data = include self::$cacheDir . $fileName;
+            $this->assertIsArray($data);
+            $this->assertSame(CachePathManager::FORMAT_VERSION, $data['version'] ?? null, $fileName);
+        }
+    }
+
+    public function testMetadataOfAnotherFormatVersionIsIgnored(): void
+    {
+        $original = self::$appDir . '/src/Outdated.php';
+        file_put_contents(self::$cacheDir . '/_include.cache', "<?php return ['map' => ['App\\Outdated' => 'x'], 'skip' => []];");
+        file_put_contents(self::$cacheDir . '/_transformation.cache', "<?php return ['" . $original . "' => ['cacheUri' => 'x']];");
+
+        $reader = $this->createManager();
+
+        $this->assertSame([], $reader->queryClassMap());
+        $this->assertNull($reader->queryCacheState($original));
+    }
+
+    public function testPrebuiltCacheRejectsMetadataOfAnotherFormatVersion(): void
+    {
+        file_put_contents(self::$cacheDir . '/_include.cache', "<?php return ['map' => [], 'skip' => []];");
+
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('rebuild it with `bin/aspect cache:warmup:aop`');
+
+        $this->createManager(prebuiltCache: true);
+    }
+
+    public function testPrebuiltCacheRejectsTransformationMetadataOfAnotherFormatVersion(): void
+    {
+        $original = self::$appDir . '/src/Outdated.php';
+        $writer   = $this->createManager();
+        $writer->setCacheState($original, ['filemtime' => 1, 'cacheUri' => null]);
+        $writer->flushCacheState();
+        file_put_contents(self::$cacheDir . '/_transformation.cache', "<?php return ['" . $original . "' => ['cacheUri' => 'x']];");
+
+        // The class map is current, so the outdated full metadata is only detected once it is loaded on demand
+        $reader = $this->createManager(prebuiltCache: true);
+
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('rebuild it with `bin/aspect cache:warmup:aop`');
+
+        $reader->queryCacheState($original);
+    }
+
+    public function testCacheDirectoryWithMissingParentIsRejected(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('Can not create a directory');
+
+        $this->createManager(cacheDir: self::$appDir . '/missing/parent/cache');
     }
 
     public function testCachePathReplacesOnlyTheLeadingApplicationDirectory(): void

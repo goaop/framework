@@ -58,7 +58,7 @@ class InterceptorInjectorTest extends TestCase
         $this->assertSame('classProperty', $fieldAccess->getField()->name);
 
         $value = 'hello';
-        $result = $fieldAccess->__invoke($this, FieldAccessType::READ, $value);
+        $result = $fieldAccess->__invoke($this, FieldAccessType::Read, $value);
         $this->assertSame('hello', $result);
     }
 

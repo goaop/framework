@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Closure;
+use Go\Aop\AspectException;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\Interceptor;
 use ReflectionFunction;
@@ -75,7 +76,7 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
         $reflectionClosure = new ReflectionFunction($closureToCall);
         $closureScopeClass = $reflectionClosure->getClosureScopeClass();
         if ($closureScopeClass === null) {
-            throw new \RuntimeException('Cannot determine the scope class of the closure');
+            throw new AspectException('Cannot determine the scope class of the closure');
         }
         $this->originalMethodToCall = new ReflectionMethod(
             $closureScopeClass->getName(),

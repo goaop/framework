@@ -13,10 +13,9 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Closure;
-use InvalidArgumentException;
-use OutOfBoundsException;
+use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\ServiceNotFoundException;
 use ReflectionObject;
-use UnexpectedValueException;
 
 /**
  * DI-container
@@ -91,7 +90,7 @@ class Container implements AspectContainer
         // keys with is_subclass_of(), so an arbitrary string id must be rejected upfront
         // (checked syntactically to avoid autoloading anything at registration time).
         if (preg_match('/^\\\\?[A-Za-z_\x80-\xff][\w\x80-\xff]*(\\\\[A-Za-z_\x80-\xff][\w\x80-\xff]*)*$/', $id) !== 1) {
-            throw new InvalidArgumentException("Lazy service id must be a valid class name, \"$id\" given");
+            throw new InvalidConfigurationException("Lazy service id must be a valid class name, \"$id\" given");
         }
         $this->factories[$id] = $lazyInitializationClosure;
 
@@ -111,7 +110,7 @@ class Container implements AspectContainer
     {
         $service = $this->getValue($className);
         if (!$service instanceof $className) {
-            throw new UnexpectedValueException("Service $className is not properly registered");
+            throw new InvalidConfigurationException("Service $className is not properly registered");
         }
 
         return $service;
@@ -123,7 +122,7 @@ class Container implements AspectContainer
             if (isset($this->factories[$key])) {
                 $this->materializeService($key);
             } else {
-                throw new OutOfBoundsException("Value $key is not defined in the container");
+                throw new ServiceNotFoundException("Value $key is not defined in the container");
             }
         }
 
@@ -196,7 +195,7 @@ class Container implements AspectContainer
         return NativeLazyProxy::tryCreate($id, function () use ($id, $factory): object {
             $instance = $factory($this);
             if (!$instance instanceof $id) {
-                throw new UnexpectedValueException("Service $id is not properly registered");
+                throw new InvalidConfigurationException("Service $id is not properly registered");
             }
 
             return $instance;

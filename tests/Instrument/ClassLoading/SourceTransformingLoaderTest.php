@@ -12,13 +12,14 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
-use Go\Instrument\Transformer\TransformerResultEnum;
+use Go\Instrument\Transformer\TransformerResult;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use PhpToken;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -116,9 +117,37 @@ class SourceTransformingLoaderTest extends TestCase
     /**
      * Creates a transformer stub that replaces the source and reports the given result
      */
-    private function createTransformerStub(TransformerResultEnum $result, ?string $newSource = null): CountingSourceTransformerStub
+    private function createTransformerStub(TransformerResult $result, ?string $newSource = null): CountingSourceTransformerStub
     {
         return new CountingSourceTransformerStub($result, $newSource);
+    }
+
+    public function testFilterIdIsNotAvailableBeforeRegistration(): void
+    {
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('Stream filter was not registered');
+
+        SourceTransformingLoader::getId();
+    }
+
+    public function testFilterCanNotBeRegisteredTwice(): void
+    {
+        $this->registerLoader([]);
+
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('Stream filter already registered');
+
+        SourceTransformingLoader::register();
+    }
+
+    public function testFilterNameTakenByAnotherFilterIsReported(): void
+    {
+        stream_filter_register('go.aop.taken', \php_user_filter::class);
+
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('Stream filter was not registered');
+
+        SourceTransformingLoader::register('go.aop.taken');
     }
 
     public function testFreshTransformedCacheRecordIsServedWithoutAnyTransformer(): void
@@ -130,10 +159,7 @@ class SourceTransformingLoaderTest extends TestCase
         $cacheFile = $this->cacheDir . '/src/Some.php';
         mkdir(dirname($cacheFile), 0777, true);
         file_put_contents($cacheFile, self::WOVEN_SOURCE);
-        $this->cachePathManager->setCacheState($this->originalFile, [
-            'filemtime' => (int) filemtime($this->originalFile) + 10,
-            'cacheUri'  => $cacheFile,
-        ]);
+        $this->cachePathManager->setCacheState($this->originalFile, $this->freshRecord($cacheFile));
 
         $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
     }
@@ -144,17 +170,14 @@ class SourceTransformingLoaderTest extends TestCase
         $this->container->expects($this->never())->method('getServicesByInterface');
         $this->container->method('isFreshSince')->willReturn(true);
 
-        $this->cachePathManager->setCacheState($this->originalFile, [
-            'filemtime' => (int) filemtime($this->originalFile) + 10,
-            'cacheUri'  => null,
-        ]);
+        $this->cachePathManager->setCacheState($this->originalFile, $this->freshRecord(null));
 
         $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
     }
 
     public function testCacheMissRunsTransformerChainAndPersistsWovenFile(): void
     {
-        $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, self::WOVEN_SOURCE);
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
         $this->registerLoader([$transformer]);
 
         $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
@@ -169,15 +192,15 @@ class SourceTransformingLoaderTest extends TestCase
 
     public function testWovenBodyTraitIsCachedUnderTheProxiedSuffix(): void
     {
-        $wovenSource = "<?php\ntrait Some" . AspectContainer::AOP_PROXIED_SUFFIX . " { }\n";
-        $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, $wovenSource);
+        $wovenSource = "<?php\ntrait Some" . AspectContainer::ORIGINAL_TRAIT_SUFFIX . " { }\n";
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, $wovenSource);
         $this->registerLoader([$transformer]);
 
         $this->assertSame($wovenSource, $this->filterOriginalFile());
 
         // The generated proxy claims the plain name in the cache, so the original body
         // trait has to move aside to its own sibling file
-        $cacheFile = $this->cacheDir . '/src/Some' . AspectContainer::AOP_PROXIED_SUFFIX . '.php';
+        $cacheFile = $this->cacheDir . '/src/Some' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX;
         $this->assertFileExists($cacheFile);
         $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
         $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
@@ -189,23 +212,72 @@ class SourceTransformingLoaderTest extends TestCase
     {
         // Only a `trait <Name>OriginalTrait` declaration marks a woven body; a class that just
         // carries the suffix word in its own name must not be moved aside
-        $wovenSource = "<?php\nclass " . AspectContainer::AOP_PROXIED_SUFFIX . "Request { }\n";
-        $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, $wovenSource);
+        $wovenSource = "<?php\nclass " . AspectContainer::ORIGINAL_TRAIT_SUFFIX . "Request { }\n";
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, $wovenSource);
         $this->registerLoader([$transformer]);
 
         $this->assertSame($wovenSource, $this->filterOriginalFile());
 
         $cacheFile = $this->cacheDir . '/src/Some.php';
         $this->assertFileExists($cacheFile);
-        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some' . AspectContainer::AOP_PROXIED_SUFFIX . '.php');
+        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX);
         $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
         $this->assertNotNull($cacheState);
         $this->assertSame($cacheFile, $cacheState['cacheUri']);
     }
 
+    /**
+     * Cache record matching the current original file
+     *
+     * @return array{filemtime: int|false, filesize: int|false, cachedAt: int, cacheUri: string|null}
+     */
+    private function freshRecord(?string $cacheUri): array
+    {
+        clearstatcache();
+
+        return [
+            'filemtime' => filemtime($this->originalFile),
+            'filesize'  => filesize($this->originalFile),
+            'cachedAt'  => time(),
+            'cacheUri'  => $cacheUri,
+        ];
+    }
+
+    public function testSourceWithAnOlderMtimeIsWovenAgain(): void
+    {
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer]);
+        $this->container->method('isFreshSince')->willReturn(true);
+        $this->cachePathManager->setCacheState($this->originalFile, $this->freshRecord(null));
+
+        // A deployment restores an older mtime of a changed source (rsync -t, checkout of an older revision)
+        touch($this->originalFile, (int) filemtime($this->originalFile) - 3600);
+        clearstatcache();
+
+        $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
+        $this->assertSame(1, $transformer->callCount);
+    }
+
+    public function testSourceWithAnotherSizeIsWovenAgain(): void
+    {
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer]);
+        $this->container->method('isFreshSince')->willReturn(true);
+        $record = $this->freshRecord(null);
+        $this->cachePathManager->setCacheState($this->originalFile, $record);
+
+        // Same mtime, different content length
+        file_put_contents($this->originalFile, self::ORIGINAL_SOURCE . "// changed\n");
+        touch($this->originalFile, (int) $record['filemtime']);
+        clearstatcache();
+
+        $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
+        $this->assertSame(1, $transformer->callCount);
+    }
+
     public function testStaleCacheRecordFallsBackToTransformerChain(): void
     {
-        $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, self::WOVEN_SOURCE);
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
         $this->registerLoader([$transformer]);
         $this->container->method('isFreshSince')->willReturn(true);
 
@@ -221,7 +293,7 @@ class SourceTransformingLoaderTest extends TestCase
 
     public function testAbstainingChainRecordsFileAsUntransformedWithoutWritingCacheFile(): void
     {
-        $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_ABSTAIN);
+        $transformer = $this->createTransformerStub(TransformerResult::Abstain);
         $this->registerLoader([$transformer]);
 
         $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
@@ -235,8 +307,8 @@ class SourceTransformingLoaderTest extends TestCase
 
     public function testAbortingTransformerSkipsTheRestOfTheChain(): void
     {
-        $aborting    = $this->createTransformerStub(TransformerResultEnum::RESULT_ABORTED);
-        $neverCalled = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, self::WOVEN_SOURCE);
+        $aborting    = $this->createTransformerStub(TransformerResult::Aborted);
+        $neverCalled = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
         $this->registerLoader([$aborting, $neverCalled]);
 
         $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
@@ -248,8 +320,8 @@ class SourceTransformingLoaderTest extends TestCase
 
     public function testAbortedChainRevertsChangesOfEarlierTransformers(): void
     {
-        $transforming = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, self::WOVEN_SOURCE);
-        $aborting     = $this->createTransformerStub(TransformerResultEnum::RESULT_ABORTED);
+        $transforming = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $aborting     = $this->createTransformerStub(TransformerResult::Aborted);
         $this->registerLoader([$transforming, $aborting]);
 
         $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
@@ -284,7 +356,7 @@ class SourceTransformingLoaderTest extends TestCase
     {
         // With cacheDir == appDir the computed cache path equals the original file:
         // the guard must pass the source through without running any transformer
-        $transformer = $this->createTransformerStub(TransformerResultEnum::RESULT_TRANSFORMED, self::WOVEN_SOURCE);
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
         $this->registerLoader([$transformer], 0, $this->appDir);
 
         $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
@@ -301,11 +373,11 @@ final class CountingSourceTransformerStub implements SourceTransformer
     public int $callCount = 0;
 
     public function __construct(
-        private readonly TransformerResultEnum $result,
+        private readonly TransformerResult $result,
         private readonly ?string $newSource,
     ) {}
 
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function transform(StreamMetaData $metadata): TransformerResult
     {
         $this->callCount++;
         if ($this->newSource !== null) {

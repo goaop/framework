@@ -76,7 +76,7 @@ class PointcutReferenceTest extends TestCase
         $reference = new PointcutReference('app.pointcut.broken');
 
         $this->expectException(AspectException::class);
-        $this->expectExceptionMessage('Reference app.pointcut.broken points not to a Pointcut.');
+        $this->expectExceptionMessage('Pointcut reference app.pointcut.broken resolves to stdClass, not to a pointcut');
 
         $reference->getKind();
     }

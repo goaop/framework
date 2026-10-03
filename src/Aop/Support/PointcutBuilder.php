@@ -19,17 +19,13 @@ use Go\Aop\Framework\AfterThrowingInterceptor;
 use Go\Aop\Framework\AroundInterceptor;
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Core\AspectContainer;
+use ReflectionFunction;
 
 /**
  * Pointcut builder provides simple DSL for declaring pointcuts in plain PHP code
  */
 final class PointcutBuilder
 {
-    /**
-     * Auto-incrementing index for generating unique pointcut IDs
-     */
-    private static int $index = 0;
-
     /**
      * Default constructor for the builder
      */
@@ -41,7 +37,7 @@ final class PointcutBuilder
     public function before(string $pointcutExpression, Closure $adviceToInvoke): void
     {
         $interceptor = new BeforeInterceptor($adviceToInvoke, 0, $pointcutExpression);
-        $this->registerAdviceInContainer($pointcutExpression, $interceptor);
+        $this->registerAdviceInContainer('before', $pointcutExpression, $adviceToInvoke, $interceptor);
     }
 
     /**
@@ -50,7 +46,7 @@ final class PointcutBuilder
     public function after(string $pointcutExpression, Closure $adviceToInvoke): void
     {
         $interceptor = new AfterInterceptor($adviceToInvoke, 0, $pointcutExpression);
-        $this->registerAdviceInContainer($pointcutExpression, $interceptor);
+        $this->registerAdviceInContainer('after', $pointcutExpression, $adviceToInvoke, $interceptor);
     }
 
     /**
@@ -59,7 +55,7 @@ final class PointcutBuilder
     public function afterThrowing(string $pointcutExpression, Closure $adviceToInvoke): void
     {
         $interceptor = new AfterThrowingInterceptor($adviceToInvoke, 0, $pointcutExpression);
-        $this->registerAdviceInContainer($pointcutExpression, $interceptor);
+        $this->registerAdviceInContainer('afterThrowing', $pointcutExpression, $adviceToInvoke, $interceptor);
     }
 
     /**
@@ -68,25 +64,47 @@ final class PointcutBuilder
     public function around(string $pointcutExpression, Closure $adviceToInvoke): void
     {
         $interceptor = new AroundInterceptor($adviceToInvoke, 0, $pointcutExpression);
-        $this->registerAdviceInContainer($pointcutExpression, $interceptor);
+        $this->registerAdviceInContainer('around', $pointcutExpression, $adviceToInvoke, $interceptor);
     }
 
     /**
      * General method to register advices
      */
-    private function registerAdviceInContainer(string $pointcutExpression, Advice $adviceToInvoke): void
-    {
+    private function registerAdviceInContainer(
+        string $adviceKind,
+        string $pointcutExpression,
+        Closure $adviceClosure,
+        Advice $interceptor,
+    ): void {
         $this->container->add(
-            $this->getPointcutId($pointcutExpression),
-            new LazyPointcutAdvisor($this->container, $pointcutExpression, $adviceToInvoke),
+            $this->getAdvisorId($adviceKind, $pointcutExpression, $adviceClosure),
+            new LazyPointcutAdvisor($this->container, $pointcutExpression, $interceptor),
         );
     }
 
     /**
-     * Returns an unique name for given pointcut expression
+     * Returns a stable id for the advisor
+     *
+     * Woven proxies reference closure advisors by this id (`The::advice('<id>')`), so it must not depend on the
+     * registration order: it is derived from the expression, the advice kind and the source location of the closure.
+     * Only identical registrations (the same closure registered twice for the same expression) get a counter suffix.
      */
-    private function getPointcutId(string $pointcutExpression): string
+    private function getAdvisorId(string $adviceKind, string $pointcutExpression, Closure $adviceClosure): string
     {
-        return (preg_replace('/\W+/', '_', $pointcutExpression) ?? '') . '.' . self::$index++;
+        $closureReflection = new ReflectionFunction($adviceClosure);
+        $closureLocation   = $closureReflection->getFileName() . ':' . $closureReflection->getStartLine();
+        $advisorId         = sprintf(
+            '%s.%s.%s',
+            preg_replace('/\W+/', '_', $pointcutExpression) ?? '',
+            $adviceKind,
+            substr(sha1($closureLocation . "\n" . $adviceKind . "\n" . $pointcutExpression), 0, 12),
+        );
+
+        $uniqueId = $advisorId;
+        for ($duplicate = 2; $this->container->has($uniqueId); $duplicate++) {
+            $uniqueId = $advisorId . '.' . $duplicate;
+        }
+
+        return $uniqueId;
     }
 }

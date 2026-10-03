@@ -74,7 +74,7 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function transform(StreamMetaData $metadata): TransformerResult
     {
         $totalTransformations = 0;
         $parsedSource         = new ReflectionFile($metadata->uri, $metadata->syntaxTree);
@@ -111,7 +111,7 @@ class WeavingTransformer extends BaseSourceTransformer
             $totalTransformations += (int) $wasFunctionsProcessed;
         }
 
-        $result = ($totalTransformations > 0) ? TransformerResultEnum::RESULT_TRANSFORMED : TransformerResultEnum::RESULT_ABSTAIN;
+        $result = ($totalTransformations > 0) ? TransformerResult::Transformed : TransformerResult::Abstain;
 
         return $result;
     }
@@ -142,7 +142,7 @@ class WeavingTransformer extends BaseSourceTransformer
         $advices = AbstractJoinpoint::flatAndSortAdvices($advices);
 
         // Prepare new class name
-        $newClassName = $class->getShortName() . AspectContainer::AOP_PROXIED_SUFFIX;
+        $newClassName = $class->getShortName() . AspectContainer::ORIGINAL_TRAIT_SUFFIX;
         $newFqcn      = ($class->getNamespaceName() !== '' ? $class->getNamespaceName() . '\\' : '') . $newClassName;
 
         $classFileName = $class->getFileName();

@@ -14,14 +14,15 @@ namespace Go\Core;
 
 use Go\Aop\Advice;
 use Go\Aop\Aspect;
+use Go\Aop\AspectException;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\Lang\Attribute\AbstractAttribute;
 use Go\Lang\Attribute\DeclareParents;
+use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionProperty;
-use UnexpectedValueException;
 
 /**
  * Introduction aspect extension
@@ -33,10 +34,14 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
         $loadedItems = [];
         foreach ($reflectionAspect->getProperties() as $aspectProperty) {
             $propertyId = $reflectionAspect->getName() . '->' . $aspectProperty->getName();
-            $attributes = $aspectProperty->getAttributes();
+            // Only the framework's own attributes are interpreted, others are ignored
+            $attributes = $aspectProperty->getAttributes(AbstractAttribute::class, ReflectionAttribute::IS_INSTANCEOF);
 
             foreach ($attributes as $reflectionAttribute) {
-                $attribute = $reflectionAttribute->newInstance();
+                // Checked before instantiating: PHP itself rejects an advice attribute on a property
+                $attribute = is_a($reflectionAttribute->getName(), DeclareParents::class, true)
+                    ? $reflectionAttribute->newInstance()
+                    : null;
                 if ($attribute instanceof DeclareParents) {
                     $pointcut = $this->parsePointcut($aspect, $aspectProperty, $attribute->expression);
                     // Introduction doesn't have own syntax and uses any suitable class-filter
@@ -49,7 +54,12 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 
                     $loadedItems[$propertyId] = $advisor;
                 } else {
-                    throw new UnexpectedValueException('Unsupported attribute class: ' . $attribute::class);
+                    throw new AspectException(sprintf(
+                        'Attribute %s is not supported on aspect property %s::$%s, only #[DeclareParents] is',
+                        $reflectionAttribute->getName(),
+                        $aspectProperty->class,
+                        $aspectProperty->name,
+                    ));
                 }
             }
         }
@@ -60,7 +70,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
     /**
      * Returns an interceptor instance by meta-type attribute and closure
      *
-     * @throws UnexpectedValueException For unsupported annotations
+     * @throws AspectException For unsupported attributes
      */
     protected function getAdvice(
         AbstractAttribute $interceptorAttribute,
@@ -71,7 +81,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
             $interceptorAttribute instanceof DeclareParents
                 => new TraitIntroductionInfo($interceptorAttribute->traitName, $interceptorAttribute->interfaceName),
             default
-            => throw new UnexpectedValueException('Unsupported attribute class: ' . $interceptorAttribute::class),
+            => throw new AspectException('Unsupported attribute class: ' . $interceptorAttribute::class),
         };
     }
 }

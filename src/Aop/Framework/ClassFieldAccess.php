@@ -33,8 +33,8 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * @var array<key-of<FieldAccessType>, string> $propertyMap
      */
     private static array $propertyMap = [
-        FieldAccessType::READ->name => 'value',
-        FieldAccessType::WRITE->name => 'newValue',
+        FieldAccessType::Read->name => 'value',
+        FieldAccessType::Write->name => 'newValue',
     ];
 
     /**
@@ -121,7 +121,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     public function getValueToSet(): mixed
     {
-        if ($this->accessType === FieldAccessType::READ) {
+        if ($this->accessType === FieldAccessType::Read) {
             throw new AspectException("Value to set is not available for READ access type");
         }
         return $this->newValue;

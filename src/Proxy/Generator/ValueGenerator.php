@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use InvalidArgumentException;
+use Go\Aop\Exception\WeavingException;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\ArrayItem;
@@ -103,7 +103,7 @@ final class ValueGenerator
             return $this->buildArrayNode($value, $currentDepth);
         }
 
-        throw new InvalidArgumentException('Cannot generate AST node for value of type: ' . get_debug_type($value));
+        throw new WeavingException('Cannot generate AST node for value of type: ' . get_debug_type($value));
     }
 
     /**

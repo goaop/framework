@@ -53,21 +53,12 @@ class ModifierPointcutTest extends TestCase
 
         $modifiers = $reflector->getModifiers();
 
-        // If "not" isset and matches at least one modifier, this should never match at all
-        if ($notMask & $modifiers) {
-            $this->assertFalse($this->pointcut->matches($context, $reflector));
-        } elseif ($orMask & $modifiers) {
-            // If "or" mask is set, it is enough to match with at least one modifier
-            $this->assertTrue($this->pointcut->matches($context, $reflector));
-        } elseif ($andMask === ($andMask & $modifiers)) {
-            // Otherwise we have strict "AND" comparison that should match
-            $this->assertTrue($this->pointcut->matches($context, $reflector));
-        } elseif ($andMask !== ($andMask & $modifiers)) {
-            // But if mask for "AND" is not equal itself, then we have strict comparison that should not match
-            $this->assertFalse($this->pointcut->matches($context, $reflector));
-        } else {
-            $this->fail('Unknown logical combination of modifiers');
-        }
+        // "not" excludes, every "and" bit is required, and one of the "or" bits when alternatives are given
+        $expected = ($notMask & $modifiers) === 0
+            && $andMask === ($andMask & $modifiers)
+            && ($orMask === 0 || ($orMask & $modifiers) !== 0);
+
+        $this->assertSame($expected, $this->pointcut->matches($context, $reflector));
     }
 
     public static function reflectorProvider(): \Generator

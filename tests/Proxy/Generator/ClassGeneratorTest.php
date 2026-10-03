@@ -32,14 +32,14 @@ class ClassGeneratorTest extends TestCase
 
     public function testFinalClass(): void
     {
-        $gen = new ClassGenerator('MyClass', null, [ClassModifier::FINAL], null);
+        $gen = new ClassGenerator('MyClass', null, [ClassModifier::Final], null);
         $output = $gen->generate();
         $this->assertStringContainsString('final class MyClass', $output);
     }
 
     public function testAbstractClass(): void
     {
-        $gen = new ClassGenerator('MyClass', null, [ClassModifier::ABSTRACT], null);
+        $gen = new ClassGenerator('MyClass', null, [ClassModifier::Abstract], null);
         $output = $gen->generate();
         $this->assertStringContainsString('abstract class MyClass', $output);
     }
@@ -116,7 +116,7 @@ class ClassGeneratorTest extends TestCase
 
     public function testWithProperty(): void
     {
-        $prop = new PropertyGenerator('myProp', [PropertyModifier::PRIVATE, PropertyModifier::STATIC]);
+        $prop = new PropertyGenerator('myProp', [PropertyModifier::Private, PropertyModifier::Static]);
         $prop->defaultValue = [];
         $prop->type = TypeGenerator::fromTypeString('array');
         $gen = new ClassGenerator('MyClass', null, [], null, [], [$prop]);

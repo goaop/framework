@@ -33,8 +33,8 @@ class PropertyInterceptorAspect implements Aspect
     {
         if ($fieldAccess->getField()->isInitialized($fieldAccess->getThis())) {
             $value = match ($fieldAccess->getAccessType()) {
-                FieldAccessType::READ => $fieldAccess->getValue(),
-                FieldAccessType::WRITE => $fieldAccess->getValueToSet(),
+                FieldAccessType::Read => $fieldAccess->getValue(),
+                FieldAccessType::Write => $fieldAccess->getValueToSet(),
             };
         } else {
             $value = '<uninitialized>';

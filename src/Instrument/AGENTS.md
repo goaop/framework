@@ -7,7 +7,7 @@
 4. Caching lives in SourceTransformingLoader::filter() — cache hit → cached content emitted as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → write cache
 
 ## Transformer chain (order matters)
-Applied per loaded file. Each returns TransformerResultEnum: RESULT_TRANSFORMED|RESULT_ABSTAIN|RESULT_ABORTED (skips the rest of the chain, reverts to the original source, recorded as untransformed).
+Applied per loaded file. Each returns TransformerResult: Transformed|Abstain|Aborted (skips the rest of the chain, reverts to the original source, recorded as untransformed).
 
 1. ConstructorExecutionTransformer — new expressions (works only if INTERCEPT_INITIALIZATIONS enabled)
 2. FilterInjectorTransformer — include/require (works only if INTERCEPT_INCLUDES enabled)

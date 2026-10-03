@@ -66,7 +66,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function transform(StreamMetaData $metadata): TransformerResult
     {
         $this->replaceMagicDirFileConstants($metadata);
         $this->wrapReflectionGetFileName($metadata);
@@ -75,7 +75,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
         // transformers produce. A source served unchanged runs from its original location, and PHP resolves the
         // magic constants of a `php://filter/.../resource=<path>` include to <path> itself, so they stay correct
         // on cache hits too (see the functional MagicConstantTest)
-        return TransformerResultEnum::RESULT_ABSTAIN;
+        return TransformerResult::Abstain;
     }
 
     /**
@@ -96,7 +96,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
             $fileName = $rebasedFileName;
             // Only the trailing marker of the woven-body file is dropped, so a class that simply
             // carries the suffix word in its own name (e.g. `OriginalTraitRegistry.php`) keeps its name
-            $proxiedFileSuffix = AspectContainer::AOP_PROXIED_SUFFIX . '.php';
+            $proxiedFileSuffix = AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX;
             if (str_ends_with($fileName, $proxiedFileSuffix)) {
                 $fileName = substr($fileName, 0, -strlen($proxiedFileSuffix)) . '.php';
             }

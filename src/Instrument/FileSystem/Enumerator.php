@@ -14,6 +14,7 @@ namespace Go\Instrument\FileSystem;
 
 use ArrayIterator;
 use Closure;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Instrument\PathResolver;
 use InvalidArgumentException;
 use Iterator;
@@ -122,7 +123,7 @@ class Enumerator
             // Include paths must be below the root directory: this is a prefix check,
             // a path merely containing the root somewhere else must be rejected
             if (!PathResolver::isBelow($path, $this->rootDirectory)) {
-                throw new UnexpectedValueException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
+                throw new InvalidConfigurationException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
             }
 
             $inPaths[] = $path;

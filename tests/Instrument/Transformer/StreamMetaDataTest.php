@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Exception\WeavingException;
 use PHPUnit\Framework\TestCase;
 
 class StreamMetaDataTest extends TestCase
@@ -52,5 +53,14 @@ class StreamMetaDataTest extends TestCase
 
         $this->assertSame(['Setting StreamMetaData->source is deprecated, use tokenStream instead'], $deprecations);
         $this->assertSame('<?php echo "new"; ?>', $metadata->source);
+    }
+
+    public function testRejectsNonResourceStream(): void
+    {
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('Stream should be valid resource');
+
+        // @phpstan-ignore argument.type (the guard is exactly what is under test)
+        new StreamMetaData('php://memory');
     }
 }

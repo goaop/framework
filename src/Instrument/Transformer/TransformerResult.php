@@ -15,21 +15,21 @@ namespace Go\Instrument\Transformer;
 /**
  * Transformer result determines the status of applied transformation
  */
-enum TransformerResultEnum: string
+enum TransformerResult: string
 {
     /**
      * Transformer decided to stop whole transformation process: the remaining transformers are skipped,
      * changes of the whole chain are reverted and the original source is served
      */
-    case RESULT_ABORTED = 'aborted';
+    case Aborted = 'aborted';
 
     /**
      * Transformer voted to abstain transformation, need to process following transformers to get result
      */
-    case RESULT_ABSTAIN = 'abstain';
+    case Abstain = 'abstain';
 
     /**
      * Source code was transformed, can process next transformers if needed
      */
-    case RESULT_TRANSFORMED = 'transformed';
+    case Transformed = 'transformed';
 }

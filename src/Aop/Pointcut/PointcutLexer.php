@@ -57,6 +57,9 @@ final class PointcutLexer extends SimpleLexer
         $this->token('&');
         $this->token('&&');
         $this->token('|');
+
+        // Nullable marker of a return-type pattern: '?Foo' equals 'Foo|null'
+        $this->token('?');
         $this->token('||');
 
         $this->token('annotation', '@');

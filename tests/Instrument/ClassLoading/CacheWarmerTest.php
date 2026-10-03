@@ -17,7 +17,7 @@ use Go\Core\AspectKernel;
 use Go\Core\Container;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
-use Go\Instrument\Transformer\TransformerResultEnum;
+use Go\Instrument\Transformer\TransformerResult;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -135,7 +135,7 @@ class CacheWarmerTest extends TestCase
     private function createFailingTransformer(): SourceTransformer
     {
         return new class implements SourceTransformer {
-            public function transform(StreamMetaData $metadata): TransformerResultEnum
+            public function transform(StreamMetaData $metadata): TransformerResult
             {
                 if (str_contains($metadata->source, 'broken')) {
                     throw new RuntimeException('Cannot weave <broken> file');
@@ -147,7 +147,7 @@ class CacheWarmerTest extends TestCase
                     @trigger_error('Silenced warning', E_USER_WARNING);
                 }
 
-                return TransformerResultEnum::RESULT_ABSTAIN;
+                return TransformerResult::Abstain;
             }
         };
     }

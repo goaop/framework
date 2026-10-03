@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
+use Go\Aop\Exception\WeavingException;
 use Go\ParserReflection\Resolver\TypeExpressionResolver;
 use PhpParser\BuilderFactory;
 use PhpParser\Node;
@@ -92,7 +93,7 @@ final class ParameterGenerator
                 if (!isset($defaultValue)) {
                     $rawDefault = $param->getDefaultValue();
                     if ($rawDefault instanceof \Closure) {
-                        throw new \LogicException(sprintf(
+                        throw new WeavingException(sprintf(
                             'Cannot generate proxy for parameter $%s: PHP 8.5 Closure default values '
                             . 'require goaop/parser-reflection for AST access.',
                             $param->getName(),

@@ -57,9 +57,9 @@ For typed properties without a default value, generated `get` hooks include an i
 
 ```php
 if ($fieldAccess->getField()->isInitialized($this)) {
-    $value = &$fieldAccess->__invoke($this, FieldAccessType::READ, $this->property);
+    $value = &$fieldAccess->__invoke($this, FieldAccessType::Read, $this->property);
 } else {
-    $value = $fieldAccess->__invoke($this, FieldAccessType::READ);
+    $value = $fieldAccess->__invoke($this, FieldAccessType::Read);
 }
 ```
 

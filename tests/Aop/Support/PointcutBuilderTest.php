@@ -93,6 +93,34 @@ class PointcutBuilderTest extends TestCase
         $this->assertNotSame(...array_values($matchingKeys));
     }
 
+    public function testAdvisorIdsDoNotDependOnRegistrationOrder(): void
+    {
+        $first  = static function (): void {};
+        $second = static function (): void {};
+
+        $this->builder->before('execution(public Foo->bar(*))', $first);
+        $this->builder->after('execution(public Foo->baz(*))', $second);
+        $idsInOrder = array_keys($this->readContainerValues());
+
+        $this->container = new Container();
+        $this->builder   = new PointcutBuilder($this->container);
+        $this->builder->after('execution(public Foo->baz(*))', $second);
+        $this->builder->before('execution(public Foo->bar(*))', $first);
+        $idsInReverseOrder = array_keys($this->readContainerValues());
+
+        $this->assertEqualsCanonicalizing($idsInOrder, $idsInReverseOrder);
+    }
+
+    public function testAdvisorIdNamesExpressionAndAdviceKind(): void
+    {
+        $this->builder->around('execution(public Foo->bar(*))', static function (): void {});
+
+        $this->assertMatchesRegularExpression(
+            '/^execution_public_Foo_bar_\\.around\\.[0-9a-f]{12}$/',
+            (string) array_key_first($this->readContainerValues()),
+        );
+    }
+
     /**
      * @return array<array-key, mixed>
      */

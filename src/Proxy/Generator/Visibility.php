@@ -22,9 +22,9 @@ use ReflectionMethod;
  */
 enum Visibility: string
 {
-    case PUBLIC    = 'public';
-    case PROTECTED = 'protected';
-    case PRIVATE   = 'private';
+    case Public    = 'public';
+    case Protected = 'protected';
+    case Private   = 'private';
 
     /**
      * Derives the visibility from a reflection method (boundary conversion
@@ -33,9 +33,9 @@ enum Visibility: string
     public static function fromReflectionMethod(ReflectionMethod $method): self
     {
         return match (true) {
-            $method->isPrivate()   => self::PRIVATE,
-            $method->isProtected() => self::PROTECTED,
-            default                => self::PUBLIC,
+            $method->isPrivate()   => self::Private,
+            $method->isProtected() => self::Protected,
+            default                => self::Public,
         };
     }
 
@@ -45,9 +45,9 @@ enum Visibility: string
     public function toAstModifier(): int
     {
         return match ($this) {
-            self::PUBLIC    => Modifiers::PUBLIC,
-            self::PROTECTED => Modifiers::PROTECTED,
-            self::PRIVATE   => Modifiers::PRIVATE,
+            self::Public    => Modifiers::PUBLIC,
+            self::Protected => Modifiers::PROTECTED,
+            self::Private   => Modifiers::PRIVATE,
         };
     }
 }

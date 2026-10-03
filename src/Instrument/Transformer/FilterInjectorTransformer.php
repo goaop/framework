@@ -133,7 +133,7 @@ class FilterInjectorTransformer implements SourceTransformer
     /**
      * Wrap all includes into rewrite filter
      */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function transform(StreamMetaData $metadata): TransformerResult
     {
         $includeExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof Include_);
 
@@ -146,7 +146,7 @@ class FilterInjectorTransformer implements SourceTransformer
         $includeExpressions = $includeExpressionFinder->getFoundNodes();
 
         if (empty($includeExpressions)) {
-            return TransformerResultEnum::RESULT_ABSTAIN;
+            return TransformerResult::Abstain;
         }
 
         foreach ($includeExpressions as $includeExpression) {
@@ -164,6 +164,6 @@ class FilterInjectorTransformer implements SourceTransformer
             $metadata->tokenStream[$endPosition]->text .= ', __DIR__)';
         }
 
-        return TransformerResultEnum::RESULT_TRANSFORMED;
+        return TransformerResult::Transformed;
     }
 }

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\PhpUnit\AssertsCompilablePhp;
@@ -21,7 +22,6 @@ use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
 use Go\Stubs\PropertyInheritanceChild;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
@@ -229,7 +229,7 @@ class ClassProxyGeneratorTest extends TestCase
             ],
         ];
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(WeavingException::class);
         new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
     }
 
@@ -300,7 +300,7 @@ class ClassProxyGeneratorTest extends TestCase
             $proxyFileContent,
         );
         $this->assertStringContainsString(
-            "return \$__joinPoint->__invoke(\$this, FieldAccessType::READ);",
+            "return \$__joinPoint->__invoke(\$this, FieldAccessType::Read);",
             $proxyFileContent,
         );
         $this->assertStringContainsString(
@@ -308,11 +308,11 @@ class ClassProxyGeneratorTest extends TestCase
             $proxyFileContent,
         );
         $this->assertStringContainsString(
-            "if (\$__joinPoint->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, FieldAccessType::WRITE, \$value, \$this->uninitialized);",
+            "if (\$__joinPoint->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, FieldAccessType::Write, \$value, \$this->uninitialized);",
             $proxyFileContent,
         );
         $this->assertStringContainsString(
-            "} else {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, FieldAccessType::WRITE, \$value);",
+            "} else {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, FieldAccessType::Write, \$value);",
             $proxyFileContent,
         );
     }
@@ -342,7 +342,7 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertMatchesRegularExpression('/&get\s*\\{/', $proxyFileContent);
-        $this->assertStringNotContainsString("FieldAccessType::WRITE, \$this->items, \$value", $proxyFileContent);
+        $this->assertStringNotContainsString("FieldAccessType::Write, \$this->items, \$value", $proxyFileContent);
     }
 
     /**

@@ -50,14 +50,14 @@ use ReflectionProperty;
  *         if ($__joinPoint === null) {
  *             $__joinPoint = InterceptorInjector::forProperty(self::class, 'name', [...]);
  *         }
- *         return $__joinPoint->__invoke($this, FieldAccessType::READ, $this->name);
+ *         return $__joinPoint->__invoke($this, FieldAccessType::Read, $this->name);
  *     }
  *     set {
  *         static $__joinPoint;
  *         if ($__joinPoint === null) {
  *             $__joinPoint = InterceptorInjector::forProperty(self::class, 'name', [...]);
  *         }
- *         $this->name = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this->name);
+ *         $this->name = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this->name);
  *     }
  * }
  * </pre>
@@ -73,7 +73,7 @@ use ReflectionProperty;
  *         if ($__joinPoint === null) {
  *             $__joinPoint = InterceptorInjector::forProperty(self::class, 'items', [...]);
  *         }
- *         $value = &$__joinPoint->__invoke($this, FieldAccessType::READ, $this->items);
+ *         $value = &$__joinPoint->__invoke($this, FieldAccessType::Read, $this->items);
  *         return $value;
  *     }
  * }
@@ -115,7 +115,7 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
      *     if ($__joinPoint === null) {
      *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
      *     }
-     *     return $__joinPoint->__invoke($this, FieldAccessType::READ, $this-><propertyName>);
+     *     return $__joinPoint->__invoke($this, FieldAccessType::Read, $this-><propertyName>);
      * }
      * </pre>
      *
@@ -127,9 +127,9 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
      *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
      *     }
      *     if ($__joinPoint->getField()->isInitialized($this)) {
-     *         return $__joinPoint->__invoke($this, FieldAccessType::READ, $this-><propertyName>);
+     *         return $__joinPoint->__invoke($this, FieldAccessType::Read, $this-><propertyName>);
      *     }
-     *     return $__joinPoint->__invoke($this, FieldAccessType::READ);
+     *     return $__joinPoint->__invoke($this, FieldAccessType::Read);
      * }
      * </pre>
      *
@@ -141,9 +141,9 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
      *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
      *     }
      *     if ($__joinPoint->getField()->isInitialized($this)) {
-     *         return $__joinPoint->__invoke($this, FieldAccessType::READ, $this-><propertyName>);
+     *         return $__joinPoint->__invoke($this, FieldAccessType::Read, $this-><propertyName>);
      *     }
-     *     return $__joinPoint->__invoke($this, FieldAccessType::READ);
+     *     return $__joinPoint->__invoke($this, FieldAccessType::Read);
      * }
      * </pre>
      */
@@ -152,12 +152,12 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
         $propertyName = $this->property->getName();
         $readInvokeWithValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'READ')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Read')),
             new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
         $readInvokeWithoutValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'READ')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Read')),
         ]);
         $fieldAccessExpression = $this->createFieldAccessInitializationExpression($propertyName);
 
@@ -191,7 +191,7 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
      *     if ($__joinPoint === null) {
      *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
      *     }
-     *     $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this-><propertyName>);
+     *     $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this-><propertyName>);
      * }
      * </pre>
      *
@@ -203,9 +203,9 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
      *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
      *     }
      *     if ($__joinPoint->getField()->isInitialized($this)) {
-     *         $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value, $this-><propertyName>);
+     *         $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this-><propertyName>);
      *     } else {
-     *         $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::WRITE, $value);
+     *         $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::Write, $value);
      *     }
      * }
      * </pre>
@@ -217,13 +217,13 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
 
         $writeInvokeWithBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'WRITE')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Write')),
             new Arg(new Variable('value')),
             new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
         $writeInvokeWithoutBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'WRITE')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Write')),
             new Arg(new Variable('value')),
         ]);
 

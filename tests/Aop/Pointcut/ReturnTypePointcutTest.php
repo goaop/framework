@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Pointcut;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Stubs\First;
 use Go\Tests\TestProject\Application\ClassWithComplexTypes;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionFunction;
@@ -110,7 +110,7 @@ final class ReturnTypePointcutTest extends TestCase
 
     public function testThrowsInvalidArgumentExceptionForEmptyType(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(PointcutSyntaxException::class);
 
         new ReturnTypePointcut('');
     }
@@ -121,5 +121,22 @@ final class ReturnTypePointcutTest extends TestCase
 
         $this->assertTrue(($pointcut->getKind() & Pointcut::KIND_FUNCTION) > 0, 'Pointcut should be for functions');
         $this->assertTrue(($pointcut->getKind() & Pointcut::KIND_METHOD) > 0, 'Pointcut should be for methods');
+    }
+
+    public function testRegexpFailureIsReportedAsSyntaxError(): void
+    {
+        $pointcut = new ReturnTypePointcut('Arr*It*r');
+
+        $backtrackLimit = ini_set('pcre.backtrack_limit', '1');
+        try {
+            $this->expectException(PointcutSyntaxException::class);
+            $this->expectExceptionMessage('Return type pattern `Arr*It*r` can not be matched');
+            $pointcut->matches(
+                new ReflectionClass(self::class),
+                new ReflectionFunction(static fn(): \ArrayIterator => new \ArrayIterator()),
+            );
+        } finally {
+            ini_set('pcre.backtrack_limit', (string) $backtrackLimit);
+        }
     }
 }

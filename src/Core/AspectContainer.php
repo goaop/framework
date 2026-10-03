@@ -61,9 +61,14 @@ interface AspectContainer
     public const string STATIC_INIT_PREFIX = 'staticinit';
 
     /**
-     * Suffix, that will be added to all proxied class names
+     * Suffix of the trait holding the original class body: `Foo` is woven into the trait `FooOriginalTrait`
      */
-    public const string AOP_PROXIED_SUFFIX = 'OriginalTrait';
+    public const string ORIGINAL_TRAIT_SUFFIX = 'OriginalTrait';
+
+    /**
+     * Suffix of the cached file with the original class body, next to the proxy: `Foo.php` and `FooOriginalTrait.php`
+     */
+    public const string ORIGINAL_TRAIT_FILE_SUFFIX = self::ORIGINAL_TRAIT_SUFFIX . '.php';
 
     /**
      * Returns a service from the container.

@@ -84,7 +84,7 @@ class AdviceMatcher implements AdviceMatcherInterface
         $parentClass  = $class->getParentClass();
 
         $originalClass = $class;
-        if ($parentClass && str_ends_with($parentClass->name, AspectContainer::AOP_PROXIED_SUFFIX)) {
+        if ($parentClass && str_ends_with($parentClass->name, AspectContainer::ORIGINAL_TRAIT_SUFFIX)) {
             $originalClass = $parentClass;
         }
 
@@ -142,7 +142,7 @@ class AdviceMatcher implements AdviceMatcherInterface
         }
         // Introduction which can add interfaces or traits
         if (($pointcutKind & Pointcut::KIND_INTRODUCTION) !== 0 && $advice instanceof IntroductionInfo && !$class->isTrait()) {
-            $classAdvices = [...$this->getIntroductionAdvices($advice)];
+            $classAdvices = [...$classAdvices, ...$this->getIntroductionAdvices($advice)];
         }
 
         return $classAdvices;

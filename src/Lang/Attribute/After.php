@@ -17,5 +17,5 @@ use Attribute;
 /**
  * After advice attribute
  */
-#[Attribute(Attribute::TARGET_METHOD | Attribute::TARGET_PROPERTY)]
+#[Attribute(Attribute::TARGET_METHOD)]
 class After extends AbstractInterceptor {}

@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Aop\InitializationAware;
-use LogicException;
 use PhpParser\Node\Name;
 use PhpParser\NodeTraverser;
 
@@ -53,7 +53,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
     /**
      * Rewrites all "new" expressions with our implementation
      */
-    public function transform(StreamMetaData $metadata): TransformerResultEnum
+    public function transform(StreamMetaData $metadata): TransformerResult
     {
         // Skips `new` inside constant-expression contexts (parameter defaults, static var
         // initializers, attribute arguments, constants, enum cases) — see issue #603.
@@ -67,7 +67,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         $newExpressions = $newExpressionFinder->getFoundNewExpressions();
 
         if (empty($newExpressions)) {
-            return TransformerResultEnum::RESULT_ABSTAIN;
+            return TransformerResult::Abstain;
         }
 
         foreach ($newExpressions as $newExpressionNode) {
@@ -86,7 +86,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
             $metadata->tokenStream[$endClassNamePos]->text .= $expressionSuffix;
         }
 
-        return TransformerResultEnum::RESULT_TRANSFORMED;
+        return TransformerResult::Transformed;
     }
 
     /**
@@ -135,7 +135,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
 
         $cachedInvocation = self::$constructorInvocationsCache[$fullClassName];
         if ($cachedInvocation === null) {
-            throw new LogicException("Cannot instantiate non-existent class: {$fullClassName}");
+            throw new WeavingException("Cannot instantiate non-existent class: {$fullClassName}");
         }
 
         return $cachedInvocation->__invoke($arguments);

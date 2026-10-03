@@ -141,13 +141,13 @@ final class ClassGenerator implements GeneratorInterface
     {
         $builder = self::getFactory()->class($this->name);
 
-        if (in_array(ClassModifier::FINAL, $this->modifiers, true)) {
+        if (in_array(ClassModifier::Final, $this->modifiers, true)) {
             $builder->makeFinal();
         }
-        if (in_array(ClassModifier::ABSTRACT, $this->modifiers, true)) {
+        if (in_array(ClassModifier::Abstract, $this->modifiers, true)) {
             $builder->makeAbstract();
         }
-        if (in_array(ClassModifier::READONLY, $this->modifiers, true)) {
+        if (in_array(ClassModifier::Readonly, $this->modifiers, true)) {
             $builder->makeReadonly();
         }
 

@@ -24,28 +24,28 @@ class PropertyGeneratorTest extends TestCase
 {
     public function testBasicPublicProperty(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Public]);
         $output = $gen->generate();
         $this->assertStringContainsString('public $myProp', $output);
     }
 
     public function testProtectedProperty(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PROTECTED]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Protected]);
         $output = $gen->generate();
         $this->assertStringContainsString('protected $myProp', $output);
     }
 
     public function testPrivateProperty(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PRIVATE]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Private]);
         $output = $gen->generate();
         $this->assertStringContainsString('private $myProp', $output);
     }
 
     public function testStaticProperty(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PRIVATE, PropertyModifier::STATIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Private, PropertyModifier::Static]);
         $output = $gen->generate();
         $this->assertStringContainsString('static', $output);
         $this->assertStringContainsString('private', $output);
@@ -53,7 +53,7 @@ class PropertyGeneratorTest extends TestCase
 
     public function testFinalProperty(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC, PropertyModifier::FINAL]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Public, PropertyModifier::Final]);
         $output = $gen->generate();
         $this->assertStringContainsString('final', $output);
         $this->assertStringContainsString('public', $output);
@@ -61,7 +61,7 @@ class PropertyGeneratorTest extends TestCase
 
     public function testPropertyWithDefaultValue(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PRIVATE]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Private]);
         $gen->defaultValue = [];
         $output = $gen->generate();
         $this->assertStringContainsString('= []', $output);
@@ -69,7 +69,7 @@ class PropertyGeneratorTest extends TestCase
 
     public function testPropertyWithStringDefault(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Public]);
         $gen->defaultValue = 'hello';
         $output = $gen->generate();
         $this->assertStringContainsString("= 'hello'", $output);
@@ -77,7 +77,7 @@ class PropertyGeneratorTest extends TestCase
 
     public function testPropertyWithNullDefault(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Public]);
         $gen->defaultValue = null;
         $gen->type = TypeGenerator::fromTypeString('?string');
         $output = $gen->generate();
@@ -87,7 +87,7 @@ class PropertyGeneratorTest extends TestCase
 
     public function testSetType(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PRIVATE, PropertyModifier::STATIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Private, PropertyModifier::Static]);
         $gen->type = TypeGenerator::fromTypeString('array');
         $output = $gen->generate();
         $this->assertStringContainsString('array', $output);
@@ -95,7 +95,7 @@ class PropertyGeneratorTest extends TestCase
 
     public function testSetDocBlock(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PRIVATE]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Private]);
         $gen->docBlock = new DocBlockGenerator('My prop doc.');
         $output = $gen->generate();
         $this->assertStringContainsString('My prop doc.', $output);
@@ -103,20 +103,20 @@ class PropertyGeneratorTest extends TestCase
 
     public function testGetNode(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Public]);
         $node = $gen->getNode();
         $this->assertSame('myProp', (string) $node->props[0]->name);
     }
 
     public function testGetName(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Public]);
         $this->assertSame('myProp', $gen->name);
     }
 
     public function testImplementsPropertyNodeProvider(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Public]);
         // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the implemented interface)
         $this->assertInstanceOf(PropertyNodeProvider::class, $gen);
     }
@@ -125,7 +125,7 @@ class PropertyGeneratorTest extends TestCase
     {
         $factory = new BuilderFactory();
         $attrGroup = new AttributeGroup([$factory->attribute(new Name\FullyQualified('Deprecated'))]);
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Public]);
         $gen->attrGroups = [$attrGroup];
         $output = $gen->generate();
         $this->assertStringContainsString('#[', $output);
@@ -134,7 +134,7 @@ class PropertyGeneratorTest extends TestCase
 
     public function testAddAttributeGroupsEmpty(): void
     {
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Public]);
         $gen->attrGroups = [];
         $output = $gen->generate();
         $this->assertStringNotContainsString('#[', $output);
@@ -149,7 +149,7 @@ class PropertyGeneratorTest extends TestCase
         $this->assertInstanceOf(\PhpParser\Node\Stmt\Expression::class, $stmts[0]);
         $exprNode = $stmts[0]->expr;
 
-        $gen = new PropertyGenerator('myProp', [PropertyModifier::PUBLIC]);
+        $gen = new PropertyGenerator('myProp', [PropertyModifier::Public]);
         $gen->defaultExpressionNode = $exprNode;
         $gen->type = TypeGenerator::fromTypeString('callable');
         $output = $gen->generate();

@@ -76,12 +76,12 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
         $propertyName = $this->property->getName();
         $readInvokeWithValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'READ')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Read')),
             new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
         $readInvokeWithoutValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'READ')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Read')),
         ]);
 
         return new PropertyHook('get', [
@@ -109,13 +109,13 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
         $propertyName = $this->property->getName();
         $writeInvokeWithBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'WRITE')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Write')),
             new Arg(new Variable('value')),
             new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
         ]);
         $writeInvokeWithoutBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
             new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'WRITE')),
+            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Write')),
             new Arg(new Variable('value')),
         ]);
 

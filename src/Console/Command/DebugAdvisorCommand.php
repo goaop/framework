@@ -13,13 +13,13 @@ declare(strict_types=1);
 namespace Go\Console\Command;
 
 use Go\Aop\Advisor;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Framework\AbstractInterceptor;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectContainer;
 use Go\Core\Cache\CachedAspectLoader;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\ParserReflection\ReflectionFile;
-use InvalidArgumentException;
 use ReflectionClass;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -96,7 +96,7 @@ class DebugAdvisorCommand extends BaseAspectCommand
 
         $advisor = $aspectContainer->getValue($advisorId);
         if (!$advisor instanceof Advisor) {
-            throw new InvalidArgumentException("Invalid advisor {$advisorId} given");
+            throw new InvalidConfigurationException("Invalid advisor {$advisorId} given");
         }
         $options = $this->aspectKernel->getOptions();
 

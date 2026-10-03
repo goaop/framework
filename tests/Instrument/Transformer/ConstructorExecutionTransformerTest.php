@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Instrument\Transformer\Stubs\ConstructedStub;
 use Go\Instrument\Transformer\Stubs\InitializationAwareStub;
-use LogicException;
 use PHPUnit\Framework\TestCase;
 
 class ConstructorExecutionTransformerTest extends TestCase
@@ -49,16 +49,16 @@ class ConstructorExecutionTransformerTest extends TestCase
     public function testTransformReportsTransformedOnlyForRewrittenExpressions(): void
     {
         $this->assertSame(
-            TransformerResultEnum::RESULT_TRANSFORMED,
+            TransformerResult::Transformed,
             self::$transformer->transform($this->createMetadata('<?php $a = new \stdClass();')),
         );
         $this->assertSame(
-            TransformerResultEnum::RESULT_ABSTAIN,
+            TransformerResult::Abstain,
             self::$transformer->transform($this->createMetadata('<?php $a = 42;')),
         );
         // `new` in a constant-expression context is skipped, so nothing is left to rewrite
         $this->assertSame(
-            TransformerResultEnum::RESULT_ABSTAIN,
+            TransformerResult::Abstain,
             self::$transformer->transform($this->createMetadata('<?php const SERVICE = new \stdClass;')),
         );
     }
@@ -136,7 +136,7 @@ class ConstructorExecutionTransformerTest extends TestCase
     {
         $transformer = ConstructorExecutionTransformer::getInstance();
 
-        $this->expectException(LogicException::class);
+        $this->expectException(WeavingException::class);
         $this->expectExceptionMessage('Cannot instantiate non-existent class: Go\Instrument\Transformer\Stubs\MissingStub');
 
         // @phpstan-ignore property.notFound, expr.resultUnused (exercises the __get() magic method directly)

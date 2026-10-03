@@ -114,11 +114,11 @@ class DebugWeavingCommand extends BaseAspectCommand
                 continue;
             }
             $pathname = $splFileInfo->getPathname();
-            if (str_ends_with($pathname, AspectContainer::AOP_PROXIED_SUFFIX . '.php')) {
+            if (str_ends_with($pathname, AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX)) {
                 continue;
             }
             // Only collect proxy files: they have a sibling `<Class>OriginalTrait.php` file
-            $traitSibling = PathResolver::withSuffixBeforeExtension($pathname, AspectContainer::AOP_PROXIED_SUFFIX);
+            $traitSibling = PathResolver::withSuffixBeforeExtension($pathname, AspectContainer::ORIGINAL_TRAIT_SUFFIX);
             if (!file_exists($traitSibling)) {
                 continue;
             }

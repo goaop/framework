@@ -80,7 +80,7 @@ final class JoinpointPerformanceTest extends TestCase
                 static function () use ($fieldAccess, $target): mixed {
                     $value = $target->value;
 
-                    return $fieldAccess($target, FieldAccessType::READ, $value);
+                    return $fieldAccess($target, FieldAccessType::Read, $value);
                 },
                 $advices === [] ? 40.0 : 55.0,
             ];
@@ -90,7 +90,7 @@ final class JoinpointPerformanceTest extends TestCase
                     $newValue = 'new';
                     $value    = $target->value;
 
-                    return $fieldAccess($target, FieldAccessType::WRITE, $newValue, $value);
+                    return $fieldAccess($target, FieldAccessType::Write, $newValue, $value);
                 },
                 $advices === [] ? 35.0 : 40.0,
             ];

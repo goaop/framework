@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Support;
 
+use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Framework\AfterInterceptor;
 use Go\Aop\Pointcut;
 use Go\Core\Container;
@@ -37,6 +38,16 @@ class LazyPointcutAdvisorTest extends TestCase
         $advisor = new LazyPointcutAdvisor($this->container, 'execution(public Foo->bar(*))', $advice);
 
         $this->assertSame($advice, $advisor->getAdvice());
+    }
+
+    public function testInvalidExpressionIsNamedInTheException(): void
+    {
+        $advisor = new LazyPointcutAdvisor($this->container, 'execution(public Foo->)', new AfterInterceptor(static function (): void {}));
+
+        $this->expectException(PointcutSyntaxException::class);
+        $this->expectExceptionMessage('Invalid pointcut expression `execution(public Foo->)`');
+
+        $this->fail('Parsed into ' . $advisor->getPointcut()::class);
     }
 
     public function testGetPointcutParsesExpressionLazilyOnFirstAccess(): void

@@ -70,7 +70,7 @@ final class PropertyGenerator implements PropertyNodeProvider
      */
     public function __construct(
         public readonly string $name,
-        private readonly array $modifiers = [PropertyModifier::PUBLIC],
+        private readonly array $modifiers = [PropertyModifier::Public],
     ) {}
 
     public function addHook(PropertyHook $hook): void
@@ -86,26 +86,26 @@ final class PropertyGenerator implements PropertyNodeProvider
         $builder = self::getFactory()->property($this->name);
 
         // Visibility
-        if ($this->hasModifier(PropertyModifier::PRIVATE)) {
+        if ($this->hasModifier(PropertyModifier::Private)) {
             $builder->makePrivate();
-        } elseif ($this->hasModifier(PropertyModifier::PROTECTED)) {
+        } elseif ($this->hasModifier(PropertyModifier::Protected)) {
             $builder->makeProtected();
         } else {
             $builder->makePublic();
         }
 
-        if ($this->hasModifier(PropertyModifier::STATIC)) {
+        if ($this->hasModifier(PropertyModifier::Static)) {
             $builder->makeStatic();
         }
-        if ($this->hasModifier(PropertyModifier::FINAL)) {
+        if ($this->hasModifier(PropertyModifier::Final)) {
             $builder->makeFinal();
         }
-        if ($this->hasModifier(PropertyModifier::READONLY)) {
+        if ($this->hasModifier(PropertyModifier::Readonly)) {
             $builder->makeReadonly();
         }
-        if ($this->hasModifier(PropertyModifier::PRIVATE_SET)) {
+        if ($this->hasModifier(PropertyModifier::PrivateSet)) {
             $builder->makePrivateSet();
-        } elseif ($this->hasModifier(PropertyModifier::PROTECTED_SET)) {
+        } elseif ($this->hasModifier(PropertyModifier::ProtectedSet)) {
             $builder->makeProtectedSet();
         }
 

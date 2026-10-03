@@ -173,13 +173,13 @@ class ClassProxyGenerator
         // Proxy modifiers: preserve final/abstract/readonly from original class.
         $modifiers = [];
         if ($originalClass->isFinal()) {
-            $modifiers[] = ClassModifier::FINAL;
+            $modifiers[] = ClassModifier::Final;
         }
         if ($originalClass->isAbstract()) {
-            $modifiers[] = ClassModifier::ABSTRACT;
+            $modifiers[] = ClassModifier::Abstract;
         }
         if ($originalClass->isReadOnly()) {
-            $modifiers[] = ClassModifier::READONLY;
+            $modifiers[] = ClassModifier::Readonly;
         }
 
         $classGenerator = new ClassGenerator(
@@ -222,7 +222,7 @@ class ClassProxyGenerator
                 continue;
             }
 
-            $classGenerator->addTraitAlias($effectiveTraitName, $methodName, $methodName . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX, Visibility::PRIVATE);
+            $classGenerator->addTraitAlias($effectiveTraitName, $methodName, $methodName . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX, Visibility::Private);
         }
         // Add any AOP-introduced traits
         $classGenerator->addTraits($introducedTraits);

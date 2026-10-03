@@ -75,7 +75,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream('php://input'), '<?php echo "simple test, no magic constants" ?>');
         $expected = $metadata->source;
-        $this->assertSame(TransformerResultEnum::RESULT_ABSTAIN, $this->transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Abstain, $this->transformer->transform($metadata));
         $this->assertSame($expected, $metadata->source);
     }
 
@@ -83,7 +83,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __DIR__; ?>');
         $expected = '<?php echo \'' . __DIR__ . '\'; ?>';
-        $this->assertSame(TransformerResultEnum::RESULT_ABSTAIN, $this->transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Abstain, $this->transformer->transform($metadata));
         $this->assertEquals($expected, $metadata->source);
     }
 
@@ -91,7 +91,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __FILE__; ?>');
         $expected = '<?php echo \'' . __FILE__ . '\'; ?>';
-        $this->assertSame(TransformerResultEnum::RESULT_ABSTAIN, $this->transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Abstain, $this->transformer->transform($metadata));
         $this->assertEquals($expected, $metadata->source);
     }
 
@@ -99,7 +99,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream('php://input'), '<?php echo "__FILE__"; ?>');
         $expected = '<?php echo "__FILE__"; ?>';
-        $this->assertSame(TransformerResultEnum::RESULT_ABSTAIN, $this->transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Abstain, $this->transformer->transform($metadata));
         $this->assertEquals($expected, $metadata->source);
     }
 
@@ -107,7 +107,7 @@ class MagicConstantTransformerTest extends TestCase
     {
         $source   = '<?php $class = new ReflectionClass("stdClass"); echo $class->getFileName(); ?>';
         $metadata = new StreamMetaData(self::openStream('php://input'), $source);
-        $this->assertSame(TransformerResultEnum::RESULT_ABSTAIN, $this->transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Abstain, $this->transformer->transform($metadata));
         $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $metadata->source);
     }
 
@@ -123,7 +123,7 @@ class MagicConstantTransformerTest extends TestCase
 
         $this->assertSame(
             dirname(__DIR__) . '/Some.php',
-            $class::resolveFileName(__DIR__ . '/Some' . AspectContainer::AOP_PROXIED_SUFFIX . '.php'),
+            $class::resolveFileName(__DIR__ . '/Some' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX),
         );
     }
 
@@ -134,8 +134,8 @@ class MagicConstantTransformerTest extends TestCase
         // The marker is only meaningful at the very end of the file name: a class that happens
         // to carry the suffix word inside its own name must keep it
         $this->assertSame(
-            dirname(__DIR__) . '/' . AspectContainer::AOP_PROXIED_SUFFIX . 'Request.php',
-            $class::resolveFileName(__DIR__ . '/' . AspectContainer::AOP_PROXIED_SUFFIX . 'Request.php'),
+            dirname(__DIR__) . '/' . AspectContainer::ORIGINAL_TRAIT_SUFFIX . 'Request.php',
+            $class::resolveFileName(__DIR__ . '/' . AspectContainer::ORIGINAL_TRAIT_SUFFIX . 'Request.php'),
         );
     }
 

@@ -22,10 +22,10 @@ enum FieldAccessType: string
     /**
      * The read access type
      */
-    case READ = 'get';
+    case Read = 'get';
 
     /**
      * The write access type
      */
-    case WRITE = 'set';
+    case Write = 'set';
 }

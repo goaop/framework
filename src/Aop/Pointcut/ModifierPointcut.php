@@ -46,8 +46,8 @@ final readonly class ModifierPointcut implements Pointcut
     /**
      * Initialize the filter with pre-resolved bit masks
      *
-     * @param int $andMask Bit mask that should always match
-     * @param int $orMask  Bit mask that can be used for additional check
+     * @param int $andMask Bit mask whose bits must all be present
+     * @param int $orMask  Bit mask of alternatives, at least one of them must be present (ignored when 0)
      * @param int $notMask Bit mask to exclude specific value from matching, for example, !public
      */
     public function __construct(
@@ -75,8 +75,18 @@ final readonly class ModifierPointcut implements Pointcut
             $modifiers = $reflector->getModifiers();
         }
 
+        // Every "and" bit is required, and at least one "or" bit when alternatives are given
         return !($this->notMask & $modifiers)
-            && (($this->andMask === ($this->andMask & $modifiers)) || ($this->orMask & $modifiers));
+            && ($this->andMask === ($this->andMask & $modifiers))
+            && ($this->orMask === 0 || ($this->orMask & $modifiers) !== 0);
+    }
+
+    /**
+     * Checks whether the filter already has a group of alternatives in its "or" mask
+     */
+    public function hasAlternatives(): bool
+    {
+        return $this->orMask !== 0;
     }
 
     /**

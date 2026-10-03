@@ -28,7 +28,7 @@ use Go\Tests\TestProject\Application\FooInterface;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 
 return [
-    'version' => 1,
+    'version' => 2,
     'advisors' => [
         DoSomethingAspect::class . '->afterDoSomething' => new GenericPointcutAdvisor(
             new OrPointcut(

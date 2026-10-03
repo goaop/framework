@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
+use Go\Aop\AspectException;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
@@ -146,6 +148,14 @@ class AspectKernelTest extends TestCase
         $this->assertSame($container, $kernel->getContainer());
     }
 
+    public function testGetContainerBeforeInitThrowsClearException(): void
+    {
+        $this->expectException(AspectException::class);
+        $this->expectExceptionMessage('is not initialized yet, call init() first');
+
+        $this->makeKernel()->getContainer();
+    }
+
     public function testHasFeatureReturnsTrueOnlyWhenBitIsSet(): void
     {
         $kernel = $this->makeKernel();
@@ -191,7 +201,7 @@ class AspectKernelTest extends TestCase
     {
         $kernel = $this->makeKernel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage('You need to provide valid cache directory for Go! AOP framework.');
 
         $this->invokeProtected($kernel, 'normalizeOptions', [[]]);
@@ -201,7 +211,7 @@ class AspectKernelTest extends TestCase
     {
         $kernel = $this->makeKernel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage(sprintf(
             'Container class "%s" must extend %s.',
             self::class,
@@ -255,7 +265,7 @@ class AspectKernelTest extends TestCase
     {
         $kernel = $this->makeKernel();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage('Option "cacheFileMode" must be an integer permission mask');
 
         $this->invokeProtectedArray($kernel, 'normalizeOptions', [[

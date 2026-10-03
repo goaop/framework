@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
+use Go\Aop\Exception\WeavingException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use PhpParser\Node\Expr;
@@ -124,7 +125,7 @@ class ValueGeneratorTest extends TestCase
 
     public function testThrowsForUnsupportedType(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(WeavingException::class);
         $this->expectExceptionMessage('Cannot generate AST node for value of type');
         $gen = new ValueGenerator(new \stdClass());
         $gen->getNode();

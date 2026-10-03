@@ -14,6 +14,7 @@ namespace Go\Core\Cache;
 
 use Go\Aop\Advisor;
 use Go\Aop\Compilable;
+use Go\Aop\Exception\NotCompilableException;
 use Go\Aop\Pointcut;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
@@ -44,7 +45,7 @@ final class AdvisorCacheCompiler
     /**
      * Version of the compiled advisor cache format
      */
-    public const int VERSION = 1;
+    public const int VERSION = 2;
 
     /**
      * Compiles the loaded items of one aspect into advisor cache file content

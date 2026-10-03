@@ -27,7 +27,8 @@ use ReflectionProperty;
 use function in_array;
 
 /**
- * Inheritance pointcut that matches any child for given parent or implements given interface
+ * `Foo+` pointcut: matches Foo itself, its subclasses and implementers, and classes using the trait Foo
+ * directly or through a parent class
  */
 final readonly class ClassInheritancePointcut implements Pointcut
 {
@@ -46,8 +47,21 @@ final readonly class ClassInheritancePointcut implements Pointcut
             return false;
         }
 
-        // Otherwise, we match only if given context is child of given previously class name (either interface or class)
-        return $context->isSubclassOf($this->parentClassOrInterfaceName) || in_array($this->parentClassOrInterfaceName, (array) $context->getInterfaceNames());
+        $typeName = $this->parentClassOrInterfaceName;
+        if ($context->getName() === $typeName
+            || in_array($typeName, $context->getInterfaceNames(), true)
+            || $context->isSubclassOf($typeName)
+        ) {
+            return true;
+        }
+
+        for ($class = $context; $class !== false; $class = $class->getParentClass()) {
+            if (in_array($typeName, $class->getTraitNames(), true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function getKind(): int
