@@ -17,6 +17,8 @@ use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Core\Cache\CachedAspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\Instrument\Transformer\NodeRewriter;
+use Go\Instrument\Transformer\SyntaxTreeRewriter;
 
 /**
  * Deferred definitions of the framework's own services, registered by the kernel during
@@ -63,6 +65,13 @@ final class FrameworkServices
 
         $container->addLazyService(CachePathManager::class, fn(AspectContainer $container): CachePathManager => new CachePathManager(
             $container->getService(AspectKernel::class),
+        ));
+
+        // Registered ahead of the kernel's transformer services, so the single syntax tree walk
+        // opens the transformation chain even when AspectKernel::registerTransformerServices()
+        // is overridden; the NodeRewriter rules are resolved by their tag when it is first used
+        $container->addLazyService(SyntaxTreeRewriter::class, fn(AspectContainer $container): SyntaxTreeRewriter => new SyntaxTreeRewriter(
+            ...$container->getServicesByInterface(NodeRewriter::class),
         ));
     }
 }

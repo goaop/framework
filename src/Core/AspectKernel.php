@@ -25,8 +25,6 @@ use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
-use Go\Instrument\Transformer\NodeRewriter;
-use Go\Instrument\Transformer\SyntaxTreeRewriter;
 use Go\Instrument\Transformer\WeavingTransformer;
 use ReflectionClass;
 
@@ -376,8 +374,9 @@ abstract class AspectKernel
      * cache miss only.
      *
      * Rewrites of single syntax tree nodes are NodeRewriter services instead: the
-     * SyntaxTreeRewriter stage walks the syntax tree of a file once for all of them,
-     * in their registration order, before the weaving.
+     * SyntaxTreeRewriter stage, a framework service registered before this hook (so
+     * it stays in place when the hook is overridden), walks the syntax tree of a file
+     * once for all of them, in their registration order, before the weaving.
      *
      * Override this method to replace, omit, reorder or extend the built-in transformers
      * (e.g. a mocking framework registering its own weaver instead of WeavingTransformer).
@@ -411,12 +410,6 @@ abstract class AspectKernel
         $container->addLazyService(
             MagicConstantTransformer::class,
             fn(): MagicConstantTransformer => new MagicConstantTransformer($this),
-        );
-        $container->addLazyService(
-            SyntaxTreeRewriter::class,
-            fn(AspectContainer $container): SyntaxTreeRewriter => new SyntaxTreeRewriter(
-                ...$container->getServicesByInterface(NodeRewriter::class),
-            ),
         );
         $container->addLazyService(
             WeavingTransformer::class,
