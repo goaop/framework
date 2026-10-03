@@ -28,9 +28,6 @@ use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use ReflectionClass;
 
-use function define;
-use function defined;
-
 /**
  * Abstract aspect kernel is used to prepare an application to work with aspects.
  *
