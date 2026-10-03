@@ -61,9 +61,6 @@ class First
         // nothing here
     }
 
-    /**
-     * @link https://github.com/laminas/laminas-code/pull/145 For tracking why attributes are not suuported
-     */
     #[StubAttribute(First::class)]
     public function publicMethodWithAttribute(#[StubAttribute("argument")] string $argument): string
     {

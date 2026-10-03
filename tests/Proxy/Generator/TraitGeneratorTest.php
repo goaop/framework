@@ -14,7 +14,6 @@ namespace Go\Proxy\Generator;
 
 use Go\Stubs\Generator\MethodGeneratorTestStub;
 use PHPUnit\Framework\TestCase;
-use PhpParser\Node\Stmt\Trait_;
 use ReflectionMethod;
 
 class TraitGeneratorTest extends TestCase

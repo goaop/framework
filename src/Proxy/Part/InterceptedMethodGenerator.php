@@ -39,16 +39,6 @@ final class InterceptedMethodGenerator
         return $this->generator->generate();
     }
 
-    public function getBody(): string
-    {
-        return $this->generator->body;
-    }
-
-    public function setBody(string $body): void
-    {
-        $this->generator->body = $body;
-    }
-
     public function getName(): string
     {
         return $this->generator->name;

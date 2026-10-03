@@ -19,7 +19,6 @@ use InvalidArgumentException;
 use PhpParser\Node;
 use PhpToken;
 
-use function is_array;
 use function is_resource;
 
 /**

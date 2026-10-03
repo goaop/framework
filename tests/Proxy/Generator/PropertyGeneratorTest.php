@@ -15,9 +15,7 @@ namespace Go\Proxy\Generator;
 use PHPUnit\Framework\TestCase;
 use PhpParser\BuilderFactory;
 use PhpParser\Node\AttributeGroup;
-use PhpParser\Node\Expr;
 use PhpParser\Node\Name;
-use PhpParser\Node\Stmt\Property;
 use PhpParser\ParserFactory;
 
 class PropertyGeneratorTest extends TestCase

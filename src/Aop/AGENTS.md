@@ -64,7 +64,7 @@ when `$level > 0` and pops it in `finally`. Check every change with `composer te
 
 ## Attributes (src/Lang/Attribute/)
 - Advice: #[Before], #[After], #[Around], #[AfterThrowing]
-- Declaration: #[Aspect], #[Pointcut], #[DeclareParents]
+- Declaration: #[Pointcut], #[DeclareParents]
 - Base: AbstractAttribute, AbstractInterceptor, Interceptor (interface)
 
 ## Features (src/Aop/Features.php)
