@@ -202,12 +202,9 @@ class WeavingTransformer extends BaseSourceTransformer
     ): void {
         $classNode = $class->getNode();
         $position = $this->getPositionAfterAttributeGroups($classNode);
-        if (!is_int($position)) {
-            return;
-        }
         // Every scan stays within the declaration: a malformed token stream can never loop forever
         $lastPosition = $classNode->getAttribute('endTokenPos');
-        if (!is_int($lastPosition)) {
+        if (!is_int($position) || !is_int($lastPosition)) {
             return;
         }
         while ($position <= $lastPosition) {
@@ -269,12 +266,9 @@ class WeavingTransformer extends BaseSourceTransformer
     ): void {
         $classNode = $class->getNode();
         $position = $this->getPositionAfterAttributeGroups($classNode);
-        if (!is_int($position)) {
-            return;
-        }
         // Every scan stays within the declaration: a malformed token stream can never loop forever
         $lastPosition = $classNode->getAttribute('endTokenPos');
-        if (!is_int($lastPosition)) {
+        if (!is_int($position) || !is_int($lastPosition)) {
             return;
         }
 
@@ -512,12 +506,9 @@ class WeavingTransformer extends BaseSourceTransformer
     ): void {
         $classNode = $class->getNode();
         $position = $this->getPositionAfterAttributeGroups($classNode);
-        if (!is_int($position)) {
-            return;
-        }
         // Every scan stays within the declaration: a malformed token stream can never loop forever
         $lastPosition = $classNode->getAttribute('endTokenPos');
-        if (!is_int($lastPosition)) {
+        if (!is_int($position) || !is_int($lastPosition)) {
             return;
         }
 
