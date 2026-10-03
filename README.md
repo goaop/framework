@@ -69,7 +69,7 @@ if ($fieldAccess->getField()->isInitialized($this)) {
 
 ### 🛠️ Developer Experience
 
- - **Rich pointcut syntax** — Express complex matching rules with an intuitive, readable grammar. Target methods by visibility, name patterns, annotations, class hierarchy, and more — all in a single expression like `execution(public **->save*(*))`.
+ - **Rich pointcut syntax** — Express complex matching rules with an intuitive, readable grammar. Target methods by visibility, name patterns, attributes, class hierarchy, and more — all in a single expression like `execution(public **->save*(*))`.
 
  - **Full XDebug support** — Unlike other AOP solutions that generate unreadable proxy code, the framework produces clean, debuggable PHP. Set breakpoints directly in your aspects or original classes — step through code naturally, inspect variables, and debug as if AOP wasn't there.
 
@@ -85,7 +85,7 @@ if ($fieldAccess->getField()->isInitialized($this)) {
 
  - **Smart caching** — Advices are woven as **first-class callables** pointing straight at your aspect methods, joinpoints are resolved at compile-time and cached in the generated code — eliminating runtime reflection costs and lazy advisor indirection.
 
- - **No runtime overhead** — Zero runtime annotation parsing, no slow `__call` methods, no proxy objects wrapping your instances. Method interception happens through direct, inlined PHP code — as fast as handwritten cross-cutting code. **Zero** overhead for non-intercepted methods.
+ - **No runtime overhead** — Zero runtime attribute parsing, no slow `__call` methods, no proxy objects wrapping your instances. Method interception happens through direct, inlined PHP code — as fast as handwritten cross-cutting code. **Zero** overhead for non-intercepted methods.
 
 
 What is AOP?
