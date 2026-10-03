@@ -123,10 +123,10 @@ class DebugWeavingCommand extends BaseAspectCommand
         while ($i < $firstCount || $j < $secondCount) {
             if ($i < $firstCount && $j < $secondCount && $firstLines[$i] === $secondLines[$j]) {
                 [$i, $j] = [$i + 1, $j + 1];
-            } elseif ($j < $secondCount && ($i === $firstCount || $lengths[$i][$j + 1] >= $lengths[$i + 1][$j])) {
-                $diff[] = '<info>+ ' . $secondLines[$j++] . '</info>';
-            } else {
+            } elseif ($i < $firstCount && ($j === $secondCount || $lengths[$i + 1][$j] >= $lengths[$i][$j + 1])) {
                 $diff[] = '<fg=red>- ' . $firstLines[$i++] . '</>';
+            } else {
+                $diff[] = '<info>+ ' . $secondLines[$j++] . '</info>';
             }
         }
 

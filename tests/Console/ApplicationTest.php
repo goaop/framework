@@ -69,6 +69,13 @@ class ApplicationTest extends TestCase
         $this->assertSame([DebugWeavingCommand::class], $instantiated, 'Only the requested command must be instantiated');
     }
 
+    public function testDefaultLoaderInstantiatesTheCommands(): void
+    {
+        $commandLoader = CommandLoader::create();
+
+        $this->assertInstanceOf(DebugWeavingCommand::class, $commandLoader->get('debug:weaving'));
+    }
+
     /**
      * @param list<string> $args
      */
