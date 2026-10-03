@@ -203,6 +203,10 @@ abstract class AspectKernel
      */
     public function hasFeature(int $featureToCheck): bool
     {
+        if ($featureToCheck === 0 || ($featureToCheck & ~Features::ALL) !== 0) {
+            throw new InvalidConfigurationException(sprintf('Unknown feature %d, use Go\\Aop\\Features constants', $featureToCheck));
+        }
+
         return ($this->options['features'] & $featureToCheck) !== 0;
     }
 

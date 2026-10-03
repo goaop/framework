@@ -68,6 +68,6 @@ when `$level > 0` and pops it in `finally`. Check every change with `composer te
 - Base: AbstractAttribute, AbstractInterceptor, Interceptor (interface)
 
 ## Features (src/Aop/Features.php)
-Interface with bitmask constants:
+Final class with bitmask constants (`ALL` is the mask of every flag):
 - INTERCEPT_FUNCTIONS=1, INTERCEPT_INITIALIZATIONS=2, INTERCEPT_INCLUDES=4
 - PREBUILT_CACHE=64 — assume cache already prepared, skip freshness checks
