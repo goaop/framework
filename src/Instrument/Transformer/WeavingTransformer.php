@@ -30,6 +30,10 @@ use Go\Proxy\ClassProxyGenerator;
 use Go\Proxy\EnumProxyGenerator;
 use Go\Proxy\FunctionProxyGenerator;
 use Go\Proxy\TraitProxyGenerator;
+use Closure;
+use PhpParser\Node\Attribute;
+use PhpParser\Node\AttributeGroup;
+use PhpParser\Node\Name;
 use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\EnumCase;
@@ -201,7 +205,12 @@ class WeavingTransformer extends BaseSourceTransformer
         if (!is_int($position)) {
             return;
         }
-        do {
+        // Every scan stays within the declaration: a malformed token stream can never loop forever
+        $lastPosition = $classNode->getAttribute('endTokenPos');
+        if (!is_int($lastPosition)) {
+            return;
+        }
+        while ($position <= $lastPosition) {
             if (isset($streamMetaData->tokenStream[$position])) {
                 $token = $streamMetaData->tokenStream[$position];
                 // First string is class/trait name
@@ -212,7 +221,7 @@ class WeavingTransformer extends BaseSourceTransformer
                 }
             }
             ++$position;
-        } while (true);
+        }
     }
 
     /**
@@ -263,10 +272,15 @@ class WeavingTransformer extends BaseSourceTransformer
         if (!is_int($position)) {
             return;
         }
+        // Every scan stays within the declaration: a malformed token stream can never loop forever
+        $lastPosition = $classNode->getAttribute('endTokenPos');
+        if (!is_int($lastPosition)) {
+            return;
+        }
 
         $classNameFound = false;
 
-        do {
+        while ($position <= $lastPosition) {
             if (!isset($streamMetaData->tokenStream[$position])) {
                 ++$position;
                 continue;
@@ -277,19 +291,19 @@ class WeavingTransformer extends BaseSourceTransformer
             if (!$classNameFound) {
                 // Remove 'final' modifier (and trailing whitespace) — traits cannot be final
                 if ($token->id === T_FINAL) {
-                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                    $this->removeModifierToken($position, $streamMetaData);
                     ++$position;
                     continue;
                 }
                 // Remove 'abstract' modifier (and trailing whitespace) — trait keyword itself has no modifier
                 if ($token->id === T_ABSTRACT) {
-                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                    $this->removeModifierToken($position, $streamMetaData);
                     ++$position;
                     continue;
                 }
                 // Remove 'readonly' modifier — traits cannot be readonly
                 if ($token->id === T_READONLY) {
-                    unset($streamMetaData->tokenStream[$position], $streamMetaData->tokenStream[$position + 1]);
+                    $this->removeModifierToken($position, $streamMetaData);
                     ++$position;
                     continue;
                 }
@@ -313,12 +327,12 @@ class WeavingTransformer extends BaseSourceTransformer
                 }
                 // Keep whitespace tokens to preserve original brace placement (same line or next line)
                 if ($token->id !== T_WHITESPACE) {
-                    unset($streamMetaData->tokenStream[$position]);
+                    $this->blankTokenRangePreservingNewlines($position, $position, $streamMetaData);
                 }
             }
 
             ++$position;
-        } while (true);
+        }
 
         // Strip #[\Override] from intercepted methods.
         // PHP copies attributes to alias names (e.g. fooOriginalAlias). Since fooOriginalAlias has no parent
@@ -344,20 +358,31 @@ class WeavingTransformer extends BaseSourceTransformer
      */
     private function stripTraitIncompatibleClassAttributes(ClassLike $classNode, StreamMetaData $streamMetaData): void
     {
-        foreach ($classNode->attrGroups as $attrGroup) {
-            $incompatibleAttributes = [];
-            foreach ($attrGroup->attrs as $attribute) {
-                // Names are resolved by parser-reflection's NameResolver, so global attribute
-                // classes are FullyQualified nodes ('Attribute', 'AllowDynamicProperties').
-                if (in_array(ltrim($attribute->name->toString(), '\\'), self::TRAIT_INCOMPATIBLE_ATTRIBUTES, true)) {
-                    $incompatibleAttributes[] = $attribute;
-                }
-            }
-            if ($incompatibleAttributes === []) {
+        $this->stripAttributes(
+            $classNode->attrGroups,
+            static fn(Attribute $attribute): bool => in_array(self::resolveAttributeName($attribute), self::TRAIT_INCOMPATIBLE_ATTRIBUTES, true),
+            $streamMetaData,
+        );
+    }
+
+    /**
+     * Removes the attributes selected by $shouldRemove from the given attribute groups in the token stream
+     *
+     * A group whose attributes are all removed is blanked out entirely; otherwise only the selected entries are
+     * removed together with one adjacent comma. Newlines inside the removed token ranges are kept, so every
+     * following declaration stays at its original line number (XDebug breakpoint mapping).
+     *
+     * @param AttributeGroup[]              $attrGroups
+     * @param Closure(Attribute): bool      $shouldRemove
+     */
+    private function stripAttributes(array $attrGroups, Closure $shouldRemove, StreamMetaData $streamMetaData): void
+    {
+        foreach ($attrGroups as $attrGroup) {
+            $attributesToRemove = array_filter($attrGroup->attrs, $shouldRemove);
+            if ($attributesToRemove === []) {
                 continue;
             }
-            if (count($incompatibleAttributes) === count($attrGroup->attrs)) {
-                // Every attribute in the group is incompatible — blank out the whole group '#[...]'
+            if (count($attributesToRemove) === count($attrGroup->attrs)) {
                 $start = $attrGroup->getAttribute('startTokenPos');
                 $end   = $attrGroup->getAttribute('endTokenPos');
                 if (is_int($start) && is_int($end)) {
@@ -365,7 +390,7 @@ class WeavingTransformer extends BaseSourceTransformer
                 }
                 continue;
             }
-            foreach ($incompatibleAttributes as $attribute) {
+            foreach ($attributesToRemove as $attribute) {
                 $start = $attribute->getAttribute('startTokenPos');
                 $end   = $attribute->getAttribute('endTokenPos');
                 if (!is_int($start) || !is_int($end)) {
@@ -374,6 +399,34 @@ class WeavingTransformer extends BaseSourceTransformer
                 $this->blankTokenRangePreservingNewlines($start, $end, $streamMetaData);
                 $this->removeAdjacentAttributeComma($start, $end, $streamMetaData);
             }
+        }
+    }
+
+    /**
+     * Returns the fully qualified name of an attribute class, without a leading backslash
+     *
+     * parser-reflection runs the NameResolver without replacing nodes, so the resolved name is kept in the
+     * `resolvedName` attribute of the name node; the name as written is the fallback.
+     */
+    private static function resolveAttributeName(Attribute $attribute): string
+    {
+        $resolvedName = $attribute->name->getAttribute('resolvedName');
+        $name         = $resolvedName instanceof Name ? $resolvedName : $attribute->name;
+
+        return ltrim($name->toString(), '\\');
+    }
+
+    /**
+     * Removes a class modifier token (final, abstract, readonly) together with the whitespace after it
+     *
+     * The whitespace is removed only when it holds no newline, so `final\nclass Foo` keeps its line count.
+     */
+    private function removeModifierToken(int $position, StreamMetaData $streamMetaData): void
+    {
+        unset($streamMetaData->tokenStream[$position]);
+        $nextToken = $streamMetaData->tokenStream[$position + 1] ?? null;
+        if ($nextToken !== null && $nextToken->id === T_WHITESPACE && strpbrk($nextToken->text, "\r\n") === false) {
+            unset($streamMetaData->tokenStream[$position + 1]);
         }
     }
 
@@ -462,10 +515,15 @@ class WeavingTransformer extends BaseSourceTransformer
         if (!is_int($position)) {
             return;
         }
+        // Every scan stays within the declaration: a malformed token stream can never loop forever
+        $lastPosition = $classNode->getAttribute('endTokenPos');
+        if (!is_int($lastPosition)) {
+            return;
+        }
 
         $classNameFound = false;
 
-        do {
+        while ($position <= $lastPosition) {
             if (!isset($streamMetaData->tokenStream[$position])) {
                 ++$position;
                 continue;
@@ -494,12 +552,12 @@ class WeavingTransformer extends BaseSourceTransformer
                 }
                 // Keep whitespace tokens to preserve original brace placement
                 if ($token->id !== T_WHITESPACE) {
-                    unset($streamMetaData->tokenStream[$position]);
+                    $this->blankTokenRangePreservingNewlines($position, $position, $streamMetaData);
                 }
             }
 
             ++$position;
-        } while (true);
+        }
 
         // Remove all enum case declarations from the trait body.
         // Cases cannot exist in traits; they are re-declared in the proxy enum by EnumProxyGenerator.
@@ -559,114 +617,13 @@ class WeavingTransformer extends BaseSourceTransformer
             if ($method->getDeclaringClass()->name !== $class->name) {
                 continue;
             }
-            $methodNode = $method->getNode();
-            $start = $methodNode->getAttribute('startTokenPos');
-            $end   = $methodNode->getAttribute('endTokenPos');
-            if (!is_int($start) || !is_int($end)) {
-                continue;
-            }
-
-            // Scan from method start for #[\Override] attribute groups, stopping at
-            // the first modifier keyword or 'function'.
-            $pos = $start;
-            while ($pos <= $end) {
-                if (!isset($streamMetaData->tokenStream[$pos])) {
-                    $pos++;
-                    continue;
-                }
-                $tok = $streamMetaData->tokenStream[$pos];
-                // Stop at any method modifier or 'function' keyword
-                if (in_array($tok->id, [T_FUNCTION, T_PUBLIC, T_PROTECTED, T_PRIVATE, T_STATIC, T_ABSTRACT, T_FINAL, T_READONLY], true)) {
-                    break;
-                }
-                if ($tok->id !== T_ATTRIBUTE) {
-                    $pos++;
-                    continue;
-                }
-                // Scan from '#[' to the closing ']', tracking:
-                //   $topLevelCommas  — positions of ',' at argument depth 0 (not inside nested parens)
-                //   $overridePos     — position of the Override token at depth 0, if present
-                $groupPositions = [$pos];
-                $topLevelCommas = [];
-                $overridePos    = null;
-                $depth          = 0;
-                $scanPos        = $pos + 1;
-                while ($scanPos <= $end) {
-                    if (!isset($streamMetaData->tokenStream[$scanPos])) {
-                        $scanPos++;
-                        continue;
-                    }
-                    $t = $streamMetaData->tokenStream[$scanPos];
-                    $groupPositions[] = $scanPos;
-                    if ($t->text === '(') {
-                        $depth++;
-                    } elseif ($t->text === ')') {
-                        $depth--;
-                    } elseif ($t->text === ',' && $depth === 0) {
-                        $topLevelCommas[] = $scanPos;
-                    }
-                    // Match Override only at depth 0 so that SomeAttr(name: 'Override') is not affected
-                    // #[Override]  → T_STRING 'Override'
-                    // #[\Override] → T_NAME_FULLY_QUALIFIED '\Override'
-                    if ($depth === 0 && (
-                        ($t->id === T_STRING && $t->text === 'Override')
-                        || ($t->id === T_NAME_FULLY_QUALIFIED && str_ends_with($t->text, 'Override'))
-                    )) {
-                        $overridePos = $scanPos;
-                    }
-                    if ($t->text === ']') {
-                        break;
-                    }
-                    $scanPos++;
-                }
-                /** @var int $groupEnd */
-                $groupEnd = end($groupPositions);
-                if ($overridePos === null) {
-                    // No Override attribute in this group — advance past it
-                    $pos = $groupEnd + 1;
-                } elseif (empty($topLevelCommas)) {
-                    // #[Override] is the only attribute — remove the entire group + trailing whitespace
-                    foreach ($groupPositions as $gPos) {
-                        unset($streamMetaData->tokenStream[$gPos]);
-                    }
-                    $afterPos = $groupEnd + 1;
-                    if (isset($streamMetaData->tokenStream[$afterPos])
-                        && $streamMetaData->tokenStream[$afterPos]->id === T_WHITESPACE) {
-                        unset($streamMetaData->tokenStream[$afterPos]);
-                    }
-                    $pos = $afterPos + 1;
-                } else {
-                    // Multi-attribute group: remove only the Override token and one adjacent comma+whitespace,
-                    // keeping '#[' and the remaining attribute entries intact.
-                    unset($streamMetaData->tokenStream[$overridePos]);
-                    // Prefer removing a trailing comma (first ',' after Override),
-                    // fall back to the leading comma (last ',' before Override).
-                    $commaToRemove = null;
-                    foreach ($topLevelCommas as $commaPos) {
-                        if ($commaPos > $overridePos) {
-                            $commaToRemove = $commaPos;
-                            break;
-                        }
-                    }
-                    if ($commaToRemove === null) {
-                        foreach (array_reverse($topLevelCommas) as $commaPos) {
-                            if ($commaPos < $overridePos) {
-                                $commaToRemove = $commaPos;
-                                break;
-                            }
-                        }
-                    }
-                    if ($commaToRemove !== null) {
-                        unset($streamMetaData->tokenStream[$commaToRemove]);
-                        $nextPos = $commaToRemove + 1;
-                        if (isset($streamMetaData->tokenStream[$nextPos])
-                            && $streamMetaData->tokenStream[$nextPos]->id === T_WHITESPACE) {
-                            unset($streamMetaData->tokenStream[$nextPos]);
-                        }
-                    }
-                    $pos = $groupEnd + 1;
-                }
-            }
+            // Attribute names are compared as resolved by the parser, so aliases (`use Override as O; #[O]`),
+            // qualified names and attributes that merely end with "Override" are told apart correctly
+            $this->stripAttributes(
+                $method->getNode()->attrGroups,
+                static fn(Attribute $attribute): bool => self::resolveAttributeName($attribute) === 'Override',
+                $streamMetaData,
+            );
         }
     }
 
@@ -966,6 +923,11 @@ class WeavingTransformer extends BaseSourceTransformer
         ReflectionFileNamespace $namespace,
     ): bool {
         $wasProcessedFunctions = false;
+        // A function proxy shadows the internal function with a namespaced one of the same name: that is
+        // impossible in the global namespace, where it would redeclare the internal function
+        if ($namespace->getName() === '') {
+            return false;
+        }
         $functionAdvices = $this->adviceMatcher->getAdvicesForFunctions($namespace, $advisors);
         $cacheDir        = $this->cachePathManager->getCacheDir();
         if (!empty($functionAdvices) && $cacheDir !== null) {

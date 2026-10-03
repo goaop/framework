@@ -9,6 +9,7 @@ namespace Test\ns1;
  */
 trait TestClassWithOverrideOriginalTrait
 {
+
     public function overriddenMethod(): string
     {
         return 'child';

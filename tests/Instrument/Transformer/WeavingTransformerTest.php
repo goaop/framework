@@ -22,6 +22,7 @@ use Go\Instrument\ClassLoading\CachePathManager;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\MockObject\MockObject;
 use Go\Instrument\Transformer\Stubs\MultiLinePropertiesClass;
+use Go\Instrument\Transformer\Stubs\TokenSurgeryClass;
 use Go\PhpUnit\AssertsCompilablePhp;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -547,6 +548,41 @@ class WeavingTransformerTest extends TestCase
         $actualProxyContent   = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
         $expectedProxyContent = $this->normalizeWhitespaces($this->loadTestMetadata('php80-82-syntax-proxy')->source);
         $this->assertEquals($expectedProxyContent, $actualProxyContent);
+    }
+
+    /**
+     * The class-to-trait surgery must keep every line in place and compare attribute names as resolved:
+     * an aliased #[\Attribute] and aliased #[\Override] are removed from the trait, an attribute that merely
+     * ends with "Override" is kept, and a modifier or comment spanning lines does not shift the body.
+     */
+    public function testTraitConversionKeepsLinesAndResolvesAttributeNames(): void
+    {
+        $className      = TokenSurgeryClass::class;
+        $methodAdvices  = [];
+        foreach (['count', 'getIterator', 'marker'] as $methodName) {
+            $methodAdvices[$methodName] = [
+                "advisor.{$className}->{$methodName}" => new BeforeInterceptor(static function (): void {}),
+            ];
+        }
+        $transformer = $this->createTransformerWithAdvices([AspectContainer::METHOD_PREFIX => $methodAdvices]);
+
+        $metadata       = $this->loadStubMetadata('TokenSurgeryClass');
+        $originalSource = (string) $metadata->source;
+        $transformer->transform($metadata);
+        $wovenSource = (string) $metadata->source;
+
+        $this->assertPhpCompiles($wovenSource);
+        $this->assertStringNotContainsString('#[AttributeAlias]', $wovenSource);
+        $this->assertStringNotContainsString('#[Overrides]', $wovenSource);
+        $this->assertStringNotContainsString('#[\Override]', $wovenSource);
+        $this->assertStringContainsString('#[MyOverride]', $wovenSource);
+        $this->assertStringNotContainsString('final', $wovenSource);
+
+        // Every line keeps its number: the woven source only gains the trailing include line
+        $this->assertSame(substr_count($originalSource, "\n") + 1, substr_count($wovenSource, "\n"));
+        foreach (['public function count()', 'public function getIterator()', 'public function marker()'] as $needle) {
+            $this->assertSame($this->findLineOf($needle, $originalSource), $this->findLineOf($needle, $wovenSource), $needle);
+        }
     }
 
     /**
@@ -1178,6 +1214,45 @@ class WeavingTransformerTest extends TestCase
         );
         $this->assertFileExists('vfs:///_functions/Test/ns1.php');
         $this->assertStringContainsString('array_product', (string) file_get_contents('vfs:///_functions/Test/ns1.php'));
+    }
+
+    /**
+     * A function proxy shadows an internal function with a namespaced function of the same name, which is
+     * impossible in the global namespace (it would redeclare the internal function), so nothing is woven there
+     */
+    public function testWeaverSkipsFunctionInterceptionInGlobalNamespace(): void
+    {
+        $container = $this->createMock(AspectContainer::class);
+        $container->method('getServicesByInterface')->willReturnMap([[Advisor::class, []]]);
+        $container->method('isFreshSince')->willReturn(false);
+
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher->method('getAdvicesForClass')->willReturn([]);
+        $adviceMatcher->expects($this->never())->method('getAdvicesForFunctions');
+
+        $kernel = $this->getKernelMock(
+            [
+                'appDir'        => dirname(__DIR__),
+                'cacheDir'      => 'vfs://',
+                'cacheFileMode' => 0770,
+                'includePaths'  => [],
+                'excludePaths'  => [],
+            ],
+            $container,
+        );
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$container])
+            ->getMock();
+        $transformer = new WeavingTransformer($kernel, $adviceMatcher, new CachePathManager($kernel), $loader);
+
+        $metadata = $this->loadTestMetadata('functions-global-namespace');
+        $original = $metadata->source;
+        $result   = $transformer->transform($metadata);
+
+        $this->assertSame(TransformerResult::Abstain, $result);
+        $this->assertSame($original, $metadata->source);
+        $this->assertFileDoesNotExist('vfs:///_functions/.php');
     }
 
     /**

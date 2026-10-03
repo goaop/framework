@@ -19,6 +19,7 @@ use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Param;
 use PhpParser\Node\PropertyItem;
 use PhpParser\Node\StaticVar;
+use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\NodeVisitorAbstract;
 
@@ -84,7 +85,8 @@ final class NewExpressionFinderVisitor extends NodeVisitorAbstract
             ++$this->constExprDepth;
         }
 
-        if ($this->constExprDepth === 0 && $node instanceof New_) {
+        // Anonymous classes (`new class {...}`) have no name to construct through the interceptor
+        if ($this->constExprDepth === 0 && $node instanceof New_ && !$node->class instanceof Class_) {
             $this->newExpressions[] = $node;
         }
 

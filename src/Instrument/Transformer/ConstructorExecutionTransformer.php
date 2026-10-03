@@ -29,7 +29,7 @@ final class ConstructorExecutionTransformer implements SourceTransformer
     /**
      * List of constructor invocations per class
      *
-     * @var array<string, ReflectionConstructorInvocation<object>|null>
+     * @var array<string, ReflectionConstructorInvocation<object>>
      */
     private static array $constructorInvocationsCache = [];
 
@@ -118,26 +118,20 @@ final class ConstructorExecutionTransformer implements SourceTransformer
     protected static function construct(string $fullClassName, array $arguments = []): object
     {
         $fullClassName = ltrim($fullClassName, '\\');
-        if (!isset(self::$constructorInvocationsCache[$fullClassName])) {
-            $invocation  = null;
-            if (class_exists($fullClassName)) {
-                if (!is_subclass_of($fullClassName, InitializationAware::class)) {
-                    $invocation = new ReflectionConstructorInvocation([], $fullClassName);
-                }
-            }
-            self::$constructorInvocationsCache[$fullClassName] = $invocation;
-        }
-
         if (is_subclass_of($fullClassName, InitializationAware::class)) {
             /** @var class-string<InitializationAware<object>> $fullClassName */
             return $fullClassName::__initialization($arguments);
         }
 
-        $cachedInvocation = self::$constructorInvocationsCache[$fullClassName];
-        if ($cachedInvocation === null) {
-            throw new WeavingException("Cannot instantiate non-existent class: {$fullClassName}");
+        $invocation = self::$constructorInvocationsCache[$fullClassName] ?? null;
+        if ($invocation === null) {
+            // A missing class is not cached: it may still become loadable later in the request
+            if (!class_exists($fullClassName)) {
+                throw new WeavingException("Cannot instantiate non-existent class: {$fullClassName}");
+            }
+            $invocation = self::$constructorInvocationsCache[$fullClassName] = new ReflectionConstructorInvocation([], $fullClassName);
         }
 
-        return $cachedInvocation->__invoke($arguments);
+        return $invocation->__invoke($arguments);
     }
 }
