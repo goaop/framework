@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\AbstractMethodInvocation;
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Aop\Framework\Interceptor;
@@ -272,6 +273,15 @@ class ClassProxyGenerator
         $interceptedMethods = [];
         foreach ($methodNames as $methodName) {
             $reflectionMethod = $originalClass->getMethod($methodName);
+            if ($reflectionMethod->returnsReference()) {
+                throw new WeavingException(sprintf(
+                    'Method %s::%s() returns by reference and can not be intercepted: the joinpoint returns '
+                    . 'values, so the reference would be lost. Exclude it from the pointcut with '
+                    . '"&& !matchReturningByReference()".',
+                    $originalClass->name,
+                    $methodName,
+                ));
+            }
             $methodBody       = $this->getJoinpointInvocationBody($reflectionMethod, $originalClass);
 
             $interceptedMethods[$methodName] = new InterceptedMethodGenerator($reflectionMethod, $methodBody);
@@ -326,7 +336,8 @@ class ClassProxyGenerator
 
         $argumentList = new FunctionCallArgumentListGenerator($method);
         $argumentCode = $argumentList->generate();
-        $return       = 'return ';
+        // Constructors and __clone() return nothing, whatever the joinpoint returns
+        $return       = $method->isConstructor() || $method->name === '__clone' ? '' : 'return ';
         if ($method->hasReturnType()) {
             $returnType = $method->getReturnType();
             if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {

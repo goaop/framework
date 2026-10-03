@@ -233,7 +233,8 @@ class EnumProxyGenerator extends ClassProxyGenerator
         $argumentCode = $argumentList->generate();
         $argumentCode = $scope . ($argumentCode !== '' ? ", $argumentCode" : '');
 
-        $return = 'return ';
+        // Constructors and __clone() return nothing, whatever the joinpoint returns
+        $return = $method->isConstructor() || $method->name === '__clone' ? '' : 'return ';
         if ($method->hasReturnType()) {
             $returnType = $method->getReturnType();
             if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {

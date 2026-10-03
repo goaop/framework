@@ -16,6 +16,7 @@ use Attribute;
 use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Go\Stubs\ByReferenceStub;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -101,6 +102,20 @@ final class PointcutSemanticsTest extends TestCase
 
         $this->assertTrue($pointcut->matches($class, $class->getMethod('plainPublic')));
         $this->assertFalse($pointcut->matches($class, $class->getMethod('finalPublic')));
+    }
+
+    public function testMethodsReturningByReferenceCanBeFilteredOut(): void
+    {
+        $class    = new ReflectionClass(ByReferenceStub::class);
+        $pointcut = self::parse('execution(public ' . ByReferenceStub::class . '->*(*)) && !matchReturningByReference()');
+
+        $this->assertFalse($pointcut->matches($class, $class->getMethod('items')));
+        $this->assertTrue($pointcut->matches($class, $class->getMethod('count')));
+
+        $byReference = self::parse('matchReturningByReference()');
+        $this->assertInstanceOf(MatchReturningByReferencePointcut::class, $byReference);
+        $this->assertTrue($byReference->matches($class, $class->getMethod('items')));
+        $this->assertTrue($byReference->matches($class), 'Without a member the class context must stay open');
     }
 
     public function testNullableReturnTypeMarker(): void

@@ -54,6 +54,20 @@ class ServiceAspect implements Aspect
 The joinpoints declare `@template` types, so PHPStan and IDEs know the types of `getThis()` and `proceed()`, e.g.
 `MethodInvocation<OrderService, Order>`.
 
+### Limitations
+
+- **Returning by reference.** A method or function declared `function &name()` can not be intercepted: joinpoints
+  and advices return values, so the caller would get a copy instead of the reference. Weaving one fails with a
+  `WeavingException`; exclude such methods from a broad pointcut with `&& !matchReturningByReference()`.
+- **Generators.** For a method that contains `yield`, the advice runs when the method is called and
+  `proceed()` returns the `Generator` object. The advice does not see the yielded values, which are produced later,
+  while the caller iterates.
+- **Arguments.** `getArguments()` lists the arguments by position. A by-reference variadic parameter
+  (`&...$values`) is passed to the original method by value.
+- **`strict_types` of function proxies.** The proxies of intercepted functions are generated with
+  `declare(strict_types=1)`, one file per namespace; the arguments are coerced by the calling file's mode before
+  the proxy is entered.
+
 ## Property interception
 
 `access(...)` pointcuts intercept reads and writes of instance properties through native PHP 8.4 property hooks.
