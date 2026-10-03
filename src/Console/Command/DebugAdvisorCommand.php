@@ -35,7 +35,13 @@ use Symfony\Component\Console\Style\SymfonyStyle;
     name: 'debug:advisor',
     description: 'Provides an interface for checking and debugging advisors',
     help: <<<EOT
-Allows to query an information about matching joinpoints for specified advisor.
+Lists the advisors registered in the aspect kernel, or shows which classes and members one advisor matches.
+
+  <info>%command.full_name% web/index.php</info>
+  <info>%command.full_name% web/index.php --advisor='App\Aspect\LoggingAspect->beforeMethod'</info>
+
+The loader file is executed to boot the kernel. With <comment>--advisor</comment> every file below the kernel's
+include paths is analysed; an unknown advisor id is reported as an error.
 EOT,
 )]
 class DebugAdvisorCommand extends BaseAspectCommand
@@ -43,7 +49,7 @@ class DebugAdvisorCommand extends BaseAspectCommand
     protected function configure(): void
     {
         parent::configure();
-        $this->addOption('advisor', null, InputOption::VALUE_OPTIONAL, 'Identifier of advisor');
+        $this->addOption('advisor', null, InputOption::VALUE_REQUIRED, 'Show the joinpoints matched by this advisor (id from the list)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -54,14 +60,13 @@ class DebugAdvisorCommand extends BaseAspectCommand
         $io->title('Advisor debug information');
 
         $advisorId = $input->getOption('advisor');
-        if (empty($advisorId)) {
+        if (!is_string($advisorId) || $advisorId === '') {
             $this->showAdvisorsList($io);
-        } else {
-            assert(is_string($advisorId), "Option 'advisor' must be a string, " . gettype($advisorId) . " given");
-            $this->showAdvisorInformation($io, $advisorId);
+
+            return Command::SUCCESS;
         }
 
-        return Command::SUCCESS;
+        return $this->showAdvisorInformation($io, $advisorId) ? Command::SUCCESS : Command::FAILURE;
     }
 
     private function showAdvisorsList(SymfonyStyle $io): void
@@ -87,16 +92,21 @@ class DebugAdvisorCommand extends BaseAspectCommand
         );
     }
 
-    private function showAdvisorInformation(SymfonyStyle $io, string $advisorId): void
+    /**
+     * Shows the joinpoints matched by the advisor, returns false when there is no such advisor
+     */
+    private function showAdvisorInformation(SymfonyStyle $io, string $advisorId): bool
     {
         $aspectContainer = $this->aspectKernel->getContainer();
 
         $adviceMatcher = $aspectContainer->getService(AdviceMatcher::class);
-        $this->loadAdvisorsList($aspectContainer);
+        $advisors      = $this->loadAdvisorsList($aspectContainer);
 
-        $advisor = $aspectContainer->getValue($advisorId);
+        $advisor = $advisors[$advisorId] ?? null;
         if (!$advisor instanceof Advisor) {
-            throw new InvalidConfigurationException("Invalid advisor {$advisorId} given");
+            $io->error(sprintf('Advisor "%s" is not registered.', $advisorId) . self::suggestAlternative($advisorId, array_keys($advisors)));
+
+            return false;
         }
         $options = $this->aspectKernel->getOptions();
 
@@ -119,6 +129,8 @@ class DebugAdvisorCommand extends BaseAspectCommand
                 }
             }
         }
+
+        return true;
     }
 
     /**

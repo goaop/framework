@@ -44,7 +44,14 @@ class DebugWeavingCommandInProcessTest extends TestCase
 
         $this->assertSame('debug:weaving', $command->getName());
         $this->assertSame('Checks consistency in weaving process', $command->getDescription());
-        $this->assertStringContainsString('consistency of weaving process', $command->getHelp());
+        $this->assertStringContainsString('compares the generated proxies', $command->getHelp());
+    }
+
+    public function testDiffShowsRemovedAndAddedLines(): void
+    {
+        $diff = new \ReflectionMethod(DebugWeavingCommand::class, 'diffLines')->invoke(null, "a\nb\nc", "a\nx\nc\nd");
+
+        $this->assertSame(['<info>+ x</info>', '<fg=red>- b</>', '<info>+ d</info>'], $diff);
     }
 
     public function testFailsForInvalidLoaderPath(): void

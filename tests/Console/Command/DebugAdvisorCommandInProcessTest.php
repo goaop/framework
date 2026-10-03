@@ -100,7 +100,7 @@ class DebugAdvisorCommandInProcessTest extends TestCase
         $this->assertSame(Command::SUCCESS, $exitCode);
     }
 
-    public function testShowAdvisorInformationThrowsForInvalidAdvisor(): void
+    public function testShowAdvisorInformationFailsForUnknownAdvisor(): void
     {
         $aspectLoader = $this->createStub(CachedAspectLoader::class);
         $aspectLoader->method('getUnloadedAspects')->willReturn([]);
@@ -110,20 +110,20 @@ class DebugAdvisorCommandInProcessTest extends TestCase
             [AdviceMatcher::class, $this->createStub(AdviceMatcher::class)],
             [CachedAspectLoader::class, $aspectLoader],
         ]);
-        $container->method('getServicesByInterface')->willReturn([]);
-        $container->method('getValue')->willReturn(new stdClass());
+        $container->method('getServicesByInterface')->willReturn(['App\\Aspect->beforeMethod' => $this->createStub(Advisor::class)]);
 
         $kernel = $this->createStub(AspectKernel::class);
         $kernel->method('getContainer')->willReturn($container);
 
         $command = $this->makeCommandWithKernel($kernel);
 
-        $tester = new CommandTester($command);
+        $tester   = new CommandTester($command);
+        $exitCode = $tester->execute(['loader' => 'unused.php', '--advisor' => 'App\\Aspect->beforeMetod']);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid advisor Not\\An\\Advisor given');
-
-        $tester->execute(['loader' => 'unused.php', '--advisor' => 'Not\\An\\Advisor']);
+        $this->assertSame(Command::FAILURE, $exitCode);
+        $display = (string) preg_replace('/\s+/', ' ', $tester->getDisplay());
+        $this->assertStringContainsString('Advisor "App\\Aspect->beforeMetod" is not registered.', $display);
+        $this->assertStringContainsString('Did you mean "App\\Aspect->beforeMethod"?', $display);
     }
 
     public function testShowAdvisorInformationScansMatchingClasses(): void
@@ -150,8 +150,7 @@ class DebugAdvisorCommandInProcessTest extends TestCase
             [AdviceMatcher::class, $adviceMatcher],
             [CachedAspectLoader::class, $aspectLoader],
         ]);
-        $container->method('getServicesByInterface')->willReturn([]);
-        $container->method('getValue')->willReturn($advisor);
+        $container->method('getServicesByInterface')->willReturn([$advisorId => $advisor]);
 
         $aspectDir = realpath(__DIR__ . '/../../Fixtures/project/src/Aspect');
         $this->assertNotFalse($aspectDir);
