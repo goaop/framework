@@ -18,7 +18,14 @@ use Go\Aop\Features;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
+use Go\Instrument\Transformer\NodeRewriter;
+use Go\Instrument\Transformer\SourceTransformer;
+use Go\Instrument\Transformer\StreamMetaData;
+use Go\Instrument\Transformer\SyntaxTreeRewriter;
+use Go\Instrument\Transformer\TransformerResult;
 use Go\Instrument\Transformer\WeavingTransformer;
+use PhpParser\Node;
+use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -503,6 +510,79 @@ class AspectKernelTest extends TestCase
         $this->assertFalse($container->has(ConstructorExecutionTransformer::class));
     }
 
+    /**
+     * External projects register their own transformers and node rewriters as container services
+     * from configureAop(): transformers join the chain after the built-in ones, rewriters join the
+     * single syntax tree walk that opens the chain
+     */
+    public function testCustomTransformersAndNodeRewritersJoinTheTransformationChain(): void
+    {
+        $kernel    = $this->makeKernel();
+        $container = $this->registerPipeline($kernel);
+
+        $this->assertSame(
+            [SyntaxTreeRewriter::class, WeavingTransformer::class, AspectKernelTestCustomTransformer::class],
+            array_keys($container->getServicesByInterface(SourceTransformer::class)),
+        );
+        $this->assertCustomNodeRewriterIsApplied($container);
+    }
+
+    /**
+     * A kernel replacing the built-in transformers (e.g. AspectMock) keeps the syntax tree walk,
+     * so node rewriters registered by external projects keep working
+     */
+    public function testNodeRewritersStillApplyWhenTransformerServicesAreOverridden(): void
+    {
+        /** @var AspectKernelTestCustomPipelineKernel $kernel */
+        $kernel    = (new ReflectionClass(AspectKernelTestCustomPipelineKernel::class))->newInstanceWithoutConstructor();
+        $container = $this->registerPipeline($kernel);
+
+        $this->assertSame(
+            [SyntaxTreeRewriter::class, AspectKernelTestCustomTransformer::class],
+            array_keys($container->getServicesByInterface(SourceTransformer::class)),
+        );
+        $this->assertCustomNodeRewriterIsApplied($container);
+    }
+
+    /**
+     * Registers the services in the order of AspectKernel::init(), with an external transformer
+     * and node rewriter registered the way configureAop() does
+     */
+    private function registerPipeline(AspectKernel $kernel): Container
+    {
+        $this->setKernelOptions($kernel, ['features' => 0, 'appDir' => __DIR__, 'cacheDir' => sys_get_temp_dir()]);
+
+        $container = new Container();
+        $container->add(AspectKernel::class, $kernel);
+        $container->add('kernel.interceptFunctions', false);
+        FrameworkServices::register($container);
+        // Invoked on the kernel class itself, so an overridden hook is the one that runs
+        (new ReflectionMethod($kernel, 'registerTransformerServices'))->invoke($kernel, $container);
+
+        $container->addLazyService(
+            AspectKernelTestCustomNodeRewriter::class,
+            fn(): AspectKernelTestCustomNodeRewriter => new AspectKernelTestCustomNodeRewriter(),
+        );
+        $container->addLazyService(
+            AspectKernelTestCustomTransformer::class,
+            fn(): AspectKernelTestCustomTransformer => new AspectKernelTestCustomTransformer(),
+        );
+
+        return $container;
+    }
+
+    private function assertCustomNodeRewriterIsApplied(Container $container): void
+    {
+        $stream = fopen('php://input', 'rb');
+        assert($stream !== false);
+        $metadata = new StreamMetaData($stream, '<?php echo "original";');
+
+        $result = $container->getService(SyntaxTreeRewriter::class)->transform($metadata);
+
+        $this->assertSame(TransformerResult::Transformed, $result);
+        $this->assertSame('<?php echo "custom";', $metadata->source);
+    }
+
     public function testGetFileNameWhereInitializedReturnsCallerFile(): void
     {
         $kernel = $this->makeKernel();
@@ -525,4 +605,41 @@ class AspectKernelTest extends TestCase
 final class AspectKernelTestConcreteKernel extends AspectKernel
 {
     protected function configureAop(AspectContainer $container): void {}
+}
+
+/**
+ * Kernel replacing the built-in transformers with its own one, like AspectMock does
+ */
+final class AspectKernelTestCustomPipelineKernel extends AspectKernel
+{
+    protected function configureAop(AspectContainer $container): void {}
+
+    protected function registerTransformerServices(AspectContainer $container): void {}
+}
+
+final class AspectKernelTestCustomTransformer implements SourceTransformer
+{
+    public function transform(StreamMetaData $metadata): TransformerResult
+    {
+        return TransformerResult::Abstain;
+    }
+}
+
+final class AspectKernelTestCustomNodeRewriter implements NodeRewriter
+{
+    public function getNodeTypes(): array
+    {
+        return [String_::class];
+    }
+
+    public function rewriteNode(Node $node, StreamMetaData $file): bool
+    {
+        $position = $node->getAttribute('startTokenPos');
+        if (!is_int($position)) {
+            return false;
+        }
+        $file->tokenStream[$position]->text = '"custom"';
+
+        return true;
+    }
 }

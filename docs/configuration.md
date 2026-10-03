@@ -38,6 +38,60 @@ Combine the flags with `|`, e.g. `'features' => Features::INTERCEPT_FUNCTIONS | 
 | `INTERCEPT_INCLUDES`        | Routes `include`/`require` in woven files through the weaver, for legacy code that is not loaded by Composer. |
 | `PREBUILT_CACHE`            | Trusts the cache built at deploy time completely. Skips the cache directory and writability probes, source `filemtime` comparisons, tracked-resource checks and advisor cache freshness checks, and never writes to the cache directory. Rebuilding the cache on every deploy is your responsibility. Works on read-only file systems. |
 
+## Extending the transformation pipeline
+
+Every file is transformed by a chain of `Go\Instrument\Transformer\SourceTransformer` services, in registration
+order:
+
+1. `SyntaxTreeRewriter` walks the syntax tree of the file once, for all `NodeRewriter` rules. It is a framework
+   service, so it always opens the chain.
+2. The transformers registered by `AspectKernel::registerTransformerServices()`: `WeavingTransformer`, plus the
+   `INTERCEPT_INITIALIZATIONS`, `INTERCEPT_INCLUDES` and magic-constant rules.
+3. Your own transformers.
+
+To change single syntax nodes, implement `NodeRewriter`. It declares the node classes it handles and rewrites
+the tokens of one node at a time. Rules keep no state between nodes. The parent of a node is available through
+its `weak_parent` attribute (a `WeakReference`):
+
+```php
+use Go\Instrument\Transformer\NodeRewriter;
+use Go\Instrument\Transformer\StreamMetaData;
+use PhpParser\Node;
+use PhpParser\Node\Expr\FuncCall;
+
+final class DebugCallRemover implements NodeRewriter
+{
+    public function getNodeTypes(): array
+    {
+        return [FuncCall::class];
+    }
+
+    public function rewriteNode(Node $node, StreamMetaData $file): bool
+    {
+        // Edit $file->tokenStream between $node->getAttribute('startTokenPos') and 'endTokenPos',
+        // return true when the tokens were changed
+        return false;
+    }
+}
+```
+
+For whole-file changes, implement `SourceTransformer` and return a `TransformerResult`. Register both kinds as
+container services at the top of `configureAop()`. The chain and its rules are assembled on the first cache
+miss, and loading a class can already cause that miss:
+
+```php
+protected function configureAop(AspectContainer $container): void
+{
+    $container->addLazyService(DebugCallRemover::class, fn() => new DebugCallRemover());
+    $container->addLazyService(MyTransformer::class, fn() => new MyTransformer());
+    // ...aspects
+}
+```
+
+Override `registerTransformerServices()` to replace, omit or reorder the built-in transformers and rules, for
+example to swap `WeavingTransformer` for your own weaver. The `SyntaxTreeRewriter` walk and any rules you register
+stay in place.
+
 ## Console
 
 `bin/aspect` needs `symfony/console` (`^7.4 || ^8.0`). Every command takes the path to the file that initializes your kernel, usually the front controller. That file is executed.

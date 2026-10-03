@@ -223,9 +223,11 @@ Kernel and transformers
 - `StreamMetaData::$source` is read-only: it is rebuilt from `$tokenStream` on every read. Custom
   transformers edit the tokens in `$tokenStream`, or replace them with `setTokenStreamFromRawTokens()`.
 - `ConstructorExecutionTransformer`, `FilterInjectorTransformer` and `MagicConstantTransformer` are no
-  longer `SourceTransformer`s: they are `NodeRewriter` rules, applied by one `SyntaxTreeRewriter` walk over
-  the syntax tree that runs before `WeavingTransformer`. To rewrite single nodes, register a `NodeRewriter`
-  service instead of a transformer that walks the tree itself.
+  longer `SourceTransformer`s. They are `NodeRewriter` rules, applied by one `SyntaxTreeRewriter` walk over
+  the syntax tree. That walk is a framework service: it opens the chain before `WeavingTransformer`, even
+  when `registerTransformerServices()` is overridden. Custom `SourceTransformer`s are registered as before.
+  To rewrite single nodes, register a `NodeRewriter` service instead of a transformer that walks the tree
+  itself. See [Extending the transformation pipeline](docs/configuration.md#extending-the-transformation-pipeline).
 
 Final and internal classes
 --------------------------
