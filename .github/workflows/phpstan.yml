@@ -3,6 +3,10 @@ name: "PHPStan analysis"
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
   push:
@@ -13,6 +17,7 @@ jobs:
   build:
     name: "PHPStan analysis - PHP${{ matrix.php-version }}"
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -34,8 +39,8 @@ jobs:
           path: |
             ~/.composer/cache
             vendor
-          key: "php-${{ matrix.php-version }}"
-          restore-keys: "php-${{ matrix.php-version }}"
+          key: "composer-${{ runner.os }}-php-${{ matrix.php-version }}-highest-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-${{ matrix.php-version }}-highest-"
       - name: "Install dependencies"
         run: "composer install --no-interaction --no-progress"
       - name: "Static analysis"

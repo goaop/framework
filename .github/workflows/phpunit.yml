@@ -3,6 +3,10 @@ name: "PHPUnit tests"
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
   push:
@@ -14,6 +18,8 @@ jobs:
     name: "PHPUnit tests (${{ matrix.dependencies }}, ${{ matrix.php-version }}, ${{ matrix.operating-system }})"
 
     runs-on: ${{ matrix.operating-system }}
+
+    timeout-minutes: 20
 
     continue-on-error: ${{ matrix.experimental }}
 
@@ -58,8 +64,8 @@ jobs:
           path: |
             ~/.composer/cache
             vendor
-          key: "php-${{ matrix.php-version }}-${{ matrix.dependencies }}"
-          restore-keys: "php-${{ matrix.php-version }}-${{ matrix.dependencies }}"
+          key: "composer-${{ runner.os }}-php-${{ matrix.php-version }}-${{ matrix.dependencies }}-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-${{ matrix.php-version }}-${{ matrix.dependencies }}-"
 
       - name: "Install lowest dependencies"
         if: ${{ matrix.dependencies == 'lowest' }}
@@ -69,17 +75,16 @@ jobs:
         if: ${{ matrix.dependencies == 'highest' }}
         run: "composer update --no-interaction --no-progress${{ matrix.experimental && ' --ignore-platform-req=php+' || '' }}"
 
-      - name: "Install locked dependencies"
-        if: ${{ matrix.dependencies == 'locked' }}
-        run: "composer install --no-interaction --no-progress${{ matrix.experimental && ' --ignore-platform-req=php+' || '' }}"
-
       - name: "Tests"
         run: "vendor/bin/phpunit"
 
   coverage:
-    name: "Code coverage (highest, 8.5, ubuntu-latest)"
+    # Coverage is measured on the oldest supported PHP version
+    name: "Code coverage (highest, 8.4, ubuntu-latest)"
 
     runs-on: "ubuntu-latest"
+
+    timeout-minutes: 20
 
     steps:
       - name: "Checkout"
@@ -89,7 +94,7 @@ jobs:
         uses: "shivammathur/setup-php@v2"
         with:
           coverage: "xdebug"
-          php-version: "8.5"
+          php-version: "8.4"
           ini-values: memory_limit=-1
           tools: composer:v2
 
@@ -99,10 +104,8 @@ jobs:
           path: |
             ~/.composer/cache
             vendor
-          key: "php-8.5-highest-coverage"
-          restore-keys: |
-            php-8.5-highest-coverage
-            php-8.5-highest
+          key: "composer-${{ runner.os }}-php-8.4-highest-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-8.4-highest-"
 
       - name: "Install highest dependencies"
         run: "composer update --no-interaction --no-progress"
@@ -117,3 +120,46 @@ jobs:
           fail_ci_if_error: false
           slug: goaop/framework
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  demos:
+    name: "Demos smoke test"
+
+    runs-on: "ubuntu-latest"
+
+    timeout-minutes: 10
+
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v7"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "none"
+          php-version: "8.4"
+          ini-values: memory_limit=-1, error_reporting=-1, display_errors=1
+          tools: composer:v2
+
+      - name: "Cache dependencies"
+        uses: "actions/cache@v6"
+        with:
+          path: |
+            ~/.composer/cache
+            vendor
+          key: "composer-${{ runner.os }}-php-8.4-highest-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-8.4-highest-"
+
+      - name: "Install highest dependencies"
+        run: "composer update --no-interaction --no-progress"
+
+      - name: "Run every demo showcase through the weaver"
+        run: |
+          for showcase in $(grep -o "case '[a-z-]*'" demos/index.php | cut -d"'" -f2); do
+            echo "::group::${showcase}"
+            php -r "\$_GET['showcase'] = '${showcase}'; include 'demos/index.php';" > "demo-${showcase}.html"
+            if grep -qiE '(fatal error|uncaught|warning|deprecated|notice)' "demo-${showcase}.html"; then
+              grep -iE '(fatal error|uncaught|warning|deprecated|notice)' "demo-${showcase}.html"
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
