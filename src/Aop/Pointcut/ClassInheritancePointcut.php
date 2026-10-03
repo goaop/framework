@@ -38,6 +38,7 @@ final readonly class ClassInheritancePointcut implements Pointcut
      */
     public function __construct(private string $parentClassOrInterfaceName) {}
 
+    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
@@ -64,11 +65,13 @@ final readonly class ClassInheritancePointcut implements Pointcut
         return false;
     }
 
+    #[\Override]
     public function getKind(): int
     {
         return self::KIND_CLASS;
     }
 
+    #[\Override]
     public function compileToPhp(): Expr
     {
         // The parent name comes from existing code, so a ::class fetch is always safe

@@ -28,9 +28,16 @@ use ReflectionException;
  * back already initialized so the initializer (and with it the service factory) would
  * never run - is detected with a single isUninitializedLazyObject() call on the created
  * proxy. In the common compatible case the whole check costs one engine-level boolean.
+ *
+ * @internal Used by the container for lazy services
  */
 final class NativeLazyProxy
 {
+    /**
+     * Static facade, never instantiated
+     */
+    private function __construct() {}
+
     /**
      * @var array<class-string, true> Classes PHP refused to make lazy, so long-running
      *      workers skip the throwing attempt on repeated registrations

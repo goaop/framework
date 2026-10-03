@@ -26,7 +26,7 @@ use PhpParser\NodeVisitor\FindingVisitor;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-class FilterInjectorTransformer implements SourceTransformer
+final class FilterInjectorTransformer implements SourceTransformer
 {
     /**
      * Php filter definition
@@ -133,6 +133,7 @@ class FilterInjectorTransformer implements SourceTransformer
     /**
      * Wrap all includes into rewrite filter
      */
+    #[\Override]
     public function transform(StreamMetaData $metadata): TransformerResult
     {
         $includeExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof Include_);

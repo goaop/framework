@@ -59,6 +59,7 @@ final class NewExpressionFinderVisitor extends NodeVisitorAbstract
         return $this->newExpressions;
     }
 
+    #[\Override]
     public function enterNode(Node $node): null
     {
         if ($node instanceof Attribute) {
@@ -91,6 +92,7 @@ final class NewExpressionFinderVisitor extends NodeVisitorAbstract
         return null;
     }
 
+    #[\Override]
     public function leaveNode(Node $node): null
     {
         $nodeId = spl_object_id($node);

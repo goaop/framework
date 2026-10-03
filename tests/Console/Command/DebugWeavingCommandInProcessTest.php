@@ -135,6 +135,7 @@ class DebugWeavingCommandInProcessTest extends TestCase
                 $this->warmUpCallback = $warmUpCallback;
             }
 
+            #[\Override]
             public function warmUp(): int
             {
                 ($this->warmUpCallback)();
@@ -151,11 +152,13 @@ class DebugWeavingCommandInProcessTest extends TestCase
                 parent::__construct();
             }
 
+            #[\Override]
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
                 $this->aspectKernel = $this->kernel;
             }
 
+            #[\Override]
             protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
             {
                 return $this->warmer;
@@ -181,6 +184,7 @@ class DebugWeavingCommandInProcessTest extends TestCase
         }
     }
 
+    #[\Override]
     protected function tearDown(): void
     {
         $this->fileSystem?->unmount();

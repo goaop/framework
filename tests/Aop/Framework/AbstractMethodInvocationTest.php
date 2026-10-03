@@ -12,6 +12,7 @@ class AbstractMethodInvocationTest extends TestCase
     /** @var AbstractMethodInvocation<object, mixed> */
     protected AbstractMethodInvocation $invocation;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->invocation = $this->getMockBuilder(AbstractMethodInvocation::class)
@@ -37,21 +38,25 @@ class AbstractMethodInvocationTest extends TestCase
                 parent::__construct([new AroundInterceptor(function () {})], AbstractMethodInvocationTest::class, 'testInstanceIsInitialized', static fn() => null);
             }
 
+            #[\Override]
             public function isDynamic(): bool
             {
                 return false;
             }
 
+            #[\Override]
             public function getThis(): ?object
             {
                 return null;
             }
 
+            #[\Override]
             public function getScope(): string
             {
                 return self::class;
             }
 
+            #[\Override]
             public function proceed(): string
             {
                 return $this->reflectionMethod->getName();
@@ -70,21 +75,25 @@ class AbstractMethodInvocationTest extends TestCase
                 parent::__construct([], AbstractMethodInvocationTest::class, 'testToStringForInstanceMethodUsesArrowNotation', static fn() => null);
             }
 
+            #[\Override]
             public function isDynamic(): bool
             {
                 return true;
             }
 
+            #[\Override]
             public function getThis(): object
             {
                 return $this;
             }
 
+            #[\Override]
             public function getScope(): string
             {
                 return self::class;
             }
 
+            #[\Override]
             public function proceed(): mixed
             {
                 return null;
@@ -105,21 +114,25 @@ class AbstractMethodInvocationTest extends TestCase
                 parent::__construct([], StaticHelperForAbstractMethodInvocationTest::class, 'staticMethod', static fn() => null);
             }
 
+            #[\Override]
             public function isDynamic(): bool
             {
                 return false;
             }
 
+            #[\Override]
             public function getThis(): ?object
             {
                 return null;
             }
 
+            #[\Override]
             public function getScope(): string
             {
                 return self::class;
             }
 
+            #[\Override]
             public function proceed(): mixed
             {
                 return null;

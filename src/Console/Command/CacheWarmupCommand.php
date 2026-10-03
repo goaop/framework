@@ -49,12 +49,14 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
      */
     private ?CacheWarmer $cacheWarmer = null;
 
+    #[\Override]
     protected function configure(): void
     {
         parent::configure();
         $this->addOption('fail-fast', null, InputOption::VALUE_NONE, 'Stop after the first file that fails to weave');
     }
 
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);
@@ -74,11 +76,13 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
     /**
      * @return list<int>
      */
+    #[\Override]
     public function getSubscribedSignals(): array
     {
         return defined('SIGINT') ? [SIGINT, SIGTERM] : [];
     }
 
+    #[\Override]
     public function handleSignal(int $signal, int|false $previousExitCode = 0): int|false
     {
         $this->receivedSignal = $signal;

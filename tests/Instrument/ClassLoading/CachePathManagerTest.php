@@ -31,6 +31,7 @@ class CachePathManagerTest extends TestCase
     private static string $appDir;
     private static string $cacheDir;
 
+    #[\Override]
     public static function setUpBeforeClass(): void
     {
         // Real directories: the cache files are loaded with include and reference the AOP_ROOT_DIR and
@@ -44,6 +45,7 @@ class CachePathManagerTest extends TestCase
         }
     }
 
+    #[\Override]
     public static function tearDownAfterClass(): void
     {
         self::removeTemporaryDirectory(self::$cacheDir);

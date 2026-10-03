@@ -25,6 +25,7 @@ use stdClass;
 
 class PointcutReferenceTest extends TestCase
 {
+    #[\Override]
     protected function tearDown(): void
     {
         $instance = new ReflectionProperty(AspectKernel::class, 'instance');
@@ -99,5 +100,6 @@ class PointcutReferenceTest extends TestCase
 
 final class PointcutReferenceTestAspectKernel extends AspectKernel
 {
+    #[\Override]
     protected function configureAop(AspectContainer $container): void {}
 }

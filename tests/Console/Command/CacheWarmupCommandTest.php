@@ -18,6 +18,7 @@ use Go\Tests\TestProject\Application\Main;
 class CacheWarmupCommandTest extends BaseFunctionalTestCase
 {
     // @phpstan-ignore phpunit.callParent (deliberately skips the parent cache warm-up - warming the cache is the test subject)
+    #[\Override]
     public function setUp(): void
     {
         $this->loadConfiguration();

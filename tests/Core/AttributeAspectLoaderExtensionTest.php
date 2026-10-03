@@ -25,6 +25,7 @@ final class AttributeAspectLoaderExtensionTest extends TestCase
 {
     private AttributeAspectLoaderExtension $extension;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->extension = new AttributeAspectLoaderExtension(new PointcutLexer(), new PointcutParser(new PointcutGrammar()));

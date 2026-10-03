@@ -76,11 +76,13 @@ class CacheWarmupCommandInProcessTest extends TestCase
     public function testSuccessfulWarmupReturnsSuccess(): void
     {
         $command = new class extends CacheWarmupCommand {
+            #[\Override]
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
+            #[\Override]
             protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
             {
                 return new class extends CacheWarmer {
@@ -89,6 +91,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                         // Deliberately skips the parent constructor: no kernel is involved
                     }
 
+                    #[\Override]
                     public function warmUp(): int
                     {
                         // Simulates a warmup that completes without being interrupted
@@ -122,11 +125,13 @@ class CacheWarmupCommandInProcessTest extends TestCase
     public function testInterruptedWarmupMapsSignalToExitCode(): void
     {
         $command = new class extends CacheWarmupCommand {
+            #[\Override]
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
+            #[\Override]
             protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
             {
                 return new class ($this) extends CacheWarmer {
@@ -135,6 +140,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                         // Deliberately skips the parent constructor: no kernel is involved
                     }
 
+                    #[\Override]
                     public function warmUp(): int
                     {
                         // Simulates SIGINT delivered while the warmup loop is running
@@ -158,11 +164,13 @@ class CacheWarmupCommandInProcessTest extends TestCase
         $command = new class extends CacheWarmupCommand {
             public ?bool $failFast = null;
 
+            #[\Override]
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
+            #[\Override]
             protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
             {
                 $this->failFast = $failFast;
@@ -173,6 +181,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                         // Deliberately skips the parent constructor: no kernel is involved
                     }
 
+                    #[\Override]
                     public function warmUp(): int
                     {
                         // Simulates a warmup where one file failed to weave

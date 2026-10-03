@@ -26,6 +26,7 @@ class LazyPointcutAdvisorTest extends TestCase
 {
     private Container $container;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->container = new Container();

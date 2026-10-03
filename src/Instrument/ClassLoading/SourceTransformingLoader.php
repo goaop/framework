@@ -37,7 +37,7 @@ use function strlen;
  *
  * @phpstan-property resource $stream Inherited from php_user_filter; typed here for static analysis
  */
-class SourceTransformingLoader extends PhpStreamFilter
+final class SourceTransformingLoader extends PhpStreamFilter
 {
     /**
      * Php filter definition
@@ -134,6 +134,7 @@ class SourceTransformingLoader extends PhpStreamFilter
         return self::$filterId;
     }
 
+    #[\Override]
     public function filter($in, $out, &$consumed, $closing): int
     {
         while ($bucket = stream_bucket_make_writeable($in)) {

@@ -24,11 +24,13 @@ abstract class AbstractInvocation extends AbstractJoinpoint implements Invocatio
      */
     protected array $arguments = [];
 
+    #[\Override]
     final public function getArguments(): array
     {
         return $this->arguments;
     }
 
+    #[\Override]
     final public function setArguments(array $arguments): void
     {
         $this->arguments = $arguments;

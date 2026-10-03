@@ -26,6 +26,7 @@ class ApplicationTest extends TestCase
 {
     private string $console;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->console = __DIR__ . '/../../bin/aspect';

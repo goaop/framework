@@ -20,7 +20,7 @@ use ReflectionObject;
 /**
  * DI-container
  */
-class Container implements AspectContainer
+final class Container implements AspectContainer
 {
     /**
      * @var array<string, mixed> Hashmap of items/services in the container
@@ -63,12 +63,14 @@ class Container implements AspectContainer
         $this->resources = array_combine($resources, $resources);
     }
 
-    final public function onRegistration(string $interfaceName, Closure $listener): void
+    #[\Override]
+    public function onRegistration(string $interfaceName, Closure $listener): void
     {
         $this->registrationListeners[$interfaceName][] = $listener;
     }
 
-    final public function add(string $id, mixed $value): void
+    #[\Override]
+    public function add(string $id, mixed $value): void
     {
         $this->values[$id] = $value;
 
@@ -84,7 +86,8 @@ class Container implements AspectContainer
         }
     }
 
-    final public function addLazyService(string $id, Closure $lazyInitializationClosure): void
+    #[\Override]
+    public function addLazyService(string $id, Closure $lazyInitializationClosure): void
     {
         // Only class-names are acceptable ids here: getServicesByInterface() probes these
         // keys with is_subclass_of(), so an arbitrary string id must be rejected upfront
@@ -106,7 +109,8 @@ class Container implements AspectContainer
         }
     }
 
-    final public function getService(string $className): object
+    #[\Override]
+    public function getService(string $className): object
     {
         $service = $this->getValue($className);
         if (!$service instanceof $className) {
@@ -116,7 +120,8 @@ class Container implements AspectContainer
         return $service;
     }
 
-    final public function getValue(string $key): mixed
+    #[\Override]
+    public function getValue(string $key): mixed
     {
         if (!isset($this->values[$key])) {
             if (isset($this->factories[$key])) {
@@ -129,12 +134,14 @@ class Container implements AspectContainer
         return $this->values[$key];
     }
 
-    final public function has(string $id): bool
+    #[\Override]
+    public function has(string $id): bool
     {
         return isset($this->values[$id]) || isset($this->factories[$id]);
     }
 
-    final public function getServicesByInterface(string $interfaceTagClassName): array
+    #[\Override]
+    public function getServicesByInterface(string $interfaceTagClassName): array
     {
         // Deferred services are only tagged once materialized (as lazy objects), so
         // materialize the pending ones that implement the requested interface first.
@@ -202,7 +209,8 @@ class Container implements AspectContainer
         }) ?? $factory($this);
     }
 
-    final public function isFreshSince(int $timestamp): bool
+    #[\Override]
+    public function isFreshSince(int $timestamp): bool
     {
         if (!isset($this->cachedMaxTimestamp)) {
             $this->cachedMaxTimestamp = max(array_filter(array_map(filemtime(...), $this->resources)) + [0]);
@@ -211,7 +219,8 @@ class Container implements AspectContainer
         return $this->cachedMaxTimestamp <= $timestamp;
     }
 
-    final public function addResource(string $resource): void
+    #[\Override]
+    public function addResource(string $resource): void
     {
         if (!isset($this->resources[$resource]) && is_readable($resource)) {
             $this->resources[$resource] = $resource;

@@ -27,6 +27,7 @@ final class AfterThrowingInterceptor extends AbstractInterceptor
      * @inheritdoc
      * @throws Throwable if original joinpoint throws an exception
      */
+    #[\Override]
     public function invoke(Joinpoint $joinpoint): mixed
     {
         try {
@@ -38,6 +39,7 @@ final class AfterThrowingInterceptor extends AbstractInterceptor
         }
     }
 
+    #[\Override]
     public function getType(): AdviceTypeEnum
     {
         return AdviceTypeEnum::AfterThrowing;

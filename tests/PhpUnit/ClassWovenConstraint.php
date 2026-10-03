@@ -38,6 +38,7 @@ final class ClassWovenConstraint extends Constraint
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function matches(mixed $other): bool
     {
         assert(is_string($other) || is_object($other));
@@ -57,6 +58,7 @@ final class ClassWovenConstraint extends Constraint
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function toString(): string
     {
         return 'is woven class.';

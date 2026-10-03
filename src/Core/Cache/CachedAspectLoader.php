@@ -33,6 +33,8 @@ use ReflectionClass;
  * is cached as '{cacheDir}/src/Aspect/LoggingAspect.cache.php'.
  *
  * @phpstan-import-type KernelOptions from AspectKernel
+ *
+ * @internal Framework service, not a public extension point
  */
 class CachedAspectLoader implements AspectLoaderInterface
 {
@@ -91,6 +93,7 @@ class CachedAspectLoader implements AspectLoaderInterface
         $this->advisorCacheCompiler = new AdvisorCacheCompiler();
     }
 
+    #[\Override]
     public function load(Aspect $aspect): array
     {
         if ($this->cacheDir === null || $this->cacheDir === '') {
@@ -132,6 +135,7 @@ class CachedAspectLoader implements AspectLoaderInterface
     /**
      * Loads and register all items of aspect in the container
      */
+    #[\Override]
     public function loadAndRegister(Aspect $aspect): void
     {
         $loadedItems = $this->load($aspect);
@@ -146,6 +150,7 @@ class CachedAspectLoader implements AspectLoaderInterface
      *
      * @return list<Aspect>
      */
+    #[\Override]
     public function getUnloadedAspects(): array
     {
         $unloadedAspects = [];

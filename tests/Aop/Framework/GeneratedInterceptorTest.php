@@ -80,11 +80,13 @@ final class GeneratedInterceptorTest extends TestCase
     public function testRejectsNonInterceptorAdvice(): void
     {
         $advice = new class implements Advice {
+            #[\Override]
             public function getType(): AdviceTypeEnum
             {
                 return AdviceTypeEnum::Before;
             }
 
+            #[\Override]
             public function compileToPhp(): Expr
             {
                 throw new LogicException('Not expected to be called');

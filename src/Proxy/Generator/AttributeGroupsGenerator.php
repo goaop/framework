@@ -181,6 +181,7 @@ final class AttributeGroupsGenerator
         $traverser = new NodeTraverser(
             new CloningVisitor(),
             new class extends NodeVisitorAbstract {
+                #[\Override]
                 public function leaveNode(Node $node): ?Node
                 {
                     if ($node instanceof Name && !($node instanceof Name\FullyQualified)) {

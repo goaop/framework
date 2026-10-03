@@ -31,7 +31,7 @@ use PhpParser\NodeVisitor\FindingVisitor;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-class MagicConstantTransformer extends BaseSourceTransformer
+final class MagicConstantTransformer extends BaseSourceTransformer
 {
     /**
      * Root path of application
@@ -66,6 +66,7 @@ class MagicConstantTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      */
+    #[\Override]
     public function transform(StreamMetaData $metadata): TransformerResult
     {
         $this->replaceMagicDirFileConstants($metadata);

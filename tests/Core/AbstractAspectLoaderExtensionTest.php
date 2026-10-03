@@ -27,6 +27,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
 {
     private AbstractAspectLoaderExtensionTestExtension $extension;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->extension = new AbstractAspectLoaderExtensionTestExtension(
@@ -134,6 +135,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
  */
 final class AbstractAspectLoaderExtensionTestExtension extends AbstractAspectLoaderExtension implements AspectLoaderExtension
 {
+    #[\Override]
     public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
     {
         return [];

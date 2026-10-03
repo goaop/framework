@@ -136,6 +136,7 @@ final class ValueGenerator
             // Anonymous subclass: forces non-empty arrays to multi-line with trailing commas.
             // Empty arrays keep the compact `[]` form.
             self::$printer = new class (['shortArraySyntax' => true]) extends Standard {
+                #[\Override]
                 protected function pExpr_Array(Expr\Array_ $node): string
                 {
                     if (empty($node->items)) {

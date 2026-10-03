@@ -33,7 +33,7 @@ use ReflectionMethod;
 /**
  * Attribute aspect loader add common support for general advices, declared as attributes
  */
-class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
+final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
 {
     /**
      * Suffix of the advisor id when the advice method also declares a #[Pointcut], which keeps the plain method id
@@ -41,6 +41,7 @@ class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
      */
     public const string ADVISOR_ID_SUFFIX = '.advice';
 
+    #[\Override]
     public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
     {
         $loadedItems = [];

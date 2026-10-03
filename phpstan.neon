@@ -4,6 +4,7 @@ includes:
 
 parameters:
   level: 10
+  checkMissingOverrideMethodAttribute: true
   paths:
     - src
     - tests
@@ -28,3 +29,6 @@ parameters:
     # tests/Fixtures/project/src plus its generated var/ cache) — same
     # source-shape-under-test reasoning as tests/Stubs.
     - tests/Fixtures
+  ignoreErrors:
+    # #[\Override] on properties needs PHP 8.5, the framework still supports 8.4
+    - identifier: property.missingOverride

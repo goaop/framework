@@ -41,6 +41,7 @@ class CacheWarmerTest extends TestCase
     private string $cacheDir;
     private string $sourceFile;
 
+    #[\Override]
     protected function setUp(): void
     {
         // Real directories: warming up includes woven sources through the stream filter
@@ -52,6 +53,7 @@ class CacheWarmerTest extends TestCase
         file_put_contents($this->sourceFile, "<?php echo 'original';\n");
     }
 
+    #[\Override]
     protected function tearDown(): void
     {
         self::removeTemporaryDirectory($this->cacheDir);
@@ -135,6 +137,7 @@ class CacheWarmerTest extends TestCase
     private function createFailingTransformer(): SourceTransformer
     {
         return new class implements SourceTransformer {
+            #[\Override]
             public function transform(StreamMetaData $metadata): TransformerResult
             {
                 if (str_contains($metadata->source, 'broken')) {

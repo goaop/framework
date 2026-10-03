@@ -40,12 +40,14 @@ EOT,
 )]
 class DebugAdvisorCommand extends BaseAspectCommand
 {
+    #[\Override]
     protected function configure(): void
     {
         parent::configure();
         $this->addOption('advisor', null, InputOption::VALUE_OPTIONAL, 'Identifier of advisor');
     }
 
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);

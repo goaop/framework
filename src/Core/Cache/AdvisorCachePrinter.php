@@ -27,6 +27,7 @@ use PhpParser\Node\Stmt;
  */
 final class AdvisorCachePrinter extends GeneratedCodePrinter
 {
+    #[\Override]
     protected function pExpr_Array(Expr\Array_ $node): string
     {
         if (empty($node->items)) {
@@ -36,6 +37,7 @@ final class AdvisorCachePrinter extends GeneratedCodePrinter
         return '[' . $this->pCommaSeparatedMultiline($node->items, true) . $this->nl . ']';
     }
 
+    #[\Override]
     protected function pExpr_New(Expr\New_ $node): string
     {
         if (!$node->class instanceof Stmt\Class_ && count($node->args) > 1) {

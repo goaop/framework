@@ -22,6 +22,7 @@ use stdClass;
 
 final class TheTest extends TestCase
 {
+    #[\Override]
     protected function tearDown(): void
     {
         $instance = new ReflectionProperty(AspectKernel::class, 'instance');
@@ -47,11 +48,13 @@ final class TheTest extends TestCase
                     $this->advice = static function (): void {};
                 }
 
+                #[\Override]
                 public function getAdvice(): Advice
                 {
                     return new AroundInterceptor($this->advice);
                 }
 
+                #[\Override]
                 public function compileToPhp(): Expr
                 {
                     throw new LogicException('Not expected to be called');
@@ -108,14 +111,17 @@ final class TheTest extends TestCase
     {
         $this->initKernelWithContainerValues([
             'manual-advisor' => new class implements Advisor {
+                #[\Override]
                 public function getAdvice(): Advice
                 {
                     return new class implements Advice {
+                        #[\Override]
                         public function getType(): AdviceTypeEnum
                         {
                             return AdviceTypeEnum::Before;
                         }
 
+                        #[\Override]
                         public function compileToPhp(): Expr
                         {
                             throw new LogicException('Not expected to be called');
@@ -123,6 +129,7 @@ final class TheTest extends TestCase
                     };
                 }
 
+                #[\Override]
                 public function compileToPhp(): Expr
                 {
                     throw new LogicException('Not expected to be called');
@@ -155,6 +162,7 @@ final class TheTest extends TestCase
 
 final class TheTestAspectKernel extends AspectKernel
 {
+    #[\Override]
     protected function configureAop(AspectContainer $container): void
     {
         $container->add(TheTestAspect::class, new TheTestAspect());

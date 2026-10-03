@@ -39,6 +39,7 @@ EOT,
 )]
 class DebugWeavingCommand extends BaseAspectCommand
 {
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);

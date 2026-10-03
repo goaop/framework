@@ -39,7 +39,7 @@ use ReflectionProperty;
 /**
  * Main transformer that performs weaving of aspects into the source code
  */
-class WeavingTransformer extends BaseSourceTransformer
+final class WeavingTransformer extends BaseSourceTransformer
 {
     private const string FUNCTIONS_CACHE_SUFFIX = '/_functions/';
 
@@ -74,6 +74,7 @@ class WeavingTransformer extends BaseSourceTransformer
     /**
      * This method may transform the supplied source and return a new replacement for it
      */
+    #[\Override]
     public function transform(StreamMetaData $metadata): TransformerResult
     {
         $totalTransformations = 0;

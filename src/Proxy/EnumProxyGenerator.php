@@ -54,7 +54,7 @@ use ReflectionNamedType;
  *   - Re-declares all enum cases (they cannot live in traits)
  *   - Overrides each intercepted method with per-method lazy joinpoint dispatch
  */
-class EnumProxyGenerator extends ClassProxyGenerator
+final class EnumProxyGenerator extends ClassProxyGenerator
 {
     /**
      * Built-in enum methods that must never be intercepted.
@@ -196,6 +196,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function addUse(string $use, ?string $useAlias = null): void
     {
         if ($use !== '' && $this->generator instanceof EnumGenerator) {
@@ -209,6 +210,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
      * Unlike ClassProxyGenerator, there is no injectJoinPoints() tail call because
      * enums cannot hold properties — joinpoints are lazily created per method instead.
      */
+    #[\Override]
     public function generate(): string
     {
         return $this->generator->generate();
@@ -222,6 +224,7 @@ class EnumProxyGenerator extends ClassProxyGenerator
      *
      * All intercepted enum methods have `<method>OriginalAlias` aliases from the enum's trait-use block.
      */
+    #[\Override]
     protected function getJoinpointInvocationBody(ReflectionMethod $method, ?ReflectionClass $originalClass = null): string
     {
         $isStatic = $method->isStatic();

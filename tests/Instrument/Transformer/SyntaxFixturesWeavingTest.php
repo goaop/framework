@@ -64,16 +64,19 @@ class SyntaxFixturesWeavingTest extends TestCase
 
     protected ?CachePathManager $cachePathManager;
 
+    #[\Override]
     public static function setUpBeforeClass(): void
     {
         static::$fileSystem = FileSystem::mount('syntaxweavingvfs');
     }
 
+    #[\Override]
     public static function tearDownAfterClass(): void
     {
         static::$fileSystem->unmount();
     }
 
+    #[\Override]
     public function setUp(): void
     {
         $container = $this->getContainerMock();

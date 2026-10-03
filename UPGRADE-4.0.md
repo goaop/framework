@@ -203,6 +203,25 @@ Kernel and transformers
   `SourceTransformingLoader::addTransformer()` is removed, and `transformCode()` returns the overall
   `TransformerResult`.
 
+Final and internal classes
+--------------------------
+
+Classes that were never meant to be extended are `final` now:
+- `Go\Core\Container`, `Go\Core\AttributeAspectLoaderExtension`
+- `Go\Aop\Framework\StaticInitializationJoinpoint`
+- `Go\Instrument\ClassLoading\AopComposerLoader`, `SourceTransformingLoader`, `Go\Instrument\PathResolver`
+- the transformers `WeavingTransformer`, `FilterInjectorTransformer`, `MagicConstantTransformer` and `StreamMetaData`
+- the proxy generators `EnumProxyGenerator`, `TraitProxyGenerator` and `FunctionProxyGenerator`
+- the attributes `#[Before]`, `#[After]`, `#[Around]`, `#[AfterThrowing]`, `#[Pointcut]`, `#[DeclareParents]`
+  and `#[Aspect]`
+
+`Go\Lang\Attribute\AbstractInterceptor` is `abstract`. Classes that are only part of the framework's
+machinery (`AdviceMatcher`, `AspectLoader`, `CachedAspectLoader`, `CachePathManager`, `CacheWarmer`, `Enumerator`,
+`InterceptorInjector`, `The`, `NativeLazyProxy`) are marked `@internal` and are not covered by BC promises.
+
+**Action:** replace subclasses of these classes with composition, or with your own container or transformer
+registered in `configureAop()` / `registerTransformerServices()`.
+
 Exceptions
 ----------
 

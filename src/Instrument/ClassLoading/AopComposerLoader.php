@@ -26,7 +26,7 @@ use Composer\Autoload\ClassLoader;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-class AopComposerLoader
+final class AopComposerLoader
 {
     /**
      * File enumerator

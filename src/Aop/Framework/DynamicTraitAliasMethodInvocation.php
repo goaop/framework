@@ -89,7 +89,8 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    final public function __invoke(object $instance, array $arguments = [], array $variadicArguments = []): mixed
+    #[\Override]
+    public function __invoke(object $instance, array $arguments = [], array $variadicArguments = []): mixed
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
@@ -121,6 +122,7 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
+    #[\Override]
     public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
@@ -133,7 +135,8 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     /**
      * @phpstan-return T Covariance, always instance of object
      */
-    final public function getThis(): object
+    #[\Override]
+    public function getThis(): object
     {
         return $this->instance;
     }
@@ -141,12 +144,14 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     /**
      * @return true Covariance, always true for dynamic method calls
      */
-    final public function isDynamic(): true
+    #[\Override]
+    public function isDynamic(): true
     {
         return true;
     }
 
-    final public function getScope(): string
+    #[\Override]
+    public function getScope(): string
     {
         return $this->instance::class;
     }

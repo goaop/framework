@@ -24,6 +24,7 @@ class ConstructorExecutionTransformerTest extends TestCase
     /**
      * @inheritDoc
      */
+    #[\Override]
     public static function setUpBeforeClass(): void
     {
         self::$transformer = new ConstructorExecutionTransformer();

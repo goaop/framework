@@ -36,21 +36,25 @@ final readonly class TraitIntroductionInfo implements IntroductionInfo
         private string $introducedInterface,
     ) {}
 
+    #[\Override]
     public function getInterface(): string
     {
         return $this->introducedInterface;
     }
 
+    #[\Override]
     public function getTrait(): string
     {
         return $this->introducedTrait;
     }
 
+    #[\Override]
     public function getType(): AdviceTypeEnum
     {
         return AdviceTypeEnum::Introduction;
     }
 
+    #[\Override]
     public function compileToPhp(): Expr
     {
         // Trait and interface names come from existing code, so ::class fetches are always safe

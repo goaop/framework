@@ -22,11 +22,13 @@ use Go\Aop\Intercept\Joinpoint;
  */
 final class AroundInterceptor extends AbstractInterceptor
 {
+    #[\Override]
     public function invoke(Joinpoint $joinpoint): mixed
     {
         return ($this->adviceMethod)($joinpoint);
     }
 
+    #[\Override]
     public function getType(): AdviceTypeEnum
     {
         return AdviceTypeEnum::Around;

@@ -82,6 +82,7 @@ final readonly class ReturnTypePointcut implements Pointcut
         $this->isSingleAtomicPattern = count($this->patternGroups) === 1 && count($this->patternGroups[0]) === 1;
     }
 
+    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
@@ -129,11 +130,13 @@ final readonly class ReturnTypePointcut implements Pointcut
         );
     }
 
+    #[\Override]
     public function getKind(): int
     {
         return Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION;
     }
 
+    #[\Override]
     public function compileToPhp(): Expr
     {
         return new New_(new FullyQualified(self::class), [

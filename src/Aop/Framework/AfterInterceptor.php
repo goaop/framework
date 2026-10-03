@@ -22,6 +22,7 @@ use Go\Aop\Intercept\Joinpoint;
  */
 final class AfterInterceptor extends AbstractInterceptor
 {
+    #[\Override]
     public function invoke(Joinpoint $joinpoint): mixed
     {
         try {
@@ -31,6 +32,7 @@ final class AfterInterceptor extends AbstractInterceptor
         }
     }
 
+    #[\Override]
     public function getType(): AdviceTypeEnum
     {
         return AdviceTypeEnum::After;

@@ -37,6 +37,7 @@ class GeneratedCodePrinter extends Standard
      */
     private const array INTERCEPTOR_METHODS = ['before', 'after', 'around', 'afterThrowing'];
 
+    #[\Override]
     protected function pExpr_Array(Expr\Array_ $node): string
     {
         if (empty($node->items)) {
@@ -54,6 +55,7 @@ class GeneratedCodePrinter extends Standard
             . ($isShort ? ']' : ')');
     }
 
+    #[\Override]
     protected function pExpr_StaticCall(Expr\StaticCall $node): string
     {
         // The class may be imported under any alias (see ProxyImports), so calls are also recognized by method name

@@ -25,6 +25,7 @@ class DebugWeavingCommandTest extends BaseFunctionalTestCase
         $this->assertStringContainsString('[ERROR] Weaving is unstable, there are 1 reported error(s).', $output);
     }
 
+    #[\Override]
     protected function getConfigurationName(): string
     {
         return 'inconsistent_weaving';

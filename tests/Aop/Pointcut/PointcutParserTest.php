@@ -31,6 +31,7 @@ class PointcutParserTest extends TestCase
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -194,35 +195,43 @@ class PointcutParserTest extends TestCase
     public function testParseThrowsWhenUnderlyingParserDoesNotProduceAPointcut(): void
     {
         $emptyStream = new class implements TokenStream {
+            #[\Override]
             public function getPosition(): int
             {
                 return 0;
             }
 
+            #[\Override]
             public function getCurrentToken(): \Dissect\Lexer\Token
             {
                 throw new \OutOfBoundsException('No tokens in stream');
             }
 
+            #[\Override]
             public function lookAhead(int $n): \Dissect\Lexer\Token
             {
                 throw new \OutOfBoundsException('No tokens in stream');
             }
 
+            #[\Override]
             public function get(int $n): \Dissect\Lexer\Token
             {
                 throw new \OutOfBoundsException('No tokens in stream');
             }
 
+            #[\Override]
             public function move(int $n): void {}
 
+            #[\Override]
             public function seek(int $n): void {}
 
+            #[\Override]
             public function next(): void
             {
                 throw new \OutOfBoundsException('No tokens in stream');
             }
 
+            #[\Override]
             public function count(): int
             {
                 return 0;
@@ -231,6 +240,7 @@ class PointcutParserTest extends TestCase
             /**
              * @return ArrayIterator<int, \Dissect\Lexer\Token>
              */
+            #[\Override]
             public function getIterator(): ArrayIterator
             {
                 return new ArrayIterator([]);

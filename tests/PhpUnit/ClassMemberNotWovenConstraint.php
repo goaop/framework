@@ -36,6 +36,7 @@ final class ClassMemberNotWovenConstraint extends Constraint
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function matches(mixed $other): bool
     {
         if (!$other instanceof ClassAdvisorIdentifier) {
@@ -67,6 +68,7 @@ final class ClassMemberNotWovenConstraint extends Constraint
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function toString(): string
     {
         return 'class member not woven.';

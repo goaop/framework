@@ -27,6 +27,7 @@ class EnumeratorTest extends TestCase
      *
      * @throws \Exception
      */
+    #[\Override]
     public static function setUpBeforeClass(): void
     {
         static::$fileSystem = FileSystem::mount('enumeratorvfs');
@@ -42,6 +43,7 @@ class EnumeratorTest extends TestCase
         }
     }
 
+    #[\Override]
     public static function tearDownAfterClass(): void
     {
         static::$fileSystem->unmount();

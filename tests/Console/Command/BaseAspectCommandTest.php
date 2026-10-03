@@ -32,6 +32,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 final class BaseAspectCommandTestKernelStub extends AspectKernel
 {
+    #[\Override]
     protected function configureAop(AspectContainer $container): void {}
 }
 
@@ -44,6 +45,7 @@ final class BaseAspectCommandTestCommandStub extends BaseAspectCommand
     public ?AspectKernel $exposedKernel = null;
     public ?CacheWarmer $exposedWarmer  = null;
 
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);

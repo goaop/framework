@@ -20,8 +20,13 @@ use function is_array;
  * @see http://stackoverflow.com/questions/4049856/replace-phps-realpath/4050444
  * @see http://bugs.php.net/bug.php?id=52769
  */
-class PathResolver
+final class PathResolver
 {
+    /**
+     * Static facade, never instantiated
+     */
+    private function __construct() {}
+
     /**
      * Custom replacement for realpath() and stream_resolve_include_path()
      *

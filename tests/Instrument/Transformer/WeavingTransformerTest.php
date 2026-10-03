@@ -44,11 +44,13 @@ class WeavingTransformerTest extends TestCase
     /**
      * @inheritDoc
      */
+    #[\Override]
     public static function setUpBeforeClass(): void
     {
         static::$fileSystem = FileSystem::mount('vfs');
     }
 
+    #[\Override]
     public static function tearDownAfterClass(): void
     {
         static::$fileSystem->unmount();
@@ -57,6 +59,7 @@ class WeavingTransformerTest extends TestCase
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function setUp(): void
     {
         $container = $this->getContainerMock();

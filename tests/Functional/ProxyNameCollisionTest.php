@@ -62,6 +62,7 @@ class ProxyNameCollisionTest extends BaseFunctionalTestCase
         $this->assertStringEndsWith('log:x', $output);
     }
 
+    #[\Override]
     protected function getConfigurationName(): string
     {
         return 'default';

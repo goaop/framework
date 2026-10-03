@@ -25,7 +25,7 @@ use function is_resource;
 /**
  * Stream metadata object
  */
-class StreamMetaData
+final class StreamMetaData
 {
     /**
      * Source code represented by the token stream.

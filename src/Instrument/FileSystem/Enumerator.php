@@ -25,6 +25,8 @@ use UnexpectedValueException;
 
 /**
  * Enumerates files in the concrete directory, applying filtration logic
+ *
+ * @internal Framework service, not a public extension point
  */
 class Enumerator
 {

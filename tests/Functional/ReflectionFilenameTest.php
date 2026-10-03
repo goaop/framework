@@ -20,6 +20,7 @@ use InvalidArgumentException;
 
 class ReflectionFilenameTest extends BaseFunctionalTestCase
 {
+    #[\Override]
     protected function warmUp(): void
     {
         $loader = $this->configuration['frontController'];
@@ -41,6 +42,7 @@ class ReflectionFilenameTest extends BaseFunctionalTestCase
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function tearDown(): void
     {
         parent::tearDown();

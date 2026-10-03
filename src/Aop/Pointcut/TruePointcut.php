@@ -38,6 +38,7 @@ final readonly class TruePointcut implements Pointcut
      * @inheritdoc
      * @return true Covariant, always true for TruePointcut
      */
+    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
@@ -45,11 +46,13 @@ final readonly class TruePointcut implements Pointcut
         return true;
     }
 
+    #[\Override]
     public function getKind(): int
     {
         return $this->pointcutKind;
     }
 
+    #[\Override]
     public function compileToPhp(): Expr
     {
         return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([

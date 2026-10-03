@@ -11,6 +11,7 @@ class ClassFieldAccessTest extends TestCase
 {
     protected ClassFieldAccess $classField;
 
+    #[\Override]
     public function setUp(): void
     {
         $this->classField = new ClassFieldAccess([], self::class, 'classField');

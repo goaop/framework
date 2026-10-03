@@ -27,6 +27,7 @@ class FilterInjectorTransformerTest extends TestCase
     /**
      * {@inheritDoc}
      */
+    #[\Override]
     public function setUp(): void
     {
         if (!isset(self::$transformer)) {

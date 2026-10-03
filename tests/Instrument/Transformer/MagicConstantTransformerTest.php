@@ -27,6 +27,7 @@ class MagicConstantTransformerTest extends TestCase
     /**
     * {@inheritDoc}
     */
+    #[\Override]
     public function setUp(): void
     {
         $this->transformer = new MagicConstantTransformer(

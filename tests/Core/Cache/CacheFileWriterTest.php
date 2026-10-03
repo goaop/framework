@@ -26,12 +26,14 @@ class CacheFileWriterTest extends TestCase
 
     private string $baseDir;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->fileSystem = FileSystem::mount('cachewritervfs');
         $this->baseDir    = $this->fileSystem->path('/base');
     }
 
+    #[\Override]
     protected function tearDown(): void
     {
         $this->fileSystem->unmount();

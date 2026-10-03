@@ -50,6 +50,7 @@ final class PointcutReference implements Pointcut
      */
     public function __construct(private readonly string $pointcutId) {}
 
+    #[\Override]
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
@@ -57,11 +58,13 @@ final class PointcutReference implements Pointcut
         return $this->getPointcut()->matches($context, $reflector);
     }
 
+    #[\Override]
     public function getKind(): int
     {
         return $this->getPointcut()->getKind();
     }
 
+    #[\Override]
     public function compileToPhp(): Expr
     {
         return new New_(new FullyQualified(self::class), [

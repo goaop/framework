@@ -53,6 +53,7 @@ class CachedAspectLoaderTest extends TestCase
     /** @var AspectLoaderInterface&\PHPUnit\Framework\MockObject\MockObject */
     private AspectLoaderInterface $innerLoader;
 
+    #[\Override]
     protected function setUp(): void
     {
         $this->fileSystem = FileSystem::mount('cachedloadervfs');
@@ -79,6 +80,7 @@ class CachedAspectLoaderTest extends TestCase
         $this->cacheFileName = $this->cacheDir . '/src/Aspect/' . $shortClassName . '.cache.php';
     }
 
+    #[\Override]
     protected function tearDown(): void
     {
         $this->fileSystem->unmount();
@@ -267,11 +269,13 @@ class CachedAspectLoaderTest extends TestCase
     {
         $loader               = $this->createLoader(0);
         $notCompilableAdvisor = new class implements Advisor {
+            #[\Override]
             public function getAdvice(): Advice
             {
                 throw new \LogicException('Not expected to be called');
             }
 
+            #[\Override]
             public function compileToPhp(): \PhpParser\Node\Expr
             {
                 throw new NotCompilableException('This advisor deliberately refuses compilation');

@@ -132,6 +132,7 @@ class DebugAspectCommandInProcessTest extends TestCase
                 parent::__construct();
             }
 
+            #[\Override]
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
                 $this->aspectKernel = $this->kernel;

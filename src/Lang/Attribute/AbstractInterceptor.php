@@ -15,4 +15,4 @@ namespace Go\Lang\Attribute;
 /**
  * Default interceptor class with common attributes
  */
-class AbstractInterceptor extends AbstractAttribute implements Interceptor {}
+abstract class AbstractInterceptor extends AbstractAttribute implements Interceptor {}

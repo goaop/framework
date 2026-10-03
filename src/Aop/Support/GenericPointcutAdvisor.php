@@ -30,16 +30,19 @@ final readonly class GenericPointcutAdvisor implements PointcutAdvisor
 {
     public function __construct(private Pointcut $pointcut, private Advice $advice) {}
 
+    #[\Override]
     public function getAdvice(): Advice
     {
         return $this->advice;
     }
 
+    #[\Override]
     public function getPointcut(): Pointcut
     {
         return $this->pointcut;
     }
 
+    #[\Override]
     public function compileToPhp(): Expr
     {
         return new New_(new FullyQualified(self::class), [

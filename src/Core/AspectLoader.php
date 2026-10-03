@@ -19,6 +19,8 @@ use ReflectionClass;
 
 /**
  * Loader of aspects into the container
+ *
+ * @internal Framework service, not a public extension point
  */
 class AspectLoader implements AspectLoaderInterface
 {
@@ -49,6 +51,7 @@ class AspectLoader implements AspectLoaderInterface
      *
      * @return array<string, Pointcut|Advisor>
      */
+    #[\Override]
     public function load(Aspect $aspect): array
     {
         $refAspect   = new ReflectionClass($aspect);
@@ -64,6 +67,7 @@ class AspectLoader implements AspectLoaderInterface
     /**
      * Loads and register all items of aspect in the container
      */
+    #[\Override]
     public function loadAndRegister(Aspect $aspect): void
     {
         $loadedItems = $this->load($aspect);
@@ -78,6 +82,7 @@ class AspectLoader implements AspectLoaderInterface
      *
      * @return list<Aspect>
      */
+    #[\Override]
     public function getUnloadedAspects(): array
     {
         $unloadedAspects = [];
