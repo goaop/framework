@@ -17,9 +17,7 @@ use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Attribute\Before;
 
 /**
- * Logging aspect
- *
- * @see http://go.aopphp.com/blog/2013/07/21/implementing-logging-aspect-with-doctrine-annotations/
+ * Logging aspect, logs the calls of methods marked with the #[Loggable] attribute
  */
 class LoggingAspect implements Aspect
 {

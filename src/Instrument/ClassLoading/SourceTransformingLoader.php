@@ -23,7 +23,6 @@ use Go\Instrument\Transformer\TransformerResult;
 use php_user_filter as PhpStreamFilter;
 use RuntimeException;
 
-use function dirname;
 use function is_string;
 use function strlen;
 

@@ -19,7 +19,7 @@ ApplicationAspectKernel::getInstance()->init([
 | `appDir`         | `string`   | the directory that contains `vendor/` | Application root. Cache paths mirror source paths relative to it, and only files below it are woven. |
 | `debug`          | `bool`     | `false`                     | Development mode: changes of the kernel file and of aspect files invalidate the cache, and every class and `include` is loaded through the weaving stream filter. With `false`, woven classes are loaded from the cache through Composer's class map. Use `false` in production. |
 | `includePaths`   | `string[]` | `[]` (everything below `appDir`) | Directories that are woven. Keep it narrow: weaving vendor code is slow and rarely needed. |
-| `excludePaths`   | `string[]` | `[]`                        | Directories that are never woven. The cache directory and the framework itself are always excluded. |
+| `excludePaths`   | `string[]` | `[]`                        | Directories that are never woven. The cache directory, the framework itself and its runtime dependencies (goaop/dissect, goaop/parser-reflection, nikic/php-parser, symfony/finder) are always excluded. |
 | `features`       | `int`      | `0`                         | Bitmask of `Go\Aop\Features` flags, see below. |
 | `cacheFileMode`  | `int`      | `0770` minus the umask      | Permissions of cache files. Must be between `0600` and `0777` and give the owner read and write access; directories get matching search bits. |
 | `containerClass` | `class-string` | `Go\Core\Container`     | Aspect container implementation, must implement `Go\Core\AspectContainer`. |

@@ -47,11 +47,10 @@ interface Pointcut extends Compilable
     public const int KIND_METHOD       = 1;
     public const int KIND_PROPERTY     = 2;
     public const int KIND_CLASS        = 4;
-    public const int KIND_TRAIT        = 8;
     public const int KIND_FUNCTION     = 16;
     public const int KIND_INIT         = 32;
     public const int KIND_STATIC_INIT  = 64;
-    public const int KIND_ALL          = 127;
+    public const int KIND_ALL          = 119;
     public const int KIND_INTRODUCTION = 512;
 
     /**

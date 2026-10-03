@@ -44,7 +44,7 @@ class Enumerator
     /**
      * Returns an enumerator for files
      *
-     * @return Iterator|SplFileInfo[]
+     * @return Iterator<SplFileInfo>
      * @throws UnexpectedValueException
      * @throws InvalidArgumentException
      * @throws LogicException

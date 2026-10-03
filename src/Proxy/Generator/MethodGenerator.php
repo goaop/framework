@@ -14,7 +14,6 @@ namespace Go\Proxy\Generator;
 
 use Go\ParserReflection\Resolver\TypeExpressionResolver;
 use PhpParser\BuilderFactory;
-use PhpParser\Modifiers;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Parser;
