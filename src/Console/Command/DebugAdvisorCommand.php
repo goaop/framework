@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Console\Command;
 
 use Go\Aop\Advisor;
-use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Framework\AbstractInterceptor;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectContainer;
