@@ -64,6 +64,17 @@ final class MagicConstantTransformer extends BaseSourceTransformer
     }
 
     /**
+     * Forgets the path mapping, the next resolveFileName() configures from the booted kernel again
+     *
+     * @internal For tests and processes that boot the framework again
+     */
+    public static function reset(): void
+    {
+        self::$rootPath      = '';
+        self::$rewriteToPath = '';
+    }
+
+    /**
      * This method may transform the supplied source and return a new replacement for it
      */
     public function transform(StreamMetaData $metadata): TransformerResult

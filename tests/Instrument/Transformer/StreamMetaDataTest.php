@@ -47,6 +47,17 @@ class StreamMetaDataTest extends TestCase
         $metadata->source = '<?php echo "new"; ?>';
     }
 
+    public function testRejectsStreamWithoutUri(): void
+    {
+        $sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        $this->assertIsArray($sockets);
+
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('Stream has no uri');
+
+        new StreamMetaData($sockets[0], '<?php');
+    }
+
     public function testRejectsNonResourceStream(): void
     {
         $this->expectException(WeavingException::class);

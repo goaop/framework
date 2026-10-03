@@ -29,23 +29,28 @@ class FilterInjectorTransformerTest extends TestCase
      */
     public function setUp(): void
     {
-        if (!isset(self::$transformer)) {
-            $kernelMock = $this->getKernelMock(
-                [
-                    'cacheDir'      => null,
-                    'cacheFileMode' => 0770,
-                    'appDir'        => '',
-                    'debug'         => false,
-                    'features'      => 0,
-                ],
-                $this->createMock(AspectContainer::class),
-            );
-            $cachePathManager = $this
-                ->getMockBuilder(CachePathManager::class)
-                ->setConstructorArgs([$kernelMock])
-                ->getMock();
-            self::$transformer = new FilterInjectorTransformer($kernelMock, 'unit.test', $cachePathManager);
-        }
+        // The rewriting configuration is static and set-once: every test starts from its own
+        FilterInjectorTransformer::reset();
+        $kernelMock = $this->getKernelMock(
+            [
+                'cacheDir'      => null,
+                'cacheFileMode' => 0770,
+                'appDir'        => '',
+                'debug'         => false,
+                'features'      => 0,
+            ],
+            $this->createMock(AspectContainer::class),
+        );
+        $cachePathManager = $this
+            ->getMockBuilder(CachePathManager::class)
+            ->setConstructorArgs([$kernelMock])
+            ->getMock();
+        self::$transformer = new FilterInjectorTransformer($kernelMock, 'unit.test', $cachePathManager);
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        FilterInjectorTransformer::reset();
     }
 
     /**
@@ -145,6 +150,21 @@ class FilterInjectorTransformerTest extends TestCase
                 . 'unit.test/resource='
                 . PathResolver::realpath(__DIR__ . '/_files/class.php');
         $this->assertEquals($expectedPath, $actualPath);
+    }
+
+    public function testResetForgetsTheConfiguredFilter(): void
+    {
+        FilterInjectorTransformer::reset();
+        new FilterInjectorTransformer(
+            $this->getKernelMock(['cacheDir' => null, 'appDir' => '', 'debug' => false, 'features' => 0], $this->createStub(AspectContainer::class)),
+            'unit.test.reset',
+            $this->createStub(CachePathManager::class),
+        );
+
+        $this->assertSame(
+            FilterInjectorTransformer::PHP_FILTER_READ . 'unit.test.reset/resource=/path/to/my/class.php',
+            FilterInjectorTransformer::rewrite('/path/to/my/class.php'),
+        );
     }
 
     public function testCannotRewriteClassesWithToString(): void
