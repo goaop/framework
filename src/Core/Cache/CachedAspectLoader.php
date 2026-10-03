@@ -88,6 +88,7 @@ class CachedAspectLoader implements AspectLoaderInterface
     ) {
         $this->cacheDir             = $options['cacheDir'];
         $this->appDir               = $options['appDir'];
+        // The loader gets the normalized options, not the kernel, so the flag is read from the bitmask directly
         $this->isPrebuiltCache      = ($options['features'] & Features::PREBUILT_CACHE) !== 0;
         $this->cacheFileWriter      = new CacheFileWriter($options['cacheFileMode']);
         $this->advisorCacheCompiler = new AdvisorCacheCompiler();

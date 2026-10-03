@@ -184,6 +184,8 @@ that relied on that inheritance layer:
   `__initialization()` and `__staticInitialization()`.
 - `self::` in woven code resolves to the proxy class, so `SelfValueTransformer` and
   `SelfValueVisitor` are removed.
+- `Go\Aop\Features` is a final class instead of an interface: the constants are unchanged, but it can no longer
+  be implemented. `Features::ALL` combines every flag, and `AspectKernel::hasFeature()` throws on an unknown flag.
 - `Features::PARAMETER_WIDENING` is removed. Delete the flag from your kernel options if you
   passed it.
 
