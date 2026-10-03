@@ -446,7 +446,7 @@ $ignoreErrors[] = [
 	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
 https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'identifier' => 'method.deprecated',
-	'count' => 4,
+	'count' => 5,
 	'path' => __DIR__ . '/tests/Core/AspectKernelTest.php',
 ];
 $ignoreErrors[] = [
