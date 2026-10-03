@@ -43,7 +43,7 @@ use ReflectionProperty;
 /**
  * Main transformer that performs weaving of aspects into the source code
  */
-class WeavingTransformer extends BaseSourceTransformer
+final class WeavingTransformer extends BaseSourceTransformer
 {
     private const string FUNCTIONS_CACHE_SUFFIX = '/_functions/';
 

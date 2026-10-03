@@ -38,7 +38,7 @@ use ReflectionNamedType;
 /**
  * Trait proxy builder that is used to generate a trait from the list of joinpoints
  */
-class TraitProxyGenerator extends ClassProxyGenerator
+final class TraitProxyGenerator extends ClassProxyGenerator
 {
     /**
      * Generates an child code by original class reflection and joinpoints for it

@@ -33,7 +33,7 @@ use ReflectionNamedType;
 /**
  * Function proxy builder that is used to generate a proxy-function from the list of joinpoints
  */
-class FunctionProxyGenerator
+final class FunctionProxyGenerator
 {
     /**
      * List of advices that are used for generation of child

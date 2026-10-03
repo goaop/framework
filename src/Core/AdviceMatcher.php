@@ -24,6 +24,8 @@ use ReflectionProperty;
 
 /**
  * Advice matcher returns the list of advices for the specific point of code
+ *
+ * @internal Framework service, not a public extension point
  */
 class AdviceMatcher implements AdviceMatcherInterface
 {

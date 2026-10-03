@@ -21,9 +21,18 @@ use Go\Core\AspectKernel;
 
 /**
  * Accessor for aspect instances from generated proxy code.
+ *
+ * @internal Called by generated proxy code only
  */
 final class The
 {
+    /**
+     * Static facade, never instantiated
+     *
+     * @codeCoverageIgnore
+     */
+    private function __construct() {}
+
     /**
      * @template T of Aspect
      * @param class-string<T> $aspectClass

@@ -89,7 +89,7 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    final public function __invoke(string $scope, array $arguments = [], array $variadicArguments = []): mixed
+    public function __invoke(string $scope, array $arguments = [], array $variadicArguments = []): mixed
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->scope, $this->current];
@@ -136,7 +136,7 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     /**
      * @return false Covariance, always false for static method calls
      */
-    final public function isDynamic(): false
+    public function isDynamic(): false
     {
         return false;
     }
@@ -144,12 +144,12 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     /**
      * @return null Covariance, always null for static invocations
      */
-    final public function getThis(): null
+    public function getThis(): null
     {
         return null;
     }
 
-    final public function getScope(): string
+    public function getScope(): string
     {
         return $this->scope;
     }

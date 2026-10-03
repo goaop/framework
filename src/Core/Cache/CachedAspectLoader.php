@@ -33,6 +33,8 @@ use ReflectionClass;
  * is cached as '{cacheDir}/src/Aspect/LoggingAspect.cache.php'.
  *
  * @phpstan-import-type KernelOptions from AspectKernel
+ *
+ * @internal Framework service, not a public extension point
  */
 class CachedAspectLoader implements AspectLoaderInterface
 {
