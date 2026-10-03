@@ -12,8 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Go\Core\AspectContainer;
-
 class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
 {
     public function testCanCreateObjectDuringInvocation(): void

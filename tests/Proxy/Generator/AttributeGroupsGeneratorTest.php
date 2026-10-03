@@ -17,7 +17,6 @@ use Go\Stubs\Generator\AttrGenHelperClass;
 use Go\Stubs\Generator\AttrGenRichHelperClass;
 use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
-use PhpParser\Node\AttributeGroup;
 use PhpParser\PrettyPrinter\Standard;
 use ReflectionFunction;
 use ReflectionMethod;

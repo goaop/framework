@@ -17,7 +17,6 @@ use PHPUnit\Framework\TestCase;
 use PhpParser\BuilderFactory;
 use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Name;
-use PhpParser\Node\Stmt\Class_;
 use ReflectionMethod;
 
 class ClassGeneratorTest extends TestCase

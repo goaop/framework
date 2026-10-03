@@ -34,9 +34,6 @@ final class PointcutGrammar extends Grammar
      */
     public function __construct()
     {
-        $this('empty')
-            ->is(/* empty */);
-
         $stringConverter = $this->getNodeToStringConverter();
 
         $this('pointcutExpression')

@@ -15,7 +15,6 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Framework\AbstractJoinpoint;
-use Go\Core\AdviceMatcher;
 use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;

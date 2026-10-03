@@ -16,7 +16,6 @@ use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class AspectLoaderTest extends TestCase

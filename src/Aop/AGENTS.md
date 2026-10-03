@@ -33,7 +33,7 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 | ReflectionConstructorInvocation   | ConstructorInvocation   | newInstanceWithoutConstructor() then call constructor (requires INTERCEPT_INITIALIZATIONS feature)                     |
 | ReflectionFunctionInvocation      | FunctionInvocation      | receives FCC to global fn (e.g. \strlen(...) with leading \ to avoid recursive proxy call)                             |
 | ClassFieldAccess                  | FieldAccess             | Property interception via native get/set hooks on proxied properties                                                   |
-| StaticInitializationJoinpoint     | ClassJoinpoint          | Fired once after proxy class loaded via injectJoinPoints()                                                             |
+| StaticInitializationJoinpoint     | ClassJoinpoint          | Fired once after proxy class loaded via `Proxy::__staticInitialization()`                                             |
 
 HOT PATH: `__invoke()`/`proceed()` of these classes run on every intercepted call. Code there is embedded on purpose:
 never extract parts into methods or a base class, never add object allocations, reflection or extra method calls
@@ -64,7 +64,7 @@ when `$level > 0` and pops it in `finally`. Check every change with `composer te
 
 ## Attributes (src/Lang/Attribute/)
 - Advice: #[Before], #[After], #[Around], #[AfterThrowing]
-- Declaration: #[Aspect], #[Pointcut], #[DeclareParents]
+- Declaration: #[Pointcut], #[DeclareParents]
 - Base: AbstractAttribute, AbstractInterceptor, Interceptor (interface)
 
 ## Features (src/Aop/Features.php)

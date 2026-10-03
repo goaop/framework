@@ -14,16 +14,7 @@ Go! AOP uses **native property hooks** to intercept property access on proxy cla
 
 Properties that already define their own `get` or `set` hooks are **intentionally skipped** for `access(...)` interception. The framework uses native hooks internally for interception — it cannot wrap or compose with hooks that the user has already defined.
 
-If your pointcut matches a property that has hooks, the framework will throw an `InvalidArgumentException` at proxy generation time.
-
-**Reference:** [`src/Proxy/Part/AbstractInterceptedPropertyGenerator.php` line 33](../src/Proxy/Part/AbstractInterceptedPropertyGenerator.php)
-
-```php
-// Properties with existing hooks are rejected
-if ($this->property->isStatic() || $this->property->isReadOnly() || $this->property->hasHooks()) {
-    throw new InvalidArgumentException(...);
-}
-```
+If your pointcut matches a property that has hooks, the property is silently left out of interception: `AdviceMatcher` skips static, readonly and hooked properties before any proxy code is generated. The property generator (`src/Proxy/Part/AbstractInterceptedPropertyGenerator.php`) additionally refuses such a property with a `WeavingException` as a safety net.
 
 ## Readonly Properties
 

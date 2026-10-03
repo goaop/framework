@@ -56,7 +56,7 @@ interface AspectContainer
     public const string INIT_PREFIX = 'init';
 
     /**
-     * Initialization prefix, is used for initialization pointcuts
+     * Static initialization prefix, is used for staticinitialization pointcuts
      */
     public const string STATIC_INIT_PREFIX = 'staticinit';
 

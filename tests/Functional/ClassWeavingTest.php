@@ -13,6 +13,8 @@ declare(strict_types=1);
 namespace Go\Functional;
 
 use Go\Tests\TestProject\Application\ArrayPropertyDemo;
+use Go\Tests\TestProject\Application\EdgeCaseDemo;
+use Go\Tests\TestProject\Aspect\EdgeCaseAspect;
 use Go\Tests\TestProject\Application\AbstractBar;
 use Go\Tests\TestProject\Application\ClassWithComplexTypes;
 use Go\Tests\TestProject\Application\FinalClass;
@@ -191,6 +193,48 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertSame('seed', trim($process->getOutput()));
     }
 
+    /**
+     * Generators, never-returning methods, __call() and named arguments keep their behaviour once woven:
+     * the advice sees the Generator object, a skipped optional argument keeps its default value
+     */
+    public function testEdgeCaseMethodsKeepTheirBehaviourWhenWoven(): void
+    {
+        foreach (['numbers', 'fail', 'describe', '__call'] as $methodName) {
+            $this->assertMethodWoven(
+                EdgeCaseDemo::class,
+                $methodName,
+                'Go\\Tests\\TestProject\\Aspect\\EdgeCaseAspect->aroundEdgeCase',
+            );
+        }
+
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        $script = sprintf(
+            'include %s; $demo = new %s();'
+            . ' echo implode(",", iterator_to_array($demo->numbers(3))), "|";'
+            . ' echo $demo->describe(third: 9), "|", $demo->describe(5), "|";'
+            . ' echo $demo->anything(1, 2), "|";'
+            . ' try { $demo->fail("boom"); } catch (LogicException $e) { echo $e->getMessage(), "|"; }'
+            . ' echo %s::$calls;',
+            var_export($this->configuration['frontController'], true),
+            '\\' . EdgeCaseDemo::class,
+            '\\' . EdgeCaseAspect::class,
+        );
+        assert($phpExecutable !== false);
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
+        );
+        $process->run();
+
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Running the woven class failed: ' . $process->getOutput() . $process->getErrorOutput(),
+        );
+        // numbers, describe x2, __call and fail went through the advice: 5 calls
+        $this->assertSame('1,2,3|1,2,9|5,2,3|anything(1,2)|boom|5', trim($process->getOutput()));
+    }
+
     public function testArrayPropertyInterceptionAllowsIndirectModification(): void
     {
         $this->assertPropertyWoven(
@@ -199,10 +243,25 @@ class ClassWeavingTest extends BaseFunctionalTestCase
             'Go\\Tests\\TestProject\\Aspect\\ArrayPropertyInterceptAspect->aroundArrayFieldAccess',
         );
 
-        $demo = new ArrayPropertyDemo();
+        // The woven class only exists in the fixture application, so it is exercised in a subprocess
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        $script = sprintf(
+            'include %s; $demo = new %s(); echo $demo->countItems(); $demo->appendValue(10); echo ",", $demo->countItems();',
+            var_export($this->configuration['frontController'], true),
+            '\\' . ArrayPropertyDemo::class,
+        );
+        assert($phpExecutable !== false);
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
+        );
+        $process->run();
 
-        $this->assertSame(6, $demo->countItems());
-        $demo->appendValue(10);
-        $this->assertSame(7, $demo->countItems());
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Running the woven class failed: ' . $process->getOutput() . $process->getErrorOutput(),
+        );
+        $this->assertSame('6,7', trim($process->getOutput()));
     }
 }

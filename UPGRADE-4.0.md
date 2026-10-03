@@ -180,6 +180,19 @@ that relied on that inheritance layer:
 - `Features::PARAMETER_WIDENING` is removed. Delete the flag from your kernel options if you
   passed it.
 
+Removed unused API
+------------------
+
+These public classes, methods and constants had no use inside the framework and are removed:
+
+- The `#[Aspect]` attribute (`Go\Lang\Attribute\Aspect`). The framework never read it: aspects are
+  identified by implementing `Go\Aop\Aspect`. Remove the attribute from your aspect classes.
+- `Pointcut::KIND_TRAIT`. `Pointcut::KIND_ALL` is `119` instead of `127`.
+- `Go\Proxy\Part\InterceptedConstructorGenerator` and `Go\Proxy\Part\FunctionParameterList`.
+- `InterceptedMethodGenerator::getBody()` / `setBody()`, `CachePathManager::setCacheDir()` and
+  `AopComposerLoader::wasInitialized()` (`AopComposerLoader::init()` returns the same flag).
+- The `'kernel.options'` container entry. Use `AspectKernel::getOptions()`.
+
 Renamed enums and constants
 ---------------------------
 
@@ -205,6 +218,8 @@ Kernel and transformers
 - `CachingTransformer` is removed: the cache decision lives in `SourceTransformingLoader`.
   `SourceTransformingLoader::addTransformer()` is removed, and `transformCode()` returns the overall
   `TransformerResult`.
+- `StreamMetaData::$source` is read-only: it is rebuilt from `$tokenStream` on every read. Custom
+  transformers edit the tokens in `$tokenStream`, or replace them with `setTokenStreamFromRawTokens()`.
 
 Exceptions
 ----------

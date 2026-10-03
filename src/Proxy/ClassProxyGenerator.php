@@ -77,7 +77,7 @@ class ClassProxyGenerator
      * The original class has been converted to a trait named $traitName by WeavingTransformer.
      * The proxy class re-exposes the same name, parent, and interfaces as the original, uses
      * that trait, and aliases each intercepted method as `private <method>OriginalAlias` so the
-     * overriding method body can delegate to the original via a Closure::bind proceed closure.
+     * overriding method body can hand the original to its joinpoint as a first-class callable.
      *
      * @param ReflectionClass<covariant object> $originalClass    Original class reflection (before transformation)
      * @param string                  $traitName        FQCN of the generated trait (e.g. Ns\FooOriginalTrait)
@@ -371,13 +371,11 @@ class ClassProxyGenerator
         // Determine the first-class callable expression for the original method.
         //
         // Methods declared in the proxied class have a private `<method>OriginalAlias` alias in the
-        // proxy's trait-use block.  These first-class callables are rebound per-call.
+        // proxy's trait-use block, referenced as `$this->mOriginalAlias(...)` / `self::mOriginalAlias(...)`.
         //
-        // Inherited methods have no such alias.  For static calls, `parent::method(...)` is used
-        // directly — StaticTraitAliasMethodInvocation wraps it in a forward_static_call shim anyway.
-        // For dynamic calls, raw `parent::method(...)` first-class callables CANNOT be rebound via
-        // Closure::call() (PHP limitation), so we wrap them in a \Closure::bind'd anonymous function
-        // that is rebindable and delegates to the parent method body.
+        // Inherited methods have no such alias and are referenced as `parent::method(...)`.
+        // DynamicTraitAliasMethodInvocation dispatches through a ReflectionMethod resolved from the callable,
+        // StaticTraitAliasMethodInvocation through a forward_static_call shim that keeps late static binding.
         $hasTraitAlias = $originalClass !== null && ($method->class === $originalClass->name);
         if ($hasTraitAlias) {
             $callableExpression = $isStatic
