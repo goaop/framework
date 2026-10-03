@@ -9,6 +9,7 @@ use Go\Tests\TestProject\Aspect\Alpha\CollisionAspect as AlphaCollisionAspect;
 use Go\Tests\TestProject\Aspect\ArrayPropertyInterceptAspect;
 use Go\Tests\TestProject\Aspect\Beta\CollisionAspect as BetaCollisionAspect;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
+use Go\Tests\TestProject\Aspect\EdgeCaseAspect;
 use Go\Tests\TestProject\Aspect\EntityFieldAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use Go\Tests\TestProject\Aspect\InitializationAspect;
@@ -40,5 +41,6 @@ class DefaultAspectKernel extends AspectKernel
         $container->addLazyService(EntityFieldAspect::class, fn(): EntityFieldAspect => new EntityFieldAspect());
         $container->addLazyService(AlphaCollisionAspect::class, fn(): AlphaCollisionAspect => new AlphaCollisionAspect());
         $container->addLazyService(BetaCollisionAspect::class, fn(): BetaCollisionAspect => new BetaCollisionAspect());
+        $container->addLazyService(EdgeCaseAspect::class, fn(): EdgeCaseAspect => new EdgeCaseAspect());
     }
 }
