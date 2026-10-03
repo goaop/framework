@@ -103,7 +103,7 @@ class CacheWarmer
                     break;
                 }
 
-                $path = $file->getRealPath();
+                $path = $file->getRealPath() ?: $file->getPathname();
                 $processed++;
 
                 try {
