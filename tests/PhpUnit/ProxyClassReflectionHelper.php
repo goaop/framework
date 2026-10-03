@@ -72,29 +72,7 @@ final class ProxyClassReflectionHelper
 
         $ast = ReflectionEngine::parseFile($proxyFileName);
 
-        /** @var StaticCall|null $injectCall */
-        $injectCall = (new NodeFinder())->findFirst($ast, static function ($node): bool {
-            return $node instanceof StaticCall
-                && $node->name instanceof Identifier
-                && $node->name->toString() === 'injectJoinPoints'
-                && $node->class instanceof Name
-                && str_ends_with($node->class->toString(), 'ClassProxyGenerator');
-        });
-
-        if ($injectCall !== null && count($injectCall->args) >= 2) {
-            $advicesArg = $injectCall->args[1];
-            if ($advicesArg instanceof Arg) {
-                $result = (new ConstExprEvaluator())->evaluateSilently($advicesArg->value);
-                if (is_array($result)) {
-                    /** @var string[][][] $result The advice names literal from the generated proxy is trusted */
-                    return $result;
-                }
-            }
-
-            return [];
-        }
-
-        // New proxy generation path uses centralized InterceptorInjector calls.
+        // Generated proxies create their joinpoints through centralized InterceptorInjector calls
         /** @var StaticCall[] $injectorCalls */
         $injectorCalls = (new NodeFinder())->find($ast, static function ($node): bool {
             return $node instanceof StaticCall
@@ -103,60 +81,11 @@ final class ProxyClassReflectionHelper
                 && str_ends_with($node->class->toString(), 'InterceptorInjector');
         });
 
-        if (!empty($injectorCalls)) {
-            return self::extractAdvicesFromInjectorCalls($injectorCalls, self::extractUseAliases($ast));
-        }
-
-        // Legacy enum proxies use per-method static joinpoints via EnumProxyGenerator::getJoinPoint().
-        /** @var StaticCall[] $getJoinPointCalls */
-        $getJoinPointCalls = (new NodeFinder())->find($ast, static function ($node): bool {
-            return $node instanceof StaticCall
-                && $node->name instanceof Identifier
-                && $node->name->toString() === 'getJoinPoint'
-                && $node->class instanceof Name
-                && str_ends_with($node->class->toString(), 'EnumProxyGenerator');
-        });
-
-        if (empty($getJoinPointCalls)) {
+        if ($injectorCalls === []) {
             return [];
         }
 
-        $evaluator = new ConstExprEvaluator();
-        $result    = [];
-        foreach ($getJoinPointCalls as $call) {
-            if (count($call->args) < 4) {
-                continue;
-            }
-            $arg1 = $call->args[1];
-            $arg2 = $call->args[2];
-            $arg3 = $call->args[3];
-            if (!($arg1 instanceof Arg) || !($arg2 instanceof Arg) || !($arg3 instanceof Arg)) {
-                continue;
-            }
-            // arg[1] = join-point type string ('method' or 'static')
-            $typeNode = $arg1->value;
-            // arg[2] = method name string
-            $nameNode = $arg2->value;
-            // arg[3] = advice names array
-            $advicesNode = $arg3->value;
-
-            if (!($typeNode instanceof String_) || !($nameNode instanceof String_) || !($advicesNode instanceof Array_)) {
-                continue;
-            }
-
-            $prefix      = $typeNode->value;
-            $methodName  = $nameNode->value;
-            $adviceNames = $evaluator->evaluateSilently($advicesNode);
-
-            if (!is_array($adviceNames)) {
-                continue;
-            }
-
-            /** @var string[] $adviceNames */
-            $result[$prefix][$methodName] = array_values($adviceNames);
-        }
-
-        return $result;
+        return self::extractAdvicesFromInjectorCalls($injectorCalls, self::extractUseAliases($ast));
     }
 
     /**

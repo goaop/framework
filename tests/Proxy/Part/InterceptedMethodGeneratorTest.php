@@ -51,16 +51,12 @@ class InterceptedMethodGeneratorTest extends TestCase
         $generator         = new InterceptedMethodGenerator($reflectionMethod, 'return 1;');
 
         $this->assertSame('privateMethod', $generator->getName());
-        $this->assertSame('return 1;', $generator->getBody());
-
-        $generator->setBody('return 2;');
-        $this->assertSame('return 2;', $generator->getBody());
 
         // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertInstanceOf(ClassMethod::class, $generator->getNode());
         // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertInstanceOf(MethodGenerator::class, $generator->getGenerator());
-        $this->assertStringContainsString('return 2;', $generator->generate());
+        $this->assertStringContainsString('return 1;', $generator->generate());
     }
 
     /**

@@ -39,6 +39,7 @@ return (new Config())
     ->setRules([
         '@PER-CS' => true,
         'declare_strict_types' => true,
+        'no_unused_imports' => true,
     ])
     ->setCacheFile(__DIR__ . '/.php-cs-fixer.cache')
     ->setFinder($finder);

@@ -33,26 +33,18 @@ class StreamMetaDataTest extends TestCase
         $this->assertSame('<?php echo "brave new world"; ?>', $metadata->source);
     }
 
-    public function testSettingSourceIsDeprecatedButRetokenizes(): void
+    public function testSourceIsReadOnly(): void
     {
         $stream = fopen('php://input', 'rb');
         assert($stream !== false);
         $metadata = new StreamMetaData($stream, '<?php echo "old"; ?>');
 
-        $deprecations = [];
-        set_error_handler(function (int $errno, string $errstr) use (&$deprecations): bool {
-            $deprecations[] = $errstr;
+        // The wording differs between PHP versions ("is read-only" / "get-only virtual property")
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('StreamMetaData::$source');
 
-            return true;
-        }, E_USER_DEPRECATED);
-        try {
-            $metadata->source = '<?php echo "new"; ?>';
-        } finally {
-            restore_error_handler();
-        }
-
-        $this->assertSame(['Setting StreamMetaData->source is deprecated, use tokenStream instead'], $deprecations);
-        $this->assertSame('<?php echo "new"; ?>', $metadata->source);
+        // @phpstan-ignore assign.propertyReadOnly (writing is exactly what is under test)
+        $metadata->source = '<?php echo "new"; ?>';
     }
 
     public function testRejectsNonResourceStream(): void

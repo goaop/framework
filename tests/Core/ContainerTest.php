@@ -45,7 +45,6 @@ class ContainerTest extends TestCase
             'containerClass' => Container::class,
         ]);
         $this->container->add(AspectKernel::class, $mockKernel);
-        $this->container->add('kernel.options', ['cacheDir' => '/tmp']);
         $this->container->add('kernel.interceptFunctions', false);
         FrameworkServices::register($this->container);
     }
@@ -141,6 +140,14 @@ class ContainerTest extends TestCase
 
         $isFresh = $this->container->isFreshSince(time() + 3600);
         $this->assertTrue($isFresh);
+    }
+
+    public function testNullValueIsStoredAndRetrievable(): void
+    {
+        $this->container->add('nothing', null);
+
+        $this->assertTrue($this->container->has('nothing'));
+        $this->assertNull($this->container->getValue('nothing'));
     }
 
     public function testHasMethod(): void
