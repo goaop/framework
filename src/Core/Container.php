@@ -20,7 +20,7 @@ use ReflectionObject;
 /**
  * DI-container
  */
-class Container implements AspectContainer
+final class Container implements AspectContainer
 {
     /**
      * @var array<string, mixed> Hashmap of items/services in the container
@@ -44,6 +44,18 @@ class Container implements AspectContainer
     private array $tags = [];
 
     /**
+     * Results of getServicesByInterface(), valid until the next registration
+     *
+     * @var array<class-string, array<string, mixed>>
+     */
+    private array $servicesByInterface = [];
+
+    /**
+     * Incremented by every registration, a cached lookup is reused only while it is unchanged
+     */
+    private int $registrationVersion = 0;
+
+    /**
      * Cached timestamp for resources, might be uninitialized if {@see self::isFreshSince()} is not called yet
      */
     private int $cachedMaxTimestamp;
@@ -63,14 +75,16 @@ class Container implements AspectContainer
         $this->resources = array_combine($resources, $resources);
     }
 
-    final public function onRegistration(string $interfaceName, Closure $listener): void
+    public function onRegistration(string $interfaceName, Closure $listener): void
     {
         $this->registrationListeners[$interfaceName][] = $listener;
     }
 
-    final public function add(string $id, mixed $value): void
+    public function add(string $id, mixed $value): void
     {
         $this->values[$id] = $value;
+        $this->registrationVersion++;
+        $this->servicesByInterface = [];
 
         if (is_object($value) && !$value instanceof Closure) {
             $reflectionInstance = new ReflectionObject($value);
@@ -84,7 +98,7 @@ class Container implements AspectContainer
         }
     }
 
-    final public function addLazyService(string $id, Closure $lazyInitializationClosure): void
+    public function addLazyService(string $id, Closure $lazyInitializationClosure): void
     {
         // Only class-names are acceptable ids here: getServicesByInterface() probes these
         // keys with is_subclass_of(), so an arbitrary string id must be rejected upfront
@@ -93,6 +107,8 @@ class Container implements AspectContainer
             throw new InvalidConfigurationException("Lazy service id must be a valid class name, \"$id\" given");
         }
         $this->factories[$id] = $lazyInitializationClosure;
+        $this->registrationVersion++;
+        $this->servicesByInterface = [];
 
         // With no listeners registered (the production configuration) this is a no-op and
         // nothing below autoloads; a registered listener accepts the is_subclass_of()
@@ -106,7 +122,7 @@ class Container implements AspectContainer
         }
     }
 
-    final public function getService(string $className): object
+    public function getService(string $className): object
     {
         $service = $this->getValue($className);
         if (!$service instanceof $className) {
@@ -116,7 +132,7 @@ class Container implements AspectContainer
         return $service;
     }
 
-    final public function getValue(string $key): mixed
+    public function getValue(string $key): mixed
     {
         // isset() first for speed, array_key_exists() keeps a stored null value retrievable
         if (!isset($this->values[$key]) && !array_key_exists($key, $this->values)) {
@@ -130,13 +146,19 @@ class Container implements AspectContainer
         return $this->values[$key];
     }
 
-    final public function has(string $id): bool
+    public function has(string $id): bool
     {
         return isset($this->values[$id]) || array_key_exists($id, $this->values) || isset($this->factories[$id]);
     }
 
-    final public function getServicesByInterface(string $interfaceTagClassName): array
+    public function getServicesByInterface(string $interfaceTagClassName): array
     {
+        // The weaver asks for the same interfaces for every woven file: reuse the last result
+        // as long as nothing was registered since
+        if (isset($this->servicesByInterface[$interfaceTagClassName])) {
+            return $this->servicesByInterface[$interfaceTagClassName];
+        }
+
         // Deferred services are only tagged once materialized (as lazy objects), so
         // materialize the pending ones that implement the requested interface first.
         // This path is only taken during weaving/console runs, never on a hot request.
@@ -144,15 +166,28 @@ class Container implements AspectContainer
         // this method (an aspect class autoloaded here goes through the weaving
         // pipeline, which enumerates aspects again), consuming pending factories from
         // under this loop - hence the existence re-check and the tolerant materialization.
+        // A class that is still being autoloaded higher up the stack is not a subclass of
+        // anything yet: such an inconclusive probe makes the result unsuitable for caching.
+        $isConclusive = true;
         foreach (array_keys($this->factories) as $id) {
-            if (array_key_exists($id, $this->factories) && is_subclass_of($id, $interfaceTagClassName)) {
+            if (!array_key_exists($id, $this->factories)) {
+                continue;
+            }
+            if (is_subclass_of($id, $interfaceTagClassName)) {
                 $this->materializeService($id);
+            } elseif (!class_exists($id, false) && !interface_exists($id, false)) {
+                $isConclusive = false;
             }
         }
 
-        $values = [];
+        $version = $this->registrationVersion;
+        $values  = [];
         foreach (($this->tags[$interfaceTagClassName] ?? []) as $containerKey) {
             $values[$containerKey] = $this->getValue($containerKey);
+        }
+        // A re-entrant registration while collecting the values invalidates this result
+        if ($isConclusive && $version === $this->registrationVersion) {
+            $this->servicesByInterface[$interfaceTagClassName] = $values;
         }
 
         return $values;
@@ -203,7 +238,7 @@ class Container implements AspectContainer
         }) ?? $factory($this);
     }
 
-    final public function isFreshSince(int $timestamp): bool
+    public function isFreshSince(int $timestamp): bool
     {
         if (!isset($this->cachedMaxTimestamp)) {
             $this->cachedMaxTimestamp = max(array_filter(array_map(filemtime(...), $this->resources)) + [0]);
@@ -212,7 +247,7 @@ class Container implements AspectContainer
         return $this->cachedMaxTimestamp <= $timestamp;
     }
 
-    final public function addResource(string $resource): void
+    public function addResource(string $resource): void
     {
         if (!isset($this->resources[$resource]) && is_readable($resource)) {
             $this->resources[$resource] = $resource;

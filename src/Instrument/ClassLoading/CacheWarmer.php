@@ -27,6 +27,8 @@ use function count;
 
 /**
  * Warms up the cache
+ *
+ * @internal Used by the cache:warmup:aop command
  */
 class CacheWarmer
 {

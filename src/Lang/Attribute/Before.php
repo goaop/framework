@@ -18,4 +18,4 @@ use Attribute;
  * Before advice attribute
  */
 #[Attribute(Attribute::TARGET_METHOD)]
-class Before extends AbstractInterceptor {}
+final class Before extends AbstractInterceptor {}

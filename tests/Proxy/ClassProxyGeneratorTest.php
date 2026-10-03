@@ -22,6 +22,7 @@ use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
 use Go\Stubs\PropertyInheritanceChild;
+use Go\Stubs\ByReferenceStub;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
@@ -113,6 +114,20 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('AopInterceptor::before(AopThe::aspect(ASameNameAspect::class)', $proxyFileContent);
         $this->assertStringContainsString('AopInterceptor::before(AopThe::aspect(BSameNameAspect::class)', $proxyFileContent);
         $this->assertPhpCompiles($proxyFileContent);
+    }
+
+    public function testMethodReturningByReferenceCanNotBeIntercepted(): void
+    {
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage(
+            'Method Go\Stubs\ByReferenceStub::items() returns by reference and can not be intercepted',
+        );
+
+        new ClassProxyGenerator(
+            new ReflectionClass(ByReferenceStub::class),
+            'Test',
+            ['method' => ['items' => [self::testAdvice()]]],
+        );
     }
 
     /**

@@ -42,7 +42,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
             $this->name = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this->name);
         }
     }
-    final public private(set) int $counter = 1 {
+    public private(set) int $counter = 1 {
         get {
             /** @var FieldAccess<self, int> $__joinPoint */
             static $__joinPoint = InterceptorInjector::forProperty(
@@ -77,7 +77,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
             ],
             $this->__constructOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \array_slice([$name, $counter, $bag], 0, \func_num_args()));
+        $__joinPoint->__invoke($this, \array_slice([$name, $counter, $bag], 0, \func_num_args()));
     }
     public function getName(): string
     {

@@ -26,8 +26,8 @@ use Go\Aop\Intercept\StaticMethodInvocation;
  *  - For inherited methods (no trait alias): `parent::<method>(...)`.
  *
  * In both cases the callable is wrapped in a `static fn(array $args) => forward_static_call_array($callable, ...$args)`
- * shim (see constructor). This shim can be rebound via {@see Closure::bindTo()} on every call so that
- * `static::class` (late-static-binding) inside the original method body resolves to the correct subclass.
+ * shim (see constructor). This shim is bound via {@see Closure::bindTo()} to the calling scope (once per scope)
+ * so that `static::class` (late-static-binding) inside the original method body resolves to the correct subclass.
  *
  * @template T of object = object Declares the instance type of the method invocation.
  * @template V = mixed Declares the generic return type of the method invocation.
@@ -49,6 +49,13 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
      * @var array<int, StaticMethodInvocationFrame>
      */
     private array $stackFrames = [];
+
+    /**
+     * Shim closures bound to a late-static-binding scope, created once per scope
+     *
+     * @var array<class-string, Closure>
+     */
+    private array $boundClosures = [];
 
     /**
      * Constructor for static method invocation.
@@ -82,7 +89,7 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    final public function __invoke(string $scope, array $arguments = [], array $variadicArguments = []): mixed
+    public function __invoke(string $scope, array $arguments = [], array $variadicArguments = []): mixed
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->scope, $this->current];
@@ -120,15 +127,16 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
             return $this->advices[$this->current++]->invoke($this);
         }
 
-        // Bind the wrapper to the current scope so forward_static_call forwards the
-        // correct late-static-binding class (supports child-class static invocations).
-        return $this->closureToCall->bindTo(null, $this->scope)->__invoke($this->arguments);
+        // The wrapper is bound to the current scope so forward_static_call forwards the correct
+        // late-static-binding class (supports child-class static invocations). Binding allocates
+        // a new closure, so it happens once per scope, not on every call.
+        return ($this->boundClosures[$this->scope] ??= $this->closureToCall->bindTo(null, $this->scope))($this->arguments);
     }
 
     /**
      * @return false Covariance, always false for static method calls
      */
-    final public function isDynamic(): false
+    public function isDynamic(): false
     {
         return false;
     }
@@ -136,12 +144,12 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     /**
      * @return null Covariance, always null for static invocations
      */
-    final public function getThis(): null
+    public function getThis(): null
     {
         return null;
     }
 
-    final public function getScope(): string
+    public function getScope(): string
     {
         return $this->scope;
     }

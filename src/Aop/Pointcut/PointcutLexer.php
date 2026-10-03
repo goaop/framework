@@ -31,6 +31,7 @@ final class PointcutLexer extends SimpleLexer
         $this->token('initialization');
         $this->token('staticinitialization');
         $this->token('matchInherited');
+        $this->token('matchReturningByReference');
 
         // Parenthesis
         $this->token('(');

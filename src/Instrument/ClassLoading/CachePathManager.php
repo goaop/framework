@@ -21,9 +21,10 @@ use Go\Instrument\PathResolver;
 
 /**
  * Class that manages real-code to cached-code paths mapping.
- * Can be extended to get a more sophisticated real-to-cached code mapping
  *
  * @phpstan-import-type KernelOptions from AspectKernel
+ *
+ * @internal Framework service, not a public extension point
  */
 class CachePathManager
 {

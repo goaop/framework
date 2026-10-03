@@ -44,9 +44,19 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     private object $instance;
 
     /**
-     * Instance of reflection property
+     * Reflection of the intercepted property, created on first use: only advices ask for it
      */
-    private readonly ReflectionProperty $reflectionProperty;
+    private ReflectionProperty $reflectionProperty;
+
+    /**
+     * @var class-string<T>
+     */
+    private readonly string $className;
+
+    /**
+     * Name of the intercepted property
+     */
+    private readonly string $fieldName;
 
     /**
      * Reference to the original value of property
@@ -87,7 +97,8 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function __construct(array $advices, string $className, string $fieldName)
     {
         parent::__construct($advices);
-        $this->reflectionProperty = new ReflectionProperty($className, $fieldName);
+        $this->className = $className;
+        $this->fieldName = $fieldName;
     }
 
     public function getAccessType(): FieldAccessType
@@ -97,7 +108,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 
     public function getField(): ReflectionProperty
     {
-        return $this->reflectionProperty;
+        return $this->reflectionProperty ??= new ReflectionProperty($this->className, $this->fieldName);
     }
 
     /**
@@ -107,8 +118,8 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     public function getValue(): mixed
     {
-        if (!$this->reflectionProperty->isInitialized($this->instance)) {
-            throw new AspectException("Property {$this->reflectionProperty->name} is not initialized yet");
+        if (!$this->getField()->isInitialized($this->instance)) {
+            throw new AspectException("Property {$this->fieldName} is not initialized yet");
         }
         // We can not use ReflectionProperty->getValue() here, as it will call again the hook
         return $this->value;
@@ -132,7 +143,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    final public function proceed(): mixed
+    public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current++];
@@ -158,7 +169,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    final public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed
+    public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed
     {
         if ($this->level > 0) {
             // Nested access: keep the outer state and value references. No initialization checks on purpose:
@@ -171,12 +182,14 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
             $this->instance   = $instance;
             $this->accessType = $accessType;
             unset($this->value, $this->newValue);
+            // Name of the property that carries the result: value for READ, newValue for WRITE
+            $resultProperty = self::$propertyMap[$accessType->name];
 
             // $values[0] - either we have a reference to the original property for READ
             // OR reference to the new value for WRITE.
             // Can be unset only for READ operation when property is not initialized yet
             if (isset($values[0])) {
-                $this->{self::$propertyMap[$accessType->name]} = &$values[0];
+                $this->{$resultProperty} = &$values[0];
             }
             // $values[1] - either we have a reference to the original property for WRITE
             // OR can be unset for WRITE operation when property is not initialized yet
@@ -184,9 +197,9 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
                 $this->value = &$values[1];
             }
 
-            $this->{self::$propertyMap[$accessType->name]} = $this->proceed();
+            $this->{$resultProperty} = $this->proceed();
 
-            return $this->{self::$propertyMap[$accessType->name]};
+            return $this->{$resultProperty};
         } finally {
             --$this->level;
             if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
@@ -197,17 +210,17 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         }
     }
 
-    final public function getThis(): object
+    public function getThis(): object
     {
         return $this->instance;
     }
 
-    final public function isDynamic(): true
+    public function isDynamic(): true
     {
         return true;
     }
 
-    final public function getScope(): string
+    public function getScope(): string
     {
         return $this->instance::class;
     }
@@ -215,13 +228,13 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Returns a friendly description of current joinpoint
      */
-    final public function __toString(): string
+    public function __toString(): string
     {
         return sprintf(
             '%s(%s->%s)',
             $this->accessType->value,
             $this->getScope(),
-            $this->reflectionProperty->name,
+            $this->fieldName,
         );
     }
 }

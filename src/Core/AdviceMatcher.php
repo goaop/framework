@@ -24,6 +24,8 @@ use ReflectionProperty;
 
 /**
  * Advice matcher returns the list of advices for the specific point of code
+ *
+ * @internal Framework service, not a public extension point
  */
 class AdviceMatcher implements AdviceMatcherInterface
 {
@@ -32,6 +34,13 @@ class AdviceMatcher implements AdviceMatcherInterface
      *
      * @param bool $isInterceptFunctions Optional flag to enable function interception
      */
+    /**
+     * Reflections of every internal function, built on the first function match of the request
+     *
+     * @var array<non-empty-string, ReflectionFunction>|null
+     */
+    private static ?array $internalFunctions = null;
+
     public function __construct(private readonly bool $isInterceptFunctions = false) {}
 
     /**
@@ -82,8 +91,9 @@ class AdviceMatcher implements AdviceMatcherInterface
 
         foreach ($advisors as $advisorId => $advisor) {
             if ($advisor instanceof PointcutAdvisor) {
-                $pointcut = $advisor->getPointcut();
-                if (($pointcut->getKind() & Pointcut::KIND_CLASS) && $pointcut->matches($class)) {
+                $pointcut     = $advisor->getPointcut();
+                $matchesClass = $pointcut->matches($class);
+                if ($matchesClass && ($pointcut->getKind() & Pointcut::KIND_CLASS)) {
                     foreach ($this->getClassAdvicesFromAdvisor($class, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
                         foreach ($prefixAdvices as $name => $nameAdvices) {
                             foreach ($nameAdvices as $advisorKey => $advice) {
@@ -93,7 +103,7 @@ class AdviceMatcher implements AdviceMatcherInterface
                     }
                 }
 
-                if ($pointcut->matches($class)) {
+                if ($matchesClass) {
                     foreach ($this->getClassLevelAdvicesFromAdvisor($class, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
                         foreach ($prefixAdvices as $name => $nameAdvices) {
                             foreach ($nameAdvices as $advisorKey => $advice) {
@@ -240,15 +250,17 @@ class AdviceMatcher implements AdviceMatcherInterface
         string $advisorId,
         Pointcut $pointcut,
     ): array {
-        $functions = [];
-        $advices   = [];
+        $advices = [];
 
-        $listOfGlobalFunctions = get_defined_functions();
-        foreach ($listOfGlobalFunctions['internal'] as $functionName) {
-            $functions[$functionName] = new ReflectionFunction($functionName);
+        // Internal functions never change during a request: reflect them once, not per advisor and namespace
+        if (self::$internalFunctions === null) {
+            self::$internalFunctions = [];
+            foreach (get_defined_functions()['internal'] as $functionName) {
+                self::$internalFunctions[$functionName] = new ReflectionFunction($functionName);
+            }
         }
 
-        foreach ($functions as $functionName => $function) {
+        foreach (self::$internalFunctions as $functionName => $function) {
             if ($pointcut->matches($namespace, $function)) {
                 $advices[AspectContainer::FUNCTION_PREFIX][$functionName][$advisorId] = $advisor->getAdvice();
             }

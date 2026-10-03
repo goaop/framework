@@ -29,7 +29,7 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
             ],
             $this->__constructOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \array_slice([$label, $items], 0, \func_num_args()));
+        $__joinPoint->__invoke($this, \array_slice([$label, $items], 0, \func_num_args()));
     }
     public function describe(?\ArrayObject $extra = null): string
     {

@@ -70,6 +70,7 @@ final class PointcutGrammar extends Grammar
             ->is('initializationPointcut')
             ->is('staticInitializationPointcut')
             ->is('matchInheritedPointcut')
+            ->is('matchReturningByReferencePointcut')
             ->is('pointcutReference')
         ;
 
@@ -151,6 +152,11 @@ final class PointcutGrammar extends Grammar
         $this('matchInheritedPointcut')
             ->is('matchInherited', '(', ')')
             ->call(fn(mixed ...$_) => new MatchInheritedPointcut())
+        ;
+
+        $this('matchReturningByReferencePointcut')
+            ->is('matchReturningByReference', '(', ')')
+            ->call(fn(mixed ...$_) => new MatchReturningByReferencePointcut())
         ;
 
         $this('pointcutReference')

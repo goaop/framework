@@ -133,6 +133,9 @@ deferred registrations of services implementing an interface.
 Pointcuts
 ---------
 
+- **Methods returning by reference are rejected.** Weaving a method or function declared `function &name()` fails
+  with a `WeavingException`, because the joinpoint would return a copy instead of the reference (3.x returned a
+  copy with a notice). Add `&& !matchReturningByReference()` to pointcuts that match such methods.
 - **`?` wildcard removed.** `?` in name and type patterns is no longer a single-character wildcard,
   because it collided with nullable types. In return-type patterns a leading `?` is a nullable
   marker (`?Foo` equals `Foo|null`). Replace `?` wildcards with `*`.
@@ -224,6 +227,24 @@ Kernel and transformers
   `TransformerResult`.
 - `StreamMetaData::$source` is read-only: it is rebuilt from `$tokenStream` on every read. Custom
   transformers edit the tokens in `$tokenStream`, or replace them with `setTokenStreamFromRawTokens()`.
+
+Final and internal classes
+--------------------------
+
+Classes that were never meant to be extended are `final` now:
+- `Go\Core\Container`, `Go\Core\AttributeAspectLoaderExtension`
+- `Go\Aop\Framework\StaticInitializationJoinpoint`
+- `Go\Instrument\ClassLoading\AopComposerLoader`, `SourceTransformingLoader`, `Go\Instrument\PathResolver`
+- the transformers `WeavingTransformer`, `FilterInjectorTransformer`, `MagicConstantTransformer` and `StreamMetaData`
+- the proxy generators `EnumProxyGenerator`, `TraitProxyGenerator` and `FunctionProxyGenerator`
+- the attributes `#[Before]`, `#[After]`, `#[Around]`, `#[AfterThrowing]`, `#[Pointcut]` and `#[DeclareParents]`
+
+`Go\Lang\Attribute\AbstractInterceptor` is `abstract`. Classes that are only part of the framework's
+machinery (`AdviceMatcher`, `AspectLoader`, `CachedAspectLoader`, `CachePathManager`, `CacheWarmer`, `Enumerator`,
+`InterceptorInjector`, `The`, `NativeLazyProxy`) are marked `@internal` and are not covered by BC promises.
+
+**Action:** replace subclasses of these classes with composition, or with your own container or transformer
+registered in `configureAop()` / `registerTransformerServices()`.
 
 Exceptions
 ----------

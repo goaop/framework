@@ -50,7 +50,7 @@ final readonly class AttributePointcut implements Pointcut
         private bool   $useContextForMatching = false,
     ) {}
 
-    final public function matches(
+    public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
