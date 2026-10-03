@@ -38,7 +38,8 @@ trait UsesTemporaryDirectory
             throw new RuntimeException("Unable to create temporary directory {$directory}");
         }
 
-        return self::temporaryDirectoryRoot() . '/' . basename($directory);
+        // Native separators: the code under test compares these paths with realpath() results
+        return self::temporaryDirectoryRoot() . DIRECTORY_SEPARATOR . basename($directory);
     }
 
     protected static function removeTemporaryDirectory(string $directory): void
