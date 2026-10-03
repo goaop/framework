@@ -137,6 +137,22 @@ class AspectKernelTest extends TestCase
         $this->assertInstanceOf(AspectKernelTestConcreteKernel::class, $first);
     }
 
+    public function testGetInstanceOfTheAbstractKernelThrowsClearExceptionBeforeAnyKernelExists(): void
+    {
+        $instanceProperty = new ReflectionProperty(AspectKernel::class, 'instance');
+        $existingInstance = $instanceProperty->getValue();
+        $instanceProperty->setValue(null, null);
+
+        try {
+            $this->expectException(AspectException::class);
+            $this->expectExceptionMessage('Aspect kernel is not initialized yet');
+
+            AspectKernel::getInstance();
+        } finally {
+            $instanceProperty->setValue(null, $existingInstance);
+        }
+    }
+
     public function testGetContainerReturnsInjectedContainer(): void
     {
         $kernel    = $this->makeKernel();

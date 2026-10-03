@@ -75,6 +75,18 @@ final class FilterInjectorTransformer implements SourceTransformer
     }
 
     /**
+     * Forgets the configuration, the next rewrite() configures from the booted kernel again
+     *
+     * @internal For tests and processes that boot the framework again
+     */
+    public static function reset(): void
+    {
+        self::$kernel           = null;
+        self::$filterName       = null;
+        self::$cachePathManager = null;
+    }
+
+    /**
      * Configures the rewriting statics on demand from the booted kernel
      *
      * rewrite() call sites (autoloader miss path, rewritten include statements inside
