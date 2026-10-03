@@ -140,6 +140,12 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/src/Instrument/ClassLoading/CacheWarmer.php',
 ];
 $ignoreErrors[] = [
+	'message' => '#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#',
+	'identifier' => 'ternary.shortNotAllowed',
+	'count' => 1,
+	'path' => __DIR__ . '/src/Instrument/ClassLoading/CacheWarmer.php',
+];
+$ignoreErrors[] = [
 	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
 	'identifier' => 'empty.notAllowed',
 	'count' => 3,
@@ -154,7 +160,13 @@ $ignoreErrors[] = [
 $ignoreErrors[] = [
 	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
 	'identifier' => 'empty.notAllowed',
-	'count' => 2,
+	'count' => 1,
+	'path' => __DIR__ . '/src/Instrument/FileSystem/Enumerator.php',
+];
+$ignoreErrors[] = [
+	'message' => '#^Short ternary operator is not allowed\\. Use null coalesce operator if applicable or consider using long ternary\\.$#',
+	'identifier' => 'ternary.shortNotAllowed',
+	'count' => 1,
 	'path' => __DIR__ . '/src/Instrument/FileSystem/Enumerator.php',
 ];
 $ignoreErrors[] = [
