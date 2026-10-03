@@ -7,4 +7,5 @@ $configuration = ($env = getenv('GO_AOP_CONFIGURATION')) ? $env : 'default' ;
 $settings = require __DIR__.'/configuration.php';
 
 $applicationAspectKernel = $settings[$configuration]['kernel']::getInstance();
-$applicationAspectKernel->init($settings[$configuration]);
+// The test-harness keys (kernel class, console and front-controller paths) are not kernel options
+$applicationAspectKernel->init(array_diff_key($settings[$configuration], array_flip(['kernel', 'console', 'frontController'])));

@@ -13,6 +13,9 @@ ApplicationAspectKernel::getInstance()->init([
 ]);
 ```
 
+Only the options below are accepted. An unknown key, an unknown `containerClass` or an unknown feature
+bit throws `Go\Aop\Exception\InvalidConfigurationException`.
+
 | Option           | Type       | Default                     | Purpose |
 |------------------|------------|-----------------------------|---------|
 | `cacheDir`       | `string`   | none, required              | Directory for woven sources, proxies, advisor caches and the class map. |

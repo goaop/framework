@@ -22,6 +22,7 @@ use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
 use php_user_filter as PhpStreamFilter;
 use RuntimeException;
+use Throwable;
 
 use function is_string;
 use function strlen;
@@ -66,6 +67,14 @@ final class SourceTransformingLoader extends PhpStreamFilter
     protected static string $filterId;
 
     /**
+     * Filter names registered in PHP by this class: PHP can not unregister a stream filter,
+     * so a name outlives reset() and is reused by the next registration
+     *
+     * @var array<string, true>
+     */
+    private static array $registeredFilterIds = [];
+
+    /**
      * Container that provides the transformer services and tracks resource freshness
      */
     private static ?AspectContainer $container = null;
@@ -83,6 +92,8 @@ final class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Register current loader as stream filter in PHP
      *
+     * @internal Registers the filter only, use {@see ensureRegistered()} to bring up the whole pipeline
+     *
      * @throws RuntimeException If registration was failed
      */
     public static function register(string $filterId = self::FILTER_IDENTIFIER): void
@@ -91,9 +102,12 @@ final class SourceTransformingLoader extends PhpStreamFilter
             throw new WeavingException('Stream filter already registered');
         }
 
-        $result = stream_filter_register($filterId, self::class);
-        if ($result === false) {
-            throw new WeavingException('Stream filter was not registered');
+        if (!isset(self::$registeredFilterIds[$filterId])) {
+            $result = stream_filter_register($filterId, self::class);
+            if ($result === false) {
+                throw new WeavingException('Stream filter was not registered');
+            }
+            self::$registeredFilterIds[$filterId] = true;
         }
         self::$filterId = $filterId;
     }
@@ -110,13 +124,35 @@ final class SourceTransformingLoader extends PhpStreamFilter
     {
         if (empty(self::$filterId)) {
             self::register();
+        }
 
+        // Configured separately from the registration: a filter registered early (or for
+        // another container) would otherwise pass every source through untransformed
+        if (self::$container !== $container) {
             $kernelOptions = $container->getService(AspectKernel::class)->getOptions();
 
             self::$container        = $container;
             self::$cachePathManager = $container->getService(CachePathManager::class);
             self::$features         = $kernelOptions['features'];
+            self::$transformers     = null;
         }
+    }
+
+    /**
+     * Forgets the registration, the collaborators and the transformer chain
+     *
+     * The stream filter itself stays registered in PHP, which can not unregister it, and is
+     * reused by the next {@see ensureRegistered()} call.
+     *
+     * @internal For tests and processes that boot the framework again
+     */
+    public static function reset(): void
+    {
+        self::$filterId         = '';
+        self::$transformers     = null;
+        self::$container        = null;
+        self::$cachePathManager = null;
+        self::$features         = 0;
     }
 
     /**
@@ -184,12 +220,21 @@ final class SourceTransformingLoader extends PhpStreamFilter
      * @return TransformerResult Overall result: Transformed if at least one
      *         transformer transformed the source, Aborted if the chain was
      *         terminated, Abstain otherwise
+     *
+     * @throws WeavingException Wrapping any failure with the transformer and the file it failed on
      */
     public static function transformCode(StreamMetaData $metadata): TransformerResult
     {
         $overallResult = TransformerResult::Abstain;
         foreach (self::getTransformers() as $transformer) {
-            $transformationResult = $transformer->transform($metadata);
+            try {
+                $transformationResult = $transformer->transform($metadata);
+            } catch (Throwable $exception) {
+                throw new WeavingException(
+                    $transformer::class . " failed to transform {$metadata->uri}: {$exception->getMessage()}",
+                    previous: $exception,
+                );
+            }
             if ($overallResult === TransformerResult::Abstain
                 && $transformationResult === TransformerResult::Transformed
             ) {

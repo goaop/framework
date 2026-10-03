@@ -16,6 +16,7 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class MagicConstantTransformerTest extends TestCase
@@ -137,6 +138,25 @@ class MagicConstantTransformerTest extends TestCase
             dirname(__DIR__) . '/' . AspectContainer::ORIGINAL_TRAIT_SUFFIX . 'Request.php',
             $class::resolveFileName(__DIR__ . '/' . AspectContainer::ORIGINAL_TRAIT_SUFFIX . 'Request.php'),
         );
+    }
+
+    public function testResetMakesResolveFileNameConfigureFromTheBootedKernel(): void
+    {
+        $instanceProperty = new ReflectionProperty(AspectKernel::class, 'instance');
+        $existingInstance = $instanceProperty->getValue();
+        $instanceProperty->setValue(null, $this->getKernelMock([
+            'cacheDir' => __DIR__ . '/_files',
+            'appDir'   => __DIR__,
+        ]));
+
+        try {
+            MagicConstantTransformer::reset();
+
+            $this->assertSame(__DIR__ . '/Some.php', MagicConstantTransformer::resolveFileName(__DIR__ . '/_files/Some.php'));
+        } finally {
+            $instanceProperty->setValue(null, $existingInstance);
+            MagicConstantTransformer::reset();
+        }
     }
 
     public function testTransformerKeepsFileNameWithoutCacheDirectory(): void

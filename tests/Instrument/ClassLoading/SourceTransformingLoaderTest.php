@@ -21,13 +21,11 @@ use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
 use Go\PhpUnit\UsesTemporaryDirectory;
+use LogicException;
 use PhpToken;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-// Separate processes: the loader holds process-wide static state (the registered
-// stream filter and its cache collaborators), which every test configures differently
-#[\PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses]
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class SourceTransformingLoaderTest extends TestCase
 {
@@ -47,6 +45,9 @@ class SourceTransformingLoaderTest extends TestCase
 
     protected function setUp(): void
     {
+        // The loader holds process-wide static state, which every test configures differently
+        SourceTransformingLoader::reset();
+
         // Real directories: the stream filter includes woven sources and the loader resolves the
         // streamed path via realpath(), neither of which works on the virtual file system
         $this->appDir   = self::createTemporaryDirectory('stl-app');
@@ -59,6 +60,7 @@ class SourceTransformingLoaderTest extends TestCase
 
     protected function tearDown(): void
     {
+        SourceTransformingLoader::reset();
         self::removeTemporaryDirectory($this->cacheDir);
         self::removeTemporaryDirectory($this->appDir);
     }
@@ -156,6 +158,58 @@ class SourceTransformingLoaderTest extends TestCase
         $this->expectExceptionMessage('Stream filter was not registered');
 
         SourceTransformingLoader::register('go.aop.taken');
+    }
+
+    public function testResetForgetsRegistrationButReusesTheFilterRegisteredInPhp(): void
+    {
+        $this->registerLoader([]);
+        $filterId = SourceTransformingLoader::getId();
+
+        SourceTransformingLoader::reset();
+        try {
+            SourceTransformingLoader::getId();
+            $this->fail('The filter id must be forgotten by reset()');
+        } catch (WeavingException) {
+        }
+
+        // PHP can not unregister the filter: registering it again must reuse it
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer]);
+
+        $this->assertSame($filterId, SourceTransformingLoader::getId());
+        $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
+    }
+
+    public function testEarlyRegistrationIsConfiguredByTheKernel(): void
+    {
+        // A library registering the filter before the kernel boots must not disable weaving
+        SourceTransformingLoader::register();
+
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer]);
+
+        $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
+        $this->assertSame(1, $transformer->callCount);
+    }
+
+    public function testTransformerFailureNamesTheTransformerAndTheFile(): void
+    {
+        $failingTransformer = new FailingSourceTransformerStub();
+        $this->registerLoader([$failingTransformer]);
+        $stream = fopen($this->originalFile, 'rb');
+        $this->assertIsResource($stream);
+        $metadata = new StreamMetaData($stream, self::ORIGINAL_SOURCE);
+
+        try {
+            SourceTransformingLoader::transformCode($metadata);
+            $this->fail('The transformer failure must be reported');
+        } catch (WeavingException $exception) {
+            $this->assertSame(
+                FailingSourceTransformerStub::class . ' failed to transform ' . $metadata->uri . ': Broken transformer',
+                $exception->getMessage(),
+            );
+            $this->assertInstanceOf(LogicException::class, $exception->getPrevious());
+        }
     }
 
     public function testFreshTransformedCacheRecordIsServedWithoutAnyTransformer(): void
@@ -370,6 +424,17 @@ class SourceTransformingLoaderTest extends TestCase
         $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
         $this->assertSame(0, $transformer->callCount);
         $this->assertNull($this->cachePathManager->queryCacheState($this->originalFile));
+    }
+}
+
+/**
+ * Transformer stub that always fails
+ */
+final class FailingSourceTransformerStub implements SourceTransformer
+{
+    public function transform(StreamMetaData $metadata): TransformerResult
+    {
+        throw new LogicException('Broken transformer');
     }
 }
 
