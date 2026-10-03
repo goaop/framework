@@ -86,12 +86,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/src/Core/AdviceMatcher.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Only booleans are allowed in &&, ReflectionClass\\|false given on the left side\\.$#',
-	'identifier' => 'booleanAnd.leftNotBoolean',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Core/AdviceMatcher.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Only booleans are allowed in &&, int\\<0, 16\\> given on the left side\\.$#',
 	'identifier' => 'booleanAnd.leftNotBoolean',
 	'count' => 1,
@@ -126,12 +120,6 @@ $ignoreErrors[] = [
 	'identifier' => 'arrayFilter.strict',
 	'count' => 1,
 	'path' => __DIR__ . '/src/Core/Container.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
-	'identifier' => 'empty.notAllowed',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Instrument/ClassLoading/AopComposerLoader.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
@@ -578,7 +566,7 @@ $ignoreErrors[] = [
 	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
 https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'identifier' => 'method.deprecated',
-	'count' => 1,
+	'count' => 2,
 	'path' => __DIR__ . '/tests/Instrument/Transformer/StreamMetaDataTest.php',
 ];
 $ignoreErrors[] = [
@@ -600,12 +588,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/tests/Instrument/Transformer/WeavingTransformerTest.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
-	'identifier' => 'empty.notAllowed',
-	'count' => 2,
-	'path' => __DIR__ . '/tests/PhpUnit/ProxyClassReflectionHelper.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
 https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'identifier' => 'method.deprecated',
@@ -625,12 +607,6 @@ https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'identifier' => 'method.deprecated',
 	'count' => 1,
 	'path' => __DIR__ . '/tests/Proxy/Generator/ValueGeneratorTest.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Variable method call on Go\\\\Proxy\\\\Generator\\\\ParameterGenerator\\.$#',
-	'identifier' => 'method.dynamicName',
-	'count' => 1,
-	'path' => __DIR__ . '/tests/Proxy/Part/FunctionParameterListTest.php',
 ];
 
 return ['parameters' => ['ignoreErrors' => $ignoreErrors]];
