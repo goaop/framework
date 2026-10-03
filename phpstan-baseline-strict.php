@@ -64,14 +64,8 @@ $ignoreErrors[] = [
 $ignoreErrors[] = [
 	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
 	'identifier' => 'empty.notAllowed',
-	'count' => 2,
-	'path' => __DIR__ . '/src/Console/Command/DebugAdvisorCommand.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Only booleans are allowed in a negated boolean, mixed given\\.$#',
-	'identifier' => 'booleanNot.exprNotBoolean',
 	'count' => 1,
-	'path' => __DIR__ . '/src/Console/Command/DebugAspectCommand.php',
+	'path' => __DIR__ . '/src/Console/Command/DebugAdvisorCommand.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Only booleans are allowed in an if condition, string\\|false given\\.$#',
@@ -434,13 +428,6 @@ https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'identifier' => 'method.deprecated',
 	'count' => 2,
 	'path' => __DIR__ . '/tests/Console/Command/CacheWarmupCommandInProcessTest.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
-https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
-	'identifier' => 'method.deprecated',
-	'count' => 1,
-	'path' => __DIR__ . '/tests/Console/Command/DebugAdvisorCommandInProcessTest.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^AnonymousClass[0-9a-f]+\\:\\:__construct\\(\\) does not call parent constructor from Go\\\\Instrument\\\\ClassLoading\\\\CacheWarmer\\.$#',

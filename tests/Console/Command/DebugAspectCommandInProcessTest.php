@@ -66,9 +66,11 @@ class DebugAspectCommandInProcessTest extends TestCase
         $this->assertStringContainsString('has following enabled aspects', $tester->getDisplay());
     }
 
-    public function testExecuteWithUnknownAspectOptionShowsNoAspects(): void
+    public function testExecuteWithUnknownAspectOptionFailsWithSuggestion(): void
     {
         $container = $this->createStub(AspectContainer::class);
+        $container->method('has')->willReturn(false);
+        $container->method('getServicesByInterface')->willReturn([LoggingAspect::class => new LoggingAspect($this->createStub(LoggerInterface::class))]);
 
         $kernel = $this->createStub(AspectKernel::class);
         $kernel->method('getContainer')->willReturn($container);
@@ -76,11 +78,13 @@ class DebugAspectCommandInProcessTest extends TestCase
         $command = $this->makeCommandWithKernel($kernel);
 
         $tester   = new CommandTester($command);
-        $exitCode = $tester->execute(['loader' => 'unused.php', '--aspect' => 'Not\\An\\Aspect']);
+        $exitCode = $tester->execute(['loader' => 'unused.php', '--aspect' => 'Go\\Tests\\TestProject\\Aspect\\LogingAspect']);
 
-        $this->assertSame(Command::SUCCESS, $exitCode);
-        $this->assertStringContainsString('Aspect debug information', $tester->getDisplay());
-        $this->assertStringNotContainsString('has following enabled aspects', $tester->getDisplay());
+        $this->assertSame(Command::FAILURE, $exitCode);
+        $display = (string) preg_replace('/\s+/', ' ', $tester->getDisplay());
+        $this->assertStringContainsString('Aspect "Go\\Tests\\TestProject\\Aspect\\LogingAspect" is not registered in the kernel.', $display);
+        $this->assertStringContainsString('Did you mean "' . LoggingAspect::class . '"?', $display);
+        $this->assertStringNotContainsString('has following enabled aspects', $display);
     }
 
     public function testExecuteFiltersByAspectOptionAndShowsPointcutsAndAdvisors(): void
@@ -96,6 +100,7 @@ class DebugAspectCommandInProcessTest extends TestCase
         ]);
 
         $container = $this->createStub(AspectContainer::class);
+        $container->method('has')->willReturn(true);
         $container->method('getService')->willReturnMap([
             [AspectLoader::class, $aspectLoader],
             [LoggingAspect::class, $aspect],
