@@ -15,18 +15,20 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Exception\WeavingException;
 use Go\Instrument\Transformer\Stubs\ConstructedStub;
 use Go\Instrument\Transformer\Stubs\InitializationAwareStub;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name;
 use PHPUnit\Framework\TestCase;
 
 class ConstructorExecutionTransformerTest extends TestCase
 {
-    protected static ConstructorExecutionTransformer $transformer;
+    protected static SyntaxTreeRewriter $rewriter;
 
     /**
      * @inheritDoc
      */
     public static function setUpBeforeClass(): void
     {
-        self::$transformer = new ConstructorExecutionTransformer();
+        self::$rewriter = new SyntaxTreeRewriter(new ConstructorExecutionTransformer());
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('listOfExpressions')]
@@ -36,7 +38,7 @@ class ConstructorExecutionTransformerTest extends TestCase
         assert($stream !== false);
         $metadata = new StreamMetaData($stream, "<?php $source; ?>");
 
-        self::$transformer->transform($metadata);
+        self::$rewriter->transform($metadata);
         $output = "<?php $expected; ?>";
         $this->assertEquals($output, $metadata->source);
         fclose($stream);
@@ -50,16 +52,16 @@ class ConstructorExecutionTransformerTest extends TestCase
     {
         $this->assertSame(
             TransformerResult::Transformed,
-            self::$transformer->transform($this->createMetadata('<?php $a = new \stdClass();')),
+            self::$rewriter->transform($this->createMetadata('<?php $a = new \stdClass();')),
         );
         $this->assertSame(
             TransformerResult::Abstain,
-            self::$transformer->transform($this->createMetadata('<?php $a = 42;')),
+            self::$rewriter->transform($this->createMetadata('<?php $a = 42;')),
         );
         // `new` in a constant-expression context is skipped, so nothing is left to rewrite
         $this->assertSame(
             TransformerResult::Abstain,
-            self::$transformer->transform($this->createMetadata('<?php const SERVICE = new \stdClass;')),
+            self::$rewriter->transform($this->createMetadata('<?php const SERVICE = new \stdClass;')),
         );
     }
 
@@ -71,7 +73,7 @@ class ConstructorExecutionTransformerTest extends TestCase
     {
         $metadata = $this->createMetadata('<?php $a = new class { public function make() { return new \stdClass(); } };');
 
-        $this->assertSame(TransformerResult::Transformed, self::$transformer->transform($metadata));
+        $this->assertSame(TransformerResult::Transformed, self::$rewriter->transform($metadata));
         $this->assertSame(
             '<?php $a = new class { public function make() { return \\' . ConstructorExecutionTransformer::class . '::getInstance()->{\stdClass::class}(); } };',
             $metadata->source,
@@ -292,10 +294,38 @@ class ConstructorExecutionTransformerTest extends TestCase
                 'function f($helper = new stdClass(new stdClass())) {}',
                 'function f($helper = new stdClass(new stdClass())) {}',
             ],
+            'class constant initializer' => [
+                'class I { const SERVICE = new stdClass; }',
+                'class I { const SERVICE = new stdClass; }',
+            ],
+            'property default value' => [
+                'class J { public $service = new stdClass; }',
+                'class J { public $service = new stdClass; }',
+            ],
+            'enum case value' => [
+                'enum K: string { case A = new stdClass; }',
+                'enum K: string { case A = new stdClass; }',
+            ],
+            'new inside an attribute of a closure parameter' => [
+                '$f = function (#[SomeAttr(new stdClass)] $x) { return new stdClass; }',
+                '$f = function (#[SomeAttr(new stdClass)] $x) { return \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}; }',
+            ],
             'promoted property hook body is still rewritten' => [
                 'class G { public function __construct(public stdClass $h = new stdClass { get { return new stdClass; } }) {} }',
                 'class G { public function __construct(public stdClass $h = new stdClass { get { return \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}; } }) {} }',
             ],
         ];
+    }
+
+    /**
+     * Nodes built outside of the parser have no token positions, so there is nothing to rewrite
+     */
+    public function testNodesWithoutTokenPositionsAreNotRewritten(): void
+    {
+        $metadata = $this->createMetadata('<?php $a = new \stdClass();');
+        $expected = $metadata->source;
+
+        $this->assertFalse((new ConstructorExecutionTransformer())->rewriteNode(new New_(new Name('stdClass')), $metadata));
+        $this->assertSame($expected, $metadata->source);
     }
 }

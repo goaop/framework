@@ -1,0 +1,103 @@
+<?php
+
+declare(strict_types=1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2026, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
+namespace Go\Instrument\Transformer;
+
+use Closure;
+use PhpParser\Node;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\ParentConnectingVisitor;
+use PhpParser\NodeVisitorAbstract;
+
+/**
+ * Source transformer that walks the syntax tree of a file once and applies node rewriting rules
+ *
+ * Every node is passed to the rules declaring its type, in the order of the rules.
+ */
+final class SyntaxTreeRewriter implements SourceTransformer
+{
+    /**
+     * @var list<NodeRewriter>
+     */
+    private readonly array $rules;
+
+    /**
+     * Rules per node class, resolved on the first node of each class
+     *
+     * @var array<class-string<Node>, list<NodeRewriter>>
+     */
+    private array $rulesByNodeClass = [];
+
+    public function __construct(NodeRewriter ...$rules)
+    {
+        $this->rules = array_values($rules);
+    }
+
+    public function transform(StreamMetaData $metadata): TransformerResult
+    {
+        if ($this->rules === []) {
+            return TransformerResult::Abstain;
+        }
+
+        $dispatcher = new class ($this->getRulesFor(...), $metadata) extends NodeVisitorAbstract {
+            public bool $isTransformed = false;
+
+            /**
+             * @param Closure(Node): list<NodeRewriter> $rulesFor
+             */
+            public function __construct(
+                private readonly Closure $rulesFor,
+                private readonly StreamMetaData $metadata,
+            ) {}
+
+            public function enterNode(Node $node): null
+            {
+                foreach (($this->rulesFor)($node) as $rule) {
+                    if ($rule->rewriteNode($node, $this->metadata)) {
+                        $this->isTransformed = true;
+                    }
+                }
+
+                return null;
+            }
+        };
+        // Weak references keep the parsed tree, which is cached and shared with reflection, free of cycles
+        $traverser = new NodeTraverser(new ParentConnectingVisitor(true), $dispatcher);
+        $traverser->traverse($metadata->syntaxTree);
+
+        return $dispatcher->isTransformed ? TransformerResult::Transformed : TransformerResult::Abstain;
+    }
+
+    /**
+     * Returns the rules declaring the type of the given node, in the order of the rules
+     *
+     * @return list<NodeRewriter>
+     */
+    private function getRulesFor(Node $node): array
+    {
+        $nodeClass = $node::class;
+        if (!isset($this->rulesByNodeClass[$nodeClass])) {
+            $matchingRules = [];
+            foreach ($this->rules as $rule) {
+                foreach ($rule->getNodeTypes() as $nodeType) {
+                    if ($node instanceof $nodeType) {
+                        $matchingRules[] = $rule;
+                        break;
+                    }
+                }
+            }
+            $this->rulesByNodeClass[$nodeClass] = $matchingRules;
+        }
+
+        return $this->rulesByNodeClass[$nodeClass];
+    }
+}

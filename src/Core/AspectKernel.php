@@ -373,10 +373,15 @@ abstract class AspectKernel
      * is constructed here - these are deferred definitions, materialized on the first
      * cache miss only.
      *
+     * Rewrites of single syntax tree nodes are NodeRewriter services instead: the
+     * SyntaxTreeRewriter stage, a framework service registered before this hook (so
+     * it stays in place when the hook is overridden), walks the syntax tree of a file
+     * once for all of them, in their registration order, before the weaving.
+     *
      * Override this method to replace, omit, reorder or extend the built-in transformers
      * (e.g. a mocking framework registering its own weaver instead of WeavingTransformer).
-     * To merely append a transformer, a single addLazyService() call from configureAop()
-     * is enough - it is picked up by the interface tag automatically.
+     * To merely append a transformer or a node rewriter, a single addLazyService() call
+     * from configureAop() is enough - it is picked up by the interface tag automatically.
      */
     protected function registerTransformerServices(AspectContainer $container): void
     {
@@ -403,6 +408,10 @@ abstract class AspectKernel
             );
         }
         $container->addLazyService(
+            MagicConstantTransformer::class,
+            fn(): MagicConstantTransformer => new MagicConstantTransformer($this),
+        );
+        $container->addLazyService(
             WeavingTransformer::class,
             fn(AspectContainer $container): WeavingTransformer => new WeavingTransformer(
                 $this,
@@ -410,10 +419,6 @@ abstract class AspectKernel
                 $container->getService(CachePathManager::class),
                 $container->getService(CachedAspectLoader::class),
             ),
-        );
-        $container->addLazyService(
-            MagicConstantTransformer::class,
-            fn(): MagicConstantTransformer => new MagicConstantTransformer($this),
         );
     }
 

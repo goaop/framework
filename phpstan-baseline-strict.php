@@ -194,18 +194,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/src/Instrument/PathResolver.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
-	'identifier' => 'empty.notAllowed',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Instrument/Transformer/ConstructorExecutionTransformer.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
-	'identifier' => 'empty.notAllowed',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Instrument/Transformer/FilterInjectorTransformer.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Only booleans are allowed in a negated boolean, string\\|null given\\.$#',
 	'identifier' => 'booleanNot.exprNotBoolean',
 	'count' => 1,

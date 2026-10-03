@@ -15,8 +15,17 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Aop\InitializationAware;
+use PhpParser\Node;
+use PhpParser\Node\Attribute;
+use PhpParser\Node\Const_;
+use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
-use PhpParser\NodeTraverser;
+use PhpParser\Node\Param;
+use PhpParser\Node\PropertyItem;
+use PhpParser\Node\StaticVar;
+use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\EnumCase;
+use WeakReference;
 
 /**
  * Transforms the source code to add an ability to intercept new instances creation
@@ -24,7 +33,7 @@ use PhpParser\NodeTraverser;
  * @see https://github.com/php/php-src/blob/master/Zend/zend_language_parser.y
  *
  */
-final class ConstructorExecutionTransformer implements SourceTransformer
+final class ConstructorExecutionTransformer implements NodeRewriter
 {
     /**
      * List of constructor invocations per class
@@ -61,43 +70,83 @@ final class ConstructorExecutionTransformer implements SourceTransformer
         self::$constructorInvocationsCache = [];
     }
 
-    /**
-     * Rewrites all "new" expressions with our implementation
-     */
-    public function transform(StreamMetaData $metadata): TransformerResult
+    public function getNodeTypes(): array
     {
-        // Skips `new` inside constant-expression contexts (parameter defaults, static var
-        // initializers, attribute arguments, constants, enum cases) — see issue #603.
-        $newExpressionFinder = new NewExpressionFinderVisitor();
+        return [New_::class];
+    }
 
-        // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($newExpressionFinder);
-        $traverser->traverse($metadata->syntaxTree);
-
-        $newExpressions = $newExpressionFinder->getFoundNewExpressions();
-
-        if (empty($newExpressions)) {
-            return TransformerResult::Abstain;
+    /**
+     * Rewrites the "new" expression with our implementation
+     */
+    public function rewriteNode(Node $node, StreamMetaData $file): bool
+    {
+        // Anonymous classes (`new class {...}`) have no name to construct through the interceptor
+        if (!$node instanceof New_ || $node->class instanceof Class_ || self::isInConstantExpression($node)) {
+            return false;
+        }
+        $startPosition   = $node->getAttribute('startTokenPos');
+        $endClassNamePos = $node->class->getAttribute('endTokenPos');
+        if (!is_int($startPosition) || !is_int($endClassNamePos)) {
+            return false;
         }
 
-        foreach ($newExpressions as $newExpressionNode) {
-            $startPosition = $newExpressionNode->getAttribute('startTokenPos');
-            $endClassNamePos = $newExpressionNode->class->getAttribute('endTokenPos');
-            if (!is_int($startPosition) || !is_int($endClassNamePos)) {
-                continue;
-            }
+        $isExplicitClass = $node->class instanceof Name;
+        $file->tokenStream[$startPosition]->text = '\\' . self::class . '::getInstance()->{';
+        if ($file->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
+            unset($file->tokenStream[$startPosition + 1]);
+        }
+        $expressionSuffix                           = $isExplicitClass ? '::class}' : '}';
+        $file->tokenStream[$endClassNamePos]->text .= $expressionSuffix;
 
-            $isExplicitClass = $newExpressionNode->class instanceof Name;
-            $metadata->tokenStream[$startPosition]->text = '\\' . self::class . '::getInstance()->{';
-            if ($metadata->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
-                unset($metadata->tokenStream[$startPosition + 1]);
+        return true;
+    }
+
+    /**
+     * Checks if the `new` expression is inside a constant-expression context
+     *
+     * Since PHP 8.1 `new` may appear inside constant-expression contexts: parameter default
+     * values, static variable initializers, attribute arguments and global constants (and
+     * php-parser also accepts it in property/class-constant defaults and enum case values).
+     * Such occurrences must stay untouched — the interceptor rewrite
+     * `...getInstance()->{Foo::class}(...)` is not a valid constant expression and would
+     * trigger a compile-time fatal error (https://github.com/goaop/framework/issues/603).
+     *
+     * Property hooks on promoted parameters contain runtime code, so for the containers other
+     * than attributes only the initializer child expression is a constant expression.
+     */
+    private static function isInConstantExpression(New_ $newExpression): bool
+    {
+        $child  = $newExpression;
+        $parent = self::getParent($child);
+        while ($parent !== null) {
+            $constExpr = match (true) {
+                $parent instanceof Attribute    => $child,
+                $parent instanceof Param        => $parent->default,
+                $parent instanceof StaticVar    => $parent->default,
+                $parent instanceof PropertyItem => $parent->default,
+                $parent instanceof Const_       => $parent->value,
+                $parent instanceof EnumCase     => $parent->expr,
+                default                         => null,
+            };
+            if ($constExpr === $child) {
+                return true;
             }
-            $expressionSuffix                           = $isExplicitClass ? '::class}' : '}';
-            $metadata->tokenStream[$endClassNamePos]->text .= $expressionSuffix;
+            $child  = $parent;
+            $parent = self::getParent($child);
         }
 
-        return TransformerResult::Transformed;
+        return false;
+    }
+
+    /**
+     * Returns the parent node connected by {@see SyntaxTreeRewriter}
+     */
+    private static function getParent(Node $node): ?Node
+    {
+        $parentReference = $node->getAttribute('weak_parent');
+        $parent          = $parentReference instanceof WeakReference ? $parentReference->get() : null;
+
+        return $parent instanceof Node ? $parent : null;
     }
 
     /**
