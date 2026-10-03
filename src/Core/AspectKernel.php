@@ -55,14 +55,6 @@ use ReflectionClass;
 abstract class AspectKernel
 {
     /**
-     * Mask of every feature bit defined in {@see Features}, used to reject unknown bits in the options
-     */
-    private const int KNOWN_FEATURES = Features::INTERCEPT_FUNCTIONS
-        | Features::INTERCEPT_INITIALIZATIONS
-        | Features::INTERCEPT_INCLUDES
-        | Features::PREBUILT_CACHE;
-
-    /**
      * Composer packages the framework runs on during weaving, always excluded from weaving
      */
     private const array RUNTIME_DEPENDENCIES = [
@@ -312,7 +304,7 @@ abstract class AspectKernel
             ));
         }
         $features = $merged['features'] ?? 0;
-        if (!is_int($features) || ($features & ~self::KNOWN_FEATURES) !== 0) {
+        if (!is_int($features) || ($features & ~Features::ALL) !== 0) {
             throw new InvalidConfigurationException(sprintf(
                 'Option "features" must be a combination of Go\\Aop\\Features constants, got %s.',
                 is_int($features) ? (string) $features : get_debug_type($features),
