@@ -92,8 +92,8 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/src/Core/AdviceMatcher.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Only booleans are allowed in &&, int\\<0, 4\\> given on the left side\\.$#',
-	'identifier' => 'booleanAnd.leftNotBoolean',
+	'message' => '#^Only booleans are allowed in &&, int\\<0, 4\\> given on the right side\\.$#',
+	'identifier' => 'booleanAnd.rightNotBoolean',
 	'count' => 1,
 	'path' => __DIR__ . '/src/Core/AdviceMatcher.php',
 ];
@@ -226,7 +226,7 @@ $ignoreErrors[] = [
 $ignoreErrors[] = [
 	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
 	'identifier' => 'empty.notAllowed',
-	'count' => 4,
+	'count' => 3,
 	'path' => __DIR__ . '/src/Instrument/Transformer/WeavingTransformer.php',
 ];
 $ignoreErrors[] = [
@@ -423,21 +423,9 @@ https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'path' => __DIR__ . '/tests/Console/Command/BaseAspectCommandTest.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^AnonymousClass20db6a73122db6ebef8f8520465410f1\\:\\:__construct\\(\\) does not call parent constructor from Go\\\\Instrument\\\\ClassLoading\\\\CacheWarmer\\.$#',
+	'message' => '#^AnonymousClass[0-9a-f]+\\:\\:__construct\\(\\) does not call parent constructor from Go\\\\Instrument\\\\ClassLoading\\\\CacheWarmer\\.$#',
 	'identifier' => 'constructor.missingParentCall',
-	'count' => 1,
-	'path' => __DIR__ . '/tests/Console/Command/CacheWarmupCommandInProcessTest.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^AnonymousClassaf953a8e5600bb15d8274afbd58ea46e\\:\\:__construct\\(\\) does not call parent constructor from Go\\\\Instrument\\\\ClassLoading\\\\CacheWarmer\\.$#',
-	'identifier' => 'constructor.missingParentCall',
-	'count' => 1,
-	'path' => __DIR__ . '/tests/Console/Command/CacheWarmupCommandInProcessTest.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^AnonymousClassc556689dd0dc5cfe5e5df1f7e6d2cb7c\\:\\:__construct\\(\\) does not call parent constructor from Go\\\\Instrument\\\\ClassLoading\\\\CacheWarmer\\.$#',
-	'identifier' => 'constructor.missingParentCall',
-	'count' => 1,
+	'count' => 3,
 	'path' => __DIR__ . '/tests/Console/Command/CacheWarmupCommandInProcessTest.php',
 ];
 $ignoreErrors[] = [
@@ -455,7 +443,7 @@ https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'path' => __DIR__ . '/tests/Console/Command/DebugAdvisorCommandInProcessTest.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^AnonymousClass9dcabfa332158c1e9134b8aad52dc725\\:\\:__construct\\(\\) does not call parent constructor from Go\\\\Instrument\\\\ClassLoading\\\\CacheWarmer\\.$#',
+	'message' => '#^AnonymousClass[0-9a-f]+\\:\\:__construct\\(\\) does not call parent constructor from Go\\\\Instrument\\\\ClassLoading\\\\CacheWarmer\\.$#',
 	'identifier' => 'constructor.missingParentCall',
 	'count' => 1,
 	'path' => __DIR__ . '/tests/Console/Command/DebugWeavingCommandInProcessTest.php',
@@ -576,9 +564,16 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/tests/Instrument/Transformer/SyntaxFixturesWeavingTest.php',
 ];
 $ignoreErrors[] = [
+	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
+https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
+	'identifier' => 'method.deprecated',
+	'count' => 1,
+	'path' => __DIR__ . '/tests/Instrument/Transformer/WeavingTransformerTest.php',
+];
+$ignoreErrors[] = [
 	'message' => '#^Casting to string something that\'s already string\\.$#',
 	'identifier' => 'cast.useless',
-	'count' => 2,
+	'count' => 4,
 	'path' => __DIR__ . '/tests/Instrument/Transformer/WeavingTransformerTest.php',
 ];
 $ignoreErrors[] = [
@@ -586,6 +581,20 @@ $ignoreErrors[] = [
 	'identifier' => 'if.condNotBoolean',
 	'count' => 8,
 	'path' => __DIR__ . '/tests/Instrument/Transformer/WeavingTransformerTest.php',
+];
+$ignoreErrors[] = [
+	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
+https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
+	'identifier' => 'method.deprecated',
+	'count' => 1,
+	'path' => __DIR__ . '/tests/Proxy/ClassProxyGeneratorTest.php',
+];
+$ignoreErrors[] = [
+	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
+https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
+	'identifier' => 'method.deprecated',
+	'count' => 1,
+	'path' => __DIR__ . '/tests/Proxy/FunctionProxyGeneratorTest.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
