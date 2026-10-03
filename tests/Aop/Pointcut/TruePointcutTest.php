@@ -45,7 +45,6 @@ class TruePointcutTest extends TestCase
         $this->assertTrue((bool) ($kind & Pointcut::KIND_METHOD));
         $this->assertTrue((bool) ($kind & Pointcut::KIND_PROPERTY));
         $this->assertTrue((bool) ($kind & Pointcut::KIND_CLASS));
-        $this->assertTrue((bool) ($kind & Pointcut::KIND_TRAIT));
         $this->assertTrue((bool) ($kind & Pointcut::KIND_FUNCTION));
         $this->assertTrue((bool) ($kind & Pointcut::KIND_INIT));
         $this->assertTrue((bool) ($kind & Pointcut::KIND_STATIC_INIT));

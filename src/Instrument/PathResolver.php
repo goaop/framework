@@ -15,10 +15,8 @@ namespace Go\Instrument;
 use function is_array;
 
 /**
- * Special class for resolving path for different file systems, wrappers, etc
- *
- * @see http://stackoverflow.com/questions/4049856/replace-phps-realpath/4050444
- * @see http://bugs.php.net/bug.php?id=52769
+ * Resolves paths for different file systems and stream wrappers without touching the disk,
+ * which native realpath() can not do for stream wrapper (e.g. phar://, vfs://) paths
  */
 class PathResolver
 {

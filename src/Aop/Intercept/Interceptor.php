@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Aop\Intercept;
 
 use Go\Aop\Advice;
-use Go\Aop\AdviceTypeEnum;
 
 /**
  * This interface represents a generic interceptor.
@@ -22,7 +21,7 @@ use Go\Aop\AdviceTypeEnum;
  * Those events are materialized by (reified in) joinpoints. Runtime joinpoints can be invocations, field
  * access, exceptions...
  *
- * This interface is not used directly. Use the the sub-interfaces to intercept specific events.
+ * This interface is not used directly. Use the sub-interfaces to intercept specific events.
  *
  * @see Joinpoint
  * @api

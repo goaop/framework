@@ -197,6 +197,20 @@ class AspectKernelTest extends TestCase
         $this->assertSame(Container::class, $default['containerClass']);
     }
 
+    public function testNormalizeOptionsExcludesRuntimeDependenciesFromWeaving(): void
+    {
+        $kernel = $this->makeKernel();
+
+        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir']]);
+
+        $excludePaths = $normalized['excludePaths'];
+        $this->assertIsArray($excludePaths);
+        foreach (['goaop/dissect', 'goaop/parser-reflection', 'nikic/php-parser', 'symfony/finder'] as $package) {
+            $this->assertContains(realpath(__DIR__ . '/../../vendor/' . $package), $excludePaths, $package);
+        }
+        $this->assertNotContains(realpath(__DIR__ . '/../..'), $excludePaths, 'The application root must stay woven');
+    }
+
     public function testNormalizeOptionsThrowsWithoutCacheDir(): void
     {
         $kernel = $this->makeKernel();
