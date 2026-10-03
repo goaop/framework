@@ -15,6 +15,9 @@ namespace Go\Instrument\Transformer;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use PHPUnit\Framework\MockObject\MockObject;
+use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Scalar\MagicConst\Dir;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
@@ -170,5 +173,19 @@ class MagicConstantTransformerTest extends TestCase
         $class = get_class($transformer);
 
         $this->assertSame(__FILE__, $class::resolveFileName(__FILE__));
+    }
+
+    /**
+     * Nodes built outside of the parser have no token positions, so there is nothing to rewrite
+     */
+    public function testNodesWithoutTokenPositionsAreNotRewritten(): void
+    {
+        $metadata = new StreamMetaData(self::openStream(__FILE__), '<?php echo __DIR__, $r->getFileName(); ?>');
+        $expected = $metadata->source;
+        $rule     = new MagicConstantTransformer($this->getKernelMock(['cacheDir' => __DIR__, 'appDir' => dirname(__DIR__)]));
+
+        $this->assertFalse($rule->rewriteNode(new Dir(), $metadata));
+        $this->assertFalse($rule->rewriteNode(new MethodCall(new Variable('r'), 'getFileName'), $metadata));
+        $this->assertSame($expected, $metadata->source);
     }
 }

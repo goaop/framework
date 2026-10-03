@@ -15,6 +15,8 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Exception\WeavingException;
 use Go\Instrument\Transformer\Stubs\ConstructedStub;
 use Go\Instrument\Transformer\Stubs\InitializationAwareStub;
+use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Name;
 use PHPUnit\Framework\TestCase;
 
 class ConstructorExecutionTransformerTest extends TestCase
@@ -313,5 +315,17 @@ class ConstructorExecutionTransformerTest extends TestCase
                 'class G { public function __construct(public stdClass $h = new stdClass { get { return \Go\Instrument\Transformer\ConstructorExecutionTransformer::getInstance()->{stdClass::class}; } }) {} }',
             ],
         ];
+    }
+
+    /**
+     * Nodes built outside of the parser have no token positions, so there is nothing to rewrite
+     */
+    public function testNodesWithoutTokenPositionsAreNotRewritten(): void
+    {
+        $metadata = $this->createMetadata('<?php $a = new \stdClass();');
+        $expected = $metadata->source;
+
+        $this->assertFalse((new ConstructorExecutionTransformer())->rewriteNode(new New_(new Name('stdClass')), $metadata));
+        $this->assertSame($expected, $metadata->source);
     }
 }

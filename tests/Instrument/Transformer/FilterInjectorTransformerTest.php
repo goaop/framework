@@ -16,6 +16,9 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
+use PhpParser\Node\Expr\Include_;
+use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
@@ -189,4 +192,16 @@ class FilterInjectorTransformerTest extends TestCase
         $this->assertEquals($expectedOutput, $metadata->source);
     }
 
+    /**
+     * Nodes built outside of the parser have no token positions, so there is nothing to rewrite
+     */
+    public function testNodesWithoutTokenPositionsAreNotRewritten(): void
+    {
+        $metadata = new StreamMetaData(self::openStream(), '<?php include $class; ?>');
+        $expected = $metadata->source;
+
+        $this->assertFalse(self::$transformer->rewriteNode(new Include_(new Variable('class'), Include_::TYPE_INCLUDE), $metadata));
+        $this->assertFalse(self::$transformer->rewriteNode(new String_('not an include'), $metadata));
+        $this->assertSame($expected, $metadata->source);
+    }
 }
