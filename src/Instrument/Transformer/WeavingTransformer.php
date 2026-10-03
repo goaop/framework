@@ -14,6 +14,7 @@ namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\AbstractJoinpoint;
 use Go\Core\AdviceMatcher;
 use Go\Core\AdviceMatcherInterface;
@@ -200,13 +201,7 @@ class WeavingTransformer extends BaseSourceTransformer
         StreamMetaData $streamMetaData,
         string $newClassName,
     ): void {
-        $classNode = $class->getNode();
-        $position = $this->getPositionAfterAttributeGroups($classNode);
-        // Every scan stays within the declaration: a malformed token stream can never loop forever
-        $lastPosition = $classNode->getAttribute('endTokenPos');
-        if (!is_int($position) || !is_int($lastPosition)) {
-            return;
-        }
+        [$position, $lastPosition] = $this->getDeclarationTokenRange($class->getNode());
         while ($position <= $lastPosition) {
             if (isset($streamMetaData->tokenStream[$position])) {
                 $token = $streamMetaData->tokenStream[$position];
@@ -222,19 +217,26 @@ class WeavingTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Returns the token position where the class/enum declaration scan should start.
+     * Returns the token range where the class/enum declaration scan should start and end.
      *
      * A ClassLike node's startTokenPos includes its attribute groups (`#[...]`), so scanning
      * from there would rename the first T_STRING inside the attribute to the trait name and
      * then delete the real class header (see https://github.com/goaop/framework/issues/598).
      * Class-level attributes are kept as-is on the generated trait — attributes are legal
      * on traits — so the scan starts right after the last attribute group.
+     *
+     * Every scan stays within the declaration: a malformed token stream can never loop forever.
+     *
+     * @return array{int, int} Positions of the first and the last token to scan
+     *
+     * @throws WeavingException When the node was parsed without token positions
      */
-    private function getPositionAfterAttributeGroups(ClassLike $classNode): ?int
+    private function getDeclarationTokenRange(ClassLike $classNode): array
     {
-        $position = $classNode->getAttribute('startTokenPos');
-        if (!is_int($position)) {
-            return null;
+        $position     = $classNode->getAttribute('startTokenPos');
+        $lastPosition = $classNode->getAttribute('endTokenPos');
+        if (!is_int($position) || !is_int($lastPosition)) {
+            throw new WeavingException("Declaration of {$classNode->name} has no token positions to weave");
         }
         $lastAttrGroup = end($classNode->attrGroups);
         if ($lastAttrGroup !== false) {
@@ -244,7 +246,7 @@ class WeavingTransformer extends BaseSourceTransformer
             }
         }
 
-        return $position;
+        return [$position, $lastPosition];
     }
 
     /**
@@ -265,12 +267,7 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName,
     ): void {
         $classNode = $class->getNode();
-        $position = $this->getPositionAfterAttributeGroups($classNode);
-        // Every scan stays within the declaration: a malformed token stream can never loop forever
-        $lastPosition = $classNode->getAttribute('endTokenPos');
-        if (!is_int($position) || !is_int($lastPosition)) {
-            return;
-        }
+        [$position, $lastPosition] = $this->getDeclarationTokenRange($classNode);
 
         $classNameFound = false;
 
@@ -505,12 +502,7 @@ class WeavingTransformer extends BaseSourceTransformer
         string $newClassName,
     ): void {
         $classNode = $class->getNode();
-        $position = $this->getPositionAfterAttributeGroups($classNode);
-        // Every scan stays within the declaration: a malformed token stream can never loop forever
-        $lastPosition = $classNode->getAttribute('endTokenPos');
-        if (!is_int($position) || !is_int($lastPosition)) {
-            return;
-        }
+        [$position, $lastPosition] = $this->getDeclarationTokenRange($classNode);
 
         $classNameFound = false;
 

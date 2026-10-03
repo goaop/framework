@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Core\AdviceMatcherInterface;
 use Go\Core\AspectContainer;
@@ -21,11 +22,13 @@ use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\MockObject\MockObject;
+use PhpParser\Node\Stmt\Class_;
 use Go\Instrument\Transformer\Stubs\MultiLinePropertiesClass;
 use Go\Instrument\Transformer\Stubs\TokenSurgeryClass;
 use Go\PhpUnit\AssertsCompilablePhp;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use ReflectionMethod;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class WeavingTransformerTest extends TestCase
@@ -252,6 +255,16 @@ class WeavingTransformerTest extends TestCase
     /**
      * PHP 8.1 backed enums must be woven: methods go into a trait, cases are re-declared in the proxy enum.
      */
+    public function testDeclarationWithoutTokenPositionsIsRejected(): void
+    {
+        $getDeclarationTokenRange = new ReflectionMethod(WeavingTransformer::class, 'getDeclarationTokenRange');
+
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('Declaration of Detached has no token positions to weave');
+
+        $getDeclarationTokenRange->invoke($this->transformer, new Class_('Detached'));
+    }
+
     public function testWeaverForEnum(): void
     {
         $metadata = $this->loadTestMetadata('php81-enum');
