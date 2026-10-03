@@ -27,6 +27,8 @@ use function count;
 
 /**
  * Warms up the cache
+ *
+ * @internal Used by the cache:warmup:aop command
  */
 class CacheWarmer
 {
@@ -101,7 +103,7 @@ class CacheWarmer
                     break;
                 }
 
-                $path = $file->getRealPath();
+                $path = $file->getRealPath() ?: $file->getPathname();
                 $processed++;
 
                 try {

@@ -33,6 +33,16 @@ class PathResolverTest extends TestCase
         $this->assertEquals([__DIR__ , __FILE__], PathResolver::realpath([__DIR__ , __FILE__]));
     }
 
+    public function testArrayResolutionChecksExistenceOfEveryPath(): void
+    {
+        $this->assertSame([__DIR__, false], PathResolver::realpath([__DIR__, __DIR__ . '/bad/dir'], true));
+    }
+
+    public function testOneCharacterRelativePathIsResolvedAgainstWorkingDirectory(): void
+    {
+        $this->assertSame(getcwd() . DIRECTORY_SEPARATOR . 'z', PathResolver::realpath('z'));
+    }
+
     /**
      * Test for checking the logic of custom realpath() implementation
      */
@@ -79,6 +89,9 @@ class PathResolverTest extends TestCase
             ['./point/file' , "$curDir/point/file"],
 
             ['C:\\Windows\\..\\filename', 'C:\\filename'],
+            ['C:\\..\\filename', 'C:\\filename'],
+            ['/../outside/file', '/outside/file'],
+            ['/some//doubled///separators/', '/some/doubled/separators/'],
 
             ['http://localhost/file.name' , 'http://localhost/file.name'],
             ['http://localhost/some/../relative.file' , 'http://localhost/relative.file'],

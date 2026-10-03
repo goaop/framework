@@ -18,8 +18,15 @@ use function is_array;
  * Resolves paths for different file systems and stream wrappers without touching the disk,
  * which native realpath() can not do for stream wrapper (e.g. phar://, vfs://) paths
  */
-class PathResolver
+final class PathResolver
 {
+    /**
+     * Static facade, never instantiated
+     *
+     * @codeCoverageIgnore
+     */
+    private function __construct() {}
+
     /**
      * Custom replacement for realpath() and stream_resolve_include_path()
      *
@@ -36,7 +43,10 @@ class PathResolver
         }
 
         if (is_array($somePath)) {
-            return array_values(array_map(self::realpath(...), $somePath));
+            return array_values(array_map(
+                static fn(string $path): string|false => self::realpath($path, $shouldCheckExistence),
+                $somePath,
+            ));
         }
         // Trick to get scheme name and path in one action. If no scheme, then there will be only one part
         $components = explode('://', $somePath, 2);
@@ -53,22 +63,29 @@ class PathResolver
             return $fastPath;
         }
 
-        $isRelative = !$pathScheme && ($path[0] !== '/') && ($path[1] !== ':');
+        $isRelative = !$pathScheme && ($path[0] !== '/') && ($path[0] !== '\\') && (($path[1] ?? '') !== ':');
         if ($isRelative) {
             $path = getcwd() . DIRECTORY_SEPARATOR . $path;
         }
 
         // resolve path parts (single dot, double dot and double delimiters)
         $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
-        if (str_contains($path, '.')) {
+        if (str_contains($path, '.') || str_contains($path, DIRECTORY_SEPARATOR . DIRECTORY_SEPARATOR)) {
             $parts     = explode(DIRECTORY_SEPARATOR, $path);
+            $lastIndex = count($parts) - 1;
             $absolutes = [];
-            foreach ($parts as $part) {
-                if ('.' === $part) {
+            foreach ($parts as $index => $part) {
+                // Empty segments come from doubled separators; the leading one is the root, a trailing one keeps
+                // the trailing separator
+                if ('.' === $part || ('' === $part && $index > 0 && $index < $lastIndex)) {
                     continue;
                 }
                 if ('..' === $part) {
-                    array_pop($absolutes);
+                    // Never climb above the root (`/`) or a drive (`C:`)
+                    $isAtRoot = count($absolutes) === 1 && ($absolutes[0] === '' || str_ends_with($absolutes[0], ':'));
+                    if (!$isAtRoot) {
+                        array_pop($absolutes);
+                    }
                 } else {
                     $absolutes[] = $part;
                 }

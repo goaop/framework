@@ -126,6 +126,9 @@ deferred registrations of services implementing an interface.
 Pointcuts
 ---------
 
+- **Methods returning by reference are rejected.** Weaving a method or function declared `function &name()` fails
+  with a `WeavingException`, because the joinpoint would return a copy instead of the reference (3.x returned a
+  copy with a notice). Add `&& !matchReturningByReference()` to pointcuts that match such methods.
 - **`?` wildcard removed.** `?` in name and type patterns is no longer a single-character wildcard,
   because it collided with nullable types. In return-type patterns a leading `?` is a nullable
   marker (`?Foo` equals `Foo|null`). Replace `?` wildcards with `*`.
@@ -174,6 +177,8 @@ that relied on that inheritance layer:
   `__initialization()` and `__staticInitialization()`.
 - `self::` in woven code resolves to the proxy class, so `SelfValueTransformer` and
   `SelfValueVisitor` are removed.
+- `Go\Aop\Features` is a final class instead of an interface: the constants are unchanged, but it can no longer
+  be implemented. `Features::ALL` combines every flag, and `AspectKernel::hasFeature()` throws on an unknown flag.
 - `Features::PARAMETER_WIDENING` is removed. Delete the flag from your kernel options if you
   passed it.
 
@@ -230,6 +235,24 @@ Kernel and transformers
 - `AspectKernel::getInstance()` called on the abstract `AspectKernel` before the application kernel
   exists throws an `AspectException` asking to call `init()` first, instead of the "Cannot instantiate
   abstract class" error.
+
+Final and internal classes
+--------------------------
+
+Classes that were never meant to be extended are `final` now:
+- `Go\Core\Container`, `Go\Core\AttributeAspectLoaderExtension`
+- `Go\Aop\Framework\StaticInitializationJoinpoint`
+- `Go\Instrument\ClassLoading\AopComposerLoader`, `SourceTransformingLoader`, `Go\Instrument\PathResolver`
+- the transformers `WeavingTransformer`, `FilterInjectorTransformer`, `MagicConstantTransformer` and `StreamMetaData`
+- the proxy generators `EnumProxyGenerator`, `TraitProxyGenerator` and `FunctionProxyGenerator`
+- the attributes `#[Before]`, `#[After]`, `#[Around]`, `#[AfterThrowing]`, `#[Pointcut]` and `#[DeclareParents]`
+
+`Go\Lang\Attribute\AbstractInterceptor` is `abstract`. Classes that are only part of the framework's
+machinery (`AdviceMatcher`, `AspectLoader`, `CachedAspectLoader`, `CachePathManager`, `CacheWarmer`, `Enumerator`,
+`InterceptorInjector`, `The`, `NativeLazyProxy`) are marked `@internal` and are not covered by BC promises.
+
+**Action:** replace subclasses of these classes with composition, or with your own container or transformer
+registered in `configureAop()` / `registerTransformerServices()`.
 
 Exceptions
 ----------

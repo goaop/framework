@@ -38,7 +38,7 @@ use ReflectionNamedType;
 /**
  * Trait proxy builder that is used to generate a trait from the list of joinpoints
  */
-class TraitProxyGenerator extends ClassProxyGenerator
+final class TraitProxyGenerator extends ClassProxyGenerator
 {
     /**
      * Generates an child code by original class reflection and joinpoints for it
@@ -144,7 +144,8 @@ class TraitProxyGenerator extends ClassProxyGenerator
         $argumentCode = $argumentList->generate();
         $argumentCode = $scope . ($argumentCode !== '' ? ", $argumentCode" : '');
 
-        $return = 'return ';
+        // Constructors and __clone() return nothing, whatever the joinpoint returns
+        $return = $method->isConstructor() || $method->name === '__clone' ? '' : 'return ';
         if ($method->hasReturnType()) {
             $returnType = $method->getReturnType();
             if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {

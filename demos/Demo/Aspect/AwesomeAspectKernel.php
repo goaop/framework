@@ -33,5 +33,9 @@ class AwesomeAspectKernel extends AspectKernel
         $container->addLazyService(FluentInterfaceAspect::class, static fn(): FluentInterfaceAspect => new FluentInterfaceAspect());
         $container->addLazyService(HealthyLiveAspect::class, static fn(): HealthyLiveAspect => new HealthyLiveAspect());
         $container->addLazyService(DynamicMethodsAspect::class, static fn(): DynamicMethodsAspect => new DynamicMethodsAspect());
+        $container->addLazyService(ErrorMonitoringAspect::class, static fn(): ErrorMonitoringAspect => new ErrorMonitoringAspect());
+        $container->addLazyService(PrivateMethodAspect::class, static fn(): PrivateMethodAspect => new PrivateMethodAspect());
+        $container->addLazyService(EnumInterceptorAspect::class, static fn(): EnumInterceptorAspect => new EnumInterceptorAspect());
+        $container->addLazyService(PropertyHooksAspect::class, static fn(): PropertyHooksAspect => new PropertyHooksAspect());
     }
 }

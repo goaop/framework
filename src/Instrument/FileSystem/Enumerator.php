@@ -25,6 +25,8 @@ use UnexpectedValueException;
 
 /**
  * Enumerates files in the concrete directory, applying filtration logic
+ *
+ * @internal Framework service, not a public extension point
  */
 class Enumerator
 {
@@ -54,11 +56,9 @@ class Enumerator
         $finder = new Finder();
         $finder->files()
             ->name('*.php')
-            ->in($this->getInPaths());
-
-        foreach ($this->getExcludePaths() as $path) {
-            $finder->notPath($path);
-        }
+            ->in($this->getInPaths())
+            // The same filter as the runtime loader, so warmup and autoloading weave exactly the same files
+            ->filter($this->getFilter());
 
         $iterator = $finder->getIterator();
 
@@ -75,8 +75,12 @@ class Enumerator
      */
     public function getFilter(): Closure
     {
-        return function (SplFileInfo $file) {
+        // Every include/exclude path is a literal path prefix where only `*` is a wildcard (also crossing
+        // directory separators); `\` and `/` are treated alike. Patterns are compiled once per filter.
+        $includeRegexps = array_map(self::toPrefixRegexp(...), $this->includePaths);
+        $excludeRegexps = array_map(self::toPrefixRegexp(...), $this->excludePaths);
 
+        return function (SplFileInfo $file) use ($includeRegexps, $excludeRegexps): bool {
             if ($file->getExtension() !== 'php') {
                 return false;
             }
@@ -87,26 +91,35 @@ class Enumerator
                 return false;
             }
 
-            $matchesPattern = fn(string $pattern): bool => fnmatch("{$pattern}*", $fullPath, FNM_NOESCAPE);
+            $normalizedPath = str_replace('\\', '/', $fullPath);
+            $matchesPattern = static fn(string $regexp): bool => preg_match($regexp, $normalizedPath) === 1;
 
-            if (!empty($this->includePaths) && !array_any($this->includePaths, $matchesPattern)) {
+            if ($includeRegexps !== [] && !array_any($includeRegexps, $matchesPattern)) {
                 return false;
             }
 
-            return !array_any($this->excludePaths, $matchesPattern);
+            return !array_any($excludeRegexps, $matchesPattern);
         };
     }
 
     /**
-     * Return the real path of the given file
+     * Converts a path pattern into an anchored regular expression matching the path and everything below it
+     */
+    private static function toPrefixRegexp(string $pattern): string
+    {
+        $quotedPattern = preg_quote(str_replace('\\', '/', $pattern), '#');
+
+        return '#^' . str_replace('\\*', '.*', $quotedPattern) . '#';
+    }
+
+    /**
+     * Returns the real path of the given file
      *
-     * This is used for testing purpose with virtual file system.
-     * In a vfs the 'realPath' method will always return false.
-     * So we have a chance to mock this single function to return different path.
+     * Stream wrappers (phar://, vfs://) have no real path, their path name is used as is.
      */
     protected function getFileFullPath(SplFileInfo $file): string
     {
-        return $file->getRealPath();
+        return $file->getRealPath() ?: $file->getPathname();
     }
 
     /**
@@ -134,22 +147,5 @@ class Enumerator
         }
 
         return $inPaths;
-    }
-
-    /**
-     * Returns the list of excluded paths
-     *
-     * @return string[]
-     */
-    private function getExcludePaths(): array
-    {
-        $excludePaths = [];
-
-        foreach ($this->excludePaths as $path) {
-            $path = str_replace('*', '.*', $path);
-            $excludePaths[] = '#' . str_replace($this->rootDirectory . '/', '', $path) . '#';
-        }
-
-        return $excludePaths;
     }
 }

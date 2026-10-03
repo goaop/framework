@@ -18,6 +18,7 @@ creation. It is the argument of an advice attribute, e.g. `#[Before('execution(p
 | `@access(Attribute)`                     | Properties that carry the attribute |
 | `@within(Attribute)`                     | Every member of classes that carry the attribute |
 | `matchInherited()`                       | Only members inherited from a parent class; `!matchInherited()` excludes them |
+| `matchReturningByReference()`            | Methods and functions declared `function &name()`; `!matchReturningByReference()` excludes them |
 | `$this->pointcutName`                    | A named pointcut declared with `#[Pointcut]` on a method of the same aspect |
 | `Aspect\Class->pointcutName`             | A named pointcut of another aspect |
 

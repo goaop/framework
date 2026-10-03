@@ -104,7 +104,7 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    final public function __invoke(array $arguments = [], array $variadicArguments = []): mixed
+    public function __invoke(array $arguments = [], array $variadicArguments = []): mixed
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->current];
@@ -135,7 +135,7 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
     /**
      * Returns a friendly description of current joinpoint
      */
-    final public function __toString(): string
+    public function __toString(): string
     {
         return sprintf(
             'execution(%s())',

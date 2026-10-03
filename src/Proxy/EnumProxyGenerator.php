@@ -53,7 +53,7 @@ use ReflectionNamedType;
  *   - Re-declares all enum cases (they cannot live in traits)
  *   - Overrides each intercepted method with per-method lazy joinpoint dispatch
  */
-class EnumProxyGenerator extends ClassProxyGenerator
+final class EnumProxyGenerator extends ClassProxyGenerator
 {
     /**
      * Built-in enum methods that must never be intercepted.
@@ -229,7 +229,8 @@ class EnumProxyGenerator extends ClassProxyGenerator
         $argumentCode = $argumentList->generate();
         $argumentCode = $scope . ($argumentCode !== '' ? ", $argumentCode" : '');
 
-        $return = 'return ';
+        // Constructors and __clone() return nothing, whatever the joinpoint returns
+        $return = $method->isConstructor() || $method->name === '__clone' ? '' : 'return ';
         if ($method->hasReturnType()) {
             $returnType = $method->getReturnType();
             if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {

@@ -64,6 +64,21 @@ class ConstructorExecutionTransformerTest extends TestCase
     }
 
     /**
+     * An anonymous class has no name to construct through the interceptor, so it is left alone while the
+     * named `new` expressions around it are still rewritten
+     */
+    public function testAnonymousClassesAreNotRewritten(): void
+    {
+        $metadata = $this->createMetadata('<?php $a = new class { public function make() { return new \stdClass(); } };');
+
+        $this->assertSame(TransformerResult::Transformed, self::$transformer->transform($metadata));
+        $this->assertSame(
+            '<?php $a = new class { public function make() { return \\' . ConstructorExecutionTransformer::class . '::getInstance()->{\stdClass::class}(); } };',
+            $metadata->source,
+        );
+    }
+
+    /**
      * The transformer is used as a singleton by the code it injects into the sources.
      */
     public function testGetInstanceAlwaysReturnsTheSameInstance(): void
@@ -150,6 +165,33 @@ class ConstructorExecutionTransformerTest extends TestCase
 
         // @phpstan-ignore property.notFound, expr.resultUnused (exercises the __get() magic method directly)
         $transformer->{'Go\Instrument\Transformer\Stubs\MissingStub'};
+    }
+
+    public function testClassThatBecomesLoadableLaterIsConstructed(): void
+    {
+        $transformer = ConstructorExecutionTransformer::getInstance();
+        $lateClass   = 'Go\\Instrument\\Transformer\\Stubs\\LateLoadedStub';
+
+        try {
+            // @phpstan-ignore property.notFound, expr.resultUnused (exercises the __get() magic method directly)
+            $transformer->{$lateClass};
+            $this->fail('The class does not exist yet');
+        } catch (WeavingException) {
+            // The failed lookup must not be cached
+        }
+
+        $autoloader = static function (string $className) use ($lateClass): void {
+            if ($className === $lateClass) {
+                class_alias(ConstructedStub::class, $lateClass);
+            }
+        };
+        spl_autoload_register($autoloader);
+        try {
+            // @phpstan-ignore property.notFound (exercises the __get() magic method directly)
+            $this->assertInstanceOf(ConstructedStub::class, $transformer->{$lateClass});
+        } finally {
+            spl_autoload_unregister($autoloader);
+        }
     }
 
     private function createMetadata(string $source): StreamMetaData

@@ -20,6 +20,7 @@ use Go\PhpUnit\AssertsCompilablePhp;
 use Go\Stubs\AttributeAspectLoaderExtensionTestPublicAspect;
 use Go\Stubs\Collision\A\SameNameAspect as AspectA;
 use Go\Stubs\Collision\B\SameNameAspect as AspectB;
+use Go\Aop\Exception\WeavingException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -139,6 +140,18 @@ class FunctionProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('The::aspect(SameNameAspect::class)', $code);
         $this->assertStringContainsString('The::aspect(BSameNameAspect::class)', $code);
         $this->assertPhpCompiles($code);
+    }
+
+    public function testFunctionReturningByReferenceCanNotBeIntercepted(): void
+    {
+        $advice = GeneratedInterceptor::fromAdvice('manual.before', new BeforeInterceptor(static fn(): mixed => null));
+
+        $this->expectException(WeavingException::class);
+        $this->expectExceptionMessage('Function Go\Stubs\Generator\funcGenHelper_byReference() returns by reference');
+
+        new FunctionProxyGenerator($this->getStubsNamespace(), [
+            AspectContainer::FUNCTION_PREFIX => ['Go\Stubs\Generator\funcGenHelper_byReference' => [$advice]],
+        ]);
     }
 
     private function getStubsNamespace(): ReflectionFileNamespace

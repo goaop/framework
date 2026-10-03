@@ -20,7 +20,9 @@ class FunctionDemo
     /**
      * Some array transformer
      *
-     * @param array $data Incoming array
+     * @param array<string, int> $data Incoming array
+     *
+     * @return array<int, int> Unique values flipped into keys
      */
     public function testArrayFunctions(array $data = []): array
     {
@@ -32,6 +34,6 @@ class FunctionDemo
      */
     public function testFileContent(): void
     {
-        echo '<pre>', htmlspecialchars(file_get_contents(__FILE__)), '</pre>';
+        echo file_get_contents(__FILE__), PHP_EOL;
     }
 }

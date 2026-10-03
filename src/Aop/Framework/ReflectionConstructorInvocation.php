@@ -69,7 +69,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    final public function proceed(): object
+    public function proceed(): object
     {
         if (isset($this->advices[$this->current])) {
             $currentInterceptor = $this->advices[$this->current];
@@ -115,7 +115,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    final public function __invoke(array $arguments = []): object
+    public function __invoke(array $arguments = []): object
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
@@ -155,7 +155,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
     /**
      * Returns a friendly description of current joinpoint
      */
-    final public function __toString(): string
+    public function __toString(): string
     {
         return sprintf(
             'initialization(%s)',

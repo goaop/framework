@@ -225,7 +225,8 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         } else {
             $modifiers[] = PropertyModifier::Public;
         }
-        if ($this->property->isFinal()) {
+        // private(set) makes a property implicitly final, only an explicit final modifier is repeated
+        if ($this->property->isFinal() && !$this->property->isPrivateSet()) {
             $modifiers[] = PropertyModifier::Final;
         }
 

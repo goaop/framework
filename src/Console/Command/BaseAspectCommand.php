@@ -32,7 +32,12 @@ abstract class BaseAspectCommand extends Command
 
     protected function configure(): void
     {
-        $this->addArgument('loader', InputArgument::REQUIRED, 'Path to the aspect loader file');
+        $this->addArgument(
+            'loader',
+            InputArgument::REQUIRED,
+            'Path to the PHP file that initializes your aspect kernel (usually the front controller or a bootstrap '
+            . 'file). The file is executed, so it must not dispatch a request or produce side effects',
+        );
     }
 
     /**
@@ -53,9 +58,13 @@ abstract class BaseAspectCommand extends Command
             throw new InvalidConfigurationException("Invalid loader path: {$loader}");
         }
 
+        // The loader is executed only to boot the kernel: anything it prints is discarded
         ob_start();
-        include_once $path;
-        ob_clean();
+        try {
+            include_once $path;
+        } finally {
+            ob_end_clean();
+        }
 
         if (!class_exists(AspectKernel::class, false)) {
             $message = "Kernel was not initialized yet, please configure it in the {$path}";
@@ -63,6 +72,29 @@ abstract class BaseAspectCommand extends Command
         }
 
         $this->aspectKernel = AspectKernel::getInstance();
+    }
+
+    /**
+     * Returns a " Did you mean ...?" hint with the candidate closest to the given name, or an empty string
+     *
+     * @param iterable<string> $candidates
+     */
+    protected static function suggestAlternative(string $given, iterable $candidates): string
+    {
+        $bestCandidate = null;
+        $bestDistance  = PHP_INT_MAX;
+        foreach ($candidates as $candidate) {
+            $distance = levenshtein(strtolower($given), strtolower($candidate));
+            if ($distance < $bestDistance) {
+                [$bestCandidate, $bestDistance] = [$candidate, $distance];
+            }
+        }
+        // Only close matches are worth suggesting: at most a third of the name may differ
+        if ($bestCandidate === null || $bestDistance > max(3, intdiv(strlen($given), 3))) {
+            return '';
+        }
+
+        return sprintf(' Did you mean "%s"?', $bestCandidate);
     }
 
     /**

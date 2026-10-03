@@ -31,7 +31,7 @@ use PhpParser\NodeVisitor\FindingVisitor;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-class MagicConstantTransformer extends BaseSourceTransformer
+final class MagicConstantTransformer extends BaseSourceTransformer
 {
     /**
      * Root path of application

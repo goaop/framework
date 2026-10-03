@@ -186,6 +186,28 @@ class AspectKernelTest extends TestCase
         $this->assertFalse($kernel->hasFeature(Features::PREBUILT_CACHE));
     }
 
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function unknownFeatures(): iterable
+    {
+        yield 'zero' => [0];
+        yield 'undefined bit' => [8];
+        yield 'defined and undefined bits' => [Features::PREBUILT_CACHE | 128];
+    }
+
+    #[DataProvider('unknownFeatures')]
+    public function testHasFeatureRejectsUnknownFeature(int $feature): void
+    {
+        $kernel = $this->makeKernel();
+        $this->setKernelOptions($kernel, ['features' => Features::ALL]);
+
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage("Unknown feature {$feature}");
+
+        $kernel->hasFeature($feature);
+    }
+
     public function testGetOptionsReturnsCurrentlyStoredOptions(): void
     {
         $kernel = $this->makeKernel();
