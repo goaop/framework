@@ -65,6 +65,13 @@ final readonly class ReturnTypePointcut implements Pointcut
     private bool $isSingleAtomicPattern;
 
     /**
+     * Regular expression for every atomic pattern, compiled once in the constructor
+     *
+     * @var array<string, string>
+     */
+    private array $atomRegexps;
+
+    /**
      * Return type name matcher constructor accepts name or glob pattern of the type to match.
      *
      * The pattern may be a plain type name ('string'), contain wildcards ('Some*'), or be a
@@ -80,6 +87,14 @@ final readonly class ReturnTypePointcut implements Pointcut
         $this->returnTypeName        = $returnTypeName;
         $this->patternGroups         = self::normalizeTypeExpression($returnTypeName);
         $this->isSingleAtomicPattern = count($this->patternGroups) === 1 && count($this->patternGroups[0]) === 1;
+
+        $atomRegexps = [];
+        foreach ($this->patternGroups as $patternGroup) {
+            foreach ($patternGroup as $patternAtom) {
+                $atomRegexps[$patternAtom] = '/^(' . strtr(preg_quote($patternAtom, '/'), ['\\*' => '[^\\\\]+']) . ')$/';
+            }
+        }
+        $this->atomRegexps = $atomRegexps;
     }
 
     public function matches(
@@ -108,7 +123,7 @@ final readonly class ReturnTypePointcut implements Pointcut
             $atomicPattern = $this->patternGroups[0][0];
             foreach ($actualGroups as $actualGroup) {
                 foreach ($actualGroup as $actualAtom) {
-                    if (self::atomMatches($atomicPattern, $actualAtom)) {
+                    if ($this->atomMatches($atomicPattern, $actualAtom)) {
                         return true;
                     }
                 }
@@ -121,10 +136,10 @@ final readonly class ReturnTypePointcut implements Pointcut
         return self::matchOneToOne(
             $this->patternGroups,
             $actualGroups,
-            static fn(array $patternGroup, array $actualGroup): bool => self::matchOneToOne(
+            fn(array $patternGroup, array $actualGroup): bool => self::matchOneToOne(
                 $patternGroup,
                 $actualGroup,
-                static fn(string $patternAtom, string $actualAtom): bool => self::atomMatches($patternAtom, $actualAtom),
+                fn(string $patternAtom, string $actualAtom): bool => $this->atomMatches($patternAtom, $actualAtom),
             ),
         );
     }
@@ -210,16 +225,13 @@ final readonly class ReturnTypePointcut implements Pointcut
     /**
      * Checks whether one atomic type pattern (with a possible '*' wildcard) matches an atomic type.
      */
-    private static function atomMatches(string $pattern, string $actual): bool
+    private function atomMatches(string $pattern, string $actual): bool
     {
         if ($pattern === $actual) {
             return true;
         }
-        $regexp = '/^(' . strtr(preg_quote($pattern, '/'), [
-            '\\*' => '[^\\\\]+',
-        ]) . ')$/';
 
-        $isMatched = preg_match($regexp, $actual);
+        $isMatched = preg_match($this->atomRegexps[$pattern], $actual);
         if ($isMatched === false) {
             throw new PointcutSyntaxException("Return type pattern `{$pattern}` can not be matched: " . preg_last_error_msg());
         }

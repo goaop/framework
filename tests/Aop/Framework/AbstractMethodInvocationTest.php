@@ -54,7 +54,7 @@ class AbstractMethodInvocationTest extends TestCase
 
             public function proceed(): string
             {
-                return $this->reflectionMethod->getName();
+                return $this->getMethod()->getName();
             }
         };
 
