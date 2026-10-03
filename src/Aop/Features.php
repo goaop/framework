@@ -56,6 +56,8 @@ final class Features
 
     /**
      * Holder of constants, never instantiated
+     *
+     * @codeCoverageIgnore
      */
     private function __construct() {}
 }
