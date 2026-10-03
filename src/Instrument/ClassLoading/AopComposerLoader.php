@@ -48,9 +48,11 @@ class AopComposerLoader
     private array $skippedClasses;
 
     /**
-     * Was initialization successful or not
+     * Includes a file in an isolated scope: neither $this nor the loader state leak into it
+     *
+     * @var (Closure(string): void)|null
      */
-    private static bool $wasInitialized = false;
+    private static ?Closure $includeFile = null;
 
     /**
      * Lazy-initialized filter for allowed files
@@ -92,21 +94,26 @@ class AopComposerLoader
     /**
      * Initialize aspect autoloader and returns status whether initialization was successful or not
      *
-     * Replaces original composer autoloader with wrapper
+     * Replaces original composer autoloader with wrapper. A loader wrapped by an earlier call
+     * is wrapped again around its original composer loader, with the given options and container.
      *
      * @phpstan-param KernelOptions $options Aspect kernel options
      */
     public static function init(array $options, AspectContainer $container): bool
     {
-        $loaders = spl_autoload_functions();
+        $wasInitialized = false;
+        $loaders        = spl_autoload_functions();
 
         foreach ($loaders as &$loader) {
             $loaderToUnregister = $loader;
             if (is_array($loader)) {
                 $originalLoader = $loader[0];
+                if ($originalLoader instanceof self) {
+                    $originalLoader = $originalLoader->getOriginalLoader();
+                }
                 if ($originalLoader instanceof ClassLoader) {
-                    $loader[0] = new AopComposerLoader($originalLoader, $container, $options);
-                    self::$wasInitialized = true;
+                    $loader[0]      = new AopComposerLoader($originalLoader, $container, $options);
+                    $wasInitialized = true;
                 }
             }
             spl_autoload_unregister($loaderToUnregister);
@@ -117,19 +124,39 @@ class AopComposerLoader
             spl_autoload_register($loader);
         }
 
-        return self::$wasInitialized;
+        return $wasInitialized;
+    }
+
+    /**
+     * Returns the wrapped composer class loader
+     *
+     * The wrapper replaces composer's loader in spl_autoload_functions(), so tools that look for
+     * a ClassLoader instance there should unwrap it with this method
+     * (ClassLoader::getRegisteredLoaders() is not affected).
+     */
+    public function getOriginalLoader(): ClassLoader
+    {
+        return $this->original;
     }
 
     /**
      * Autoload a class by it's name
+     *
+     * @return true|null True if loaded, null otherwise (the same contract as composer's loader)
      */
-    public function loadClass(string $class): void
+    public function loadClass(string $class): ?true
     {
         $file = $this->findFile($class);
 
         if ($file !== false) {
-            include $file;
+            (self::$includeFile ??= static function (string $file): void {
+                include $file;
+            })($file);
+
+            return true;
         }
+
+        return null;
     }
 
     /**

@@ -217,6 +217,19 @@ Kernel and transformers
   `TransformerResult`.
 - `StreamMetaData::$source` is read-only: it is rebuilt from `$tokenStream` on every read. Custom
   transformers edit the tokens in `$tokenStream`, or replace them with `setTokenStreamFromRawTokens()`.
+  A stream without a uri (a socket, for example) is rejected with a `WeavingException`.
+- An exception thrown by a transformer is wrapped in a `WeavingException` that names the transformer
+  and the file; the original exception is its `getPrevious()`.
+- `SourceTransformingLoader::register()` is `@internal`: the kernel brings the loader up with
+  `ensureRegistered()`, which now also configures a filter registered earlier.
+- `AopComposerLoader::loadClass()` returns `true` for a loaded class and `null` otherwise, like
+  composer's own loader, and includes the file without exposing `$this`. The wrapper takes the place of
+  composer's `ClassLoader` in `spl_autoload_functions()`: tools that look for a `ClassLoader` there
+  unwrap it with `AopComposerLoader::getOriginalLoader()` (`ClassLoader::getRegisteredLoaders()` is
+  not affected).
+- `AspectKernel::getInstance()` called on the abstract `AspectKernel` before the application kernel
+  exists throws an `AspectException` asking to call `init()` first, instead of the "Cannot instantiate
+  abstract class" error.
 
 Exceptions
 ----------

@@ -67,6 +67,8 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 * [Fixed] Closure advices registered through `PointcutBuilder` get stable advisor ids derived from the expression, the advice kind and the closure's source location instead of a process-wide counter, so changing the order of registrations in `configureAop()` no longer makes cached proxies call the wrong advice or fail with an unknown id (#640).
 * [Fixed] The weaving metadata files (`_transformation.cache`, `_include.cache`) carry a format version: a cache of another version is rebuilt, and with `Features::PREBUILT_CACHE` it fails with a hint to run `cache:warmup:aop`. Records keep the size and mtime of the woven source, so a source whose mtime moved backwards (rsync `-t`, checkout of an older revision) is woven again instead of serving the stale proxy (#685).
 
+* [Fixed] Class loading: a stream filter registered before the kernel booted is configured instead of passing every source through unwoven, transformer failures are reported as a `WeavingException` naming the transformer and the file, `AopComposerLoader::loadClass()` follows composer's `true|null` contract without leaking `$this` into included files and exposes `getOriginalLoader()`, and `AspectKernel::getInstance()` before any kernel exists throws a clear `AspectException`. The static state of the loader and the transformers can be reset (`@internal reset()`), so their tests no longer need separate processes (#704).
+
 **Internal**
 * [Internal] Tooling: PHPUnit 13 with strict flags, PHPStan 2 at level 10 over `src/` and `tests/`, php-cs-fixer with the PER-CS rule set, and `composer test`/`analyze`/`cs`/`check` scripts.
 

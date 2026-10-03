@@ -51,6 +51,17 @@ final class ConstructorExecutionTransformer implements SourceTransformer
     }
 
     /**
+     * Forgets the singleton and the constructor invocations created for the intercepted classes
+     *
+     * @internal For tests and processes that boot the framework again
+     */
+    public static function reset(): void
+    {
+        self::$instance                    = null;
+        self::$constructorInvocationsCache = [];
+    }
+
+    /**
      * Rewrites all "new" expressions with our implementation
      */
     public function transform(StreamMetaData $metadata): TransformerResult

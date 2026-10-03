@@ -110,10 +110,15 @@ abstract class AspectKernel
 
     /**
      * Returns the single instance of kernel
+     *
+     * @throws AspectException When called on an abstract kernel before the application kernel was created
      */
     public static function getInstance(): self
     {
         if (self::$instance === null) {
+            if (new ReflectionClass(static::class)->isAbstract()) {
+                throw new AspectException('Aspect kernel is not initialized yet, call init() on the kernel of the application first');
+            }
             // PhpStan complains about LSB and args for constructor, so constructor should be final
             self::$instance = new static();
         }

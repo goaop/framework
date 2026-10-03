@@ -112,8 +112,12 @@ class StreamMetaData
             throw new WeavingException('Stream should be valid resource');
         }
         $metadata = stream_get_meta_data($stream);
-        if (isset($metadata['uri']) && preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
-            $metadata['uri'] = PathResolver::realpath($matches[1]);
+        if (!isset($metadata['uri'])) {
+            throw new WeavingException('Stream has no uri, only file streams can be transformed');
+        }
+        if (preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
+            $resolvedUri     = PathResolver::realpath($matches[1]);
+            $metadata['uri'] = is_string($resolvedUri) ? $resolvedUri : $matches[1];
         }
         foreach ($metadata as $key => $value) {
             if (!isset(self::$propertyMap[$key])) {

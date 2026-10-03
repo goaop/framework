@@ -75,6 +75,15 @@ class ConstructorExecutionTransformerTest extends TestCase
         $this->assertSame($instance, ConstructorExecutionTransformer::getInstance());
     }
 
+    public function testResetDropsTheSingleton(): void
+    {
+        $instance = ConstructorExecutionTransformer::getInstance();
+
+        ConstructorExecutionTransformer::reset();
+
+        $this->assertNotSame($instance, ConstructorExecutionTransformer::getInstance());
+    }
+
     /**
      * `new Foo` without parentheses is rewritten to a property read on the singleton, which is
      * served by __get() and must construct the class without any constructor arguments.
