@@ -20,6 +20,7 @@ use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Core\Cache\CachedAspectLoader;
 use Go\Stubs\First;
+use Go\Stubs\ReentrantAutoloadAspect;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use PHPUnit\Framework\TestCase;
@@ -387,6 +388,32 @@ class ContainerTest extends TestCase
         $aspects = $this->container->getServicesByInterface(Aspect::class);
         $this->assertArrayHasKey(DoSomethingAspect::class, $aspects);
         $this->assertArrayHasKey(EnumMethodAspect::class, $aspects);
+    }
+
+    public function testInterfaceQueryDuringAutoloadOfPendingServiceIsNotCached(): void
+    {
+        // Probing pending services for another interface autoloads the aspect class, and weaving
+        // it queries the aspects: the class is not defined yet at that point, so the nested
+        // result must not be cached (the outer query materializes nothing to invalidate it)
+        $nestedAspects = null;
+        $autoloader    = function (string $className) use (&$nestedAspects): void {
+            if ($className === ReentrantAutoloadAspect::class) {
+                $nestedAspects = $this->container->getServicesByInterface(Aspect::class);
+                require __DIR__ . '/../Stubs/ReentrantAutoloadAspect.php';
+            }
+        };
+        $this->assertFalse(class_exists(ReentrantAutoloadAspect::class, false), 'Stub must not be loaded yet');
+        $this->container->addLazyService(ReentrantAutoloadAspect::class, fn(): ReentrantAutoloadAspect => new ReentrantAutoloadAspect());
+
+        spl_autoload_register($autoloader, true, true);
+        try {
+            $this->container->getServicesByInterface(Advisor::class);
+        } finally {
+            spl_autoload_unregister($autoloader);
+        }
+
+        $this->assertSame([], $nestedAspects);
+        $this->assertArrayHasKey(ReentrantAutoloadAspect::class, $this->container->getServicesByInterface(Aspect::class));
     }
 
     public function testRegistrationListenerFiresForMatchingLazyIdsOnly(): void

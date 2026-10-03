@@ -166,9 +166,17 @@ class Container implements AspectContainer
         // this method (an aspect class autoloaded here goes through the weaving
         // pipeline, which enumerates aspects again), consuming pending factories from
         // under this loop - hence the existence re-check and the tolerant materialization.
+        // A class that is still being autoloaded higher up the stack is not a subclass of
+        // anything yet: such an inconclusive probe makes the result unsuitable for caching.
+        $isConclusive = true;
         foreach (array_keys($this->factories) as $id) {
-            if (array_key_exists($id, $this->factories) && is_subclass_of($id, $interfaceTagClassName)) {
+            if (!array_key_exists($id, $this->factories)) {
+                continue;
+            }
+            if (is_subclass_of($id, $interfaceTagClassName)) {
                 $this->materializeService($id);
+            } elseif (!class_exists($id, false) && !interface_exists($id, false)) {
+                $isConclusive = false;
             }
         }
 
@@ -178,7 +186,7 @@ class Container implements AspectContainer
             $values[$containerKey] = $this->getValue($containerKey);
         }
         // A re-entrant registration while collecting the values invalidates this result
-        if ($version === $this->registrationVersion) {
+        if ($isConclusive && $version === $this->registrationVersion) {
             $this->servicesByInterface[$interfaceTagClassName] = $values;
         }
 
