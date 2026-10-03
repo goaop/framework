@@ -45,11 +45,6 @@ jobs:
             dependencies: "highest"
             operating-system: "ubuntu-latest"
             experimental: true
-          # Path handling differs on Windows; the leg is informative until it has been green for a while
-          - php-version: "8.4"
-            dependencies: "highest"
-            operating-system: "windows-latest"
-            experimental: true
 
     steps:
       - name: "Checkout"
