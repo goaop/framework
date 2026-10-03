@@ -29,8 +29,8 @@ class MagicConstantTest extends BaseFunctionalTestCase
         $applicationDir = realpath(__DIR__ . '/../Fixtures/project/src/Application');
         $this->assertIsString($applicationDir);
         $expected = [
-            'holder'   => ['dir' => $applicationDir, 'file' => $applicationDir . '/MagicConstantHolder.php'],
-            'included' => ['dir' => $applicationDir, 'file' => $applicationDir . '/magic-constant-paths.php'],
+            'holder'   => ['dir' => $applicationDir, 'file' => $applicationDir . DIRECTORY_SEPARATOR . 'MagicConstantHolder.php'],
+            'included' => ['dir' => $applicationDir, 'file' => $applicationDir . DIRECTORY_SEPARATOR . 'magic-constant-paths.php'],
         ];
 
         // The cache was warmed up in setUp(): both requests are served from the cache

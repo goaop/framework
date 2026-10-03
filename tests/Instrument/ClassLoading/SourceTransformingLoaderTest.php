@@ -54,7 +54,7 @@ class SourceTransformingLoaderTest extends TestCase
         $this->cacheDir = self::createTemporaryDirectory('stl-cache');
         mkdir($this->appDir . '/src');
 
-        $this->originalFile = $this->appDir . '/src/Some.php';
+        $this->originalFile = $this->appDir . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Some.php';
         file_put_contents($this->originalFile, self::ORIGINAL_SOURCE);
     }
 
@@ -63,6 +63,14 @@ class SourceTransformingLoaderTest extends TestCase
         SourceTransformingLoader::reset();
         self::removeTemporaryDirectory($this->cacheDir);
         self::removeTemporaryDirectory($this->appDir);
+    }
+
+    /**
+     * Path below the cache directory with native separators, as the loader computes it
+     */
+    private function cachePath(string $relativePath): string
+    {
+        return $this->cacheDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
     }
 
     /**
@@ -210,7 +218,7 @@ class SourceTransformingLoaderTest extends TestCase
         $this->container->expects($this->never())->method('getServicesByInterface');
         $this->container->method('isFreshSince')->willReturn(true);
 
-        $cacheFile = $this->cacheDir . '/src/Some.php';
+        $cacheFile = $this->cachePath('src/Some.php');
         mkdir(dirname($cacheFile), 0777, true);
         file_put_contents($cacheFile, self::WOVEN_SOURCE);
         $this->cachePathManager->setCacheState($this->originalFile, $this->freshRecord($cacheFile));
@@ -236,7 +244,7 @@ class SourceTransformingLoaderTest extends TestCase
 
         $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
 
-        $cacheFile = $this->cacheDir . '/src/Some.php';
+        $cacheFile = $this->cachePath('src/Some.php');
         $this->assertFileExists($cacheFile);
         $this->assertSame(self::WOVEN_SOURCE, file_get_contents($cacheFile));
         $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
@@ -254,9 +262,9 @@ class SourceTransformingLoaderTest extends TestCase
 
         // The generated proxy claims the plain name in the cache, so the original body
         // trait has to move aside to its own sibling file
-        $cacheFile = $this->cacheDir . '/src/Some' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX;
+        $cacheFile = $this->cachePath('src/Some' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX);
         $this->assertFileExists($cacheFile);
-        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
+        $this->assertFileDoesNotExist($this->cachePath('src/Some.php'));
         $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
         $this->assertNotNull($cacheState);
         $this->assertSame($cacheFile, $cacheState['cacheUri']);
@@ -272,9 +280,9 @@ class SourceTransformingLoaderTest extends TestCase
 
         $this->assertSame($wovenSource, $this->filterOriginalFile());
 
-        $cacheFile = $this->cacheDir . '/src/Some.php';
+        $cacheFile = $this->cachePath('src/Some.php');
         $this->assertFileExists($cacheFile);
-        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX);
+        $this->assertFileDoesNotExist($this->cachePath('src/Some' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX));
         $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
         $this->assertNotNull($cacheState);
         $this->assertSame($cacheFile, $cacheState['cacheUri']);
@@ -353,7 +361,7 @@ class SourceTransformingLoaderTest extends TestCase
         $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
         $this->assertSame(1, $transformer->callCount);
 
-        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
+        $this->assertFileDoesNotExist($this->cachePath('src/Some.php'));
         $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
         $this->assertNotNull($cacheState);
         $this->assertNull($cacheState['cacheUri']);
@@ -369,7 +377,7 @@ class SourceTransformingLoaderTest extends TestCase
         $this->assertSame(1, $aborting->callCount);
         $this->assertSame(0, $neverCalled->callCount);
 
-        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
+        $this->assertFileDoesNotExist($this->cachePath('src/Some.php'));
     }
 
     public function testAbortedChainRevertsChangesOfEarlierTransformers(): void
@@ -381,7 +389,7 @@ class SourceTransformingLoaderTest extends TestCase
         $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
         $this->assertSame(1, $aborting->callCount);
 
-        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
+        $this->assertFileDoesNotExist($this->cachePath('src/Some.php'));
         $cacheState = $this->cachePathManager->queryCacheState($this->originalFile);
         $this->assertNotNull($cacheState);
         $this->assertNull($cacheState['cacheUri']);
@@ -394,7 +402,7 @@ class SourceTransformingLoaderTest extends TestCase
         // Freshness collaborators must not even be consulted for a trusted record
         $this->container->expects($this->never())->method('isFreshSince');
 
-        $cacheFile = $this->cacheDir . '/src/Some.php';
+        $cacheFile = $this->cachePath('src/Some.php');
         mkdir(dirname($cacheFile), 0777, true);
         file_put_contents($cacheFile, self::WOVEN_SOURCE);
         // The record is deliberately STALE - the prebuilt mode must trust it anyway

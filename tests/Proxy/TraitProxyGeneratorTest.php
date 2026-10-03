@@ -209,7 +209,8 @@ class TraitProxyGeneratorTest extends TestCase
 
         $output = "<?php\n" . $generator->generate();
 
-        $this->assertStringContainsString('public int $public = 326 {', $output);
+        // The stub's default is T_PUBLIC, whose value depends on the PHP build
+        $this->assertStringContainsString('public int $public = ' . T_PUBLIC . ' {', $output);
         $this->assertStringContainsString('static $__joinPoint = InterceptorInjector::forProperty', $output);
         $this->assertStringContainsString("InterceptorInjector::forProperty(", $output);
         $this->assertStringContainsString('FieldAccessType::Read', $output);

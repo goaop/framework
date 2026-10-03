@@ -49,7 +49,10 @@ class StreamMetaDataTest extends TestCase
 
     public function testRejectsStreamWithoutUri(): void
     {
-        $sockets = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+        // Windows has no Unix domain socket pairs: PHP emulates the pair over TCP there
+        $sockets = PHP_OS_FAMILY === 'Windows'
+            ? stream_socket_pair(STREAM_PF_INET, STREAM_SOCK_STREAM, STREAM_IPPROTO_TCP)
+            : stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
         $this->assertIsArray($sockets);
 
         $this->expectException(WeavingException::class);

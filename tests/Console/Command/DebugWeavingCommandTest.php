@@ -18,11 +18,14 @@ class DebugWeavingCommandTest extends BaseFunctionalTestCase
 {
     public function testReportInconsistentWeaving(): void
     {
-        $output = str_replace("\n", ' ', $this->execute('debug:weaving', ['-vv'], false, 1));
+        $output = $this->execute('debug:weaving', ['-vv'], false, 1);
+        // SymfonyStyle wraps blocks (at most 120 columns), also in the middle of a long path, and prefixes
+        // the continuation lines of a note with "!": compare the messages without line breaks and spaces
+        $compactOutput = (string) preg_replace(['/\R[ !]*/', '/\s+/'], '', $output);
 
-        $this->assertMatchesRegularExpression('/.+InconsistentlyWeavedClass.php.+generated.+on.+second.+"warmup".+pass.+/', $output);
-        $this->assertMatchesRegularExpression('/.+Main.php".+is.+consistently.+weaved.+/', $output);
-        $this->assertStringContainsString('[ERROR] Weaving is unstable, there are 1 reported error(s).', $output);
+        $this->assertStringContainsString('InconsistentlyWeavedClass.php"isgeneratedonsecond"warmup"pass.', $compactOutput);
+        $this->assertStringContainsString('Main.php"isconsistentlyweaved.', $compactOutput);
+        $this->assertStringContainsString('[ERROR]Weavingisunstable,thereare1reportederror(s).', $compactOutput);
     }
 
     protected function getConfigurationName(): string
