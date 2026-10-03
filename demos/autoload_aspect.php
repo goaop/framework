@@ -18,7 +18,7 @@ include __DIR__ . '/../vendor/autoload.php';
 // Initialize demo aspect container
 AwesomeAspectKernel::getInstance()->init([
     'debug'    => true,
-    'appDir'   => __DIR__ . '/../demos',
+    'appDir'   => __DIR__,
     'cacheDir' => __DIR__ . '/cache',
 
     'features' => Features::INTERCEPT_FUNCTIONS,

@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use Go\Aop\Proxy;
-
 /*
  * Go! AOP framework
  *
@@ -11,112 +9,6 @@ use Go\Aop\Proxy;
  * This source file is subject to the license that is bundled
  * with this source code in the file LICENSE.
  */
-?><!DOCTYPE html>
-<html>
-<head>
-    <title>Go! AOP Demo</title>
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
-    <link href="//netdna.bootstrapcdn.com/bootswatch/3.1.1/spacelab/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-
-<header class="navbar" id="top" role="banner">>
-    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
-        <div class="container-fluid">
-          <!-- Brand and toggle get grouped for better mobile display -->
-          <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-              <span class="sr-only">Toggle navigation</span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="http://go.aopphp.com/">Go! AOP</a>
-          </div>
-
-          <!-- Collect the nav links, forms, and other content for toggling -->
-          <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-            <ul class="nav navbar-nav">
-              <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                    <span class="glyphicon glyphicon-tasks"></span>
-                    Examples <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a href="?showcase=loggable">Logging</a></li>
-                  <li><a href="?showcase=cacheable">Caching</a></li>
-                  <li class="divider">Interceptors</li>
-                  <li><a href="?showcase=property-interceptor">Intercepting access to the properties</a></li>
-                  <li><a href="?showcase=function-interceptor">Intercepting system functions</a></li>
-                  <li><a href="?showcase=dynamic-interceptor">Intercepting magic methods (__call and __callStatic)</a></li>
-                  <li class="divider">Advanced</li>
-                  <li><a href="?showcase=fluent-interface">Fluent Interface</a></li>
-                  <li><a href="?showcase=human-advices">Human live advices</a></li>
-                  <li><a href="?showcase=dynamic-traits">Dynamic traits and interfaces</a></li>
-                </ul>
-              </li>
-              <li><a href="http://go.aopphp.com/docs/" target="_blank">Documentation</a></li>
-              <li class="dropdown">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                      AOP Solutions <b class="caret"></b>
-                  </a>
-                  <ul class="dropdown-menu">
-                    <li><a href="https://github.com/lisachenko/php-deal" target="_blank">PhpDeal - Design By Contract Framework</a></li>
-                    <li><a href="https://github.com/Codeception/AspectMock" target="_blank">AspectMock - Testing framework</a></li>
-                    <li><a href="https://github.com/lisachenko/warlock" target="_blank">Warlock - Go! AOP + Symfony DiC</a></li>
-                  </ul>
-              </li>
-              <li class="dropdown">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                      Videos & Presentations<b class="caret"></b>
-                  </a>
-                  <ul class="dropdown-menu">
-                    <li><a href="https://www.youtube.com/watch?feature=player_detailpage&v=aZ_9PuHemBk#t=1283" target="_blank">Advanced logging in PHP</a></li>
-                    <li><a href="https://www.youtube.com/watch?v=BXKQ99-78bI" target="_blank">Aspect Oriented Programming in PHP</a></li>
-                    <li><a href="http://tutsplus.s3.amazonaws.com/tutspremium/Quick-Tips/AspectMock-Is-Pretty-Neat.mp4" target="_blank">AspectMock Is Pretty Neat</a></li>
-                    <li class="divider">Slides</li>
-                    <li><a href="http://www.slideshare.net/lisachenko/solving-crosscutting-concerns-in-php" target="_blank">Solving Cross-Cutting Concerns in PHP (at DPC16)</a></li>
-                    <li><a href="http://www.slideshare.net/lisachenko/weaving-aspects-in-php-with-the-help-of-go-aop-library" target="_blank">Weaving aspects in PHP with the help of Go! AOP library</a></li>
-                    <li><a href="http://www.slideshare.net/lisachenko/aspect-oriented-programming-in-php" target="_blank">Aspect-Oriented Programming in PHP (Russian)</a></li>
-                  </ul>
-              </li>
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                <li>AOP:
-                    <div class="navbar-form btn-group" data-toggle="button">
-                        <?php if (empty($_COOKIE['aop_on']) || $_COOKIE['aop_on'] === 'true'): ?>
-                        <button type="button" class="btn btn-info" id="aop_on">On</button>
-                        <?php else: ?>
-                        <button type="button" class="btn btn-danger active" id="aop_on">Off</button>
-                        <?php endif; ?>
-                    </div>
-                </li>
-              <li><a href="https://github.com/lisachenko/go-aop-php" target="_blank">Fork me</a></li>
-            </ul>
-          </div><!-- /.navbar-collapse -->
-        </div><!-- /.container-fluid -->
-    </nav>
-</header>
-
-<div class="container">
-
-  <div>
-    <h1>Welcome</h1>
-    <p class="lead">
-        This demo shows your an examples of AOP usage. <br>
-    </p>
-  </div>
-
-  <div class="well"><!--Here will be an output of code execution-->
-      <p>
-          Please, choose one of available examples from navigation menu. <br>
-          You can also try to run this code with XDebug.
-      </p>
-      <pre>
-<?php
-/*
- * Start of demo source code here
- */
 
 use Demo\Example\CacheableDemo;
 use Demo\Example\DynamicMethodsDemo;
@@ -124,17 +16,25 @@ use Demo\Example\FunctionDemo;
 use Demo\Example\HumanDemo;
 use Demo\Example\IntroductionDemo;
 use Demo\Example\LoggingDemo;
+use Demo\Example\OrderProcessorDemo;
+use Demo\Example\OrderStatus;
+use Demo\Example\PaymentDemo;
+use Demo\Example\ProductDemo;
 use Demo\Example\PropertyDemo;
 use Demo\Example\UserFluentDemo;
 use Demo\Highlighter;
+use Go\Aop\Proxy;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 
-$isAOPDisabled = isset($_COOKIE['aop_on']) && $_COOKIE['aop_on'] == 'false';
+$isAOPDisabled = isset($_COOKIE['aop_on']) && $_COOKIE['aop_on'] === 'false';
 include __DIR__ . ($isAOPDisabled ? '/../vendor/autoload.php' : '/autoload_aspect.php');
 
 $showCase   = $_GET['showcase'] ?? 'default';
 $example    = null;
 $aspectName = '';
+
+// The output of a showcase is captured to be escaped inside the page
+ob_start();
 
 switch ($showCase) {
     case 'cacheable':
@@ -156,14 +56,54 @@ switch ($showCase) {
         LoggingDemo::runByName('StaticTask'); // Logging for static methods
         break;
 
+    case 'after-throwing':
+        $aspectName = 'Demo\Aspect\ErrorMonitoringAspect';
+
+        $example = new PaymentDemo();
+        echo $example->charge('4111-1111', 50), PHP_EOL; // No exception, the advice is not called
+        try {
+            $example->charge('4111-1111', 0); // The advice reports the exception, then it is rethrown
+        } catch (InvalidArgumentException $exception) {
+            echo 'Caller handled the exception: ', $exception->getMessage(), PHP_EOL;
+        }
+        break;
+
+    case 'private-methods':
+        $aspectName = 'Demo\Aspect\PrivateMethodAspect';
+
+        $example = new OrderProcessorDemo();
+        $total   = $example->process(['book' => 42.5, 'lamp' => 80.0]); // Only the public method is called here
+        echo 'Order total: ', $total, PHP_EOL;
+        break;
+
     case 'property-interceptor':
         $aspectName = 'Demo\Aspect\PropertyInterceptorAspect';
 
         $example = new PropertyDemo();
-        echo $example->publicProperty; // Read public property
+        echo $example->publicProperty, PHP_EOL; // Read public property
         $example->publicProperty = 987; // Write public property
         $example->showProtected();
         $example->setProtected(987);
+        break;
+
+    case 'property-hooks':
+        $aspectName = 'Demo\Aspect\PropertyHooksAspect';
+
+        $example = new ProductDemo('go-aop-4'); // The own "set" hook of $sku uppercases the value
+        $example->price = 19.99;
+        $example->restock(5); // Reads and writes the asymmetric $stock property
+        echo "Product {$example->sku} costs {$example->price}, {$example->stock} in stock", PHP_EOL;
+        break;
+
+    case 'enum-interceptor':
+        $aspectName = 'Demo\Aspect\EnumInterceptorAspect';
+
+        $example = OrderStatus::Pending;
+        foreach (OrderStatus::cases() as $status) {
+            echo $status->label(), PHP_EOL;
+        }
+        $next = OrderStatus::next($example);
+        echo 'Next status after pending: ', $next->name, PHP_EOL;
         break;
 
     case 'dynamic-interceptor':
@@ -171,15 +111,15 @@ switch ($showCase) {
 
         $example = new DynamicMethodsDemo();
         $example->saveById(123); // intercept magic dynamic method
-        $example->load(456); // notice, that advice filters out this method by name
-        DynamicMethodsDemo::find(['id' => 124]); //intercept magic static method
+        $example->load(456); // the advice filters out this method by name
+        DynamicMethodsDemo::find(['id' => 124]); // intercept magic static method
         break;
 
     case 'function-interceptor':
         $aspectName = 'Demo\Aspect\FunctionInterceptorAspect';
 
         $example = new FunctionDemo();
-        $example->testArrayFunctions(['test' => 1, 'code' => 2, 'more' => 1]);
+        echo 'Unique values: ', json_encode($example->testArrayFunctions(['test' => 1, 'code' => 2, 'more' => 1])), PHP_EOL;
         $example->testFileContent();
         break;
 
@@ -218,75 +158,135 @@ switch ($showCase) {
 
     default:
 }
-?>
-  </pre></div>
-  <div class="panel-group" id="accordion">
-<?php // Conditional block with source code of aspect
-if ($aspectName !== ''):
-    ?>
 
-    <div class="panel panel-default" id="aspect">
-      <div class="panel-heading">
-          <a data-toggle="collapse" href="#collapseOne">
-              Source code of aspect
-          </a>
-          </div>
-      <div class="panel-body well panel-collapse collapse out" id="collapseOne">
-<?php
-    $refAspect = new ReflectionClass($aspectName);
-    Highlighter::highlight(MagicConstantTransformer::resolveFileName($refAspect->getFileName()));
-    ?>
-      </div>
+$output = (string) ob_get_clean();
+
+// Woven classes are loaded from the cache: the page shows their original source files
+$sourceFile = static fn(string|false $path): string => MagicConstantTransformer::resolveFileName((string) $path);
+?><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Go! AOP Demo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+<body>
+
+<header>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="https://go.aopphp.com/">Go! AOP</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-navigation"
+                    aria-controls="main-navigation" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="main-navigation">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">Examples</a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header">Advices</h6></li>
+                            <li><a class="dropdown-item" href="?showcase=loggable">Logging</a></li>
+                            <li><a class="dropdown-item" href="?showcase=cacheable">Caching</a></li>
+                            <li><a class="dropdown-item" href="?showcase=after-throwing">Reporting exceptions (AfterThrowing)</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Interceptors</h6></li>
+                            <li><a class="dropdown-item" href="?showcase=private-methods">Intercepting private and protected methods</a></li>
+                            <li><a class="dropdown-item" href="?showcase=property-interceptor">Intercepting access to the properties</a></li>
+                            <li><a class="dropdown-item" href="?showcase=property-hooks">Property hooks and asymmetric visibility</a></li>
+                            <li><a class="dropdown-item" href="?showcase=enum-interceptor">Intercepting enum methods</a></li>
+                            <li><a class="dropdown-item" href="?showcase=function-interceptor">Intercepting system functions</a></li>
+                            <li><a class="dropdown-item" href="?showcase=dynamic-interceptor">Intercepting magic methods (__call and __callStatic)</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Advanced</h6></li>
+                            <li><a class="dropdown-item" href="?showcase=fluent-interface">Fluent interface</a></li>
+                            <li><a class="dropdown-item" href="?showcase=human-advices">Human life advices</a></li>
+                            <li><a class="dropdown-item" href="?showcase=dynamic-traits">Dynamic traits and interfaces</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="https://github.com/goaop/framework/tree/master/docs" target="_blank" rel="noopener">Documentation</a></li>
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">AOP solutions</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="https://github.com/php-deal/framework" target="_blank" rel="noopener">PhpDeal - Design by Contract framework</a></li>
+                            <li><a class="dropdown-item" href="https://github.com/Codeception/AspectMock" target="_blank" rel="noopener">AspectMock - Testing framework</a></li>
+                            <li><a class="dropdown-item" href="https://github.com/lisachenko/warlock" target="_blank" rel="noopener">Warlock - Go! AOP + Symfony DiC</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">Videos &amp; presentations</a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header">Videos</h6></li>
+                            <li><a class="dropdown-item" href="https://www.youtube.com/watch?v=aZ_9PuHemBk&amp;t=1283" target="_blank" rel="noopener">Advanced logging in PHP</a></li>
+                            <li><a class="dropdown-item" href="https://www.youtube.com/watch?v=BXKQ99-78bI" target="_blank" rel="noopener">Aspect-Oriented Programming in PHP</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Slides</h6></li>
+                            <li><a class="dropdown-item" href="https://www.slideshare.net/lisachenko/solving-crosscutting-concerns-in-php" target="_blank" rel="noopener">Solving Cross-Cutting Concerns in PHP (at DPC16)</a></li>
+                            <li><a class="dropdown-item" href="https://www.slideshare.net/lisachenko/weaving-aspects-in-php-with-the-help-of-go-aop-library" target="_blank" rel="noopener">Weaving aspects in PHP with the help of Go! AOP library</a></li>
+                            <li><a class="dropdown-item" href="https://www.slideshare.net/lisachenko/aspect-oriented-programming-in-php" target="_blank" rel="noopener">Aspect-Oriented Programming in PHP (Russian)</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="navbar-text">AOP:</span>
+                    <?php if ($isAOPDisabled): ?>
+                    <button type="button" class="btn btn-sm btn-danger" id="aop_on" data-enabled="false">Off</button>
+                    <?php else: ?>
+                    <button type="button" class="btn btn-sm btn-info" id="aop_on" data-enabled="true">On</button>
+                    <?php endif; ?>
+                    <a class="nav-link" href="https://github.com/goaop/framework" target="_blank" rel="noopener">Fork me</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="container">
+
+    <h1>Welcome</h1>
+    <p class="lead">This demo shows examples of AOP usage.</p>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <p class="card-text">
+                Choose one of the examples from the navigation menu.
+                You can also run this code with Xdebug.
+            </p>
+            <pre class="mb-0"><?= htmlspecialchars($output) ?></pre>
+        </div>
     </div>
-<?php // End of conditional block with source code of class
-endif;
-?>
 
-<?php // Conditional block with source code of class
-if ($example):
-    ?>
-    <div class="panel panel-default">
-      <div class="panel-heading">
-          <a data-toggle="collapse" href="#collapseTwo">
-             Source code of class
-          </a></div>
-      <div class="panel-body well panel-collapse collapse out" id="collapseTwo">
-<?php
-    $refObject = new ReflectionObject($example);
+    <?php if ($aspectName !== ''): ?>
+    <details class="card mb-3">
+        <summary class="card-header">Source code of the aspect</summary>
+        <div class="card-body">
+            <?php Highlighter::highlight($sourceFile(new ReflectionClass($aspectName)->getFileName())); ?>
+        </div>
+    </details>
+    <?php endif; ?>
 
-    /**
-     * Get filename without proxy additions
-     */
-    $path = $refObject->getFileName();
-    $basename = basename($path);
-    $explodedPath = explode($basename, $path);
-    $path = array_shift($explodedPath) . $basename;
+    <?php if ($example !== null): ?>
+    <details class="card mb-3">
+        <summary class="card-header">Source code of the class</summary>
+        <div class="card-body">
+            <?php Highlighter::highlight($sourceFile(new ReflectionObject($example)->getFileName())); ?>
+        </div>
+    </details>
+    <?php endif; ?>
 
-    Highlighter::highlight(MagicConstantTransformer::resolveFileName($path));
-    ?>
-      </div>
-    </div>
-<?php // End of conditional block with source code of class
-endif;
-?>
-  </div><!-- /.accordion -->
+</main>
 
-</div><!-- /.container -->
-
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-    <script>
-        $(function() {
-            $("#aop_on").click(function() {
-                var active=$(this).hasClass('active');
-                document.cookie = "aop_on=" + active + "; path=/";
-                $(this).toggleClass('btn-info').toggleClass('btn-danger').text(active ? "On" : "Off");
-                window.location.reload();
-            });
-        });
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script>
+    document.getElementById('aop_on').addEventListener('click', function () {
+        const enabled = this.dataset.enabled === 'true';
+        document.cookie = 'aop_on=' + (!enabled) + '; path=/; SameSite=Lax';
+        window.location.reload();
+    });
+</script>
 </body>
 </html>
