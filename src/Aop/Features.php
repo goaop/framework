@@ -13,9 +13,9 @@ declare(strict_types=1);
 namespace Go\Aop;
 
 /**
- * Interface-enumeration of framework features to use in checking and configuration
+ * Framework feature flags for the `features` kernel option, combined with `|`
  */
-interface Features
+final class Features
 {
     /**
      * Enables interception of system function.
@@ -45,4 +45,17 @@ interface Features
      * (GAE, phar, etc).
      */
     public const int PREBUILT_CACHE = 64;
+
+    /**
+     * Mask of every defined feature flag
+     */
+    public const int ALL = self::INTERCEPT_FUNCTIONS
+        | self::INTERCEPT_INITIALIZATIONS
+        | self::INTERCEPT_INCLUDES
+        | self::PREBUILT_CACHE;
+
+    /**
+     * Holder of constants, never instantiated
+     */
+    private function __construct() {}
 }

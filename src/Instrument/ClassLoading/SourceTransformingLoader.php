@@ -240,7 +240,8 @@ class SourceTransformingLoader extends PhpStreamFilter
 
         // With a prebuilt cache (built at deploy time) an existing cache record is trusted
         // as-is: no filemtime or tracked-resource freshness checks - staleness is the
-        // deployer's responsibility.
+        // deployer's responsibility. The feature bits are cached statically on registration, so the
+        // bitmask is tested directly instead of calling the kernel for every loaded file.
         $isTrustedCacheRecord = (self::$features & Features::PREBUILT_CACHE) !== 0;
 
         if (!$isTrustedCacheRecord) {
