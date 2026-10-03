@@ -34,8 +34,8 @@ jobs:
           path: |
             ~/.composer/cache
             vendor
-          key: "cs-php-8.4-${{ hashFiles('composer.json') }}"
-          restore-keys: "cs-php-8.4-"
+          key: "composer-${{ runner.os }}-php-8.4-highest-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-8.4-highest-"
       - name: "Validate composer.json"
         run: "composer validate --strict --no-check-lock"
       - name: "Install dependencies"
