@@ -44,6 +44,18 @@ class Container implements AspectContainer
     private array $tags = [];
 
     /**
+     * Results of getServicesByInterface(), valid until the next registration
+     *
+     * @var array<class-string, array<string, mixed>>
+     */
+    private array $servicesByInterface = [];
+
+    /**
+     * Incremented by every registration, a cached lookup is reused only while it is unchanged
+     */
+    private int $registrationVersion = 0;
+
+    /**
      * Cached timestamp for resources, might be uninitialized if {@see self::isFreshSince()} is not called yet
      */
     private int $cachedMaxTimestamp;
@@ -71,6 +83,8 @@ class Container implements AspectContainer
     final public function add(string $id, mixed $value): void
     {
         $this->values[$id] = $value;
+        $this->registrationVersion++;
+        $this->servicesByInterface = [];
 
         if (is_object($value) && !$value instanceof Closure) {
             $reflectionInstance = new ReflectionObject($value);
@@ -93,6 +107,8 @@ class Container implements AspectContainer
             throw new InvalidConfigurationException("Lazy service id must be a valid class name, \"$id\" given");
         }
         $this->factories[$id] = $lazyInitializationClosure;
+        $this->registrationVersion++;
+        $this->servicesByInterface = [];
 
         // With no listeners registered (the production configuration) this is a no-op and
         // nothing below autoloads; a registered listener accepts the is_subclass_of()
@@ -136,6 +152,12 @@ class Container implements AspectContainer
 
     final public function getServicesByInterface(string $interfaceTagClassName): array
     {
+        // The weaver asks for the same interfaces for every woven file: reuse the last result
+        // as long as nothing was registered since
+        if (isset($this->servicesByInterface[$interfaceTagClassName])) {
+            return $this->servicesByInterface[$interfaceTagClassName];
+        }
+
         // Deferred services are only tagged once materialized (as lazy objects), so
         // materialize the pending ones that implement the requested interface first.
         // This path is only taken during weaving/console runs, never on a hot request.
@@ -149,9 +171,14 @@ class Container implements AspectContainer
             }
         }
 
-        $values = [];
+        $version = $this->registrationVersion;
+        $values  = [];
         foreach (($this->tags[$interfaceTagClassName] ?? []) as $containerKey) {
             $values[$containerKey] = $this->getValue($containerKey);
+        }
+        // A re-entrant registration while collecting the values invalidates this result
+        if ($version === $this->registrationVersion) {
+            $this->servicesByInterface[$interfaceTagClassName] = $values;
         }
 
         return $values;

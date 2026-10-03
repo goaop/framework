@@ -90,6 +90,29 @@ class ContainerTest extends TestCase
         $this->assertSame(['test' => $pointcut], $pointcuts);
     }
 
+    public function testServicesByInterfaceAreRefreshedAfterRegistration(): void
+    {
+        $first = $this->createStub(Pointcut::class);
+        $this->container->add('first', $first);
+        $this->assertSame(['first' => $first], $this->container->getServicesByInterface(Pointcut::class));
+        // The repeated lookup is served from the cache
+        $this->assertSame(['first' => $first], $this->container->getServicesByInterface(Pointcut::class));
+
+        $second = $this->createStub(Pointcut::class);
+        $this->container->add('second', $second);
+
+        $this->assertSame(['first' => $first, 'second' => $second], $this->container->getServicesByInterface(Pointcut::class));
+    }
+
+    public function testServicesByInterfaceIncludeLazyServiceRegisteredAfterLookup(): void
+    {
+        $this->assertSame([], $this->container->getServicesByInterface(Aspect::class));
+
+        $this->container->addLazyService(DoSomethingAspect::class, static fn(): DoSomethingAspect => new DoSomethingAspect());
+
+        $this->assertArrayHasKey(DoSomethingAspect::class, $this->container->getServicesByInterface(Aspect::class));
+    }
+
     /**
      * Tests that pointcut can be registered and accessed
      */

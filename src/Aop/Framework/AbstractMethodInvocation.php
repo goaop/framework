@@ -32,7 +32,20 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
      */
     public const string TRAIT_ALIAS_SUFFIX = 'OriginalAlias';
 
-    protected readonly ReflectionMethod $reflectionMethod;
+    /**
+     * Reflection of the intercepted method, created on first use: only advices ask for it
+     */
+    private ReflectionMethod $reflectionMethod;
+
+    /**
+     * @var class-string<T>
+     */
+    private readonly string $className;
+
+    /**
+     * @var non-empty-string
+     */
+    private readonly string $methodName;
 
     /**
      * First-class callable pointing to the original method.
@@ -53,13 +66,14 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
     public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)
     {
         parent::__construct($advices);
-        $this->closureToCall    = $closureToCall;
-        $this->reflectionMethod = new ReflectionMethod($className, $methodName);
+        $this->closureToCall = $closureToCall;
+        $this->className     = $className;
+        $this->methodName    = $methodName;
     }
 
     final public function getMethod(): ReflectionMethod
     {
-        return $this->reflectionMethod;
+        return $this->reflectionMethod ??= new ReflectionMethod($this->className, $this->methodName);
     }
 
     /**
@@ -70,8 +84,8 @@ abstract class AbstractMethodInvocation extends AbstractInvocation implements Me
         return sprintf(
             'execution(%s%s%s())',
             $this->getScope(),
-            $this->reflectionMethod->isStatic() ? '::' : '->',
-            $this->reflectionMethod->name,
+            $this->getMethod()->isStatic() ? '::' : '->',
+            $this->methodName,
         );
     }
 }
