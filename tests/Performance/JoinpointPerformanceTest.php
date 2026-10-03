@@ -63,7 +63,7 @@ final class JoinpointPerformanceTest extends TestCase
             yield "static method, {$adviceName}" => [
                 static fn(): mixed => $staticCallable(),
                 static fn(): mixed => $staticMethod(TraitAliasProxy::class),
-                $advices === [] ? 25.0 : 30.0,
+                $advices === [] ? 15.0 : 20.0,
             ];
 
             $function = new ReflectionFunctionInvocation($advices, 'strlen', \strlen(...));
