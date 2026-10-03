@@ -21,7 +21,7 @@ use Go\Aop\Advice;
  * Those events are materialized by (reified in) joinpoints. Runtime joinpoints can be invocations, field
  * access, exceptions...
  *
- * This interface is not used directly. Use the the sub-interfaces to intercept specific events.
+ * This interface is not used directly. Use the sub-interfaces to intercept specific events.
  *
  * @see Joinpoint
  * @api

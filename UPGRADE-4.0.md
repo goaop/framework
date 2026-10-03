@@ -215,6 +215,8 @@ Kernel and transformers
 - `CachingTransformer` is removed: the cache decision lives in `SourceTransformingLoader`.
   `SourceTransformingLoader::addTransformer()` is removed, and `transformCode()` returns the overall
   `TransformerResult`.
+- `StreamMetaData::$source` is read-only: it is rebuilt from `$tokenStream` on every read. Custom
+  transformers edit the tokens in `$tokenStream`, or replace them with `setTokenStreamFromRawTokens()`.
 
 Exceptions
 ----------

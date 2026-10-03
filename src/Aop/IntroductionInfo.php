@@ -15,9 +15,8 @@ namespace Go\Aop;
 /**
  * Interface supplying the information necessary to describe an introduction of trait.
  *
- * If Advice implements this, it may be used as an introduction without an IntroductionAdvisor.
- * In this case, the advice is self-describing, providing not only the necessary behavior,
- * but describing the interfaces it introduces.
+ * An advice implementing this is self-describing: besides the behavior, it names the trait and
+ * the interface it introduces into the matched classes.
  */
 interface IntroductionInfo extends Advice
 {
