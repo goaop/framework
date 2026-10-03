@@ -68,8 +68,8 @@ jobs:
           path: |
             ~/.composer/cache
             vendor
-          key: "phpunit-${{ matrix.operating-system }}-php-${{ matrix.php-version }}-${{ matrix.dependencies }}-${{ hashFiles('composer.json') }}"
-          restore-keys: "phpunit-${{ matrix.operating-system }}-php-${{ matrix.php-version }}-${{ matrix.dependencies }}-"
+          key: "composer-${{ runner.os }}-php-${{ matrix.php-version }}-${{ matrix.dependencies }}-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-${{ matrix.php-version }}-${{ matrix.dependencies }}-"
 
       - name: "Install lowest dependencies"
         if: ${{ matrix.dependencies == 'lowest' }}
@@ -108,8 +108,8 @@ jobs:
           path: |
             ~/.composer/cache
             vendor
-          key: "coverage-php-8.4-${{ hashFiles('composer.json') }}"
-          restore-keys: "coverage-php-8.4-"
+          key: "composer-${{ runner.os }}-php-8.4-highest-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-8.4-highest-"
 
       - name: "Install highest dependencies"
         run: "composer update --no-interaction --no-progress"
@@ -150,8 +150,8 @@ jobs:
           path: |
             ~/.composer/cache
             vendor
-          key: "demos-php-8.4-${{ hashFiles('composer.json') }}"
-          restore-keys: "demos-php-8.4-"
+          key: "composer-${{ runner.os }}-php-8.4-highest-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-8.4-highest-"
 
       - name: "Install highest dependencies"
         run: "composer update --no-interaction --no-progress"
