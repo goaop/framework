@@ -135,12 +135,7 @@ abstract class BaseFunctionalTestCase extends TestCase
         ];
 
         $commandLine = array_merge($commandLine, $args);
-        // A wide terminal keeps SymfonyStyle from wrapping long (Windows) paths in the middle of a file name
-        $process = new Process(
-            $commandLine,
-            null,
-            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName(), 'COLUMNS' => '1000'],
-        );
+        $process     = new Process($commandLine, null, ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()]);
         $process->run();
 
         if ($expectSuccess) {
