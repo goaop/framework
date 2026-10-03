@@ -25,7 +25,6 @@
 
 ## Proxy parts (src/Proxy/Part/)
 - InterceptedMethodGenerator — wraps a method with join-point dispatch
-- InterceptedConstructorGenerator — wraps constructor
   - Calls `$this->__constructOriginalAlias()` when constructor is in trait, `parent::__construct()` otherwise
 - InterceptedPropertyGenerator — re-declares properties with native get/set hooks → ClassFieldAccess
 

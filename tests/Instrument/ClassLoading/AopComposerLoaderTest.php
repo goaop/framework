@@ -32,9 +32,9 @@ class AopComposerLoaderTest extends TestCase
     {
         // Real directory: the file enumerator resolves candidate files with realpath()
         $this->appDir = self::createTemporaryDirectory('composer-loader');
-        mkdir($this->appDir . '/vendor/dissect/src/Dissect', 0777, true);
+        mkdir($this->appDir . '/vendor/goaop/dissect/src', 0777, true);
         mkdir($this->appDir . '/src', 0777, true);
-        touch($this->appDir . '/vendor/dissect/src/Dissect/Parser.php');
+        touch($this->appDir . '/vendor/goaop/dissect/src/Parser.php');
         touch($this->appDir . '/src/Service.php');
     }
 
@@ -44,19 +44,16 @@ class AopComposerLoaderTest extends TestCase
         self::removeTemporaryDirectory($this->appDir);
     }
 
-    public function testPsr0DissectPrefixIsExcludedFromWeaving(): void
+    public function testExcludedPathsAreNotWoven(): void
     {
-        $composerLoader = new ClassLoader();
-        $composerLoader->add('Dissect', $this->appDir . '/vendor/dissect/src');
-
-        $loader = new AopComposerLoader($composerLoader, $this->createContainer(), [
+        $loader = new AopComposerLoader(new ClassLoader(), $this->createContainer(), [
             'debug'          => true,
             'appDir'         => $this->appDir,
             'cacheDir'       => null,
             'cacheFileMode'  => 0770,
             'features'       => 0,
             'includePaths'   => [],
-            'excludePaths'   => [],
+            'excludePaths'   => [$this->appDir . '/vendor/goaop/dissect'],
             'containerClass' => Container::class,
         ]);
 
@@ -64,7 +61,7 @@ class AopComposerLoaderTest extends TestCase
         $this->assertInstanceOf(Enumerator::class, $fileEnumerator);
         $isAllowed = $fileEnumerator->getFilter();
 
-        $this->assertFalse($isAllowed(new SplFileInfo($this->appDir . '/vendor/dissect/src/Dissect/Parser.php')));
+        $this->assertFalse($isAllowed(new SplFileInfo($this->appDir . '/vendor/goaop/dissect/src/Parser.php')));
         $this->assertTrue($isAllowed(new SplFileInfo($this->appDir . '/src/Service.php')));
     }
 

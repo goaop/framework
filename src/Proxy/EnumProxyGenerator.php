@@ -43,7 +43,6 @@ use ReflectionNamedType;
  * PHP enums cannot have properties (static or instance), so this generator uses the same
  * per-method static variable approach as TraitProxyGenerator: each intercepted method body
  * lazily initialises its own `static $__joinPoint` on first call and delegates to it.
- * There is no `$__joinPoints` class property and no `injectJoinPoints()` tail call.
  *
  * The original enum has been converted to a trait by WeavingTransformer (cases removed,
  * `enum` keyword replaced by `trait`, backed type stripped). This generator creates a new
@@ -206,9 +205,6 @@ final class EnumProxyGenerator extends ClassProxyGenerator
 
     /**
      * Generates the enum proxy source code.
-     *
-     * Unlike ClassProxyGenerator, there is no injectJoinPoints() tail call because
-     * enums cannot hold properties — joinpoints are lazily created per method instead.
      */
     #[\Override]
     public function generate(): string
@@ -219,8 +215,8 @@ final class EnumProxyGenerator extends ClassProxyGenerator
     /**
      * Creates the method body that lazily initialises a per-method static joinpoint.
      *
-     * This mirrors TraitProxyGenerator::getJoinpointInvocationBody() because enums,
-     * like traits, cannot hold a class-level $__joinPoints property.
+     * This mirrors TraitProxyGenerator::getJoinpointInvocationBody(): every intercepted method
+     * keeps its joinpoint in its own `static $__joinPoint` variable.
      *
      * All intercepted enum methods have `<method>OriginalAlias` aliases from the enum's trait-use block.
      */

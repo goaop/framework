@@ -19,7 +19,6 @@ use InvalidArgumentException;
 use PhpParser\Node;
 use PhpToken;
 
-use function is_array;
 use function is_resource;
 
 /**
@@ -28,11 +27,10 @@ use function is_resource;
 final class StreamMetaData
 {
     /**
-     * Source code represented by the token stream.
+     * Source code represented by the token stream, rebuilt from {@see self::$tokenStream} on every read.
      *
-     * Reading rebuilds the source directly from {@see self::$tokenStream}. Writing is
-     * deprecated: it re-tokenizes the given source into the token stream instead - use
-     * {@see self::setTokenStreamFromRawTokens()} directly.
+     * The property is read-only: transformers change the token stream, or replace it through
+     * {@see self::setTokenStreamFromRawTokens()}.
      */
     public string $source {
         get {
@@ -44,10 +42,6 @@ final class StreamMetaData
             }
 
             return $transformedSource;
-        }
-        set {
-            trigger_error('Setting StreamMetaData->source is deprecated, use tokenStream instead', E_USER_DEPRECATED);
-            $this->setTokenStreamFromRawTokens(...PhpToken::tokenize($value));
         }
     }
 

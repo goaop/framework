@@ -16,7 +16,6 @@ use Go\Aop\Advice;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\IntroductionInfo;
 use Go\Aop\Pointcut;
-use Go\Aop\Pointcut\TruePointcut;
 use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\ParserReflection\Locator\ComposerLocator;
 use Go\ParserReflection\ReflectionEngine;
@@ -342,31 +341,6 @@ class AdviceMatcherTest extends TestCase
     }
 
     /**
-     * Verifies that when a class' parent is an AOP-proxied trait-holder (name contains the
-     * Original suffix), advice matching resolves methods against that original parent class
-     * instead of the (proxy) class passed in - private methods declared directly on the original
-     * class must still be matched.
-     */
-    public function testResolvesOriginalClassWhenParentIsAopProxied(): void
-    {
-        $reflectionClass = new ReflectionClass(AdviceMatcherTestProxyChild::class);
-
-        $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
-        $pointcut->method('matches')->willReturn(true);
-
-        $advice  = $this->createMock(Advice::class);
-        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
-
-        $advices = $this->adviceMatcher->getAdvicesForClass($reflectionClass, ['advisor' => $advisor]);
-
-        $methodAdvices = $advices[AspectContainer::METHOD_PREFIX] ?? [];
-        // privateOriginal is declared directly on the Original parent, so it is matched
-        // only if the original (parent) class was used for the declaring-class comparison.
-        $this->assertArrayHasKey('privateOriginal', $methodAdvices);
-    }
-
-    /**
      * Verifies dynamic (KIND_INIT) class-level advice is collected.
      */
     public function testGetAdvicesForClassCollectsInitAdvice(): void
@@ -551,14 +525,6 @@ abstract class AdviceMatcherTestAbstractClass
 
     public function concreteMethod(): void {}
 }
-
-class AdviceMatcherTestFooOriginalTrait
-{
-    // @phpstan-ignore method.unused (only ever reached via reflection in AdviceMatcher, never called directly)
-    private function privateOriginal(): void {}
-}
-
-class AdviceMatcherTestProxyChild extends AdviceMatcherTestFooOriginalTrait {}
 
 trait AdviceMatcherTestIntroducedTrait {}
 

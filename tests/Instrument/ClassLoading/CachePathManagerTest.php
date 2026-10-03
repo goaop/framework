@@ -148,6 +148,19 @@ class CachePathManagerTest extends TestCase
         $this->assertNull($reader->queryCacheState($original));
     }
 
+    public function testPrebuiltCacheSkipsDirectoryChecks(): void
+    {
+        // A missing (or read-only) cache directory is never probed nor created with a prebuilt cache:
+        // without the feature the same directory is rejected, its parent does not exist
+        $missingCacheDir = self::$appDir . '/missing/parent/cache';
+
+        $manager = $this->createManager(prebuiltCache: true, cacheDir: $missingCacheDir);
+
+        $this->assertSame($missingCacheDir, $manager->getCacheDir());
+        $this->assertDirectoryDoesNotExist($missingCacheDir);
+        $this->assertSame([], $manager->queryClassMap());
+    }
+
     public function testPrebuiltCacheRejectsMetadataOfAnotherFormatVersion(): void
     {
         file_put_contents(self::$cacheDir . '/_include.cache', "<?php return ['map' => [], 'skip' => []];");

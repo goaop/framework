@@ -22,8 +22,6 @@ use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionProperty;
 
-use function count;
-
 /**
  * Advice matcher returns the list of advices for the specific point of code
  *
@@ -85,18 +83,12 @@ class AdviceMatcher implements AdviceMatcherInterface
     public function getAdvicesForClass(ReflectionClass $class, array $advisors): array
     {
         $classAdvices = [];
-        $parentClass  = $class->getParentClass();
-
-        $originalClass = $class;
-        if ($parentClass && str_ends_with($parentClass->name, AspectContainer::ORIGINAL_TRAIT_SUFFIX)) {
-            $originalClass = $parentClass;
-        }
 
         foreach ($advisors as $advisorId => $advisor) {
             if ($advisor instanceof PointcutAdvisor) {
                 $pointcut = $advisor->getPointcut();
                 if (($pointcut->getKind() & Pointcut::KIND_CLASS) && $pointcut->matches($class)) {
-                    foreach ($this->getClassAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
+                    foreach ($this->getClassAdvicesFromAdvisor($class, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
                         foreach ($prefixAdvices as $name => $nameAdvices) {
                             foreach ($nameAdvices as $advisorKey => $advice) {
                                 $classAdvices[$prefix][$name][$advisorKey] = $advice;
@@ -106,7 +98,7 @@ class AdviceMatcher implements AdviceMatcherInterface
                 }
 
                 if ($pointcut->matches($class)) {
-                    foreach ($this->getClassLevelAdvicesFromAdvisor($originalClass, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
+                    foreach ($this->getClassLevelAdvicesFromAdvisor($class, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
                         foreach ($prefixAdvices as $name => $nameAdvices) {
                             foreach ($nameAdvices as $advisorKey => $advice) {
                                 $classAdvices[$prefix][$name][$advisorKey] = $advice;

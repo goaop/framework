@@ -272,14 +272,6 @@ class CachePathManager
     }
 
     /**
-     * Configures a new cache directory for aspects
-     */
-    public function setCacheDir(string $cacheDir): void
-    {
-        $this->cacheDir = $cacheDir;
-    }
-
-    /**
      * Returns cache path for requested file name, or null when caching is disabled
      */
     public function getCachePathForResource(string $resource): ?string

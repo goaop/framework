@@ -123,7 +123,8 @@ final class Container implements AspectContainer
     #[\Override]
     public function getValue(string $key): mixed
     {
-        if (!isset($this->values[$key])) {
+        // isset() first for speed, array_key_exists() keeps a stored null value retrievable
+        if (!isset($this->values[$key]) && !array_key_exists($key, $this->values)) {
             if (isset($this->factories[$key])) {
                 $this->materializeService($key);
             } else {
@@ -137,7 +138,7 @@ final class Container implements AspectContainer
     #[\Override]
     public function has(string $id): bool
     {
-        return isset($this->values[$id]) || isset($this->factories[$id]);
+        return isset($this->values[$id]) || array_key_exists($id, $this->values) || isset($this->factories[$id]);
     }
 
     #[\Override]

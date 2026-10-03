@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use PHPUnit\Framework\TestCase;
-use PhpParser\Node\Stmt\Function_;
 use ReflectionFunction;
 
 class FunctionGeneratorTest extends TestCase

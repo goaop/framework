@@ -41,8 +41,7 @@ use ReflectionProperty;
 /**
  * Generates intercepted property hooks for trait proxies.
  *
- * Unlike class proxies, trait proxies do not use a shared static $__joinPoints property.
- * Instead, each hook lazily creates and caches its own static $__joinPoint.
+ * Each hook lazily creates and caches its own static $__joinPoint.
  */
 final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropertyGenerator implements PropertyNodeProvider
 {

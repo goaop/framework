@@ -41,7 +41,7 @@ final readonly class AttributePointcut implements Pointcut
     /**
      * Attribute matcher constructor
      *
-     * @param int $pointcutKind Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY, KIND_TRAIT
+     * @param int $pointcutKind Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY
      * @param string $attributeClassName Attribute class to match
      */
     public function __construct(

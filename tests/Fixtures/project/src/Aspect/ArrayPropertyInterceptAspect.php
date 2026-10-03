@@ -10,8 +10,9 @@ use Go\Lang\Attribute\Around;
 class ArrayPropertyInterceptAspect implements Aspect
 {
     #[Around("access(protected Go\Tests\TestProject\Application\ArrayPropertyDemo->indirectModificationCheck)")]
-    public function aroundArrayFieldAccess(FieldAccess $access): void
+    public function aroundArrayFieldAccess(FieldAccess $access): mixed
     {
-        $access->proceed();
+        // An around advice must return the value of the field, it becomes the result of the access
+        return $access->proceed();
     }
 }
