@@ -39,7 +39,7 @@ if (!class_exists(Application::class)) {
     );
 }
 
-$app = new Application('Go! AOP', InstalledVersions::getVersion('goaop/framework'));
+$app = new Application('Go! AOP', InstalledVersions::getVersion('goaop/framework') ?? 'dev');
 $app->setCommandLoader(new FactoryCommandLoader([
     'cache:warmup:aop' => static fn(): CacheWarmupCommand => new CacheWarmupCommand(),
     'debug:aspect'     => static fn(): DebugAspectCommand => new DebugAspectCommand(),

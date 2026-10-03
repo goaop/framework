@@ -1,12 +1,19 @@
 includes:
-	- phpstan-baseline.php
-	- phpstan-baseline-tests.php
+    - phpstan-baseline.php
+    - phpstan-baseline-tests.php
+    - phpstan-baseline-strict.php
+    - phpstan-baseline-demos.php
 
 parameters:
   level: 10
   paths:
+    - bin/aspect
+    - demos
     - src
     - tests
+  strictRules:
+    # PHPUnit's assertions are static methods that are idiomatically called as $this->assert*()
+    dynamicCallOnStaticMethod: false
   excludePaths:
     # Snapshot fixtures for the weaving transformer: raw inputs plus generated
     # *-woven.php/*-proxy.php expected outputs (traits/proxies referencing
@@ -28,3 +35,7 @@ parameters:
     # tests/Fixtures/project/src plus its generated var/ cache) — same
     # source-shape-under-test reasoning as tests/Stubs.
     - tests/Fixtures
+    # Byte-for-byte snapshot of a compiled advisor cache (AdvisorCacheCompilerTest)
+    - tests/Core/Cache/_files
+    # Weaving cache of the demo application
+    - demos/cache
