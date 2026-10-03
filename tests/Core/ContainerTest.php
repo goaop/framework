@@ -142,6 +142,14 @@ class ContainerTest extends TestCase
         $this->assertTrue($isFresh);
     }
 
+    public function testNullValueIsStoredAndRetrievable(): void
+    {
+        $this->container->add('nothing', null);
+
+        $this->assertTrue($this->container->has('nothing'));
+        $this->assertNull($this->container->getValue('nothing'));
+    }
+
     public function testHasMethod(): void
     {
         $this->assertFalse($this->container->has('test'));
