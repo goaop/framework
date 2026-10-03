@@ -276,16 +276,91 @@ class AspectKernelTest extends TestCase
         ]]);
     }
 
-    public function testNormalizeOptionsFallsBackToDefaultContainerClassForUnknownClassString(): void
+    public function testNormalizeOptionsThrowsForUnknownContainerClass(): void
     {
         $kernel = $this->makeKernel();
 
-        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [[
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('Container class "Totally\\Unknown\\ClassThatDoesNotExist" does not exist.');
+
+        $this->invokeProtected($kernel, 'normalizeOptions', [[
             'cacheDir'       => '/some/cache/dir',
             'containerClass' => 'Totally\\Unknown\\ClassThatDoesNotExist',
         ]]);
+    }
 
-        $this->assertSame(Container::class, $normalized['containerClass']);
+    public function testNormalizeOptionsAcceptsZeroAsCacheDirName(): void
+    {
+        $kernel = $this->makeKernel();
+
+        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [['cacheDir' => '0']]);
+
+        $this->assertSame('0', $normalized['cacheDir']);
+    }
+
+    public function testNormalizeOptionsRejectsUnknownOptionWithSuggestion(): void
+    {
+        $kernel = $this->makeKernel();
+
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('Unknown kernel option "cachedir", did you mean "cacheDir"?');
+
+        $this->invokeProtected($kernel, 'normalizeOptions', [[
+            'cacheDir' => '/some/cache/dir',
+            'cachedir' => '/some/other/dir',
+        ]]);
+    }
+
+    public function testNormalizeOptionsRejectsUnknownOptionWithoutSuggestion(): void
+    {
+        $kernel = $this->makeKernel();
+
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('Unknown kernel option "frontController". Known options are: debug, appDir');
+
+        $this->invokeProtected($kernel, 'normalizeOptions', [[
+            'cacheDir'        => '/some/cache/dir',
+            'frontController' => '/web/index.php',
+        ]]);
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function invalidFeatures(): iterable
+    {
+        yield 'unknown bit' => [8];
+        yield 'known and unknown bits' => [Features::INTERCEPT_FUNCTIONS | 128];
+        yield 'string' => ['1'];
+        yield 'boolean' => [true];
+    }
+
+    #[DataProvider('invalidFeatures')]
+    public function testNormalizeOptionsRejectsInvalidFeatures(mixed $features): void
+    {
+        $kernel = $this->makeKernel();
+
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('Option "features" must be a combination of Go\\Aop\\Features constants');
+
+        $this->invokeProtected($kernel, 'normalizeOptions', [[
+            'cacheDir' => '/some/cache/dir',
+            'features' => $features,
+        ]]);
+    }
+
+    public function testNormalizeOptionsAcceptsEveryKnownFeature(): void
+    {
+        $kernel   = $this->makeKernel();
+        $features = Features::INTERCEPT_FUNCTIONS | Features::INTERCEPT_INITIALIZATIONS
+            | Features::INTERCEPT_INCLUDES | Features::PREBUILT_CACHE;
+
+        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [[
+            'cacheDir' => '/some/cache/dir',
+            'features' => $features,
+        ]]);
+
+        $this->assertSame($features, $normalized['features']);
     }
 
     /**

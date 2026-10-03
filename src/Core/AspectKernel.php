@@ -28,8 +28,6 @@ use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
 use ReflectionClass;
 
-use function define;
-
 /**
  * Abstract aspect kernel is used to prepare an application to work with aspects.
  *
@@ -138,16 +136,16 @@ abstract class AspectKernel
         }
 
         $this->options = $this->normalizeOptions($options);
-        define('AOP_ROOT_DIR', $this->options['appDir']);
-        define('AOP_CACHE_DIR', $this->options['cacheDir']);
+        if (!defined('AOP_ROOT_DIR')) {
+            define('AOP_ROOT_DIR', $this->options['appDir']);
+        }
+        if (!defined('AOP_CACHE_DIR')) {
+            define('AOP_CACHE_DIR', $this->options['cacheDir']);
+        }
 
         $resourcesToTrack = [];
         if ($this->options['debug']) {
             $resourcesToTrack[] = $this->getFileNameWhereInitialized();
-        }
-
-        if (!is_subclass_of($this->options['containerClass'], AspectContainer::class)) {
-            throw new InvalidConfigurationException("Invalid aspect container class");
         }
 
         $container = $this->container = new $this->options['containerClass']($resourcesToTrack);
@@ -262,10 +260,27 @@ abstract class AspectKernel
      */
     protected function normalizeOptions(array $options): array
     {
-        $merged = [...$this->getDefaultOptions(), ...$options];
+        $defaultOptions = $this->getDefaultOptions();
+        $unknownOptions = array_diff_key($options, $defaultOptions);
+        foreach (array_keys($unknownOptions) as $unknownOption) {
+            $suggestion = null;
+            foreach (array_keys($defaultOptions) as $knownOption) {
+                if (levenshtein(strtolower((string) $unknownOption), strtolower($knownOption)) <= 3) {
+                    $suggestion = $knownOption;
+                    break;
+                }
+            }
+            throw new InvalidConfigurationException(sprintf(
+                'Unknown kernel option "%s"%s. Known options are: %s.',
+                $unknownOption,
+                $suggestion !== null ? sprintf(', did you mean "%s"?', $suggestion) : '',
+                implode(', ', array_keys($defaultOptions)),
+            ));
+        }
+        $merged = [...$defaultOptions, ...$options];
 
         $cacheDir = is_string($merged['cacheDir'] ?? null) ? $merged['cacheDir'] : null;
-        if (empty($cacheDir)) {
+        if ($cacheDir === null || $cacheDir === '') {
             throw new InvalidConfigurationException('You need to provide valid cache directory for Go! AOP framework.');
         }
 
@@ -293,14 +308,26 @@ abstract class AspectKernel
                 is_int($cacheFileMode) ? sprintf('0%o', $cacheFileMode) : get_debug_type($cacheFileMode),
             ));
         }
-        $features      = is_int($merged['features'] ?? null) ? $merged['features'] : 0;
+        $features = $merged['features'] ?? 0;
+        if (!is_int($features) || ($features & ~Features::ALL) !== 0) {
+            throw new InvalidConfigurationException(sprintf(
+                'Option "features" must be a combination of Go\\Aop\\Features constants, got %s.',
+                is_int($features) ? (string) $features : get_debug_type($features),
+            ));
+        }
         $rawIncludePaths = is_array($merged['includePaths'] ?? null) ? $merged['includePaths'] : [];
         $includePaths    = array_values(array_filter($rawIncludePaths, is_string(...)));
         $debug         = is_bool($merged['debug'] ?? null) ? $merged['debug'] : false;
 
         $containerClass       = static::$containerClass;
         $containerClassOption = $merged['containerClass'] ?? null;
-        if (is_string($containerClassOption) && class_exists($containerClassOption)) {
+        if ($containerClassOption !== null) {
+            if (!is_string($containerClassOption) || !class_exists($containerClassOption)) {
+                throw new InvalidConfigurationException(sprintf(
+                    'Container class %s does not exist.',
+                    is_string($containerClassOption) ? '"' . $containerClassOption . '"' : get_debug_type($containerClassOption),
+                ));
+            }
             if (!is_a($containerClassOption, AspectContainer::class, true)) {
                 throw new InvalidConfigurationException(sprintf(
                     'Container class "%s" must extend %s.',
