@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy;
 
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\InterceptorInjector;
@@ -82,6 +83,13 @@ class FunctionProxyGenerator
         $functionAdvices  = $adviceNames[AspectContainer::FUNCTION_PREFIX] ?? [];
         foreach (array_keys($functionAdvices) as $functionName) {
             $functionReflection = new ReflectionFunction($functionName);
+            if ($functionReflection->returnsReference()) {
+                throw new WeavingException(sprintf(
+                    'Function %s() returns by reference and can not be intercepted: the joinpoint returns values, '
+                    . 'so the reference would be lost. Exclude it from the pointcut with "&& !matchReturningByReference()".',
+                    $functionName,
+                ));
+            }
             $functionBody       = $this->getJoinpointInvocationBody($functionReflection);
             $funcGenerator      = FunctionGenerator::fromReflection($functionReflection);
             $funcGenerator->body = $functionBody;

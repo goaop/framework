@@ -40,3 +40,10 @@ function funcGenHelper_classReturn(): Exception
 function funcGenHelper_deprecated(): void {}
 
 function funcGenHelper_noAttr(): void {}
+
+function &funcGenHelper_byReference(): array
+{
+    static $items = [];
+
+    return $items;
+}

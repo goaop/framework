@@ -126,6 +126,9 @@ deferred registrations of services implementing an interface.
 Pointcuts
 ---------
 
+- **Methods returning by reference are rejected.** Weaving a method or function declared `function &name()` fails
+  with a `WeavingException`, because the joinpoint would return a copy instead of the reference (3.x returned a
+  copy with a notice). Add `&& !matchReturningByReference()` to pointcuts that match such methods.
 - **`?` wildcard removed.** `?` in name and type patterns is no longer a single-character wildcard,
   because it collided with nullable types. In return-type patterns a leading `?` is a nullable
   marker (`?Foo` equals `Foo|null`). Replace `?` wildcards with `*`.
