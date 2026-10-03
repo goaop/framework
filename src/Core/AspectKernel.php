@@ -137,7 +137,6 @@ abstract class AspectKernel
         $container = $this->container = new $this->options['containerClass']($resourcesToTrack);
         $container->add(AspectKernel::class, $this);
         $container->add('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
-        $container->add('kernel.options', $this->options);
 
         // The framework's own services are deferred definitions registered through the
         // generic lazy container API - the container itself knows nothing about them.

@@ -45,7 +45,6 @@ class ContainerTest extends TestCase
             'containerClass' => Container::class,
         ]);
         $this->container->add(AspectKernel::class, $mockKernel);
-        $this->container->add('kernel.options', ['cacheDir' => '/tmp']);
         $this->container->add('kernel.interceptFunctions', false);
         FrameworkServices::register($this->container);
     }

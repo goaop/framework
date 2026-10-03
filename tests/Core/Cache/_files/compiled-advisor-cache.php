@@ -35,7 +35,7 @@ return [
                 new AndPointcut(
                     1,
                     new NamePointcut(
-                        127,
+                        119,
                         'Go\Tests\TestProject\Application\*',
                         true,
                     ),
@@ -69,7 +69,7 @@ return [
             new AndPointcut(
                 516,
                 new NamePointcut(
-                    127,
+                    119,
                     'Go\Tests\TestProject\Application\**',
                     true,
                 ),

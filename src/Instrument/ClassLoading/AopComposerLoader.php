@@ -174,12 +174,4 @@ class AopComposerLoader
 
         return $file;
     }
-
-    /**
-     * Whether or not loader was initialized
-     */
-    public static function wasInitialized(): bool
-    {
-        return self::$wasInitialized;
-    }
 }
