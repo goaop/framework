@@ -43,6 +43,7 @@
 
 ## PHP compat: Property hooks (8.4+)
 - Intercepted properties: moved from trait to proxy, emitted with get/set hooks dispatching through ClassFieldAccess
+- Hooks pass values by value (`read()`/`write()`); array properties get only `&get` → `readByReference()`. No default → `isset($this->p) || $__joinPoint->getField()->isInitialized($this)` guard (built in AbstractInterceptedPropertyGenerator)
 - Woven trait: property declarations neutralized (avoid conflicts, preserve line numbers)
 - Readonly properties and properties with existing hooks: skipped for access() interception
 

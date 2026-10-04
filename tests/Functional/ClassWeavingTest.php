@@ -21,6 +21,7 @@ use Go\Tests\TestProject\Application\FinalClass;
 use Go\Tests\TestProject\Application\FooInterface;
 use Go\Tests\TestProject\Application\Main;
 use Go\Tests\TestProject\Application\NewInInitializerClass;
+use Go\Tests\TestProject\Application\NullablePropertyDemo;
 use Go\Tests\TestProject\Application\PromotedPropertyClass;
 use Go\Tests\TestProject\Application\SingleLinePromotedClass;
 use Symfony\Component\Process\PhpExecutableFinder;
@@ -263,5 +264,40 @@ class ClassWeavingTest extends BaseFunctionalTestCase
             'Running the woven class failed: ' . $process->getOutput() . $process->getErrorOutput(),
         );
         $this->assertSame('6,7', trim($process->getOutput()));
+    }
+
+    /**
+     * Null values of intercepted properties are read and written through the advices
+     */
+    public function testNullablePropertyInterceptionHandlesNullValues(): void
+    {
+        $this->assertPropertyWoven(
+            NullablePropertyDemo::class,
+            'label',
+            'Go\\Tests\\TestProject\\Aspect\\NullablePropertyInterceptAspect->beforeNullableFieldAccess',
+        );
+
+        // The woven class only exists in the fixture application, so it is exercised in a subprocess
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        $script = sprintf(
+            'include %s; echo (new %s())->describe(), "|", %s::$accesses;',
+            var_export($this->configuration['frontController'], true),
+            '\\' . NullablePropertyDemo::class,
+            '\\Go\\Tests\\TestProject\\Aspect\\NullablePropertyInterceptAspect',
+        );
+        assert($phpExecutable !== false);
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
+        );
+        $process->run();
+
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Running the woven class failed: ' . $process->getOutput() . $process->getErrorOutput(),
+        );
+        // Reads of label (twice) and note, writes of note and label: 5 accesses through the advice
+        $this->assertSame('NULL,NULL,set|5', trim($process->getOutput()));
     }
 }

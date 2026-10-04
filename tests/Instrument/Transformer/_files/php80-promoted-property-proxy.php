@@ -7,7 +7,6 @@ use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Intercept\FieldAccessType;
 /**
  * Class with promoted constructor properties (multi-line constructor) used for
  * testing interception of promoted properties (issue #599).
@@ -28,7 +27,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name')),
                 ],
             );
-            return $__joinPoint->__invoke($this, FieldAccessType::Read, $this->name);
+            return $__joinPoint->read($this, $this->name);
         }
         set {
             /** @var FieldAccess<self, string> $__joinPoint */
@@ -39,7 +38,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->name')),
                 ],
             );
-            $this->name = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this->name);
+            $this->name = $__joinPoint->write($this, $value, $this->name);
         }
     }
     public private(set) int $counter = 1 {
@@ -52,7 +51,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter')),
                 ],
             );
-            return $__joinPoint->__invoke($this, FieldAccessType::Read, $this->counter);
+            return $__joinPoint->read($this, $this->counter);
         }
         set {
             /** @var FieldAccess<self, int> $__joinPoint */
@@ -63,7 +62,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\PromotedPropertyClass->counter')),
                 ],
             );
-            $this->counter = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this->counter);
+            $this->counter = $__joinPoint->write($this, $value, $this->counter);
         }
     }
     public function __construct(string $name = 'initial', int $counter = 1, ?\ArrayObject $bag = null)

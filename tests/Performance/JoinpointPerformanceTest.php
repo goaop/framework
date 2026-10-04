@@ -19,7 +19,6 @@ use Go\Aop\Framework\DynamicTraitAliasMethodInvocation;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Aop\Framework\ReflectionFunctionInvocation;
 use Go\Aop\Framework\StaticTraitAliasMethodInvocation;
-use Go\Aop\Intercept\FieldAccessType;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Stubs\TraitAliasProxy;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -77,22 +76,13 @@ final class JoinpointPerformanceTest extends TestCase
             $fieldAccess = new ClassFieldAccess($advices, PerformanceTarget::class, 'value');
             yield "field read, {$adviceName}" => [
                 static fn(): mixed => $target->value,
-                static function () use ($fieldAccess, $target): mixed {
-                    $value = $target->value;
-
-                    return $fieldAccess($target, FieldAccessType::Read, $value);
-                },
-                $advices === [] ? 40.0 : 55.0,
+                static fn(): mixed => $fieldAccess->read($target, $target->value),
+                $advices === [] ? 20.0 : 30.0,
             ];
             yield "field write, {$adviceName}" => [
                 static fn(): mixed => $target->value = 'new',
-                static function () use ($fieldAccess, $target): mixed {
-                    $newValue = 'new';
-                    $value    = $target->value;
-
-                    return $fieldAccess($target, FieldAccessType::Write, $newValue, $value);
-                },
-                $advices === [] ? 35.0 : 40.0,
+                static fn(): mixed => $fieldAccess->write($target, 'new', $target->value),
+                $advices === [] ? 14.0 : 22.0,
             ];
 
             $constructor = new ReflectionConstructorInvocation($advices, PerformanceTarget::class);

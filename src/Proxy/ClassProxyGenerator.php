@@ -23,7 +23,6 @@ use Go\Aop\Intercept\ClassJoinpoint;
 use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Intercept\FieldAccessType;
 use Go\Aop\Intercept\StaticMethodInvocation;
 use Go\Aop\Proxy;
 use Go\Aop\StaticInitializationAware;
@@ -135,7 +134,6 @@ class ClassProxyGenerator
         }
         if (!empty($propertyAdvices)) {
             $this->imports->import(FieldAccess::class);
-            $this->imports->import(FieldAccessType::class);
         }
 
         $generatedProperties = [];

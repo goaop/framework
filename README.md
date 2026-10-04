@@ -53,13 +53,15 @@ Go! AOP intercepts field access via native PHP 8.4 property hooks on generated p
 For array-typed intercepted properties, the proxy emits only a by-reference `&get` hook (without `set`) to keep
 indirect modification operations like `array_push($this->items, ...)` valid.
 
-For typed properties without a default value, generated `get` hooks include an initialization guard:
+Generated hooks pass values to the field access joinpoint by value (`read()`/`write()`), only the `&get` hook of
+array properties uses `readByReference()`. For typed properties without a default value, generated hooks include an
+initialization guard:
 
 ```php
-if ($fieldAccess->getField()->isInitialized($this)) {
-    $value = &$fieldAccess->__invoke($this, FieldAccessType::Read, $this->property);
+if (isset($this->property) || $__joinPoint->getField()->isInitialized($this)) {
+    return $__joinPoint->read($this, $this->property);
 } else {
-    $value = $fieldAccess->__invoke($this, FieldAccessType::Read);
+    return $__joinPoint->read($this);
 }
 ```
 

@@ -28,16 +28,6 @@ use ReflectionProperty;
 final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
 {
     /**
-     * Mapping of access types to property names
-     *
-     * @var array<key-of<FieldAccessType>, string> $propertyMap
-     */
-    private static array $propertyMap = [
-        FieldAccessType::Read->name => 'value',
-        FieldAccessType::Write->name => 'newValue',
-    ];
-
-    /**
      * Instance of object for accessing
      * @phpstan-var T
      */
@@ -59,22 +49,25 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     private readonly string $fieldName;
 
     /**
-     * Reference to the original value of property
+     * Current value of property, bound to the stored array during {@see self::readByReference()}
      *
-     * Maybe uninitialized if the property itself is not initialized yet
+     * Holds null when the property is not initialized yet, see $isInitialized
      *
      * @phpstan-var V Templated type
      */
-    private mixed $value;
+    private mixed $value = null;
 
     /**
-     * New value to set
-     *
-     * Maybe uninitialized if set hook has not called yet
+     * New value to set, applicable only for WRITE access type
      *
      * @phpstan-var V Templated type
      */
-    private mixed $newValue;
+    private mixed $newValue = null;
+
+    /**
+     * Whether the property had a value when the access started
+     */
+    private bool $isInitialized = false;
 
     /**
      * Access type for field access
@@ -84,7 +77,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     /**
      * Stack frames of the outer accesses interrupted by a nested access (an advice touching the same property)
      *
-     * @var array<int, array{T, FieldAccessType, int, V, V}>
+     * @var array<int, array{T, FieldAccessType, int, bool, V, V}>
      */
     private array $stackFrames = [];
 
@@ -118,10 +111,10 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      */
     public function getValue(): mixed
     {
-        if (!$this->getField()->isInitialized($this->instance)) {
+        if (!$this->isInitialized) {
             throw new AspectException("Property {$this->fieldName} is not initialized yet");
         }
-        // We can not use ReflectionProperty->getValue() here, as it will call again the hook
+
         return $this->value;
     }
 
@@ -146,66 +139,109 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function proceed(): mixed
     {
         if (isset($this->advices[$this->current])) {
-            $currentInterceptor = $this->advices[$this->current++];
-
-            return $currentInterceptor->invoke($this);
+            return $this->advices[$this->current++]->invoke($this);
+        }
+        if ($this->accessType === FieldAccessType::Write) {
+            return $this->newValue;
+        }
+        if ($this->isInitialized) {
+            return $this->value;
         }
 
-        // Next line can cause an Error if the property is not initialized yet
-        // To prevent this error, use Around hook or ensure that underlying property is initialized
-        return $this->{self::$propertyMap[$this->accessType->name]};
+        // Reading the property without interception fails the same way: an around advice can return a value instead
+        throw new AspectException(sprintf(
+            'Typed property %s::$%s must not be accessed before initialization',
+            $this->getField()->class,
+            $this->fieldName,
+        ));
     }
 
     /**
-     * Invokes current field access with all interceptors
-     *
-     * @phpstan-param T $instance Instance of object for accessing
-     * @param FieldAccessType $accessType Access type for field access
-     * @phpstan-param V ...$values Original value of property + new value (for write operation)
-     *
-     * @phpstan-return V Templated return type of property
-     *
-     * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
+     * Hot path: runs on every intercepted read. The code is inlined on purpose and the frame handling is copied
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed
+    public function read(object $instance, mixed $value = null): mixed
     {
         if ($this->level > 0) {
-            // Nested access: keep the outer state and value references. No initialization checks on purpose:
-            // referencing an uninitialized value initializes it with null for the outer access
-            $this->stackFrames[] = [$this->instance, $this->accessType, $this->current, &$this->value, &$this->newValue];
+            $this->stackFrames[] = [$this->instance, $this->accessType, $this->current, $this->isInitialized, $this->value, $this->newValue];
         }
         try {
             ++$this->level;
-            $this->current    = 0;
-            $this->instance   = $instance;
-            $this->accessType = $accessType;
-            unset($this->value, $this->newValue);
-            // Name of the property that carries the result: value for READ, newValue for WRITE
-            $resultProperty = self::$propertyMap[$accessType->name];
+            $this->current       = 0;
+            $this->instance      = $instance;
+            $this->accessType    = FieldAccessType::Read;
+            $this->isInitialized = \func_num_args() > 1;
+            $this->value         = $value;
 
-            // $values[0] - either we have a reference to the original property for READ
-            // OR reference to the new value for WRITE.
-            // Can be unset only for READ operation when property is not initialized yet
-            if (isset($values[0])) {
-                $this->{$resultProperty} = &$values[0];
-            }
-            // $values[1] - either we have a reference to the original property for WRITE
-            // OR can be unset for WRITE operation when property is not initialized yet
-            if (isset($values[1])) {
-                $this->value = &$values[1];
-            }
-
-            $this->{$resultProperty} = $this->proceed();
-
-            return $this->{$resultProperty};
+            return $this->proceed();
         } finally {
             --$this->level;
-            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames))) {
-                [$this->instance, $this->accessType, $this->current] = $stackFrame;
-                $this->value    = &$stackFrame[3];
-                $this->newValue = &$stackFrame[4];
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames)) !== null) {
+                [$this->instance, $this->accessType, $this->current, $this->isInitialized, $this->value, $this->newValue] = $stackFrame;
+            }
+        }
+    }
+
+    /**
+     * The joinpoint is bound to the stored array during the access: the result of the advices is written to it and
+     * returned by reference. The binding is released afterwards, so later accesses never write to the array.
+     *
+     * Hot path: runs on every intercepted read of an array property. The code is inlined on purpose and the frame
+     * handling is copied into every joinpoint class: do not extract parts of it into methods, and do not add object
+     * allocations, reflection or extra method calls here.
+     */
+    public function &readByReference(object $instance, mixed &$value = null): mixed
+    {
+        if ($this->level > 0) {
+            $this->stackFrames[] = [$this->instance, $this->accessType, $this->current, $this->isInitialized, &$this->value, $this->newValue];
+        }
+        try {
+            ++$this->level;
+            $this->current       = 0;
+            $this->instance      = $instance;
+            $this->accessType    = FieldAccessType::Read;
+            $this->isInitialized = \func_num_args() > 1;
+            $this->value         = &$value;
+            $this->value         = $this->proceed();
+        } finally {
+            --$this->level;
+            unset($this->value);
+            $this->value = $value;
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames)) !== null) {
+                [$this->instance, $this->accessType, $this->current, $this->isInitialized] = $stackFrame;
+                $this->value    = &$stackFrame[4];
+                $this->newValue = $stackFrame[5];
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * Hot path: runs on every intercepted write. The code is inlined on purpose and the frame handling is copied
+     * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
+     * reflection or extra method calls here.
+     */
+    public function write(object $instance, mixed $newValue, mixed $value = null): mixed
+    {
+        if ($this->level > 0) {
+            $this->stackFrames[] = [$this->instance, $this->accessType, $this->current, $this->isInitialized, $this->value, $this->newValue];
+        }
+        try {
+            ++$this->level;
+            $this->current       = 0;
+            $this->instance      = $instance;
+            $this->accessType    = FieldAccessType::Write;
+            $this->isInitialized = \func_num_args() > 2;
+            $this->value         = $value;
+            $this->newValue      = $newValue;
+
+            return $this->proceed();
+        } finally {
+            --$this->level;
+            if ($this->level > 0 && ($stackFrame = array_pop($this->stackFrames)) !== null) {
+                [$this->instance, $this->accessType, $this->current, $this->isInitialized, $this->value, $this->newValue] = $stackFrame;
             }
         }
     }

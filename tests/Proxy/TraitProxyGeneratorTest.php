@@ -213,8 +213,8 @@ class TraitProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('public int $public = ' . T_PUBLIC . ' {', $output);
         $this->assertStringContainsString('static $__joinPoint = InterceptorInjector::forProperty', $output);
         $this->assertStringContainsString("InterceptorInjector::forProperty(", $output);
-        $this->assertStringContainsString('FieldAccessType::Read', $output);
-        $this->assertStringContainsString('FieldAccessType::Write', $output);
+        $this->assertStringContainsString('return $__joinPoint->read($this, $this->public);', $output);
+        $this->assertStringContainsString('$this->public = $__joinPoint->write($this, $value, $this->public);', $output);
         $this->assertStringNotContainsString('$__joinPoints[', $output);
     }
 

@@ -311,23 +311,19 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
-            "if (\$__joinPoint->getField()->isInitialized(\$this)) {",
+            "if (isset(\$this->uninitialized) || \$__joinPoint->getField()->isInitialized(\$this)) {\n                return \$__joinPoint->read(\$this, \$this->uninitialized);",
             $proxyFileContent,
         );
         $this->assertStringContainsString(
-            "return \$__joinPoint->__invoke(\$this, FieldAccessType::Read);",
+            "} else {\n                return \$__joinPoint->read(\$this);",
             $proxyFileContent,
         );
         $this->assertStringContainsString(
-            "if (\$__joinPoint->getField()->isInitialized(\$this)) {",
+            "if (isset(\$this->uninitialized) || \$__joinPoint->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$__joinPoint->write(\$this, \$value, \$this->uninitialized);",
             $proxyFileContent,
         );
         $this->assertStringContainsString(
-            "if (\$__joinPoint->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, FieldAccessType::Write, \$value, \$this->uninitialized);",
-            $proxyFileContent,
-        );
-        $this->assertStringContainsString(
-            "} else {\n                \$this->uninitialized = \$__joinPoint->__invoke(\$this, FieldAccessType::Write, \$value);",
+            "} else {\n                \$this->uninitialized = \$__joinPoint->write(\$this, \$value);",
             $proxyFileContent,
         );
     }
@@ -357,7 +353,8 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertMatchesRegularExpression('/&get\s*\\{/', $proxyFileContent);
-        $this->assertStringNotContainsString("FieldAccessType::Write, \$this->items, \$value", $proxyFileContent);
+        $this->assertStringContainsString('return $__joinPoint->readByReference($this, $this->items);', $proxyFileContent);
+        $this->assertStringNotContainsString('$__joinPoint->write(', $proxyFileContent);
     }
 
     /**

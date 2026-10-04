@@ -7,7 +7,6 @@ use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Intercept\FieldAccessType;
 /**
  * Class with a promoted constructor property in a single-line constructor used for
  * testing interception of promoted properties (issue #599).
@@ -27,7 +26,7 @@ class SingleLinePromotedClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->tag')),
                 ],
             );
-            return $__joinPoint->__invoke($this, FieldAccessType::Read, $this->tag);
+            return $__joinPoint->read($this, $this->tag);
         }
         set {
             /** @var FieldAccess<self, string> $__joinPoint */
@@ -38,7 +37,7 @@ class SingleLinePromotedClass implements \Go\Aop\Proxy
                     Interceptor::before(The::advice('advisor.Go\Tests\TestProject\Application\SingleLinePromotedClass->tag')),
                 ],
             );
-            $this->tag = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this->tag);
+            $this->tag = $__joinPoint->write($this, $value, $this->tag);
         }
     }
     public function __construct(string $tag = 'default')

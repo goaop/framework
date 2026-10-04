@@ -93,13 +93,39 @@ interface FieldAccess extends ClassJoinpoint
     public function isDynamic(): true;
 
     /**
-     * Invokes current field access with all interceptors
+     * Invokes the read access with all interceptors, called by the generated `get` hook
+     *
+     * The value is passed by value: a hook without indirect modification needs no reference, and an advice result
+     * never changes the stored value.
      *
      * @phpstan-param T $instance Instance of object for accessing
-     * @param FieldAccessType $accessType Access type for field access
-     * @phpstan-param V ...$values Original value of property + new value by reference (for write operation)
+     * @phpstan-param V $value Current value of the property, omitted when the property is not initialized yet
      *
-     * @phpstan-return V Templated return type of property
+     * @phpstan-return V Value returned to the reader
      */
-    public function &__invoke(object $instance, FieldAccessType $accessType, mixed &...$values): mixed;
+    public function read(object $instance, mixed $value = null): mixed;
+
+    /**
+     * Invokes the read access with all interceptors and returns the property by reference
+     *
+     * Called by the generated `&get` hook of array properties, so indirect modifications like
+     * `$object->items[] = $item` change the stored array.
+     *
+     * @phpstan-param T $instance Instance of object for accessing
+     * @phpstan-param V $value Reference to the property, omitted when the property is not initialized yet
+     *
+     * @phpstan-return V Reference to the value returned to the reader
+     */
+    public function &readByReference(object $instance, mixed &$value = null): mixed;
+
+    /**
+     * Invokes the write access with all interceptors, called by the generated `set` hook
+     *
+     * @phpstan-param T $instance Instance of object for accessing
+     * @phpstan-param V $newValue Value to set
+     * @phpstan-param V $value Current value of the property, omitted when the property is not initialized yet
+     *
+     * @phpstan-return V Value to store in the property
+     */
+    public function write(object $instance, mixed $newValue, mixed $value = null): mixed;
 }

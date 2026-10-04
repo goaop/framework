@@ -14,26 +14,18 @@ namespace Go\Proxy\Part;
 
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Aop\Framework\InterceptorInjector;
-use Go\Aop\Intercept\FieldAccessType;
 use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\ProxyImports;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
-use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\ClassConstFetch;
-use PhpParser\Node\Expr\MethodCall;
-use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Name;
 use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Scalar\String_;
-use PhpParser\Node\Stmt\Else_;
-use PhpParser\Node\Stmt\Expression;
-use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Property as PropertyNode;
-use PhpParser\Node\Stmt\Return_;
 use PhpParser\Node\Stmt\Static_;
 use PhpParser\Node\StaticVar;
 use ReflectionProperty;
@@ -72,80 +64,17 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
 
     private function createGetHook(bool $returnsByReference): PropertyHook
     {
-        $propertyName = $this->property->getName();
-        $readInvokeWithValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
-            new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Read')),
-            new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
-        ]);
-        $readInvokeWithoutValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
-            new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Read')),
-        ]);
-
         return new PropertyHook('get', [
             ...$this->getFieldAccessInitializationStatements(),
-            $this->hasPotentiallyUninitializedTypedProperty()
-                ? new If_(
-                    new MethodCall(
-                        new MethodCall(new Variable('__joinPoint'), 'getField'),
-                        'isInitialized',
-                        [new Arg(new Variable('this'))],
-                    ),
-                    [
-                        'stmts' => [
-                            new Return_($readInvokeWithValue),
-                        ],
-                        'else' => new Else_([new Return_($readInvokeWithoutValue)]),
-                    ],
-                )
-                : new Return_($readInvokeWithValue),
+            $this->createReadStatement($returnsByReference),
         ], ['byRef' => $returnsByReference]);
     }
 
     private function createSetHook(): PropertyHook
     {
-        $propertyName = $this->property->getName();
-        $writeInvokeWithBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
-            new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Write')),
-            new Arg(new Variable('value')),
-            new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
-        ]);
-        $writeInvokeWithoutBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
-            new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Write')),
-            new Arg(new Variable('value')),
-        ]);
-
         return new PropertyHook('set', [
             ...$this->getFieldAccessInitializationStatements(),
-            $this->hasPotentiallyUninitializedTypedProperty()
-                ? new If_(
-                    new MethodCall(
-                        new MethodCall(new Variable('__joinPoint'), 'getField'),
-                        'isInitialized',
-                        [new Arg(new Variable('this'))],
-                    ),
-                    [
-                        'stmts' => [
-                            new Expression(new Assign(
-                                new PropertyFetch(new Variable('this'), $propertyName),
-                                $writeInvokeWithBackedValue,
-                            )),
-                        ],
-                        'else' => new Else_([
-                            new Expression(new Assign(
-                                new PropertyFetch(new Variable('this'), $propertyName),
-                                $writeInvokeWithoutBackedValue,
-                            )),
-                        ]),
-                    ],
-                )
-                : new Expression(new Assign(
-                    new PropertyFetch(new Variable('this'), $propertyName),
-                    $writeInvokeWithBackedValue,
-                )),
+            $this->createWriteStatement(),
         ]);
     }
 

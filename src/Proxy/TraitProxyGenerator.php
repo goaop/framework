@@ -19,7 +19,6 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Intercept\FieldAccessType;
 use Go\Aop\Intercept\StaticMethodInvocation;
 use Go\Core\AspectContainer;
 use Go\Proxy\Generator\DocBlockGenerator;
@@ -81,7 +80,6 @@ final class TraitProxyGenerator extends ClassProxyGenerator
         }
         if (!empty($propertyAdvices)) {
             $this->imports->import(FieldAccess::class);
-            $this->imports->import(FieldAccessType::class);
         }
 
         $generatedMethods     = $this->interceptMethods($originalTrait, $interceptedMethods);
