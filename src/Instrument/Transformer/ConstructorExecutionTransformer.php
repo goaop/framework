@@ -25,7 +25,6 @@ use PhpParser\Node\PropertyItem;
 use PhpParser\Node\StaticVar;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\EnumCase;
-use WeakReference;
 
 /**
  * Transforms the source code to add an ability to intercept new instances creation
@@ -78,10 +77,10 @@ final class ConstructorExecutionTransformer implements NodeRewriter
     /**
      * Rewrites the "new" expression with our implementation
      */
-    public function rewriteNode(Node $node, StreamMetaData $file): bool
+    public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
     {
         // Anonymous classes (`new class {...}`) have no name to construct through the interceptor
-        if (!$node instanceof New_ || $node->class instanceof Class_ || self::isInConstantExpression($node)) {
+        if (!$node instanceof New_ || $node->class instanceof Class_ || self::isInConstantExpression($node, $ancestors)) {
             return false;
         }
         $startPosition   = $node->getAttribute('startTokenPos');
@@ -113,12 +112,14 @@ final class ConstructorExecutionTransformer implements NodeRewriter
      *
      * Property hooks on promoted parameters contain runtime code, so for the containers other
      * than attributes only the initializer child expression is a constant expression.
+     *
+     * @param list<Node> $ancestors Nodes enclosing the expression, from the outermost to its parent
      */
-    private static function isInConstantExpression(New_ $newExpression): bool
+    private static function isInConstantExpression(New_ $newExpression, array $ancestors): bool
     {
-        $child  = $newExpression;
-        $parent = self::getParent($child);
-        while ($parent !== null) {
+        $child = $newExpression;
+        for ($index = count($ancestors) - 1; $index >= 0; $index--) {
+            $parent    = $ancestors[$index];
             $constExpr = match (true) {
                 $parent instanceof Attribute    => $child,
                 $parent instanceof Param        => $parent->default,
@@ -131,22 +132,10 @@ final class ConstructorExecutionTransformer implements NodeRewriter
             if ($constExpr === $child) {
                 return true;
             }
-            $child  = $parent;
-            $parent = self::getParent($child);
+            $child = $parent;
         }
 
         return false;
-    }
-
-    /**
-     * Returns the parent node connected by {@see SyntaxTreeRewriter}
-     */
-    private static function getParent(Node $node): ?Node
-    {
-        $parentReference = $node->getAttribute('weak_parent');
-        $parent          = $parentReference instanceof WeakReference ? $parentReference->get() : null;
-
-        return $parent instanceof Node ? $parent : null;
     }
 
     /**

@@ -184,8 +184,8 @@ class MagicConstantTransformerTest extends TestCase
         $expected = $metadata->source;
         $rule     = new MagicConstantTransformer($this->getKernelMock(['cacheDir' => __DIR__, 'appDir' => dirname(__DIR__)]));
 
-        $this->assertFalse($rule->rewriteNode(new Dir(), $metadata));
-        $this->assertFalse($rule->rewriteNode(new MethodCall(new Variable('r'), 'getFileName'), $metadata));
+        $this->assertFalse($rule->rewriteNode(new Dir(), $metadata, []));
+        $this->assertFalse($rule->rewriteNode(new MethodCall(new Variable('r'), 'getFileName'), $metadata, []));
         $this->assertSame($expected, $metadata->source);
     }
 }

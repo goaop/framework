@@ -632,7 +632,7 @@ final class AspectKernelTestCustomNodeRewriter implements NodeRewriter
         return [String_::class];
     }
 
-    public function rewriteNode(Node $node, StreamMetaData $file): bool
+    public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
     {
         $position = $node->getAttribute('startTokenPos');
         if (!is_int($position)) {

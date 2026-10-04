@@ -20,8 +20,9 @@ use PhpParser\Node\Scalar\MagicConst\Dir;
 use PhpParser\Node\Scalar\MagicConst\File;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\Echo_;
+use PhpParser\Node\Stmt\Function_;
+use PhpParser\Node\Stmt\Namespace_;
 use PHPUnit\Framework\TestCase;
-use WeakReference;
 
 class SyntaxTreeRewriterTest extends TestCase
 {
@@ -83,20 +84,22 @@ class SyntaxTreeRewriterTest extends TestCase
         $this->assertSame('<?php echo "rewritten";', $metadata->source);
     }
 
-    public function testParentsAreConnectedWithWeakReferences(): void
+    public function testRulesReceiveTheAncestorsOfTheNode(): void
     {
-        $parents = [];
-        $rule    = $this->createRule([String_::class], function (Node $node) use (&$parents): bool {
-            $parents[] = $node->getAttribute('weak_parent');
+        $ancestors = [];
+        $rule      = $this->createRule([String_::class], function (Node $node, StreamMetaData $file, array $nodeAncestors) use (&$ancestors): bool {
+            $ancestors[] = array_map(fn(Node $ancestor): string => $ancestor::class, $nodeAncestors);
 
             return false;
         });
 
-        (new SyntaxTreeRewriter($rule))->transform($this->createMetadata('<?php echo "a";'));
+        (new SyntaxTreeRewriter($rule))->transform($this->createMetadata('<?php function f() { echo "a"; } echo "b";'));
 
-        $this->assertCount(1, $parents);
-        $this->assertInstanceOf(WeakReference::class, $parents[0]);
-        $this->assertInstanceOf(Echo_::class, $parents[0]->get());
+        // The parsed file is wrapped into a global namespace node
+        $this->assertSame(
+            [[Namespace_::class, Function_::class, Echo_::class], [Namespace_::class, Echo_::class]],
+            $ancestors,
+        );
     }
 
     /**
@@ -128,14 +131,14 @@ class SyntaxTreeRewriterTest extends TestCase
 
     /**
      * @param list<class-string<Node>>                  $nodeTypes
-     * @param Closure(Node, StreamMetaData): bool $rewrite
+     * @param Closure(Node, StreamMetaData, list<Node>): bool $rewrite
      */
     private function createRule(array $nodeTypes, Closure $rewrite): NodeRewriter
     {
         return new readonly class ($nodeTypes, $rewrite) implements NodeRewriter {
             /**
-             * @param list<class-string<Node>>            $nodeTypes
-             * @param Closure(Node, StreamMetaData): bool $rewrite
+             * @param list<class-string<Node>>                        $nodeTypes
+             * @param Closure(Node, StreamMetaData, list<Node>): bool $rewrite
              */
             public function __construct(private array $nodeTypes, private Closure $rewrite) {}
 
@@ -144,9 +147,9 @@ class SyntaxTreeRewriterTest extends TestCase
                 return $this->nodeTypes;
             }
 
-            public function rewriteNode(Node $node, StreamMetaData $file): bool
+            public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
             {
-                return ($this->rewrite)($node, $file);
+                return ($this->rewrite)($node, $file, $ancestors);
             }
         };
     }

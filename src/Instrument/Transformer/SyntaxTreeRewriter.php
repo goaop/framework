@@ -14,7 +14,6 @@ namespace Go\Instrument\Transformer;
 
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\ParentConnectingVisitor;
 
 /**
  * Source transformer that walks the syntax tree of a file once and applies node rewriting rules
@@ -47,8 +46,7 @@ final class SyntaxTreeRewriter implements SourceTransformer
         }
 
         $dispatcher = new NodeRewriterDispatcher($this->getRulesFor(...), $metadata);
-        // Weak references keep the parsed tree, which is cached and shared with reflection, free of cycles
-        $traverser = new NodeTraverser(new ParentConnectingVisitor(true), $dispatcher);
+        $traverser  = new NodeTraverser($dispatcher);
         $traverser->traverse($metadata->syntaxTree);
 
         return $dispatcher->isTransformed() ? TransformerResult::Transformed : TransformerResult::Abstain;

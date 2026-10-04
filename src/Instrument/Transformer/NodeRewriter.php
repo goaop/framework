@@ -20,7 +20,6 @@ use PhpParser\Node;
  * Rules do not walk the syntax tree themselves: {@see SyntaxTreeRewriter} walks it once per file
  * and hands every node to the rules declaring its type. A rule keeps no state between nodes, so
  * the same rule instance serves files that are transformed while another one is still in progress.
- * Parents are reachable through the "weak_parent" node attribute.
  */
 interface NodeRewriter
 {
@@ -34,7 +33,9 @@ interface NodeRewriter
     /**
      * Rewrites the source tokens of the given node in the token stream of the file
      *
+     * @param list<Node> $ancestors Nodes enclosing the given one, from the outermost to its parent
+     *
      * @return bool True if the token stream was changed
      */
-    public function rewriteNode(Node $node, StreamMetaData $file): bool;
+    public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool;
 }

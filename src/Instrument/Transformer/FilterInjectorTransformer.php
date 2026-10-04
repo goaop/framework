@@ -148,7 +148,7 @@ final class FilterInjectorTransformer implements NodeRewriter
     /**
      * Wraps the include into rewrite filter
      */
-    public function rewriteNode(Node $node, StreamMetaData $file): bool
+    public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
     {
         $startPosition = $node->getAttribute('startTokenPos');
         $endPosition   = $node->getAttribute('endTokenPos');

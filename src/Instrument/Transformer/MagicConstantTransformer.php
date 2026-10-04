@@ -83,7 +83,7 @@ final class MagicConstantTransformer implements NodeRewriter
      * magic constants of a `php://filter/.../resource=<path>` include to <path> itself, so they stay correct
      * on cache hits too (see the functional MagicConstantTest)
      */
-    public function rewriteNode(Node $node, StreamMetaData $file): bool
+    public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
     {
         if ($node instanceof MethodCall) {
             $this->wrapReflectionGetFileName($node, $file);

@@ -200,8 +200,8 @@ class FilterInjectorTransformerTest extends TestCase
         $metadata = new StreamMetaData(self::openStream(), '<?php include $class; ?>');
         $expected = $metadata->source;
 
-        $this->assertFalse(self::$transformer->rewriteNode(new Include_(new Variable('class'), Include_::TYPE_INCLUDE), $metadata));
-        $this->assertFalse(self::$transformer->rewriteNode(new String_('not an include'), $metadata));
+        $this->assertFalse(self::$transformer->rewriteNode(new Include_(new Variable('class'), Include_::TYPE_INCLUDE), $metadata, []));
+        $this->assertFalse(self::$transformer->rewriteNode(new String_('not an include'), $metadata, []));
         $this->assertSame($expected, $metadata->source);
     }
 }

@@ -26,6 +26,13 @@ final class NodeRewriterDispatcher extends NodeVisitorAbstract
     private bool $isTransformed = false;
 
     /**
+     * Nodes enclosing the current one, from the outermost to its parent
+     *
+     * @var list<Node>
+     */
+    private array $ancestors = [];
+
+    /**
      * @param Closure(Node): list<NodeRewriter> $rulesFor Resolves the rules for a node, in the order of the rules
      * @param StreamMetaData                     $file     File whose token stream is rewritten
      */
@@ -37,10 +44,18 @@ final class NodeRewriterDispatcher extends NodeVisitorAbstract
     public function enterNode(Node $node): null
     {
         foreach (($this->rulesFor)($node) as $rule) {
-            if ($rule->rewriteNode($node, $this->file)) {
+            if ($rule->rewriteNode($node, $this->file, $this->ancestors)) {
                 $this->isTransformed = true;
             }
         }
+        $this->ancestors[] = $node;
+
+        return null;
+    }
+
+    public function leaveNode(Node $node): null
+    {
+        array_pop($this->ancestors);
 
         return null;
     }

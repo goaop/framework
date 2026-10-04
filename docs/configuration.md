@@ -50,8 +50,8 @@ order:
 3. Your own transformers.
 
 To change single syntax nodes, implement `NodeRewriter`. It declares the node classes it handles and rewrites
-the tokens of one node at a time. Rules keep no state between nodes. The parent of a node is available through
-its `weak_parent` attribute (a `WeakReference`):
+the tokens of one node at a time. Rules keep no state between nodes; the nodes enclosing the current one are
+passed as `$ancestors`, from the outermost to the parent:
 
 ```php
 use Go\Instrument\Transformer\NodeRewriter;
@@ -66,7 +66,7 @@ final class DebugCallRemover implements NodeRewriter
         return [FuncCall::class];
     }
 
-    public function rewriteNode(Node $node, StreamMetaData $file): bool
+    public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
     {
         // Edit $file->tokenStream between $node->getAttribute('startTokenPos') and 'endTokenPos',
         // return true when the tokens were changed

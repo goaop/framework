@@ -325,7 +325,7 @@ class ConstructorExecutionTransformerTest extends TestCase
         $metadata = $this->createMetadata('<?php $a = new \stdClass();');
         $expected = $metadata->source;
 
-        $this->assertFalse((new ConstructorExecutionTransformer())->rewriteNode(new New_(new Name('stdClass')), $metadata));
+        $this->assertFalse((new ConstructorExecutionTransformer())->rewriteNode(new New_(new Name('stdClass')), $metadata, []));
         $this->assertSame($expected, $metadata->source);
     }
 }
