@@ -15,6 +15,11 @@ Applied per loaded file. Each returns TransformerResult: Transformed|Abstain|Abo
    - MagicConstantTransformer — `__FILE__`/`__DIR__` → original paths, wraps `getFileName()`; never counts as a transformation (only cache-dir files need it; PHP resolves magic constants of a `php://filter/.../resource=<path>` include to <path>)
 2. WeavingTransformer — main; AdviceMatcher + CachedAspectLoader → proxy generators. Sees the token edits of the rules.
 
+### Performance gate
+Touching a SourceTransformer/NodeRewriter or the transformer wiring → run `composer test:performance:transformation` before and after; the numbers must not get worse.
+- tests/Performance/TransformationPerformanceTest.php (`#[Group('transformation-performance')]`, excluded from the default run): times `transform()` of SyntaxTreeRewriter (default rules, all rules) over the nikic/php-parser sources and of WeavingTransformer over the weaving fixtures; ratio to a plain no-op NodeTraverser walk of the php-parser trees vs a budget constant.
+- CI (.github/workflows/transformation-performance.yml) runs only for PRs touching src/Instrument/Transformer/**, SourceTransformingLoader, AspectKernel or FrameworkServices: alternates base/head `src/` 3× on one runner, fails on a head budget failure or a head ratio >10% above base (tests/Performance/compare-transformation-performance.php).
+
 ## Trait-based proxy engine (4.0)
 WeavingTransformer converts original class to trait + proxy class. Two generated files for class Ns\Foo:
 

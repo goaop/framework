@@ -1,0 +1,82 @@
+name: "Transformation performance"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Only pull requests changing the source transformers, the node rewriters or their wiring
+on:
+  pull_request:
+    paths:
+      - "src/Instrument/Transformer/**"
+      - "src/Instrument/ClassLoading/SourceTransformingLoader.php"
+      - "src/Core/AspectKernel.php"
+      - "src/Core/FrameworkServices.php"
+      - "tests/Performance/TransformationPerformanceTest.php"
+      - "tests/Performance/compare-transformation-performance.php"
+      - ".github/workflows/transformation-performance.yml"
+
+jobs:
+  compare:
+    name: "Transformation performance (head vs base)"
+
+    runs-on: "ubuntu-latest"
+
+    timeout-minutes: 20
+
+    steps:
+      # The pull request merge commit and its first parent, the tip of the base branch
+      - name: "Checkout"
+        uses: "actions/checkout@v7"
+        with:
+          fetch-depth: 2
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "none"
+          php-version: "8.5"
+          ini-values: memory_limit=-1, opcache.jit=disable
+          tools: composer:v2
+
+      - name: "Cache dependencies"
+        uses: "actions/cache@v6"
+        with:
+          path: |
+            ~/.composer/cache
+            vendor
+          key: "composer-${{ runner.os }}-php-8.5-highest-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-8.5-highest-"
+
+      - name: "Install highest dependencies"
+        run: "composer update --no-interaction --no-progress"
+
+      # Runs alternate between the base and the head sources on the same runner, the tests and vendor/ stay the
+      # head ones. The budgets of the group only fail the job on the head: a failure on the base (e.g. an API
+      # changed by the pull request) leaves its cases out of the comparison.
+      - name: "Measure base and head"
+        env:
+          GO_AOP_TRANSFORMATION_REPORT_DIR: "${{ runner.temp }}"
+        run: |
+          touch "${GO_AOP_TRANSFORMATION_REPORT_DIR}/base.jsonl" "${GO_AOP_TRANSFORMATION_REPORT_DIR}/head.jsonl"
+          head_failed=0
+          for run in 1 2 3; do
+            echo "::group::Base, run ${run}"
+            rm -rf src && git checkout HEAD^1 -- src
+            GO_AOP_TRANSFORMATION_REPORT="${GO_AOP_TRANSFORMATION_REPORT_DIR}/base.jsonl" composer test:performance:transformation \
+              || echo "::warning::The transformation performance group failed on the base sources"
+            echo "::endgroup::"
+            echo "::group::Head, run ${run}"
+            rm -rf src && git checkout HEAD -- src
+            GO_AOP_TRANSFORMATION_REPORT="${GO_AOP_TRANSFORMATION_REPORT_DIR}/head.jsonl" composer test:performance:transformation \
+              || head_failed=1
+            echo "::endgroup::"
+          done
+          exit "${head_failed}"
+
+      - name: "Compare head with base"
+        if: ${{ success() || failure() }}
+        run: "php tests/Performance/compare-transformation-performance.php '${{ runner.temp }}/base.jsonl' '${{ runner.temp }}/head.jsonl' 0.10"

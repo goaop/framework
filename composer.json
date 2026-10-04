@@ -100,6 +100,7 @@
         "cs:fix": "php-cs-fixer fix",
         "test": "phpunit",
         "test:performance": "phpunit --group performance",
+        "test:performance:transformation": "@php -d opcache.jit=disable vendor/bin/phpunit --group transformation-performance",
         "regenerate:parse-table": [
             "dissect Go/Aop/Pointcut/PointcutGrammar",
             "@php -r \"rename('src/Aop/Pointcut/parse_table.php', 'src/Aop/Pointcut/PointcutParseTable.php');\""
@@ -112,6 +113,7 @@
         "cs:fix": "Fix coding-standards violations (PER-CS, php-cs-fixer)",
         "test": "Run the PHPUnit test suite",
         "regenerate:parse-table": "Regenerate the pointcut parse table after a change of PointcutGrammar",
-        "test:performance": "Run the joinpoint hot-path performance group"
+        "test:performance": "Run the joinpoint hot-path performance group",
+        "test:performance:transformation": "Run the source transformation performance group (JIT disabled)"
     }
 }

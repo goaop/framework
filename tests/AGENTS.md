@@ -25,6 +25,11 @@
 - Version: 13+
 - Performance group (tests/Performance/, `#[Group('performance')]`): timing-based checks of the core joinpoint hot path,
   excluded from the default run; `composer test:performance` before and after touching src/Aop/Framework `__invoke()`/`proceed()`
+- Transformation performance group (tests/Performance/TransformationPerformanceTest.php,
+  `#[Group('transformation-performance')]`): timing-based checks of the source transformers, excluded from the default
+  run; `composer test:performance:transformation` (JIT disabled) before and after touching a SourceTransformer, a
+  NodeRewriter or their wiring. CI compares head with base on such PRs (.github/workflows/transformation-performance.yml,
+  `GO_AOP_TRANSFORMATION_REPORT=<file>` writes the JSON report read by compare-transformation-performance.php)
 - If phpstan fails: fix errors before offering to commit
 
 ## PHPStan gate
