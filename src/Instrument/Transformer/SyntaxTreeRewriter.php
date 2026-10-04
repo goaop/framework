@@ -12,11 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Instrument\Transformer;
 
-use Closure;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\ParentConnectingVisitor;
-use PhpParser\NodeVisitorAbstract;
 
 /**
  * Source transformer that walks the syntax tree of a file once and applies node rewriting rules
@@ -26,7 +24,7 @@ use PhpParser\NodeVisitorAbstract;
 final class SyntaxTreeRewriter implements SourceTransformer
 {
     /**
-     * @var list<NodeRewriter>
+     * @var array<NodeRewriter>
      */
     private readonly array $rules;
 
@@ -39,7 +37,7 @@ final class SyntaxTreeRewriter implements SourceTransformer
 
     public function __construct(NodeRewriter ...$rules)
     {
-        $this->rules = array_values($rules);
+        $this->rules = $rules;
     }
 
     public function transform(StreamMetaData $metadata): TransformerResult
@@ -48,33 +46,12 @@ final class SyntaxTreeRewriter implements SourceTransformer
             return TransformerResult::Abstain;
         }
 
-        $dispatcher = new class ($this->getRulesFor(...), $metadata) extends NodeVisitorAbstract {
-            public bool $isTransformed = false;
-
-            /**
-             * @param Closure(Node): list<NodeRewriter> $rulesFor
-             */
-            public function __construct(
-                private readonly Closure $rulesFor,
-                private readonly StreamMetaData $metadata,
-            ) {}
-
-            public function enterNode(Node $node): null
-            {
-                foreach (($this->rulesFor)($node) as $rule) {
-                    if ($rule->rewriteNode($node, $this->metadata)) {
-                        $this->isTransformed = true;
-                    }
-                }
-
-                return null;
-            }
-        };
+        $dispatcher = new NodeRewriterDispatcher($this->getRulesFor(...), $metadata);
         // Weak references keep the parsed tree, which is cached and shared with reflection, free of cycles
         $traverser = new NodeTraverser(new ParentConnectingVisitor(true), $dispatcher);
         $traverser->traverse($metadata->syntaxTree);
 
-        return $dispatcher->isTransformed ? TransformerResult::Transformed : TransformerResult::Abstain;
+        return $dispatcher->isTransformed() ? TransformerResult::Transformed : TransformerResult::Abstain;
     }
 
     /**
