@@ -32,7 +32,7 @@ use PhpParser\Node\Stmt\EnumCase;
  * @see https://github.com/php/php-src/blob/master/Zend/zend_language_parser.y
  *
  */
-final class ConstructorExecutionTransformer implements NodeRewriter
+final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
 {
     /**
      * List of constructor invocations per class
@@ -72,6 +72,11 @@ final class ConstructorExecutionTransformer implements NodeRewriter
     public function getNodeTypes(): array
     {
         return [New_::class];
+    }
+
+    public function getSourceMarkers(): array
+    {
+        return ['new'];
     }
 
     /**

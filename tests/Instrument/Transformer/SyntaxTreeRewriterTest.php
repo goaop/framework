@@ -129,6 +129,102 @@ class SyntaxTreeRewriterTest extends TestCase
         $this->assertSame(['Outer', 'Inner', 'Next'], $visited);
     }
 
+    public function testPrefilteredRuleIsSkippedForSourceWithoutItsMarkers(): void
+    {
+        $rule = $this->createPrefilteredRule(['__DIR__'], [Node\Scalar::class], function (): bool {
+            $this->fail('A rule must not see a file without its markers');
+        });
+
+        $result = (new SyntaxTreeRewriter($rule))->transform($this->createMetadata('<?php echo "x", 42;'));
+
+        $this->assertSame(TransformerResult::Abstain, $result);
+    }
+
+    public function testPrefilteredRuleMarkersAreComparedCaseInsensitively(): void
+    {
+        $visited = [];
+        $rule    = $this->createPrefilteredRule(['__DIR__'], [Dir::class], function (Node $node) use (&$visited): bool {
+            $visited[] = $node::class;
+
+            return false;
+        });
+
+        (new SyntaxTreeRewriter($rule))->transform($this->createMetadata('<?php echo __dir__;'));
+
+        $this->assertSame([Dir::class], $visited);
+    }
+
+    public function testRulesWithoutMarkersSeeEveryFile(): void
+    {
+        $calls      = [];
+        $prefilter  = $this->createPrefilteredRule(['__FILE__'], [String_::class], function () use (&$calls): bool {
+            $calls[] = 'prefiltered';
+
+            return false;
+        });
+        $everywhere = $this->createRule([String_::class], function () use (&$calls): bool {
+            $calls[] = 'everywhere';
+
+            return false;
+        });
+        $rewriter = new SyntaxTreeRewriter($prefilter, $everywhere);
+
+        $rewriter->transform($this->createMetadata('<?php echo __FILE__, "with marker";'));
+        $rewriter->transform($this->createMetadata('<?php echo "without marker";'));
+
+        // The rules per node class of the first file must not leak into the second one
+        $this->assertSame(['prefiltered', 'everywhere', 'everywhere'], $calls);
+    }
+
+    public function testMarkersAreSearchedInTheOriginalSource(): void
+    {
+        $visited  = [];
+        $metadata = $this->createMetadata('<?php echo __DIR__;');
+        // An earlier transformation of the tokens does not change the syntax tree
+        $metadata->tokenStream[3]->text = "'/replaced'";
+        $rule = $this->createPrefilteredRule(['__DIR__'], [Dir::class], function (Node $node) use (&$visited): bool {
+            $visited[] = $node::class;
+
+            return false;
+        });
+
+        (new SyntaxTreeRewriter($rule))->transform($metadata);
+
+        $this->assertSame([Dir::class], $visited);
+    }
+
+    /**
+     * @param non-empty-list<non-empty-string>               $markers
+     * @param list<class-string<Node>>                        $nodeTypes
+     * @param Closure(Node, StreamMetaData, list<Node>): bool $rewrite
+     */
+    private function createPrefilteredRule(array $markers, array $nodeTypes, Closure $rewrite): PrefilteredNodeRewriter
+    {
+        return new readonly class ($markers, $nodeTypes, $rewrite) implements PrefilteredNodeRewriter {
+            /**
+             * @param non-empty-list<non-empty-string>               $markers
+             * @param list<class-string<Node>>                        $nodeTypes
+             * @param Closure(Node, StreamMetaData, list<Node>): bool $rewrite
+             */
+            public function __construct(private array $markers, private array $nodeTypes, private Closure $rewrite) {}
+
+            public function getSourceMarkers(): array
+            {
+                return $this->markers;
+            }
+
+            public function getNodeTypes(): array
+            {
+                return $this->nodeTypes;
+            }
+
+            public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
+            {
+                return ($this->rewrite)($node, $file, $ancestors);
+            }
+        };
+    }
+
     /**
      * @param list<class-string<Node>>                  $nodeTypes
      * @param Closure(Node, StreamMetaData, list<Node>): bool $rewrite

@@ -113,8 +113,9 @@ final class TransformationPerformanceTest extends TestCase
      */
     public static function ruleSets(): iterable
     {
-        yield 'default rules' => [false, 1.9];
-        yield 'all rules' => [true, 2.0];
+        // Most files contain no marker of the default rule, their syntax trees are not walked at all
+        yield 'default rules' => [false, 0.4];
+        yield 'all rules' => [true, 1.7];
     }
 
     /**

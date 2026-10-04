@@ -100,6 +100,11 @@ final class StreamMetaData
     public array $tokenStream = [];
 
     /**
+     * Source code the syntax tree was parsed from, before any transformation
+     */
+    public readonly string $originalSource;
+
+    /**
      * Creates metadata object from stream
      *
      * @param resource $stream Instance of stream
@@ -128,6 +133,7 @@ final class StreamMetaData
         }
         $this->syntaxTree = ReflectionEngine::parseFile($this->uri, $source);
         $this->setTokenStreamFromRawTokens(...ReflectionEngine::getParser()->getTokens());
+        $this->originalSource = $source ?? $this->source;
     }
 
     /**

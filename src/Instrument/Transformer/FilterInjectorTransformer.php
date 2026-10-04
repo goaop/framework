@@ -24,7 +24,7 @@ use PhpParser\Node\Expr\Include_;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-final class FilterInjectorTransformer implements NodeRewriter
+final class FilterInjectorTransformer implements PrefilteredNodeRewriter
 {
     /**
      * Php filter definition
@@ -143,6 +143,14 @@ final class FilterInjectorTransformer implements NodeRewriter
     public function getNodeTypes(): array
     {
         return [Include_::class];
+    }
+
+    /**
+     * include, include_once, require and require_once
+     */
+    public function getSourceMarkers(): array
+    {
+        return ['include', 'require'];
     }
 
     /**

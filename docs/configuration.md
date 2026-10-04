@@ -75,6 +75,11 @@ final class DebugCallRemover implements NodeRewriter
 }
 ```
 
+When the nodes of a rule can only occur in a source that contains certain text, implement
+`PrefilteredNodeRewriter` instead and return it from `getSourceMarkers()`, e.g. `['var_dump', 'print_r']` for the
+rule above. The rule is skipped for a file without any of the markers, compared case-insensitively, and the syntax
+tree is not walked at all when no rule is left.
+
 For whole-file changes, implement `SourceTransformer` and return a `TransformerResult`. Register both kinds as
 container services at the top of `configureAop()`. The chain and its rules are assembled on the first cache
 miss, and loading a class can already cause that miss:
