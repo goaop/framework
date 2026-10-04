@@ -117,6 +117,15 @@ class MagicConstantTransformerTest extends TestCase
         $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $metadata->source);
     }
 
+    public function testTransformerKeepsOtherMethodCallsOfFileWithMarkers(): void
+    {
+        $source   = '<?php $class = new ReflectionClass("stdClass"); echo $class->getName(), $class->getFileName(); ?>';
+        $metadata = new StreamMetaData(self::openStream('php://input'), $source);
+        $this->assertSame(TransformerResult::Abstain, $this->rewriter->transform($metadata));
+        $this->assertStringContainsString('echo $class->getName(), \\', $metadata->source);
+        $this->assertStringEndsWith('::resolveFileName($class->getFileName()); ?>', $metadata->source);
+    }
+
     public function testTransformerResolvesFileName(): void
     {
         $class = MagicConstantTransformer::class;
