@@ -15,7 +15,7 @@ namespace Go\Core;
 use Closure;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\ServiceNotFoundException;
-use ReflectionObject;
+use ReflectionClass;
 
 /**
  * DI-container
@@ -66,6 +66,13 @@ final class Container implements AspectContainer
     private array $resources;
 
     /**
+     * Classes of the added objects, their files become resources on the next freshness check
+     *
+     * @var array<class-string, true>
+     */
+    private array $pendingResourceClasses = [];
+
+    /**
      * Constructor for container
      *
      * @param list<string> $resources [Optional] List of additional resources to track for container invalidation
@@ -87,14 +94,13 @@ final class Container implements AspectContainer
         $this->servicesByInterface = [];
 
         if (is_object($value) && !$value instanceof Closure) {
-            $reflectionInstance = new ReflectionObject($value);
-            foreach ($reflectionInstance->getInterfaceNames() as $interfaceTagName) {
+            foreach (class_implements($value) as $interfaceTagName) {
                 $this->tags[$interfaceTagName][] = $id;
             }
-            $fileName = $reflectionInstance->getFileName();
-            if (is_string($fileName)) {
-                $this->addResource($fileName);
-            }
+            // The file of the class is tracked on the next freshness check: registration on every
+            // request needs neither reflection nor a file system call
+            $this->pendingResourceClasses[$value::class] = true;
+            unset($this->cachedMaxTimestamp);
         }
     }
 
@@ -241,6 +247,13 @@ final class Container implements AspectContainer
     public function isFreshSince(int $timestamp): bool
     {
         if (!isset($this->cachedMaxTimestamp)) {
+            foreach (array_keys($this->pendingResourceClasses) as $className) {
+                $fileName = new ReflectionClass($className)->getFileName();
+                if (is_string($fileName)) {
+                    $this->addResource($fileName);
+                }
+            }
+            $this->pendingResourceClasses = [];
             $this->cachedMaxTimestamp = max(array_filter(array_map(filemtime(...), $this->resources)) + [0]);
         }
 

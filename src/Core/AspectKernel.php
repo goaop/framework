@@ -155,6 +155,8 @@ abstract class AspectKernel
         // The framework's own services are deferred definitions registered through the
         // generic lazy container API - the container itself knows nothing about them.
         FrameworkServices::register($container);
+        // The class loader queries the cache index right below on every request, a lazy proxy would be pure overhead
+        $container->add(CachePathManager::class, new CachePathManager($this));
 
         // The whole transformer pipeline (and the stream filter itself) is only needed on
         // a cache miss, so every transformer is registered as a typical deferred container

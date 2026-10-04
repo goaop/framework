@@ -3,7 +3,8 @@
 ## Container (Container.php)
 - Generic, AOP-unaware DI container: add(by class-string|key), getService(), getValue(), addLazyService(Closure), onRegistration(interfaceFQCN, listener), addResource()
 - Automatic tagging by interface; deferred services materialize as native lazy proxies via NativeLazyProxy (engine probe, no userland compatibility predicate)
-- Aspects are typical services — no registerAspect(); the kernel arms a debug-only Aspect::class onRegistration listener for resource tracking and registers framework services via FrameworkServices::register()
+- add() runs on every request: tags via class_implements(), the class file of an added object becomes a resource only on the next isFreshSince() (no reflection or stat calls at registration)
+- Aspects are typical services — no registerAspect(); the kernel arms a debug-only Aspect::class onRegistration listener for resource tracking and registers framework services via FrameworkServices::register(); CachePathManager is added eagerly by the kernel (the class loader reads its cache index right away)
 - Throws SPL exceptions only (InvalidArgumentException, UnexpectedValueException, OutOfBoundsException)
 
 ## Aspect loading
