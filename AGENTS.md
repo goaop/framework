@@ -14,6 +14,7 @@ AOP via source transformation at load time (stream filter, no PECL, no eval).
 | test:all  | `composer test` (= `./vendor/bin/phpunit`)                            |
 | test:file | `./vendor/bin/phpunit tests/Core/ContainerTest.php`                   |
 | test:one  | `./vendor/bin/phpunit --filter testName tests/Core/ContainerTest.php` |
+| test:perf:transform | `composer test:performance:transformation` (opt-in group, JIT disabled) |
 | analyze   | `composer analyze` (= `./vendor/bin/phpstan analyze --memory-limit=512M`) |
 | cs        | `composer cs` (= `./vendor/bin/php-cs-fixer check --diff`, PER-CS)    |
 | cs:fix    | `composer cs:fix` (= `./vendor/bin/php-cs-fixer fix`)                 |
@@ -40,6 +41,7 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 - Use targeted edits (Edit tool) over full-file rewrites.
 - No filler words ("let me", "carefully", "I'll now").
 - Before commit: phpunit and phpstan must pass. Fix errors before offering to commit.
+- Touching a SourceTransformer/NodeRewriter or the transformer wiring (AspectKernel, FrameworkServices, SourceTransformingLoader) â†’ run `composer test:performance:transformation` before and after; the numbers must not get worse (CI compares head with base on such PRs).
 - New classes are `final` unless they are meant to be extended.
 - No anonymous classes in `src/`: extract a named `final` class (`@internal` for machinery); anonymous classes are for tests and mocks.
 - Commit messages and PR titles must follow Conventional Commits (`type(scope): summary`, e.g. `fix(proxy): ...`).

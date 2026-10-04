@@ -14,6 +14,13 @@
         ReflectionFunctionInvocation, ReflectionConstructorInvocation) and keep the ratios from growing.
       -->
       <group>performance</group>
+      <!--
+        Timing-based checks of the source transformation, excluded from the default run.
+        Run `composer test:performance:transformation` before and after every change of a SourceTransformer, a
+        NodeRewriter or their wiring (AspectKernel, FrameworkServices, SourceTransformingLoader) and keep the
+        ratios from growing.
+      -->
+      <group>transformation-performance</group>
     </exclude>
   </groups>
   <source>
