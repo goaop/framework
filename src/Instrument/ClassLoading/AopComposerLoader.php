@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Instrument\ClassLoading;
 
 use Closure;
-use SplFileInfo;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
@@ -168,7 +167,7 @@ final class AopComposerLoader
     public function findFile(string $class): false|string
     {
         if ($this->isAllowedFilter === null) {
-            $this->isAllowedFilter = $this->fileEnumerator->getFilter();
+            $this->isAllowedFilter = $this->fileEnumerator->getPathFilter();
             $this->isProduction    = !$this->options['debug'];
         }
 
@@ -184,7 +183,7 @@ final class AopComposerLoader
             if (is_string($resolved)) {
                 $file = $resolved;
             }
-            if (($this->isAllowedFilter)(new SplFileInfo($file))) {
+            if (($this->isAllowedFilter)($file)) {
                 // can be optimized here with the class map even for debug mode, but no needed right now
                 $file = FilterInjectorTransformer::rewrite($file);
             }

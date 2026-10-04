@@ -15,6 +15,7 @@ namespace Go\Instrument\FileSystem;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use Go\VirtualFileSystem\FileSystem;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use SplFileInfo;
 
@@ -192,5 +193,55 @@ class EnumeratorTest extends TestCase
         } finally {
             self::removeTemporaryDirectory($root);
         }
+    }
+
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function rootDirectoryPaths(): iterable
+    {
+        yield 'file below the root'                   => ['/base/src/Service.php', true];
+        yield 'file below the root, Windows'          => ['/base\\src\\Service.php', true];
+        yield 'sibling sharing the root name prefix'  => ['/base-old/src/Service.php', false];
+        yield 'root inside another path'              => ['/other/base/src/Service.php', false];
+        yield 'not a php file'                        => ['/base/src/Service.phpx', false];
+        yield 'file with an upper-case extension'     => ['/base/src/Service.PHP', false];
+    }
+
+    #[DataProvider('rootDirectoryPaths')]
+    public function testPathFilterAcceptsOnlyPhpFilesBelowTheRoot(string $path, bool $isAllowed): void
+    {
+        $this->assertSame($isAllowed, new Enumerator('/base/')->getPathFilter()($path));
+    }
+
+    public function testPathFilterOfFileSystemRootAcceptsEveryAbsolutePath(): void
+    {
+        $this->assertTrue(new Enumerator('/')->getPathFilter()('/any/Service.php'));
+    }
+
+    public function testPathFilterOfEmptyRootAcceptsNothing(): void
+    {
+        $this->assertFalse(new Enumerator('')->getPathFilter()('/any/Service.php'));
+    }
+
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function includedAndExcludedPaths(): iterable
+    {
+        yield 'first include path'                  => ['/base/src/Service.php', true];
+        yield 'second include path'                 => ['/base/lib/Service.php', true];
+        yield 'outside of the include paths'        => ['/base/vendor/Service.php', false];
+        yield 'first exclude path'                  => ['/base/src/Legacy/Service.php', false];
+        yield 'second exclude path, with wildcard'  => ['/base/lib/Generated/Proxy/Service.php', false];
+        yield 'include path sharing an exclude prefix' => ['/base/src/LegacyBridge/Service.php', false];
+    }
+
+    #[DataProvider('includedAndExcludedPaths')]
+    public function testPathFilterCombinesAllIncludeAndExcludePaths(string $path, bool $isAllowed): void
+    {
+        $enumerator = new Enumerator('/base', ['/base/src', '/base/lib'], ['/base/src/Legacy', '/base/lib/*/Proxy']);
+
+        $this->assertSame($isAllowed, $enumerator->getPathFilter()($path));
     }
 }
