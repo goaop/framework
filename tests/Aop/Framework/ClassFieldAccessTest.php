@@ -41,9 +41,12 @@ class ClassFieldAccessTest extends TestCase
     {
         $this->classField->write($this, 'updated');
 
-        $this->expectException(\Go\Aop\AspectException::class);
-        $this->expectExceptionMessageIs('Property classField is not initialized yet');
-        $this->classField->getValue();
+        try {
+            $this->classField->getValue();
+            $this->fail('An uninitialized property has no value');
+        } catch (\Go\Aop\AspectException $exception) {
+            $this->assertSame('Property classField is not initialized yet', $exception->getMessage());
+        }
     }
 
     public function testWriteInvocationWithoutBackedValueDoesNotFail(): void
@@ -222,5 +225,30 @@ class ClassFieldAccessTest extends TestCase
         $this->assertSame('outer new value', $result);
         $this->assertSame('outer new value', $fieldAccess->getValueToSet());
         $this->assertSame('outer original value', $fieldAccess->getValue());
+    }
+
+    public function testNestedReadByReferenceFromAdviceRestoresOuterBinding(): void
+    {
+        $other       = new self('other');
+        $otherItems  = ['other'];
+        $around      = new AroundInterceptor(function (ClassFieldAccess $access) use ($other, &$otherItems): mixed {
+            if ($access->getThis() === $this) {
+                // The advice reads the same array property of another object through the shared joinpoint
+                $nestedItems = &$access->readByReference($other, $otherItems);
+                self::assertIsArray($nestedItems);
+                $nestedItems[] = 'nested';
+            }
+
+            return $access->proceed();
+        });
+        $fieldAccess = new ClassFieldAccess([$around], self::class, 'classField');
+
+        $items = ['outer'];
+        $value = &$fieldAccess->readByReference($this, $items);
+        self::assertIsArray($value);
+        $value[] = 'appended';
+
+        $this->assertSame(['outer', 'appended'], $items);
+        $this->assertSame(['other', 'nested'], $otherItems);
     }
 }
