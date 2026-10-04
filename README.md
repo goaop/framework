@@ -379,7 +379,7 @@ Documentation
 -------------
 
 - [Configuration and deployment](docs/configuration.md): kernel options, `Features` flags, the `bin/aspect` console
-  commands and the production deployment recipe
+  commands, the production deployment recipe and custom transformers or node rewriters
 - [Pointcut syntax](docs/pointcuts.md): every pointcut type, wildcards, modifiers, return types and operators
 - [Advices](docs/advices.md): advice types, joinpoints, property interception, introductions, function and
   object-creation interception

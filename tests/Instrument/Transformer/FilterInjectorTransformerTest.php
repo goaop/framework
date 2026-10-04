@@ -16,6 +16,9 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
+use PhpParser\Node\Expr\Include_;
+use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
@@ -23,6 +26,8 @@ use TypeError;
 class FilterInjectorTransformerTest extends TestCase
 {
     protected static FilterInjectorTransformer $transformer;
+
+    protected static SyntaxTreeRewriter $rewriter;
 
     /**
      * {@inheritDoc}
@@ -46,6 +51,7 @@ class FilterInjectorTransformerTest extends TestCase
             ->setConstructorArgs([$kernelMock])
             ->getMock();
         self::$transformer = new FilterInjectorTransformer($kernelMock, 'unit.test', $cachePathManager);
+        self::$rewriter    = new SyntaxTreeRewriter(self::$transformer);
     }
 
     public static function tearDownAfterClass(): void
@@ -92,7 +98,7 @@ class FilterInjectorTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream(), '<?php echo "simple test, include" . $include; ?>');
         $output   = $metadata->source;
-        self::$transformer->transform($metadata);
+        self::$rewriter->transform($metadata);
         $this->assertEquals($output, $metadata->source);
     }
 
@@ -100,14 +106,14 @@ class FilterInjectorTransformerTest extends TestCase
     {
         $metadata = new StreamMetaData(self::openStream(), '<?php echo "simple test, no key words" ?>');
         $output = $metadata->source;
-        self::$transformer->transform($metadata);
+        self::$rewriter->transform($metadata);
         $this->assertEquals($output, $metadata->source);
     }
 
     public function testCanTransformInclude(): void
     {
         $metadata = new StreamMetaData(self::openStream(), '<?php include $class; ?>');
-        self::$transformer->transform($metadata);
+        self::$rewriter->transform($metadata);
         $output = '<?php include \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
     }
@@ -115,7 +121,7 @@ class FilterInjectorTransformerTest extends TestCase
     public function testCanTransformIncludeOnce(): void
     {
         $metadata = new StreamMetaData(self::openStream(), '<?php include_once $class; ?>');
-        self::$transformer->transform($metadata);
+        self::$rewriter->transform($metadata);
         $output = '<?php include_once \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
     }
@@ -123,7 +129,7 @@ class FilterInjectorTransformerTest extends TestCase
     public function testCanTransformRequire(): void
     {
         $metadata = new StreamMetaData(self::openStream(), '<?php require $class; ?>');
-        self::$transformer->transform($metadata);
+        self::$rewriter->transform($metadata);
         $output = '<?php require \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
     }
@@ -131,7 +137,7 @@ class FilterInjectorTransformerTest extends TestCase
     public function testCanTransformRequireOnce(): void
     {
         $metadata = new StreamMetaData(self::openStream(), '<?php require_once $class; ?>');
-        self::$transformer->transform($metadata);
+        self::$rewriter->transform($metadata);
         $output = '<?php require_once \\' . get_class(self::$transformer) . '::rewrite($class, __DIR__); ?>';
         $this->assertEquals($output, $metadata->source);
     }
@@ -181,9 +187,21 @@ class FilterInjectorTransformerTest extends TestCase
         $fileContent = file_get_contents(__DIR__ . '/_files/yii_style.php');
         $this->assertIsString($fileContent);
         $metadata    = new StreamMetaData(self::openStream(__DIR__ . '/_files/yii_style.php'), $fileContent);
-        self::$transformer->transform($metadata);
+        self::$rewriter->transform($metadata);
         $expectedOutput = file_get_contents(__DIR__ . '/_files/yii_style_output.php');
         $this->assertEquals($expectedOutput, $metadata->source);
     }
 
+    /**
+     * Nodes built outside of the parser have no token positions, so there is nothing to rewrite
+     */
+    public function testNodesWithoutTokenPositionsAreNotRewritten(): void
+    {
+        $metadata = new StreamMetaData(self::openStream(), '<?php include $class; ?>');
+        $expected = $metadata->source;
+
+        $this->assertFalse(self::$transformer->rewriteNode(new Include_(new Variable('class'), Include_::TYPE_INCLUDE), $metadata, []));
+        $this->assertFalse(self::$transformer->rewriteNode(new String_('not an include'), $metadata, []));
+        $this->assertSame($expected, $metadata->source);
+    }
 }

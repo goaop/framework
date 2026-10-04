@@ -9,10 +9,11 @@
 ## Transformer chain (order matters)
 Applied per loaded file. Each returns TransformerResult: Transformed|Abstain|Aborted (skips the rest of the chain, reverts to the original source, recorded as untransformed).
 
-1. ConstructorExecutionTransformer — new expressions (works only if INTERCEPT_INITIALIZATIONS enabled)
-2. FilterInjectorTransformer — include/require (works only if INTERCEPT_INCLUDES enabled)
-3. WeavingTransformer — main; AdviceMatcher + CachedAspectLoader → proxy generators
-4. MagicConstantTransformer — `__FILE__`/`__DIR__` → original paths; always ABSTAINS (only cache-dir files need it; PHP resolves magic constants of a `php://filter/.../resource=<path>` include to <path>)
+1. SyntaxTreeRewriter — framework service (FrameworkServices, so it survives an overridden registerTransformerServices()); walks the syntax tree once and dispatches every node to the NodeRewriter rules (container tag) declaring its type (`getNodeTypes()`), in registration order. Rules are stateless per node (weaving re-enters the loader for other files mid-chain); ancestors are passed to the rules from the dispatcher's stack (no parent attributes on the shared tree, they cost ~3x a walk). Built-in rules:
+   - ConstructorExecutionTransformer — new expressions outside constant-expression contexts (only if INTERCEPT_INITIALIZATIONS enabled)
+   - FilterInjectorTransformer — include/require (only if INTERCEPT_INCLUDES enabled)
+   - MagicConstantTransformer — `__FILE__`/`__DIR__` → original paths, wraps `getFileName()`; never counts as a transformation (only cache-dir files need it; PHP resolves magic constants of a `php://filter/.../resource=<path>` include to <path>)
+2. WeavingTransformer — main; AdviceMatcher + CachedAspectLoader → proxy generators. Sees the token edits of the rules.
 
 ## Trait-based proxy engine (4.0)
 WeavingTransformer converts original class to trait + proxy class. Two generated files for class Ns\Foo:

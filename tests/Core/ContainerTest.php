@@ -19,6 +19,7 @@ use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Core\Cache\CachedAspectLoader;
+use Go\Instrument\Transformer\SyntaxTreeRewriter;
 use Go\Stubs\First;
 use Go\Stubs\ReentrantAutoloadAspect;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
@@ -72,6 +73,7 @@ class ContainerTest extends TestCase
             AdviceMatcher::class       => [AdviceMatcher::class],
             AspectLoader::class        => [AspectLoader::class],
             CachedAspectLoader::class  => [CachedAspectLoader::class],
+            SyntaxTreeRewriter::class  => [SyntaxTreeRewriter::class],
             // [CachePathManager::class], // Need to politely switch to options instead of whole kernel
         ];
     }

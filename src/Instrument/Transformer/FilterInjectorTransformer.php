@@ -18,15 +18,13 @@ use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Include_;
-use PhpParser\NodeTraverser;
-use PhpParser\NodeVisitor\FindingVisitor;
 
 /**
- * Transformer that injects source filter for "require" and "include" operations
+ * Rule that injects source filter for "require" and "include" operations
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-final class FilterInjectorTransformer implements SourceTransformer
+final class FilterInjectorTransformer implements NodeRewriter
 {
     /**
      * Php filter definition
@@ -142,40 +140,29 @@ final class FilterInjectorTransformer implements SourceTransformer
         return $cachedResource;
     }
 
-    /**
-     * Wrap all includes into rewrite filter
-     */
-    public function transform(StreamMetaData $metadata): TransformerResult
+    public function getNodeTypes(): array
     {
-        $includeExpressionFinder = new FindingVisitor(fn(Node $node) => $node instanceof Include_);
+        return [Include_::class];
+    }
 
-        // TODO: move this logic into walkSyntaxTree(Visitor $nodeVistor) method
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($includeExpressionFinder);
-        $traverser->traverse($metadata->syntaxTree);
-
-        /** @var Include_[] $includeExpressions */
-        $includeExpressions = $includeExpressionFinder->getFoundNodes();
-
-        if (empty($includeExpressions)) {
-            return TransformerResult::Abstain;
+    /**
+     * Wraps the include into rewrite filter
+     */
+    public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
+    {
+        $startPosition = $node->getAttribute('startTokenPos');
+        $endPosition   = $node->getAttribute('endTokenPos');
+        if (!$node instanceof Include_ || !is_int($startPosition) || !is_int($endPosition)) {
+            return false;
         }
 
-        foreach ($includeExpressions as $includeExpression) {
-            $startPosition = $includeExpression->getAttribute('startTokenPos');
-            $endPosition   = $includeExpression->getAttribute('endTokenPos');
-            if (!is_int($startPosition) || !is_int($endPosition)) {
-                continue;
-            }
-
-            $metadata->tokenStream[$startPosition]->text .= ' \\' . self::class . '::rewrite(';
-            if ($metadata->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
-                unset($metadata->tokenStream[$startPosition + 1]);
-            }
-
-            $metadata->tokenStream[$endPosition]->text .= ', __DIR__)';
+        $file->tokenStream[$startPosition]->text .= ' \\' . self::class . '::rewrite(';
+        if ($file->tokenStream[$startPosition + 1]->id === T_WHITESPACE) {
+            unset($file->tokenStream[$startPosition + 1]);
         }
 
-        return TransformerResult::Transformed;
+        $file->tokenStream[$endPosition]->text .= ', __DIR__)';
+
+        return true;
     }
 }
