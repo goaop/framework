@@ -37,7 +37,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->stringSthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function floatSth(float $arg)
     {
@@ -50,7 +50,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->floatSthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function boolSth(bool $arg)
     {
@@ -63,7 +63,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->boolSthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function intSth(int $arg)
     {
@@ -76,7 +76,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->intSthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function callableSth(callable $arg)
     {
@@ -89,7 +89,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->callableSthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function arraySth(array $arg)
     {
@@ -102,7 +102,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->arraySthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function variadicStringSthByRef(string &...$args)
     {
@@ -128,7 +128,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->exceptionArgOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$exception, $localException]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 2 ? [$exception, $localException] + \func_get_args() : [$exception, $localException]);
     }
     public function stringRth(string $arg): string
     {
@@ -141,7 +141,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->stringRthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function floatRth(float $arg): float
     {
@@ -154,7 +154,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->floatRthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function boolRth(bool $arg): bool
     {
@@ -167,7 +167,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->boolRthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function intRth(int $arg): int
     {
@@ -180,7 +180,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->intRthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function callableRth(callable $arg): callable
     {
@@ -193,7 +193,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->callableRthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function arrayRth(array $arg): array
     {
@@ -206,7 +206,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->arrayRthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$arg]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$arg] + \func_get_args() : [$arg]);
     }
     public function exceptionRth(\Exception $exception): \Exception
     {
@@ -219,7 +219,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->exceptionRthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$exception]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$exception] + \func_get_args() : [$exception]);
     }
     public function noRth(\Test\ns1\LocalException $exception)
     {
@@ -232,7 +232,7 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->noRthOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$exception]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$exception] + \func_get_args() : [$exception]);
     }
     public function returnSelf(): self
     {
@@ -245,6 +245,6 @@ class TestPhp7Class implements \Go\Aop\Proxy
             ],
             $this->returnSelfOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this);
+        return $__joinPoint->__invoke($this, \func_get_args());
     }
 }

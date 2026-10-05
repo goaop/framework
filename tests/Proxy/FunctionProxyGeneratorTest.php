@@ -95,8 +95,8 @@ class FunctionProxyGeneratorTest extends TestCase
 
         $this->assertStringContainsString('function funcGenHelper_void(): void', $code);
         // void return type: the joinpoint must be invoked but its result not returned.
-        $this->assertStringContainsString('$__joinPoint->__invoke()', $code);
-        $this->assertStringNotContainsString('return $__joinPoint->__invoke()', $code);
+        $this->assertStringContainsString('$__joinPoint->__invoke(\\func_get_args())', $code);
+        $this->assertStringNotContainsString('return $__joinPoint->__invoke(', $code);
     }
 
     public function testGenerateImportsAspectClassOfBoundAdvice(): void

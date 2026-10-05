@@ -32,7 +32,8 @@ class ImportCollisionClass implements \Go\Aop\Proxy
         return $__joinPoint->__invoke($this, match (\func_num_args()) {
             0 => [],
             1 => [$level],
-            default => [$level, $target],
+            2 => [$level, $target],
+            default => [$level, $target] + \func_get_args(),
         });
     }
     public function injector(): ?\Go\Aop\Framework\InterceptorInjector
@@ -46,6 +47,6 @@ class ImportCollisionClass implements \Go\Aop\Proxy
             ],
             $this->injectorOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this);
+        return $__joinPoint->__invoke($this, \func_get_args());
     }
 }

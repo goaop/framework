@@ -32,7 +32,8 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
         $__joinPoint->__invoke($this, match (\func_num_args()) {
             0 => [],
             1 => [$label],
-            default => [$label, $items],
+            2 => [$label, $items],
+            default => [$label, $items] + \func_get_args(),
         });
     }
     public function describe(?\ArrayObject $extra = null): string
@@ -48,7 +49,8 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
         );
         return $__joinPoint->__invoke($this, match (\func_num_args()) {
             0 => [],
-            default => [$extra],
+            1 => [$extra],
+            default => [$extra] + \func_get_args(),
         });
     }
 }

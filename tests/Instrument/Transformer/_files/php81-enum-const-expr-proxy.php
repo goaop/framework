@@ -25,6 +25,6 @@ enum ConstExprStatus : int implements \Go\Aop\Proxy
             ],
             $this->describeOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this);
+        return $__joinPoint->__invoke($this, \func_get_args());
     }
 }

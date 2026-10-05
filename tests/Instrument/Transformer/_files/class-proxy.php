@@ -28,7 +28,7 @@ class TestClass implements \Go\Aop\Proxy
             ],
             $this->publicMethodOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this);
+        return $__joinPoint->__invoke($this, \func_get_args());
     }
     protected function protectedMethod()
     {
@@ -41,7 +41,7 @@ class TestClass implements \Go\Aop\Proxy
             ],
             $this->protectedMethodOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this);
+        return $__joinPoint->__invoke($this, \func_get_args());
     }
     public static function publicStaticMethod()
     {
@@ -54,7 +54,7 @@ class TestClass implements \Go\Aop\Proxy
             ],
             self::publicStaticMethodOriginalAlias(...),
         );
-        return $__joinPoint->__invoke(static::class);
+        return $__joinPoint->__invoke(static::class, \func_get_args());
     }
     protected static function protectedStaticMethod()
     {
@@ -67,7 +67,7 @@ class TestClass implements \Go\Aop\Proxy
             ],
             self::protectedStaticMethodOriginalAlias(...),
         );
-        return $__joinPoint->__invoke(static::class);
+        return $__joinPoint->__invoke(static::class, \func_get_args());
     }
     public function publicMethodDynamicArguments($a, &$b)
     {
@@ -80,7 +80,7 @@ class TestClass implements \Go\Aop\Proxy
             ],
             $this->publicMethodDynamicArgumentsOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$a, &$b]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 2 ? [$a, &$b] + \func_get_args() : [$a, &$b]);
     }
     public function publicMethodFixedArguments($a, $b, $c = null)
     {
@@ -95,7 +95,8 @@ class TestClass implements \Go\Aop\Proxy
         );
         return $__joinPoint->__invoke($this, match (\func_num_args()) {
             2 => [$a, $b],
-            default => [$a, $b, $c],
+            3 => [$a, $b, $c],
+            default => [$a, $b, $c] + \func_get_args(),
         });
     }
     public function methodWithSpecialTypeArguments(self $instance)
@@ -109,6 +110,6 @@ class TestClass implements \Go\Aop\Proxy
             ],
             $this->methodWithSpecialTypeArgumentsOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, [$instance]);
+        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$instance] + \func_get_args() : [$instance]);
     }
 }
