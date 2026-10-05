@@ -41,8 +41,12 @@ class CachePathManager
     /**
      * Version of the metadata format of both files, a file of another version is ignored (or rejected with a
      * prebuilt cache, which must never be rebuilt at runtime)
+     *
+     * Both files are constant arrays: records are keyed by the path of the source relative to the application
+     * root, and cached files are written as `__DIR__ . '/…'`. opcache keeps such an array as is, so including
+     * the files on a warm request copies and checks nothing.
      */
-    public const int FORMAT_VERSION = 2;
+    public const int FORMAT_VERSION = 3;
 
     /** @phpstan-var KernelOptions */
     protected array $options;
@@ -62,7 +66,7 @@ class CachePathManager
     private CacheFileWriter $cacheFileWriter;
 
     /**
-     * Cached metadata for transformation state for the concrete file
+     * Cached metadata for transformation state for the concrete file, keyed by {@see self::getRecordKey()}
      *
      * Loaded lazily from the metadata file: only the cache-miss/weaving paths need it,
      * a hot request works from the include map alone.
@@ -101,7 +105,7 @@ class CachePathManager
     private array $pendingClasses = [];
 
     /**
-     * New metadata items, that was not present in $cacheState
+     * New metadata items, that was not present in $cacheState, keyed by {@see self::getRecordKey()}
      *
      * @var array<string, mixed>
      */
@@ -144,21 +148,12 @@ class CachePathManager
                     $this->rejectOutdatedFormat();
                     // Outdated format: everything re-weaves once and both files are rewritten
                     $this->cacheStateLoaded = true;
-                } elseif (is_array($includeData)) {
-                    $rawClassMap = is_array($includeData['map'] ?? null) ? $includeData['map'] : [];
-                    foreach ($rawClassMap as $className => $cacheUri) {
-                        if (is_string($className) && is_string($cacheUri)) {
-                            /** @var class-string $className */
-                            $this->classMap[$className] = $cacheUri;
-                        }
-                    }
-                    $rawSkip = is_array($includeData['skip'] ?? null) ? $includeData['skip'] : [];
-                    foreach (array_keys($rawSkip) as $className) {
-                        if (is_string($className)) {
-                            /** @var class-string $className */
-                            $this->skippedClasses[$className] = true;
-                        }
-                    }
+                } else {
+                    // A file of the current format is written by flushCacheState() only, so its arrays are used
+                    // as they are: checking every entry would cost a loop over the whole map on every request
+                    /** @var array{map: array<class-string, string>, skip: array<class-string, true>} $includeData */
+                    $this->classMap       = $includeData['map'];
+                    $this->skippedClasses = $includeData['skip'];
                 }
             } elseif (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
                 // Legacy cache directory (pre-class-map format): the metadata records carry
@@ -190,7 +185,8 @@ class CachePathManager
             $cacheData = include $this->cacheDir . self::CACHE_FILE_NAME;
             if (!$this->isCurrentFormat($cacheData)) {
                 $this->rejectOutdatedFormat();
-            } elseif (is_array($cacheData) && is_array($cacheData['files'] ?? null)) {
+            } else {
+                /** @var array{files: array<string, mixed>} $cacheData */
                 $this->cacheState = $cacheData['files'];
             }
         }
@@ -295,7 +291,7 @@ class CachePathManager
     /**
      * Tries to return an information for queried resource
      *
-     * @param string|null $resource Name of the file or null to get all information
+     * @param string|null $resource Name of the file or null to get all records, keyed by {@see self::getRecordKey()}
      *
      * @return array<string, mixed>|null Information or null if no record in the cache
      */
@@ -307,17 +303,10 @@ class CachePathManager
             return $this->cacheState;
         }
 
-        if (isset($this->newCacheState[$resource])) {
-            $result = $this->newCacheState[$resource];
-            return is_array($result) ? $result : null;
-        }
+        $recordKey = $this->getRecordKey($resource);
+        $result    = $this->newCacheState[$recordKey] ?? $this->cacheState[$recordKey] ?? null;
 
-        if (isset($this->cacheState[$resource])) {
-            $result = $this->cacheState[$resource];
-            return is_array($result) ? $result : null;
-        }
-
-        return null;
+        return is_array($result) ? $result : null;
     }
 
     /**
@@ -333,7 +322,7 @@ class CachePathManager
         unset($this->pendingClasses[$resource]);
         $metadata['classes'] = $classNames;
 
-        $this->newCacheState[$resource] = $metadata;
+        $this->newCacheState[$this->getRecordKey($resource)] = $metadata;
 
         // Keep the in-memory runtime map coherent within this request
         $cacheUri = $metadata['cacheUri'] ?? null;
@@ -421,23 +410,30 @@ class CachePathManager
     }
 
     /**
-     * Writes one cache file as an opcache-friendly PHP return-array with portable paths
+     * Writes one cache file as a constant PHP return-array with portable paths
+     *
+     * The files lie in the cache directory, so every cached file becomes `__DIR__ . '/…'`: a constant expression
+     * that keeps the whole array constant for opcache and follows the cache directory when it is moved.
      *
      * @param array<string, mixed> $data
      */
     private function writeCacheFile(string $relativeFileName, array $data): void
     {
         $cachePath = substr(var_export($this->cacheDir, true), 1, -1);
-        $rootPath  = substr(var_export($this->appDir, true), 1, -1);
         $cacheData = '<?php return ' . var_export($data, true) . ';';
-        $cacheData = strtr(
-            $cacheData,
-            [
-                '\'' . $cachePath => 'AOP_CACHE_DIR . \'',
-                '\'' . $rootPath  => 'AOP_ROOT_DIR . \'',
-            ],
-        );
+        $cacheData = str_replace('\'' . $cachePath, '__DIR__ . \'', $cacheData);
         $this->getCacheFileWriter()->write($this->cacheDir . $relativeFileName, $cacheData);
+    }
+
+    /**
+     * Returns the key of the record of a source: its path relative to the application root
+     *
+     * A relative key keeps the metadata file constant (no runtime path in it) and valid when the application
+     * is moved. Sources outside of the application root are never woven and keep their own path.
+     */
+    private function getRecordKey(string $resource): string
+    {
+        return ($this->appDir !== null ? PathResolver::rebase($resource, $this->appDir, '') : null) ?? $resource;
     }
 
     /**
