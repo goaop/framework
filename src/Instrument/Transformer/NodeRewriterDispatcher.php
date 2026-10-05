@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Instrument\Transformer;
 
-use Closure;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 
@@ -33,17 +32,29 @@ final class NodeRewriterDispatcher extends NodeVisitorAbstract
     private array $ancestors = [];
 
     /**
-     * @param Closure(Node): list<NodeRewriter> $rulesFor Resolves the rules for a node, in the order of the rules
-     * @param StreamMetaData                     $file     File whose token stream is rewritten
+     * Rules per node class, shared by the files with the same rules
+     *
+     * @var array<class-string<Node>, list<NodeRewriter>>
+     */
+    private array $rulesByNodeClass;
+
+    /**
+     * @param list<NodeRewriter>                            $rules            Rules applicable to the file, in their order
+     * @param array<class-string<Node>, list<NodeRewriter>> $rulesByNodeClass Rules per node class, filled on the first
+     *                                                                        node of each class
+     * @param StreamMetaData                                $file             File whose token stream is rewritten
      */
     public function __construct(
-        private readonly Closure $rulesFor,
+        private readonly array $rules,
+        array &$rulesByNodeClass,
         private readonly StreamMetaData $file,
-    ) {}
+    ) {
+        $this->rulesByNodeClass = &$rulesByNodeClass;
+    }
 
     public function enterNode(Node $node): null
     {
-        foreach (($this->rulesFor)($node) as $rule) {
+        foreach ($this->rulesByNodeClass[$node::class] ?? $this->resolveRules($node) as $rule) {
             if ($rule->rewriteNode($node, $this->file, $this->ancestors)) {
                 $this->isTransformed = true;
             }
@@ -58,6 +69,23 @@ final class NodeRewriterDispatcher extends NodeVisitorAbstract
         array_pop($this->ancestors);
 
         return null;
+    }
+
+    /**
+     * Returns the rules declaring the type of the given node, in the order of the rules
+     *
+     * @return list<NodeRewriter>
+     */
+    private function resolveRules(Node $node): array
+    {
+        $matchingRules = [];
+        foreach ($this->rules as $rule) {
+            if (array_any($rule->getNodeTypes(), static fn(string $nodeType): bool => $node instanceof $nodeType)) {
+                $matchingRules[] = $rule;
+            }
+        }
+
+        return $this->rulesByNodeClass[$node::class] = $matchingRules;
     }
 
     /**

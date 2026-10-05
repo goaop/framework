@@ -28,7 +28,7 @@ use PhpParser\Node\Identifier;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-final class MagicConstantTransformer implements NodeRewriter
+final class MagicConstantTransformer implements PrefilteredNodeRewriter
 {
     /**
      * Root path of application
@@ -73,6 +73,14 @@ final class MagicConstantTransformer implements NodeRewriter
     public function getNodeTypes(): array
     {
         return [Dir::class, File::class, MethodCall::class];
+    }
+
+    /**
+     * __DIR__, __FILE__ and ReflectionClass::getFileName() calls
+     */
+    public function getSourceMarkers(): array
+    {
+        return ['__DIR__', '__FILE__', 'getFileName'];
     }
 
     /**
