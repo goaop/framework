@@ -39,11 +39,35 @@ class FunctionCallArgumentListGeneratorTest extends TestCase
     public static function dataGenerator(): array
     {
         return [
-            ['var_dump', '\array_slice([$value], 0, \func_num_args()), $values'],                    // var_dump(...$vars)
+            ['var_dump', '[$value], $values'],                    // var_dump($value, ...$values)
             ['array_pop', '[&$array]'],               // array_pop(&$stack)
-            ['array_diff_assoc', '\array_slice([$array], 0, \func_num_args()), $arrays'], // array_diff_assoc($arr1, array ...$arrays)
+            ['array_diff_assoc', '[$array], $arrays'], // array_diff_assoc($arr1, array ...$arrays)
             ['strcoll', '[$string1, $string2]'],            // strcoll($string1, $string2)
-            ['basename', '\array_slice([$path, $suffix], 0, \func_num_args())'],  // basename($path, $suffix = null)
+            // basename($path, $suffix = '')
+            ['basename', 'match (\func_num_args()) { 1 => [$path], default => [$path, $suffix] }'],
+            // setcookie($name, $value = '', ... five more optional parameters): too many arms for a match
+            ['setcookie', '\array_slice([$name, $value, $expires_or_options, $path, $domain, $secure, $httponly], 0, \func_num_args())'],
         ];
+    }
+
+    /**
+     * The generated list holds exactly the passed arguments, like array_slice(…, func_num_args()) did
+     */
+    public function testGeneratedListHoldsOnlyThePassedArguments(): void
+    {
+        $function = static function ($first, $second = 2, &$third = 3, ...$rest): array {
+            return [];
+        };
+        $code = (new FunctionCallArgumentListGenerator(new ReflectionFunction($function)))->generate();
+        $this->assertSame('match (\func_num_args()) { 1 => [$first], 2 => [$first, $second], default => [$first, $second, &$third] }, $rest', $code);
+
+        // Evaluates the generated list in a function with the same signature (test code only)
+        $listOf = eval('return static function ($first, $second = 2, &$third = 3, ...$rest): array { return [' . $code . ']; };');
+        $this->assertInstanceOf(\Closure::class, $listOf);
+
+        $this->assertSame([[1], []], $listOf(1));
+        $this->assertSame([[1, 'b'], []], $listOf(1, 'b'));
+        $third = 'c';
+        $this->assertSame([[1, 'b', 'c'], ['d', 'e']], $listOf(1, 'b', $third, 'd', 'e'));
     }
 }

@@ -16,20 +16,30 @@ use ReflectionFunctionAbstract;
 
 /**
  * Prepares the function call argument list
+ *
+ * Optional arguments that were not passed must not be passed to the original function either, so its
+ * func_num_args() and func_get_args() stay the same. The list is chosen by the number of passed arguments with a
+ * match of array literals, which costs no more than a plain array; beyond MAX_MATCHED_OPTIONALS optional arguments
+ * the list is cut with array_slice() instead, to keep the generated code short.
  */
 final class FunctionCallArgumentListGenerator
 {
     /**
+     * Largest number of optional arguments whose argument lists are chosen with a match
+     */
+    private const int MAX_MATCHED_OPTIONALS = 4;
+
+    /**
      * List of function arguments
      *
-     * @var string[]
+     * @var list<string>
      */
     private array $arguments = [];
 
     /**
-     * If function contains optional arguments
+     * Number of leading arguments that are always passed
      */
-    private bool $hasOptionals = false;
+    private int $requiredCount = 0;
 
     /**
      * Definition of variadic argument or null if function is not variadic
@@ -44,9 +54,12 @@ final class FunctionCallArgumentListGenerator
     public function __construct(ReflectionFunctionAbstract $functionLike)
     {
         foreach ($functionLike->getParameters() as $parameter) {
-            $byReference        = ($parameter->isPassedByReference() && !$parameter->isVariadic()) ? '&' : '';
-            $this->hasOptionals = $this->hasOptionals || $parameter->isOptional();
-            $this->arguments[]  = $byReference . '$' . $parameter->name;
+            $byReference       = ($parameter->isPassedByReference() && !$parameter->isVariadic()) ? '&' : '';
+            $this->arguments[] = $byReference . '$' . $parameter->name;
+            if (!$parameter->isOptional()) {
+                // Required parameters precede the optional ones
+                $this->requiredCount++;
+            }
         }
         if ($functionLike->isVariadic()) {
             // Variadic argument is last and should be handled separately
@@ -61,13 +74,34 @@ final class FunctionCallArgumentListGenerator
             $argumentsPart[] = $this->variadicArgument;
         }
         if (!empty($this->arguments)) {
-            $argumentLine = '[' . implode(', ', $this->arguments) . ']';
-            if ($this->hasOptionals) {
-                $argumentLine = "\\array_slice($argumentLine, 0, \\func_num_args())";
-            }
-            array_unshift($argumentsPart, $argumentLine);
+            array_unshift($argumentsPart, $this->generateArgumentList());
         }
 
         return implode(', ', $argumentsPart);
+    }
+
+    /**
+     * Generates the list of the passed non-variadic arguments
+     */
+    private function generateArgumentList(): string
+    {
+        $argumentCount = count($this->arguments);
+        $allArguments  = '[' . implode(', ', $this->arguments) . ']';
+        $optionalCount = $argumentCount - $this->requiredCount;
+        if ($optionalCount === 0) {
+            return $allArguments;
+        }
+        if ($optionalCount > self::MAX_MATCHED_OPTIONALS) {
+            return "\\array_slice($allArguments, 0, \\func_num_args())";
+        }
+
+        $arms = [];
+        for ($passedCount = $this->requiredCount; $passedCount < $argumentCount; $passedCount++) {
+            $arms[] = $passedCount . ' => [' . implode(', ', array_slice($this->arguments, 0, $passedCount)) . ']';
+        }
+        // All arguments passed, and more of them for a variadic function
+        $arms[] = 'default => ' . $allArguments;
+
+        return 'match (\\func_num_args()) { ' . implode(', ', $arms) . ' }';
     }
 }

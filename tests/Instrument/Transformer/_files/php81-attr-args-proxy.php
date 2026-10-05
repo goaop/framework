@@ -27,7 +27,10 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
             ],
             $this->taggedOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \array_slice([$x], 0, \func_num_args()));
+        return $__joinPoint->__invoke($this, match (\func_num_args()) {
+            0 => [],
+            default => [$x],
+        });
     }
     #[\Test\ns1\RichValueAttr(\Test\ns1\AttrStatus::Active, new \ArrayObject([1, 2]))]
     public function collected(): array

@@ -93,7 +93,10 @@ class TestClass implements \Go\Aop\Proxy
             ],
             $this->publicMethodFixedArgumentsOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \array_slice([$a, $b, $c], 0, \func_num_args()));
+        return $__joinPoint->__invoke($this, match (\func_num_args()) {
+            2 => [$a, $b],
+            default => [$a, $b, $c],
+        });
     }
     public function methodWithSpecialTypeArguments(self $instance)
     {
