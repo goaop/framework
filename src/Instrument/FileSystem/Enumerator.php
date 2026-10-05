@@ -72,44 +72,72 @@ class Enumerator
 
     /**
      * Returns a filter callback for enumerating files
+     *
+     * @return Closure(SplFileInfo): bool
      */
     public function getFilter(): Closure
     {
-        // Every include/exclude path is a literal path prefix where only `*` is a wildcard (also crossing
-        // directory separators); `\` and `/` are treated alike. Patterns are compiled once per filter.
-        $includeRegexps = array_map(self::toPrefixRegexp(...), $this->includePaths);
-        $excludeRegexps = array_map(self::toPrefixRegexp(...), $this->excludePaths);
+        $isAllowedPath = $this->getPathFilter();
 
-        return function (SplFileInfo $file) use ($includeRegexps, $excludeRegexps): bool {
-            if ($file->getExtension() !== 'php') {
+        return fn(SplFileInfo $file): bool => $isAllowedPath($this->getFileFullPath($file));
+    }
+
+    /**
+     * Returns a filter callback for resolved file paths: the class loader checks with it every file it loads
+     *
+     * Every include/exclude path is a literal path prefix where only `*` is a wildcard (also crossing
+     * directory separators); `\` and `/` are treated alike. Patterns are compiled once per filter, all
+     * include paths and all exclude paths into one regular expression each.
+     *
+     * @return Closure(string): bool
+     */
+    public function getPathFilter(): Closure
+    {
+        // The same check as PathResolver::isBelow() with the root prepared once: an empty root contains nothing,
+        // the file-system root `/` becomes an empty prefix, so every absolute path lies below it
+        $rootPrefix    = rtrim($this->rootDirectory, '/\\');
+        $rootLength    = strlen($rootPrefix);
+        $hasRoot       = $this->rootDirectory !== '';
+        $includeRegexp = self::toPrefixRegexp($this->includePaths);
+        $excludeRegexp = self::toPrefixRegexp($this->excludePaths);
+
+        return static function (string $fullPath) use ($rootPrefix, $rootLength, $hasRoot, $includeRegexp, $excludeRegexp): bool {
+            if (!str_ends_with($fullPath, '.php') || !$hasRoot || !str_starts_with($fullPath, $rootPrefix)) {
                 return false;
             }
-
-            $fullPath = $this->getFileFullPath($file);
-            // Do not touch files that not under rootDirectory
-            if (!PathResolver::isBelow($fullPath, $this->rootDirectory)) {
+            // Do not touch files that not under rootDirectory, siblings sharing a name prefix included
+            $separator = $fullPath[$rootLength] ?? '';
+            if ($separator !== '' && $separator !== '/' && $separator !== '\\') {
                 return false;
             }
 
             $normalizedPath = str_replace('\\', '/', $fullPath);
-            $matchesPattern = static fn(string $regexp): bool => preg_match($regexp, $normalizedPath) === 1;
-
-            if ($includeRegexps !== [] && !array_any($includeRegexps, $matchesPattern)) {
+            if ($includeRegexp !== null && preg_match($includeRegexp, $normalizedPath) !== 1) {
                 return false;
             }
 
-            return !array_any($excludeRegexps, $matchesPattern);
+            return $excludeRegexp === null || preg_match($excludeRegexp, $normalizedPath) !== 1;
         };
     }
 
     /**
-     * Converts a path pattern into an anchored regular expression matching the path and everything below it
+     * Converts path patterns into one anchored regular expression matching the paths and everything below them
+     *
+     * @param string[] $patterns
+     *
+     * @return string|null Null when there are no patterns
      */
-    private static function toPrefixRegexp(string $pattern): string
+    private static function toPrefixRegexp(array $patterns): ?string
     {
-        $quotedPattern = preg_quote(str_replace('\\', '/', $pattern), '#');
+        if ($patterns === []) {
+            return null;
+        }
+        $alternatives = array_map(
+            static fn(string $pattern): string => str_replace('\\*', '.*', preg_quote(str_replace('\\', '/', $pattern), '#')),
+            $patterns,
+        );
 
-        return '#^' . str_replace('\\*', '.*', $quotedPattern) . '#';
+        return '#^(?:' . implode('|', $alternatives) . ')#';
     }
 
     /**
