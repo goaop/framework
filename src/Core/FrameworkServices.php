@@ -16,7 +16,6 @@ use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Core\Cache\CachedAspectLoader;
-use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\Transformer\NodeRewriter;
 use Go\Instrument\Transformer\SyntaxTreeRewriter;
 
@@ -62,10 +61,6 @@ final class FrameworkServices
 
             return new CachedAspectLoader($container, AspectLoader::class, $options);
         });
-
-        $container->addLazyService(CachePathManager::class, fn(AspectContainer $container): CachePathManager => new CachePathManager(
-            $container->getService(AspectKernel::class),
-        ));
 
         // Registered ahead of the kernel's transformer services, so the single syntax tree walk
         // opens the transformation chain even when AspectKernel::registerTransformerServices()

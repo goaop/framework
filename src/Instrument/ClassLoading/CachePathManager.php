@@ -57,9 +57,9 @@ class CachePathManager
     protected ?string $appDir = null;
 
     /**
-     * Writer performing the actual cache file system operations
+     * Writer performing the actual cache file system operations, created on the first write
      */
-    private readonly CacheFileWriter $cacheFileWriter;
+    private CacheFileWriter $cacheFileWriter;
 
     /**
      * Cached metadata for transformation state for the concrete file
@@ -115,13 +115,14 @@ class CachePathManager
         $this->cacheDir = $options['cacheDir'];
         $this->fileMode = $options['cacheFileMode'];
 
-        $this->cacheFileWriter = new CacheFileWriter($this->fileMode);
-
         if ($this->cacheDir) {
+            $hasIncludeMap = file_exists($this->cacheDir . self::INCLUDE_MAP_FILE_NAME);
             // With a prebuilt cache the directory is guaranteed to exist (built at deploy
             // time), so all directory/writability stat checks are skipped - this also
-            // covers read-only file systems (GAE, phar, etc)
-            if (!$this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
+            // covers read-only file systems (GAE, phar, etc). An existing include map
+            // proves the directory too: a warm cache costs no stat calls, and a cache
+            // that became read-only fails on the next write only, not on every request
+            if (!$hasIncludeMap && !$this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
                 if (!is_dir($this->cacheDir)) {
                     $cacheRootDir = dirname($this->cacheDir);
                     if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
@@ -137,7 +138,7 @@ class CachePathManager
                 }
             }
 
-            if (file_exists($this->cacheDir . self::INCLUDE_MAP_FILE_NAME)) {
+            if ($hasIncludeMap) {
                 $includeData = include $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
                 if (!$this->isCurrentFormat($includeData)) {
                     $this->rejectOutdatedFormat();
@@ -268,7 +269,7 @@ class CachePathManager
      */
     public function getCacheFileWriter(): CacheFileWriter
     {
-        return $this->cacheFileWriter;
+        return $this->cacheFileWriter ??= new CacheFileWriter($this->fileMode);
     }
 
     /**
@@ -436,7 +437,7 @@ class CachePathManager
                 '\'' . $rootPath  => 'AOP_ROOT_DIR . \'',
             ],
         );
-        $this->cacheFileWriter->write($this->cacheDir . $relativeFileName, $cacheData);
+        $this->getCacheFileWriter()->write($this->cacheDir . $relativeFileName, $cacheData);
     }
 
     /**
