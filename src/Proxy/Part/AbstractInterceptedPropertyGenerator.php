@@ -21,10 +21,22 @@ use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\ProxyImports;
 use Go\Proxy\Generator\TypeGenerator;
 use PhpParser\Comment\Doc;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\BinaryOp\BooleanOr;
+use PhpParser\Node\Expr\Isset_;
+use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
+use PhpParser\Node\Expr\PropertyFetch;
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Param;
 use PhpParser\Node\PropertyItem;
+use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Else_;
+use PhpParser\Node\Stmt\Expression;
+use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Property;
+use PhpParser\Node\Stmt\Return_;
 use PhpParser\NodeFinder;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
@@ -113,6 +125,111 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         }
 
         return false;
+    }
+
+    /**
+     * Builds the statement of a `get` hook that dispatches the read to the field access joinpoint
+     *
+     * Rendered PHP template (`readByReference` for the `&get` hook of array properties):
+     * <pre>
+     * return $__joinPoint->read($this, $this-><propertyName>);
+     * </pre>
+     *
+     * Rendered PHP template for potentially uninitialized typed properties:
+     * <pre>
+     * if (isset($this-><propertyName>) || $__joinPoint->getField()->isInitialized($this)) {
+     *     return $__joinPoint->read($this, $this-><propertyName>);
+     * } else {
+     *     return $__joinPoint->read($this);
+     * }
+     * </pre>
+     */
+    protected function createReadStatement(bool $returnsByReference): Stmt
+    {
+        $readMethod    = $returnsByReference ? 'readByReference' : 'read';
+        $readWithValue = new MethodCall(new Variable('__joinPoint'), $readMethod, [
+            new Arg(new Variable('this')),
+            new Arg($this->createPropertyFetch()),
+        ]);
+        if (!$this->hasPotentiallyUninitializedTypedProperty()) {
+            return new Return_($readWithValue);
+        }
+        $readWithoutValue = new MethodCall(new Variable('__joinPoint'), $readMethod, [
+            new Arg(new Variable('this')),
+        ]);
+
+        return new If_($this->createInitializedCondition(), [
+            'stmts' => [new Return_($readWithValue)],
+            'else'  => new Else_([new Return_($readWithoutValue)]),
+        ]);
+    }
+
+    /**
+     * Builds the statement of a `set` hook that dispatches the write to the field access joinpoint
+     *
+     * Rendered PHP template:
+     * <pre>
+     * $this-><propertyName> = $__joinPoint->write($this, $value, $this-><propertyName>);
+     * </pre>
+     *
+     * Rendered PHP template for potentially uninitialized typed properties:
+     * <pre>
+     * if (isset($this-><propertyName>) || $__joinPoint->getField()->isInitialized($this)) {
+     *     $this-><propertyName> = $__joinPoint->write($this, $value, $this-><propertyName>);
+     * } else {
+     *     $this-><propertyName> = $__joinPoint->write($this, $value);
+     * }
+     * </pre>
+     */
+    protected function createWriteStatement(): Stmt
+    {
+        $writeWithValue = new Expression(new Assign(
+            $this->createPropertyFetch(),
+            new MethodCall(new Variable('__joinPoint'), 'write', [
+                new Arg(new Variable('this')),
+                new Arg(new Variable('value')),
+                new Arg($this->createPropertyFetch()),
+            ]),
+        ));
+        if (!$this->hasPotentiallyUninitializedTypedProperty()) {
+            return $writeWithValue;
+        }
+        $writeWithoutValue = new Expression(new Assign(
+            $this->createPropertyFetch(),
+            new MethodCall(new Variable('__joinPoint'), 'write', [
+                new Arg(new Variable('this')),
+                new Arg(new Variable('value')),
+            ]),
+        ));
+
+        return new If_($this->createInitializedCondition(), [
+            'stmts' => [$writeWithValue],
+            'else'  => new Else_([$writeWithoutValue]),
+        ]);
+    }
+
+    /**
+     * isset() answers without a call for every value except null, reflection decides only between null and
+     * an uninitialized property
+     */
+    private function createInitializedCondition(): BooleanOr
+    {
+        return new BooleanOr(
+            new Isset_([$this->createPropertyFetch()]),
+            new MethodCall(
+                new MethodCall(new Variable('__joinPoint'), 'getField'),
+                'isInitialized',
+                [new Arg(new Variable('this'))],
+            ),
+        );
+    }
+
+    /**
+     * Inside its own hook, the property fetch reads and writes the stored value
+     */
+    private function createPropertyFetch(): PropertyFetch
+    {
+        return new PropertyFetch(new Variable('this'), $this->property->getName());
     }
 
     protected function hasPotentiallyUninitializedTypedProperty(): bool

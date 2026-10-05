@@ -14,25 +14,17 @@ namespace Go\Proxy\Part;
 
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Aop\Framework\InterceptorInjector;
-use Go\Aop\Intercept\FieldAccessType;
 use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\ProxyImports;
 use PhpParser\Node\Arg;
-use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\ClassConstFetch;
-use PhpParser\Node\Expr\MethodCall;
-use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Name;
 use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Scalar\String_;
-use PhpParser\Node\Stmt\Else_;
-use PhpParser\Node\Stmt\Expression;
-use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Property as PropertyNode;
-use PhpParser\Node\Stmt\Return_;
 use PhpParser\Node\Stmt\Static_;
 use PhpParser\Node\StaticVar;
 use ReflectionProperty;
@@ -40,24 +32,18 @@ use ReflectionProperty;
 /**
  * Generates an intercepted class property using native PHP 8.4 property hooks.
  *
- * For regular properties it generates both `get` and `set` hooks.
+ * For regular properties it generates both `get` and `set` hooks, which pass the values to the joinpoint by value.
  *
  * Rendered output shape:
  * <pre>
  * public string $name = 'value' {
  *     get {
- *         static $__joinPoint;
- *         if ($__joinPoint === null) {
- *             $__joinPoint = InterceptorInjector::forProperty(self::class, 'name', [...]);
- *         }
- *         return $__joinPoint->__invoke($this, FieldAccessType::Read, $this->name);
+ *         static $__joinPoint = InterceptorInjector::forProperty(self::class, 'name', [...]);
+ *         return $__joinPoint->read($this, $this->name);
  *     }
  *     set {
- *         static $__joinPoint;
- *         if ($__joinPoint === null) {
- *             $__joinPoint = InterceptorInjector::forProperty(self::class, 'name', [...]);
- *         }
- *         $this->name = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this->name);
+ *         static $__joinPoint = InterceptorInjector::forProperty(self::class, 'name', [...]);
+ *         $this->name = $__joinPoint->write($this, $value, $this->name);
  *     }
  * }
  * </pre>
@@ -69,15 +55,14 @@ use ReflectionProperty;
  * <pre>
  * public array $items = [] {
  *     &get {
- *         static $__joinPoint;
- *         if ($__joinPoint === null) {
- *             $__joinPoint = InterceptorInjector::forProperty(self::class, 'items', [...]);
- *         }
- *         $value = &$__joinPoint->__invoke($this, FieldAccessType::Read, $this->items);
- *         return $value;
+ *         static $__joinPoint = InterceptorInjector::forProperty(self::class, 'items', [...]);
+ *         return $__joinPoint->readByReference($this, $this->items);
  *     }
  * }
  * </pre>
+ *
+ * Hooks of typed properties without a default value check the initialization first, see
+ * {@see AbstractInterceptedPropertyGenerator::createReadStatement()}.
  */
 final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGenerator implements PropertyNodeProvider
 {
@@ -106,155 +91,28 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
     }
 
     /**
-     * Builds AST for a native property `get` hook.
-     *
-     * Rendered PHP template for initialized/backed properties:
-     * <pre>
-     * get {
-     *     static $__joinPoint;
-     *     if ($__joinPoint === null) {
-     *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
-     *     }
-     *     return $__joinPoint->__invoke($this, FieldAccessType::Read, $this-><propertyName>);
-     * }
-     * </pre>
-     *
-     * Rendered PHP template for potentially uninitialized typed properties:
-     * <pre>
-     * get {
-     *     static $__joinPoint;
-     *     if ($__joinPoint === null) {
-     *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
-     *     }
-     *     if ($__joinPoint->getField()->isInitialized($this)) {
-     *         return $__joinPoint->__invoke($this, FieldAccessType::Read, $this-><propertyName>);
-     *     }
-     *     return $__joinPoint->__invoke($this, FieldAccessType::Read);
-     * }
-     * </pre>
-     *
-     * For array typed properties this becomes `&get`:
-     * <pre>
-     * &get {
-     *     static $__joinPoint;
-     *     if ($__joinPoint === null) {
-     *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
-     *     }
-     *     if ($__joinPoint->getField()->isInitialized($this)) {
-     *         return $__joinPoint->__invoke($this, FieldAccessType::Read, $this-><propertyName>);
-     *     }
-     *     return $__joinPoint->__invoke($this, FieldAccessType::Read);
-     * }
-     * </pre>
+     * Builds AST for a native property `get` hook, `&get` for array typed properties
      */
     private function createGetHook(bool $returnsByReference): PropertyHook
     {
-        $propertyName = $this->property->getName();
-        $readInvokeWithValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
-            new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Read')),
-            new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
-        ]);
-        $readInvokeWithoutValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
-            new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Read')),
-        ]);
-        $fieldAccessExpression = $this->createFieldAccessInitializationExpression($propertyName);
+        $fieldAccessExpression = $this->createFieldAccessInitializationExpression($this->property->getName());
 
         return new PropertyHook('get', [
             ...$this->getFieldAccessInitializationStatements($fieldAccessExpression),
-            $this->hasPotentiallyUninitializedTypedProperty()
-                ? new If_(
-                    new MethodCall(
-                        new MethodCall(new Variable('__joinPoint'), 'getField'),
-                        'isInitialized',
-                        [new Arg(new Variable('this'))],
-                    ),
-                    [
-                        'stmts' => [
-                            new Return_($readInvokeWithValue),
-                        ],
-                        'else' => new Else_([new Return_($readInvokeWithoutValue)]),
-                    ],
-                )
-                : new Return_($readInvokeWithValue),
+            $this->createReadStatement($returnsByReference),
         ], ['byRef' => $returnsByReference]);
     }
 
     /**
-     * Builds AST for a native property `set` hook.
-     *
-     * Rendered PHP template for initialized/backed properties:
-     * <pre>
-     * set {
-     *     static $__joinPoint;
-     *     if ($__joinPoint === null) {
-     *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
-     *     }
-     *     $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this-><propertyName>);
-     * }
-     * </pre>
-     *
-     * Rendered PHP template for potentially uninitialized typed properties:
-     * <pre>
-     * set {
-     *     static $__joinPoint;
-     *     if ($__joinPoint === null) {
-     *         $__joinPoint = InterceptorInjector::forProperty(self::class, '<propertyName>', [...]);
-     *     }
-     *     if ($__joinPoint->getField()->isInitialized($this)) {
-     *         $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::Write, $value, $this-><propertyName>);
-     *     } else {
-     *         $this-><propertyName> = $__joinPoint->__invoke($this, FieldAccessType::Write, $value);
-     *     }
-     * }
-     * </pre>
+     * Builds AST for a native property `set` hook
      */
     private function createSetHook(): PropertyHook
     {
-        $propertyName = $this->property->getName();
-        $fieldAccessExpression = $this->createFieldAccessInitializationExpression($propertyName);
-
-        $writeInvokeWithBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
-            new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Write')),
-            new Arg(new Variable('value')),
-            new Arg(new PropertyFetch(new Variable('this'), $propertyName)),
-        ]);
-        $writeInvokeWithoutBackedValue = new MethodCall(new Variable('__joinPoint'), '__invoke', [
-            new Arg(new Variable('this')),
-            new Arg(new ClassConstFetch(new Name($this->importedName(FieldAccessType::class)), 'Write')),
-            new Arg(new Variable('value')),
-        ]);
+        $fieldAccessExpression = $this->createFieldAccessInitializationExpression($this->property->getName());
 
         return new PropertyHook('set', [
             ...$this->getFieldAccessInitializationStatements($fieldAccessExpression),
-            $this->hasPotentiallyUninitializedTypedProperty()
-                ? new If_(
-                    new MethodCall(
-                        new MethodCall(new Variable('__joinPoint'), 'getField'),
-                        'isInitialized',
-                        [new Arg(new Variable('this'))],
-                    ),
-                    [
-                        'stmts' => [
-                            new Expression(new Assign(
-                                new PropertyFetch(new Variable('this'), $propertyName),
-                                $writeInvokeWithBackedValue,
-                            )),
-                        ],
-                        'else' => new Else_([
-                            new Expression(new Assign(
-                                new PropertyFetch(new Variable('this'), $propertyName),
-                                $writeInvokeWithoutBackedValue,
-                            )),
-                        ]),
-                    ],
-                )
-                : new Expression(new Assign(
-                    new PropertyFetch(new Variable('this'), $propertyName),
-                    $writeInvokeWithBackedValue,
-                )),
+            $this->createWriteStatement(),
         ]);
     }
 

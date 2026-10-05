@@ -2,18 +2,6 @@
 
 $ignoreErrors = [];
 $ignoreErrors[] = [
-	'message' => '#^Only booleans are allowed in &&, list\\<Go\\\\Aop\\\\Intercept\\\\FieldAccessType\\|int\\|\\(T of object \\= object\\)\\|V \\= mixed\\>\\|null given on the right side\\.$#',
-	'identifier' => 'booleanAnd.rightNotBoolean',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Aop/Framework/ClassFieldAccess.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Variable property access on \\$this\\(Go\\\\Aop\\\\Framework\\\\ClassFieldAccess\\<T of object \\= object, V \\= mixed\\>\\)\\.$#',
-	'identifier' => 'property.dynamicName',
-	'count' => 4,
-	'path' => __DIR__ . '/src/Aop/Framework/ClassFieldAccess.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Only booleans are allowed in &&, list\\<int\\|list\\<mixed\\>\\|T of object \\= object\\>\\|null given on the right side\\.$#',
 	'identifier' => 'booleanAnd.rightNotBoolean',
 	'count' => 1,

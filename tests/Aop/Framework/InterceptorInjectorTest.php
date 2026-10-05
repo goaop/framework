@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\Intercept\FieldAccessType;
 use Go\Aop\Intercept\Interceptor as InterceptorContract;
 use Go\Stubs\TraitAliasProxy;
 use PHPUnit\Framework\TestCase;
@@ -57,9 +56,7 @@ class InterceptorInjectorTest extends TestCase
         $this->assertInstanceOf(ClassFieldAccess::class, $fieldAccess);
         $this->assertSame('classProperty', $fieldAccess->getField()->name);
 
-        $value = 'hello';
-        $result = $fieldAccess->__invoke($this, FieldAccessType::Read, $value);
-        $this->assertSame('hello', $result);
+        $this->assertSame('hello', $fieldAccess->read($this, 'hello'));
     }
 
     public function testForFunctionBuildsReflectionFunctionInvocation(): void

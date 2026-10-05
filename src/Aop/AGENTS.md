@@ -22,7 +22,7 @@ ClassJoinpoint → ConstructorInvocation
 | FieldAccess             | `<T of object, V=mixed>` | class holding property     | property type  |
 | ConstructorInvocation   | `<T of object>`          | class being constructed    | —              |
 
-Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd generic arg in per-method @var annotations — gives IDE/PHPStan full type-awareness on $__joinPoint->__invoke().
+Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd generic arg in per-method @var annotations — gives IDE/PHPStan full type-awareness on $__joinPoint->__invoke() (read()/write() for FieldAccess).
 
 ## Implementations (src/Aop/Framework/)
 | Class                             | Implements              | Key behavior                                                                                                           |
@@ -32,10 +32,10 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 | StaticTraitAliasMethodInvocation  | StaticMethodInvocation  | FCC shim: static fn(array $args) => forward_static_call_array(...); bindTo(null, $scope) per call                      |
 | ReflectionConstructorInvocation   | ConstructorInvocation   | newInstanceWithoutConstructor() then call constructor (requires INTERCEPT_INITIALIZATIONS feature)                     |
 | ReflectionFunctionInvocation      | FunctionInvocation      | receives FCC to global fn (e.g. \strlen(...) with leading \ to avoid recursive proxy call)                             |
-| ClassFieldAccess                  | FieldAccess             | Property interception via native get/set hooks on proxied properties                                                   |
+| ClassFieldAccess                  | FieldAccess             | Property hooks call read()/write() by value; readByReference() only for the &get hook of arrays (binding released after) |
 | StaticInitializationJoinpoint     | ClassJoinpoint          | Fired once after proxy class loaded via `Proxy::__staticInitialization()`                                             |
 
-HOT PATH: `__invoke()`/`proceed()` of these classes run on every intercepted call. Code there is embedded on purpose:
+HOT PATH: `__invoke()`/`proceed()` of these classes (`read()`/`readByReference()`/`write()` of ClassFieldAccess) run on every intercepted call. Code there is embedded on purpose:
 never extract parts into methods or a base class, never add object allocations, reflection or extra method calls
 (copy-paste of the frame handling across the classes is intentional). Joinpoint objects are shared by every call of
 their member (`static $__joinPoint`), so each `__invoke()` pushes the outer call state onto its own `$stackFrames`
