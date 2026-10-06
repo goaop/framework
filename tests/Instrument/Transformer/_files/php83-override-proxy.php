@@ -28,7 +28,7 @@ class TestClassWithOverride implements \Go\Aop\Proxy
             ],
             $this->overriddenMethodOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \func_get_args());
+        return $__joinPoint->__invoke($this);
     }
     public function normalMethod(): int
     {
@@ -41,6 +41,6 @@ class TestClassWithOverride implements \Go\Aop\Proxy
             ],
             $this->normalMethodOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \func_get_args());
+        return $__joinPoint->__invoke($this);
     }
 }

@@ -29,8 +29,7 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
         );
         return $__joinPoint->__invoke($this, match (\func_num_args()) {
             0 => [],
-            1 => [$x],
-            default => [$x] + \func_get_args(),
+            default => [$x],
         });
     }
     #[\Test\ns1\RichValueAttr(\Test\ns1\AttrStatus::Active, new \ArrayObject([1, 2]))]
@@ -45,6 +44,6 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
             ],
             $this->collectedOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \func_get_args());
+        return $__joinPoint->__invoke($this);
     }
 }

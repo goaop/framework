@@ -24,7 +24,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             ],
             $this->publicMethodOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \func_get_args());
+        return $__joinPoint->__invoke($this);
     }
     public function anotherMethod(int $x): int
     {
@@ -37,7 +37,7 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             ],
             $this->anotherMethodOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \func_num_args() > 1 ? [$x] + \func_get_args() : [$x]);
+        return $__joinPoint->__invoke($this, [$x]);
     }
     public static function staticMethod(): string
     {
@@ -50,6 +50,6 @@ final readonly class TestReadonlyClass implements \Go\Aop\Proxy
             ],
             self::staticMethodOriginalAlias(...),
         );
-        return $__joinPoint->__invoke(static::class, \func_get_args());
+        return $__joinPoint->__invoke(static::class);
     }
 }

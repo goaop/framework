@@ -23,6 +23,6 @@ enum TestStatus : string implements \Go\Aop\Proxy
             ],
             $this->labelOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \func_get_args());
+        return $__joinPoint->__invoke($this);
     }
 }

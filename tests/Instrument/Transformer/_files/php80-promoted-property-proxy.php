@@ -80,8 +80,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
             0 => [],
             1 => [$name],
             2 => [$name, $counter],
-            3 => [$name, $counter, $bag],
-            default => [$name, $counter, $bag] + \func_get_args(),
+            default => [$name, $counter, $bag],
         });
     }
     public function getName(): string
@@ -95,6 +94,6 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
             ],
             $this->getNameOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, \func_get_args());
+        return $__joinPoint->__invoke($this);
     }
 }

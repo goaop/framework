@@ -17,12 +17,10 @@ use ReflectionFunctionAbstract;
 /**
  * Prepares the function call argument list
  *
- * The original function receives exactly the passed arguments, so its func_num_args() and func_get_args() stay the
- * same: optional arguments that were not passed are left out, and extra arguments passed after the declared ones
- * are added from func_get_args() (a variadic function collects them in its variadic argument instead). The list is
- * chosen by the number of passed arguments with a match of array literals (a ternary for a function without optional
- * arguments), which costs little more than a plain array; beyond MAX_MATCHED_OPTIONALS optional arguments the list is
- * cut with array_slice() instead, to keep the generated code short.
+ * Optional arguments that were not passed must not be passed to the original function either, so its
+ * func_num_args() and func_get_args() stay the same. The list is chosen by the number of passed arguments with a
+ * match of array literals, which costs no more than a plain array; beyond MAX_MATCHED_OPTIONALS optional arguments
+ * the list is cut with array_slice() instead, to keep the generated code short.
  */
 final class FunctionCallArgumentListGenerator
 {
@@ -71,15 +69,15 @@ final class FunctionCallArgumentListGenerator
 
     public function generate(): string
     {
-        if ($this->variadicArgument === null) {
-            // Without declared arguments every passed argument is an extra one
-            return $this->arguments === [] ? '\\func_get_args()' : $this->generateArgumentList();
+        $argumentsPart = [];
+        if ($this->variadicArgument !== null) {
+            $argumentsPart[] = $this->variadicArgument;
         }
-        if ($this->arguments === []) {
-            return $this->variadicArgument;
+        if (!empty($this->arguments)) {
+            array_unshift($argumentsPart, $this->generateArgumentList());
         }
 
-        return $this->generateArgumentList() . ', ' . $this->variadicArgument;
+        return implode(', ', $argumentsPart);
     }
 
     /**
@@ -90,30 +88,19 @@ final class FunctionCallArgumentListGenerator
         $argumentCount = count($this->arguments);
         $allArguments  = '[' . implode(', ', $this->arguments) . ']';
         $optionalCount = $argumentCount - $this->requiredCount;
-        // The union keeps the declared arguments (with their references) and adds the extra ones
-        $withExtraArguments = $this->variadicArgument === null ? "$allArguments + \\func_get_args()" : null;
-        if ($optionalCount === 0 || $optionalCount > self::MAX_MATCHED_OPTIONALS) {
-            $passedArguments = $optionalCount === 0
-                ? $allArguments
-                : "\\array_slice($allArguments, 0, \\func_num_args())";
-
-            // A ternary costs less than a match, which pays off for the common functions without optional arguments
-            return $withExtraArguments === null
-                ? $passedArguments
-                : "\\func_num_args() > $argumentCount ? $withExtraArguments : $passedArguments";
+        if ($optionalCount === 0) {
+            return $allArguments;
+        }
+        if ($optionalCount > self::MAX_MATCHED_OPTIONALS) {
+            return "\\array_slice($allArguments, 0, \\func_num_args())";
         }
 
         $arms = [];
         for ($passedCount = $this->requiredCount; $passedCount < $argumentCount; $passedCount++) {
             $arms[] = $passedCount . ' => [' . implode(', ', array_slice($this->arguments, 0, $passedCount)) . ']';
         }
-        if ($withExtraArguments === null) {
-            // All arguments passed, the extra ones are collected by the variadic argument
-            $arms[] = 'default => ' . $allArguments;
-        } else {
-            $arms[] = $argumentCount . ' => ' . $allArguments;
-            $arms[] = 'default => ' . $withExtraArguments;
-        }
+        // All arguments passed, and more of them for a variadic function
+        $arms[] = 'default => ' . $allArguments;
 
         return 'match (\\func_num_args()) { ' . implode(', ', $arms) . ' }';
     }

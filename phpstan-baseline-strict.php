@@ -287,6 +287,12 @@ $ignoreErrors[] = [
 	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
 	'identifier' => 'empty.notAllowed',
 	'count' => 1,
+	'path' => __DIR__ . '/src/Proxy/Part/FunctionCallArgumentListGenerator.php',
+];
+$ignoreErrors[] = [
+	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
+	'identifier' => 'empty.notAllowed',
+	'count' => 1,
 	'path' => __DIR__ . '/src/Proxy/TraitProxyGenerator.php',
 ];
 $ignoreErrors[] = [

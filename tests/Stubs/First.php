@@ -150,7 +150,8 @@ class First
     /**
      * Method for checking invocation with any number of arguments
      *
-     * Real proxy passes the extra arguments after the declared ones to the original method with func_get_args()
+     * NB: Real proxy use the method definition to prepare invocation proxy, so variable number of arguments
+     * will not work at all!
      */
     public function variableArgsTest(): string
     {
@@ -168,7 +169,8 @@ class First
     /**
      * Method for checking invocation with any number of arguments
      *
-     * Real proxy passes the extra arguments after the declared ones to the original method with func_get_args()
+     * NB: Real proxy use the method definition to prepare invocation proxy, so variable number of arguments
+     * will not work at all!
      */
     public static function staticVariableArgsTest(): string
     {
