@@ -20,8 +20,7 @@ use Go\PhpUnit\UsesTemporaryDirectory;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
-// Separate processes: the cache files reference the AOP_ROOT_DIR/AOP_CACHE_DIR constants,
-// which other tests in the shared process define with the fixture-project paths
+// Separate processes: every test rewrites the same cache files, which are loaded with include
 #[\PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses]
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class CachePathManagerTest extends TestCase
@@ -33,15 +32,9 @@ class CachePathManagerTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        // Real directories: the cache files are loaded with include and reference the AOP_ROOT_DIR and
-        // AOP_CACHE_DIR constants, which must match the directories of every test in this class exactly
-        // (each test runs in its own process, so the constants are defined once per process)
+        // Real directories: the cache files are loaded with include, their paths are relative to __DIR__
         self::$appDir   = self::createTemporaryDirectory('cpm-app');
         self::$cacheDir = self::createTemporaryDirectory('cpm-cache');
-        if (!defined('AOP_ROOT_DIR')) {
-            define('AOP_ROOT_DIR', self::$appDir);
-            define('AOP_CACHE_DIR', self::$cacheDir);
-        }
     }
 
     public static function tearDownAfterClass(): void
@@ -50,12 +43,12 @@ class CachePathManagerTest extends TestCase
         self::removeTemporaryDirectory(self::$appDir);
     }
 
-    private function createManager(bool $prebuiltCache = false, ?string $cacheDir = null): CachePathManager
+    private function createManager(bool $prebuiltCache = false, ?string $cacheDir = null, ?string $appDir = null): CachePathManager
     {
         $kernel = $this->createMock(AspectKernel::class);
         $kernel->method('getOptions')->willReturn([
             'debug'          => false,
-            'appDir'         => self::$appDir,
+            'appDir'         => $appDir ?? self::$appDir,
             'cacheDir'       => $cacheDir ?? self::$cacheDir,
             'cacheFileMode'  => 0770,
             'features'       => 0,
@@ -207,5 +200,53 @@ class CachePathManagerTest extends TestCase
         // A sibling sharing the name prefix of the application directory is not below it
         $sibling = self::$appDir . '-old/Foo.php';
         $this->assertSame($sibling, $manager->getCachePathForResource($sibling));
+    }
+
+    public function testMetadataFilesAreConstantArraysWithPathsRelativeToTheirDirectories(): void
+    {
+        $writer = $this->createManager();
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
+        $writer->registerClassForResource(self::$appDir . '/src/Constant.php', 'App\Constant');
+        $writer->setCacheState(self::$appDir . '/src/Constant.php', ['filemtime' => 1, 'cacheUri' => self::$cacheDir . '/src/Constant.php']);
+        $writer->flushCacheState();
+
+        foreach (['/_transformation.cache', '/_include.cache'] as $fileName) {
+            $content = file_get_contents(self::$cacheDir . $fileName);
+            $this->assertIsString($content);
+            // No runtime path in the file: opcache keeps a constant array as it is
+            $this->assertStringContainsString("__DIR__ . '/src/Constant.php'", $content, $fileName);
+            $this->assertStringNotContainsString(self::$appDir, $content, $fileName);
+            $this->assertStringNotContainsString(self::$cacheDir, $content, $fileName);
+            $this->assertStringNotContainsString('AOP_', $content, $fileName);
+        }
+        $this->assertStringContainsString("'/src/Constant.php' => ", (string) file_get_contents(self::$cacheDir . '/_transformation.cache'));
+    }
+
+    public function testRecordsAreFoundWhenTheApplicationAndTheCacheAreMoved(): void
+    {
+        $writer = $this->createManager();
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
+        $writer->registerClassForResource(self::$appDir . '/src/Moved.php', 'App\Moved');
+        $writer->setCacheState(self::$appDir . '/src/Moved.php', ['filemtime' => 1, 'cacheUri' => self::$cacheDir . '/src/Moved.php']);
+        $writer->flushCacheState();
+
+        $movedCacheDir = self::createTemporaryDirectory('cpm-moved-cache');
+        try {
+            foreach (['/_transformation.cache', '/_include.cache'] as $fileName) {
+                copy(self::$cacheDir . $fileName, $movedCacheDir . $fileName);
+            }
+            $movedAppDir = '/moved/application';
+            $reader      = $this->createManager(cacheDir: $movedCacheDir, appDir: $movedAppDir);
+
+            // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
+            $this->assertSame(['App\Moved' => $movedCacheDir . '/src/Moved.php'], $reader->queryClassMap());
+            $this->assertSame(
+                ['filemtime' => 1, 'cacheUri' => $movedCacheDir . '/src/Moved.php', 'classes' => ['App\Moved']],
+                $reader->queryCacheState($movedAppDir . '/src/Moved.php'),
+            );
+            $this->assertSame($movedCacheDir . '/src/Moved.php', $reader->getCachePathForResource($movedAppDir . '/src/Moved.php'));
+        } finally {
+            self::removeTemporaryDirectory($movedCacheDir);
+        }
     }
 }

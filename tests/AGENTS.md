@@ -14,8 +14,8 @@
 - The wrapper supports include/require, mkdir, rename, touch/chmod (stream_metadata), filemtime (url_stat), scandir — but NOT glob(); list directories with scandir().
 - Production code needs no special casing: CacheFileWriter's atomic tmp+rename is one universal path that runs identically on vfs and real disk.
 - Exception, real disk: only when the code under test needs what the wrapper can not provide (realpath() of the
-  streamed file, includes through the php://filter stream filter, AOP_ROOT_DIR/AOP_CACHE_DIR constants baked into
-  included cache files): SourceTransformingLoaderTest, CacheWarmerTest, CachePathManagerTest. Use
+  streamed file, includes through the php://filter stream filter, `__DIR__` of included cache files and the
+  AOP_CACHE_DIR constant in woven files): SourceTransformingLoaderTest, CacheWarmerTest, CachePathManagerTest. Use
   `Go\PhpUnit\UsesTemporaryDirectory` (unique per process + call, realpath()-resolved so prefix checks hold on macOS'
   /private/var, recursive removal guarded to its own `goaop-test-*` directories, which also drops
   _transformation.cache/_include.cache). NEVER hard-code sys_get_temp_dir() paths or tempnam().
