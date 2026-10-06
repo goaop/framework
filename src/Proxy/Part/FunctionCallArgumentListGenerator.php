@@ -18,17 +18,12 @@ use ReflectionFunctionAbstract;
  * Prepares the function call argument list
  *
  * Optional arguments that were not passed must not be passed to the original function either, so its
- * func_num_args() and func_get_args() stay the same. The list is chosen by the number of passed arguments with a
- * match of array literals, which costs no more than a plain array; beyond MAX_MATCHED_OPTIONALS optional arguments
- * the list is cut with array_slice() instead, to keep the generated code short.
+ * func_num_args() and func_get_args() stay the same. The number of passed arguments is stored in a local variable
+ * and compared with the number of arguments: the usual call passing all of them gets a plain array, only a call
+ * that omits optional arguments cuts the list with array_slice().
  */
 final class FunctionCallArgumentListGenerator
 {
-    /**
-     * Largest number of optional arguments whose argument lists are chosen with a match
-     */
-    private const int MAX_MATCHED_OPTIONALS = 4;
-
     /**
      * List of function arguments
      *
@@ -87,21 +82,13 @@ final class FunctionCallArgumentListGenerator
     {
         $argumentCount = count($this->arguments);
         $allArguments  = '[' . implode(', ', $this->arguments) . ']';
-        $optionalCount = $argumentCount - $this->requiredCount;
-        if ($optionalCount === 0) {
+        if ($this->requiredCount === $argumentCount) {
+            // Every argument is always passed
             return $allArguments;
         }
-        if ($optionalCount > self::MAX_MATCHED_OPTIONALS) {
-            return "\\array_slice($allArguments, 0, \\func_num_args())";
-        }
-
-        $arms = [];
-        for ($passedCount = $this->requiredCount; $passedCount < $argumentCount; $passedCount++) {
-            $arms[] = $passedCount . ' => [' . implode(', ', array_slice($this->arguments, 0, $passedCount)) . ']';
-        }
-        // All arguments passed, and more of them for a variadic function
-        $arms[] = 'default => ' . $allArguments;
-
-        return 'match (\\func_num_args()) { ' . implode(', ', $arms) . ' }';
+        // The local $__argsCount keeps the number of passed arguments for array_slice()
+        return "(\$__argsCount = \\func_num_args()) >= $argumentCount"
+            . " ? $allArguments"
+            . " : \\array_slice($allArguments, 0, \$__argsCount)";
     }
 }

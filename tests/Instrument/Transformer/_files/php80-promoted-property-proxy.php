@@ -76,12 +76,7 @@ class PromotedPropertyClass implements \Go\Aop\Proxy
             ],
             $this->__constructOriginalAlias(...),
         );
-        $__joinPoint->__invoke($this, match (\func_num_args()) {
-            0 => [],
-            1 => [$name],
-            2 => [$name, $counter],
-            default => [$name, $counter, $bag],
-        });
+        $__joinPoint->__invoke($this, ($__argsCount = \func_num_args()) >= 3 ? [$name, $counter, $bag] : \array_slice([$name, $counter, $bag], 0, $__argsCount));
     }
     public function getName(): string
     {

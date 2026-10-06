@@ -29,11 +29,7 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
             ],
             $this->__constructOriginalAlias(...),
         );
-        $__joinPoint->__invoke($this, match (\func_num_args()) {
-            0 => [],
-            1 => [$label],
-            default => [$label, $items],
-        });
+        $__joinPoint->__invoke($this, ($__argsCount = \func_num_args()) >= 2 ? [$label, $items] : \array_slice([$label, $items], 0, $__argsCount));
     }
     public function describe(?\ArrayObject $extra = null): string
     {
@@ -46,9 +42,6 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
             ],
             $this->describeOriginalAlias(...),
         );
-        return $__joinPoint->__invoke($this, match (\func_num_args()) {
-            0 => [],
-            default => [$extra],
-        });
+        return $__joinPoint->__invoke($this, ($__argsCount = \func_num_args()) >= 1 ? [$extra] : \array_slice([$extra], 0, $__argsCount));
     }
 }

@@ -51,9 +51,6 @@ class SingleLinePromotedClass implements \Go\Aop\Proxy
             ],
             $this->__constructOriginalAlias(...),
         );
-        $__joinPoint->__invoke($this, match (\func_num_args()) {
-            0 => [],
-            default => [$tag],
-        });
+        $__joinPoint->__invoke($this, ($__argsCount = \func_num_args()) >= 1 ? [$tag] : \array_slice([$tag], 0, $__argsCount));
     }
 }
