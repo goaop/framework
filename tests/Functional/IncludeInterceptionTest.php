@@ -86,7 +86,8 @@ class IncludeInterceptionTest extends BaseFunctionalTestCase
             $output['result'] ?? null,
         );
 
-        $cachedWovenFile = $cacheDir . '/src/Application/includes/woven-file.php';
+        // The recorded cached file keeps the native separators of the woven source path
+        $cachedWovenFile = $cacheDir . str_replace('/', DIRECTORY_SEPARATOR, '/src/Application/includes/woven-file.php');
         $this->assertSame(
             ['plain-file.php' => $plainFile, 'woven-file.php' => $cachedWovenFile],
             $output['rewrites'] ?? null,
