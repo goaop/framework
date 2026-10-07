@@ -111,12 +111,11 @@ class DebugAdvisorCommand extends BaseAspectCommand
 
         $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
 
-        $iterator   = $enumerator->enumerate();
-        $totalFiles = iterator_count($iterator);
+        $files      = iterator_to_array($enumerator->enumerate(), false);
+        $totalFiles = count($files);
         $io->writeln("Total <info>{$totalFiles}</info> files to analyze.");
-        $iterator->rewind();
 
-        foreach ($iterator as $file) {
+        foreach ($files as $file) {
             $reflectionFile       = new ReflectionFile((string) $file);
             $reflectionNamespaces = $reflectionFile->getFileNamespaces();
             foreach ($reflectionNamespaces as $reflectionNamespace) {
