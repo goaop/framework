@@ -170,6 +170,23 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * When the aspect check of a class that failed matching fails as well (an ancestor can't be located), the class
+     * is no confirmed aspect: the matching error is rethrown, not the error of the aspect check
+     */
+    public function testAdviceMatchingFailureIsRethrownWhenAspectCheckFails(): void
+    {
+        $matchingError = new \RuntimeException('Matching failed');
+        $transformer   = $this->createTransformerWithFailingMatcher($matchingError);
+
+        try {
+            $transformer->transform($this->loadTestMetadata('class-unknown-parent'));
+            $this->fail('The matching error must be rethrown for a class that can not be confirmed as an aspect');
+        } catch (\RuntimeException $e) {
+            $this->assertSame($matchingError, $e);
+        }
+    }
+
+    /**
      * A class whose parent can't be located (optional dependency) and that no advisor matches is
      * recorded as untransformed: the aspect check never reflects its ancestors (issue #748)
      */
