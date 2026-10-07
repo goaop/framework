@@ -34,7 +34,7 @@ class CachePathManager
     private const string CACHE_FILE_NAME = '/_transformation.cache';
 
     /**
-     * Name of the file with the minimal runtime include map (originalPath => cacheUri|null)
+     * Name of the file with the minimal runtime include map: woven classes, untransformed classes and known files
      */
     private const string INCLUDE_MAP_FILE_NAME = '/_include.cache';
 
@@ -46,7 +46,7 @@ class CachePathManager
      * root, and cached files are written as `__DIR__ . '/…'`. opcache keeps such an array as is, so including
      * the files on a warm request copies and checks nothing.
      */
-    public const int FORMAT_VERSION = 3;
+    public const int FORMAT_VERSION = 4;
 
     /** @phpstan-var KernelOptions */
     protected array $options;
@@ -95,6 +95,16 @@ class CachePathManager
      * @var array<class-string, true>
      */
     protected array $skippedClasses = [];
+
+    /**
+     * Minimal runtime map of every source known to the cache, keyed by {@see self::getRecordKey()}, to its cached
+     * file, or to null when the source was not transformed
+     *
+     * Serves the includes rewritten by FilterInjectorTransformer without the full metadata.
+     *
+     * @var array<string, string|null>
+     */
+    private array $fileMap = [];
 
     /**
      * Class names discovered by the weaver per original file, pending until
@@ -151,9 +161,10 @@ class CachePathManager
                 } else {
                     // A file of the current format is written by flushCacheState() only, so its arrays are used
                     // as they are: checking every entry would cost a loop over the whole map on every request
-                    /** @var array{map: array<class-string, string>, skip: array<class-string, true>} $includeData */
+                    /** @var array{map: array<class-string, string>, skip: array<class-string, true>, files: array<string, string|null>} $includeData */
                     $this->classMap       = $includeData['map'];
                     $this->skippedClasses = $includeData['skip'];
+                    $this->fileMap        = $includeData['files'];
                 }
             } elseif (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
                 // Legacy cache directory (pre-class-map format): the metadata records carry
@@ -240,6 +251,23 @@ class CachePathManager
     }
 
     /**
+     * Returns the file to include natively for a source known to the include map
+     *
+     * The cached file of a woven source, the source itself for a source recorded as untransformed, or null for a
+     * source unknown to the cache. Like a class of the class map, a known source is trusted without any freshness
+     * check, and the full metadata is never loaded.
+     */
+    public function findIncludeFile(string $resource): ?string
+    {
+        $recordKey = $this->getRecordKey($resource);
+        if (isset($this->fileMap[$recordKey])) {
+            return $this->fileMap[$recordKey];
+        }
+
+        return array_key_exists($recordKey, $this->fileMap) ? $resource : null;
+    }
+
+    /**
      * Records a class name discovered by the weaver in the given original file
      *
      * The pending names are folded into the file's metadata record by setCacheState()
@@ -322,10 +350,12 @@ class CachePathManager
         unset($this->pendingClasses[$resource]);
         $metadata['classes'] = $classNames;
 
-        $this->newCacheState[$this->getRecordKey($resource)] = $metadata;
+        $recordKey = $this->getRecordKey($resource);
+        $this->newCacheState[$recordKey] = $metadata;
 
-        // Keep the in-memory runtime map coherent within this request
+        // Keep the in-memory runtime maps coherent within this request
         $cacheUri = $metadata['cacheUri'] ?? null;
+        $this->fileMap[$recordKey] = is_string($cacheUri) ? $cacheUri : null;
         foreach ($classNames as $className) {
             if (is_string($cacheUri)) {
                 $this->classMap[$className] = $cacheUri;
@@ -377,11 +407,13 @@ class CachePathManager
 
             $classMap       = [];
             $skippedClasses = [];
-            foreach ($fullCacheMap as $metadata) {
+            $fileMap        = [];
+            foreach ($fullCacheMap as $recordKey => $metadata) {
                 if (!is_array($metadata)) {
                     continue;
                 }
                 $cacheUri   = $metadata['cacheUri'] ?? null;
+                $fileMap[$recordKey] = is_string($cacheUri) ? $cacheUri : null;
                 $classNames = is_array($metadata['classes'] ?? null) ? $metadata['classes'] : [];
                 foreach ($classNames as $className) {
                     if (!is_string($className)) {
@@ -399,12 +431,13 @@ class CachePathManager
             $this->writeCacheFile(self::CACHE_FILE_NAME, ['version' => self::FORMAT_VERSION, 'files' => $fullCacheMap]);
             $this->writeCacheFile(
                 self::INCLUDE_MAP_FILE_NAME,
-                ['version' => self::FORMAT_VERSION, 'map' => $classMap, 'skip' => $skippedClasses],
+                ['version' => self::FORMAT_VERSION, 'map' => $classMap, 'skip' => $skippedClasses, 'files' => $fileMap],
             );
 
             $this->cacheState     = $fullCacheMap;
             $this->classMap       = $classMap;
             $this->skippedClasses = $skippedClasses;
+            $this->fileMap        = $fileMap;
             $this->newCacheState  = [];
         }
     }
@@ -445,6 +478,7 @@ class CachePathManager
         $this->cacheStateLoaded = true;
         $this->classMap         = [];
         $this->skippedClasses   = [];
+        $this->fileMap          = [];
         $this->pendingClasses   = [];
         $this->newCacheState    = [];
 

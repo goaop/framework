@@ -36,7 +36,8 @@ Every cache format changed, and no 3.x cache file is reused:
   source file below the cache directory, and the woven source (the original class body as a
   `<Class>OriginalTrait` trait) next to it.
 - **Class map.** `_include.cache` maps every woven class to its cached file and is handed to Composer
-  at boot. A cache directory without it is treated as stale.
+  at boot, and maps every known source file to its cached file (or `null` when untransformed) for the
+  includes intercepted by `INTERCEPT_INCLUDES`. A cache directory without it is treated as stale.
 - **Advisor cache.** The serialized `{cacheDir}/_aspect/sha1(FQCN)` blobs are replaced by plain PHP
   files next to the woven sources: `{appDir}/src/Aspect/LoggingAspect.php` is cached as
   `{cacheDir}/src/Aspect/LoggingAspect.cache.php`. Interceptors are no longer serializable

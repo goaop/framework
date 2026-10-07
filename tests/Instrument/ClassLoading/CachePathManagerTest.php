@@ -96,6 +96,54 @@ class CachePathManagerTest extends TestCase
         $this->assertTrue($loadedFlag->getValue($reader));
     }
 
+    public function testIncludeMapServesKnownFilesWithoutFullMetadata(): void
+    {
+        $woven         = self::$appDir . '/src/woven.php';
+        $cached        = self::$cacheDir . '/src/woven.php';
+        $untransformed = self::$appDir . '/templates/plain.php';
+        $outside       = '/outside/the/application/plain.php';
+
+        $writer = $this->createManager();
+        $writer->setCacheState($woven, ['filemtime' => 1, 'cacheUri' => $cached]);
+        $writer->setCacheState($untransformed, ['filemtime' => 1, 'cacheUri' => null]);
+        $writer->setCacheState($outside, ['filemtime' => 1, 'cacheUri' => null]);
+        // Known within the request that recorded them, before any flush
+        $this->assertSame($cached, $writer->findIncludeFile($woven));
+        $this->assertSame($untransformed, $writer->findIncludeFile($untransformed));
+        $writer->flushCacheState();
+
+        $content = file_get_contents(self::$cacheDir . '/_include.cache');
+        $this->assertIsString($content);
+        $this->assertStringContainsString("'/src/woven.php' => __DIR__ . '/src/woven.php'", $content);
+        $this->assertStringContainsString("'/templates/plain.php' => NULL", $content);
+
+        $reader = $this->createManager();
+        // The woven file is served from its cached file, an untransformed one as it is
+        $this->assertSame($cached, $reader->findIncludeFile($woven));
+        $this->assertSame($untransformed, $reader->findIncludeFile($untransformed));
+        $this->assertSame($outside, $reader->findIncludeFile($outside));
+        // An unknown file is not answered by the include map
+        $this->assertNull($reader->findIncludeFile(self::$appDir . '/templates/unknown.php'));
+        $loadedFlag = new ReflectionProperty(CachePathManager::class, 'cacheStateLoaded');
+        $this->assertFalse($loadedFlag->getValue($reader), 'Full metadata should not be loaded for includes');
+    }
+
+    public function testRecordedFileChangesItsIncludeFileWithinTheRequest(): void
+    {
+        $original = self::$appDir . '/src/rewoven.php';
+        $cached   = self::$cacheDir . '/src/rewoven.php';
+
+        $manager = $this->createManager();
+        $manager->setCacheState($original, ['filemtime' => 1, 'cacheUri' => null]);
+        $manager->flushCacheState();
+        $manager->setCacheState($original, ['filemtime' => 2, 'cacheUri' => $cached]);
+
+        $this->assertSame($cached, $manager->findIncludeFile($original));
+
+        $manager->clearCacheState();
+        $this->assertNull($manager->findIncludeFile($original));
+    }
+
     public function testLegacyCacheDirectoryWithoutClassMapIsTreatedAsStale(): void
     {
         $original    = self::$appDir . '/src/Legacy.php';
@@ -245,6 +293,7 @@ class CachePathManagerTest extends TestCase
                 $reader->queryCacheState($movedAppDir . '/src/Moved.php'),
             );
             $this->assertSame($movedCacheDir . '/src/Moved.php', $reader->getCachePathForResource($movedAppDir . '/src/Moved.php'));
+            $this->assertSame($movedCacheDir . '/src/Moved.php', $reader->findIncludeFile($movedAppDir . '/src/Moved.php'));
         } finally {
             self::removeTemporaryDirectory($movedCacheDir);
         }
