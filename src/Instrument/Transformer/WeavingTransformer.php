@@ -39,6 +39,7 @@ use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Property;
 use ReflectionProperty;
+use Throwable;
 
 /**
  * Main transformer that performs weaving of aspects into the source code
@@ -99,8 +100,9 @@ final class WeavingTransformer extends BaseSourceTransformer
                 // map / skip set can be built for the autoloader at flush time
                 $this->cachePathManager->registerClassForResource($metadata->uri, $class->getName());
 
-                // Skip interfaces and aspects — enums are now supported via EnumProxyGenerator
-                if ($class->isInterface() || in_array(Aspect::class, $class->getInterfaceNames(), true)) {
+                // Skip interfaces — enums are supported via EnumProxyGenerator. Aspects are skipped
+                // in processSingleClass() once advices were found: the check reflects every ancestor
+                if ($class->isInterface()) {
                     continue;
                 }
                 $wasClassProcessed = $this->processSingleClass(
@@ -135,10 +137,24 @@ final class WeavingTransformer extends BaseSourceTransformer
         ReflectionClass $class,
         bool $useStrictMode,
     ): bool {
-        $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
+        try {
+            $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
+        } catch (Throwable $matchingError) {
+            // Aspects used to be skipped before matching, so matching one must not fail the file
+            if ($this->isAspectSafe($class)) {
+                return false;
+            }
+            throw $matchingError;
+        }
 
         if (empty($advices)) {
-            // Fast return if there aren't any advices for that class
+            // Fast return if there aren't any advices for that class. It comes before the aspect check,
+            // as that one reflects (and parses) every ancestor and fails when one can't be located
+            return false;
+        }
+
+        // Aspects are never woven
+        if ($class->implementsInterface(Aspect::class)) {
             return false;
         }
 
@@ -190,6 +206,18 @@ final class WeavingTransformer extends BaseSourceTransformer
         $metadata->tokenStream[$lastClassToken]->text .= PHP_EOL . $contentToInclude;
 
         return true;
+    }
+
+    /**
+     * Checks whether the class is an aspect, a failure of the check counts as "not an aspect"
+     */
+    private function isAspectSafe(ReflectionClass $class): bool
+    {
+        try {
+            return $class->implementsInterface(Aspect::class);
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /**
