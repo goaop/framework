@@ -17,6 +17,7 @@ use Go\Core\AspectContainer;
 use Go\Core\Container;
 use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
+use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use PHPUnit\Framework\TestCase;
@@ -104,7 +105,7 @@ class AopComposerLoaderTest extends TestCase
         $loader = $this->createDebugLoader($file, ['filemtime' => 1, 'filesize' => 0, 'cachedAt' => 1, 'cacheUri' => null]);
 
         // A plain path: opcache caches the file, it never caches a php://filter include
-        $this->assertSame($file, $loader->findFile('App\\Service'));
+        $this->assertSame(PathResolver::realpath($file), $loader->findFile('App\\Service'));
     }
 
     public function testDebugModeStreamsStaleOrUnknownFileThroughTheFilter(): void
@@ -113,7 +114,7 @@ class AopComposerLoaderTest extends TestCase
         $loader = $this->createDebugLoader($file, null);
 
         $this->assertSame(
-            SourceTransformingLoader::PHP_FILTER_READ . SourceTransformingLoader::FILTER_IDENTIFIER . '/resource=' . $file,
+            SourceTransformingLoader::PHP_FILTER_READ . SourceTransformingLoader::FILTER_IDENTIFIER . '/resource=' . PathResolver::realpath($file),
             $loader->findFile('App\\Service'),
             'A stale record or a miss must reach the filter to be woven again',
         );
@@ -125,7 +126,7 @@ class AopComposerLoaderTest extends TestCase
         $loader = $this->createDebugLoader($file, ['cacheUri' => $this->appDir . '/cache/src/Service.php']);
 
         $this->assertSame(
-            SourceTransformingLoader::PHP_FILTER_READ . SourceTransformingLoader::FILTER_IDENTIFIER . '/resource=' . $file,
+            SourceTransformingLoader::PHP_FILTER_READ . SourceTransformingLoader::FILTER_IDENTIFIER . '/resource=' . PathResolver::realpath($file),
             $loader->findFile('App\\Service'),
             'Magic constants and breakpoints of a woven file rely on the filter in debug mode',
         );
@@ -146,7 +147,7 @@ class AopComposerLoaderTest extends TestCase
         $loader = new AopComposerLoader($composerLoader, $this->createContainer($cachePathManager), $this->createOptions([]));
 
         $this->assertSame(
-            SourceTransformingLoader::PHP_FILTER_READ . SourceTransformingLoader::FILTER_IDENTIFIER . '/resource=' . $file,
+            SourceTransformingLoader::PHP_FILTER_READ . SourceTransformingLoader::FILTER_IDENTIFIER . '/resource=' . PathResolver::realpath($file),
             $loader->findFile('App\\Service'),
         );
     }
@@ -163,7 +164,7 @@ class AopComposerLoaderTest extends TestCase
 
         $loader = new AopComposerLoader($composerLoader, $this->createContainer($cachePathManager), $this->createOptions([]));
 
-        $this->assertSame($file, $loader->findFile('Dissect\\Parser'));
+        $this->assertSame(PathResolver::realpath($file), $loader->findFile('Dissect\\Parser'));
     }
 
     public function testProductionModeNeverChecksFreshnessOfUnknownClasses(): void
