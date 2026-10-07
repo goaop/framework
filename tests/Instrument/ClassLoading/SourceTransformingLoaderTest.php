@@ -20,11 +20,14 @@ use Go\Core\Container;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
+use Go\ParserReflection\ReflectionEngine;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use LogicException;
 use PhpToken;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class SourceTransformingLoaderTest extends TestCase
@@ -190,6 +193,32 @@ class SourceTransformingLoaderTest extends TestCase
 
         $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
         $this->assertSame(1, $transformer->callCount);
+    }
+
+    /**
+     * The syntax tree cache of parser-reflection is unbounded until a limit is set: weaving bounds it
+     * (a separate process starts with no limit, which can not be unset once set)
+     */
+    #[RunInSeparateProcess]
+    public function testRegistrationBoundsTheSyntaxTreeCache(): void
+    {
+        $limitProperty = new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles');
+        $this->assertFalse($limitProperty->isInitialized());
+
+        $this->registerLoader([]);
+
+        $this->assertSame(SourceTransformingLoader::MAXIMUM_CACHED_SYNTAX_TREES, $limitProperty->getValue());
+    }
+
+    #[RunInSeparateProcess]
+    public function testRegistrationKeepsTheSyntaxTreeCacheLimitOfTheApplication(): void
+    {
+        ReflectionEngine::setMaximumCachedFiles(1000);
+
+        $this->registerLoader([]);
+
+        $limitProperty = new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles');
+        $this->assertSame(1000, $limitProperty->getValue());
     }
 
     public function testTransformerFailureNamesTheTransformerAndTheFile(): void

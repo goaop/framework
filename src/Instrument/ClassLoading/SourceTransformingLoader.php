@@ -20,7 +20,9 @@ use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
+use Go\ParserReflection\ReflectionEngine;
 use php_user_filter as PhpStreamFilter;
+use ReflectionProperty;
 use RuntimeException;
 use Throwable;
 
@@ -48,6 +50,18 @@ final class SourceTransformingLoader extends PhpStreamFilter
      * Default PHP filter name for registration
      */
     public const string FILTER_IDENTIFIER = 'go.source.transforming.loader';
+
+    /**
+     * Number of syntax trees kept in the parser-reflection cache while weaving
+     *
+     * Every woven file and every ancestor reflected during advice matching is parsed through
+     * ReflectionEngine, which keeps each tree for the life of the process unless a limit is set.
+     * Chosen by measurement of a cold warmup over ~3,900 vendor files: peak memory drops from
+     * 678 MB to 162 MB for ~20% more time (evicted trees are freed, some ancestors are parsed
+     * again); 256 and 64 save little more memory but cost ~45% more time. Processes weaving
+     * fewer files never evict. The limit applies only when the application did not set its own one.
+     */
+    public const int MAXIMUM_CACHED_SYNTAX_TREES = 512;
 
     /**
      * String buffer
@@ -118,7 +132,8 @@ final class SourceTransformingLoader extends PhpStreamFilter
      *
      * Idempotent; called from the cache-miss paths (autoloader miss, include rewriting,
      * cache warmup), so a warm-cache request never registers the filter nor constructs
-     * any transformer.
+     * any transformer. Bounds the parser-reflection syntax tree cache when the pipeline is
+     * brought up, see {@see MAXIMUM_CACHED_SYNTAX_TREES}.
      */
     public static function ensureRegistered(AspectContainer $container): void
     {
@@ -135,6 +150,23 @@ final class SourceTransformingLoader extends PhpStreamFilter
             self::$cachePathManager = $container->getService(CachePathManager::class);
             self::$features         = $kernelOptions['features'];
             self::$transformers     = null;
+
+            self::limitSyntaxTreeCache();
+        }
+    }
+
+    /**
+     * Bounds the syntax tree cache of parser-reflection, unless a limit was set already
+     *
+     * ReflectionEngine exposes no getter for the limit: its typed property stays uninitialized
+     * until setMaximumCachedFiles() is called, so an initialized one is a limit chosen by the
+     * application (or by a previous registration) and is kept as is.
+     */
+    private static function limitSyntaxTreeCache(): void
+    {
+        $limitProperty = new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles');
+        if (!$limitProperty->isInitialized()) {
+            ReflectionEngine::setMaximumCachedFiles(self::MAXIMUM_CACHED_SYNTAX_TREES);
         }
     }
 

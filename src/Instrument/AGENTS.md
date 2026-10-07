@@ -2,7 +2,7 @@
 
 ## Init flow
 1. AspectKernel::init() — singleton, registers deferred transformer services, calls configureAop()
-2. SourceTransformingLoader — PHP stream filter (php://filter/read=go.source.transforming.loader/resource=... protocol); registered lazily on the first cache miss via ensureRegistered()
+2. SourceTransformingLoader — PHP stream filter (php://filter/read=go.source.transforming.loader/resource=... protocol); registered lazily on the first cache miss via ensureRegistered(), which also bounds the parser-reflection AST cache (`ReflectionEngine::setMaximumCachedFiles(MAXIMUM_CACHED_SYNTAX_TREES)`, unless the application set a limit). Never rely on a file's AST staying cached: read it from the tree being woven (StreamMetaData::$syntaxTree, the iterated ReflectionFileNamespace), a lookup by file name re-parses an evicted file
 3. AopComposerLoader::init() — hooks Composer autoloader → redirects through stream filter
 4. Caching lives in SourceTransformingLoader::filter() — cache hit → cached content emitted as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → write cache
 
@@ -56,7 +56,7 @@ Interceptor list entries are first-class advice callables on the aspect instance
 GeneratedInterceptor descriptors (string advisor ids are rejected).
 Short names above are `use` aliases managed by ProxyImports: a name colliding with the original
 file's imports or body gets an adjusted alias (e.g. `use Go\Aop\Framework\Interceptor as AopInterceptor;`),
-see src/Proxy/AGENTS.md. WeavingTransformer passes the original imports to the proxy generator constructors.
+see src/Proxy/AGENTS.md. WeavingTransformer passes the original imports (of the namespace block declaring the class) to the proxy generator constructors.
 
 ### Key invariants
 - Proxy re-inherits parent+interfaces via reflection (not from woven source)
