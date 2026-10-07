@@ -6,7 +6,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 
 **Requirements**
 * [BC BREAK] Requires PHP 8.4+
-* [BC BREAK] **Dependencies** — `ext-tokenizer`, `goaop/parser-reflection` ^4.0, `goaop/dissect` ^4.0 and `symfony/finder` ^7.4 || ^8.0. `nikic/php-parser` 5 comes through parser-reflection and is no longer required directly. `symfony/console` ^7.4 || ^8.0 is needed for the `bin/aspect` tool.
+* [BC BREAK] **Dependencies** — `ext-tokenizer`, `goaop/parser-reflection` ^4.0.1 || ^5.0.1, `goaop/dissect` ^4.0 and `symfony/finder` ^7.4 || ^8.0. `nikic/php-parser` 5 comes through parser-reflection and is no longer required directly. `symfony/console` ^7.4 || ^8.0 is needed for the `bin/aspect` tool.
 
 **Added**
 * [Feature] **First-class callable advices** — the main way advices are now wired into woven code. Generated proxies declare each aspect-method advice as `Interceptor::before(The::aspect(MonitorAspect::class)->beforeMethodExecution(...))` — an eager first-class callable, since the interceptor list is only built while the intercepted method or hook is already executing (`LazyAdvisorAccessor` is removed). Compiled advisor cache files use the same facade in its lazy static-data form, e.g. `Interceptor::before(MonitorAspect::class, 'beforeMethodExecution')`, which returns a native PHP lazy proxy: interceptor construction, aspect resolution from the container and advice callable creation are all deferred until the advice is actually used, so cached advices whose pointcut never matches never instantiate their aspect. Advices registered in the container as plain closures (not aspect methods) are resolved through the new `The::advice('advisorId')` accessor, which unwraps `Advisor` and interceptor values down to the raw advice closure.
