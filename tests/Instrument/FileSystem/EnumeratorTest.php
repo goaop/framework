@@ -320,7 +320,7 @@ class EnumeratorTest extends TestCase
         $expectedPaths = [];
         foreach (new Finder()->files()->name('*.php')->in($includePaths !== [] ? $includePaths : [self::APP]) as $file) {
             if ($isAllowedPath($file->getPathname())) {
-                $expectedPaths[] = $file->getPathname();
+                $expectedPaths[] = str_replace('\\', '/', $file->getPathname());
             }
         }
 
@@ -459,7 +459,11 @@ class EnumeratorTest extends TestCase
      */
     private static function pathNames(Enumerator $enumerator): array
     {
-        $paths = array_map(static fn(SplFileInfo $file): string => $file->getPathname(), iterator_to_array($enumerator->enumerate(), false));
+        // Finder joins the names below the root with the native separator: compare and sort them in one form
+        $paths = array_map(
+            static fn(SplFileInfo $file): string => str_replace('\\', '/', $file->getPathname()),
+            iterator_to_array($enumerator->enumerate(), false),
+        );
         sort($paths);
 
         return $paths;
@@ -482,7 +486,7 @@ class EnumeratorTest extends TestCase
 
         $enumerator->method('getFileFullPath')
             ->willReturnCallback(static function (SplFileInfo $file) use (&$visitedPaths): string {
-                $visitedPaths[] = $file->getPathname();
+                $visitedPaths[] = str_replace('\\', '/', $file->getPathname());
 
                 return $file->getPathname();
             });

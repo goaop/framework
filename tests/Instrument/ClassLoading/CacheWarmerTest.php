@@ -155,9 +155,11 @@ class CacheWarmerTest extends TestCase
         $display = $output->fetch();
 
         preg_match_all('/\[OK\]: (\S+)/', $display, $matches);
-        $processed = $matches[1];
+        // Paths are compared in one separator form: Finder joins the names below the include paths natively
+        $processed = array_map(static fn(string $path): string => str_replace('\\', '/', $path), $matches[1]);
         sort($processed);
-        $this->assertSame([$this->appDir . '/src/Some.php', $this->appDir . '/vendor/acme/lib/src/Acme.php', $this->appDir . '/vendor/autoload.php'], $processed);
+        $appDir = str_replace('\\', '/', $this->appDir);
+        $this->assertSame([$appDir . '/src/Some.php', $appDir . '/vendor/acme/lib/src/Acme.php', $appDir . '/vendor/autoload.php'], $processed);
         $this->assertStringContainsString('Total 3 files to process.', $display);
         $this->assertStringContainsString('[DONE]: Total processed 3, 0 errors.', $display);
     }
