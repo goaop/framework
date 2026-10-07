@@ -15,7 +15,9 @@ namespace Go\Instrument\ClassLoading;
 use Composer\Autoload\ClassLoader;
 use Go\Core\AspectContainer;
 use Go\Core\Container;
+use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
+use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
@@ -39,6 +41,7 @@ class AopComposerLoaderTest extends TestCase
 
     protected function tearDown(): void
     {
+        FilterInjectorTransformer::reset();
         self::removeTemporaryDirectory($this->appDir);
     }
 
@@ -93,6 +96,120 @@ class AopComposerLoaderTest extends TestCase
         $loader = $this->createLoader(new ClassLoader());
 
         $this->assertNull($loader->loadClass(__NAMESPACE__ . '\\UnknownClass'));
+    }
+
+    public function testDebugModeIncludesFreshUntransformedFileByItsOriginalPath(): void
+    {
+        $file   = $this->appDir . '/src/Service.php';
+        $loader = $this->createDebugLoader($file, ['filemtime' => 1, 'filesize' => 0, 'cachedAt' => 1, 'cacheUri' => null]);
+
+        // A plain path: opcache caches the file, it never caches a php://filter include
+        $this->assertSame($file, $loader->findFile('App\\Service'));
+    }
+
+    public function testDebugModeStreamsStaleOrUnknownFileThroughTheFilter(): void
+    {
+        $file   = $this->appDir . '/src/Service.php';
+        $loader = $this->createDebugLoader($file, null);
+
+        $this->assertSame(
+            SourceTransformingLoader::PHP_FILTER_READ . SourceTransformingLoader::FILTER_IDENTIFIER . '/resource=' . $file,
+            $loader->findFile('App\\Service'),
+            'A stale record or a miss must reach the filter to be woven again',
+        );
+    }
+
+    public function testDebugModeStreamsWovenFileThroughTheFilter(): void
+    {
+        $file   = $this->appDir . '/src/Service.php';
+        $loader = $this->createDebugLoader($file, ['cacheUri' => $this->appDir . '/cache/src/Service.php']);
+
+        $this->assertSame(
+            SourceTransformingLoader::PHP_FILTER_READ . SourceTransformingLoader::FILTER_IDENTIFIER . '/resource=' . $file,
+            $loader->findFile('App\\Service'),
+            'Magic constants and breakpoints of a woven file rely on the filter in debug mode',
+        );
+    }
+
+    public function testDebugModeSendsClassOfTheWovenClassMapToTheFilterWithoutFreshnessCheck(): void
+    {
+        $file           = $this->appDir . '/src/Service.php';
+        $composerLoader = new ClassLoader();
+        $composerLoader->addClassMap(['App\\Service' => $file]);
+        $cachePathManager = $this->createMock(CachePathManager::class);
+        $cachePathManager->method('queryClassMap')->willReturn(['App\\Service' => $this->appDir . '/cache/src/Service.php']);
+        $cachePathManager->method('querySkippedClasses')->willReturn([]);
+        // The filter checks the record of a woven file anyway
+        $cachePathManager->expects($this->never())->method('queryFreshCacheState');
+        $this->configureFilterInjector($cachePathManager);
+
+        $loader = new AopComposerLoader($composerLoader, $this->createContainer($cachePathManager), $this->createOptions([]));
+
+        $this->assertSame(
+            SourceTransformingLoader::PHP_FILTER_READ . SourceTransformingLoader::FILTER_IDENTIFIER . '/resource=' . $file,
+            $loader->findFile('App\\Service'),
+        );
+    }
+
+    public function testDebugModeKeepsExcludedFilesUntouchedWithoutQueryingTheCache(): void
+    {
+        $file           = $this->appDir . '/vendor/goaop/dissect/src/Parser.php';
+        $composerLoader = new ClassLoader();
+        $composerLoader->addClassMap(['Dissect\\Parser' => $file]);
+        $cachePathManager = $this->createMock(CachePathManager::class);
+        $cachePathManager->method('queryClassMap')->willReturn([]);
+        $cachePathManager->method('querySkippedClasses')->willReturn([]);
+        $cachePathManager->expects($this->never())->method('queryFreshCacheState');
+
+        $loader = new AopComposerLoader($composerLoader, $this->createContainer($cachePathManager), $this->createOptions([]));
+
+        $this->assertSame($file, $loader->findFile('Dissect\\Parser'));
+    }
+
+    public function testProductionModeNeverChecksFreshnessOfUnknownClasses(): void
+    {
+        $file           = $this->appDir . '/src/Service.php';
+        $composerLoader = new ClassLoader();
+        $composerLoader->addClassMap(['App\\Service' => $file]);
+        $cachePathManager = $this->createMock(CachePathManager::class);
+        $cachePathManager->method('queryClassMap')->willReturn([]);
+        $cachePathManager->method('querySkippedClasses')->willReturn([]);
+        $cachePathManager->expects($this->never())->method('queryFreshCacheState');
+        $this->configureFilterInjector($cachePathManager);
+
+        $loader = new AopComposerLoader(
+            $composerLoader,
+            $this->createContainer($cachePathManager),
+            ['debug' => false] + $this->createOptions([]),
+        );
+
+        $this->assertStringStartsWith(SourceTransformingLoader::PHP_FILTER_READ, (string) $loader->findFile('App\\Service'));
+    }
+
+    public function testFindOriginalFileResolvesClassThroughWrappedComposerLoaderWithoutLoadingIt(): void
+    {
+        $className      = __NAMESPACE__ . '\\NeverLoadedProbe';
+        $composerLoader = new ClassLoader();
+        $composerLoader->addClassMap([$className => $this->appDir . '/src/Service.php']);
+        $composerLoader->register(true);
+        $registeredLoaders = spl_autoload_functions();
+        try {
+            $this->assertNull(AopComposerLoader::findOriginalFile($className), 'Unwrapped composer loaders are not consulted');
+
+            AopComposerLoader::init($this->createOptions([]), $this->createContainer());
+
+            $this->assertSame($this->appDir . '/src/Service.php', AopComposerLoader::findOriginalFile($className));
+            $this->assertNull(AopComposerLoader::findOriginalFile(__NAMESPACE__ . '\\UnknownClass'));
+            $this->assertFalse(class_exists($className, false));
+        } finally {
+            foreach (spl_autoload_functions() as $loader) {
+                spl_autoload_unregister($loader);
+            }
+            foreach ($registeredLoaders as $loader) {
+                spl_autoload_register($loader);
+            }
+            $composerLoader->unregister();
+        }
     }
 
     public function testOriginalLoaderIsExposed(): void
@@ -173,11 +290,42 @@ class AopComposerLoaderTest extends TestCase
         ];
     }
 
-    private function createContainer(): AspectContainer
+    /**
+     * Debug loader resolving App\\Service to the given file, whose cache record queryFreshCacheState() reports
+     *
+     * @param array<string, mixed>|null $freshCacheState
+     */
+    private function createDebugLoader(string $file, ?array $freshCacheState): AopComposerLoader
     {
+        $composerLoader = new ClassLoader();
+        $composerLoader->addClassMap(['App\\Service' => $file]);
+
         $cachePathManager = $this->createStub(CachePathManager::class);
         $cachePathManager->method('queryClassMap')->willReturn([]);
         $cachePathManager->method('querySkippedClasses')->willReturn([]);
+        $cachePathManager->method('queryFreshCacheState')->willReturn($freshCacheState);
+        $this->configureFilterInjector($cachePathManager);
+
+        return new AopComposerLoader($composerLoader, $this->createContainer($cachePathManager), $this->createOptions([]));
+    }
+
+    /**
+     * Configures the php://filter rewriting without a booted kernel
+     */
+    private function configureFilterInjector(CachePathManager $cachePathManager): void
+    {
+        $kernel = $this->createStub(AspectKernel::class);
+        $kernel->method('getOptions')->willReturn($this->createOptions([]));
+        new FilterInjectorTransformer($kernel, SourceTransformingLoader::FILTER_IDENTIFIER, $cachePathManager);
+    }
+
+    private function createContainer(?CachePathManager $cachePathManager = null): AspectContainer
+    {
+        if ($cachePathManager === null) {
+            $cachePathManager = $this->createStub(CachePathManager::class);
+            $cachePathManager->method('queryClassMap')->willReturn([]);
+            $cachePathManager->method('querySkippedClasses')->willReturn([]);
+        }
 
         $container = $this->createStub(AspectContainer::class);
         $container->method('getService')->willReturn($cachePathManager);

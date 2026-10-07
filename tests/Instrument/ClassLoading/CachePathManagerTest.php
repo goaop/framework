@@ -14,6 +14,8 @@ namespace Go\Instrument\ClassLoading;
 
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\WeavingException;
+use Go\Aop\Features;
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
 use Go\PhpUnit\UsesTemporaryDirectory;
@@ -51,7 +53,7 @@ class CachePathManagerTest extends TestCase
             'appDir'         => $appDir ?? self::$appDir,
             'cacheDir'       => $cacheDir ?? self::$cacheDir,
             'cacheFileMode'  => 0770,
-            'features'       => 0,
+            'features'       => $prebuiltCache ? Features::PREBUILT_CACHE : 0,
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
@@ -248,5 +250,62 @@ class CachePathManagerTest extends TestCase
         } finally {
             self::removeTemporaryDirectory($movedCacheDir);
         }
+    }
+
+    public function testFreshCacheStateNeedsTheRecordedSourceAndFreshResources(): void
+    {
+        $source = self::$appDir . '/src/Fresh.php';
+        if (!is_dir(dirname($source))) {
+            mkdir(dirname($source), 0777, true);
+        }
+        file_put_contents($source, '<?php class Fresh {}');
+        $record = [
+            'filemtime' => filemtime($source),
+            'filesize'  => filesize($source),
+            'cachedAt'  => time(),
+            'cacheUri'  => null,
+        ];
+        $manager = $this->createManager();
+        $manager->setCacheState($source, $record);
+
+        $this->assertSame([...$record, 'classes' => []], $manager->queryFreshCacheState($source, $this->createContainer(true)));
+        // A tracked resource (kernel or aspect file) changed after the record was written
+        $this->assertNull($manager->queryFreshCacheState($source, $this->createContainer(false)));
+        $this->assertNull($manager->queryFreshCacheState(self::$appDir . '/src/Unknown.php', $this->createContainer(true)));
+
+        // Same mtime, another size
+        file_put_contents($source, '<?php class Fresh { }');
+        touch($source, (int) $record['filemtime']);
+        clearstatcache();
+        $this->assertNull($manager->queryFreshCacheState($source, $this->createContainer(true)));
+
+        // Same size, an older mtime restored by a deployment
+        file_put_contents($source, '<?php class Fresh {}');
+        touch($source, (int) $record['filemtime'] - 3600);
+        clearstatcache();
+        $this->assertNull($manager->queryFreshCacheState($source, $this->createContainer(true)));
+    }
+
+    public function testPrebuiltCacheTrustsTheRecordWithoutFreshnessChecks(): void
+    {
+        $manager = $this->createManager(prebuiltCache: true);
+        $record  = ['filemtime' => 1, 'cacheUri' => null];
+        $manager->setCacheState(self::$appDir . '/src/Stale.php', $record);
+
+        $container = $this->createMock(AspectContainer::class);
+        $container->expects($this->never())->method('isFreshSince');
+
+        $this->assertSame(
+            [...$record, 'classes' => []],
+            $manager->queryFreshCacheState(self::$appDir . '/src/Stale.php', $container),
+        );
+    }
+
+    private function createContainer(bool $isFresh): AspectContainer
+    {
+        $container = $this->createStub(AspectContainer::class);
+        $container->method('isFreshSince')->willReturn($isFresh);
+
+        return $container;
     }
 }
