@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\FileSystem;
 
+use Composer\InstalledVersions;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use Go\VirtualFileSystem\FileSystem;
@@ -351,17 +352,44 @@ class EnumeratorTest extends TestCase
             ],
             self::pathNames($enumerator),
         );
-        // Excluded directories are checked themselves, but nothing below them (vendor-bin shares the vendor prefix)
+        // A top-level excluded directory is checked itself, but nothing below it (vendor-bin shares the vendor prefix)
         $this->assertContains(self::APP . '/vendor', $visitedPaths);
+        foreach ($visitedPaths as $visitedPath) {
+            $this->assertStringStartsNotWith(self::APP . '/vendor/', $visitedPath);
+        }
+        // A wildcard matching only some of the files below a directory does not prune it: the files below are checked
+        $this->assertNotEmpty(array_filter(
+            $visitedPaths,
+            static fn(string $visitedPath): bool => str_starts_with($visitedPath, self::APP . '/tests/Unit/'),
+        ));
+    }
+
+    public function testNestedExcludedDirectoriesAreNotWalked(): void
+    {
+        // symfony/finder applies prune filters to nested directories since 6.4.46, 7.4.19 and 8.1.7 (symfony/finder@716f028),
+        // older versions prune top-level directories only: the enumerated files are the same, only the walk is longer
+        $finderVersion = InstalledVersions::getVersion('symfony/finder') ?? '0';
+        $prunesNested  = version_compare($finderVersion, '8.1.7', '>=')
+            || (version_compare($finderVersion, '7.4.19', '>=') && version_compare($finderVersion, '8.0.0-dev', '<'));
+        if (!$prunesNested) {
+            $this->markTestSkipped("symfony/finder {$finderVersion} does not apply prune filters to nested directories");
+        }
+
+        $visitedPaths = [];
+        $enumerator   = $this->createVirtualEnumerator(
+            self::APP,
+            [],
+            [self::APP . '/vendor', self::APP . '/var/cache/aop', self::APP . '/src/*/Proxy', self::APP . '/*Test.php'],
+            $visitedPaths,
+        );
+
+        self::pathNames($enumerator);
         $this->assertContains(self::APP . '/var/cache/aop', $visitedPaths);
         $this->assertContains(self::APP . '/src/Generated/Proxy', $visitedPaths);
         foreach ($visitedPaths as $visitedPath) {
-            $this->assertStringStartsNotWith(self::APP . '/vendor/', $visitedPath);
             $this->assertStringStartsNotWith(self::APP . '/var/cache/aop/', $visitedPath);
             $this->assertStringStartsNotWith(self::APP . '/src/Generated/Proxy/', $visitedPath);
         }
-        // A wildcard matching only some of the files below a directory does not prune it
-        $this->assertContains(self::APP . '/tests/Unit', $visitedPaths);
     }
 
     /**
