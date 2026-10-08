@@ -117,16 +117,103 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
-     * Do not make anything for aspect class
+     * Do not make anything for aspect class, even when a pointcut matches its methods
      */
     public function testAspectIsSkipped(): void
     {
         $metadata = $this->loadTestMetadata('aspect');
-        $this->transformer->transform($metadata);
+        $result   = $this->transformer->transform($metadata);
 
+        $this->assertSame(TransformerResult::Abstain, $result);
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('aspect')->source);
         $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * An aspect implementing Go\Aop\Aspect only through its parent is skipped as well
+     */
+    public function testAspectInheritingAspectInterfaceIsSkipped(): void
+    {
+        $metadata = $this->loadStubMetadata('InheritedAspectStub');
+        $source   = $metadata->source;
+        $result   = $this->transformer->transform($metadata);
+
+        $this->assertSame(TransformerResult::Abstain, $result);
+        $this->assertSame($source, $metadata->source);
+    }
+
+    /**
+     * Aspects used to be skipped before advice matching: a matching failure on an aspect must not fail the file
+     */
+    public function testAdviceMatchingFailureOnAspectIsIgnored(): void
+    {
+        $transformer = $this->createTransformerWithFailingMatcher();
+        $metadata    = $this->loadTestMetadata('aspect');
+        $source      = $metadata->source;
+
+        $this->assertSame(TransformerResult::Abstain, $transformer->transform($metadata));
+        $this->assertSame($source, $metadata->source);
+    }
+
+    public function testAdviceMatchingFailureOnRegularClassIsRethrown(): void
+    {
+        $matchingError = new \RuntimeException('Matching failed');
+        $transformer   = $this->createTransformerWithFailingMatcher($matchingError);
+
+        try {
+            $transformer->transform($this->loadTestMetadata('class'));
+            $this->fail('The matching error must be rethrown for a class that is not an aspect');
+        } catch (\RuntimeException $e) {
+            $this->assertSame($matchingError, $e);
+        }
+    }
+
+    /**
+     * When the aspect check of a class that failed matching fails as well (an ancestor can't be located), the class
+     * is no confirmed aspect: the matching error is rethrown, not the error of the aspect check
+     */
+    public function testAdviceMatchingFailureIsRethrownWhenAspectCheckFails(): void
+    {
+        $matchingError = new \RuntimeException('Matching failed');
+        $transformer   = $this->createTransformerWithFailingMatcher($matchingError);
+
+        try {
+            $transformer->transform($this->loadTestMetadata('class-unknown-parent'));
+            $this->fail('The matching error must be rethrown for a class that can not be confirmed as an aspect');
+        } catch (\RuntimeException $e) {
+            $this->assertSame($matchingError, $e);
+        }
+    }
+
+    /**
+     * A class whose parent can't be located (optional dependency) and that no advisor matches is
+     * recorded as untransformed: the aspect check never reflects its ancestors (issue #748)
+     */
+    public function testUnadvisedClassWithUnknownParentIsNotTransformed(): void
+    {
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher->method('getAdvicesForClass')->willReturn([]);
+        $adviceMatcher->method('getAdvicesForFunctions')->willReturn([]);
+
+        // The class is still registered, so the loader records it as untransformed (skip set)
+        $cachePathManager = $this->createMock(CachePathManager::class);
+        $metadata         = $this->loadTestMetadata('class-unknown-parent');
+        $cachePathManager
+            ->expects($this->once())
+            ->method('registerClassForResource')
+            ->with($metadata->uri, 'Test\ns1\RuleWithMissingParent');
+
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$this->getContainerMock()])
+            ->getMock();
+
+        $transformer = new WeavingTransformer($this->kernel, $adviceMatcher, $cachePathManager, $loader);
+        $source      = $metadata->source;
+
+        $this->assertSame(TransformerResult::Abstain, $transformer->transform($metadata));
+        $this->assertSame($source, $metadata->source);
     }
 
     /**
@@ -1369,6 +1456,24 @@ class WeavingTransformerTest extends TestCase
         );
     }
 
+    private function createTransformerWithFailingMatcher(?\RuntimeException $matchingError = null): WeavingTransformer
+    {
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher->method('getAdvicesForClass')->willThrowException($matchingError ?? new \RuntimeException('Matching failed'));
+        $adviceMatcher->method('getAdvicesForFunctions')->willReturn([]);
+
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$this->getContainerMock()])
+            ->getMock();
+
+        return new WeavingTransformer(
+            $this->kernel,
+            $adviceMatcher,
+            $this->cachePathManager,
+            $loader,
+        );
+    }
 
     /**
      * Testcase for multiple classes (@see https://github.com/lisachenko/go-aop-php/issues/71)

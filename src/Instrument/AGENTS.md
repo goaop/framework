@@ -81,3 +81,6 @@ WeavingTransformer::convertClassToTrait() strips #[\Override] from trait for eve
 
 ## Aspects themselves
 Classes implementing \Go\Aop\Aspect: unconditionally skipped by WeavingTransformer. Aspects cannot weave themselves.
+The check (`implementsInterface(Aspect::class)`) runs in processSingleClass() only AFTER advices were found: it reflects
+(and parses) every ancestor and throws when one can't be located, so unadvised classes must never pay for it (#748).
+A matching failure on an aspect is swallowed (aspects used to be skipped before matching); on other classes it is rethrown.
