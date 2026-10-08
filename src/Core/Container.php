@@ -116,11 +116,13 @@ final class Container implements AspectContainer
         $this->registrationVersion++;
         $this->servicesByInterface = [];
 
-        // With no listeners registered (the production configuration) this is a no-op and
-        // nothing below autoloads; a registered listener accepts the is_subclass_of()
-        // autoload of matching ids as its cost.
+        // With no listeners registered (the production configuration) this is a no-op. Nothing
+        // below autoloads: only an id of an already loaded class can be matched exactly, an id
+        // that is not loaded yet reaches the listeners as a candidate (see onRegistration())
+        $isLoaded = null;
         foreach ($this->registrationListeners as $interfaceName => $listeners) {
-            if (is_subclass_of($id, $interfaceName)) {
+            $isLoaded ??= class_exists($id, false) || interface_exists($id, false);
+            if (!$isLoaded || is_subclass_of($id, $interfaceName)) {
                 foreach ($listeners as $listener) {
                     $listener($id, $this);
                 }

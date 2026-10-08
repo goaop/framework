@@ -440,6 +440,29 @@ class ContainerTest extends TestCase
         $this->assertFalse($constructed, 'Registration listener must not defeat laziness');
     }
 
+    public function testRegistrationListenerNeverAutoloadsAndReceivesNotLoadedIdsAsCandidates(): void
+    {
+        $seen = [];
+        $this->container->onRegistration(Aspect::class, function (string $id) use (&$seen): void {
+            $seen[] = $id;
+        });
+        $autoloaded = [];
+        $probe      = static function (string $className) use (&$autoloaded): void {
+            $autoloaded[] = $className;
+        };
+        spl_autoload_register($probe, prepend: true);
+        try {
+            // @phpstan-ignore argument.type (a class that is never loaded)
+            $this->container->addLazyService('Go\Core\NotLoadedService', fn(): stdClass => new stdClass());
+        } finally {
+            spl_autoload_unregister($probe);
+        }
+
+        $this->assertSame([], $autoloaded, 'Registration must not autoload the service class');
+        // @phpstan-ignore method.impossibleType (a class that is never loaded)
+        $this->assertSame(['Go\Core\NotLoadedService'], $seen, 'A not loaded id can only be passed on as a candidate');
+    }
+
     public function testRegistrationListenerEnablesDebugResourceTracking(): void
     {
         // Emulates the debug-mode listener armed by AspectKernel::init(): every lazily
