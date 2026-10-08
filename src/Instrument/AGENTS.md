@@ -81,6 +81,3 @@ WeavingTransformer::convertClassToTrait() strips #[\Override] from trait for eve
 
 ## Aspects themselves
 Classes implementing \Go\Aop\Aspect: unconditionally skipped by WeavingTransformer. Aspects cannot weave themselves.
-
-## File enumeration (cache warmup, debug:advisor)
-FileSystem\Enumerator::enumerate() walks the include paths (appDir without them) with one Finder filter: files pass getPathFilter() (the runtime loader's filter), directories pass getDirectoryFilter() (prune: a rejected directory is not entered). getDirectoryFilter() must only reject a directory when no file below it can pass getPathFilter(): an exclude pattern prunes when it matches `<dir>/` (so a prefix of every path below), an include pattern keeps a directory when its literal part before the first `*` and `<dir>/` are prefix-compatible. symfony/finder prunes nested directories only since 6.4.46/7.4.19/8.1.7 (older: top-level only, same files, longer walk). The iterator is lazy and not rewindable with several include paths: callers collect it once (iterator_to_array) to count and process.
