@@ -13,9 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\ClassLoading;
 
 use Go\Aop\Exception\WeavingException;
-use Go\Aop\Features;
 use Go\Core\AspectContainer;
-use Go\Core\AspectKernel;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
@@ -85,11 +83,6 @@ final class SourceTransformingLoader extends PhpStreamFilter
     private static ?CachePathManager $cachePathManager = null;
 
     /**
-     * Mask of enabled kernel features (see Features enumeration)
-     */
-    private static int $features = 0;
-
-    /**
      * Register current loader as stream filter in PHP
      *
      * @internal Registers the filter only, use {@see ensureRegistered()} to bring up the whole pipeline
@@ -129,11 +122,8 @@ final class SourceTransformingLoader extends PhpStreamFilter
         // Configured separately from the registration: a filter registered early (or for
         // another container) would otherwise pass every source through untransformed
         if (self::$container !== $container) {
-            $kernelOptions = $container->getService(AspectKernel::class)->getOptions();
-
             self::$container        = $container;
             self::$cachePathManager = $container->getService(CachePathManager::class);
-            self::$features         = $kernelOptions['features'];
             self::$transformers     = null;
         }
     }
@@ -152,7 +142,6 @@ final class SourceTransformingLoader extends PhpStreamFilter
         self::$transformers     = null;
         self::$container        = null;
         self::$cachePathManager = null;
-        self::$features         = 0;
     }
 
     /**
@@ -192,7 +181,7 @@ final class SourceTransformingLoader extends PhpStreamFilter
 
             // Cache hit: return the cached content as a result right from here -
             // no StreamMetaData, no parsing, no transformers
-            $cachedContent = self::findCachedContent($originalUri, $cacheUri, $this->data);
+            $cachedContent = self::findCachedContent($originalUri, $this->data);
             if ($cachedContent !== null) {
                 stream_bucket_append($out, stream_bucket_new($this->stream, $cachedContent));
 
@@ -275,30 +264,14 @@ final class SourceTransformingLoader extends PhpStreamFilter
      *
      * @param string $originalContent Buffered original source of the streamed file
      */
-    private static function findCachedContent(string $originalUri, string $cacheUri, string $originalContent): ?string
+    private static function findCachedContent(string $originalUri, string $originalContent): ?string
     {
-        $cacheState = self::$cachePathManager?->queryCacheState($originalUri);
-        if ($cacheState === null) {
+        if (self::$cachePathManager === null || self::$container === null) {
             return null;
         }
-
-        // With a prebuilt cache (built at deploy time) an existing cache record is trusted
-        // as-is: no filemtime or tracked-resource freshness checks - staleness is the
-        // deployer's responsibility. The feature bits are cached statically on registration, so the
-        // bitmask is tested directly instead of calling the kernel for every loaded file.
-        $isTrustedCacheRecord = (self::$features & Features::PREBUILT_CACHE) !== 0;
-
-        if (!$isTrustedCacheRecord) {
-            // The record keeps the size and mtime of the source it was woven from: any difference, also an older
-            // mtime restored by a deployment (rsync -t, checkout of an older revision), means the source changed
-            $cachedAt = $cacheState['cachedAt'] ?? 0;
-            $isStale  = ($cacheState['filemtime'] ?? null) !== filemtime($originalUri)
-                || ($cacheState['filesize'] ?? null) !== filesize($originalUri)
-                || (isset($cacheState['cacheUri']) && $cacheState['cacheUri'] !== $cacheUri)
-                || !(self::$container?->isFreshSince(is_int($cachedAt) ? $cachedAt : 0) ?? false);
-            if ($isStale) {
-                return null;
-            }
+        $cacheState = self::$cachePathManager->queryFreshCacheState($originalUri, self::$container);
+        if ($cacheState === null) {
+            return null;
         }
 
         $recordedCacheUri = $cacheState['cacheUri'] ?? null;

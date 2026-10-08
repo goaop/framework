@@ -47,6 +47,11 @@ final class AopComposerLoader
     private array $skippedClasses;
 
     /**
+     * Cache index, consulted in debug mode for files the cache knows as untransformed
+     */
+    private CachePathManager $cachePathManager;
+
+    /**
      * Includes a file in an isolated scope: neither $this nor the loader state leak into it
      *
      * @var (Closure(string): void)|null
@@ -70,16 +75,17 @@ final class AopComposerLoader
      */
     public function __construct(
         protected readonly ClassLoader $original,
-        AspectContainer $container,
+        private readonly AspectContainer $container,
         protected readonly array $options,
     ) {
         // The framework itself and its runtime dependencies are already part of excludePaths (see AspectKernel)
         $fileEnumerator       = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
         $this->fileEnumerator = $fileEnumerator;
 
-        $cachePathManager     = $container->getService(CachePathManager::class);
-        $this->classMap       = $cachePathManager->queryClassMap();
-        $this->skippedClasses = $cachePathManager->querySkippedClasses();
+        $cachePathManager       = $container->getService(CachePathManager::class);
+        $this->cachePathManager = $cachePathManager;
+        $this->classMap         = $cachePathManager->queryClassMap();
+        $this->skippedClasses   = $cachePathManager->querySkippedClasses();
 
         // In production the woven class map is handed to composer directly: its findFile()
         // consults the class map before PSR-4/PSR-0, so woven classes resolve natively to
@@ -139,6 +145,26 @@ final class AopComposerLoader
     }
 
     /**
+     * Finds the original source file of a class through the composer loaders wrapped by AopComposerLoader::init(),
+     * without loading the class
+     *
+     * @return string|null Path given by composer, or null when no wrapped composer loader knows the class
+     */
+    public static function findOriginalFile(string $class): ?string
+    {
+        foreach (spl_autoload_functions() as $loader) {
+            if (is_array($loader) && $loader[0] instanceof self) {
+                $file = $loader[0]->original->findFile($class);
+                if ($file !== false) {
+                    return $file;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Autoload a class by it's name
      *
      * @return true|null True if loaded, null otherwise (the same contract as composer's loader)
@@ -183,12 +209,28 @@ final class AopComposerLoader
             if (is_string($resolved)) {
                 $file = $resolved;
             }
-            if (($this->isAllowedFilter)($file)) {
-                // can be optimized here with the class map even for debug mode, but no needed right now
+            // Debug mode: a woven class (known from the class map) goes to the filter without a freshness check of its
+            // own, the filter checks the record anyway
+            $mayBeUntransformed = !$this->isProduction && !isset($this->classMap[$class]);
+            if (($this->isAllowedFilter)($file) && (!$mayBeUntransformed || !$this->isFreshUntransformedFile($file))) {
                 $file = FilterInjectorTransformer::rewrite($file);
             }
         }
 
         return $file;
+    }
+
+    /**
+     * Debug mode: checks whether the cache knows the file as untransformed, by a record that is still fresh
+     *
+     * Such a file is included by its original path: opcache caches it, while it never caches a php://filter include,
+     * which compiles the file again on every request. Woven files keep the filter, so that their magic constants and
+     * breakpoints point at the original file, and so do stale records and misses, to be woven again.
+     */
+    private function isFreshUntransformedFile(string $file): bool
+    {
+        $cacheState = $this->cachePathManager->queryFreshCacheState($file, $this->container);
+
+        return $cacheState !== null && !isset($cacheState['cacheUri']);
     }
 }

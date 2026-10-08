@@ -15,6 +15,7 @@ namespace Go\Instrument\ClassLoading;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Features;
+use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Cache\CacheFileWriter;
 use Go\Instrument\PathResolver;
@@ -286,6 +287,36 @@ class CachePathManager
         return $this->appDir !== null
             ? (PathResolver::rebase($resource, $this->appDir, $this->cacheDir) ?? $resource)
             : $resource;
+    }
+
+    /**
+     * Returns the cache record of a resource when it is still valid for the current source, null otherwise
+     *
+     * The single freshness rule of the framework: the stream filter serves a cache hit with it, and the debug-mode
+     * autoloader includes a fresh untransformed file by its original path, so that opcache can cache it.
+     *
+     * @return array<string, mixed>|null Valid record, or null when there is no record or the record is stale
+     */
+    public function queryFreshCacheState(string $resource, AspectContainer $container): ?array
+    {
+        $cacheState = $this->queryCacheState($resource);
+
+        // With a prebuilt cache (built at deploy time) an existing cache record is trusted as-is: no filemtime or
+        // tracked-resource freshness checks - staleness is the deployer's responsibility
+        if ($cacheState === null || ($this->options['features'] & Features::PREBUILT_CACHE) !== 0) {
+            return $cacheState;
+        }
+
+        // The record keeps the size and mtime of the source it was woven from: any difference, also an older
+        // mtime restored by a deployment (rsync -t, checkout of an older revision), means the source changed.
+        // Weaving depends on the tracked resources too (kernel and aspect files in debug mode)
+        $cachedAt = $cacheState['cachedAt'] ?? 0;
+        $isStale  = ($cacheState['filemtime'] ?? null) !== filemtime($resource)
+            || ($cacheState['filesize'] ?? null) !== filesize($resource)
+            || (isset($cacheState['cacheUri']) && !is_string($cacheState['cacheUri']))
+            || !$container->isFreshSince(is_int($cachedAt) ? $cachedAt : 0);
+
+        return $isStale ? null : $cacheState;
     }
 
     /**
