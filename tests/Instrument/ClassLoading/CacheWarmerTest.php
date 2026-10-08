@@ -63,11 +63,17 @@ class CacheWarmerTest extends TestCase
      * warmer receives from a real aspect kernel
      *
      * @param list<SourceTransformer> $transformers
+     * @param list<string>            $includePaths
+     * @param list<string>            $excludePaths
      *
      * @return AspectKernel&MockObject
      */
-    private function createKernel(?string $cacheDir, array $transformers = []): AspectKernel
-    {
+    private function createKernel(
+        ?string $cacheDir,
+        array $transformers = [],
+        array $includePaths = [],
+        array $excludePaths = [],
+    ): AspectKernel {
         $kernel = $this->createMock(AspectKernel::class);
         $kernel->method('getOptions')->willReturn([
             'debug'          => true,
@@ -75,8 +81,8 @@ class CacheWarmerTest extends TestCase
             'cacheDir'       => $cacheDir,
             'cacheFileMode'  => 0770,
             'features'       => 0,
-            'includePaths'   => [],
-            'excludePaths'   => [],
+            'includePaths'   => $includePaths,
+            'excludePaths'   => $excludePaths,
             'containerClass' => Container::class,
         ]);
 
@@ -113,6 +119,49 @@ class CacheWarmerTest extends TestCase
         $this->assertStringContainsString('Total 1 files to process.', $display);
         $this->assertStringContainsString('[OK]', $display);
         $this->assertStringContainsString('[DONE]: Total processed 1, 0 errors.', $display);
+    }
+
+    /**
+     * The kernel excludes its cache directory, here below the application directory, like any other exclude path.
+     * Several include paths: their files were once counted and then rewound, which a multi-directory Finder can not do
+     */
+    public function testWarmUpProcessesExactlyTheFilesOfTheEnumerator(): void
+    {
+        $cacheDir = $this->appDir . '/var/cache';
+        $files    = [
+            'src/Legacy/Old.php',
+            'src/Generated/Proxy/ServiceProxy.php',
+            'src/ServiceTest.php',
+            'var/cache/src/Some.php',
+            'vendor/acme/lib/src/Acme.php',
+            'vendor/acme/lib/tests/AcmeTest.php',
+            'vendor/autoload.php',
+            'vendor-bin/Tool.php',
+        ];
+        foreach ($files as $file) {
+            $path = $this->appDir . '/' . $file;
+            if (!is_dir(dirname($path))) {
+                mkdir(dirname($path), 0777, true);
+            }
+            file_put_contents($path, "<?php\n");
+        }
+        $includePaths = [$this->appDir . '/src', $this->appDir . '/vendor', $this->appDir . '/var'];
+        $excludePaths = [$cacheDir, $this->appDir . '/src/Legacy', $this->appDir . '/src/*/Proxy', $this->appDir . '/vendor/*/tests', $this->appDir . '/*Test.php'];
+
+        $output = new BufferedOutput();
+        $warmer = new CacheWarmer($this->createKernel($cacheDir, [], $includePaths, $excludePaths), $output);
+
+        $this->assertSame(0, $warmer->warmUp());
+        $display = $output->fetch();
+
+        preg_match_all('/\[OK\]: (\S+)/', $display, $matches);
+        // Paths are compared in one separator form: Finder joins the names below the include paths natively
+        $processed = array_map(static fn(string $path): string => str_replace('\\', '/', $path), $matches[1]);
+        sort($processed);
+        $appDir = str_replace('\\', '/', $this->appDir);
+        $this->assertSame([$appDir . '/src/Some.php', $appDir . '/vendor/acme/lib/src/Acme.php', $appDir . '/vendor/autoload.php'], $processed);
+        $this->assertStringContainsString('Total 3 files to process.', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 3, 0 errors.', $display);
     }
 
     public function testInterruptStopsWarmupLoopBeforeNextFile(): void

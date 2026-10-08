@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Go\ParserReflection\Resolver\TypeExpressionResolver;
 use PhpParser\BuilderFactory;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -123,21 +122,16 @@ final class MethodGenerator
 
         // Return type
         if ($method->hasReturnType()) {
-            // If the method exposes its AST node (Go\ParserReflection\ReflectionMethod),
-            // re-process the raw type node with TypeExpressionResolver(null, null) so that
-            // 'self' and 'parent' keywords are preserved without PHP 8.5+ name resolution,
-            // while regular class names are still fully qualified via resolvedName attributes.
+            // If the method exposes its AST node (Go\ParserReflection\ReflectionMethod), the
+            // type is built from the raw type node, so that 'self' and 'parent' keywords are
+            // preserved without PHP 8.5+ name resolution, while regular class names are still
+            // fully qualified via resolvedName attributes.
             if (method_exists($method, 'getNode')) {
                 /** @var ClassMethod $astMethod */
                 $astMethod = $method->getNode();
                 $returnTypeNode = $astMethod->returnType;
                 if ($returnTypeNode !== null) {
-                    $typeResolver = new TypeExpressionResolver(null, null);
-                    $typeResolver->process($returnTypeNode, false);
-                    $resolvedType = $typeResolver->getType();
-                    if ($resolvedType !== null) {
-                        $generator->returnType = TypeGenerator::fromReflectionType($resolvedType);
-                    }
+                    $generator->returnType = TypeGenerator::fromResolvedAstNode($returnTypeNode);
                 }
             } else {
                 $reflectionReturnType = $method->getReturnType();

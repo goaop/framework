@@ -26,9 +26,15 @@ use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\ProxyImports;
 use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
+use Go\Proxy\Part\JoinPointStatementsGenerator;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Stmt;
+use PhpParser\Node\VariadicPlaceholder;
 use ReflectionException;
 use ReflectionFunction;
-use ReflectionNamedType;
 
 /**
  * Function proxy builder that is used to generate a proxy-function from the list of joinpoints
@@ -90,10 +96,9 @@ final class FunctionProxyGenerator
                     $functionName,
                 ));
             }
-            $functionBody       = $this->getJoinpointInvocationBody($functionReflection);
-            $funcGenerator      = FunctionGenerator::fromReflection($functionReflection);
-            $funcGenerator->body = $functionBody;
-            $functionsContent[] = $funcGenerator->generate();
+            $funcGenerator        = FunctionGenerator::fromReflection($functionReflection);
+            $funcGenerator->stmts = $this->getJoinpointInvocationStatements($functionReflection);
+            $functionsContent[]   = $funcGenerator->generate();
         }
 
         $this->fileGenerator->body = implode("\n", $functionsContent);
@@ -108,45 +113,37 @@ final class FunctionProxyGenerator
     }
 
     /**
-     * Creates string definition for function method body by function reflection
+     * Builds the statements of a function proxy body by function reflection
      *
      * The callable expression uses a fully-qualified global function reference (leading backslash)
      * to ensure that proceed() calls the original built-in function, not the proxy defined in
      * the current namespace.
+     *
+     * @return list<Stmt>
      */
-    protected function getJoinpointInvocationBody(ReflectionFunction $function): string
+    protected function getJoinpointInvocationStatements(ReflectionFunction $function): array
     {
-        $argumentList = new FunctionCallArgumentListGenerator($function);
-        $argumentCode = $argumentList->generate();
-
-        $return = 'return ';
-        if ($function->hasReturnType()) {
-            $returnType = $function->getReturnType();
-            if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {
-                // void/never return types should not return anything
-                $return = '';
-            }
-        }
-
-        $functionAdvices = $this->adviceNames[AspectContainer::FUNCTION_PREFIX][$function->name];
-        $advicesCode = (new InterceptorListGenerator(array_values($functionAdvices), $this->imports))->generate();
+        $functionAdvices  = $this->adviceNames[AspectContainer::FUNCTION_PREFIX][$function->name];
         $returnTypeString = $function->hasReturnType() ? '<' . TypeGenerator::renderTypeForPhpDoc($function->getReturnType()) . '>' : '';
 
-        // Use a fully-qualified (global) callable so proceed() calls the original built-in
-        // function rather than the proxy defined in this namespace.
-        $callableExpression = '\\' . $function->getName() . '(...)';
-        $injector           = $this->imports->import(InterceptorInjector::class);
-        $joinPoint          = $this->imports->import(FunctionInvocation::class);
-
-        return <<<BODY
-        /** @var {$joinPoint}{$returnTypeString} \$__joinPoint */
-        static \$__joinPoint = {$injector}::forFunction(
-            '{$function->name}',
-            {$advicesCode},
-            {$callableExpression},
-        );
-        {$return}\$__joinPoint->__invoke($argumentCode);
-        BODY;
+        return [
+            JoinPointStatementsGenerator::createInitialization(
+                $this->imports->import(FunctionInvocation::class) . $returnTypeString,
+                $this->imports->import(InterceptorInjector::class),
+                'forFunction',
+                [
+                    new Arg(new String_($function->name)),
+                    new Arg((new InterceptorListGenerator(array_values($functionAdvices), $this->imports))->getNode()),
+                    // Use a fully-qualified (global) callable so proceed() calls the original built-in
+                    // function rather than the proxy defined in this namespace.
+                    new Arg(new FuncCall(new FullyQualified($function->getName()), [new VariadicPlaceholder()])),
+                ],
+            ),
+            JoinPointStatementsGenerator::createInvocation(
+                (new FunctionCallArgumentListGenerator($function))->getArgs(),
+                JoinPointStatementsGenerator::returnsResult($function),
+            ),
+        ];
     }
 
     /**

@@ -214,7 +214,7 @@ $ignoreErrors[] = [
 $ignoreErrors[] = [
 	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
 	'identifier' => 'empty.notAllowed',
-	'count' => 4,
+	'count' => 3,
 	'path' => __DIR__ . '/src/Proxy/ClassProxyGenerator.php',
 ];
 $ignoreErrors[] = [
