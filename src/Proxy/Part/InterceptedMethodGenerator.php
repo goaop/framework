@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy\Part;
 
 use Go\Proxy\Generator\MethodGenerator;
+use PhpParser\Node\Stmt;
 use ReflectionMethod;
 
 /**
@@ -25,13 +26,17 @@ final class InterceptedMethodGenerator
     /**
      * InterceptedMethod constructor.
      *
-     * @param ReflectionMethod $reflectionMethod Instance of original method
-     * @param string           $body             Method body
+     * @param ReflectionMethod   $reflectionMethod Instance of original method
+     * @param string|list<Stmt> $body             Method body: AST statements, or PHP code which is parsed into them
      */
-    public function __construct(ReflectionMethod $reflectionMethod, string $body)
+    public function __construct(ReflectionMethod $reflectionMethod, string|array $body)
     {
         $this->generator = MethodGenerator::fromReflection($reflectionMethod);
-        $this->generator->body = $body;
+        if (is_string($body)) {
+            $this->generator->body = $body;
+        } else {
+            $this->generator->stmts = $body;
+        }
     }
 
     public function generate(): string

@@ -42,10 +42,22 @@ use Go\Proxy\Generator\Visibility;
 use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use Go\Proxy\Part\InterceptedMethodGenerator;
 use Go\Proxy\Part\InterceptedPropertyGenerator;
+use Go\Proxy\Part\JoinPointStatementsGenerator;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Name;
+use PhpParser\Node\Scalar\String_;
+use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\ClassMethod;
+use PhpParser\Node\Stmt\Expression;
+use PhpParser\Node\VariadicPlaceholder;
 use ReflectionClass;
 use ReflectionMethod;
-use ReflectionNamedType;
 use ReflectionProperty;
 
 /**
@@ -71,6 +83,13 @@ class ClassProxyGenerator
     protected ProxyImports $imports;
 
     /**
+     * Methods of the original class by name
+     *
+     * @var array<string, ReflectionMethod>
+     */
+    protected array $originalMethods = [];
+
+    /**
      * Generates a proxy class that wraps the original class body (now a trait) via trait-use.
      *
      * The original class has been converted to a trait named $traitName by WeavingTransformer.
@@ -82,14 +101,18 @@ class ClassProxyGenerator
      * @param string                  $traitName        FQCN of the generated trait (e.g. Ns\FooOriginalTrait)
      * @param array<string, array<string, list<string|GeneratedInterceptor>>> $classAdviceNames List of advices for class
      * @param array<string, string|null> $originalImports Imports of the original file: class name => alias
+     * @param array<string, ReflectionMethod>|null $originalMethods Methods of the original class by name, see
+     *                                                              {@see self::indexMethods()}; indexed here when null
      */
     public function __construct(
         ReflectionClass $originalClass,
         string $traitName,
         array $classAdviceNames,
         array $originalImports = [],
+        ?array $originalMethods = null,
     ) {
-        $this->adviceNames = $classAdviceNames;
+        $this->adviceNames     = $classAdviceNames;
+        $this->originalMethods = $originalMethods ?? self::indexMethods($originalClass);
 
         $dynamicMethodAdvices  = $classAdviceNames[AspectContainer::METHOD_PREFIX] ?? [];
         $staticMethodAdvices   = $classAdviceNames[AspectContainer::STATIC_METHOD_PREFIX] ?? [];
@@ -119,13 +142,7 @@ class ClassProxyGenerator
         foreach ($this->collectAspectClasses($classAdviceNames) as $aspectClass) {
             $this->imports->import($aspectClass);
         }
-        foreach ($interceptedMethods as $methodName) {
-            if ($originalClass->hasMethod($methodName) && $originalClass->getMethod($methodName)->isStatic()) {
-                $this->imports->import(StaticMethodInvocation::class);
-            } else {
-                $this->imports->import(DynamicMethodInvocation::class);
-            }
-        }
+        $this->importMethodInvocationTypes($originalClass, $interceptedMethods);
         if ($staticInitializationAdvices !== []) {
             $this->imports->import(ClassJoinpoint::class);
         }
@@ -216,7 +233,7 @@ class ClassProxyGenerator
 
         // Alias each intercepted method as private <name>OriginalAlias
         foreach ($interceptedMethods as $methodName) {
-            $reflectionMethod = $originalClass->getMethod($methodName);
+            $reflectionMethod = $this->getOriginalMethod($originalClass, $methodName);
             if ($reflectionMethod->class !== $originalClass->name) {
                 continue;
             }
@@ -270,7 +287,7 @@ class ClassProxyGenerator
     {
         $interceptedMethods = [];
         foreach ($methodNames as $methodName) {
-            $reflectionMethod = $originalClass->getMethod($methodName);
+            $reflectionMethod = $this->getOriginalMethod($originalClass, $methodName);
             if ($reflectionMethod->returnsReference()) {
                 throw new WeavingException(sprintf(
                     'Method %s::%s() returns by reference and can not be intercepted: the joinpoint returns '
@@ -280,12 +297,61 @@ class ClassProxyGenerator
                     $methodName,
                 ));
             }
-            $methodBody       = $this->getJoinpointInvocationBody($reflectionMethod, $originalClass);
-
-            $interceptedMethods[$methodName] = new InterceptedMethodGenerator($reflectionMethod, $methodBody);
+            $interceptedMethods[$methodName] = new InterceptedMethodGenerator(
+                $reflectionMethod,
+                $this->getJoinpointInvocationStatements($reflectionMethod, $originalClass),
+            );
         }
 
         return $interceptedMethods;
+    }
+
+    /**
+     * Indexes the methods of a class by name, so that each intercepted method is found without a linear scan
+     *
+     * @param ReflectionClass<covariant object> $class
+     *
+     * @return array<string, ReflectionMethod>
+     */
+    public static function indexMethods(ReflectionClass $class): array
+    {
+        $methods = [];
+        foreach ($class->getMethods() as $method) {
+            $methods[$method->name] ??= $method;
+        }
+
+        return $methods;
+    }
+
+    /**
+     * Returns the method of the original class by name
+     *
+     * Names missing in the index fall back to the reflection lookup, which keeps its semantics (case-insensitive
+     * lookup of native reflection, ReflectionException for an unknown method).
+     *
+     * @param ReflectionClass<covariant object> $originalClass
+     */
+    protected function getOriginalMethod(ReflectionClass $originalClass, string $methodName): ReflectionMethod
+    {
+        return $this->originalMethods[$methodName] ?? $originalClass->getMethod($methodName);
+    }
+
+    /**
+     * Imports the invocation types of the intercepted methods
+     *
+     * Determines needed invocation types from actual method signatures, not advice category keys,
+     * because callers may place static-method advices under METHOD_PREFIX.
+     *
+     * @param ReflectionClass<covariant object> $originalClass
+     * @param list<string>                      $methodNames
+     */
+    protected function importMethodInvocationTypes(ReflectionClass $originalClass, array $methodNames): void
+    {
+        foreach ($methodNames as $methodName) {
+            $method = $this->originalMethods[$methodName]
+                ?? ($originalClass->hasMethod($methodName) ? $originalClass->getMethod($methodName) : null);
+            $this->imports->import($method?->isStatic() === true ? StaticMethodInvocation::class : DynamicMethodInvocation::class);
+        }
     }
 
     /**
@@ -318,87 +384,102 @@ class ClassProxyGenerator
     }
 
     /**
-     * Creates string definition for method body by method reflection
+     * Builds the statements of an intercepted method body by method reflection
      *
      * @param ReflectionClass<covariant object>|null $originalClass The original class being proxied. When provided,
      *                                                    it is used to determine if the method has a trait alias
      *                                                    (method declared in the class itself) or is inherited
      *                                                    (uses parent:: callable wrapper).
+     *
+     * @return list<Stmt>
      */
-    protected function getJoinpointInvocationBody(ReflectionMethod $method, ?ReflectionClass $originalClass = null): string
+    protected function getJoinpointInvocationStatements(ReflectionMethod $method, ?ReflectionClass $originalClass = null): array
     {
-        $isStatic = $method->isStatic();
-        $invocationArguments = $isStatic ? 'static::class' : '$this';
-        $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
-        $injectorMethod = $isStatic ? 'forStaticMethod' : 'forMethod';
-
-        $argumentList = new FunctionCallArgumentListGenerator($method);
-        $argumentCode = $argumentList->generate();
-        // Constructors and __clone() return nothing, whatever the joinpoint returns
-        $return       = $method->isConstructor() || $method->name === '__clone' ? '' : 'return ';
-        if ($method->hasReturnType()) {
-            $returnType = $method->getReturnType();
-            if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {
-                // void/never return types should not return anything
-                $return = '';
-            }
-        }
-
-        if (!empty($argumentCode)) {
-            $invocationArguments .= ", $argumentCode";
-        }
-
-        $adviceNames = $this->adviceNames[$prefix][$method->name]
+        $isStatic       = $method->isStatic();
+        $prefix         = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
+        $adviceNames    = $this->adviceNames[$prefix][$method->name]
             ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
-        $advicesCode = (new InterceptorListGenerator($adviceNames, $this->imports))->generate();
-        $returnTypeString   = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
-        // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
-        // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.
-        if ($method->hasReturnType() && method_exists($method, 'getNode')) {
-            $node = $method->getNode();
-            if ($node instanceof ClassMethod) {
-                $astReturnType = $node->getReturnType();
-                $returnTypeString = $astReturnType !== null ? ', ' . TypeGenerator::renderAstTypeForPhpDoc($astReturnType) : '';
-            }
-        }
-        $joinPointType = $isStatic
-            ? $this->imports->import(StaticMethodInvocation::class) . '<self' . $returnTypeString . '>'
-            : $this->imports->import(DynamicMethodInvocation::class) . '<self' . $returnTypeString . '>';
-        $injector = $this->imports->import(InterceptorInjector::class);
+        $invocationType = $this->imports->import($isStatic ? StaticMethodInvocation::class : DynamicMethodInvocation::class);
 
-        // Determine the first-class callable expression for the original method.
-        //
-        // Methods declared in the proxied class have a private `<method>OriginalAlias` alias in the
-        // proxy's trait-use block, referenced as `$this->mOriginalAlias(...)` / `self::mOriginalAlias(...)`.
-        //
-        // Inherited methods have no such alias and are referenced as `parent::method(...)`.
-        // DynamicTraitAliasMethodInvocation dispatches through a ReflectionMethod resolved from the callable,
-        // StaticTraitAliasMethodInvocation through a forward_static_call shim that keeps late static binding.
-        $hasTraitAlias = $originalClass !== null && ($method->class === $originalClass->name);
-        if ($hasTraitAlias) {
-            $callableExpression = $isStatic
-                ? 'self::' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)'
-                : '$this->' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)';
-        } else {
-            // Inherited method (no trait alias): use parent:: first-class callable for both static and dynamic.
-            // DynamicTraitAliasMethodInvocation uses ReflectionMethod internally, so the callable is stored
-            // but not used for the actual dispatch. StaticTraitAliasMethodInvocation wraps it in a
-            // forward_static_call shim to preserve late-static-binding.
-            $callableExpression = 'parent::' . $method->name . '(...)';
-        }
-
-        $body = <<<BODY
-        /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = {$injector}::{$injectorMethod}(
-            self::class,
-            '{$method->name}',
-            {$advicesCode},
-            {$callableExpression},
+        $initialization = JoinPointStatementsGenerator::createInitialization(
+            $invocationType . '<self' . self::renderReturnTypeForPhpDoc($method) . '>',
+            $this->imports->import(InterceptorInjector::class),
+            $isStatic ? 'forStaticMethod' : 'forMethod',
+            [
+                new Arg(new ClassConstFetch(new Name('self'), 'class')),
+                new Arg(new String_($method->name)),
+                new Arg((new InterceptorListGenerator($adviceNames, $this->imports))->getNode()),
+                new Arg($this->createOriginalMethodCallable($method, $originalClass)),
+            ],
         );
-        {$return}\$__joinPoint->__invoke($invocationArguments);
-        BODY;
+        $invocationArguments = [
+            new Arg($isStatic ? new ClassConstFetch(new Name('static'), 'class') : new Variable('this')),
+            ...(new FunctionCallArgumentListGenerator($method))->getArgs(),
+        ];
 
-        return $body;
+        return [
+            $initialization,
+            JoinPointStatementsGenerator::createInvocation(
+                $invocationArguments,
+                JoinPointStatementsGenerator::returnsResult($method),
+            ),
+        ];
+    }
+
+    /**
+     * Builds the first-class callable of the original method, which the joinpoint keeps
+     *
+     * Methods declared in the proxied class have a private `<method>OriginalAlias` alias in the
+     * proxy's trait-use block, referenced as `$this->mOriginalAlias(...)` / `self::mOriginalAlias(...)`.
+     *
+     * Inherited methods have no such alias and are referenced as `parent::method(...)` for both static
+     * and dynamic methods. DynamicTraitAliasMethodInvocation dispatches through a ReflectionMethod resolved
+     * from the callable, StaticTraitAliasMethodInvocation through a forward_static_call shim that keeps
+     * late static binding.
+     *
+     * @param ReflectionClass<covariant object>|null $originalClass
+     */
+    protected function createOriginalMethodCallable(ReflectionMethod $method, ?ReflectionClass $originalClass): Expr
+    {
+        if ($originalClass !== null && $method->class === $originalClass->name) {
+            return self::createTraitAliasCallable($method);
+        }
+
+        return new StaticCall(new Name('parent'), $method->name, [new VariadicPlaceholder()]);
+    }
+
+    /**
+     * Builds `$this-><method>OriginalAlias(...)`, or `self::<method>OriginalAlias(...)` for a static method
+     */
+    protected static function createTraitAliasCallable(ReflectionMethod $method): Expr
+    {
+        $alias = $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX;
+
+        return $method->isStatic()
+            ? new StaticCall(new Name('self'), $alias, [new VariadicPlaceholder()])
+            : new MethodCall(new Variable('this'), $alias, [new VariadicPlaceholder()]);
+    }
+
+    /**
+     * Renders the return type of the method for the joinpoint `@var` docblock: `, <type>` or an empty string
+     *
+     * On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN, so the raw
+     * AST return-type node is used when available (goaop/parser-reflection) to preserve keywords; the
+     * reflection type is only rendered without it.
+     */
+    private static function renderReturnTypeForPhpDoc(ReflectionMethod $method): string
+    {
+        if (!$method->hasReturnType()) {
+            return '';
+        }
+        $node = method_exists($method, 'getNode') ? $method->getNode() : null;
+        if ($node instanceof ClassMethod) {
+            $astReturnType = $node->getReturnType();
+
+            return $astReturnType !== null ? ', ' . TypeGenerator::renderAstTypeForPhpDoc($astReturnType) : '';
+        }
+
+        return ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType());
     }
 
     /**
@@ -406,22 +487,24 @@ class ClassProxyGenerator
      */
     private function createStaticInitializationMethod(array $advisorNames): MethodGenerator
     {
-        $advicesCode = (new InterceptorListGenerator($advisorNames, $this->imports))->generate();
-
-        $injector    = $this->imports->import(InterceptorInjector::class);
-        $joinPoint   = $this->imports->import(ClassJoinpoint::class);
-
         $method = new MethodGenerator('__staticInitialization');
         $method->static = true;
         $method->returnType = 'void';
-        $method->body = <<<BODY
-        /** @var {$joinPoint}<self> \$__joinPoint */
-        static \$__joinPoint = {$injector}::forStaticInitialization(
-            self::class,
-            {$advicesCode},
-        );
-        \$__joinPoint(static::class);
-        BODY;
+        $method->stmts = [
+            JoinPointStatementsGenerator::createInitialization(
+                $this->imports->import(ClassJoinpoint::class) . '<self>',
+                $this->imports->import(InterceptorInjector::class),
+                'forStaticInitialization',
+                [
+                    new Arg(new ClassConstFetch(new Name('self'), 'class')),
+                    new Arg((new InterceptorListGenerator($advisorNames, $this->imports))->getNode()),
+                ],
+            ),
+            new Expression(new FuncCall(
+                new Variable(JoinPointStatementsGenerator::JOINPOINT_VARIABLE),
+                [new Arg(new ClassConstFetch(new Name('static'), 'class'))],
+            )),
+        ];
 
         return $method;
     }
@@ -431,11 +514,6 @@ class ClassProxyGenerator
      */
     private function createInitializationMethod(array $advisorNames): MethodGenerator
     {
-        $advicesCode = (new InterceptorListGenerator($advisorNames, $this->imports))->generate();
-
-        $injector    = $this->imports->import(InterceptorInjector::class);
-        $joinPoint   = $this->imports->import(ConstructorInvocation::class);
-
         $method = new MethodGenerator('__initialization');
         $method->static = true;
         $method->returnType = 'static';
@@ -447,14 +525,18 @@ class ClassProxyGenerator
             new ValueGenerator([]),
         );
         $method->addParameter($argumentsParameter);
-        $method->body = <<<BODY
-        /** @var {$joinPoint}<self> \$__joinPoint */
-        static \$__joinPoint = {$injector}::forInitialization(
-            self::class,
-            {$advicesCode},
-        );
-        return \$__joinPoint->__invoke(\$arguments);
-        BODY;
+        $method->stmts = [
+            JoinPointStatementsGenerator::createInitialization(
+                $this->imports->import(ConstructorInvocation::class) . '<self>',
+                $this->imports->import(InterceptorInjector::class),
+                'forInitialization',
+                [
+                    new Arg(new ClassConstFetch(new Name('self'), 'class')),
+                    new Arg((new InterceptorListGenerator($advisorNames, $this->imports))->getNode()),
+                ],
+            ),
+            JoinPointStatementsGenerator::createInvocation([new Arg(new Variable('arguments'))], true),
+        ];
 
         return $method;
     }

@@ -13,6 +13,12 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use Go\Aop\Exception\WeavingException;
+use Go\ParserReflection\Resolver\TypeExpressionResolver;
+use PhpParser\Node\Stmt\Function_;
+use PhpParser\NodeFinder;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\NameResolver;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
@@ -147,6 +153,66 @@ class TypeGeneratorTest extends TestCase
         $this->expectException(WeavingException::class);
         $this->expectExceptionMessage('Malformed DNF type');
         TypeGenerator::fromTypeString('(Countable&Iterator|null');
+    }
+
+    /**
+     * The AST path builds the same type as the former round trip through TypeExpressionResolver(null, null)
+     * and fromReflectionType(): generated proxies stay byte-identical
+     */
+    #[DataProvider('declaredTypeProvider')]
+    public function testFromResolvedAstNodeMatchesResolvedReflectionType(string $declaredType, string $expected): void
+    {
+        $code = <<<PHP
+            <?php
+            namespace App\\Model;
+
+            use Vendor\\Lib\\Collection;
+            use Vendor\\Lib as Lib;
+
+            function typed(): {$declaredType} {}
+            PHP;
+        $statements = (new ParserFactory())->createForNewestSupportedVersion()->parse($code);
+        $this->assertNotNull($statements);
+        $statements = (new NodeTraverser(new NameResolver(null, ['replaceNodes' => false])))->traverse($statements);
+        $function   = (new NodeFinder())->findFirstInstanceOf($statements, Function_::class);
+        $this->assertInstanceOf(Function_::class, $function);
+        $typeNode = $function->returnType;
+        $this->assertNotNull($typeNode);
+
+        $resolver = new TypeExpressionResolver(null, null);
+        $resolver->process($typeNode, false);
+        $resolvedType = $resolver->getType();
+        $this->assertNotNull($resolvedType);
+
+        $this->assertSame($expected, TypeGenerator::fromReflectionType($resolvedType)->generate());
+        $this->assertSame($expected, TypeGenerator::fromResolvedAstNode($typeNode)->generate());
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function declaredTypeProvider(): array
+    {
+        return [
+            'builtin'             => ['int', 'int'],
+            'builtin upper case'  => ['INT', 'int'],
+            'mixed'               => ['mixed', 'mixed'],
+            'static'              => ['static', 'static'],
+            'self'                => ['self', 'self'],
+            'parent'              => ['parent', 'parent'],
+            'self upper case'     => ['SELF', 'self'],
+            'imported class'      => ['Collection', '\Vendor\Lib\Collection'],
+            'aliased namespace'   => ['Lib\Item', '\Vendor\Lib\Item'],
+            'relative class'      => ['Entity', '\App\Model\Entity'],
+            'fully qualified'     => ['\Countable', '\Countable'],
+            'nullable builtin'    => ['?string', '?string'],
+            'nullable class'      => ['?Collection', '?\Vendor\Lib\Collection'],
+            'nullable self'       => ['?self', '?self'],
+            'union with null'     => ['Collection|null', '\Vendor\Lib\Collection|null'],
+            'union'               => ['int|string|false', 'int|string|false'],
+            'intersection'        => ['\Countable&Collection', '\Countable&\Vendor\Lib\Collection'],
+            'dnf'                 => ['(\Countable&Collection)|Entity|null', '(\Countable&\Vendor\Lib\Collection)|\App\Model\Entity|null'],
+        ];
     }
 
     public function testFromReflectionIntersectionType(): void

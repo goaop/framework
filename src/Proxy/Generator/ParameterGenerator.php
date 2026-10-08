@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use Go\Aop\Exception\WeavingException;
-use Go\ParserReflection\Resolver\TypeExpressionResolver;
 use PhpParser\BuilderFactory;
 use PhpParser\Node;
 use PhpParser\PrettyPrinter\Standard;
@@ -49,20 +48,15 @@ final class ParameterGenerator
 
         if ($param->hasType()) {
             // If the parameter exposes its AST node (Go\ParserReflection\ReflectionParameter),
-            // re-process the raw type node with TypeExpressionResolver(null, null) so that
-            // 'self' and 'parent' keywords are preserved without PHP 8.5+ name resolution,
-            // while regular class names are still fully qualified via resolvedName attributes.
+            // the type is built from the raw type node, so that 'self' and 'parent' keywords
+            // are preserved without PHP 8.5+ name resolution, while regular class names are
+            // still fully qualified via resolvedName attributes.
             if (method_exists($param, 'getNode')) {
                 /** @var Node\Param $astParam */
                 $astParam = $param->getNode();
                 $typeNode  = $astParam->type;
                 if ($typeNode !== null) {
-                    $typeResolver = new TypeExpressionResolver(null, null);
-                    $typeResolver->process($typeNode, false);
-                    $resolvedType = $typeResolver->getType();
-                    if ($resolvedType !== null) {
-                        $type = TypeGenerator::fromReflectionType($resolvedType);
-                    }
+                    $type = TypeGenerator::fromResolvedAstNode($typeNode);
                 }
             } else {
                 $reflectionType = $param->getType();

@@ -113,13 +113,15 @@ interface AspectContainer
     public function has(string $id): bool;
 
     /**
-     * Registers a listener that is called whenever a deferred service whose id is a
+     * Registers a listener that is called whenever a deferred service whose id may be a
      * subclass of the given interface is added via {@see addLazyService()}.
      *
      * The listener receives the service id (class-name) and the container - never the
      * service value, so laziness of the registered services is fully preserved. Matching
-     * ids are autoloaded by the is_subclass_of() probe, which is the accepted cost of
-     * arming a listener; with no listeners registered, registration stays autoload-free.
+     * never autoloads: an id of an already loaded class is matched exactly, while an id
+     * whose class is not loaded yet can not be told apart without loading it and reaches
+     * the listener as a candidate. A listener that needs an exact match checks such an id
+     * itself, by loading it or, better, by resolving its file without loading it.
      * Eagerly added instances ({@see add()}) do not fire listeners - they are already
      * tagged by their interfaces and tracked as resources at addition time.
      *

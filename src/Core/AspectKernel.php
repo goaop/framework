@@ -169,16 +169,24 @@ abstract class AspectKernel
         AopComposerLoader::init($this->options, $container);
 
         // In debug mode every lazily registered aspect's source file must be tracked as a
-        // resource right away: SourceTransformingLoader consults resource freshness before
-        // any aspect materializes. Production arms no listener - registration stays a pure
-        // array write, its warm path never checks freshness, and a cache miss materializes
-        // every aspect during weaving anyway. Armed after the framework/transformer
-        // services above, so only aspects from configureAop() pass through it.
+        // resource right away: the cache freshness checks consult it before any aspect
+        // materializes. Production arms no listener - registration stays a pure array write,
+        // its warm path never checks freshness, and a cache miss materializes every aspect
+        // during weaving anyway. Armed after the framework/transformer services above, so
+        // only services from configureAop() pass through it.
         if ($this->options['debug']) {
-            $container->onRegistration(Aspect::class, static function (string $aspectClassName) use ($container): void {
-                $aspectFileName = (new ReflectionClass($aspectClassName))->getFileName();
-                if (is_string($aspectFileName)) {
-                    $container->addResource($aspectFileName);
+            $container->onRegistration(Aspect::class, static function (string $serviceId) use ($container): void {
+                // A service that is not loaded yet is a candidate only (telling an aspect apart would load it):
+                // its file is resolved through composer and tracked without loading the class. A change of such a
+                // file that is no aspect at all costs one more weaving pass in debug mode, never a stale cache
+                $isLoaded = class_exists($serviceId, false) || interface_exists($serviceId, false);
+                $fileName = $isLoaded ? null : AopComposerLoader::findOriginalFile($serviceId);
+                // Loaded already, or not known to composer: reflection (autoloading in the latter case)
+                if ($fileName === null && is_subclass_of($serviceId, Aspect::class)) {
+                    $fileName = new ReflectionClass($serviceId)->getFileName();
+                }
+                if (is_string($fileName)) {
+                    $container->addResource($fileName);
                 }
             });
         }
