@@ -71,6 +71,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 * [Fixed] Closure advices registered through `PointcutBuilder` get stable advisor ids derived from the expression, the advice kind and the closure's source location instead of a process-wide counter, so changing the order of registrations in `configureAop()` no longer makes cached proxies call the wrong advice or fail with an unknown id (#640).
 * [Fixed] The weaving metadata files (`_transformation.cache`, `_include.cache`) carry a format version: a cache of another version is rebuilt, and with `Features::PREBUILT_CACHE` it fails with a hint to run `cache:warmup:aop`. Records keep the size and mtime of the woven source, so a source whose mtime moved backwards (rsync `-t`, checkout of an older revision) is woven again instead of serving the stale proxy (#685).
 * [Fixed] `cache:warmup:aop` and `debug:advisor` no longer fail with "Cannot rewind a generator that was already run" when more than one include path is configured (#751).
+* [Fixed] The proxy of a class declared in the second (or a later) block of a namespace that a file declares several times copies the imports of its own block instead of the first block's.
 
 **Internal**
 * [Internal] Tooling: PHPUnit 13 with strict flags, PHPStan 2 at level 10 over `src/` and `tests/`, php-cs-fixer with the PER-CS rule set, and `composer test`/`analyze`/`cs`/`check` scripts.
