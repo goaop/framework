@@ -172,6 +172,8 @@ final class WeavingTransformer extends BaseSourceTransformer
         // Imports of the original file are copied into the proxy (parameter defaults and types rely on
         // them); the generators reserve their names and alias their own imports around them
         $originalImports = new ReflectionFileNamespace($classFileName, $class->getNamespaceName())->getNamespaceAliases();
+        // Intercepted methods are looked up by name several times per method, here and in the proxy generators
+        $methods = ClassProxyGenerator::indexMethods($class);
 
         // For traits: rename the trait (legacy approach, TraitProxyGenerator generates a child trait).
         // For enums: convert the enum body to a trait (cases extracted to proxy enum by EnumProxyGenerator).
@@ -179,13 +181,13 @@ final class WeavingTransformer extends BaseSourceTransformer
         if ($class->isTrait()) {
             $this->removeInterceptedPropertiesFromTraitBody($class, $advices, $metadata);
             $this->adjustOriginalTrait($class, $metadata, $newClassName);
-            $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices, $originalImports);
+            $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices, $originalImports, $methods);
         } elseif ($class->isEnum()) {
-            $this->convertEnumToTrait($class, $advices, $metadata, $newClassName);
-            $childProxyGenerator = new EnumProxyGenerator($class, $newFqcn, $advices, $originalImports);
+            $this->convertEnumToTrait($class, $advices, $methods, $metadata, $newClassName);
+            $childProxyGenerator = new EnumProxyGenerator($class, $newFqcn, $advices, $originalImports, $methods);
         } else {
-            $this->convertClassToTrait($class, $advices, $metadata, $newClassName);
-            $childProxyGenerator = new ClassProxyGenerator($class, $newFqcn, $advices, $originalImports);
+            $this->convertClassToTrait($class, $advices, $methods, $metadata, $newClassName);
+            $childProxyGenerator = new ClassProxyGenerator($class, $newFqcn, $advices, $originalImports, $methods);
         }
 
         $childCode = $childProxyGenerator->generate();
@@ -286,10 +288,12 @@ final class WeavingTransformer extends BaseSourceTransformer
      *  - Removes the 'extends X' and 'implements Y, Z' clauses (moved to the proxy class)
      *
      * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices List of class advices
+     * @param array<string, \ReflectionMethod> $methods Methods of the class by name
      */
     private function convertClassToTrait(
         ReflectionClass $class,
         array $advices,
+        array $methods,
         StreamMetaData $streamMetaData,
         string $newClassName,
     ): void {
@@ -356,7 +360,7 @@ final class WeavingTransformer extends BaseSourceTransformer
         // PHP copies attributes to alias names (e.g. fooOriginalAlias). Since fooOriginalAlias has no parent
         // match, PHP would raise a fatal error if #[\Override] were present on the alias.
         $this->removeInterceptedPropertiesFromTraitBody($class, $advices, $streamMetaData);
-        $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
+        $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $methods, $streamMetaData);
         $this->stripTraitIncompatibleClassAttributes($classNode, $streamMetaData);
     }
 
@@ -521,10 +525,12 @@ final class WeavingTransformer extends BaseSourceTransformer
      *  - Removes all enum case declarations from the body (cases live in the proxy enum instead)
      *
      * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices List of class advices
+     * @param array<string, \ReflectionMethod> $methods Methods of the enum by name
      */
     private function convertEnumToTrait(
         ReflectionClass $class,
         array $advices,
+        array $methods,
         StreamMetaData $streamMetaData,
         string $newClassName,
     ): void {
@@ -594,7 +600,7 @@ final class WeavingTransformer extends BaseSourceTransformer
         // Strip #[\Override] from intercepted methods to prevent fatal errors on the alias.
         // PHP copies attributes to alias names (e.g. labelOriginalAlias), and since labelOriginalAlias has
         // no matching parent method, #[\Override] on the alias would be a fatal error.
-        $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $streamMetaData);
+        $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $methods, $streamMetaData);
     }
 
     /**
@@ -607,10 +613,12 @@ final class WeavingTransformer extends BaseSourceTransformer
      * (those with dynamic or static method advices).
      *
      * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices
+     * @param array<string, \ReflectionMethod> $methods Methods of the class by name
      */
     private function stripOverrideAttributeFromInterceptedMethods(
         ReflectionClass $class,
         array $advices,
+        array $methods,
         StreamMetaData $streamMetaData,
     ): void {
         $interceptedNames = array_merge(
@@ -619,12 +627,10 @@ final class WeavingTransformer extends BaseSourceTransformer
         );
 
         foreach ($interceptedNames as $methodName) {
-            if (!$class->hasMethod($methodName)) {
-                continue;
-            }
-            /** @var ReflectionMethod $method */
-            $method = $class->getMethod($methodName);
-            if ($method->getDeclaringClass()->name !== $class->name) {
+            // The declaring class, not the `class` property: a method imported from a trait reports the using
+            // class there, while its attributes live in the trait source, not in this token stream
+            $method = $methods[$methodName] ?? null;
+            if (!$method instanceof ReflectionMethod || $method->getDeclaringClass()->name !== $class->name) {
                 continue;
             }
             // Attribute names are compared as resolved by the parser, so aliases (`use Override as O; #[O]`),

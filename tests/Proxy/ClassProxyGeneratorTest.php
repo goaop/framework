@@ -495,6 +495,50 @@ class ClassProxyGeneratorTest extends TestCase
         );
     }
 
+    public function testIndexMethodsMapsEveryMethodByName(): void
+    {
+        $reflectionClass = new ReflectionClass(FirstStatic::class);
+
+        $methods = ClassProxyGenerator::indexMethods($reflectionClass);
+
+        $this->assertSame(
+            array_map(static fn(\ReflectionMethod $method): string => $method->name, $reflectionClass->getMethods()),
+            array_keys($methods),
+        );
+        foreach ($methods as $name => $method) {
+            $this->assertSame($name, $method->name);
+        }
+    }
+
+    /**
+     * The method index built once by WeavingTransformer is used instead of reflection lookups, and a method
+     * missing from it falls back to the reflection lookup
+     */
+    public function testGenerateUsesGivenMethodIndex(): void
+    {
+        $reflectionClass = new ReflectionClass(First::class);
+        $classAdvices    = [
+            'method' => [
+                'publicMethod'    => [self::testAdvice()],
+                'protectedMethod' => [self::testAdvice()],
+            ],
+        ];
+        $methods = ClassProxyGenerator::indexMethods($reflectionClass);
+
+        $expected = (new ClassProxyGenerator($reflectionClass, 'FirstOriginalTrait', $classAdvices))->generate();
+        $withIndex = new ClassProxyGenerator($reflectionClass, 'FirstOriginalTrait', $classAdvices, [], $methods);
+        $partialIndex = new ClassProxyGenerator(
+            $reflectionClass,
+            'FirstOriginalTrait',
+            $classAdvices,
+            [],
+            ['publicMethod' => $methods['publicMethod']],
+        );
+
+        $this->assertSame($expected, $withIndex->generate());
+        $this->assertSame($expected, $partialIndex->generate());
+    }
+
     /**
      * Inherited static methods have no trait alias in the proxy (the woven trait only contains
      * methods declared in the intercepted class itself).  The generated proxy must therefore use

@@ -12,6 +12,13 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use PhpParser\Node\Arg;
+use PhpParser\Node\ArrayItem;
+use PhpParser\Node\Expr\Array_;
+use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Scalar\Int_;
 use ReflectionFunctionAbstract;
 
 /**
@@ -20,9 +27,9 @@ use ReflectionFunctionAbstract;
 final class FunctionCallArgumentListGenerator
 {
     /**
-     * List of function arguments
+     * List of function arguments: parameter name => passed by reference
      *
-     * @var string[]
+     * @var array<string, bool>
      */
     private array $arguments = [];
 
@@ -32,7 +39,7 @@ final class FunctionCallArgumentListGenerator
     private bool $hasOptionals = false;
 
     /**
-     * Definition of variadic argument or null if function is not variadic
+     * Name of the variadic parameter or null if function is not variadic
      */
     private ?string $variadicArgument = null;
 
@@ -44,13 +51,13 @@ final class FunctionCallArgumentListGenerator
     public function __construct(ReflectionFunctionAbstract $functionLike)
     {
         foreach ($functionLike->getParameters() as $parameter) {
-            $byReference        = ($parameter->isPassedByReference() && !$parameter->isVariadic()) ? '&' : '';
             $this->hasOptionals = $this->hasOptionals || $parameter->isOptional();
-            $this->arguments[]  = $byReference . '$' . $parameter->name;
+            $this->arguments[$parameter->name] = $parameter->isPassedByReference() && !$parameter->isVariadic();
         }
         if ($functionLike->isVariadic()) {
             // Variadic argument is last and should be handled separately
-            $this->variadicArgument = array_pop($this->arguments);
+            $this->variadicArgument = array_key_last($this->arguments);
+            array_pop($this->arguments);
         }
     }
 
@@ -58,10 +65,14 @@ final class FunctionCallArgumentListGenerator
     {
         $argumentsPart = [];
         if ($this->variadicArgument !== null) {
-            $argumentsPart[] = $this->variadicArgument;
+            $argumentsPart[] = '$' . $this->variadicArgument;
         }
         if (!empty($this->arguments)) {
-            $argumentLine = '[' . implode(', ', $this->arguments) . ']';
+            $arguments = [];
+            foreach ($this->arguments as $name => $byReference) {
+                $arguments[] = ($byReference ? '&$' : '$') . $name;
+            }
+            $argumentLine = '[' . implode(', ', $arguments) . ']';
             if ($this->hasOptionals) {
                 $argumentLine = "\\array_slice($argumentLine, 0, \\func_num_args())";
             }
@@ -69,5 +80,35 @@ final class FunctionCallArgumentListGenerator
         }
 
         return implode(', ', $argumentsPart);
+    }
+
+    /**
+     * Returns the argument list of {@see generate()} as AST call arguments
+     *
+     * @return list<Arg>
+     */
+    public function getArgs(): array
+    {
+        $args = [];
+        if ($this->arguments !== []) {
+            $items = [];
+            foreach ($this->arguments as $name => $byReference) {
+                $items[] = new ArrayItem(new Variable($name), null, $byReference);
+            }
+            $argumentList = new Array_($items, ['kind' => Array_::KIND_SHORT]);
+            if ($this->hasOptionals) {
+                $argumentList = new FuncCall(new FullyQualified('array_slice'), [
+                    new Arg($argumentList),
+                    new Arg(new Int_(0)),
+                    new Arg(new FuncCall(new FullyQualified('func_num_args'))),
+                ]);
+            }
+            $args[] = new Arg($argumentList);
+        }
+        if ($this->variadicArgument !== null) {
+            $args[] = new Arg(new Variable($this->variadicArgument));
+        }
+
+        return $args;
     }
 }
