@@ -84,6 +84,20 @@ final class TypeGenerator
     }
 
     /**
+     * Creates a TypeGenerator from a type node of a parsed declaration, e.g. parser-reflection's getNode()
+     *
+     * Produces the same node as resolving the declared type to a reflection type without a class context and
+     * converting it back with {@see fromReflectionType()}, without that round trip:
+     *  - class names are fully qualified through their 'resolvedName' attribute set by the NameResolver;
+     *  - builtin types and the 'self', 'parent' and 'static' keywords are kept as declared, in lower case;
+     *  - nullable, union, intersection and DNF types keep their structure.
+     */
+    public static function fromResolvedAstNode(Identifier|Name|ComplexType $node): self
+    {
+        return new self(self::buildNodeFromAst($node));
+    }
+
+    /**
      * Returns the underlying AST node, ready for injection into a parent node.
      */
     public function getNode(): Identifier|Name|NullableType|UnionType|IntersectionType
@@ -256,6 +270,59 @@ final class TypeGenerator
 
         // Fallback: use string representation
         return self::buildNodeFromString((string) $type);
+    }
+
+    private static function buildNodeFromAst(Identifier|Name|ComplexType $node): Identifier|Name|NullableType|UnionType|IntersectionType
+    {
+        if ($node instanceof Identifier || $node instanceof Name) {
+            return self::buildNamedOrClassNode(self::resolveAstTypeName($node));
+        }
+
+        if ($node instanceof NullableType) {
+            $name = self::resolveAstTypeName($node->type);
+
+            return self::buildNamedTypeNode($name, $name !== 'null' && $name !== 'mixed');
+        }
+
+        if ($node instanceof UnionType) {
+            /** @var list<Identifier|IntersectionType|Name> $parts */
+            $parts = [];
+            foreach ($node->types as $innerType) {
+                $innerNode = self::buildNodeFromAst($innerType);
+                if ($innerNode instanceof Identifier || $innerNode instanceof Name || $innerNode instanceof IntersectionType) {
+                    $parts[] = $innerNode;
+                }
+            }
+
+            return new UnionType($parts);
+        }
+
+        if ($node instanceof IntersectionType) {
+            /** @var list<Identifier|Name> $parts */
+            $parts = [];
+            foreach ($node->types as $innerType) {
+                $parts[] = self::buildNamedOrClassNode(self::resolveAstTypeName($innerType));
+            }
+
+            return new IntersectionType($parts);
+        }
+
+        throw new WeavingException('Unsupported type node ' . $node->getType());
+    }
+
+    /**
+     * Returns the name of a named type node: the resolved class name when the NameResolver has set it
+     */
+    private static function resolveAstTypeName(Identifier|Name $node): string
+    {
+        if ($node instanceof Name && !$node instanceof Name\FullyQualified) {
+            $resolvedName = $node->getAttribute('resolvedName');
+            if ($resolvedName instanceof Name) {
+                return $resolvedName->toString();
+            }
+        }
+
+        return $node->toString();
     }
 
     private static function buildNodeFromString(string $typeStr): Identifier|Name|NullableType|UnionType|IntersectionType

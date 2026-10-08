@@ -46,6 +46,8 @@ final class InterceptorListGenerator
      */
     private const string JOINPOINT_ARGUMENT_INDENT = '            ';
 
+    private static ?GeneratedCodePrinter $printer = null;
+
     /**
      * @var list<GeneratedInterceptor>
      */
@@ -94,7 +96,8 @@ final class InterceptorListGenerator
             return '[]';
         }
 
-        $printed = (new GeneratedCodePrinter(['shortArraySyntax' => true]))->prettyPrintExpr($this->getNode());
+        self::$printer ??= new GeneratedCodePrinter(['shortArraySyntax' => true]);
+        $printed = self::$printer->prettyPrintExpr($this->getNode());
 
         return str_replace("\n", "\n" . $indent, $printed);
     }

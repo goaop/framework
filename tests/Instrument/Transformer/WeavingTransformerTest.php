@@ -1103,6 +1103,32 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * A method imported from a trait reports the using class as its `class`, but its #[\Override] attribute
+     * lives in the trait source: the token positions of that attribute must never be applied to the token
+     * stream of the woven class.
+     */
+    public function testWeaverDoesNotStripAttributesOfTraitImportedMethods(): void
+    {
+        $classFqn    = Stubs\ClassUsingOverrideTrait::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'count'     => ["advisor.{$classFqn}->count" => new BeforeInterceptor(static function (): void {})],
+                'ownMethod' => ["advisor.{$classFqn}->ownMethod" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('ClassUsingOverrideTrait');
+        $original = $metadata->source;
+        $transformer->transform($metadata);
+
+        $woven = $metadata->source;
+        // Only the class declaration line changes, the body tokens stay as they are
+        $this->assertStringContainsString('trait ClassUsingOverrideTraitOriginalTrait', $woven);
+        $originalBody = substr($original, (int) strpos($original, '{', (int) strpos($original, 'class ClassUsingOverrideTrait')));
+        $this->assertStringContainsString(rtrim($originalBody), $woven);
+    }
+
+    /**
      * Global functions called from a namespace are woven into a per-namespace proxy file placed
      * in the `_functions/` cache sub-directory, and the original file receives an include_once
      * appended to the last token of the namespace.

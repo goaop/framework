@@ -17,25 +17,18 @@ use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\The;
-use Go\Aop\Intercept\DynamicMethodInvocation;
-use Go\Aop\Intercept\StaticMethodInvocation;
 use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
 use Go\Proxy\Generator\EnumGenerator;
-use Go\Proxy\Generator\InterceptorListGenerator;
 use Go\Proxy\Generator\ProxyImports;
-use Go\Proxy\Generator\TypeGenerator;
 use Go\Proxy\Generator\Visibility;
-use Go\Proxy\Part\FunctionCallArgumentListGenerator;
 use PhpParser\Node\Expr;
-use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Enum_ as EnumNode;
 use ReflectionClass;
 use ReflectionEnum;
 use ReflectionEnumBackedCase;
 use ReflectionMethod;
-use ReflectionNamedType;
 
 /**
  * Enum proxy builder that generates an intercepted enum from a list of joinpoints.
@@ -83,13 +76,17 @@ final class EnumProxyGenerator extends ClassProxyGenerator
      * @param string                  $traitName            FQCN of the generated trait (e.g. Ns\FooOriginalTrait)
      * @param array<string, array<string, list<string|GeneratedInterceptor>>> $classAdviceNames List of advices for enum
      * @param array<string, string|null> $originalImports Imports of the original file: class name => alias
+     * @param array<string, ReflectionMethod>|null $originalMethods Methods of the original enum by name, see
+     *                                                              {@see self::indexMethods()}; indexed here when null
      */
     public function __construct(
         ReflectionClass $originalClass,
         string $traitName,
         array $classAdviceNames,
         array $originalImports = [],
+        ?array $originalMethods = null,
     ) {
+        $this->originalMethods = $originalMethods ?? self::indexMethods($originalClass);
         // Enums cannot be instantiated (no `new EnumClass()`) and cannot have properties, so
         // initialization and property-access join points must never be woven for enums.
         // Filtering them here prevents "Cannot instantiate enum" errors that would occur if
@@ -111,8 +108,6 @@ final class EnumProxyGenerator extends ClassProxyGenerator
         ));
 
         // Register the imports up front, so that every generated reference below uses the final alias.
-        // Determine needed invocation types from actual method signatures, not advice
-        // category keys, because callers may place static-method advices under METHOD_PREFIX.
         $this->imports = ProxyImports::forClass($originalClass, $originalImports);
         $this->imports->reserve(self::shortClassName($traitName));
         $this->imports->import(InterceptorInjector::class);
@@ -121,13 +116,7 @@ final class EnumProxyGenerator extends ClassProxyGenerator
         foreach ($this->collectAspectClasses($classAdviceNames) as $aspectClass) {
             $this->imports->import($aspectClass);
         }
-        foreach ($interceptedMethods as $methodName) {
-            if ($originalClass->hasMethod($methodName) && $originalClass->getMethod($methodName)->isStatic()) {
-                $this->imports->import(StaticMethodInvocation::class);
-            } else {
-                $this->imports->import(DynamicMethodInvocation::class);
-            }
-        }
+        $this->importMethodInvocationTypes($originalClass, $interceptedMethods);
 
         $generatedMethods = $this->interceptMethods($originalClass, $interceptedMethods);
 
@@ -211,66 +200,13 @@ final class EnumProxyGenerator extends ClassProxyGenerator
     }
 
     /**
-     * Creates the method body that lazily initialises a per-method static joinpoint.
-     *
-     * This mirrors TraitProxyGenerator::getJoinpointInvocationBody(): every intercepted method
-     * keeps its joinpoint in its own `static $__joinPoint` variable.
-     *
-     * All intercepted enum methods have `<method>OriginalAlias` aliases from the enum's trait-use block.
+     * Every intercepted method keeps its joinpoint in its own `static $__joinPoint` variable, like in
+     * a trait proxy: all intercepted enum methods have `<method>OriginalAlias` aliases from the enum's
+     * trait-use block, so the callable always references the alias.
      */
-    protected function getJoinpointInvocationBody(ReflectionMethod $method, ?ReflectionClass $originalClass = null): string
+    protected function createOriginalMethodCallable(ReflectionMethod $method, ?ReflectionClass $originalClass): Expr
     {
-        $isStatic = $method->isStatic();
-        $scope    = $isStatic ? 'static::class' : '$this';
-        $prefix   = $isStatic ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
-        $injectorMethod = $isStatic ? 'forStaticMethod' : 'forMethod';
-
-        $argumentList = new FunctionCallArgumentListGenerator($method);
-        $argumentCode = $argumentList->generate();
-        $argumentCode = $scope . ($argumentCode !== '' ? ", $argumentCode" : '');
-
-        // Constructors and __clone() return nothing, whatever the joinpoint returns
-        $return = $method->isConstructor() || $method->name === '__clone' ? '' : 'return ';
-        if ($method->hasReturnType()) {
-            $returnType = $method->getReturnType();
-            if ($returnType instanceof ReflectionNamedType && in_array($returnType->getName(), ['void', 'never'], true)) {
-                $return = '';
-            }
-        }
-
-        $adviceNames = $this->adviceNames[$prefix][$method->name]
-            ?? ($isStatic ? ($this->adviceNames[AspectContainer::METHOD_PREFIX][$method->name] ?? []) : []);
-        $advicesCode = (new InterceptorListGenerator($adviceNames, $this->imports))->generate();
-        $returnTypeString = $method->hasReturnType() ? ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType()) : '';
-        // On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN.
-        // Use the raw AST return-type node when available (goaop/parser-reflection) to preserve keywords.
-        if ($method->hasReturnType() && method_exists($method, 'getNode')) {
-            $node = $method->getNode();
-            if ($node instanceof ClassMethod) {
-                $astReturnType = $node->getReturnType();
-                $returnTypeString = $astReturnType !== null ? ', ' . TypeGenerator::renderAstTypeForPhpDoc($astReturnType) : '';
-            }
-        }
-        $joinPointType = $isStatic
-            ? $this->imports->import(StaticMethodInvocation::class) . '<self' . $returnTypeString . '>'
-            : $this->imports->import(DynamicMethodInvocation::class) . '<self' . $returnTypeString . '>';
-        $injector = $this->imports->import(InterceptorInjector::class);
-
-        // All intercepted enum methods have `<method>OriginalAlias` aliases from the enum's trait-use block.
-        $callableExpression = $isStatic
-            ? 'self::' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)'
-            : '$this->' . $method->name . AbstractMethodInvocation::TRAIT_ALIAS_SUFFIX . '(...)';
-
-        return <<<BODY
-        /** @var {$joinPointType} \$__joinPoint */
-        static \$__joinPoint = {$injector}::{$injectorMethod}(
-            self::class,
-            '{$method->name}',
-            {$advicesCode},
-            {$callableExpression},
-        );
-        {$return}\$__joinPoint->__invoke($argumentCode);
-        BODY;
+        return self::createTraitAliasCallable($method);
     }
 
     /**

@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Go\Proxy\Generator\GeneratedCodePrinter;
+use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Name;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 
@@ -29,6 +32,29 @@ class FunctionCallArgumentListGeneratorTest extends TestCase
         $generator  = new FunctionCallArgumentListGenerator($reflection);
         $actualLine = $generator->generate();
         $this->assertSame($expectedLine, $actualLine);
+    }
+
+    /**
+     * Tests that the AST arguments print as the generated code
+     *
+     * @throws \ReflectionException if function is not present
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('dataGenerator')]
+    public function testGetArgs(string $functionName, string $expectedLine): void
+    {
+        $reflection = new ReflectionFunction($functionName);
+        $generator  = new FunctionCallArgumentListGenerator($reflection);
+        $call       = new FuncCall(new Name('f'), $generator->getArgs());
+
+        $this->assertSame("f($expectedLine)", (new GeneratedCodePrinter(['shortArraySyntax' => true]))->prettyPrintExpr($call));
+    }
+
+    public function testGetArgsOfFunctionWithoutParameters(): void
+    {
+        $generator = new FunctionCallArgumentListGenerator(new ReflectionFunction('time'));
+
+        $this->assertSame('', $generator->generate());
+        $this->assertSame([], $generator->getArgs());
     }
 
     /**
