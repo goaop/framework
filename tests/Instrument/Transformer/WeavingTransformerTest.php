@@ -104,6 +104,27 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * A file may declare the same namespace in several blocks, each with its own imports: the proxy of a class
+     * must copy the imports of the block declaring it, not the ones of the first block of that namespace
+     */
+    public function testProxyCopiesImportsOfTheNamespaceBlockDeclaringTheClass(): void
+    {
+        $metadata = $this->loadTestMetadata('duplicate-ns');
+        $this->transformer->transform($metadata);
+
+        $this->assertStringContainsString('trait SecondBlockClassOriginalTrait', $metadata->source);
+        $this->assertStringNotContainsString('FirstBlockClassOriginalTrait', $metadata->source);
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches));
+
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertStringContainsString('class SecondBlockClass', $proxyContent);
+        $this->assertStringContainsString('use Go\\Stubs\\Collision\\The as Level;', $proxyContent);
+        $this->assertStringNotContainsString('Go\\Stubs\\Collision\\Interceptor', $proxyContent);
+        $this->assertStringContainsString('string $level = Level::LEVEL', $proxyContent);
+        $this->assertPhpCompiles($proxyContent);
+    }
+
+    /**
      * Do not make anything for code without classes
      */
     public function testEmptyNamespaceInFile(): void

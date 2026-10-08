@@ -109,6 +109,7 @@ final class WeavingTransformer extends BaseSourceTransformer
                     $advisors,
                     $metadata,
                     $class,
+                    $namespace,
                     $parsedSource->isStrictMode(),
                 );
                 $totalTransformations += (int) $wasClassProcessed;
@@ -125,16 +126,18 @@ final class WeavingTransformer extends BaseSourceTransformer
     /**
      * Performs weaving of single class if needed, returns true if the class was processed
      *
-     * @param Advisor[]       $advisors List of advisors
-     * @param StreamMetaData  $metadata
-     * @param ReflectionClass $class
-     * @param bool            $useStrictMode If the source file used strict mode, the proxy should too
+     * @param Advisor[]               $advisors      List of advisors
+     * @param StreamMetaData          $metadata
+     * @param ReflectionClass         $class
+     * @param ReflectionFileNamespace $namespace     Namespace block of the file that declares the class
+     * @param bool                    $useStrictMode If the source file used strict mode, the proxy should too
      * @return bool
      */
     private function processSingleClass(
         array $advisors,
         StreamMetaData $metadata,
         ReflectionClass $class,
+        ReflectionFileNamespace $namespace,
         bool $useStrictMode,
     ): bool {
         try {
@@ -165,13 +168,11 @@ final class WeavingTransformer extends BaseSourceTransformer
         $newClassName = $class->getShortName() . AspectContainer::ORIGINAL_TRAIT_SUFFIX;
         $newFqcn      = ($class->getNamespaceName() !== '' ? $class->getNamespaceName() . '\\' : '') . $newClassName;
 
-        $classFileName = $class->getFileName();
-        if ($classFileName === false) {
-            return false;
-        }
-        // Imports of the original file are copied into the proxy (parameter defaults and types rely on
-        // them); the generators reserve their names and alias their own imports around them
-        $originalImports = new ReflectionFileNamespace($classFileName, $class->getNamespaceName())->getNamespaceAliases();
+        // Imports of the namespace block declaring the class are copied into the proxy (parameter defaults
+        // and types rely on them); the generators reserve their names and alias their own imports around them.
+        // They are read from the block being woven: a lookup by file and namespace name returns the first block
+        // when the file declares the same namespace several times
+        $originalImports = $namespace->getNamespaceAliases();
         // Intercepted methods are looked up by name several times per method, here and in the proxy generators
         $methods = ClassProxyGenerator::indexMethods($class);
 
