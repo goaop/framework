@@ -75,13 +75,12 @@ class CacheWarmer
         // bypass FilterInjectorTransformer::rewrite(), so bring it up explicitly
         SourceTransformingLoader::ensureRegistered($this->aspectKernel->getContainer());
 
+        // One walk of the application tree: the collected list is counted and then processed
         $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
-        $iterator   = $enumerator->enumerate();
-        $total      = iterator_count($iterator);
+        $files      = iterator_to_array($enumerator->enumerate(), false);
 
-        $this->output->writeln(sprintf('Total <info>%s</info> files to process.', $total));
+        $this->output->writeln(sprintf('Total <info>%s</info> files to process.', count($files)));
         $this->output->writeln('');
-        $iterator->rewind();
 
         $errorOutput = $this->output instanceof ConsoleOutputInterface ? $this->output->getErrorOutput() : $this->output;
 
@@ -97,7 +96,7 @@ class CacheWarmer
         });
 
         try {
-            foreach ($iterator as $file) {
+            foreach ($files as $file) {
                 if ($this->interrupted) {
                     $this->output->writeln('<comment>[STOP]: Warmup was interrupted, stopping...</comment>');
                     break;

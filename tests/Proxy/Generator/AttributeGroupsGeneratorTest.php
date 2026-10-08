@@ -17,6 +17,11 @@ use Go\Stubs\Generator\AttrGenHelperClass;
 use Go\Stubs\Generator\AttrGenRichHelperClass;
 use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
+use PhpParser\Node\Arg;
+use PhpParser\Node\Attribute;
+use PhpParser\Node\AttributeGroup;
+use PhpParser\Node\Expr\ClassConstFetch;
+use PhpParser\Node\Name;
 use PhpParser\PrettyPrinter\Standard;
 use ReflectionFunction;
 use ReflectionMethod;
@@ -247,6 +252,33 @@ class AttributeGroupsGeneratorTest extends TestCase
         $output = $this->generateGroups($groups);
         $this->assertStringContainsString('static function (int $x) : int', str_replace('):', ') :', $output));
         $this->assertStringContainsString('$x * 2', $output);
+    }
+
+    /**
+     * AST path: arguments are deep-cloned with resolved names fully qualified, the original nodes stay untouched;
+     * attributes without arguments are copied without a traversal
+     */
+    public function testAttributeGroupNodesAreClonedWithFullyQualifiedNames(): void
+    {
+        $argumentClass = new Name('Status', ['resolvedName' => new Name\FullyQualified('App\Status')]);
+        $argumentFetch = new ClassConstFetch($argumentClass, 'Active');
+        $argument      = new Arg($argumentFetch);
+        $original      = new AttributeGroup([
+            new Attribute(new Name('Marker', ['resolvedName' => new Name\FullyQualified('App\Marker')])),
+            new Attribute(new Name('Tagged', ['resolvedName' => new Name\FullyQualified('App\Tagged')]), [$argument]),
+        ]);
+
+        $groups = AttributeGroupsGenerator::fromAttributeGroupNodes([$original]);
+
+        $this->assertCount(2, $groups);
+        $this->assertSame([], $groups[0]->attrs[0]->args);
+        $clonedArgument = $groups[1]->attrs[0]->args[0];
+        $this->assertNotSame($argument, $clonedArgument);
+        $this->assertSame($argumentClass, $argumentFetch->class, 'The original argument is not modified');
+        $this->assertSame(
+            "#[\\App\\Marker]\n#[\\App\\Tagged(\\App\\Status::Active)]\n",
+            $this->generateGroups($groups),
+        );
     }
 
     /**

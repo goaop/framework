@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Instrument\FileSystem;
 
-use ArrayIterator;
 use Closure;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Instrument\PathResolver;
@@ -46,6 +45,9 @@ class Enumerator
     /**
      * Returns an enumerator for files
      *
+     * The directory tree is walked lazily: collect the iterator (iterator_to_array()) to count and process the files,
+     * it can not be rewound with several include paths and rewinding it would walk the tree again anyway.
+     *
      * @return Iterator<SplFileInfo>
      * @throws UnexpectedValueException
      * @throws InvalidArgumentException
@@ -53,21 +55,23 @@ class Enumerator
      */
     public function enumerate(): Iterator
     {
+        $isAllowedPath     = $this->getPathFilter();
+        $isTraversablePath = $this->getDirectoryFilter();
+
         $finder = new Finder();
         $finder->files()
             ->name('*.php')
             ->in($this->getInPaths())
-            // The same filter as the runtime loader, so warmup and autoloading weave exactly the same files
-            ->filter($this->getFilter());
+            // Files: the same filter as the runtime loader, so warmup and autoloading weave exactly the same files.
+            // Directories (only those reach the closure as prune filter): not entered when no file below them can pass
+            ->filter(
+                fn(SplFileInfo $file): bool => $file->isDir()
+                    ? $isTraversablePath($this->getFileFullPath($file))
+                    : $isAllowedPath($this->getFileFullPath($file)),
+                prune: true,
+            );
 
-        $iterator = $finder->getIterator();
-
-        // on Windows platform the default iterator is unable to rewind, not sure why
-        if (PHP_OS_FAMILY === 'Windows') {
-            $iterator = new ArrayIterator(iterator_to_array($iterator));
-        }
-
-        return $iterator;
+        return $finder->getIterator();
     }
 
     /**
@@ -117,6 +121,67 @@ class Enumerator
             }
 
             return $excludeRegexp === null || preg_match($excludeRegexp, $normalizedPath) !== 1;
+        };
+    }
+
+    /**
+     * Returns a filter callback for resolved directory paths: false when no file below the directory can pass
+     * the path filter, so the directory does not need to be walked
+     *
+     * The answer is conservative, a directory is only rejected when that holds for any file name below it:
+     * - outside of the root directory;
+     * - no include path can match below it: the literal part of an include path before its first `*` is neither
+     *   a prefix of the directory nor below it;
+     * - an exclude path matches the directory path with a trailing separator, so it matches a prefix of every path
+     *   below the directory (a `*` pattern matching only some of the files below never rejects the directory).
+     *
+     * @see getPathFilter()
+     *
+     * @return Closure(string): bool
+     */
+    public function getDirectoryFilter(): Closure
+    {
+        $rootPrefix      = rtrim($this->rootDirectory, '/\\');
+        $rootLength      = strlen($rootPrefix);
+        $hasRoot         = $this->rootDirectory !== '';
+        $excludeRegexp   = self::toPrefixRegexp($this->excludePaths);
+        $includePrefixes = null;
+        if ($this->includePaths !== []) {
+            $includePrefixes = array_map(
+                static fn(string $pattern): string => explode('*', str_replace('\\', '/', $pattern), 2)[0],
+                $this->includePaths,
+            );
+        }
+
+        return static function (string $directoryPath) use ($rootPrefix, $rootLength, $hasRoot, $excludeRegexp, $includePrefixes): bool {
+            if (!$hasRoot) {
+                return false;
+            }
+            // Every file below lies in `<directory>/`: the root check of a directory at least as long as the root
+            // is the root check of all of them; a shorter directory (above the root) is never rejected by it
+            $directoryPath = rtrim($directoryPath, '/\\');
+            if (strlen($directoryPath) >= $rootLength) {
+                $separator = $directoryPath[$rootLength] ?? '';
+                if (!str_starts_with($directoryPath, $rootPrefix) || ($separator !== '' && $separator !== '/' && $separator !== '\\')) {
+                    return false;
+                }
+            }
+
+            $pathPrefix = str_replace('\\', '/', $directoryPath) . '/';
+            if ($includePrefixes !== null) {
+                $canBeIncluded = false;
+                foreach ($includePrefixes as $includePrefix) {
+                    if (str_starts_with($pathPrefix, $includePrefix) || str_starts_with($includePrefix, $pathPrefix)) {
+                        $canBeIncluded = true;
+                        break;
+                    }
+                }
+                if (!$canBeIncluded) {
+                    return false;
+                }
+            }
+
+            return $excludeRegexp === null || preg_match($excludeRegexp, $pathPrefix) !== 1;
         };
     }
 

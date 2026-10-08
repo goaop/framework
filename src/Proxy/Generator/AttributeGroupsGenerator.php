@@ -25,7 +25,6 @@ use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\CloningVisitor;
-use PhpParser\NodeVisitorAbstract;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionFunctionAbstract;
@@ -43,6 +42,11 @@ use ReflectionProperty;
 final class AttributeGroupsGenerator
 {
     private static ?BuilderFactory $factory = null;
+
+    /**
+     * Deep-clones attribute arguments, fully qualifying the resolved names inside them
+     */
+    private static ?NodeTraverser $argumentCloner = null;
 
     /**
      * Converts the attributes of a reflection element to PhpParser AttributeGroup nodes.
@@ -173,30 +177,19 @@ final class AttributeGroupsGenerator
             ? new Name\FullyQualified($resolved->toString())
             : new Name\FullyQualified(ltrim($nameNode->toString(), '\\'));
 
+        if ($attr->args === []) {
+            return new Attribute($fqName);
+        }
+
         // Deep-clone argument expressions so the proxy AST shares no nodes with the
         // original file AST, and fully qualify resolved names inside them so class
         // constant fetches, enum cases etc. stay unambiguous in the proxy context.
         // Unresolved names (e.g. unqualified global constants like PHP_INT_MAX with
         // namespace fallback semantics) are kept as written.
-        $traverser = new NodeTraverser(
-            new CloningVisitor(),
-            new class extends NodeVisitorAbstract {
-                public function leaveNode(Node $node): ?Node
-                {
-                    if ($node instanceof Name && !($node instanceof Name\FullyQualified)) {
-                        $resolved = $node->getAttribute('resolvedName');
-                        if ($resolved instanceof Name) {
-                            return new Name\FullyQualified($resolved->toString(), $node->getAttributes());
-                        }
-                    }
-
-                    return null;
-                }
-            },
-        );
+        self::$argumentCloner ??= new NodeTraverser(new CloningVisitor(), new ResolvedNameQualifyingVisitor());
 
         /** @var list<Node\Arg> $clonedArgs */
-        $clonedArgs = array_values($traverser->traverse($attr->args));
+        $clonedArgs = array_values(self::$argumentCloner->traverse($attr->args));
 
         return new Attribute($fqName, $clonedArgs);
     }
