@@ -102,6 +102,16 @@ class ClassGeneratorTest extends TestCase
         $this->assertStringNotContainsString('\MyClassOriginalTrait', $output);
     }
 
+    public function testTraitAliasOfExplicitlyRootedGlobalTraitStaysFullyQualified(): void
+    {
+        $gen = new ClassGenerator('MyClass', 'My\Namespace', [], null);
+        $gen->addTraitAlias('\GlobalHelperTrait', 'help', 'helpOriginalAlias', Visibility::Private);
+        $output = $gen->generate();
+        $this->assertStringContainsString('use \GlobalHelperTrait {', $output);
+        $this->assertStringContainsString('\GlobalHelperTrait::help as private helpOriginalAlias;', $output);
+        $this->assertStringNotContainsString(' GlobalHelperTrait::help', $output);
+    }
+
     public function testWithMethod(): void
     {
         $method = MethodGenerator::fromReflection(new ReflectionMethod(

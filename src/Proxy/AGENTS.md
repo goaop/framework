@@ -4,6 +4,8 @@
 - ClassProxyGenerator — trait-based proxy for regular classes
   - Constructor takes $traitName (FooOriginalTrait FQCN) as 2nd arg
   - Always emits `use $traitName` (even for introduction-only aspects)
+  - Parent and interfaces from reflection are always rooted (`\`); only the OriginalTrait name is a deliberate short
+    relative name (#759)
 - FunctionProxyGenerator — function wrappers
 - TraitProxyGenerator — trait proxies
 - EnumProxyGenerator — enum proxies (trait extraction + case re-declaration)

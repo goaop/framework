@@ -119,14 +119,15 @@ class ClassProxyGenerator
         $propertyAdvices       = $classAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
         $interceptedMethods    = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $interceptedProperties = array_keys($propertyAdvices);
-        $introducedInterfaces  = array_values(array_filter(
+        // Introduced names are class names, root them so a global name never resolves in the proxy namespace
+        $introducedInterfaces  = array_map(self::rootClassName(...), array_values(array_filter(
             $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [],
             is_string(...),
-        ));
-        $introducedTraits      = array_values(array_filter(
+        )));
+        $introducedTraits      = array_map(self::rootClassName(...), array_values(array_filter(
             $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [],
             is_string(...),
-        ));
+        )));
 
         $staticInitializationAdvices = $classAdviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? [];
         $initializationAdvices       = $classAdviceNames[AspectContainer::INIT_PREFIX]['root'] ?? [];
@@ -184,7 +185,7 @@ class ClassProxyGenerator
 
         // Proxy parent = original class parent (not the trait — there is no inheritance layer)
         $parentClass     = $originalClass->getParentClass();
-        $parentClassName = $parentClass !== false ? $parentClass->getName() : null;
+        $parentClassName = $parentClass !== false ? '\\' . $parentClass->getName() : null;
 
         // Proxy modifiers: preserve final/abstract/readonly from original class.
         $modifiers = [];
@@ -569,5 +570,13 @@ class ClassProxyGenerator
         $lastSeparator = strrpos($className, '\\');
 
         return $lastSeparator === false ? $className : substr($className, $lastSeparator + 1);
+    }
+
+    /**
+     * Returns the class name rooted with a leading backslash, so that it is emitted fully qualified
+     */
+    private static function rootClassName(string $className): string
+    {
+        return '\\' . ltrim($className, '\\');
     }
 }
