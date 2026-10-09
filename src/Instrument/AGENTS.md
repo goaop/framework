@@ -78,11 +78,10 @@ Woven trait MUST preserve original source line numbers for XDebug breakpoints.
 
 ## PHP compat: #[\Override] on intercepted methods (8.3+)
 When intercepted method has #[\Override], PHP copies attribute to trait alias — fatal error (alias doesn't override anything).
-WeavingTransformer::convertClassToTrait() strips #[\Override] from trait for every intercepted method. Attribute preserved on proxy's override method (proxy extends same parent).
-- Limitation (#761): a method imported from a trait with #[\Override] can not be intercepted — the attribute lives in the shared trait file, can't be stripped per class. assertNoTraitImportedOverride() (processSingleClass, before the generators; native reflection hides the trait) throws WeavingException naming class, method, trait. Covers aliases, static methods, enums, woven traits using a trait.
-- Workaround: `&& !matchInherited()` (excludes trait-imported methods too), narrower `&& !execution(public Foo->hello(*))`, or drop #[\Override] from the trait method.
+WeavingTransformer::stripOverrideAttributeFromInterceptedMethods() strips #[\Override] from the woven source for every intercepted own method: classes (convertClassToTrait), enums (convertEnumToTrait) and woven traits (renamed original trait, its methods aliased by TraitProxyGenerator). Attribute preserved on the proxy method (MethodGenerator copies it from the AST), so PHP still checks the override.
+- Limitation (#761): a method a class/enum/trait imports from ANOTHER trait with #[\Override] can not be intercepted — the attribute lives in the shared trait file, can't be stripped per class. assertNoTraitImportedOverride() (processSingleClass, before the generators; native reflection hides the trait) throws WeavingException naming class, method, trait. Covers aliases, static methods, enums, woven traits using a trait.
+- Workaround: `&& !matchInherited()` (excludes trait-imported methods too), narrower `&& !execution(public Foo->hello(*))`, drop #[\Override] from the trait method, or advise the trait itself (`execution(public HelloTrait->hello(*))`, intercepts it in every class using the trait).
 - Trait methods inherited via a parent class are fine: proxy calls `parent::m(...)`, no alias.
-- Not handled: weaving a trait whose own method has #[\Override] (adjustOriginalTrait keeps it, TraitProxyGenerator aliases it → same fatal error in the using class).
 
 ## Aspects themselves
 Classes implementing \Go\Aop\Aspect: unconditionally skipped by WeavingTransformer. Aspects cannot weave themselves.

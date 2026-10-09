@@ -15,6 +15,8 @@ namespace Go\Functional;
 use Go\Tests\TestProject\Application\ClassUsingTrait;
 use Go\Tests\TestProject\Application\ClassWithPrivateMethods;
 use Go\Tests\TestProject\Application\Issue761Child;
+use Go\Tests\TestProject\Application\Issue761WovenOverrideTrait;
+use Go\Tests\TestProject\Application\Issue761WovenOverrideTraitUser;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 
@@ -95,14 +97,38 @@ class TraitCompositionTest extends BaseFunctionalTestCase
         $this->assertMethodWoven(Issue761Child::class, 'own', $advisor);
         $this->assertMethodNotWoven(Issue761Child::class, 'hello', $advisor);
 
+        $output = $this->runInProject(
+            sprintf(
+                '$instance = new %s(); echo $instance->hello(), ",", $instance->own(), ",", '
+                . '$instance instanceof \Go\Aop\Proxy ? "proxy" : "plain";',
+                '\\' . Issue761Child::class,
+            ),
+        );
+        $this->assertSame('trait,own,proxy', $output);
+    }
+
+    /**
+     * A woven trait whose own intercepted method has #[\Override] (issue #761): the attribute is stripped from the
+     * renamed original trait, so the class using the trait loads, and the advice runs.
+     */
+    public function testWovenTraitMethodWithOverrideIsIntercepted(): void
+    {
+        $this->assertClassIsWoven(Issue761WovenOverrideTrait::class);
+
+        $output = $this->runInProject(
+            sprintf('echo (new %s())->hello();', '\\' . Issue761WovenOverrideTraitUser::class),
+        );
+        $this->assertSame('advised:woven-trait', $output);
+    }
+
+    /**
+     * Runs PHP code in a subprocess after the front controller of the fixture project, returns its trimmed output
+     */
+    private function runInProject(string $code): string
+    {
         $phpExecutable = (new PhpExecutableFinder())->find();
         assert($phpExecutable !== false);
-        $script = sprintf(
-            'include %s; $instance = new %s(); echo $instance->hello(), ",", $instance->own(), ",", '
-            . '$instance instanceof \Go\Aop\Proxy ? "proxy" : "plain";',
-            var_export($this->configuration['frontController'], true),
-            '\\' . Issue761Child::class,
-        );
+        $script  = sprintf('include %s; %s', var_export($this->configuration['frontController'], true), $code);
         $process = new Process(
             [$phpExecutable, '-r', $script],
             null,
@@ -114,7 +140,8 @@ class TraitCompositionTest extends BaseFunctionalTestCase
             $process->isSuccessful(),
             'Loading the woven class failed: ' . $process->getOutput() . $process->getErrorOutput(),
         );
-        $this->assertSame('trait,own,proxy', trim($process->getOutput()));
+
+        return trim($process->getOutput());
     }
 
     // -------------------------------------------------------------------------

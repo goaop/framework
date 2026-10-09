@@ -63,7 +63,10 @@ The joinpoints declare `@template` types, so PHPStan and IDEs know the types of 
   can not be intercepted in that class: PHP copies the attribute to the private alias the proxy calls, which
   overrides nothing. Weaving one fails with a `WeavingException`; exclude trait methods from the pointcut with
   `&& !matchInherited()`, exclude only that method (`&& !execution(public Foo->hello(*))`), or remove
-  `#[\Override]` from the trait. Trait methods that a class inherits from its parent class are not affected.
+  `#[\Override]` from the trait. To intercept the method anyway, advise the trait itself
+  (`execution(public HelloTrait->hello(*))`): the trait is woven, which works with `#[\Override]`, and the advice
+  applies in every class using the trait. Trait methods that a class inherits from its parent class are not
+  affected.
 - **Generators.** For a method that contains `yield`, the advice runs when the method is called and
   `proceed()` returns the `Generator` object. The advice does not see the yielded values, which are produced later,
   while the caller iterates.

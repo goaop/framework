@@ -1062,6 +1062,61 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * A woven trait aliases every intercepted method in the proxy trait (`m as private mOriginalAlias`), and PHP
+     * copies #[\Override] to the alias of the class using it, which overrides nothing (issue #761). The attribute
+     * lives in the file being woven, so it is stripped from the intercepted methods of the renamed original trait,
+     * keeping every line in place, and stays on the methods of the proxy trait.
+     */
+    public function testWeaverStripsOverrideAttributeFromInterceptedMethodsOfTrait(): void
+    {
+        $traitFqn    = Stubs\WovenOverrideTrait::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'hello' => ["advisor.{$traitFqn}->hello" => new BeforeInterceptor(static function (): void {})],
+                'count' => ["advisor.{$traitFqn}->count" => new BeforeInterceptor(static function (): void {})],
+            ],
+            AspectContainer::STATIC_METHOD_PREFIX => [
+                'make' => ["advisor.{$traitFqn}->make" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('WovenOverrideTrait');
+        $original = $metadata->source;
+        $transformer->transform($metadata);
+
+        $woven = $metadata->source;
+        $this->assertStringContainsString('trait WovenOverrideTraitOriginalTrait', $woven);
+        // Only the method that is not intercepted keeps #[\Override], an aliased one is recognised too
+        $this->assertSame(1, preg_match_all('/#\[\\\\Override\]\s+public/', $woven));
+        $this->assertMatchesRegularExpression('/#\[\\\\Override\]\s+public function notIntercepted\(\)/', $woven);
+        $this->assertStringNotContainsString('#[OverrideAlias]', $woven);
+        $this->assertStringNotContainsString(', \Override', $woven);
+        $this->assertStringContainsString('#[\ReturnTypeWillChange', $woven);
+        // Every method stays at its original line
+        foreach (['hello', 'make', 'count', 'notIntercepted'] as $methodName) {
+            $pattern = '/^.*function ' . $methodName . '\(/m';
+            $this->assertSame(1, preg_match($pattern, $original, $originalMatch, PREG_OFFSET_CAPTURE));
+            $this->assertSame(1, preg_match($pattern, $woven, $wovenMatch, PREG_OFFSET_CAPTURE));
+            $this->assertSame(
+                substr_count(substr($original, 0, $originalMatch[0][1]), "\n"),
+                substr_count(substr($woven, 0, $wovenMatch[0][1]), "\n"),
+                "Method {$methodName}() must stay at its original line",
+            );
+        }
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $woven, $matches));
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+
+        // The proxy trait methods keep the Override semantics of the original methods
+        $this->assertStringContainsString('as private helloOriginalAlias;', $proxyContent);
+        $this->assertStringContainsString('as private makeOriginalAlias;', $proxyContent);
+        $this->assertMatchesRegularExpression('/#\[\\\\Override\]\s+public function hello\(\)/', $proxyContent);
+        $this->assertMatchesRegularExpression('/#\[\\\\Override\]\s+public static function make\(\)/', $proxyContent);
+        $this->assertMatchesRegularExpression('/\\\\Override\]\s+public function count\(\)/', $proxyContent);
+    }
+
+    /**
      * `abstract` is a class-only modifier — convertClassToTrait() must drop it, otherwise the
      * woven file would contain the invalid `abstract trait ...` declaration. Abstract *methods*
      * remain legal inside the trait and must be kept.

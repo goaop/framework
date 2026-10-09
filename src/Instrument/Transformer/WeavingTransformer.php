@@ -183,6 +183,8 @@ final class WeavingTransformer extends BaseSourceTransformer
         if ($class->isTrait()) {
             $this->removeInterceptedPropertiesFromTraitBody($class, $advices, $metadata);
             $this->adjustOriginalTrait($class, $metadata, $newClassName);
+            // The proxy trait aliases every intercepted method of the renamed trait, PHP would copy #[\Override] there
+            $this->stripOverrideAttributeFromInterceptedMethods($class, $advices, $methods, $metadata);
             $childProxyGenerator = new TraitProxyGenerator($class, $newFqcn, $advices, $originalImports, $methods);
         } elseif ($class->isEnum()) {
             $this->convertEnumToTrait($class, $advices, $methods, $metadata, $newClassName);
@@ -667,7 +669,8 @@ final class WeavingTransformer extends BaseSourceTransformer
      * `SomeTrait::method as private methodOriginalAlias`), PHP copies the method's attributes to
      * the alias. If the original method had `#[\Override]`, the alias name has no matching
      * parent method → fatal error. We strip the attribute only from methods that will be aliased
-     * (those with dynamic or static method advices).
+     * (those with dynamic or static method advices). Applies to woven classes, enums and traits: the proxy trait
+     * of a woven trait aliases its intercepted methods the same way, and the proxy methods keep #[\Override].
      *
      * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices
      * @param array<string, \ReflectionMethod> $methods Methods of the class by name
