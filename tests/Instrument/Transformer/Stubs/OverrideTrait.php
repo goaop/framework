@@ -13,7 +13,8 @@ declare(strict_types=1);
 namespace Go\Instrument\Transformer\Stubs;
 
 /**
- * Trait method with #[\Override], imported by {@see ClassUsingOverrideTrait}: its attribute lives in this file
+ * Trait method with #[\Override], imported by {@see ClassUsingOverrideTrait}: its attribute lives in this file.
+ * The `label` method carries another attribute only, so it can be intercepted.
  */
 trait OverrideTrait
 {
@@ -21,5 +22,11 @@ trait OverrideTrait
     public function count(): int
     {
         return 0;
+    }
+
+    #[\ReturnTypeWillChange]
+    public function label(): string
+    {
+        return 'label';
     }
 }

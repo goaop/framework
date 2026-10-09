@@ -1265,6 +1265,29 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * A trait-imported method with attributes other than #[\Override] is aliased and intercepted as usual
+     */
+    public function testWeaverInterceptsTraitImportedMethodWithOtherAttribute(): void
+    {
+        $classFqn    = Stubs\ClassUsingOverrideTrait::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'label' => ["advisor.{$classFqn}->label" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('ClassUsingOverrideTrait');
+        $transformer->transform($metadata);
+
+        $actual  = $this->normalizeWhitespaces($metadata->source);
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+
+        $this->assertStringContainsString('as private labelOriginalAlias;', $proxyContent);
+    }
+
+    /**
      * Enum proxies alias every intercepted method, so a trait-imported method with #[\Override] is rejected there too
      */
     public function testWeaverRejectsTraitImportedMethodWithOverrideInEnum(): void
