@@ -266,13 +266,34 @@ class ClassProxyGenerator
     public function generate(): string
     {
         $classCode = $this->generator->generate();
-        $staticInitializationAdvices = $this->adviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? [];
 
-        if ($staticInitializationAdvices !== []) {
+        if ($this->hasStaticInitialization()) {
             $classCode .= "\n" . $this->generator->name . '::__staticInitialization();';
         }
 
         return $classCode;
+    }
+
+    /**
+     * Generates the statements of the proxy below its namespace declaration: use statements, the proxy and the
+     * static initialization call. Used to combine the proxies of several classes declared in one file.
+     *
+     * @return list<Stmt>
+     */
+    public function generateStmts(): array
+    {
+        $stmts = $this->generator->getStmts();
+
+        if ($this->hasStaticInitialization()) {
+            $stmts[] = new Expression(new StaticCall(new Name($this->generator->name), '__staticInitialization'));
+        }
+
+        return $stmts;
+    }
+
+    private function hasStaticInitialization(): bool
+    {
+        return ($this->adviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? []) !== [];
     }
 
     /**

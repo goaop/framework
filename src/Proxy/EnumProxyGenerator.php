@@ -199,6 +199,11 @@ final class EnumProxyGenerator extends ClassProxyGenerator
         return $this->generator->generate();
     }
 
+    public function generateStmts(): array
+    {
+        return $this->generator->getStmts();
+    }
+
     /**
      * Every intercepted method keeps its joinpoint in its own `static $__joinPoint` variable, like in
      * a trait proxy: all intercepted enum methods have `<method>OriginalAlias` aliases from the enum's

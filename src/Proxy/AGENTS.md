@@ -7,6 +7,10 @@
 - FunctionProxyGenerator — function wrappers
 - TraitProxyGenerator — trait proxies
 - EnumProxyGenerator — enum proxies (trait extraction + case re-declaration)
+- ProxyFileGenerator (@internal) — the proxy file of one source file: one proxy → `generate()` output unchanged;
+  several → one braced namespace block per proxy from `generateStmts()` (Class/Enum/TraitGenerator::getStmts() = uses
+  + declaration, static initialization as an Expression node), printed by GeneratedCodePrinter with
+  `bracedNamespaces` (see src/Instrument/AGENTS.md, #760)
 
 ## Imports in generated code (issue #668)
 - Generated code stays clean and readable: framework and aspect classes are referenced through short `use` aliases

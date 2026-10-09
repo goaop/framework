@@ -135,4 +135,9 @@ final class TraitProxyGenerator extends ClassProxyGenerator
     {
         return $this->generator->generate();
     }
+
+    public function generateStmts(): array
+    {
+        return $this->generator->getStmts();
+    }
 }

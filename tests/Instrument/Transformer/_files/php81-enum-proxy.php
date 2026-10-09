@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace Test\ns1;
+
 use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;

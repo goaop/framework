@@ -7,7 +7,8 @@ use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\StaticMethodInvocation;
-class TestClass implements \Go\Aop\Proxy
+use Go\Aop\Intercept\ClassJoinpoint;
+class TestClass implements \Go\Aop\Proxy, \Go\Aop\StaticInitializationAware
 {
     use TestClassOriginalTrait {
         TestClassOriginalTrait::publicMethod as private publicMethodOriginalAlias;
@@ -109,4 +110,16 @@ class TestClass implements \Go\Aop\Proxy
         );
         return $__joinPoint->__invoke($this, [$instance]);
     }
+    public static function __staticInitialization(): void
+    {
+        /** @var ClassJoinpoint<self> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forStaticInitialization(
+            self::class,
+            [
+                Interceptor::before(The::advice('advisor.Test\ns1\TestClass->static')),
+            ],
+        );
+        $__joinPoint(static::class);
+    }
 }
+TestClass::__staticInitialization();

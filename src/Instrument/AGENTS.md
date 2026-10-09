@@ -59,6 +59,25 @@ Short names above are `use` aliases managed by ProxyImports: a name colliding wi
 file's imports or body gets an adjusted alias (e.g. `use Go\Aop\Framework\Interceptor as AopInterceptor;`),
 see src/Proxy/AGENTS.md. WeavingTransformer passes the original imports to the proxy generator constructors.
 
+### Several woven class-likes in one file (#760)
+One proxy file per source file, never one per class: processSingleClass() only converts the class and returns a
+WovenProxy; transform() collects them in a local list (transform() is re-entered mid-transform) and writeProxies()
+writes them once (ProxyFileGenerator) and appends ONE include_once.
+- One proxy: byte-identical to the single-class output (`<?php`, optional `declare(strict_types=1);`, `namespace X;` ...).
+- Several: `declare(strict_types=1);` once, then one braced block per proxy (`namespace X { use ...; class ... }`,
+  `namespace { ... }` for global classes), even for the same namespace (each keeps its own ProxyImports). Source
+  order, a proxy extending another proxy of the file after it (ProxyIncludePlanner::sortForProxyFile()).
+- Include point (ProxyIncludePlanner::findIncludePoint()): after the last woven class-like whose proxy depends on its
+  position, else after the first one. Position-bound = its woven trait keeps trait uses (PHP declares such a trait at
+  runtime) or it extends/implements an UNWOVEN class-like of the file. A trait without trait uses is declared at compile
+  time, so proxies of classes declared after the include still find their trait.
+- Gap → WeavingException with the file, the woven class-likes, the include point and each offending line: a class-like
+  declared up to the include point that needs a woven class-like of the file (unwoven: extends/implements/uses; woven:
+  its trait uses), or a top-level statement between the first woven class-like and the include point that loads an
+  earlier woven class-like (`new X`, `X::m()`, `X::$p`, `X::C`, classes it declares; not `X::class`, `instanceof`,
+  types, function/closure/arrow function bodies — LoadedClassNameCollector).
+- The runtime class map maps every class of the file to its woven file (CachePathManager, unchanged).
+
 ### Key invariants
 - Proxy re-inherits parent+interfaces via reflection (not from woven source)
 - self:: in trait body → proxy class (no rewrite needed)

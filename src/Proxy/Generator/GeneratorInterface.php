@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
+use PhpParser\Node\Stmt;
+
 /**
  * Common contract for all top-level code generators (class, trait, file, etc.).
  */
@@ -26,4 +28,11 @@ interface GeneratorInterface
      * Returns the generated PHP source code as a string.
      */
     public function generate(): string;
+
+    /**
+     * Returns the generated statements below the namespace declaration (use statements and the declaration).
+     *
+     * @return list<Stmt>
+     */
+    public function getStmts(): array;
 }

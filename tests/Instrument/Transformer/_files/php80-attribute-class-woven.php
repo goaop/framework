@@ -27,7 +27,6 @@ trait TestDynamicPropertiesClassOriginalTrait
         return true;
     }
 }
-include_once AOP_CACHE_DIR . '/Transformer/_files/php80-attribute-class.php';
 
 
 trait TestCustomAttributeOriginalTrait
@@ -41,4 +40,3 @@ trait TestCustomAttributeOriginalTrait
         return $this->reason;
     }
 }
-include_once AOP_CACHE_DIR . '/Transformer/_files/php80-attribute-class.php';
