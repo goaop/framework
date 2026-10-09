@@ -175,6 +175,7 @@ final class WeavingTransformer extends BaseSourceTransformer
         $originalImports = $namespace->getNamespaceAliases();
         // Intercepted methods are looked up by name several times per method, here and in the proxy generators
         $methods = ClassProxyGenerator::indexMethods($class);
+        $this->assertNoTraitImportedOverride($class, $advices, $methods);
 
         // For traits: rename the trait (legacy approach, TraitProxyGenerator generates a child trait).
         // For enums: convert the enum body to a trait (cases extracted to proxy enum by EnumProxyGenerator).
@@ -220,6 +221,61 @@ final class WeavingTransformer extends BaseSourceTransformer
             return $class->implementsInterface(Aspect::class);
         } catch (Throwable) {
             return false;
+        }
+    }
+
+    /**
+     * Rejects the interception of a method imported from a trait that carries #[\Override] (issue #761)
+     *
+     * Every intercepted own method is aliased in the trait-use block of the proxy (`m as private mOriginalAlias`)
+     * and PHP copies the attributes of the method to that alias, which overrides nothing: #[\Override] on it is a
+     * fatal error at load time. For a method declared in the class body the attribute is stripped from the woven
+     * source (see stripOverrideAttributeFromInterceptedMethods()), but the attribute of a trait method lives in the
+     * trait file, which is shared by every class using it and can not be edited per class. The proxy generators can
+     * not detect the case: native reflection reports the using class as the declaring class of a trait method.
+     *
+     * Covered: trait aliases (`use T { foo as bar; }`), static methods, enums (EnumProxyGenerator aliases every
+     * intercepted method) and woven traits using another trait. Trait methods arriving through a parent class keep
+     * the parent in their `class` property and are called through `parent::m(...)` without an alias, so they pass.
+     * Methods of a trait used by an imported trait (nested traits) are not collected by parser-reflection 5.0.1, so
+     * they can not get here.
+     *
+     * @param array<string, array<string, list<string|\Go\Aop\Framework\GeneratedInterceptor>>> $advices
+     * @param array<string, \ReflectionMethod> $methods Methods of the class by name
+     */
+    private function assertNoTraitImportedOverride(ReflectionClass $class, array $advices, array $methods): void
+    {
+        $interceptedNames = array_merge(
+            array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []),
+            array_keys($advices[AspectContainer::STATIC_METHOD_PREFIX] ?? []),
+        );
+
+        foreach ($interceptedNames as $methodName) {
+            $method = $methods[$methodName] ?? null;
+            // Methods inherited from a parent class (including the ones it imports from traits) are not aliased
+            if (!$method instanceof ReflectionMethod || $method->class !== $class->name) {
+                continue;
+            }
+            $declaringClass = $method->getDeclaringClass();
+            if ($declaringClass->name === $class->name || !$declaringClass->isTrait()) {
+                continue;
+            }
+            foreach ($method->getNode()->attrGroups as $attrGroup) {
+                foreach ($attrGroup->attrs as $attribute) {
+                    if (!self::isOverrideAttribute($attribute)) {
+                        continue;
+                    }
+                    throw new WeavingException(sprintf(
+                        'Method %s::%s() is imported from trait %s and has #[\Override], so it can not be '
+                        . 'intercepted: PHP copies the attribute to the private "%sOriginalAlias" alias of the '
+                        . 'proxy, which overrides nothing. Exclude it from the pointcut with "&& !matchInherited()".',
+                        $class->name,
+                        $methodName,
+                        $declaringClass->name,
+                        $methodName,
+                    ));
+                }
+            }
         }
     }
 
@@ -629,19 +685,29 @@ final class WeavingTransformer extends BaseSourceTransformer
 
         foreach ($interceptedNames as $methodName) {
             // The declaring class, not the `class` property: a method imported from a trait reports the using
-            // class there, while its attributes live in the trait source, not in this token stream
+            // class there, while its attributes live in the trait source, not in this token stream. Interception
+            // of such a method with #[\Override] is rejected earlier, by assertNoTraitImportedOverride()
             $method = $methods[$methodName] ?? null;
             if (!$method instanceof ReflectionMethod || $method->getDeclaringClass()->name !== $class->name) {
                 continue;
             }
-            // Attribute names are compared as resolved by the parser, so aliases (`use Override as O; #[O]`),
-            // qualified names and attributes that merely end with "Override" are told apart correctly
             $this->stripAttributes(
                 $method->getNode()->attrGroups,
-                static fn(Attribute $attribute): bool => self::resolveAttributeName($attribute) === 'Override',
+                self::isOverrideAttribute(...),
                 $streamMetaData,
             );
         }
+    }
+
+    /**
+     * Checks whether the attribute is #[\Override], compared by the name resolved by the parser
+     *
+     * Aliases (`use Override as O; #[O]`), qualified names and attributes that merely end with "Override" are told
+     * apart correctly.
+     */
+    private static function isOverrideAttribute(Attribute $attribute): bool
+    {
+        return self::resolveAttributeName($attribute) === 'Override';
     }
 
     /**

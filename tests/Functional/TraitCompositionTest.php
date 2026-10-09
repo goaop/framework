@@ -14,6 +14,9 @@ namespace Go\Functional;
 
 use Go\Tests\TestProject\Application\ClassUsingTrait;
 use Go\Tests\TestProject\Application\ClassWithPrivateMethods;
+use Go\Tests\TestProject\Application\Issue761Child;
+use Symfony\Component\Process\PhpExecutableFinder;
+use Symfony\Component\Process\Process;
 
 /**
  * Functional tests for trait composition weaving and private/protected method interception.
@@ -78,6 +81,40 @@ class TraitCompositionTest extends BaseFunctionalTestCase
             'ownMethod',
             'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterClassUsingTraitMethod',
         );
+    }
+
+    /**
+     * A trait method with #[\Override] can not be intercepted (issue #761), the documented workaround is to exclude
+     * it with `!matchInherited()`: the class is woven for its own method, loads, and the trait method keeps its
+     * behaviour without an advice.
+     */
+    public function testTraitMethodWithOverrideExcludedByNotMatchInherited(): void
+    {
+        $advisor = 'Go\\Tests\\TestProject\\Aspect\\TraitCompositionAspect->afterIssue761OwnMethod';
+        $this->assertClassIsWoven(Issue761Child::class);
+        $this->assertMethodWoven(Issue761Child::class, 'own', $advisor);
+        $this->assertMethodNotWoven(Issue761Child::class, 'hello', $advisor);
+
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        assert($phpExecutable !== false);
+        $script = sprintf(
+            'include %s; $instance = new %s(); echo $instance->hello(), ",", $instance->own(), ",", '
+            . '$instance instanceof \Go\Aop\Proxy ? "proxy" : "plain";',
+            var_export($this->configuration['frontController'], true),
+            '\\' . Issue761Child::class,
+        );
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
+        );
+        $process->run();
+
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Loading the woven class failed: ' . $process->getOutput() . $process->getErrorOutput(),
+        );
+        $this->assertSame('trait,own,proxy', trim($process->getOutput()));
     }
 
     // -------------------------------------------------------------------------

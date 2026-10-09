@@ -59,6 +59,11 @@ The joinpoints declare `@template` types, so PHPStan and IDEs know the types of 
 - **Returning by reference.** A method or function declared `function &name()` can not be intercepted: joinpoints
   and advices return values, so the caller would get a copy instead of the reference. Weaving one fails with a
   `WeavingException`; exclude such methods from a broad pointcut with `&& !matchReturningByReference()`.
+- **Trait methods with `#[\Override]`.** A method that a class imports from a trait and that carries `#[\Override]`
+  can not be intercepted in that class: PHP copies the attribute to the private alias the proxy calls, which
+  overrides nothing. Weaving one fails with a `WeavingException`; exclude trait methods from the pointcut with
+  `&& !matchInherited()`, exclude only that method (`&& !execution(public Foo->hello(*))`), or remove
+  `#[\Override]` from the trait. Trait methods that a class inherits from its parent class are not affected.
 - **Generators.** For a method that contains `yield`, the advice runs when the method is called and
   `proceed()` returns the `Generator` object. The advice does not see the yielded values, which are produced later,
   while the caller iterates.

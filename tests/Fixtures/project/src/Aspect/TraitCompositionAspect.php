@@ -27,4 +27,11 @@ class TraitCompositionAspect implements Aspect
      */
     #[Pointcut\After("execution(private|protected Go\Tests\TestProject\Application\ClassWithPrivateMethods->*(*))")]
     public function afterNonPublicMethod(): void {}
+
+    /**
+     * Intercepts the own methods of Issue761Child only: its trait method with #[\Override] can not be
+     * intercepted (issue #761), `!matchInherited()` excludes the methods imported from traits.
+     */
+    #[Pointcut\After("execution(public Go\Tests\TestProject\Application\Issue761Child->*(*)) && !matchInherited()")]
+    public function afterIssue761OwnMethod(): void {}
 }
