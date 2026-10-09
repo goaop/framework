@@ -501,6 +501,78 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * A namespaced class extending a global class must get a proxy that extends the parent fully
+     * qualified, otherwise the parent resolves in the proxy namespace (issue #759).
+     */
+    public function testWeaverRootsGlobalParentClassOfNamespacedClass(): void
+    {
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'hello' => ['advisor.Test\ns1\GlobalParentCollection->hello' => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+        $metadata = $this->loadTestMetadata('global-parent-class');
+        $transformer->transform($metadata);
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('global-parent-class-woven')->source);
+        $this->assertEquals($expected, $actual);
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('global-parent-class-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
+    }
+
+    /**
+     * Functional check for issue #759: the woven trait plus the generated proxy must load, and the proxy
+     * must keep extending the global parent class.
+     */
+    public function testWovenClassWithGlobalParentClassWorksAtRuntime(): void
+    {
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'hello' => ['advisor.Test\ns1\GlobalParentCollection->hello' => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+        $metadata = $this->loadTestMetadata('global-parent-class');
+        $transformer->transform($metadata);
+
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches));
+        $proxyContent = file_get_contents('vfs://' . $matches[1]);
+
+        // The woven trait source, without the include_once tail (the proxy is included manually)
+        $traitSource = preg_replace('/^include_once AOP_CACHE_DIR.*$/m', '', $metadata->source);
+
+        $runtimeDir = static::$fileSystem->path('/runtime');
+        if (!is_dir($runtimeDir)) {
+            mkdir($runtimeDir, 0777, true);
+        }
+        $traitFile = $runtimeDir . '/aop_global_parent_trait.php';
+        $proxyFile = $runtimeDir . '/aop_global_parent_proxy.php';
+        try {
+            file_put_contents($traitFile, $traitSource);
+            file_put_contents($proxyFile, $proxyContent);
+            include $traitFile;
+            include $proxyFile;
+
+            // The class only exists after the runtime includes above
+            $className = 'Test\\ns1\\GlobalParentCollection';
+            $this->assertTrue(class_exists($className, false));
+            $this->assertTrue(is_subclass_of($className, \ArrayObject::class));
+            $instance = new $className(['a' => 1]);
+            $this->assertCount(1, $instance);
+            $this->assertSame(1, $instance['a']);
+        } finally {
+            unlink($traitFile);
+            unlink($proxyFile);
+        }
+    }
+
+    /**
      * PHP 8.3 #[\Override] attribute must be stripped from intercepted methods.
      *
      * When a method is aliased in the proxy's trait-use block (e.g. overriddenMethodOriginalAlias),

@@ -21,6 +21,7 @@ use Go\Stubs\Collision\B\SameNameAspect as AspectB;
 use Go\Stubs\ClassWithMixedSources;
 use Go\Stubs\First;
 use Go\Stubs\FirstStatic;
+use Go\Stubs\GlobalParentCollection;
 use Go\Stubs\PropertyInheritanceChild;
 use Go\Stubs\ByReferenceStub;
 use PHPUnit\Framework\TestCase;
@@ -676,6 +677,59 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('use \\Other\\Namespace\\FirstOriginalTrait {', $output);
         $this->assertStringContainsString('\\Other\\Namespace\\FirstOriginalTrait::publicMethod as private publicMethodOriginalAlias', $output);
         $this->assertStringNotContainsString('use FirstOriginalTrait {', $output);
+    }
+
+    /**
+     * A namespaced class extending a global class: the parent from reflection has no leading backslash
+     * and must be emitted fully qualified, otherwise it resolves in the proxy namespace (issue #759).
+     * The original body trait keeps its deliberate short name.
+     *
+     * @throws ReflectionException
+     */
+    public function testParentFromGlobalNamespaceIsFullyQualified(): void
+    {
+        $reflectionClass = new ReflectionClass(GlobalParentCollection::class);
+        $classAdvices    = [
+            'method' => [
+                'hello' => [self::testAdvice()],
+            ],
+        ];
+
+        $generator = new ClassProxyGenerator($reflectionClass, 'Go\\Stubs\\GlobalParentCollectionOriginalTrait', $classAdvices);
+        $output    = "<?php\n" . $generator->generate();
+
+        $this->assertStringContainsString('class GlobalParentCollection extends \\ArrayObject implements', $output);
+        $this->assertStringContainsString('use GlobalParentCollectionOriginalTrait {', $output);
+        $this->assertStringContainsString(
+            'GlobalParentCollectionOriginalTrait::hello as private helloOriginalAlias',
+            $output,
+        );
+        $this->assertPhpCompiles($output);
+    }
+
+    /**
+     * A trait or interface introduced from the global namespace must stay fully qualified, whether the
+     * caller roots the name or not (direct callers may bypass AdviceMatcher, which roots it).
+     *
+     * @throws ReflectionException
+     */
+    #[\PHPUnit\Framework\Attributes\TestWith(['GlobalHelperTrait', 'GlobalHelperInterface'])]
+    #[\PHPUnit\Framework\Attributes\TestWith(['\\GlobalHelperTrait', '\\GlobalHelperInterface'])]
+    public function testIntroducedNamesFromGlobalNamespaceAreFullyQualified(string $trait, string $interface): void
+    {
+        $reflectionClass = new ReflectionClass(GlobalParentCollection::class);
+        $classAdvices    = [
+            'interface' => ['root' => [$interface]],
+            'trait'     => ['root' => [$trait]],
+        ];
+
+        $generator = new ClassProxyGenerator($reflectionClass, 'Go\\Stubs\\GlobalParentCollectionOriginalTrait', $classAdvices);
+        $output    = "<?php\n" . $generator->generate();
+
+        $this->assertStringContainsString('use GlobalParentCollectionOriginalTrait, \\GlobalHelperTrait;', $output);
+        $this->assertStringContainsString(', \\GlobalHelperInterface', $output);
+        $this->assertStringNotContainsString(' GlobalHelperInterface', $output);
+        $this->assertPhpCompiles($output);
     }
 
     private static function testAdvice(): GeneratedInterceptor
