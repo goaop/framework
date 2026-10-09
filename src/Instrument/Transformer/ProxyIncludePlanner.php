@@ -45,7 +45,7 @@ final class ProxyIncludePlanner
      *
      * @param non-empty-list<WovenProxy> $proxies Proxies in source order
      *
-     * @return non-empty-list<WovenProxy>
+     * @return list<WovenProxy>
      */
     public static function sortForProxyFile(array $proxies): array
     {
@@ -58,7 +58,6 @@ final class ProxyIncludePlanner
         foreach ($proxies as $proxy) {
             self::place($proxy, $byName, $placed, $sorted);
         }
-        assert($sorted !== []);
 
         return $sorted;
     }
@@ -225,7 +224,8 @@ final class ProxyIncludePlanner
     }
 
     /**
-     * Statements directly in the file or in its namespace blocks
+     * Statements of the namespace blocks of the file. Parser-reflection wraps the statements of a file without a
+     * namespace declaration into a global namespace block, only declare statements stay outside of the blocks.
      *
      * @param array<Node> $syntaxTree
      *
@@ -237,10 +237,6 @@ final class ProxyIncludePlanner
         foreach ($syntaxTree as $node) {
             if ($node instanceof Stmt\Namespace_) {
                 array_push($statements, ...$node->stmts);
-            } elseif ($node instanceof Stmt\Declare_) {
-                array_push($statements, ...($node->stmts ?? []));
-            } elseif ($node instanceof Stmt) {
-                $statements[] = $node;
             }
         }
 

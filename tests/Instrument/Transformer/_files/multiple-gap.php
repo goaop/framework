@@ -21,6 +21,12 @@ class GapChild extends GapFirst
 {
 }
 
+if (!class_exists(GapNested::class, false)) {
+    class GapNested extends GapFirst
+    {
+    }
+}
+
 trait GapTrait
 {
     public function traitHello(): string

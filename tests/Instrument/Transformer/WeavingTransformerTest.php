@@ -163,36 +163,71 @@ class WeavingTransformerTest extends TestCase
     public function testWovenFileOfMixedClassLikesLoadsAtRuntime(): void
     {
         $metadata = $this->transformWithInFileReflection('multiple-mixed');
-        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches));
-        $proxyContent = file_get_contents('vfs://' . $matches[1]);
-        $this->assertIsString($proxyContent);
+        $this->includeWovenFile($metadata, 'runtime-mixed');
 
-        // The virtual file system supports include, so the woven code runs without touching the disk
-        $runtimeDir = static::$fileSystem->path('/runtime-mixed');
-        if (!is_dir($runtimeDir)) {
-            mkdir($runtimeDir, 0777, true);
-        }
-        $wovenFile = $runtimeDir . '/woven.php';
-        $proxyFile = $runtimeDir . '/proxy.php';
-        // The include stays in place, only the cache directory constant is replaced
-        $wovenSource = str_replace("AOP_CACHE_DIR . '{$matches[1]}'", var_export($proxyFile, true), $metadata->source);
-        try {
-            file_put_contents($wovenFile, $wovenSource);
-            file_put_contents($proxyFile, $proxyContent);
-            include $wovenFile;
+        $this->assertTrue(class_exists('Test\mixed\MixedFirst', false));
+        $this->assertTrue(class_exists('Test\mixed\MixedChild', false));
+        $this->assertTrue(class_exists('MixedGlobal', false));
+        $this->assertTrue(is_subclass_of('Test\mixed\MixedChild', 'Test\mixed\MixedPlain'));
+        $this->assertTrue(is_subclass_of('Test\mixed\MixedFirst', 'Test\mixed\MixedContract'));
+        $this->assertTrue(enum_exists('Test\mixed\MixedSuit', false));
+        $hearts = constant('Test\mixed\MixedSuit::Hearts');
+        $this->assertInstanceOf(\BackedEnum::class, $hearts);
+        $this->assertSame('H', $hearts->value);
+    }
 
-            $this->assertTrue(class_exists('Test\mixed\MixedFirst', false));
-            $this->assertTrue(class_exists('Test\mixed\MixedChild', false));
-            $this->assertTrue(class_exists('MixedGlobal', false));
-            $this->assertTrue(is_subclass_of('Test\mixed\MixedChild', 'Test\mixed\MixedPlain'));
-            $this->assertTrue(is_subclass_of('Test\mixed\MixedFirst', 'Test\mixed\MixedContract'));
-            $this->assertTrue(enum_exists('Test\mixed\MixedSuit', false));
-            $hearts = constant('Test\mixed\MixedSuit::Hearts');
-            $this->assertInstanceOf(\BackedEnum::class, $hearts);
-            $this->assertSame('H', $hearts->value);
-        } finally {
-            unlink($wovenFile);
-            unlink($proxyFile);
+    /**
+     * Classes of a file without a namespace declaration get one `namespace {}` block per proxy
+     */
+    public function testClassesWithoutNamespaceShareOneProxyFile(): void
+    {
+        $metadata = $this->loadTestMetadata('multiple-global');
+        $this->transformer->transform($metadata);
+
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('multiple-global-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
+
+        // The include follows the first class, before the code of the file
+        $includeOffset = strpos($metadata->source, 'include_once AOP_CACHE_DIR');
+        $this->assertIsInt($includeOffset);
+        $this->assertGreaterThan(strpos($metadata->source, 'trait GlobalMultiFirstOriginalTrait'), $includeOffset);
+        $this->assertLessThan(strpos($metadata->source, '$globalMultiName'), $includeOffset);
+
+        $this->includeWovenFile($metadata, 'runtime-global');
+        $this->assertTrue(class_exists('GlobalMultiFirst', false));
+        $this->assertTrue(class_exists('GlobalMultiSecond', false));
+    }
+
+    /**
+     * Two woven traits of one file: both child trait proxies share the proxy file
+     */
+    public function testTraitsShareOneProxyFile(): void
+    {
+        $metadata = $this->loadTestMetadata('multiple-traits');
+        $this->transformer->transform($metadata);
+
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('multiple-traits-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
+
+        $this->includeWovenFile($metadata, 'runtime-traits');
+        $this->assertTrue(trait_exists('Test\traits\FirstMultiTrait', false));
+        $this->assertTrue(trait_exists('Test\traits\SecondMultiTrait', false));
+        // Each proxy trait composes its own original trait
+        $proxyTraits = array_values(array_filter(
+            get_declared_traits(),
+            static fn(string $trait): bool => str_starts_with($trait, 'Test\traits\\') && !str_ends_with($trait, 'OriginalTrait'),
+        ));
+        $this->assertCount(2, $proxyTraits);
+        foreach ($proxyTraits as $proxyTrait) {
+            $this->assertSame([$proxyTrait . 'OriginalTrait'], (new \ReflectionClass($proxyTrait))->getTraitNames());
         }
     }
 
@@ -229,12 +264,14 @@ class WeavingTransformerTest extends TestCase
             $this->fail('Code using a woven class before the include of the proxy file must be rejected');
         } catch (WeavingException $exception) {
             $message = $exception->getMessage();
-            $this->assertStringContainsString('_files/multiple-gap.php', $message);
+            $this->assertStringContainsString('_files/multiple-gap.php', str_replace('\\', '/', $message));
             $this->assertStringContainsString('Test\gap\GapFirst, Test\gap\GapTrait, Test\gap\GapSecond', $message);
-            $this->assertStringContainsString('included after Test\gap\GapSecond (line 41)', $message);
+            $this->assertStringContainsString('included after Test\gap\GapSecond (line 47)', $message);
             $this->assertStringContainsString('the statement on line 18 uses Test\gap\GapFirst', $message);
             $this->assertStringContainsString('Test\gap\GapChild (line 20) needs Test\gap\GapFirst', $message);
-            $this->assertStringContainsString('Test\gap\GapSecond (line 32) needs Test\gap\GapTrait', $message);
+            // A class declared by a top-level statement is declared when the statement runs
+            $this->assertStringContainsString('the statement on line 24 uses Test\gap\GapFirst', $message);
+            $this->assertStringContainsString('Test\gap\GapSecond (line 38) needs Test\gap\GapTrait', $message);
             $this->assertStringContainsString('exclude the class-likes from the pointcut', $message);
         }
     }
@@ -270,7 +307,7 @@ class WeavingTransformerTest extends TestCase
             $this->transformer->transform($metadata);
 
             $this->assertSame(
-                file_get_contents(__DIR__ . '/_files/' . $expectedProxy . '.php'),
+                $this->loadExactProxySnapshot($expectedProxy),
                 $this->getSingleIncludedProxy($metadata->source),
             );
         }
@@ -299,9 +336,23 @@ class WeavingTransformerTest extends TestCase
         $this->createTransformer($adviceMatcher)->transform($metadata);
 
         $this->assertSame(
-            file_get_contents(__DIR__ . '/_files/class-static-init-proxy.php'),
+            $this->loadExactProxySnapshot('class-static-init-proxy'),
             $this->getSingleIncludedProxy($metadata->source),
         );
+    }
+
+    /**
+     * Returns a byte-exact proxy snapshot (stored with LF line endings) as the weaver writes it on this platform: the
+     * `<?php` and `declare(strict_types=1);` header lines end with PHP_EOL, the generated code with "\n"
+     */
+    private function loadExactProxySnapshot(string $name): string
+    {
+        $snapshot = file_get_contents(__DIR__ . '/_files/' . $name . '.php');
+        $header   = "<?php\ndeclare(strict_types=1);\n";
+        $this->assertIsString($snapshot);
+        $this->assertStringStartsWith($header, $snapshot);
+
+        return '<?php' . PHP_EOL . 'declare(strict_types=1);' . PHP_EOL . substr($snapshot, strlen($header));
     }
 
     /**
@@ -997,9 +1048,7 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringContainsString('#[\FakeMarkerAttr]', $actual);
 
         // The proxy file holds the proxies of all three classes, TestCustomAttribute keeps #[\Attribute(...)]
-        $matches = [];
-        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
-        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
         $this->assertStringContainsString(
             '#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]',
             $proxyContent,
@@ -1716,6 +1765,31 @@ class WeavingTransformerTest extends TestCase
             $this->normalizeWhitespaces($proxyContent),
         );
         $this->assertPhpCompiles($proxyContent);
+    }
+
+    /**
+     * Includes the woven source with its proxy file from the virtual file system: the include stays in place, only
+     * the cache directory constant is replaced
+     */
+    private function includeWovenFile(StreamMetaData $metadata, string $directoryName): void
+    {
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR \\. ('[^']+')/", $metadata->source, $matches));
+
+        $runtimeDir = static::$fileSystem->path('/' . $directoryName);
+        if (!is_dir($runtimeDir)) {
+            mkdir($runtimeDir, 0777, true);
+        }
+        $wovenFile = $runtimeDir . '/woven.php';
+        $proxyFile = $runtimeDir . '/proxy.php';
+        try {
+            file_put_contents($wovenFile, str_replace("AOP_CACHE_DIR . {$matches[1]}", var_export($proxyFile, true), $metadata->source));
+            file_put_contents($proxyFile, $proxyContent);
+            include $wovenFile;
+        } finally {
+            unlink($wovenFile);
+            unlink($proxyFile);
+        }
     }
 
     /**

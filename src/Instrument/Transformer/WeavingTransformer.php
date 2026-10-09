@@ -163,10 +163,7 @@ final class WeavingTransformer extends BaseSourceTransformer
         }
 
         // The include of the proxy file goes after the last token of a woven class
-        $lastClassToken = $class->getNode()->getAttribute('endTokenPos');
-        if (!is_int($lastClassToken)) {
-            return null;
-        }
+        [, $lastClassToken] = $this->getDeclarationTokenRange($class->getNode());
 
         // Sort advices in advance to keep the correct order in cache, and leave only keys for the cache
         $advices = AbstractJoinpoint::flatAndSortAdvices($advices);
