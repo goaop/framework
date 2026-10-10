@@ -18,12 +18,11 @@ join-point API. An aspect written for one driver runs unchanged on the other, wi
 
   ```bash
   composer config repositories.zengine vcs https://github.com/lisachenko/z-engine
-  composer require lisachenko/z-engine:dev-feature/redefine-preserve-alias-8.4   # PHP 8.4
+  composer require lisachenko/z-engine:8.4.x-dev                                 # PHP 8.4
   composer require lisachenko/z-engine:8.5.x-dev                                 # PHP 8.5
   ```
 
-  The `redefine(..., preserveAs:)` API the driver is built against is merged into `8.5`; until it reaches the
-  `8.4` branch as well, the PHP 8.4 install pins the feature branch above.
+  The `redefine(..., preserveAs:)` API the driver is built against is merged into both version branches.
 - The opcache JIT **off** for the whole process: `opcache.jit=off` and `opcache.jit_buffer_size=0` in `php.ini`, the
   FPM pool or `php -d`. z-engine hooks the executor internals the JIT bypasses. On PHP 8.5 the tracing JIT also
   miscompiles code the framework runs (a known PHP bug, see `docs/php85-limitations.md`), so there the driver switches

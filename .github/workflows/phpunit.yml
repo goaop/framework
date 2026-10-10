@@ -118,7 +118,7 @@ jobs:
         # The optional engine of the zengine driver, from the branch targeting PHP 8.4 (see docs/zengine-driver.md)
         run: |
           composer config repositories.zengine vcs https://github.com/lisachenko/z-engine
-          composer require --dev --no-update lisachenko/z-engine:dev-feature/redefine-preserve-alias-8.4
+          composer require --dev --no-update lisachenko/z-engine:8.4.x-dev
           composer update --no-interaction --no-progress
 
       - name: "Tests with coverage"

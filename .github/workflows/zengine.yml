@@ -27,7 +27,7 @@ jobs:
       matrix:
         include:
           - php-version: "8.4"
-            zengine-branch: "dev-feature/redefine-preserve-alias-8.4"
+            zengine-branch: "8.4.x-dev"
           - php-version: "8.5"
             zengine-branch: "8.5.x-dev"
     env:
