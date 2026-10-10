@@ -50,6 +50,7 @@ return [
         'debug' => true,
         'driver' => 'zengine',
         'cacheDir'  => __DIR__ . '/../var/cache/aspect-zengine',
+        'features' => \Go\Aop\Features::INTERCEPT_FUNCTIONS,
         'includePaths' => [
             __DIR__ . '/../src/'
         ],
@@ -63,6 +64,7 @@ return [
         'debug' => false,
         'driver' => 'zengine',
         'cacheDir'  => __DIR__ . '/../var/cache/aspect-zengine-production',
+        'features' => \Go\Aop\Features::INTERCEPT_FUNCTIONS,
         'includePaths' => [
             __DIR__ . '/../src/'
         ],
@@ -77,6 +79,7 @@ return [
         'debug' => true,
         'driver' => 'stream',
         'cacheDir'  => __DIR__ . '/../var/cache/aspect-zengine-reference',
+        'features' => \Go\Aop\Features::INTERCEPT_FUNCTIONS,
         'includePaths' => [
             __DIR__ . '/../src/'
         ],

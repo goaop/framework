@@ -14,6 +14,7 @@ namespace Go\Instrument\ZEngine;
 
 use Go\Aop\Exception\UnsupportedJoinpointException;
 use Go\Aop\Framework\AbstractMethodInvocation;
+use Go\Aop\Proxy;
 use ReflectionException;
 use ReflectionMethod;
 use ZEngine\Reflection\ReflectionClass as EngineClass;
@@ -29,7 +30,11 @@ use ZEngine\Reflection\ReflectionClass as EngineClass;
  *    dispatcher calls `$this-><method>OriginalAlias(...)` / `self::...` like a trait-based proxy;
  *  - a method the class only inherits gets an own override adopting the dispatcher body
  *    (`ReflectionClass::addMethod($method, $donorMethod)`), whose dispatcher reaches the
- *    original through `parent::<method>(...)`.
+ *    original through `parent::<method>(...)`;
+ *  - the rewired class is marked with the `Go\Aop\Proxy` interface
+ *    (`ReflectionClass::addInterfaces()`), like a generated proxy class: code asking
+ *    `instanceof Proxy` to tell a woven object (the Doctrine bridge, fluent-interface guards)
+ *    gets the same answer from both drivers.
  *
  * An opcache-shared class is copied out of shared memory by z-engine on the first mutation;
  * the class reflection is therefore re-resolved from the class table before every method.
@@ -70,6 +75,16 @@ final class MethodTableRewriter
                 } else {
                     $class->addMethod($methodName, $donorMethod);
                 }
+            } catch (ReflectionException $refusal) {
+                throw UnsupportedJoinpointException::engineRefusal($className, $refusal);
+            }
+        }
+
+        // Re-resolved once more: the first mutation above may have copied the class out of shared memory
+        $class = EngineClass::fromClassTable($className);
+        if ($class !== null && !in_array(Proxy::class, $class->getInterfaceNames(), true)) {
+            try {
+                $class->addInterfaces(Proxy::class);
             } catch (ReflectionException $refusal) {
                 throw UnsupportedJoinpointException::engineRefusal($className, $refusal);
             }

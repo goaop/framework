@@ -33,8 +33,14 @@ use Throwable;
  * writing engine records into it would poison a cache directory later used by the stream driver.
  * Freshness is decided by the one shared rule, {@see CachePathManager::isFreshRecord()}.
  *
+ * The function proxies of a namespace (`Features::INTERCEPT_FUNCTIONS`) are recorded per namespace name under
+ * `functions`: the proxy file generated below `{cacheDir}/_zengine/_functions/` and the names of the functions it
+ * declares, or that no advisor matches a function called from the namespace. Those records have no source file:
+ * they go stale with the tracked resources only (the internal function table never changes within a PHP build).
+ *
  * @phpstan-import-type KernelOptions from AspectKernel
  * @phpstan-type DonorRecord array{donor: string|null, donorClass: string|null, methods: list<string>}
+ * @phpstan-type FunctionsRecord array{file: string|null, functions: list<string>}
  *
  * @internal Framework service, not a public extension point
  */
@@ -43,11 +49,13 @@ final class DonorCacheIndex
     /**
      * Version of the index format, an index of another version is ignored and rebuilt
      */
-    public const int FORMAT_VERSION = 1;
+    public const int FORMAT_VERSION = 2;
 
     private const string INDEX_FILE_NAME = '/_zengine.cache';
 
     private const string DONOR_DIRECTORY = '/_zengine';
+
+    private const string FUNCTIONS_DIRECTORY = '/_zengine/_functions';
 
     private ?string $cacheDir;
 
@@ -68,6 +76,20 @@ final class DonorCacheIndex
      * @var array<string, array<string, mixed>>
      */
     private array $newRecords = [];
+
+    /**
+     * Function-proxy records read from the index file, keyed by namespace name
+     *
+     * @var array<string, array<array-key, mixed>>
+     */
+    private array $functionRecords = [];
+
+    /**
+     * Function-proxy records written during this request, keyed by namespace name
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    private array $newFunctionRecords = [];
 
     /**
      * @phpstan-param KernelOptions $options
@@ -101,6 +123,62 @@ final class DonorCacheIndex
         }
 
         return ['donor' => $donor, 'donorClass' => $donorClass, 'methods' => $methods];
+    }
+
+    /**
+     * Returns the function-proxy record of a namespace when it is still valid, null on a miss or a stale record
+     *
+     * @return FunctionsRecord|null
+     */
+    public function findFreshFunctions(string $namespace, AspectContainer $container): ?array
+    {
+        $this->records();
+        $record = $this->newFunctionRecords[$namespace] ?? $this->functionRecords[$namespace] ?? null;
+        if ($record === null) {
+            return null;
+        }
+        $cachedAt = $record['cachedAt'] ?? 0;
+        if (!$container->isFreshSince(is_int($cachedAt) ? $cachedAt : 0)) {
+            return null;
+        }
+        $file      = $record['file'] ?? null;
+        $functions = is_array($record['functions'] ?? null) ? array_values(array_filter($record['functions'], is_string(...))) : [];
+        if ($file === null) {
+            return ['file' => null, 'functions' => []];
+        }
+        if (!is_string($file) || !is_file($file)) {
+            // A record pointing at a missing proxy file is rebuilt like a miss
+            return null;
+        }
+
+        return ['file' => $file, 'functions' => $functions];
+    }
+
+    /**
+     * Returns the file the function proxies of a namespace are written to:
+     * `{cacheDir}/_zengine/_functions/{Namespace/Path}.php`
+     */
+    public function functionsFileFor(string $namespace): string
+    {
+        if ($this->cacheDir === null) {
+            throw new InvalidConfigurationException('The donor index needs the `cacheDir` option to be configured');
+        }
+
+        return $this->cacheDir . self::FUNCTIONS_DIRECTORY . '/' . str_replace('\\', '/', trim($namespace, '\\')) . '.php';
+    }
+
+    /**
+     * Records the function proxies generated for a namespace, or that no advisor matches a function called from it
+     *
+     * @param list<string> $functions Names of the proxied functions (without the namespace)
+     */
+    public function recordFunctions(string $namespace, ?string $file, array $functions): void
+    {
+        $this->newFunctionRecords[$namespace] = [
+            'file'      => $file,
+            'functions' => $functions,
+            'cachedAt'  => time(),
+        ];
     }
 
     /**
@@ -166,16 +244,20 @@ final class DonorCacheIndex
      */
     public function flush(): void
     {
-        if ($this->newRecords === [] || $this->cacheDir === null || !is_writable($this->cacheDir)) {
+        if (($this->newRecords === [] && $this->newFunctionRecords === []) || $this->cacheDir === null || !is_writable($this->cacheDir)) {
             return;
         }
-        $allRecords = $this->newRecords + $this->records();
+        $allRecords         = $this->newRecords + $this->records();
+        $allFunctionRecords = $this->newFunctionRecords + $this->functionRecords;
         $this->cachePathManager->writeIndexFile(self::INDEX_FILE_NAME, [
-            'version' => self::FORMAT_VERSION,
-            'classes' => $allRecords,
+            'version'   => self::FORMAT_VERSION,
+            'classes'   => $allRecords,
+            'functions' => $allFunctionRecords,
         ]);
-        $this->records    = $allRecords;
-        $this->newRecords = [];
+        $this->records            = $allRecords;
+        $this->newRecords         = [];
+        $this->functionRecords    = $allFunctionRecords;
+        $this->newFunctionRecords = [];
     }
 
     /**
@@ -230,6 +312,13 @@ final class DonorCacheIndex
             foreach ($indexData['classes'] as $className => $record) {
                 if (is_string($className) && is_array($record)) {
                     $this->records[$className] = $record;
+                }
+            }
+            if (is_array($indexData['functions'] ?? null)) {
+                foreach ($indexData['functions'] as $namespace => $record) {
+                    if (is_string($namespace) && is_array($record)) {
+                        $this->functionRecords[$namespace] = $record;
+                    }
                 }
             }
         }

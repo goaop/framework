@@ -15,6 +15,7 @@ namespace Go\Functional\ZEngine;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\UnsupportedJoinpointException;
 use Go\Tests\TestProject\Application\ZEngineChild;
+use Go\Tests\TestProject\Application\ZEngineFunctions;
 use Go\Tests\TestProject\Application\ZEngineLate;
 use Go\Tests\TestProject\Application\ZEngineParent;
 use Go\Tests\TestProject\Application\ZEngineUnadvised;
@@ -33,6 +34,7 @@ final class ZEngineWeavingTest extends ZEngineFunctionalTestCase
      * Files the driver writes into the cache directory of the `weave` scenario
      */
     private const array EXPECTED_CACHE_FILES = [
+        '_zengine/_functions/Go/Tests/TestProject/Application.php',
         '_zengine/src/Application/ZEngineChild__AopDonor.php',
         '_zengine/src/Application/ZEngineParent__AopDonor.php',
         'src/Aspect/ZEngineAspect.cache.php',
@@ -54,11 +56,14 @@ final class ZEngineWeavingTest extends ZEngineFunctionalTestCase
         self::assertSame($stream['log'], $engine['log']);
         self::assertNotEmpty($engine['log']);
 
-        // Reflection agrees too, except that a swapped body carries the file it was compiled in: the donor
+        // Reflection agrees too, except that a swapped body carries the file it was compiled in: the donor.
+        // The woven class is marked as a Go\Aop\Proxy like a generated proxy class, an unadvised one is not
         $expectedReflection = $stream['reflection'];
         self::assertIsArray($expectedReflection);
         $expectedReflection['parent.greet.file'] = 'ZEngineParent__AopDonor.php';
         self::assertSame($expectedReflection, $engine['reflection']);
+        self::assertTrue(self::at($engine, 'reflection', 'child.proxy'));
+        self::assertFalse(self::at($engine, 'reflection', 'unadvised.proxy'));
 
         // Own methods are swapped, inherited public methods get an override, the unadvised class is left alone
         self::assertSame(
@@ -79,6 +84,41 @@ final class ZEngineWeavingTest extends ZEngineFunctionalTestCase
         // The subprocess runs with the JIT off, nothing for the guard to do
         self::assertSame(['jitWasActive' => false, 'previousMode' => null, 'disabledAtRuntime' => false], self::at($engine, 'boot', 'jit'));
         self::assertSame($opcache, self::at($engine, 'boot', 'opcache'));
+    }
+
+    /**
+     * Function interception: the namespaced proxies of the stream driver, declared right after a class of the
+     * namespace is loaded; a warm request includes the recorded proxy file without the aspects
+     */
+    #[DataProvider('provideOpcacheLegs')]
+    public function testInterceptsFunctionsLikeTheStreamDriver(bool $opcache): void
+    {
+        $engine = $this->runProbe('zengine', 'functions', $opcache);
+        $stream = $this->runProbe('zengine_reference', 'functions', $opcache);
+
+        self::assertArrayNotHasKey('exception', $engine, 'The engine driver must run the scenario');
+        self::assertArrayNotHasKey('exception', $stream, 'The stream driver must run the scenario');
+        self::assertSame($stream['calls'], $engine['calls']);
+        self::assertSame($stream['log'], $engine['log']);
+        self::assertSame(['around array_sum with [[1,2,3]]'], $engine['log'], 'Only the unqualified call is intercepted');
+        self::assertTrue(self::at($engine, 'calls', 'functions.proxied'));
+        self::assertSame(
+            ['outcome' => 'no-advices', 'methods' => [], 'reason' => null],
+            self::at($engine, 'weave', ZEngineFunctions::class),
+            'No method advice matches the class: the function proxies need no donor',
+        );
+        self::assertSame([], $engine['donors']);
+
+        $proxyFile = self::cacheDir('zengine') . '/_zengine/_functions/Go/Tests/TestProject/Application.php';
+        self::assertFileExists($proxyFile);
+        file_put_contents($proxyFile, PHP_EOL . '// marked by ' . self::class . PHP_EOL, FILE_APPEND);
+        $markedProxy = md5_file($proxyFile);
+
+        $warm = $this->runProbe('zengine', 'functions', $opcache);
+        self::assertTrue($warm['indexExisted']);
+        self::assertSame($engine['calls'], $warm['calls']);
+        self::assertSame($engine['log'], $warm['log']);
+        self::assertSame($markedProxy, md5_file($proxyFile), 'A fresh record reuses its proxy file');
     }
 
     #[DataProvider('provideOpcacheLegs')]

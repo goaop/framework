@@ -23,8 +23,10 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectLoaderInterface;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\ParserReflection\ReflectionFile;
+use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Proxy\ClassProxyGenerator;
 use Go\Proxy\DonorClassGenerator;
+use Go\Proxy\FunctionProxyGenerator;
 use ReflectionClass;
 use Throwable;
 
@@ -40,6 +42,12 @@ use Throwable;
  * advice matching and the donor generation see what the stream driver sees (attributes, parameter
  * defaults, `self`/`parent` types and the file's imports verbatim); native reflection is the
  * fallback for a class whose file cannot be parsed. A warm donor record skips both.
+ *
+ * Function interception (`Features::INTERCEPT_FUNCTIONS`) needs no engine mutation at all: the
+ * stream driver's function proxies - namespaced functions shadowing the advised internal ones,
+ * which PHP resolves an unqualified call to before the global function - are generated per
+ * namespace and included right after the file declaring a class of that namespace, before any
+ * of its code runs ({@see weaveFunctions()}).
  *
  * @internal Framework service, not a public extension point
  */
@@ -65,12 +73,22 @@ final class ZEngineClassWeaver
     private array $failures = [];
 
     /**
-     * Includes a donor file in an isolated scope
+     * Function-proxy files declared in this request, keyed by namespace name (null: nothing proxied there)
+     *
+     * @var array<string, string|null>
+     */
+    private array $functionNamespaces = [];
+
+    /**
+     * Includes a donor or function-proxy file in an isolated scope
      *
      * @var (Closure(string): void)|null
      */
     private static ?Closure $includeFile = null;
 
+    /**
+     * @param bool $interceptFunctions Whether `Features::INTERCEPT_FUNCTIONS` is enabled (the kernel's `kernel.interceptFunctions`)
+     */
     public function __construct(
         private readonly AspectContainer $container,
         private readonly AdviceMatcherInterface $adviceMatcher,
@@ -78,6 +96,7 @@ final class ZEngineClassWeaver
         private readonly CachePathManager $cachePathManager,
         private readonly DonorCacheIndex $donorCache,
         private readonly MethodTableRewriter $rewriter,
+        private readonly bool $interceptFunctions = false,
     ) {}
 
     /**
@@ -125,11 +144,115 @@ final class ZEngineClassWeaver
             return $this->weave($className);
         }
         try {
+            // The function proxies of the namespace come first: a class of it is loaded, so code of
+            // that namespace is about to run
+            $this->weaveFunctions(self::namespaceOf($className), $file);
+
             return $this->remember($className, $this->doWeave($className, $file));
         } catch (Throwable $failure) {
             $this->failures[$className] = $failure;
             throw $failure;
         }
+    }
+
+    /**
+     * Declares the function proxies of a namespace, once per request
+     *
+     * With `Features::INTERCEPT_FUNCTIONS` an advised internal function called unqualified from a
+     * namespace is shadowed by a namespaced proxy function of the same name, generated the way the
+     * stream driver generates them (the proxy dispatches to the advices and reaches the original
+     * through its fully-qualified name). PHP resolves an unqualified call to the namespaced function
+     * first, so the proxies only have to be declared before the calling code runs - which is what
+     * including them right after the file declaring a class of the namespace guarantees. A call site
+     * that already ran keeps the global function it resolved (PHP caches the resolution per call
+     * site), like a class loaded before the kernel keeps its original methods. The global namespace
+     * cannot be served: a proxy there would redeclare the internal function.
+     *
+     * The proxy file is generated below `{cacheDir}/_zengine/_functions/` on the first request and
+     * recorded in the donor index with the function names; a warm request includes it without
+     * loading the aspects. The functions of a namespace already declared in this process (another
+     * kernel of a test runner) are never included again.
+     *
+     * @param string $namespace Namespace to declare the proxies for
+     * @param string $file      A source file declaring that namespace block, parsed for the matching
+     *
+     * @return string|null The proxy file declared for the namespace, null when nothing is proxied there
+     */
+    public function weaveFunctions(string $namespace, string $file): ?string
+    {
+        $namespace = trim($namespace, '\\');
+        if (!$this->interceptFunctions || $namespace === '') {
+            return null;
+        }
+        if (array_key_exists($namespace, $this->functionNamespaces)) {
+            return $this->functionNamespaces[$namespace];
+        }
+        $this->functionNamespaces[$namespace] = null;
+        if (!$this->donorCache->isApplicationSource($file)) {
+            return null;
+        }
+
+        $record = $this->donorCache->findFreshFunctions($namespace, $this->container)
+            ?? $this->generateFunctionProxies($namespace, $file);
+        if ($record['file'] === null) {
+            return null;
+        }
+        foreach ($record['functions'] as $function) {
+            if (function_exists($namespace . '\\' . $function)) {
+                // Declared by an earlier kernel of this process: a function cannot be declared twice
+                return $this->functionNamespaces[$namespace] = $record['file'];
+            }
+        }
+        (self::$includeFile ??= static function (string $file): void {
+            include $file;
+        })($record['file']);
+
+        return $this->functionNamespaces[$namespace] = $record['file'];
+    }
+
+    /**
+     * Matches the function advisors against the namespace and writes its proxy file (recorded either way)
+     *
+     * @return array{file: string|null, functions: list<string>}
+     */
+    private function generateFunctionProxies(string $namespace, string $file): array
+    {
+        try {
+            $fileNamespace = new ReflectionFileNamespace($file, $namespace);
+        } catch (Throwable) {
+            // The file declares no such namespace block (a class name spelled in another case than its
+            // declaration, a source the parser cannot read): nothing to match against, and not worth a record
+            return ['file' => null, 'functions' => []];
+        }
+        foreach ($this->aspectLoader->getUnloadedAspects() as $unloadedAspect) {
+            $this->aspectLoader->loadAndRegister($unloadedAspect);
+        }
+        $advisors = $this->container->getServicesByInterface(Advisor::class);
+        $advices  = $this->adviceMatcher->getAdvicesForFunctions($fileNamespace, $advisors);
+        if ($advices === []) {
+            $this->donorCache->recordFunctions($namespace, null, []);
+
+            return ['file' => null, 'functions' => []];
+        }
+        $sortedAdvices = AbstractJoinpoint::flatAndSortAdvices($advices);
+        $functions     = array_map(strval(...), array_keys($sortedAdvices[AspectContainer::FUNCTION_PREFIX] ?? []));
+        $proxyFile     = $this->donorCache->functionsFileFor($namespace);
+        $generator     = new FunctionProxyGenerator($fileNamespace, $sortedAdvices);
+
+        $this->cachePathManager->getCacheFileWriter()->write($proxyFile, $generator->generate());
+        $this->donorCache->recordFunctions($namespace, $proxyFile, $functions);
+
+        return ['file' => $proxyFile, 'functions' => $functions];
+    }
+
+    /**
+     * Namespace of a class name, '' for the global namespace
+     */
+    private static function namespaceOf(string $className): string
+    {
+        $separator = strrpos($className, '\\');
+
+        return $separator === false ? '' : substr($className, 0, $separator);
     }
 
     private function doWeave(string $className, string $file): WeaveResult

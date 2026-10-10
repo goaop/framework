@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Go\Stubs\ZEngine;
 
 use Go\Aop\Aspect;
+use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Attribute as Pointcut;
 
@@ -31,5 +32,16 @@ final class InProcessAspect implements Aspect
     public function aroundGreet(MethodInvocation $invocation): string
     {
         return strtoupper((string) $invocation->proceed());
+    }
+
+    /**
+     * Function interception: an internal function called unqualified from the stubs' namespace
+     */
+    #[Pointcut\Around("execution(Go\Stubs\ZEngine\str_rot13(*))")]
+    public function aroundRot13(FunctionInvocation $invocation): mixed
+    {
+        self::$log[] = 'around str_rot13 with ' . json_encode($invocation->getArguments());
+
+        return $invocation->proceed();
     }
 }

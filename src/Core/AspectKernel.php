@@ -72,8 +72,7 @@ abstract class AspectKernel
     /**
      * Feature flags implemented by source transformers: meaningless for a driver that never rewrites sources
      */
-    private const int STREAM_ONLY_FEATURES = Features::INTERCEPT_FUNCTIONS
-        | Features::INTERCEPT_INITIALIZATIONS
+    private const int STREAM_ONLY_FEATURES = Features::INTERCEPT_INITIALIZATIONS
         | Features::INTERCEPT_INCLUDES
         | Features::PREBUILT_CACHE;
 
@@ -353,8 +352,8 @@ abstract class AspectKernel
         if ($driver === WeavingDriver::ZEngine && ($features & self::STREAM_ONLY_FEATURES) !== 0) {
             throw new InvalidConfigurationException(
                 'The zengine weaving driver rewires loaded classes at runtime and never rewrites sources: '
-                . 'the INTERCEPT_FUNCTIONS, INTERCEPT_INITIALIZATIONS, INTERCEPT_INCLUDES and PREBUILT_CACHE '
-                . 'features are only available with the stream driver.',
+                . 'the INTERCEPT_INITIALIZATIONS, INTERCEPT_INCLUDES and PREBUILT_CACHE features are only '
+                . 'available with the stream driver.',
             );
         }
         $rawIncludePaths = is_array($merged['includePaths'] ?? null) ? $merged['includePaths'] : [];

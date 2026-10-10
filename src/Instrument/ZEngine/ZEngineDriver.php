@@ -108,6 +108,7 @@ final class ZEngineDriver
             $container->getService(CachePathManager::class),
             $container->getService(DonorCacheIndex::class),
             $container->getService(MethodTableRewriter::class),
+            (bool) $container->getValue('kernel.interceptFunctions'),
         ));
 
         ZEngineComposerLoader::init($kernel->getOptions(), $container);

@@ -44,9 +44,10 @@ ApplicationAspectKernel::getInstance()->init([
 ]);
 ```
 
-`includePaths`, `excludePaths`, `debug`, `cacheDir` and `cacheFileMode` mean the same as with the stream driver.
-The `features` option must not contain `INTERCEPT_FUNCTIONS`, `INTERCEPT_INITIALIZATIONS`, `INTERCEPT_INCLUDES` or
-`PREBUILT_CACHE`: those flags configure source transformers, and the engine driver never rewrites sources.
+`includePaths`, `excludePaths`, `debug`, `cacheDir`, `cacheFileMode` and `Features::INTERCEPT_FUNCTIONS` mean the
+same as with the stream driver. The `features` option must not contain `INTERCEPT_INITIALIZATIONS`,
+`INTERCEPT_INCLUDES` or `PREBUILT_CACHE`: those flags configure source transformers, and the engine driver never
+rewrites sources.
 
 ## How a class is woven
 
@@ -67,9 +68,28 @@ The `features` option must not contain `INTERCEPT_FUNCTIONS`, `INTERCEPT_INITIAL
      (`ReflectionClass::addMethod($method, $donorMethod)`), whose dispatcher reaches the original through
      `parent::<method>(...)`.
 
+4. The rewired class is marked with the `Go\Aop\Proxy` interface (`ReflectionClass::addInterfaces()`), like a
+   generated proxy class: `instanceof Proxy` tells a woven object apart under both drivers.
+
 A warm request finds a fresh record in the index (same freshness rule as the stream driver: source size and mtime,
 tracked resources in debug mode), loads the donor file and rewires the class without loading the aspects or running
 the matcher.
+
+### Function interception
+
+With `Features::INTERCEPT_FUNCTIONS` the driver serves `execution(Ns\function(*))` pointcuts exactly the way the
+stream driver does, and without touching the engine: an advised internal function called **unqualified** from a
+namespace is shadowed by a namespaced proxy function of the same name (`Ns\array_sum()` dispatching to the advices
+and reaching `\array_sum()`), which PHP resolves such a call to before the global function. The proxies of a
+namespace are generated into `{cacheDir}/_zengine/_functions/{Ns/Path}.php`, recorded in the donor index with the
+function names, and included right after the file declaring the first loaded class of that namespace - before any
+code of the namespace runs. A warm request includes the recorded file without loading the aspects.
+
+Two consequences of that mechanism: a fully-qualified call (`\array_sum()`) is never intercepted, like with the
+stream driver; and a call site that already ran before the proxies were declared (a class loaded before the
+kernel) keeps the global function it resolved, since PHP caches the resolution per call site. Functions called
+from the global namespace cannot be intercepted by either driver: a proxy there would redeclare the internal
+function.
 
 Classes declared before the kernel was initialized (required directly, never autoloaded) are not seen by the loader.
 Weave them on demand:
@@ -86,14 +106,15 @@ entry (z-engine refuses that mutation, the driver reports it as `Go\Aop\Exceptio
 ## Supported join points
 
 The engine driver rewires **method bodies**: `execution(...)` pointcuts on instance and static methods, public,
-protected and private, declared or inherited, in regular classes (final, abstract and readonly classes included).
+protected and private, declared or inherited, in regular classes (final, abstract and readonly classes included),
+and serves **function execution** pointcuts through namespaced proxies (`Features::INTERCEPT_FUNCTIONS`, see above).
 
 Everything else only the stream driver provides, since it needs rewritten sources:
 
 - property access (`access(...)` pointcuts),
 - introductions (interfaces and traits),
 - `initialization(...)` and `staticinitialization(...)` pointcuts,
-- function interception (`Features::INTERCEPT_FUNCTIONS`), include interception, prebuilt caches,
+- include interception, prebuilt caches,
 - traits, enums and interfaces as weaving targets.
 
 An advisor matching an unsupported join point kind on a class makes the first load of that class throw
@@ -102,8 +123,8 @@ woven. Narrow the pointcut to method execution, or run that application with the
 
 ## Differences from the stream driver
 
-- The woven class is the original class: no `FooOriginalTrait`, no proxy class, `Go\Aop\Proxy` is not implemented
-  and `get_class()`/`instanceof` see no difference at all.
+- The woven class is the original class: no `FooOriginalTrait`, no proxy class, `get_class()` sees no difference.
+  It does implement `Go\Aop\Proxy` (added at runtime), so `instanceof Proxy` works like with a generated proxy.
 - Reflection of an advised method reports the donor file as the file of its body (`getFileName()`,
   `getStartLine()`), since that is where the dispatcher was compiled; the class itself keeps its original file.
 - A private or final method whose body is a single literal may have been inlined by the opcache optimizer into its

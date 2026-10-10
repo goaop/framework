@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Go\Tests\TestProject\Aspect;
 
 use Go\Aop\Aspect;
+use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Attribute as Pointcut;
 
@@ -41,5 +42,13 @@ class ZEngineAspect implements Aspect
         self::$log[] = 'around greet got ' . get_debug_type($result);
 
         return strtoupper((string) $result);
+    }
+
+    #[Pointcut\Around("execution(Go\Tests\TestProject\Application\array_sum(*))")]
+    public function aroundArraySum(FunctionInvocation $invocation): mixed
+    {
+        self::$log[] = 'around array_sum with ' . json_encode($invocation->getArguments());
+
+        return $invocation->proceed();
     }
 }

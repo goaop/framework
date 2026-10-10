@@ -11,10 +11,12 @@ declare(strict_types = 1);
 
 include_once __DIR__ . '/../../../../vendor/autoload.php';
 
+use Go\Aop\Proxy;
 use Go\Core\AspectKernel;
 use Go\Instrument\ZEngine\ZEngineClassWeaver;
 use Go\Instrument\ZEngine\ZEngineDriver;
 use Go\Tests\TestProject\Application\ZEngineChild;
+use Go\Tests\TestProject\Application\ZEngineFunctions;
 use Go\Tests\TestProject\Application\ZEngineLate;
 use Go\Tests\TestProject\Application\ZEngineParent;
 use Go\Tests\TestProject\Application\ZEngineUnadvised;
@@ -83,6 +85,8 @@ try {
                 'parent.greet.file'    => basename((string) (new ReflectionMethod(ZEngineParent::class, 'greet'))->getFileName()),
                 'child.alias'          => method_exists($child, 'greetOriginalAlias'),
                 'parent.alias'         => method_exists($parent, 'greetOriginalAlias'),
+                'child.proxy'          => $child instanceof Proxy,
+                'unadvised.proxy'      => new ZEngineUnadvised() instanceof Proxy,
             ];
             $describeWeaving($kernel, ZEngineParent::class, ZEngineChild::class, ZEngineUnadvised::class);
             break;
@@ -95,6 +99,16 @@ try {
 
         case 'unsupported':
             $report['loaded'] = class_exists(ZEngineUnsupported::class);
+            break;
+
+        case 'functions':
+            $functions = new ZEngineFunctions();
+            $report['calls'] = [
+                'functions.total'          => $functions->total([1, 2, 3]),
+                'functions.totalQualified' => $functions->totalQualified([4, 5]),
+                'functions.proxied'        => function_exists('Go\\Tests\\TestProject\\Application\\array_sum'),
+            ];
+            $describeWeaving($kernel, ZEngineFunctions::class);
             break;
 
         default:

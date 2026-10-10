@@ -15,6 +15,7 @@ namespace Go\Instrument\ZEngine\InProcess;
 use Go\Aop\Exception\UnsupportedJoinpointException;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\BeforeInterceptor;
+use Go\Aop\Proxy;
 use Go\Aop\WeavingDriver;
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Core\AdviceMatcher;
@@ -30,6 +31,7 @@ use Go\Proxy\ClassProxyGenerator;
 use Go\Proxy\DonorClassGenerator;
 use Go\Stubs\ZEngine\InProcessAspect;
 use Go\Stubs\ZEngine\FallbackTarget;
+use Go\Stubs\ZEngine\FunctionTarget;
 use Go\Stubs\ZEngine\InProcessKernel;
 use Go\Stubs\ZEngine\LateTarget;
 use Go\Stubs\ZEngine\MatcherErrorAdvisor;
@@ -66,6 +68,7 @@ final class ZEngineClassWeaverInProcessTest extends ZEngineInProcessTestCase
         $this->assertSame(1, $target->getCalls(), 'The original body ran under its alias');
         $this->assertSame([WovenTarget::class . '::greet', WovenTarget::class . '::getCalls'], InProcessAspect::$log);
         $this->assertTrue(new ReflectionClass($target)->hasMethod('greetOriginalAlias'), 'The previous body is kept under the alias');
+        $this->assertContains(Proxy::class, class_implements($target), 'A woven class is marked like a generated proxy class');
 
         $result = $weaver->weave(WovenTarget::class);
         $this->assertSame(WeaveOutcome::AlreadyWoven, $result->outcome);
@@ -81,6 +84,7 @@ final class ZEngineClassWeaverInProcessTest extends ZEngineInProcessTestCase
 
         $this->assertSame('pong', (new UnadvisedTarget())->ping());
         $this->assertSame(WeaveOutcome::NoAdvices, $weaver->weave(UnadvisedTarget::class)->outcome);
+        $this->assertNotContains(Proxy::class, class_implements(new UnadvisedTarget()), 'An unadvised class is not marked');
         $this->assertSame(WeaveOutcome::Skipped, $weaver->weave('Go\Stubs\ZEngine\NeverLoaded')->outcome);
         $this->assertSame(WeaveOutcome::Skipped, $weaver->weave(\ArrayObject::class)->outcome, 'The result of the load above');
         $this->assertSame(WeaveOutcome::Skipped, $weaver->weave(\Countable::class)->outcome);
@@ -279,9 +283,11 @@ final class ZEngineClassWeaverInProcessTest extends ZEngineInProcessTestCase
         $donorFile = $index->donorFileFor($source, 'WarmTarget');
         $container->getService(CachePathManager::class)->getCacheFileWriter()->write($donorFile, "<?php\n" . $generator->generate());
         $index->recordDonor(WarmTarget::class, $source, $donorFile, $generator->getDonorClassName(), ['answer']);
+        // ... including the function-proxy record of the namespace, written by the same request
+        $index->recordFunctions('Go\\Stubs\\ZEngine', null, []);
         $index->flush();
 
-        // A weaver of a new request reads the index and applies the record: no aspect gets loaded for it
+        // A weaver of a new request reads the index and applies the records: no aspect gets loaded for it
         $weaver         = $this->weaverWithFreshIndex($kernel);
         $unloadedBefore = $container->getService(CachedAspectLoader::class)->getUnloadedAspects();
         $this->assertNotEmpty($unloadedBefore);
@@ -293,6 +299,43 @@ final class ZEngineClassWeaverInProcessTest extends ZEngineInProcessTestCase
         $this->assertSame(42, (new WarmTarget())->answer());
         $this->assertSame([WarmTarget::class . '::answer'], InProcessAspect::$log);
         $this->assertSame($unloadedBefore, $container->getService(CachedAspectLoader::class)->getUnloadedAspects(), 'The aspects stayed unloaded');
+    }
+
+    /**
+     * With INTERCEPT_FUNCTIONS the advised internal functions called from the stubs' namespace are shadowed by
+     * proxies declared right after the first class of the namespace is loaded; the proxies are declared once per
+     * process and the warm index serves them without the aspects
+     */
+    public function testFunctionsOfANamespaceAreProxiedWhenAClassOfItIsLoaded(): void
+    {
+        $kernel    = $this->bootKernel();
+        $container = $kernel->getContainer();
+        $weaver    = $container->getService(ZEngineClassWeaver::class);
+        $index     = $container->getService(DonorCacheIndex::class);
+        $this->assertFalse(class_exists(FunctionTarget::class, false), 'The stub must not be loaded by an earlier test');
+
+        $target = new FunctionTarget();
+
+        // The proxy was declared by the autoload of the class (or by an earlier kernel of this process)
+        $this->assertTrue(function_exists('Go\\Stubs\\ZEngine\\str_rot13'), 'The namespaced proxy shadows the internal function');
+        $this->assertSame('uryyb', $target->encode('hello'), 'The proxy reaches the original function');
+        $this->assertSame(['around str_rot13 with ["hello"]'], InProcessAspect::$log);
+        $this->assertSame('uryyb', $target->encodeQualified('hello'), 'A qualified call reaches the internal function directly');
+        $this->assertSame(['around str_rot13 with ["hello"]'], InProcessAspect::$log, 'The qualified call bypassed the proxy');
+
+        $proxyFile = $index->functionsFileFor('Go\\Stubs\\ZEngine');
+        $this->assertSame($proxyFile, $weaver->weaveFunctions('Go\\Stubs\\ZEngine', self::STUBS_DIR . '/FunctionTarget.php'));
+        $this->assertFileExists($proxyFile);
+        $this->assertStringContainsString('function str_rot13(', (string) file_get_contents($proxyFile));
+        $this->assertNull($weaver->weaveFunctions('', self::STUBS_DIR . '/FunctionTarget.php'), 'The global namespace cannot be proxied');
+        $this->assertNull($weaver->weaveFunctions('Go\\Stubs\\Unrelated', self::STUBS_DIR . '/FunctionTarget.php'), 'A namespace the file does not declare');
+        $this->assertSame($proxyFile, $weaver->weaveFunctions('Go\\Stubs\\ZEngine', $this->cacheDir . '/Outside.php'), 'Memoized per namespace and request');
+
+        // A warm request reads the record: the proxy file is reused, the functions stay declared
+        $index->flush();
+        $warm = $this->weaverWithFreshIndex($kernel);
+        $this->assertSame($proxyFile, $warm->weaveFunctions('Go\\Stubs\\ZEngine', self::STUBS_DIR . '/FunctionTarget.php'));
+        $this->assertSame('uryyb', $target->encode('hello'));
     }
 
     /**
@@ -309,6 +352,7 @@ final class ZEngineClassWeaverInProcessTest extends ZEngineInProcessTestCase
             $container->getService(CachePathManager::class),
             new DonorCacheIndex($container->getService(CachePathManager::class), $kernel->getOptions()),
             $container->getService(MethodTableRewriter::class),
+            (bool) $container->getValue('kernel.interceptFunctions'),
         );
     }
 

@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\ZEngine\InProcess;
 
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Features;
 use Go\Aop\WeavingDriver;
 use Go\Core\AspectKernel;
 use Go\Instrument\ZEngine\DonorCacheIndex;
@@ -109,6 +110,7 @@ abstract class ZEngineInProcessTestCase extends TestCase
                 'appDir'       => $appDir,
                 'cacheDir'     => $this->cacheDir,
                 'includePaths' => [$stubsDir],
+                'features'     => Features::INTERCEPT_FUNCTIONS,
             ]);
         } catch (InvalidConfigurationException $failure) {
             self::$engineUnavailableReason = 'The zengine driver cannot boot in this process: ' . $failure->getMessage();

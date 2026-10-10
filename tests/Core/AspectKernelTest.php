@@ -277,12 +277,25 @@ class AspectKernelTest extends TestCase
             $this->invokeProtected($kernel, 'normalizeOptions', [[
                 'cacheDir' => '/some/cache/dir',
                 'driver'   => WeavingDriver::ZEngine,
-                'features' => Features::INTERCEPT_FUNCTIONS,
+                'features' => Features::INTERCEPT_INITIALIZATIONS,
             ]]);
             self::fail('Stream-only features must be refused with the engine driver');
         } catch (InvalidConfigurationException $exception) {
             $this->assertStringContainsString('only available with the stream driver', $exception->getMessage());
         }
+    }
+
+    public function testNormalizeOptionsAcceptsFunctionInterceptionWithTheEngineDriver(): void
+    {
+        $kernel = $this->makeKernel();
+
+        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [[
+            'cacheDir' => '/some/cache/dir',
+            'driver'   => WeavingDriver::ZEngine,
+            'features' => Features::INTERCEPT_FUNCTIONS,
+        ]]);
+
+        $this->assertSame(Features::INTERCEPT_FUNCTIONS, $normalized['features']);
     }
 
     public function testNormalizeOptionsExcludesRuntimeDependenciesFromWeaving(): void

@@ -50,5 +50,7 @@ namespace ZEngine\Reflection {
         public function getMethod(string $name): ReflectionMethod {}
 
         public function addMethod(string $methodName, \Closure|FunctionLikeInterface $method): ReflectionMethod {}
+
+        public function addInterfaces(string ...$interfaceNames): void {}
     }
 }
