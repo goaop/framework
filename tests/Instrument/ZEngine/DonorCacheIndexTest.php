@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\ZEngine;
 
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\WeavingDriver;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -65,11 +66,11 @@ final class DonorCacheIndexTest extends TestCase
             $this->cacheDir . '/_zengine/Root__AopDonor.php',
             $index->donorFileFor($this->appDir . '/Root.php', 'Root'),
         );
-        // A source outside the application root keeps its absolute path below the donor directory
-        $this->assertSame(
-            $this->cacheDir . '/_zengine/' . ltrim($this->cacheDir, '/') . '/Outside__AopDonor.php',
-            $index->donorFileFor($this->cacheDir . '/Outside.php', 'Outside'),
-        );
+        // A source outside the application root is never woven, so it has no donor file
+        $this->assertTrue($index->isApplicationSource($this->source));
+        $this->assertFalse($index->isApplicationSource($this->cacheDir . '/Outside.php'));
+        $this->expectException(WeavingException::class);
+        $index->donorFileFor($this->cacheDir . '/Outside.php', 'Outside');
     }
 
     public function testRecordsSurviveAFlushAndAreServedWhileFresh(): void

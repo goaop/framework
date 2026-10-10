@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\ZEngine;
 
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\WeavingException;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
@@ -103,17 +104,30 @@ final class DonorCacheIndex
     }
 
     /**
-     * Returns the file the donor class of a source file is written to
+     * Whether a source file lies below the application root: only those are woven (like with the stream driver,
+     * whose cache mirrors the application tree), sources outside it are never touched
+     */
+    public function isApplicationSource(string $resource): bool
+    {
+        return PathResolver::isBelow($resource, $this->appDir);
+    }
+
+    /**
+     * Returns the file the donor class of a source file is written to:
+     * `{cacheDir}/_zengine/{path relative to appDir}/{Short}__AopDonor.php`
      *
-     * `{cacheDir}/_zengine/{path relative to appDir}/{Short}__AopDonor.php`; sources outside the application
-     * root keep their absolute path below the donor directory, like the stream driver's proxies
+     * @throws WeavingException For a source outside the application root, see {@see isApplicationSource()}
      */
     public function donorFileFor(string $resource, string $shortClassName): string
     {
         if ($this->cacheDir === null) {
             throw new InvalidConfigurationException('The donor index needs the `cacheDir` option to be configured');
         }
-        $relativePath = ltrim(PathResolver::rebase($resource, $this->appDir, '') ?? $resource, '/\\');
+        $relativePath = PathResolver::rebase($resource, $this->appDir, '');
+        if ($relativePath === null) {
+            throw new WeavingException(sprintf('The source %s lies outside the application root %s and is never woven', $resource, $this->appDir));
+        }
+        $relativePath = ltrim($relativePath, '/\\');
         $directory    = str_replace('\\', '/', dirname($relativePath));
 
         return $this->cacheDir . self::DONOR_DIRECTORY . '/'

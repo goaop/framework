@@ -144,6 +144,9 @@ final class ZEngineClassWeaver
         if ($native->isInterface() || $native->isTrait() || $native->isEnum()) {
             return WeaveResult::skipped('interfaces, traits and enums are not supported by the zengine driver');
         }
+        if (!$this->donorCache->isApplicationSource($file)) {
+            return WeaveResult::skipped('sources outside the application root are never woven');
+        }
 
         $record = $this->donorCache->findFresh($className, $file, $this->container);
         if ($record !== null) {
