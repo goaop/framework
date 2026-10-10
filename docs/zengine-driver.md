@@ -120,8 +120,15 @@ opcache is active, and the JIT guard report (`jitWasActive`, `previousMode`, `di
 
 ## Development
 
-`composer test:zengine` runs the `zengine` PHPUnit group (`tests/Functional/ZEngine/`), which is excluded from the
-default run: it boots the engine in PHP subprocesses (both opcache legs) and compares the driver with the stream
-driver on the same fixtures. The group self-skips where the engine cannot boot. `.github/workflows/zengine.yml` runs
-it on PHP 8.4 and 8.5 with the z-engine branch of each minor installed; the other workflows do not install z-engine
-(`phpstan/zengine-stubs.php` declares the API the driver uses, for the analysis without the package).
+`composer test:zengine` runs the `zengine` PHPUnit group, which is excluded from the default run and self-skips
+where the engine cannot boot:
+
+- `tests/Functional/ZEngine/` boots the engine in PHP subprocesses (both opcache legs) and compares the driver with
+  the stream driver on the same fixtures;
+- `tests/Instrument/ZEngine/InProcess/` boots z-engine inside the test runner and weaves the stubs of
+  `tests/Stubs/ZEngine` for real, which is what gives the driver code coverage (the coverage job of
+  `.github/workflows/phpunit.yml` installs z-engine and includes the group).
+
+`.github/workflows/zengine.yml` runs the group on PHP 8.4 and 8.5 with the z-engine branch of each minor installed;
+the other workflows do not install z-engine (`phpstan/zengine-stubs.php` declares the API the driver uses, for the
+analysis without the package).

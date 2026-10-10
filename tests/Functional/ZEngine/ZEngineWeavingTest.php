@@ -21,6 +21,7 @@ use Go\Tests\TestProject\Application\ZEngineUnadvised;
 use Go\Tests\TestProject\Aspect\ZEngineUnsupportedAspect;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use Go\Instrument\ZEngine\JitGuard;
 
 /**
  * The z-engine driver weaves the fixture project at runtime: same behaviour as the stream driver, donors cached
@@ -169,7 +170,7 @@ final class ZEngineWeavingTest extends ZEngineFunctionalTestCase
     {
         $report = $this->runProbe('zengine', 'weave', true, ['-d', 'opcache.jit=tracing', '-d', 'opcache.jit_buffer_size=64M']);
 
-        if (PHP_VERSION_ID >= 80500 && PHP_VERSION_ID < 80600) {
+        if (JitGuard::hasTracingJitBug()) {
             if (isset($report['exception'])) {
                 self::fail('The JIT must be switched off at runtime on PHP 8.5: ' . json_encode($report['exception']));
             }

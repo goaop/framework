@@ -77,6 +77,14 @@ final class JitGuardTest extends TestCase
         $this->assertSame([['opcache.jit', 'off']], $this->iniWrites);
     }
 
+    public function testKnowsWhichVersionsHaveTheTracingJitBug(): void
+    {
+        $this->assertFalse(JitGuard::hasTracingJitBug(self::PHP_84));
+        $this->assertTrue(JitGuard::hasTracingJitBug(80500));
+        $this->assertTrue(JitGuard::hasTracingJitBug(self::PHP_85));
+        $this->assertFalse(JitGuard::hasTracingJitBug(80600));
+    }
+
     public function testDefaultsDescribeTheRunningProcess(): void
     {
         $status = function_exists('opcache_get_status') ? opcache_get_status(false) : false;

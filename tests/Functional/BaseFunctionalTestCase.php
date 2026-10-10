@@ -24,6 +24,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
+use Go\Instrument\ZEngine\JitGuard;
 
 /**
  * Base class for functional tests.
@@ -176,7 +177,7 @@ abstract class BaseFunctionalTestCase extends TestCase
      */
     protected function getPhpOptions(): array
     {
-        if (PHP_VERSION_ID >= 80500 && PHP_VERSION_ID < 80600) {
+        if (JitGuard::hasTracingJitBug()) {
             return ['-d', 'opcache.jit=off', '-d', 'opcache.jit_buffer_size=0'];
         }
 

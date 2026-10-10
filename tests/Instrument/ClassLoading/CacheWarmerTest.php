@@ -29,6 +29,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\StreamOutput;
 use Go\Aop\WeavingDriver;
+use Go\Aop\Exception\InvalidConfigurationException;
 
 // Separate processes: warming up registers the process-wide source transforming
 // stream filter, which must not leak into the rest of the PHPUnit process
@@ -57,6 +58,31 @@ class CacheWarmerTest extends TestCase
     {
         self::removeTemporaryDirectory($this->cacheDir);
         self::removeTemporaryDirectory($this->appDir);
+    }
+
+    public function testRefusesAKernelOfTheEngineDriver(): void
+    {
+        $kernel = $this->createMock(AspectKernel::class);
+        $kernel->method('getOptions')->willReturn([
+            'debug'          => true,
+            'appDir'         => $this->appDir,
+            'cacheDir'       => $this->cacheDir,
+            'cacheFileMode'  => 0770,
+            'features'       => 0,
+            'includePaths'   => [],
+            'excludePaths'   => [],
+            'containerClass' => Container::class,
+            'driver'         => WeavingDriver::ZEngine,
+        ]);
+        $kernel->expects($this->never())->method('getContainer');
+
+        try {
+            (new CacheWarmer($kernel))->warmUp();
+            self::fail('The engine driver has nothing to warm up through the stream filter');
+        } catch (InvalidConfigurationException $refusal) {
+            $this->assertStringContainsString('zengine weaving driver', $refusal->getMessage());
+            $this->assertStringContainsString('stream filter', $refusal->getMessage());
+        }
     }
 
     /**

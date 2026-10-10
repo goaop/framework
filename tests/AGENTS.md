@@ -35,7 +35,10 @@
   tests/Fixtures/project/bin/zengine-weaving.php in subprocesses (`GO_AOP_CONFIGURATION=zengine*`, both opcache legs,
   `ZENGINE_AUTOBOOT=0`) and compares its JSON report with the stream driver on the same fixtures (`zengine_reference`);
   self-skips when z-engine is not installed or cannot boot. Fixtures: Application/ZEngine*, Aspect/ZEngineAspect,
-  Kernel/ZEngineAspectKernel. Unit tests of the driver: tests/Instrument/ZEngine/, tests/Proxy/DonorClassGeneratorTest.php
+  Kernel/ZEngineAspectKernel. Unit tests of the driver: tests/Instrument/ZEngine/, tests/Proxy/DonorClassGeneratorTest.php.
+  In-process tests (tests/Instrument/ZEngine/InProcess/, same group): boot z-engine INSIDE the runner and weave the stubs of
+  tests/Stubs/ZEngine for real (kernel created without the singleton, autoloaders restored, one stub class per test since a
+  woven class stays woven) - the only way the driver gets coverage; the coverage CI job installs z-engine and runs the group
 - If phpstan fails: fix errors before offering to commit
 
 ## PHPStan gate

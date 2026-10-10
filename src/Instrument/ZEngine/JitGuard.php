@@ -67,8 +67,7 @@ final class JitGuard
         }
         $report['jitWasActive'] = true;
 
-        $isPhp85 = $phpVersionId >= 80500 && $phpVersionId < 80600;
-        if (!$isPhp85) {
+        if (!self::hasTracingJitBug($phpVersionId)) {
             throw new InvalidConfigurationException(
                 'The zengine weaving driver requires the opcache JIT to be off: z-engine hooks the executor '
                 . 'internals the JIT bypasses. Start PHP with opcache.jit=off and opcache.jit_buffer_size=0 '
@@ -90,6 +89,16 @@ final class JitGuard
         $report['disabledAtRuntime'] = true;
 
         return $report;
+    }
+
+    /**
+     * Whether a PHP version has the tracing-JIT bug the guard works around at runtime (PHP 8.5)
+     *
+     * @param int $phpVersionId PHP_VERSION_ID of the version to check, the running one by default
+     */
+    public static function hasTracingJitBug(int $phpVersionId = PHP_VERSION_ID): bool
+    {
+        return $phpVersionId >= 80500 && $phpVersionId < 80600;
     }
 
     /**
