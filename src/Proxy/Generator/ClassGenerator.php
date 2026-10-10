@@ -17,6 +17,7 @@ use PhpParser\Comment\Doc;
 use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
+use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\Class_ as ClassNode;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Node\Stmt\TraitUseAdaptation;
@@ -221,6 +222,19 @@ final class ClassGenerator implements GeneratorInterface
             $stmts[] = self::getFactory()->namespace($this->namespace)->getNode();
         }
 
+        return self::getPrinter()->prettyPrint([...$stmts, ...$this->getStmts()]);
+    }
+
+    /**
+     * Returns the statements of the generated file below its namespace declaration: use statements and the class.
+     *
+     * Several generated declarations can be combined into one file by wrapping each one into its own namespace block.
+     *
+     * @return list<Stmt>
+     */
+    public function getStmts(): array
+    {
+        $stmts = [];
         foreach ($this->uses as $use => $alias) {
             $useBuilder = self::getFactory()->use($use);
             if ($alias !== null) {
@@ -228,10 +242,9 @@ final class ClassGenerator implements GeneratorInterface
             }
             $stmts[] = $useBuilder->getNode();
         }
-
         $stmts[] = $this->getNode();
 
-        return self::getPrinter()->prettyPrint($stmts);
+        return $stmts;
     }
 
     private static function getPrinter(): Standard

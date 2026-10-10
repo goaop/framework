@@ -28,4 +28,3 @@ trait TestClassWithArgumentAttributeOriginalTrait
         return 'else';
     }
 }
-include_once AOP_CACHE_DIR . '/Transformer/_files/php80-class-attribute.php';

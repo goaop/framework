@@ -20,9 +20,13 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\ParserReflection\Locator\CallableLocator;
+use Go\ParserReflection\LocatorInterface;
+use Go\ParserReflection\ReflectionEngine;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\MockObject\MockObject;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\PhpVersion;
 use Go\Instrument\Transformer\Stubs\MultiLinePropertiesClass;
 use Go\Instrument\Transformer\Stubs\TokenSurgeryClass;
 use Go\PhpUnit\AssertsCompilablePhp;
@@ -91,7 +95,8 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
-     * It's a caution check that multiple namespaces are not yet supported
+     * Classes declared in several namespaces of one file share one proxy file (issue #760): every proxy keeps its
+     * namespace in a braced block of its own, the file is included once, in the block of the first class
      */
     public function testMultipleNamespacesInOneFile(): void
     {
@@ -101,6 +106,253 @@ class WeavingTransformerTest extends TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-ns-woven')->source);
         $this->assertEquals($expected, $actual);
+
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('multiple-ns-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
+    }
+
+    /**
+     * A combined proxy file keeps the static initialization call of a proxy inside the namespace block of the proxy
+     */
+    public function testCombinedProxyFileKeepsStaticInitializationInNamespaceBlockOfProxy(): void
+    {
+        $advice      = new BeforeInterceptor(static function (): void {});
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX      => ['test' => ['advisor.test' => $advice]],
+            AspectContainer::STATIC_INIT_PREFIX => ['root' => ['advisor.static' => $advice]],
+        ]);
+        $metadata = $this->loadTestMetadata('multiple-ns');
+        $transformer->transform($metadata);
+
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $this->assertStringContainsString("\n    TestClass1::__staticInitialization();\n}\n\nnamespace Test\\ns2 {", $proxyContent);
+        $this->assertStringEndsWith("\n    TestClass2::__staticInitialization();\n}", $proxyContent);
+        $this->assertPhpCompiles($proxyContent);
+    }
+
+    /**
+     * Interfaces, enums, classes extending a class of the file and the global namespace in one file: unwoven
+     * class-likes stay untouched, the proxy file is included once after the last class-like whose proxy depends on
+     * its position (MixedChild extends the unwoven MixedPlain), the global namespace gets a `namespace {}` block
+     */
+    public function testClassLikesOfMixedKindsShareOneProxyFile(): void
+    {
+        $metadata = $this->transformWithInFileReflection('multiple-mixed');
+
+        $actual   = $this->normalizeWhitespaces($metadata->source);
+        $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-mixed-woven')->source);
+        $this->assertEquals($expected, $actual);
+        $this->assertPhpCompiles($metadata->source);
+
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('multiple-mixed-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
+    }
+
+    /**
+     * The woven file of mixed class-likes loads: the trait of a woven class-like without trait uses is declared at
+     * compile time, so proxies of class-likes declared after the include point find their trait
+     */
+    public function testWovenFileOfMixedClassLikesLoadsAtRuntime(): void
+    {
+        $metadata = $this->transformWithInFileReflection('multiple-mixed');
+        $this->includeWovenFile($metadata, 'runtime-mixed');
+
+        $this->assertTrue(class_exists('Test\mixed\MixedFirst', false));
+        $this->assertTrue(class_exists('Test\mixed\MixedChild', false));
+        $this->assertTrue(class_exists('MixedGlobal', false));
+        $this->assertTrue(is_subclass_of('Test\mixed\MixedChild', 'Test\mixed\MixedPlain'));
+        $this->assertTrue(is_subclass_of('Test\mixed\MixedFirst', 'Test\mixed\MixedContract'));
+        $this->assertTrue(enum_exists('Test\mixed\MixedSuit', false));
+        $hearts = constant('Test\mixed\MixedSuit::Hearts');
+        $this->assertInstanceOf(\BackedEnum::class, $hearts);
+        $this->assertSame('H', $hearts->value);
+    }
+
+    /**
+     * Classes of a file without a namespace declaration get one `namespace {}` block per proxy
+     */
+    public function testClassesWithoutNamespaceShareOneProxyFile(): void
+    {
+        $metadata = $this->loadTestMetadata('multiple-global');
+        $this->transformer->transform($metadata);
+
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('multiple-global-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
+
+        // The include follows the first class, before the code of the file
+        $includeOffset = strpos($metadata->source, 'include_once AOP_CACHE_DIR');
+        $this->assertIsInt($includeOffset);
+        $this->assertGreaterThan(strpos($metadata->source, 'trait GlobalMultiFirstOriginalTrait'), $includeOffset);
+        $this->assertLessThan(strpos($metadata->source, '$globalMultiName'), $includeOffset);
+
+        $this->includeWovenFile($metadata, 'runtime-global');
+        $this->assertTrue(class_exists('GlobalMultiFirst', false));
+        $this->assertTrue(class_exists('GlobalMultiSecond', false));
+    }
+
+    /**
+     * Two woven traits of one file: both child trait proxies share the proxy file
+     */
+    public function testTraitsShareOneProxyFile(): void
+    {
+        $metadata = $this->loadTestMetadata('multiple-traits');
+        $this->transformer->transform($metadata);
+
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('multiple-traits-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
+
+        $this->includeWovenFile($metadata, 'runtime-traits');
+        $this->assertTrue(trait_exists('Test\traits\FirstMultiTrait', false));
+        $this->assertTrue(trait_exists('Test\traits\SecondMultiTrait', false));
+        // Each proxy trait composes its own original trait
+        $proxyTraits = array_values(array_filter(
+            get_declared_traits(),
+            static fn(string $trait): bool => str_starts_with($trait, 'Test\traits\\') && !str_ends_with($trait, 'OriginalTrait'),
+        ));
+        $this->assertCount(2, $proxyTraits);
+        foreach ($proxyTraits as $proxyTrait) {
+            $this->assertSame([$proxyTrait . 'OriginalTrait'], (new \ReflectionClass($proxyTrait))->getTraitNames());
+        }
+    }
+
+    /**
+     * A proxy extending another proxy of the file follows it in the proxy file, even when the source declares the
+     * child first
+     */
+    public function testProxyOfParentDeclaredInSameFileComesFirst(): void
+    {
+        $metadata = $this->transformWithInFileReflection('multiple-parent-after-child');
+
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $parentOffset = strpos($proxyContent, 'class SortParent');
+        $childOffset  = strpos($proxyContent, 'class SortChild extends \\Test\\sort\\SortParent');
+        $this->assertIsInt($parentOffset);
+        $this->assertIsInt($childOffset);
+        $this->assertLessThan($childOffset, $parentOffset);
+        $this->assertPhpCompiles($proxyContent);
+    }
+
+    /**
+     * With several woven class-likes the proxy file is included after the last one whose proxy depends on its
+     * position. Code before that point needing a woven class-like is rejected with an actionable message instead
+     * of failing with "Class not found" when the file is loaded
+     */
+    public function testCodeNeedingWovenClassBeforeProxyFileIncludeIsRejected(): void
+    {
+        try {
+            $this->transformWithInFileReflection('multiple-gap', [
+                'Test\gap\GapFirst'  => ['hello'],
+                'Test\gap\GapTrait'  => ['traitHello'],
+                'Test\gap\GapSecond' => ['hello'],
+            ]);
+            $this->fail('Code using a woven class before the include of the proxy file must be rejected');
+        } catch (WeavingException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('_files/multiple-gap.php', str_replace('\\', '/', $message));
+            $this->assertStringContainsString('Test\gap\GapFirst, Test\gap\GapTrait, Test\gap\GapSecond', $message);
+            $this->assertStringContainsString('included after Test\gap\GapSecond (line 47)', $message);
+            $this->assertStringContainsString('the statement on line 18 uses Test\gap\GapFirst', $message);
+            $this->assertStringContainsString('Test\gap\GapChild (line 20) needs Test\gap\GapFirst', $message);
+            // A class declared by a top-level statement is declared when the statement runs
+            $this->assertStringContainsString('the statement on line 24 uses Test\gap\GapFirst', $message);
+            $this->assertStringContainsString('Test\gap\GapSecond (line 38) needs Test\gap\GapTrait', $message);
+            $this->assertStringContainsString('exclude the class-likes from the pointcut', $message);
+        }
+    }
+
+    /**
+     * References that do not load a class (instanceof, ::class, type declarations) and code running later (function
+     * and arrow function bodies) may use woven class-likes before the include of the proxy file
+     */
+    public function testCodeNotLoadingWovenClassBeforeProxyFileIncludeIsAccepted(): void
+    {
+        $metadata = $this->transformWithInFileReflection('multiple-no-gap');
+
+        $source = $metadata->source;
+        $this->getSingleIncludedProxy($source);
+        $includeOffset = strpos($source, 'include_once AOP_CACHE_DIR');
+        $secondOffset  = strpos($source, 'trait NoGapSecondOriginalTrait');
+        $usageOffset   = strpos($source, '$first  = new NoGapFirst();');
+        $this->assertIsInt($includeOffset);
+        $this->assertIsInt($secondOffset);
+        $this->assertIsInt($usageOffset);
+        $this->assertGreaterThan($secondOffset, $includeOffset);
+        $this->assertLessThan($usageOffset, $includeOffset);
+        $this->assertPhpCompiles($source);
+    }
+
+    /**
+     * The proxy file of a single woven class is byte-identical to the one generated before proxies were combined
+     */
+    public function testSingleClassProxyIsByteIdentical(): void
+    {
+        foreach (['class' => 'class-proxy', 'php81-enum' => 'php81-enum-proxy'] as $fixture => $expectedProxy) {
+            $metadata = $this->loadTestMetadata($fixture);
+            $this->transformer->transform($metadata);
+
+            $this->assertSame(
+                $this->loadExactProxySnapshot($expectedProxy),
+                $this->getSingleIncludedProxy($metadata->source),
+            );
+        }
+    }
+
+    public function testSingleClassProxyWithStaticInitializationIsByteIdentical(): void
+    {
+        $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+        $adviceMatcher
+            ->method('getAdvicesForClass')
+            ->willReturnCallback(static function (ReflectionClass $refClass): array {
+                $methodAdvices = [];
+                foreach ($refClass->getMethods() as $method) {
+                    $advisorId = "advisor.{$refClass->name}->{$method->name}";
+                    $methodAdvices[$method->name][$advisorId] = new BeforeInterceptor(static function (): void {});
+                }
+                $staticAdvisorId = "advisor.{$refClass->name}->static";
+
+                return [
+                    AspectContainer::METHOD_PREFIX      => $methodAdvices,
+                    AspectContainer::STATIC_INIT_PREFIX => ['root' => [$staticAdvisorId => new BeforeInterceptor(static function (): void {})]],
+                ];
+            });
+        $adviceMatcher->method('getAdvicesForFunctions')->willReturn([]);
+        $metadata = $this->loadTestMetadata('class');
+        $this->createTransformer($adviceMatcher)->transform($metadata);
+
+        $this->assertSame(
+            $this->loadExactProxySnapshot('class-static-init-proxy'),
+            $this->getSingleIncludedProxy($metadata->source),
+        );
+    }
+
+    /**
+     * Returns a byte-exact proxy snapshot (stored with LF line endings) as the weaver writes it on this platform: the
+     * `<?php` and `declare(strict_types=1);` header lines end with PHP_EOL, the generated code with "\n"
+     */
+    private function loadExactProxySnapshot(string $name): string
+    {
+        $snapshot = file_get_contents(__DIR__ . '/_files/' . $name . '.php');
+        $header   = "<?php\ndeclare(strict_types=1);\n";
+        $this->assertIsString($snapshot);
+        $this->assertStringStartsWith($header, $snapshot);
+
+        return '<?php' . PHP_EOL . 'declare(strict_types=1);' . PHP_EOL . substr($snapshot, strlen($header));
     }
 
     /**
@@ -867,10 +1119,8 @@ class WeavingTransformerTest extends TestCase
         // The compatible part of the grouped attribute must survive
         $this->assertStringContainsString('#[\FakeMarkerAttr]', $actual);
 
-        // The proxy (last class in the file wins the shared cache path) must keep #[\Attribute(...)]
-        $matches = [];
-        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
-        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        // The proxy file holds the proxies of all three classes, TestCustomAttribute keeps #[\Attribute(...)]
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
         $this->assertStringContainsString(
             '#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]',
             $proxyContent,
@@ -1579,6 +1829,113 @@ class WeavingTransformerTest extends TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-classes-woven')->source);
         $this->assertEquals($expected, $actual);
+
+        // All proxies of the file live in one proxy file (issue #760), each in a namespace block of its own
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $this->assertEquals(
+            $this->normalizeWhitespaces($this->loadTestMetadata('multiple-classes-proxy')->source),
+            $this->normalizeWhitespaces($proxyContent),
+        );
+        $this->assertPhpCompiles($proxyContent);
+    }
+
+    /**
+     * Includes the woven source with its proxy file from the virtual file system: the include stays in place, only
+     * the cache directory constant is replaced
+     */
+    private function includeWovenFile(StreamMetaData $metadata, string $directoryName): void
+    {
+        $proxyContent = $this->getSingleIncludedProxy($metadata->source);
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR \\. ('[^']+')/", $metadata->source, $matches));
+
+        $runtimeDir = static::$fileSystem->path('/' . $directoryName);
+        if (!is_dir($runtimeDir)) {
+            mkdir($runtimeDir, 0777, true);
+        }
+        $wovenFile = $runtimeDir . '/woven.php';
+        $proxyFile = $runtimeDir . '/proxy.php';
+        try {
+            file_put_contents($wovenFile, str_replace("AOP_CACHE_DIR . {$matches[1]}", var_export($proxyFile, true), $metadata->source));
+            file_put_contents($proxyFile, $proxyContent);
+            include $wovenFile;
+        } finally {
+            unlink($wovenFile);
+            unlink($proxyFile);
+        }
+    }
+
+    /**
+     * Asserts that the woven source includes exactly one proxy file and returns its content
+     */
+    private function getSingleIncludedProxy(string $wovenSource): string
+    {
+        $this->assertSame(1, substr_count($wovenSource, 'AOP_CACHE_DIR'), 'The proxy file must be included once');
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $wovenSource, $matches));
+        $proxyContent = file_get_contents('vfs://' . $matches[1]);
+        $this->assertIsString($proxyContent);
+
+        return $proxyContent;
+    }
+
+    /**
+     * Weaves a fixture whose classes extend, implement or use class-likes declared in the same fixture: the fixture
+     * is not autoloadable, so parser-reflection locates them in the fixture while it is woven
+     *
+     * @param array<string, list<string>>|null $advisedMethods Advised methods by class name, null advises every method
+     */
+    private function transformWithInFileReflection(string $name, ?array $advisedMethods = null): StreamMetaData
+    {
+        $fixtureFile = __DIR__ . '/_files/' . $name . '.php';
+        // The engine has no getters: the current locator and grammar are read to wrap and restore them
+        $previousLocator = (new \ReflectionProperty(ReflectionEngine::class, 'locator'))->getValue();
+        $phpVersion      = (new \ReflectionProperty(ReflectionEngine::class, 'phpVersion'))->getValue();
+        assert($previousLocator instanceof LocatorInterface);
+        assert($phpVersion === null || $phpVersion instanceof PhpVersion);
+        ReflectionEngine::init(
+            new CallableLocator(
+                static function (string $className) use ($previousLocator, $fixtureFile): string {
+                    $classFile = $previousLocator->locateClass($className);
+
+                    return $classFile !== false ? $classFile : $fixtureFile;
+                },
+            ),
+            $phpVersion,
+        );
+        try {
+            $transformer = $this->transformer;
+            if ($advisedMethods !== null) {
+                $adviceMatcher = $this->createMock(AdviceMatcherInterface::class);
+                $adviceMatcher
+                    ->method('getAdvicesForClass')
+                    ->willReturnCallback(static function (ReflectionClass $refClass) use ($advisedMethods): array {
+                        $advices = [];
+                        foreach ($advisedMethods[$refClass->name] ?? [] as $methodName) {
+                            $advisorId = "advisor.{$refClass->name}->{$methodName}";
+                            $advices[AspectContainer::METHOD_PREFIX][$methodName][$advisorId] = new BeforeInterceptor(static function (): void {});
+                        }
+
+                        return $advices;
+                    });
+                $adviceMatcher->method('getAdvicesForFunctions')->willReturn([]);
+                $transformer = $this->createTransformer($adviceMatcher);
+            }
+            $metadata = $this->loadTestMetadata($name);
+            $transformer->transform($metadata);
+
+            return $metadata;
+        } finally {
+            ReflectionEngine::init($previousLocator, $phpVersion);
+        }
+    }
+
+    private function createTransformer(AdviceMatcherInterface $adviceMatcher): WeavingTransformer
+    {
+        $loader = $this
+            ->getMockBuilder(AspectLoader::class)
+            ->setConstructorArgs([$this->getContainerMock()])
+            ->getMock();
+
+        return new WeavingTransformer($this->kernel, $adviceMatcher, $this->cachePathManager, $loader);
     }
 
     /**

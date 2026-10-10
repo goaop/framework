@@ -15,6 +15,7 @@ use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use Go\Tests\TestProject\Aspect\InitializationAspect;
 use Go\Tests\TestProject\Aspect\Issue293Aspect;
 use Go\Tests\TestProject\Aspect\LoggingAspect;
+use Go\Tests\TestProject\Aspect\MultiClassAspect;
 use Go\Tests\TestProject\Aspect\NullablePropertyInterceptAspect;
 use Go\Tests\TestProject\Aspect\PromotedPropertyInterceptAspect;
 use Go\Tests\TestProject\Aspect\PropertyInterceptAspect;
@@ -44,5 +45,6 @@ class DefaultAspectKernel extends AspectKernel
         $container->addLazyService(AlphaCollisionAspect::class, fn(): AlphaCollisionAspect => new AlphaCollisionAspect());
         $container->addLazyService(BetaCollisionAspect::class, fn(): BetaCollisionAspect => new BetaCollisionAspect());
         $container->addLazyService(EdgeCaseAspect::class, fn(): EdgeCaseAspect => new EdgeCaseAspect());
+        $container->addLazyService(MultiClassAspect::class, fn(): MultiClassAspect => new MultiClassAspect());
     }
 }

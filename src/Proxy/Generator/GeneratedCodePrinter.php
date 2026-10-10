@@ -15,6 +15,7 @@ namespace Go\Proxy\Generator;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
+use PhpParser\PhpVersion;
 use PhpParser\PrettyPrinter\Standard;
 
 /**
@@ -36,6 +37,35 @@ class GeneratedCodePrinter extends Standard
      * Factory methods of the Interceptor facade: their calls form an interceptor list
      */
     private const array INTERCEPTOR_METHODS = ['before', 'after', 'around', 'afterThrowing'];
+
+    /**
+     * Whether namespaces are always printed as braced blocks (`namespace X { ... }`)
+     */
+    private readonly bool $bracedNamespaces;
+
+    /**
+     * Accepts the options of the standard printer plus `bracedNamespaces`: print every namespace as a braced
+     * block, so a file combining several namespace blocks stays valid when one of them is the global namespace
+     *
+     * @param array{
+     *     phpVersion?: PhpVersion, newline?: string, indent?: string, shortArraySyntax?: bool,
+     *     bracedNamespaces?: bool
+     * } $options
+     */
+    public function __construct(array $options = [])
+    {
+        $this->bracedNamespaces = $options['bracedNamespaces'] ?? false;
+        unset($options['bracedNamespaces']);
+        parent::__construct($options);
+    }
+
+    protected function preprocessNodes(array $nodes): void
+    {
+        parent::preprocessNodes($nodes);
+        if ($this->bracedNamespaces) {
+            $this->canUseSemicolonNamespaces = false;
+        }
+    }
 
     protected function pExpr_Array(Expr\Array_ $node): string
     {

@@ -15,6 +15,7 @@ namespace Go\Proxy\Generator;
 use PhpParser\BuilderFactory;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Name;
+use PhpParser\Node\Stmt;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Property as PropertyNode;
 use PhpParser\Node\Stmt\Trait_ as TraitNode;
@@ -158,6 +159,19 @@ final class TraitGenerator implements GeneratorInterface
             $stmts[] = self::getFactory()->namespace($this->namespace)->getNode();
         }
 
+        return self::getPrinter()->prettyPrint([...$stmts, ...$this->getStmts()]);
+    }
+
+    /**
+     * Returns the statements of the generated file below its namespace declaration: use statements and the trait.
+     *
+     * Several generated declarations can be combined into one file by wrapping each one into its own namespace block.
+     *
+     * @return list<Stmt>
+     */
+    public function getStmts(): array
+    {
+        $stmts = [];
         foreach ($this->uses as $use => $alias) {
             $useBuilder = self::getFactory()->use($use);
             if ($alias !== null) {
@@ -165,10 +179,9 @@ final class TraitGenerator implements GeneratorInterface
             }
             $stmts[] = $useBuilder->getNode();
         }
-
         $stmts[] = $this->getNode();
 
-        return self::getPrinter()->prettyPrint($stmts);
+        return $stmts;
     }
 
     private static function getPrinter(): Standard
