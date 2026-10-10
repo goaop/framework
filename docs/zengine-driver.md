@@ -19,7 +19,7 @@ join-point API. An aspect written for one driver runs unchanged on the other, wi
   ```bash
   composer config repositories.zengine vcs https://github.com/lisachenko/z-engine
   composer require lisachenko/z-engine:dev-feature/redefine-preserve-alias-8.4   # PHP 8.4
-  composer require lisachenko/z-engine:dev-8.5                                   # PHP 8.5
+  composer require lisachenko/z-engine:8.5.x-dev                                 # PHP 8.5
   ```
 
   The `redefine(..., preserveAs:)` API the driver is built against is merged into `8.5`; until it reaches the

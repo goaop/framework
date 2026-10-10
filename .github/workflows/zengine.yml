@@ -29,7 +29,7 @@ jobs:
           - php-version: "8.4"
             zengine-branch: "dev-feature/redefine-preserve-alias-8.4"
           - php-version: "8.5"
-            zengine-branch: "dev-8.5"
+            zengine-branch: "8.5.x-dev"
     env:
       ZENGINE_BRANCH: ${{ matrix.zengine-branch }}
     steps:
