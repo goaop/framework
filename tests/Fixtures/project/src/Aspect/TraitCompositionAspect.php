@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Go\Tests\TestProject\Aspect;
 
 use Go\Aop\Aspect;
+use Go\Aop\Intercept\MethodInvocation;
 use Go\Lang\Attribute as Pointcut;
 
 /**
@@ -27,4 +28,21 @@ class TraitCompositionAspect implements Aspect
      */
     #[Pointcut\After("execution(private|protected Go\Tests\TestProject\Application\ClassWithPrivateMethods->*(*))")]
     public function afterNonPublicMethod(): void {}
+
+    /**
+     * Intercepts the own methods of Issue761Child only: its trait method with #[\Override] can not be
+     * intercepted (issue #761), `!matchInherited()` excludes the methods imported from traits.
+     */
+    #[Pointcut\After("execution(public Go\Tests\TestProject\Application\Issue761Child->*(*)) && !matchInherited()")]
+    public function afterIssue761OwnMethod(): void {}
+
+    /**
+     * Intercepts the own #[\Override] method of a woven trait (issue #761): the result is prefixed, so a functional
+     * test sees that the advice runs in the class using the trait.
+     */
+    #[Pointcut\Around("execution(public Go\Tests\TestProject\Application\Issue761WovenOverrideTrait->hello(*))")]
+    public function aroundIssue761WovenTraitMethod(MethodInvocation $invocation): mixed
+    {
+        return 'advised:' . $invocation->proceed();
+    }
 }
