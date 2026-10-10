@@ -21,6 +21,12 @@
         ratios from growing.
       -->
       <group>transformation-performance</group>
+      <!--
+        Functional tests of the z-engine weaving driver (tests/Functional/ZEngine/), excluded from the default run:
+        they need lisachenko/z-engine (the branch of the running PHP minor), ext-ffi and the JIT off, and boot the
+        engine in PHP subprocesses. Run `composer test:zengine`; the group self-skips where the engine cannot boot.
+      -->
+      <group>zengine</group>
     </exclude>
   </groups>
   <source>

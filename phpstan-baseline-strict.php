@@ -296,6 +296,12 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/src/Proxy/TraitProxyGenerator.php',
 ];
 $ignoreErrors[] = [
+	'message' => '#^Go\\\\Proxy\\\\DonorClassGenerator\\:\\:__construct\\(\\) does not call parent constructor from Go\\\\Proxy\\\\ClassProxyGenerator\\.$#',
+	'identifier' => 'constructor.missingParentCall',
+	'count' => 1,
+	'path' => __DIR__ . '/src/Proxy/DonorClassGenerator.php',
+];
+$ignoreErrors[] = [
 	'message' => '#^Go\\\\Proxy\\\\TraitProxyGenerator\\:\\:__construct\\(\\) does not call parent constructor from Go\\\\Proxy\\\\ClassProxyGenerator\\.$#',
 	'identifier' => 'constructor.missingParentCall',
 	'count' => 1,

@@ -28,6 +28,7 @@ use RuntimeException;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\StreamOutput;
+use Go\Aop\WeavingDriver;
 
 // Separate processes: warming up registers the process-wide source transforming
 // stream filter, which must not leak into the rest of the PHPUnit process
@@ -84,6 +85,7 @@ class CacheWarmerTest extends TestCase
             'includePaths'   => $includePaths,
             'excludePaths'   => $excludePaths,
             'containerClass' => Container::class,
+            'driver'         => WeavingDriver::Stream,
         ]);
 
         $container = $this->createMock(AspectContainer::class);

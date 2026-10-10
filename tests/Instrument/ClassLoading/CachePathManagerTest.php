@@ -15,6 +15,7 @@ namespace Go\Instrument\ClassLoading;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Features;
+use Go\Aop\WeavingDriver;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
@@ -57,6 +58,7 @@ class CachePathManagerTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'driver'         => WeavingDriver::Stream,
         ]);
         $kernel->method('hasFeature')->willReturn($prebuiltCache);
 
@@ -307,5 +309,49 @@ class CachePathManagerTest extends TestCase
         $container->method('isFreshSince')->willReturn($isFresh);
 
         return $container;
+    }
+
+    public function testIsFreshRecordIsTheSharedFreshnessRule(): void
+    {
+        $resource = self::$appDir . '/Fresh.php';
+        file_put_contents($resource, '<?php');
+        $record = ['filemtime' => filemtime($resource), 'filesize' => filesize($resource), 'cachedAt' => time()];
+
+        $manager = $this->createManager();
+        $this->assertTrue($manager->isFreshRecord($record, $resource, $this->createContainer(true)));
+        $this->assertFalse($manager->isFreshRecord($record, $resource, $this->createContainer(false)), 'A newer tracked resource');
+        $this->assertFalse($manager->isFreshRecord(['filesize' => 0] + $record, $resource, $this->createContainer(true)), 'Another size');
+        $this->assertFalse($manager->isFreshRecord(['filemtime' => 1] + $record, $resource, $this->createContainer(true)), 'Another mtime');
+        $this->assertFalse($manager->isFreshRecord(['cacheUri' => 5] + $record, $resource, $this->createContainer(true)), 'A broken cache URI');
+        // With a prebuilt cache a record is trusted as is
+        $this->assertTrue($this->createManager(true)->isFreshRecord(['filemtime' => 1] + $record, $resource, $this->createContainer(false)));
+    }
+
+    public function testWriteIndexFileWritesALoadableIndexNextToTheTransformationMetadata(): void
+    {
+        $this->createManager()->writeIndexFile('/_other.cache', ['version' => 7, 'classes' => ['App\\Foo' => ['donor' => self::$cacheDir . '/donor.php']]]);
+
+        $indexFile = self::$cacheDir . '/_other.cache';
+        $this->assertFileExists($indexFile);
+        $this->assertSame(
+            ['version' => 7, 'classes' => ['App\\Foo' => ['donor' => self::$cacheDir . '/donor.php']]],
+            include $indexFile,
+        );
+        $this->assertStringContainsString('__DIR__', (string) file_get_contents($indexFile), 'Cache paths are written portably');
+
+        $kernel = $this->createMock(AspectKernel::class);
+        $kernel->method('getOptions')->willReturn([
+            'debug'          => false,
+            'appDir'         => self::$appDir,
+            'cacheDir'       => null,
+            'cacheFileMode'  => 0770,
+            'features'       => 0,
+            'includePaths'   => [],
+            'excludePaths'   => [],
+            'containerClass' => Container::class,
+            'driver'         => WeavingDriver::Stream,
+        ]);
+        $this->expectException(InvalidConfigurationException::class);
+        (new CachePathManager($kernel))->writeIndexFile('/_other.cache', []);
     }
 }

@@ -7,6 +7,14 @@
 4. Caching lives in SourceTransformingLoader::filter() — cache hit → cached content emitted as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → write cache
 5. Freshness rule lives in one place: CachePathManager::queryFreshCacheState() (record filemtime/filesize, container isFreshSince(cachedAt); PREBUILT_CACHE trusts records), used by the filter and the debug autoloader
 
+## zengine driver (src/Instrument/ZEngine/, `'driver' => 'zengine'`)
+Runtime weaving through lisachenko/z-engine (FFI) in place of steps 2-4 above; AspectKernel::init() branches on the driver. ZEngineDriver::boot(): requires z-engine (class_exists Core), JitGuard::enforce() (JIT must be off; PHP 8.5: ini_set('opcache.jit','off') at runtime, reported), Core::init(), registers DonorCacheIndex / MethodTableRewriter / ZEngineClassWeaver as lazy services, ZEngineComposerLoader::init() (wraps composer's loader, unwrapping either driver's wrapper: ComposerLoaderDecorator).
+- ZEngineComposerLoader::loadClass(): include the original file natively, then ZEngineClassWeaver::weaveLoadedClass() when the path filter allows (the subclass that triggered the autoload links against the already woven parent).
+- ZEngineClassWeaver: once per class per request (failures remembered and rethrown); DonorCacheIndex::findFresh() → warm: include donor + rewire; miss: load aspects, AdviceMatcher on the parsed source (ReflectionFile, native fallback), refuse non-method kinds (UnsupportedJoinpointException::forClass), DonorClassGenerator → `{cacheDir}/_zengine/<path>/<Short>__AopDonor.php`, record. `weave($class)` is the public entry for classes declared before the kernel.
+- MethodTableRewriter: own method → `$class->getMethod($m)->redefine($donorMethod, preserveAs: $m . 'OriginalAlias')`; inherited → `$class->addMethod($m, $donorMethod)`; EngineClass::fromClassTable() re-resolved per method (opcache copy-out repoints the bucket); z-engine refusals → UnsupportedJoinpointException::engineRefusal().
+- DonorCacheIndex: `{cacheDir}/_zengine.cache` (version, classes: source/filemtime/filesize/cachedAt/donor/donorClass/methods), freshness = CachePathManager::isFreshRecord() (the one shared rule), written via CachePathManager::writeIndexFile(), flushed at destruct. Separate from _transformation.cache on purpose (a record without cacheUri means "serve natively" to the stream driver).
+- Stream-only: Features::INTERCEPT_* and PREBUILT_CACHE (refused in normalizeOptions), CacheWarmer/debug:weaving (refused), property/introduction/init join points.
+
 ## Transformer chain (order matters)
 Applied per loaded file. Each returns TransformerResult: Transformed|Abstain|Aborted (skips the rest of the chain, reverts to the original source, recorded as untransformed).
 

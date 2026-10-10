@@ -11,6 +11,10 @@ parameters:
     - demos
     - src
     - tests
+  # lisachenko/z-engine is an optional dependency (installed only on the PHP minor its branch targets): the API the
+  # zengine weaving driver uses is declared in this file for the analysis of a host without the package
+  scanFiles:
+    - phpstan/zengine-stubs.php
   strictRules:
     # PHPUnit's assertions are static methods that are idiomatically called as $this->assert*()
     dynamicCallOnStaticMethod: false

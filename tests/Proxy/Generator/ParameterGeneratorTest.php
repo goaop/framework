@@ -202,4 +202,19 @@ class ParameterGeneratorTest extends TestCase
         }
         return null;
     }
+
+    public function testWithTypeKeepsEverythingButTheType(): void
+    {
+        $function  = new ReflectionFunction(static function (int &$count = 5, string ...$names): void {});
+        $generator = ParameterGenerator::fromReflection($function->getParameters()[0]);
+
+        $retyped = $generator->withType(TypeGenerator::fromTypeString('?int'));
+
+        $this->assertSame('?int &$count = 5', $retyped->generate());
+        $this->assertSame('int &$count = 5', $generator->generate(), 'The original parameter is untouched');
+        $this->assertSame('&$count = 5', $generator->withType(null)->generate());
+
+        $variadic = ParameterGenerator::fromReflection($function->getParameters()[1])->withType(TypeGenerator::fromTypeString('\\Stringable'));
+        $this->assertSame('\\Stringable ...$names', $variadic->generate());
+    }
 }

@@ -169,6 +169,24 @@ final class MethodGenerator
     }
 
     /**
+     * @return list<ParameterGenerator>
+     */
+    public function getParameters(): array
+    {
+        return array_values($this->parameters);
+    }
+
+    /**
+     * Replaces the parameter list
+     *
+     * @param list<ParameterGenerator> $parameters
+     */
+    public function setParameters(array $parameters): void
+    {
+        $this->parameters = $parameters;
+    }
+
+    /**
      * Returns the underlying AST ClassMethod node, ready for injection into a class.
      */
     public function getNode(): ClassMethod

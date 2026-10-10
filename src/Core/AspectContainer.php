@@ -71,6 +71,12 @@ interface AspectContainer
     public const string ORIGINAL_TRAIT_FILE_SUFFIX = self::ORIGINAL_TRAIT_SUFFIX . '.php';
 
     /**
+     * Suffix of the donor class of the z-engine driver: the dispatcher bodies woven into `Foo` are compiled in
+     * the abstract class `Foo__AopDonor` (a name no PSR-4 class uses, next to the class in its namespace)
+     */
+    public const string DONOR_CLASS_SUFFIX = '__AopDonor';
+
+    /**
      * Returns a service from the container.
      *
      * Services registered via addLazyService() are returned as typed, instanceof-correct
