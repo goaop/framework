@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
+use Go\Aop\WeavingDriver;
 use Go\Aop\AspectException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
@@ -231,7 +232,7 @@ class AspectKernelTest extends TestCase
         $default = $this->invokeProtectedArray($kernel, 'getDefaultOptions');
 
         $this->assertSame(
-            ['debug', 'appDir', 'cacheDir', 'cacheFileMode', 'features', 'includePaths', 'excludePaths', 'containerClass'],
+            ['debug', 'appDir', 'cacheDir', 'cacheFileMode', 'features', 'includePaths', 'excludePaths', 'containerClass', 'driver'],
             array_keys($default),
         );
         $this->assertFalse($default['debug']);
@@ -240,6 +241,48 @@ class AspectKernelTest extends TestCase
         $this->assertSame([], $default['includePaths']);
         $this->assertSame([], $default['excludePaths']);
         $this->assertSame(Container::class, $default['containerClass']);
+        $this->assertSame(WeavingDriver::Stream, $default['driver']);
+    }
+
+    public function testNormalizeOptionsResolvesTheDriverFromItsName(): void
+    {
+        $kernel = $this->makeKernel();
+
+        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => 'zengine']]);
+
+        $this->assertSame(WeavingDriver::ZEngine, $normalized['driver']);
+        $this->assertSame(
+            WeavingDriver::Stream,
+            $this->invokeProtectedArray($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir']])['driver'],
+        );
+    }
+
+    public function testNormalizeOptionsThrowsForAnUnknownDriver(): void
+    {
+        $kernel = $this->makeKernel();
+
+        try {
+            $this->invokeProtected($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => 'ffi']]);
+            self::fail('An unknown driver must be refused');
+        } catch (InvalidConfigurationException $exception) {
+            $this->assertStringStartsWith('Option "driver" must be one of "stream", "zengine"', $exception->getMessage());
+        }
+    }
+
+    public function testNormalizeOptionsRefusesStreamOnlyFeaturesWithTheEngineDriver(): void
+    {
+        $kernel = $this->makeKernel();
+
+        try {
+            $this->invokeProtected($kernel, 'normalizeOptions', [[
+                'cacheDir' => '/some/cache/dir',
+                'driver'   => WeavingDriver::ZEngine,
+                'features' => Features::INTERCEPT_FUNCTIONS,
+            ]]);
+            self::fail('Stream-only features must be refused with the engine driver');
+        } catch (InvalidConfigurationException $exception) {
+            $this->assertStringContainsString('only available with the stream driver', $exception->getMessage());
+        }
     }
 
     public function testNormalizeOptionsExcludesRuntimeDependenciesFromWeaving(): void

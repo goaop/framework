@@ -26,10 +26,12 @@ bit throws `Go\Aop\Exception\InvalidConfigurationException`.
 | `features`       | `int`      | `0`                         | Bitmask of `Go\Aop\Features` flags, see below. |
 | `cacheFileMode`  | `int`      | `0770` minus the umask      | Permissions of cache files. Must be between `0600` and `0777` and give the owner read and write access; directories get matching search bits. |
 | `containerClass` | `class-string` | `Go\Core\Container`     | Aspect container implementation, must implement `Go\Core\AspectContainer`. |
+| `driver`         | `string` or `Go\Aop\WeavingDriver` | `'stream'` | Weaving driver: `stream` (source transformation through the stream filter, pure PHP) or `zengine` (runtime method-table weaving through lisachenko/z-engine and FFI, method execution only), see [docs/zengine-driver.md](zengine-driver.md). |
 
 ## Features
 
-Combine the flags with `|`, e.g. `'features' => Features::INTERCEPT_FUNCTIONS | Features::PREBUILT_CACHE`.
+Combine the flags with `|`, e.g. `'features' => Features::INTERCEPT_FUNCTIONS | Features::PREBUILT_CACHE`. The flags
+configure source transformers, so they are only available with the `stream` driver; the `zengine` driver refuses them.
 
 | Flag                        | Effect |
 |-----------------------------|--------|

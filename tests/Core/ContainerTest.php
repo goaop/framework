@@ -26,6 +26,7 @@ use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use PHPUnit\Framework\TestCase;
 use stdClass;
+use Go\Aop\WeavingDriver;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class ContainerTest extends TestCase
@@ -45,6 +46,7 @@ class ContainerTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'driver'         => WeavingDriver::Stream,
         ]);
         $this->container->add(AspectKernel::class, $mockKernel);
         $this->container->add('kernel.interceptFunctions', false);

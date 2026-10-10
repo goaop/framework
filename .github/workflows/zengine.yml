@@ -1,0 +1,81 @@
+name: "z-engine weaving driver"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+# The zengine driver weaves loaded classes through lisachenko/z-engine (PHP FFI). The package is an optional
+# dependency: its branches target one PHP minor each, so it is installed here only, with the branch of the
+# matrix leg's minor, and the `zengine` PHPUnit group (excluded from the default run) exercises the driver in
+# subprocesses with the JIT off.
+jobs:
+  zengine:
+    name: "z-engine driver (PHP ${{ matrix.php-version }}, opcache legs)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php-version: "8.4"
+            zengine-branch: "8.4.x-dev"
+          - php-version: "8.5"
+            zengine-branch: "8.5.x-dev"
+    env:
+      ZENGINE_BRANCH: ${{ matrix.zengine-branch }}
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v7
+
+      - name: "Install PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: "none"
+          php-version: "${{ matrix.php-version }}"
+          extensions: ffi, opcache
+          # The JIT rewrites the executor internals z-engine hooks into, and the PHP 8.5 tracing JIT
+          # miscompiles the framework: off for the test runner and (through the test base) its subprocesses
+          ini-values: memory_limit=-1, ffi.enable=1, opcache.enable=1, opcache.enable_cli=0, opcache.jit=off, opcache.jit_buffer_size=0
+          tools: composer:v2
+
+      - name: "Assert ext-ffi and opcache are available"
+        run: |
+          php -r 'exit(extension_loaded("FFI") && extension_loaded("Zend OPcache") ? 0 : 1);' \
+            || { echo "::error::ext-ffi or Zend OPcache is missing - the zengine group would silently skip"; exit 1; }
+
+      - name: "Cache dependencies"
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.composer/cache
+            vendor
+          key: "composer-zengine-${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('composer.json') }}-${{ matrix.zengine-branch }}"
+          restore-keys: "composer-zengine-${{ runner.os }}-php-${{ matrix.php-version }}-"
+
+      - name: "Install dependencies with lisachenko/z-engine"
+        run: |
+          composer config repositories.zengine vcs https://github.com/lisachenko/z-engine
+          composer require --dev --no-update "lisachenko/z-engine:${ZENGINE_BRANCH}"
+          composer update --no-interaction --no-progress
+
+      - name: "Assert the engine boots"
+        run: |
+          ZENGINE_AUTOBOOT=0 php -d ffi.enable=1 -r 'require "vendor/autoload.php"; ZEngine\Core::init(); echo "z-engine booted", PHP_EOL;'
+
+      - name: "Static analysis with the real z-engine API"
+        run: "vendor/bin/phpstan analyze --memory-limit=1G"
+
+      - name: "z-engine driver tests"
+        run: "composer test:zengine"
+
+      - name: "Default test suite with z-engine installed"
+        run: "composer test"

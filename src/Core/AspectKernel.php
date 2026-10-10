@@ -17,6 +17,7 @@ use Go\Aop\Aspect;
 use Go\Aop\AspectException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
+use Go\Aop\WeavingDriver;
 use Go\Core\Cache\CachedAspectLoader;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
@@ -26,6 +27,7 @@ use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
+use Go\Instrument\ZEngine\ZEngineDriver;
 use ReflectionClass;
 
 /**
@@ -39,7 +41,8 @@ use ReflectionClass;
  *   features: int,
  *   includePaths: string[],
  *   excludePaths: string[],
- *   containerClass: class-string<AspectContainer>
+ *   containerClass: class-string<AspectContainer>,
+ *   driver: WeavingDriver
  * }
  * @phpstan-type UserKernelOptions array{
  *   debug?: bool,
@@ -49,7 +52,8 @@ use ReflectionClass;
  *   features?: int,
  *   includePaths?: string[],
  *   excludePaths?: string[],
- *   containerClass?: class-string<AspectContainer>
+ *   containerClass?: class-string<AspectContainer>,
+ *   driver?: WeavingDriver|string
  * }
  */
 abstract class AspectKernel
@@ -60,9 +64,18 @@ abstract class AspectKernel
     private const array RUNTIME_DEPENDENCIES = [
         'goaop/dissect',
         'goaop/parser-reflection',
+        'lisachenko/z-engine',
         'nikic/php-parser',
         'symfony/finder',
     ];
+
+    /**
+     * Feature flags implemented by source transformers: meaningless for a driver that never rewrites sources
+     */
+    private const int STREAM_ONLY_FEATURES = Features::INTERCEPT_FUNCTIONS
+        | Features::INTERCEPT_INITIALIZATIONS
+        | Features::INTERCEPT_INCLUDES
+        | Features::PREBUILT_CACHE;
 
     /**
      * Kernel options
@@ -78,6 +91,7 @@ abstract class AspectKernel
         'includePaths'   => [],
         'excludePaths'   => [],
         'containerClass' => Container::class,
+        'driver'         => WeavingDriver::Stream,
     ];
 
     /**
@@ -158,15 +172,21 @@ abstract class AspectKernel
         // The class loader queries the cache index right below on every request, a lazy proxy would be pure overhead
         $container->add(CachePathManager::class, new CachePathManager($this));
 
-        // The whole transformer pipeline (and the stream filter itself) is only needed on
-        // a cache miss, so every transformer is registered as a typical deferred container
-        // service and brought up by SourceTransformingLoader::ensureRegistered() from the
-        // miss path. Caching itself lives in SourceTransformingLoader, which serves cache
-        // hits before any transformer (or even the parser) is touched - the overridable
-        // hook below only registers the transformation chain.
-        $this->registerTransformerServices($container);
+        if ($this->options['driver'] === WeavingDriver::ZEngine) {
+            // Runtime weaving: classes load natively and are rewired through z-engine right
+            // after loading; no transformer chain, no stream filter, no include interception
+            ZEngineDriver::boot($this, $container);
+        } else {
+            // The whole transformer pipeline (and the stream filter itself) is only needed on
+            // a cache miss, so every transformer is registered as a typical deferred container
+            // service and brought up by SourceTransformingLoader::ensureRegistered() from the
+            // miss path. Caching itself lives in SourceTransformingLoader, which serves cache
+            // hits before any transformer (or even the parser) is touched - the overridable
+            // hook below only registers the transformation chain.
+            $this->registerTransformerServices($container);
 
-        AopComposerLoader::init($this->options, $container);
+            AopComposerLoader::init($this->options, $container);
+        }
 
         // In debug mode every lazily registered aspect's source file must be tracked as a
         // resource right away: the cache freshness checks consult it before any aspect
@@ -244,6 +264,9 @@ abstract class AspectKernel
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
+     *   driver   - Go\Aop\WeavingDriver (or its string value) The weaving driver: "stream" (source
+     *              transformation at load time, the default) or "zengine" (runtime method-table
+     *              weaving through lisachenko/z-engine, see docs/zengine-driver.md)
      *
      * @phpstan-return KernelOptions
      */
@@ -258,6 +281,7 @@ abstract class AspectKernel
             'includePaths'    => [],
             'excludePaths'    => [],
             'containerClass'  => static::$containerClass,
+            'driver'          => WeavingDriver::Stream,
         ];
     }
 
@@ -325,6 +349,14 @@ abstract class AspectKernel
                 is_int($features) ? (string) $features : get_debug_type($features),
             ));
         }
+        $driver = WeavingDriver::fromOption($merged['driver'] ?? WeavingDriver::Stream);
+        if ($driver === WeavingDriver::ZEngine && ($features & self::STREAM_ONLY_FEATURES) !== 0) {
+            throw new InvalidConfigurationException(
+                'The zengine weaving driver rewires loaded classes at runtime and never rewrites sources: '
+                . 'the INTERCEPT_FUNCTIONS, INTERCEPT_INITIALIZATIONS, INTERCEPT_INCLUDES and PREBUILT_CACHE '
+                . 'features are only available with the stream driver.',
+            );
+        }
         $rawIncludePaths = is_array($merged['includePaths'] ?? null) ? $merged['includePaths'] : [];
         $includePaths    = array_values(array_filter($rawIncludePaths, is_string(...)));
         $debug         = is_bool($merged['debug'] ?? null) ? $merged['debug'] : false;
@@ -366,6 +398,7 @@ abstract class AspectKernel
             'includePaths'   => array_values(array_filter($resolvedIncludePaths, is_string(...))),
             'excludePaths'   => array_values(array_filter($resolvedExcludePaths, is_string(...))),
             'containerClass' => $containerClass,
+            'driver'         => $driver,
         ];
     }
 

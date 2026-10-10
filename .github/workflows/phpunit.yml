@@ -99,7 +99,10 @@ jobs:
         with:
           coverage: "xdebug"
           php-version: "8.4"
-          ini-values: memory_limit=-1
+          # ext-ffi for lisachenko/z-engine, so the zengine driver is covered too: FFI on, the JIT off (it rewrites
+          # the executor internals z-engine hooks into), opcache inactive in the runner
+          extensions: ffi, opcache
+          ini-values: memory_limit=-1, ffi.enable=1, opcache.enable=1, opcache.enable_cli=0, opcache.jit=off, opcache.jit_buffer_size=0
           tools: composer:v2
 
       - name: "Cache dependencies"
@@ -111,11 +114,17 @@ jobs:
           key: "composer-${{ runner.os }}-php-8.4-highest-${{ hashFiles('composer.json') }}"
           restore-keys: "composer-${{ runner.os }}-php-8.4-highest-"
 
-      - name: "Install highest dependencies"
-        run: "composer update --no-interaction --no-progress"
+      - name: "Install highest dependencies with lisachenko/z-engine"
+        # The optional engine of the zengine driver, from the branch targeting PHP 8.4 (see docs/zengine-driver.md)
+        run: |
+          composer config repositories.zengine vcs https://github.com/lisachenko/z-engine
+          composer require --dev --no-update lisachenko/z-engine:8.4.x-dev
+          composer update --no-interaction --no-progress
 
       - name: "Tests with coverage"
-        run: "vendor/bin/phpunit --coverage-clover build/logs/clover.xml"
+        # The zengine group (excluded from the default run) is included here: its in-process tests weave stub
+        # classes through the engine inside the runner, which is what covers the driver
+        run: "vendor/bin/phpunit --exclude-group performance --exclude-group transformation-performance --coverage-clover build/logs/clover.xml"
 
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v7"

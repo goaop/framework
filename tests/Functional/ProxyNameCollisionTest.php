@@ -46,7 +46,7 @@ class ProxyNameCollisionTest extends BaseFunctionalTestCase
             '\\' . ImportCollisionClass::class,
         );
         $process = new Process(
-            [$phpExecutable, '-r', $script],
+            [$phpExecutable, ...$this->getPhpOptions(), '-r', $script],
             null,
             ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
         );

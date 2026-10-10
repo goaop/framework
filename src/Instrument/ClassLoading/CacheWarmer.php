@@ -14,6 +14,7 @@ namespace Go\Instrument\ClassLoading;
 
 use ErrorException;
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\WeavingDriver;
 use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
@@ -69,6 +70,14 @@ class CacheWarmer
 
         if (empty($options['cacheDir'])) {
             throw new InvalidConfigurationException('Cache warmer require the `cacheDir` options to be configured');
+        }
+        if ($options['driver'] === WeavingDriver::ZEngine) {
+            throw new InvalidConfigurationException(
+                'The cache warmer transforms sources through the stream filter, which the zengine weaving driver '
+                . 'never uses: its donor classes are generated when a class is first loaded. Warm an application '
+                . 'running the zengine driver by loading its classes (e.g. a smoke request), or warm the cache '
+                . 'with a kernel configured for the stream driver.',
+            );
         }
 
         // The transformation pipeline is registered lazily; the filter URIs built below

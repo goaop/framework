@@ -9,6 +9,12 @@
 - FunctionProxyGenerator — function wrappers
 - TraitProxyGenerator — trait proxies
 - EnumProxyGenerator — enum proxies (trait extraction + case re-declaration)
+- DonorClassGenerator — zengine driver: abstract `Foo__AopDonor` (same namespace/imports/parent/interfaces, readonly
+  mirrored) declaring only the advised methods with proxy dispatcher bodies; overrides createJoinpointClassReference()
+  (`\Ns\Foo::class` literal, `self::class` would bind to the donor at compile time) and spells out `self`/`parent`
+  in signatures (TypeGenerator::resolveScopeKeywords(), `static` kept) because the engine compares the donor signature
+  with the swapped entry; original callable stays `$this->mOriginalAlias(...)` / `parent::m(...)` (scope follows the
+  swapped entry at run time)
 
 ## Imports in generated code (issue #668)
 - Generated code stays clean and readable: framework and aspect classes are referenced through short `use` aliases

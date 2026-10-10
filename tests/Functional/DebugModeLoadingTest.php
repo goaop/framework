@@ -109,7 +109,7 @@ class DebugModeLoadingTest extends BaseFunctionalTestCase
         $phpExecutable = (new PhpExecutableFinder())->find();
         $this->assertIsString($phpExecutable);
         $process = new Process(
-            [$phpExecutable, __DIR__ . '/../Fixtures/project/bin/debug-loading.php', ...$classNames],
+            [$phpExecutable, ...$this->getPhpOptions(), __DIR__ . '/../Fixtures/project/bin/debug-loading.php', ...$classNames],
             null,
             ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
         );

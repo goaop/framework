@@ -300,23 +300,39 @@ class CachePathManager
     public function queryFreshCacheState(string $resource, AspectContainer $container): ?array
     {
         $cacheState = $this->queryCacheState($resource);
+        if ($cacheState === null) {
+            return null;
+        }
 
+        return $this->isFreshRecord($cacheState, $resource, $container) ? $cacheState : null;
+    }
+
+    /**
+     * Decides whether a cache record is still valid for the source it was built from
+     *
+     * The freshness rule itself, shared by every cache index of the framework (the transformation metadata
+     * of the stream driver and the donor index of the z-engine driver), so staleness is decided in one place.
+     *
+     * @param array<array-key, mixed> $record Cache record carrying `filemtime`, `filesize` and `cachedAt`
+     */
+    public function isFreshRecord(array $record, string $resource, AspectContainer $container): bool
+    {
         // With a prebuilt cache (built at deploy time) an existing cache record is trusted as-is: no filemtime or
         // tracked-resource freshness checks - staleness is the deployer's responsibility
-        if ($cacheState === null || ($this->options['features'] & Features::PREBUILT_CACHE) !== 0) {
-            return $cacheState;
+        if (($this->options['features'] & Features::PREBUILT_CACHE) !== 0) {
+            return true;
         }
 
         // The record keeps the size and mtime of the source it was woven from: any difference, also an older
         // mtime restored by a deployment (rsync -t, checkout of an older revision), means the source changed.
         // Weaving depends on the tracked resources too (kernel and aspect files in debug mode)
-        $cachedAt = $cacheState['cachedAt'] ?? 0;
-        $isStale  = ($cacheState['filemtime'] ?? null) !== filemtime($resource)
-            || ($cacheState['filesize'] ?? null) !== filesize($resource)
-            || (isset($cacheState['cacheUri']) && !is_string($cacheState['cacheUri']))
+        $cachedAt = $record['cachedAt'] ?? 0;
+        $isStale  = ($record['filemtime'] ?? null) !== filemtime($resource)
+            || ($record['filesize'] ?? null) !== filesize($resource)
+            || (isset($record['cacheUri']) && !is_string($record['cacheUri']))
             || !$container->isFreshSince(is_int($cachedAt) ? $cachedAt : 0);
 
-        return $isStale ? null : $cacheState;
+        return !$isStale;
     }
 
     /**
@@ -438,6 +454,23 @@ class CachePathManager
             $this->skippedClasses = $skippedClasses;
             $this->newCacheState  = [];
         }
+    }
+
+    /**
+     * Writes an index file of another cache (the donor index of the z-engine driver) in the metadata format of
+     * this manager: a constant PHP return-array next to the transformation metadata, with portable paths
+     *
+     * @param string               $relativeFileName File name below the cache directory, with a leading slash
+     * @param array<string, mixed> $data
+     *
+     * @throws InvalidConfigurationException When caching is disabled (no cache directory)
+     */
+    public function writeIndexFile(string $relativeFileName, array $data): void
+    {
+        if ($this->cacheDir === null) {
+            throw new InvalidConfigurationException('Cache index files need the `cacheDir` option to be configured');
+        }
+        $this->writeCacheFile($relativeFileName, $data);
     }
 
     /**
