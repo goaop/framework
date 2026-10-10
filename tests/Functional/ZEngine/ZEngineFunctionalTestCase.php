@@ -211,7 +211,7 @@ abstract class ZEngineFunctionalTestCase extends TestCase
         self::$engineChecked = true;
         if (!class_exists(\ZEngine\Core::class)) {
             return self::$engineUnavailableReason = 'lisachenko/z-engine is not installed: '
-                . 'composer require --dev lisachenko/z-engine:dev-feature/redefine-preserve-alias (see docs/zengine-driver.md)';
+                . 'composer require --dev lisachenko/z-engine:<branch of this PHP minor> (see docs/zengine-driver.md)';
         }
         $process = new Process(
             [

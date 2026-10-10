@@ -13,15 +13,17 @@ join-point API. An aspect written for one driver runs unchanged on the other, wi
 ## Requirements
 
 - `ext-ffi` with `ffi.enable=1` (or `preload` with a preload script booting z-engine).
-- `lisachenko/z-engine`, the branch matching your PHP minor (`8.5` for PHP 8.5). The package is an optional
-  dependency of the framework, because every branch of it targets one PHP minor:
+- `lisachenko/z-engine`, the branch matching your PHP minor (`8.4` for PHP 8.4, `8.5` for PHP 8.5). The
+  package is an optional dependency of the framework, because every branch of it targets one PHP minor:
 
   ```bash
   composer config repositories.zengine vcs https://github.com/lisachenko/z-engine
-  composer require lisachenko/z-engine:dev-feature/redefine-preserve-alias
+  composer require lisachenko/z-engine:dev-feature/redefine-preserve-alias-8.4   # PHP 8.4
+  composer require lisachenko/z-engine:dev-feature/redefine-preserve-alias       # PHP 8.5
   ```
 
-  Until the `redefine(..., preserveAs:)` API is merged, the branch above is the one the driver is built against.
+  Until the `redefine(..., preserveAs:)` API is merged into the version branches, the branches above are the
+  ones the driver is built against.
 - The opcache JIT **off** for the whole process: `opcache.jit=off` and `opcache.jit_buffer_size=0` in `php.ini`, the
   FPM pool or `php -d`. z-engine hooks the executor internals the JIT bypasses. On PHP 8.5 the tracing JIT also
   miscompiles code the framework runs (a known PHP bug, see `docs/php85-limitations.md`), so there the driver switches
@@ -121,5 +123,5 @@ opcache is active, and the JIT guard report (`jitWasActive`, `previousMode`, `di
 `composer test:zengine` runs the `zengine` PHPUnit group (`tests/Functional/ZEngine/`), which is excluded from the
 default run: it boots the engine in PHP subprocesses (both opcache legs) and compares the driver with the stream
 driver on the same fixtures. The group self-skips where the engine cannot boot. `.github/workflows/zengine.yml` runs
-it on PHP 8.5 with z-engine installed; the other workflows do not install z-engine (`phpstan/zengine-stubs.php`
-declares the API the driver uses, for the analysis without the package).
+it on PHP 8.4 and 8.5 with the z-engine branch of each minor installed; the other workflows do not install z-engine
+(`phpstan/zengine-stubs.php` declares the API the driver uses, for the analysis without the package).

@@ -14,12 +14,9 @@ on:
       - master
 
 # The zengine driver weaves loaded classes through lisachenko/z-engine (PHP FFI). The package is an optional
-# dependency: its branches target one PHP minor each, so it is installed here only, on that minor, and the
-# `zengine` PHPUnit group (excluded from the default run) exercises the driver in subprocesses with the JIT off.
-env:
-  PHP_MINOR: "8.5"
-  ZENGINE_BRANCH: "dev-feature/redefine-preserve-alias"
-
+# dependency: its branches target one PHP minor each, so it is installed here only, with the branch of the
+# matrix leg's minor, and the `zengine` PHPUnit group (excluded from the default run) exercises the driver in
+# subprocesses with the JIT off.
 jobs:
   zengine:
     name: "z-engine driver (PHP ${{ matrix.php-version }}, opcache legs)"
@@ -28,8 +25,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version:
-          - "8.5"
+        include:
+          - php-version: "8.4"
+            zengine-branch: "dev-feature/redefine-preserve-alias-8.4"
+          - php-version: "8.5"
+            zengine-branch: "dev-feature/redefine-preserve-alias"
+    env:
+      ZENGINE_BRANCH: ${{ matrix.zengine-branch }}
     steps:
       - name: "Checkout"
         uses: actions/checkout@v7
@@ -56,7 +58,7 @@ jobs:
           path: |
             ~/.composer/cache
             vendor
-          key: "composer-zengine-${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('composer.json') }}-${{ env.ZENGINE_BRANCH }}"
+          key: "composer-zengine-${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('composer.json') }}-${{ matrix.zengine-branch }}"
           restore-keys: "composer-zengine-${{ runner.os }}-php-${{ matrix.php-version }}-"
 
       - name: "Install dependencies with lisachenko/z-engine"
