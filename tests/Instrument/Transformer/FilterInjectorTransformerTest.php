@@ -158,6 +158,81 @@ class FilterInjectorTransformerTest extends TestCase
         $this->assertEquals($expectedPath, $actualPath);
     }
 
+    /**
+     * Configures the rewriting with a cache directory and the given cache manager
+     */
+    private function configureWithCache(CachePathManager $cachePathManager, bool $debug = false): void
+    {
+        FilterInjectorTransformer::reset();
+        new FilterInjectorTransformer(
+            $this->getKernelMock(
+                ['cacheDir' => '/cache', 'appDir' => '/app', 'debug' => $debug, 'features' => 0],
+                $this->createStub(AspectContainer::class),
+            ),
+            'unit.test.cache',
+            $cachePathManager,
+        );
+    }
+
+    public function testProductionIncludesSourceRecordedAsUntransformedNatively(): void
+    {
+        $resolvedPath     = PathResolver::realpath(__DIR__ . '/_files/class.php');
+        $cachePathManager = $this->createMock(CachePathManager::class);
+        $cachePathManager->expects($this->once())->method('findIncludeFile')->with($resolvedPath)->willReturnArgument(0);
+        $cachePathManager->expects($this->never())->method('getCachePathForResource');
+        $this->configureWithCache($cachePathManager);
+
+        // The relative resource is resolved first, the original file is then included without the filter
+        $this->assertSame($resolvedPath, FilterInjectorTransformer::rewrite('_files/class.php', __DIR__));
+    }
+
+    public function testProductionResolvesRelativeSegmentsOfAbsolutePathBeforeLookingItUp(): void
+    {
+        $resolvedPath     = PathResolver::realpath(__DIR__ . '/_files/class.php');
+        $cachePathManager = $this->createMock(CachePathManager::class);
+        $cachePathManager->expects($this->once())->method('findIncludeFile')->with($resolvedPath)->willReturnArgument(0);
+        $this->configureWithCache($cachePathManager);
+
+        $this->assertSame($resolvedPath, FilterInjectorTransformer::rewrite(__DIR__ . '/../Transformer/./_files/class.php'));
+    }
+
+    public function testProductionIncludesRecordedCacheFileOfWovenSourceWithoutCheckingIt(): void
+    {
+        $cachePathManager = $this->createMock(CachePathManager::class);
+        $cachePathManager->expects($this->once())->method('findIncludeFile')->with('/app/src/woven.php')->willReturn('/cache/src/woven.php');
+        $cachePathManager->expects($this->never())->method('getCachePathForResource');
+        $this->configureWithCache($cachePathManager);
+
+        // The recorded cache file is trusted as it is: it does not even exist here
+        $this->assertSame('/cache/src/woven.php', FilterInjectorTransformer::rewrite('/app/src/woven.php'));
+    }
+
+    public function testProductionIncludesUnknownSourceThroughTheFilter(): void
+    {
+        $cachePathManager = $this->createStub(CachePathManager::class);
+        $cachePathManager->method('findIncludeFile')->willReturn(null);
+        $cachePathManager->method('getCachePathForResource')->willReturn('/cache/src/unknown.php');
+        $this->configureWithCache($cachePathManager);
+
+        $this->assertSame(
+            FilterInjectorTransformer::PHP_FILTER_READ . 'unit.test.cache/resource=/app/src/unknown.php',
+            FilterInjectorTransformer::rewrite('/app/src/unknown.php'),
+        );
+    }
+
+    public function testDebugModeIncludesKnownSourceThroughTheFilter(): void
+    {
+        $cachePathManager = $this->createMock(CachePathManager::class);
+        $cachePathManager->expects($this->never())->method('findIncludeFile');
+        $cachePathManager->method('getCachePathForResource')->willReturn('/cache/src/woven.php');
+        $this->configureWithCache($cachePathManager, debug: true);
+
+        $this->assertSame(
+            FilterInjectorTransformer::PHP_FILTER_READ . 'unit.test.cache/resource=/app/src/woven.php',
+            FilterInjectorTransformer::rewrite('/app/src/woven.php'),
+        );
+    }
+
     public function testResetForgetsTheConfiguredFilter(): void
     {
         FilterInjectorTransformer::reset();
