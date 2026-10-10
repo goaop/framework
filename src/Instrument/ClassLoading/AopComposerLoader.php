@@ -25,7 +25,7 @@ use Composer\Autoload\ClassLoader;
  *
  * @phpstan-import-type KernelOptions from AspectKernel
  */
-final class AopComposerLoader
+final class AopComposerLoader implements ComposerLoaderDecorator
 {
     /**
      * File enumerator
@@ -100,7 +100,8 @@ final class AopComposerLoader
      * Initialize aspect autoloader and returns status whether initialization was successful or not
      *
      * Replaces original composer autoloader with wrapper. A loader wrapped by an earlier call
-     * is wrapped again around its original composer loader, with the given options and container.
+     * (of either weaving driver) is wrapped again around its original composer loader, with the
+     * given options and container.
      *
      * @phpstan-param KernelOptions $options Aspect kernel options
      */
@@ -113,7 +114,7 @@ final class AopComposerLoader
             $loaderToUnregister = $loader;
             if (is_array($loader)) {
                 $originalLoader = $loader[0];
-                if ($originalLoader instanceof self) {
+                if ($originalLoader instanceof ComposerLoaderDecorator) {
                     $originalLoader = $originalLoader->getOriginalLoader();
                 }
                 if ($originalLoader instanceof ClassLoader) {
@@ -145,16 +146,16 @@ final class AopComposerLoader
     }
 
     /**
-     * Finds the original source file of a class through the composer loaders wrapped by AopComposerLoader::init(),
-     * without loading the class
+     * Finds the original source file of a class through the composer loaders wrapped by the kernel (by this
+     * loader or by the loader of the z-engine driver), without loading the class
      *
      * @return string|null Path given by composer, or null when no wrapped composer loader knows the class
      */
     public static function findOriginalFile(string $class): ?string
     {
         foreach (spl_autoload_functions() as $loader) {
-            if (is_array($loader) && $loader[0] instanceof self) {
-                $file = $loader[0]->original->findFile($class);
+            if (is_array($loader) && $loader[0] instanceof ComposerLoaderDecorator) {
+                $file = $loader[0]->getOriginalLoader()->findFile($class);
                 if ($file !== false) {
                     return $file;
                 }

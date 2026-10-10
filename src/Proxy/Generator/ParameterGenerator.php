@@ -115,6 +115,17 @@ final class ParameterGenerator
         return $generator;
     }
 
+    /**
+     * Returns a copy of the parameter declared with another type (attributes and default value kept)
+     */
+    public function withType(?TypeGenerator $type): self
+    {
+        $parameter = new self($this->name, $type, $this->byRef, $this->variadic, $this->defaultValue);
+        $parameter->attributeGroups = $this->attributeGroups;
+
+        return $parameter;
+    }
+
     public function getName(): string
     {
         return $this->name;

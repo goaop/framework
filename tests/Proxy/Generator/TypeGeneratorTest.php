@@ -225,4 +225,34 @@ class TypeGeneratorTest extends TestCase
         $this->assertStringContainsString('Iterator', $output);
         $this->assertStringContainsString('&', $output);
     }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideScopeKeywordTypes(): iterable
+    {
+        yield 'self' => ['self', '\\App\\Child'];
+        yield 'nullable self' => ['?self', '?\\App\\Child'];
+        yield 'parent' => ['parent', '\\App\\Base'];
+        yield 'union' => ['self|int|null', '\\App\\Child|int|null'];
+        yield 'intersection' => ['self&\\Countable', '\\App\\Child&\\Countable'];
+        yield 'dnf' => ['(self&\\Countable)|parent', '(\\App\\Child&\\Countable)|\\App\\Base'];
+        yield 'static stays' => ['static', 'static'];
+        yield 'builtin stays' => ['?int', '?int'];
+        yield 'class stays' => ['\\App\\Other', '\\App\\Other'];
+    }
+
+    #[DataProvider('provideScopeKeywordTypes')]
+    public function testResolveScopeKeywordsSpellsOutSelfAndParent(string $declared, string $expected): void
+    {
+        $resolved = TypeGenerator::fromTypeString($declared)->resolveScopeKeywords('App\\Child', 'App\\Base');
+
+        $this->assertSame($expected, $resolved->generate());
+        $this->assertSame($declared, TypeGenerator::fromTypeString($declared)->generate(), 'The original generator is untouched');
+    }
+
+    public function testResolveScopeKeywordsKeepsParentWithoutAParentClass(): void
+    {
+        $this->assertSame('?parent', TypeGenerator::fromTypeString('?parent')->resolveScopeKeywords('App\\Child', null)->generate());
+    }
 }

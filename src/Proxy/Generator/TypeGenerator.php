@@ -106,6 +106,20 @@ final class TypeGenerator
     }
 
     /**
+     * Returns the type with its `self` and `parent` keywords replaced by the classes they name in $selfClass
+     *
+     * For a declaration compiled inside another class (the donor class of the z-engine driver), where the
+     * keywords would resolve to that class. `static` is kept: it binds to the called class at run time.
+     *
+     * @param string      $selfClass   Class `self` stands for
+     * @param string|null $parentClass Class `parent` stands for, null when $selfClass has no parent
+     */
+    public function resolveScopeKeywords(string $selfClass, ?string $parentClass): self
+    {
+        return new self(self::resolveScopeKeywordsIn($this->typeNode, $selfClass, $parentClass));
+    }
+
+    /**
      * Generates the PHP type string.
      */
     public function generate(): string
@@ -233,6 +247,57 @@ final class TypeGenerator
         }
 
         return 'mixed';
+    }
+
+    /**
+     * Rebuilds a type node with `self` and `parent` replaced by fully qualified class names
+     */
+    private static function resolveScopeKeywordsIn(
+        Identifier|Name|NullableType|UnionType|IntersectionType $node,
+        string $selfClass,
+        ?string $parentClass,
+    ): Identifier|Name|NullableType|UnionType|IntersectionType {
+        if ($node instanceof NullableType) {
+            $inner = self::resolveScopeKeywordsIn($node->type, $selfClass, $parentClass);
+
+            return $inner instanceof Identifier || $inner instanceof Name ? new NullableType($inner) : $node;
+        }
+        if ($node instanceof UnionType) {
+            /** @var list<Identifier|IntersectionType|Name> $parts */
+            $parts = [];
+            foreach ($node->types as $innerType) {
+                $innerNode = self::resolveScopeKeywordsIn($innerType, $selfClass, $parentClass);
+                if ($innerNode instanceof Identifier || $innerNode instanceof Name || $innerNode instanceof IntersectionType) {
+                    $parts[] = $innerNode;
+                }
+            }
+
+            return new UnionType($parts);
+        }
+        if ($node instanceof IntersectionType) {
+            /** @var list<Identifier|Name> $parts */
+            $parts = [];
+            foreach ($node->types as $innerType) {
+                $innerNode = self::resolveScopeKeywordsIn($innerType, $selfClass, $parentClass);
+                if ($innerNode instanceof Identifier || $innerNode instanceof Name) {
+                    $parts[] = $innerNode;
+                }
+            }
+
+            return new IntersectionType($parts);
+        }
+        if ($node instanceof Name && $node instanceof Name\FullyQualified) {
+            return $node;
+        }
+        $keyword = strtolower($node->toString());
+        if ($keyword === 'self') {
+            return new Name\FullyQualified(ltrim($selfClass, '\\'));
+        }
+        if ($keyword === 'parent' && $parentClass !== null) {
+            return new Name\FullyQualified(ltrim($parentClass, '\\'));
+        }
+
+        return $node;
     }
 
     private static function buildNodeFromReflection(ReflectionType $type): Identifier|Name|NullableType|UnionType|IntersectionType

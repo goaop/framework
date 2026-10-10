@@ -18,6 +18,7 @@ use Go\Aop\Aspect;
 use Go\Aop\Exception\NotCompilableException;
 use Go\Aop\Features;
 use Go\Aop\Pointcut\TruePointcut;
+use Go\Aop\WeavingDriver;
 use Go\Core\AspectContainer;
 use Go\Core\AspectLoader;
 use Go\Core\AspectLoaderInterface;
@@ -99,6 +100,7 @@ class CachedAspectLoaderTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'driver'         => WeavingDriver::Stream,
         ]);
     }
 

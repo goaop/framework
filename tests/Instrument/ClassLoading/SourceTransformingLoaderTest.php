@@ -25,6 +25,7 @@ use LogicException;
 use PhpToken;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Go\Aop\WeavingDriver;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class SourceTransformingLoaderTest extends TestCase
@@ -91,6 +92,7 @@ class SourceTransformingLoaderTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'driver'         => WeavingDriver::Stream,
         ]);
         $kernel->method('hasFeature')->willReturnCallback(
             static fn(int $featureToCheck): bool => ($features & $featureToCheck) !== 0,

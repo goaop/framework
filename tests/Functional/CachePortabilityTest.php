@@ -53,7 +53,7 @@ class CachePortabilityTest extends BaseFunctionalTestCase
             '\\' . EdgeCaseDemo::class,
             '\\' . EdgeCaseAspect::class,
         );
-        $process = new Process([$phpExecutable, '-r', $script], null, ['GO_AOP_CONFIGURATION' => 'moved_cache']);
+        $process = new Process([$phpExecutable, ...$this->getPhpOptions(), '-r', $script], null, ['GO_AOP_CONFIGURATION' => 'moved_cache']);
         $process->run();
 
         $this->assertTrue($process->isSuccessful(), $process->getOutput() . $process->getErrorOutput());

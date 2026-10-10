@@ -53,7 +53,9 @@
     },
     "suggest": {
         "doctrine/orm": "Maps woven entities through Go\\Bridge\\Doctrine\\WovenEntityClassLocator (ORM ^3.6).",
-        "symfony/console": "Enables the bin/aspect command-line tool (^7.4 || ^8.0)."
+        "symfony/console": "Enables the bin/aspect command-line tool (^7.4 || ^8.0).",
+        "lisachenko/z-engine": "Runtime method-table weaving through the zengine driver (branch of your PHP minor, ext-ffi required, see docs/zengine-driver.md)",
+        "ext-ffi": "Required by the zengine weaving driver"
     },
     "autoload": {
         "psr-4": {
@@ -98,9 +100,13 @@
         ],
         "cs": "php-cs-fixer check --diff",
         "cs:fix": "php-cs-fixer fix",
-        "test": "phpunit",
+        "test": [
+            "@putenv ZENGINE_AUTOBOOT=0",
+            "phpunit"
+        ],
         "test:performance": "phpunit --group performance",
         "test:performance:transformation": "@php -d opcache.jit=disable vendor/bin/phpunit --group transformation-performance",
+        "test:zengine": "@php -d ffi.enable=1 -d opcache.jit=off -d opcache.jit_buffer_size=0 vendor/bin/phpunit --group zengine",
         "regenerate:parse-table": [
             "dissect Go/Aop/Pointcut/PointcutGrammar",
             "@php -r \"rename('src/Aop/Pointcut/parse_table.php', 'src/Aop/Pointcut/PointcutParseTable.php');\""
@@ -114,6 +120,7 @@
         "test": "Run the PHPUnit test suite",
         "regenerate:parse-table": "Regenerate the pointcut parse table after a change of PointcutGrammar",
         "test:performance": "Run the joinpoint hot-path performance group",
-        "test:performance:transformation": "Run the source transformation performance group (JIT disabled)"
+        "test:performance:transformation": "Run the source transformation performance group (JIT disabled)",
+        "test:zengine": "Run the z-engine weaving driver group (needs lisachenko/z-engine and ext-ffi, JIT disabled)"
     }
 }

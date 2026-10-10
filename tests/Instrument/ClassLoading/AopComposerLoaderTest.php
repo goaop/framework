@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\ClassLoading;
 
 use Composer\Autoload\ClassLoader;
+use Go\Aop\WeavingDriver;
 use Go\Core\AspectContainer;
 use Go\Core\Container;
 use Go\Core\AspectKernel;
@@ -57,6 +58,7 @@ class AopComposerLoaderTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [$this->appDir . '/vendor/goaop/dissect'],
             'containerClass' => Container::class,
+            'driver'         => WeavingDriver::Stream,
         ]);
 
         $fileEnumerator = new ReflectionProperty(AopComposerLoader::class, 'fileEnumerator')->getValue($loader);
@@ -262,6 +264,40 @@ class AopComposerLoaderTest extends TestCase
         return null;
     }
 
+    public function testInitRewrapsALoaderWrappedByTheEngineDriver(): void
+    {
+        $originalLoaders = spl_autoload_functions();
+        $composerLoader  = new ClassLoader();
+        $engineLoader    = new ZEngineComposerLoader($composerLoader, $this->createContainer(), $this->createOptions([]));
+        self::registerLoader([$engineLoader, 'loadClass']);
+        try {
+            $this->assertTrue(AopComposerLoader::init($this->createOptions([]), $this->createContainer()));
+
+            $wrappers = [];
+            foreach (spl_autoload_functions() as $loader) {
+                if (is_array($loader) && $loader[0] instanceof ComposerLoaderDecorator && $loader[0]->getOriginalLoader() === $composerLoader) {
+                    $wrappers[] = $loader[0];
+                }
+                $this->assertFalse(is_array($loader) && $loader[0] === $engineLoader, 'The engine wrapper is replaced');
+            }
+            $this->assertCount(1, $wrappers);
+            $this->assertInstanceOf(AopComposerLoader::class, $wrappers[0]);
+        } finally {
+            // init() wrapped composer's real loader too: restore the autoloaders of the test runner
+            foreach (spl_autoload_functions() as $loader) {
+                spl_autoload_unregister($loader);
+            }
+            foreach ($originalLoaders as $loader) {
+                spl_autoload_register($loader);
+            }
+        }
+    }
+
+    private static function registerLoader(callable $loader): void
+    {
+        spl_autoload_register($loader);
+    }
+
     /**
      * @param list<string> $excludePaths
      */
@@ -275,7 +311,7 @@ class AopComposerLoaderTest extends TestCase
      *
      * @param list<string> $excludePaths
      *
-     * @return array{debug: bool, appDir: string, cacheDir: string|null, cacheFileMode: int, features: int, includePaths: list<string>, excludePaths: list<string>, containerClass: class-string<AspectContainer>}
+     * @return array{debug: bool, appDir: string, cacheDir: string|null, cacheFileMode: int, features: int, includePaths: list<string>, excludePaths: list<string>, containerClass: class-string<AspectContainer>, driver: WeavingDriver}
      */
     private function createOptions(array $excludePaths): array
     {
@@ -288,6 +324,7 @@ class AopComposerLoaderTest extends TestCase
             'includePaths'   => [$this->appDir . '/src'],
             'excludePaths'   => $excludePaths,
             'containerClass' => Container::class,
+            'driver'         => WeavingDriver::Stream,
         ];
     }
 

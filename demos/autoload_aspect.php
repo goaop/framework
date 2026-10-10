@@ -15,11 +15,14 @@ use Go\Aop\Features;
 
 include __DIR__ . '/../vendor/autoload.php';
 
-// Initialize demo aspect container
+// Initialize demo aspect container. GO_AOP_DRIVER=zengine runs the demos through the z-engine weaving driver
+// (needs lisachenko/z-engine, ext-ffi and the opcache JIT off, see docs/zengine-driver.md)
+$driver = getenv('GO_AOP_DRIVER');
 AwesomeAspectKernel::getInstance()->init([
     'debug'    => true,
     'appDir'   => __DIR__,
     'cacheDir' => __DIR__ . '/cache',
+    'driver'   => is_string($driver) && $driver !== '' ? $driver : 'stream',
 
     'features' => Features::INTERCEPT_FUNCTIONS,
 ]);

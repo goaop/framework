@@ -30,6 +30,15 @@
   run; `composer test:performance:transformation` (JIT disabled) before and after touching a SourceTransformer, a
   NodeRewriter or their wiring. CI compares head with base on such PRs (.github/workflows/transformation-performance.yml,
   `GO_AOP_TRANSFORMATION_REPORT=<file>` writes the JSON report read by compare-transformation-performance.php)
+- zengine group (tests/Functional/ZEngine/, `#[Group('zengine')]`): the z-engine weaving driver, excluded from the
+  default run; `composer test:zengine` (ffi on, JIT off). ZEngineFunctionalTestCase runs the probe
+  tests/Fixtures/project/bin/zengine-weaving.php in subprocesses (`GO_AOP_CONFIGURATION=zengine*`, both opcache legs,
+  `ZENGINE_AUTOBOOT=0`) and compares its JSON report with the stream driver on the same fixtures (`zengine_reference`);
+  self-skips when z-engine is not installed or cannot boot. Fixtures: Application/ZEngine*, Aspect/ZEngineAspect,
+  Kernel/ZEngineAspectKernel. Unit tests of the driver: tests/Instrument/ZEngine/, tests/Proxy/DonorClassGeneratorTest.php.
+  In-process tests (tests/Instrument/ZEngine/InProcess/, same group): boot z-engine INSIDE the runner and weave the stubs of
+  tests/Stubs/ZEngine for real (kernel created without the singleton, autoloaders restored, one stub class per test since a
+  woven class stays woven) - the only way the driver gets coverage; the coverage CI job installs z-engine and runs the group
 - If phpstan fails: fix errors before offering to commit
 
 ## PHPStan gate

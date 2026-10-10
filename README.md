@@ -340,6 +340,22 @@ use Go\Core\AspectContainer;
 
 ### Optional configurations
 
+#### Runtime weaving with z-engine (experimental)
+
+Instead of rewriting sources through the stream filter, the `zengine` driver rewires advised methods at runtime through
+[lisachenko/z-engine](https://github.com/lisachenko/z-engine) (PHP FFI): classes load natively, the original method body
+stays callable under a private alias and the generated dispatcher is swapped in. Method execution join points only.
+
+```php
+$applicationAspectKernel->init([
+    'driver'   => 'zengine',
+    'cacheDir' => __DIR__ . '/../var/cache/aop',
+    // ...
+]);
+```
+
+Requires `ext-ffi`, the z-engine branch of your PHP minor and the opcache JIT off, see [docs/zengine-driver.md](docs/zengine-driver.md).
+
 #### Weaving Doctrine entities
 
 Doctrine ORM (3.6+) maps a woven entity as is: the woven class keeps its name and all mapping
