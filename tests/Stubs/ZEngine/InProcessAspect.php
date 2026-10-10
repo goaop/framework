@@ -20,7 +20,8 @@ final class InProcessAspect implements Aspect
 
     #[Pointcut\Before("execution(public Go\Stubs\ZEngine\WovenTarget->*(*)) || execution(public Go\Stubs\ZEngine\WovenChild->*(*))
         || execution(public Go\Stubs\ZEngine\WovenChild::*(*))
-        || execution(public Go\Stubs\ZEngine\LateTarget->*(*)) || execution(public Go\Stubs\ZEngine\WarmTarget->*(*))")]
+        || execution(public Go\Stubs\ZEngine\LateTarget->*(*)) || execution(public Go\Stubs\ZEngine\WarmTarget->*(*))
+        || execution(public Go\Stubs\ZEngine\FallbackTarget->*(*))")]
     public function beforeMethod(MethodInvocation $invocation): void
     {
         self::$log[] = $invocation->getMethod()->class . '::' . $invocation->getMethod()->name;

@@ -18,6 +18,7 @@ use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Core\AspectContainer;
 use Go\ParserReflection\ReflectionFile;
 use Go\PhpUnit\AssertsCompilablePhp;
+use Go\Stubs\ZEngine\ReadonlyPoint;
 use Go\Tests\TestProject\Application\ZEngineChild;
 use Go\Tests\TestProject\Application\ZEngineParent;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -111,6 +112,19 @@ final class DonorClassGeneratorTest extends TestCase
         self::assertStringContainsString('self::createOriginalAlias(...)', $code);
         self::assertStringContainsString('static::class', $code);
         self::assertStringContainsString('public function describe(): \Go\Tests\TestProject\Application\ZEngineParent', $code);
+    }
+
+    public function testAReadonlyClassGetsAReadonlyDonor(): void
+    {
+        $class     = new ReflectionClass(ReadonlyPoint::class);
+        $generator = new DonorClassGenerator($class, [
+            AspectContainer::METHOD_PREFIX => ['translate' => [self::testAdvice()]],
+        ]);
+        $code = "<?php\n" . $generator->generate();
+
+        self::assertPhpCompiles($code);
+        self::assertStringContainsString('abstract readonly class ReadonlyPoint__AopDonor', $code);
+        self::assertStringContainsString('public function translate(int $dx, int $dy): \\Go\\Stubs\\ZEngine\\ReadonlyPoint', $code);
     }
 
     public function testRefusesJoinpointKindsADonorCannotCarry(): void

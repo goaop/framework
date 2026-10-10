@@ -16,5 +16,7 @@ final class InProcessKernel extends AspectKernel
     {
         $container->addLazyService(InProcessAspect::class, static fn(): InProcessAspect => new InProcessAspect());
         $container->addLazyService(UnsupportedAspect::class, static fn(): UnsupportedAspect => new UnsupportedAspect());
+        $container->addLazyService(SelfMatchingAspect::class, static fn(): SelfMatchingAspect => new SelfMatchingAspect());
+        $container->addLazyService(MatcherErrorAdvisor::class, static fn(): MatcherErrorAdvisor => new MatcherErrorAdvisor());
     }
 }

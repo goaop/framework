@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ZEngine\InProcess;
 
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\WeavingDriver;
 use Go\Core\AspectKernel;
 use Go\Instrument\ZEngine\DonorCacheIndex;
@@ -21,7 +22,6 @@ use Go\Stubs\ZEngine\InProcessKernel;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionProperty;
-use Throwable;
 use ZEngine\Core;
 
 /**
@@ -101,13 +101,19 @@ abstract class ZEngineInProcessTestCase extends TestCase
         self::assertNotFalse($stubsDir);
 
         $kernel = new ReflectionClass(InProcessKernel::class)->newInstanceWithoutConstructor();
-        $kernel->init([
-            'driver'       => WeavingDriver::ZEngine,
-            'debug'        => true,
-            'appDir'       => $appDir,
-            'cacheDir'     => $this->cacheDir,
-            'includePaths' => [$stubsDir],
-        ]);
+        try {
+            // The first boot of the process initializes the engine (ZEngineDriver::boot() calls Core::init())
+            $kernel->init([
+                'driver'       => WeavingDriver::ZEngine,
+                'debug'        => true,
+                'appDir'       => $appDir,
+                'cacheDir'     => $this->cacheDir,
+                'includePaths' => [$stubsDir],
+            ]);
+        } catch (InvalidConfigurationException $failure) {
+            self::$engineUnavailableReason = 'The zengine driver cannot boot in this process: ' . $failure->getMessage();
+            self::markTestSkipped(self::$engineUnavailableReason);
+        }
         $singleton = self::singletonProperty();
         $previous  = $singleton->getValue();
         $this->previousSingleton = $previous instanceof AspectKernel ? $previous : null;
@@ -139,12 +145,11 @@ abstract class ZEngineInProcessTestCase extends TestCase
             return self::$engineUnavailableReason = 'The opcache JIT is active in the test runner: z-engine needs it off, '
                 . 'start PHP with opcache.jit=off and opcache.jit_buffer_size=0';
         }
-        try {
-            Core::init();
-        } catch (Throwable $failure) {
-            return self::$engineUnavailableReason = 'z-engine cannot boot in this process (ext-ffi, ffi.enable=1 and the '
-                . 'z-engine branch of this PHP minor are required): ' . $failure->getMessage();
+        if (!extension_loaded('FFI') || !in_array(strtolower((string) ini_get('ffi.enable')), ['1', 'true', 'on'], true)) {
+            return self::$engineUnavailableReason = 'z-engine needs ext-ffi with ffi.enable=1 in the test runner';
         }
+        // Whether this z-engine branch targets the running PHP minor is only known by booting: the first
+        // bootKernel() does that through the driver and skips the rest of the process on a failure
 
         return self::$engineUnavailableReason = null;
     }

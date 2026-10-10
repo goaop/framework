@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ZEngine;
 
+use Closure;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Core\AdviceMatcher;
 use Go\Core\AspectContainer;
@@ -49,9 +50,26 @@ final class ZEngineDriver
      */
     private function __construct() {}
 
-    public static function boot(AspectKernel $kernel, AspectContainer $container): void
-    {
-        if (!class_exists(Core::class)) {
+    /**
+     * @param (Closure(): bool)|null $isEngineInstalled Whether z-engine is installed, class_exists(Core::class) by default (tests)
+     * @param (Closure(): void)|null $bootEngine        Boots z-engine unless it is initialized, Core::init() by default (tests)
+     *
+     * @throws InvalidConfigurationException When z-engine is missing, cannot boot, or the JIT is on where it may not be switched off
+     */
+    public static function boot(
+        AspectKernel $kernel,
+        AspectContainer $container,
+        ?Closure $isEngineInstalled = null,
+        ?Closure $bootEngine = null,
+    ): void {
+        $isEngineInstalled ??= static fn(): bool => class_exists(Core::class);
+        $bootEngine        ??= static function (): void {
+            if (!Core::isInitialized()) {
+                Core::init();
+            }
+        };
+
+        if (!$isEngineInstalled()) {
             throw new InvalidConfigurationException(
                 'The zengine weaving driver requires lisachenko/z-engine: install the z-engine branch '
                 . 'matching the PHP minor version (composer require lisachenko/z-engine:8.5.x-dev on PHP 8.5) '
@@ -61,16 +79,14 @@ final class ZEngineDriver
 
         $jitReport = JitGuard::enforce();
 
-        if (!Core::isInitialized()) {
-            try {
-                Core::init();
-            } catch (Throwable $failure) {
-                throw new InvalidConfigurationException(
-                    'The zengine weaving driver cannot boot z-engine: ' . $failure->getMessage(),
-                    0,
-                    $failure,
-                );
-            }
+        try {
+            $bootEngine();
+        } catch (Throwable $failure) {
+            throw new InvalidConfigurationException(
+                'The zengine weaving driver cannot boot z-engine: ' . $failure->getMessage(),
+                0,
+                $failure,
+            );
         }
 
         $container->add(self::BOOT_REPORT, [

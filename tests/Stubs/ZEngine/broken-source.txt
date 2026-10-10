@@ -1,0 +1,3 @@
+<?php
+// Not parseable on purpose: the weaver falls back to native reflection for the class it was asked to weave
+class {
