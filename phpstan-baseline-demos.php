@@ -86,28 +86,22 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/demos/Demo/Example/UserFluentDemo.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Parameter \\#1 \\$string of function htmlspecialchars expects string, string\\|false given\\.$#',
-	'identifier' => 'argument.type',
-	'count' => 1,
-	'path' => __DIR__ . '/demos/Demo/Highlighter.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Cannot call method setPassword\\(\\) on mixed\\.$#',
 	'identifier' => 'method.nonObject',
 	'count' => 1,
-	'path' => __DIR__ . '/demos/index.php',
+	'path' => __DIR__ . '/demos/Demo/Showcase/ShowcaseCatalog.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Cannot call method setSurname\\(\\) on mixed\\.$#',
 	'identifier' => 'method.nonObject',
 	'count' => 1,
-	'path' => __DIR__ . '/demos/index.php',
+	'path' => __DIR__ . '/demos/Demo/Showcase/ShowcaseCatalog.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Instanceof between Demo\\\\Example\\\\UserFluentDemo and Go\\\\Aop\\\\Proxy will always evaluate to false\\.$#',
 	'identifier' => 'instanceof.alwaysFalse',
 	'count' => 1,
-	'path' => __DIR__ . '/demos/index.php',
+	'path' => __DIR__ . '/demos/Demo/Showcase/ShowcaseCatalog.php',
 ];
 
 return ['parameters' => ['ignoreErrors' => $ignoreErrors]];
