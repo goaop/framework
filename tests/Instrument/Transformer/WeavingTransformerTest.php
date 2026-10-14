@@ -1134,6 +1134,61 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * A woven trait aliases every intercepted method in the proxy trait (`m as private mOriginalAlias`), and PHP
+     * copies #[\Override] to the alias of the class using it, which overrides nothing (issue #761). The attribute
+     * lives in the file being woven, so it is stripped from the intercepted methods of the renamed original trait,
+     * keeping every line in place, and stays on the methods of the proxy trait.
+     */
+    public function testWeaverStripsOverrideAttributeFromInterceptedMethodsOfTrait(): void
+    {
+        $traitFqn    = Stubs\WovenOverrideTrait::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'hello' => ["advisor.{$traitFqn}->hello" => new BeforeInterceptor(static function (): void {})],
+                'count' => ["advisor.{$traitFqn}->count" => new BeforeInterceptor(static function (): void {})],
+            ],
+            AspectContainer::STATIC_METHOD_PREFIX => [
+                'make' => ["advisor.{$traitFqn}->make" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('WovenOverrideTrait');
+        $original = $metadata->source;
+        $transformer->transform($metadata);
+
+        $woven = $metadata->source;
+        $this->assertStringContainsString('trait WovenOverrideTraitOriginalTrait', $woven);
+        // Only the method that is not intercepted keeps #[\Override], an aliased one is recognised too
+        $this->assertSame(1, preg_match_all('/#\[\\\\Override\]\s+public/', $woven));
+        $this->assertMatchesRegularExpression('/#\[\\\\Override\]\s+public function notIntercepted\(\)/', $woven);
+        $this->assertStringNotContainsString('#[OverrideAlias]', $woven);
+        $this->assertStringNotContainsString(', \Override', $woven);
+        $this->assertStringContainsString('#[\ReturnTypeWillChange', $woven);
+        // Every method stays at its original line
+        foreach (['hello', 'make', 'count', 'notIntercepted'] as $methodName) {
+            $pattern = '/^.*function ' . $methodName . '\(/m';
+            $this->assertSame(1, preg_match($pattern, $original, $originalMatch, PREG_OFFSET_CAPTURE));
+            $this->assertSame(1, preg_match($pattern, $woven, $wovenMatch, PREG_OFFSET_CAPTURE));
+            $this->assertSame(
+                substr_count(substr($original, 0, $originalMatch[0][1]), "\n"),
+                substr_count(substr($woven, 0, $wovenMatch[0][1]), "\n"),
+                "Method {$methodName}() must stay at its original line",
+            );
+        }
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $woven, $matches));
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+
+        // The proxy trait methods keep the Override semantics of the original methods
+        $this->assertStringContainsString('as private helloOriginalAlias;', $proxyContent);
+        $this->assertStringContainsString('as private makeOriginalAlias;', $proxyContent);
+        $this->assertMatchesRegularExpression('/#\[\\\\Override\]\s+public function hello\(\)/', $proxyContent);
+        $this->assertMatchesRegularExpression('/#\[\\\\Override\]\s+public static function make\(\)/', $proxyContent);
+        $this->assertMatchesRegularExpression('/\\\\Override\]\s+public function count\(\)/', $proxyContent);
+    }
+
+    /**
      * `abstract` is a class-only modifier — convertClassToTrait() must drop it, otherwise the
      * woven file would contain the invalid `abstract trait ...` declaration. Abstract *methods*
      * remain legal inside the trait and must be kept.
@@ -1292,7 +1347,6 @@ class WeavingTransformerTest extends TestCase
         $classFqn    = Stubs\ClassUsingOverrideTrait::class;
         $transformer = $this->createTransformerWithAdvices([
             AspectContainer::METHOD_PREFIX => [
-                'count'     => ["advisor.{$classFqn}->count" => new BeforeInterceptor(static function (): void {})],
                 'ownMethod' => ["advisor.{$classFqn}->ownMethod" => new BeforeInterceptor(static function (): void {})],
             ],
         ]);
@@ -1306,6 +1360,110 @@ class WeavingTransformerTest extends TestCase
         $this->assertStringContainsString('trait ClassUsingOverrideTraitOriginalTrait', $woven);
         $originalBody = substr($original, (int) strpos($original, '{', (int) strpos($original, 'class ClassUsingOverrideTrait')));
         $this->assertStringContainsString(rtrim($originalBody), $woven);
+    }
+
+    /**
+     * A method imported from a trait with #[\Override] can not be intercepted: PHP copies the attribute to the
+     * private alias of the proxy, which overrides nothing, and the attribute lives in the shared trait file, so it
+     * can not be stripped per class (issue #761). Weaving fails with a hint to exclude the method.
+     */
+    public function testWeaverRejectsTraitImportedMethodWithOverride(): void
+    {
+        $classFqn    = Stubs\ClassUsingOverrideTrait::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'count'     => ["advisor.{$classFqn}->count" => new BeforeInterceptor(static function (): void {})],
+                'ownMethod' => ["advisor.{$classFqn}->ownMethod" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('ClassUsingOverrideTrait');
+
+        try {
+            $transformer->transform($metadata);
+            $this->fail('Interception of a trait-imported method with #[\Override] must be rejected');
+        } catch (WeavingException $exception) {
+            $message = $exception->getMessage();
+            $this->assertStringContainsString('ClassUsingOverrideTrait::count()', $message);
+            $this->assertStringContainsString('imported from trait ' . Stubs\OverrideTrait::class, $message);
+            $this->assertStringContainsString('"countOriginalAlias"', $message);
+            $this->assertStringContainsString('!matchInherited()', $message);
+        }
+    }
+
+    /**
+     * A trait-imported method with attributes other than #[\Override] is aliased and intercepted as usual
+     */
+    public function testWeaverInterceptsTraitImportedMethodWithOtherAttribute(): void
+    {
+        $classFqn    = Stubs\ClassUsingOverrideTrait::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'label' => ["advisor.{$classFqn}->label" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('ClassUsingOverrideTrait');
+        $transformer->transform($metadata);
+
+        $actual  = $this->normalizeWhitespaces($metadata->source);
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+
+        $this->assertStringContainsString('as private labelOriginalAlias;', $proxyContent);
+    }
+
+    /**
+     * Enum proxies alias every intercepted method, so a trait-imported method with #[\Override] is rejected there too
+     */
+    public function testWeaverRejectsTraitImportedMethodWithOverrideInEnum(): void
+    {
+        $enumFqn     = Stubs\EnumUsingOverrideTrait::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'count' => ["advisor.{$enumFqn}->count" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('EnumUsingOverrideTrait');
+
+        try {
+            $transformer->transform($metadata);
+            $this->fail('Interception of a trait-imported method with #[\Override] in an enum must be rejected');
+        } catch (WeavingException $exception) {
+            $this->assertStringContainsString(
+                'EnumUsingOverrideTrait::count() is imported from trait ' . Stubs\OverrideTrait::class,
+                $exception->getMessage(),
+            );
+        }
+    }
+
+    /**
+     * A trait method with #[\Override] that arrives through the parent class is not aliased: the proxy calls it
+     * through `parent::count(...)`, the attribute of the parent's method is never copied, so it is intercepted.
+     */
+    public function testWeaverInterceptsTraitMethodWithOverrideInheritedFromParent(): void
+    {
+        $classFqn    = Stubs\ClassExtendingOverrideTraitUser::class;
+        $transformer = $this->createTransformerWithAdvices([
+            AspectContainer::METHOD_PREFIX => [
+                'count' => ["advisor.{$classFqn}->count" => new BeforeInterceptor(static function (): void {})],
+            ],
+        ]);
+
+        $metadata = $this->loadStubMetadata('ClassExtendingOverrideTraitUser');
+        $transformer->transform($metadata);
+
+        $actual = $this->normalizeWhitespaces($metadata->source);
+        $this->assertStringContainsString('trait ClassExtendingOverrideTraitUserOriginalTrait', $actual);
+
+        $matches = [];
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+
+        $this->assertStringContainsString('parent::count(...)', $proxyContent);
+        $this->assertStringNotContainsString('countOriginalAlias', $proxyContent);
     }
 
     /**

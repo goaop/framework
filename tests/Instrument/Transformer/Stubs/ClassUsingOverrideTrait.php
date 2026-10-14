@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace Go\Instrument\Transformer\Stubs;
 
 /**
- * Weaving input for an advice that matches a method imported from a trait with #[\Override]: the attribute is
- * declared in the trait file, the token stream of this file must not be touched for it.
+ * Weaving input for a class importing a trait method with #[\Override]: the attribute is declared in the trait file,
+ * the token stream of this file must not be touched for it, and the interception of `count` is rejected (#761).
  */
 class ClassUsingOverrideTrait implements \Countable
 {
