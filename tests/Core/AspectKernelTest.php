@@ -374,13 +374,15 @@ class AspectKernelTest extends TestCase
     {
         $kernel = $this->makeKernel();
 
-        $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessageIsOrContains('Features INTERCEPT_FUNCTIONS and INTERCEPT_INITIALIZATIONS were removed');
-
-        $this->invokeProtected($kernel, 'normalizeOptions', [[
-            'cacheDir' => '/some/cache/dir',
-            'features' => $features,
-        ]]);
+        try {
+            $this->invokeProtected($kernel, 'normalizeOptions', [[
+                'cacheDir' => '/some/cache/dir',
+                'features' => $features,
+            ]]);
+            $this->fail('Removed features must be rejected');
+        } catch (InvalidConfigurationException $exception) {
+            $this->assertStringContainsString('Features INTERCEPT_FUNCTIONS and INTERCEPT_INITIALIZATIONS were removed', $exception->getMessage());
+        }
     }
 
     public function testNormalizeOptionsAcceptsEveryKnownFeature(): void
