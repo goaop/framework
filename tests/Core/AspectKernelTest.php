@@ -199,8 +199,6 @@ class AspectKernelTest extends TestCase
         yield 'zero' => [0];
         yield 'undefined bit' => [8];
         yield 'defined and undefined bits' => [Features::PREBUILT_CACHE | 128];
-        yield 'removed INTERCEPT_FUNCTIONS bit' => [1];
-        yield 'removed INTERCEPT_INITIALIZATIONS bit' => [2];
     }
 
     #[DataProvider('unknownFeatures')]
@@ -354,35 +352,6 @@ class AspectKernelTest extends TestCase
             'cacheDir' => '/some/cache/dir',
             'features' => $features,
         ]]);
-    }
-
-    /**
-     * @return iterable<string, array{int}>
-     */
-    public static function removedFeatures(): iterable
-    {
-        yield 'INTERCEPT_FUNCTIONS' => [1];
-        yield 'INTERCEPT_INITIALIZATIONS' => [2];
-        yield 'removed and known bits' => [2 | Features::PREBUILT_CACHE];
-    }
-
-    /**
-     * Function and initialization pointcuts need no feature flag anymore, the removed flags point to that
-     */
-    #[DataProvider('removedFeatures')]
-    public function testNormalizeOptionsRejectsRemovedFeatures(int $features): void
-    {
-        $kernel = $this->makeKernel();
-
-        try {
-            $this->invokeProtected($kernel, 'normalizeOptions', [[
-                'cacheDir' => '/some/cache/dir',
-                'features' => $features,
-            ]]);
-            $this->fail('Removed features must be rejected');
-        } catch (InvalidConfigurationException $exception) {
-            $this->assertStringContainsString('Features INTERCEPT_FUNCTIONS and INTERCEPT_INITIALIZATIONS were removed', $exception->getMessage());
-        }
     }
 
     public function testNormalizeOptionsAcceptsEveryKnownFeature(): void

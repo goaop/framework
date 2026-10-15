@@ -69,6 +69,6 @@ when `$level > 0` and pops it in `finally`. Check every change with `composer te
 
 ## Features (src/Aop/Features.php)
 Final class with bitmask constants (`ALL` is the mask of every flag):
-- INTERCEPT_INCLUDES=4 (bits 1/2 were INTERCEPT_FUNCTIONS/INTERCEPT_INITIALIZATIONS, removed: AspectKernel rejects them with a hint)
+- INTERCEPT_INCLUDES=4
 - No flag for function/initialization interception: pointcut kinds decide (AdvisorIndex, see src/Core/AGENTS.md)
 - PREBUILT_CACHE=64 — assume cache already prepared, skip freshness checks

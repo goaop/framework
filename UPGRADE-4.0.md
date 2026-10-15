@@ -184,9 +184,9 @@ that relied on that inheritance layer:
   passed it.
 - `Features::INTERCEPT_FUNCTIONS` and `Features::INTERCEPT_INITIALIZATIONS` are removed: function and
   initialization interception are enabled by the registered `execution(Namespace\function(*))` and
-  `initialization(...)` pointcuts. Delete the flags from your kernel options; passing them throws an
-  `InvalidConfigurationException`. While an `initialization(...)` pointcut is registered, every `new` in woven
-  files is rewritten, so an aspect that declares one without the flag starts intercepting object creation.
+  `initialization(...)` pointcuts. Delete the flags from your kernel options. While an `initialization(...)`
+  pointcut is registered, every `new` in woven files is rewritten, so an aspect that declares one without the
+  flag starts intercepting object creation.
 
 Removed unused API
 ------------------

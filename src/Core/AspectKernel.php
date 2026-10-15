@@ -55,11 +55,6 @@ use ReflectionClass;
 abstract class AspectKernel
 {
     /**
-     * Bits of the removed INTERCEPT_FUNCTIONS (1) and INTERCEPT_INITIALIZATIONS (2) features
-     */
-    private const int REMOVED_FEATURES = 1 | 2;
-
-    /**
      * Composer packages the framework runs on during weaving, always excluded from weaving
      */
     private const array RUNTIME_DEPENDENCIES = [
@@ -323,12 +318,6 @@ abstract class AspectKernel
             ));
         }
         $features = $merged['features'] ?? 0;
-        if (is_int($features) && ($features & self::REMOVED_FEATURES) !== 0) {
-            throw new InvalidConfigurationException(
-                'Features INTERCEPT_FUNCTIONS and INTERCEPT_INITIALIZATIONS were removed, remove them from the "features" '
-                . 'option: function and initialization pointcuts are enabled automatically by the registered aspects.',
-            );
-        }
         if (!is_int($features) || ($features & ~Features::ALL) !== 0) {
             throw new InvalidConfigurationException(sprintf(
                 'Option "features" must be a combination of Go\\Aop\\Features constants, got %s.',
