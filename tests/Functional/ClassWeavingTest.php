@@ -20,6 +20,7 @@ use Go\Tests\TestProject\Application\ClassWithComplexTypes;
 use Go\Tests\TestProject\Application\FinalClass;
 use Go\Tests\TestProject\Application\FooInterface;
 use Go\Tests\TestProject\Application\Main;
+use Go\Tests\TestProject\Application\MainFactory;
 use Go\Tests\TestProject\Application\NewInInitializerClass;
 use Go\Tests\TestProject\Application\NullablePropertyDemo;
 use Go\Tests\TestProject\Application\PromotedPropertyClass;
@@ -104,6 +105,32 @@ class ClassWeavingTest extends BaseFunctionalTestCase
     {
         $this->assertClassInitializationWoven(Main::class, 'Go\\Tests\\TestProject\\Aspect\\InitializationAspect->beforeInstanceInitialization');
         $this->assertClassStaticInitializationWoven(Main::class, 'Go\\Tests\\TestProject\\Aspect\\InitializationAspect->afterClassStaticInitialization');
+    }
+
+    /**
+     * The initialization pointcut of InitializationAspect turns the rewriting of `new` on by itself, no feature flag needed
+     */
+    public function testInitializationAdviceRunsOnNewInWovenCode(): void
+    {
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        $script = sprintf(
+            'include %s; ob_start(); $main = new %s()->create(); $output = ob_get_clean(); echo $main::class, "|", $output;',
+            var_export($this->configuration['frontController'], true),
+            '\\' . MainFactory::class,
+        );
+        assert($phpExecutable !== false);
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
+        );
+        $process->run();
+
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Running the woven class failed: ' . $process->getOutput() . $process->getErrorOutput(),
+        );
+        $this->assertSame(Main::class . '|It invokes before class instance is initialized.', trim($process->getOutput()));
     }
 
     public function testItWeavesFinalClasses(): void

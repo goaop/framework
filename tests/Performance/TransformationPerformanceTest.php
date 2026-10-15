@@ -119,7 +119,7 @@ final class TransformationPerformanceTest extends TestCase
     }
 
     /**
-     * @param bool  $allRules Enables the rules of INTERCEPT_INITIALIZATIONS and INTERCEPT_INCLUDES too
+     * @param bool  $allRules Enables the `new` rewriting (ungated) and INTERCEPT_INCLUDES rules too
      * @param float $maxRatio Budget: transformation time / plain walk time
      */
     #[DataProvider('ruleSets')]

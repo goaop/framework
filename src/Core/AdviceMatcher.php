@@ -30,18 +30,11 @@ use ReflectionProperty;
 class AdviceMatcher implements AdviceMatcherInterface
 {
     /**
-     * Constructor
-     *
-     * @param bool $isInterceptFunctions Optional flag to enable function interception
-     */
-    /**
      * Reflections of every internal function, built on the first function match of the request
      *
      * @var array<non-empty-string, ReflectionFunction>|null
      */
     private static ?array $internalFunctions = null;
-
-    public function __construct(private readonly bool $isInterceptFunctions = false) {}
 
     /**
      * Returns list of function advices for namespace
@@ -52,10 +45,7 @@ class AdviceMatcher implements AdviceMatcherInterface
      */
     public function getAdvicesForFunctions(ReflectionFileNamespace $namespace, array $advisors): array
     {
-        if (!$this->isInterceptFunctions) {
-            return [];
-        }
-
+        // Only advisors with a function pointcut are matched: without one a namespace costs a scan of the advisors
         $advices = [];
 
         foreach ($advisors as $advisorId => $advisor) {

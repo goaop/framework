@@ -47,7 +47,6 @@ class ContainerTest extends TestCase
             'containerClass' => Container::class,
         ]);
         $this->container->add(AspectKernel::class, $mockKernel);
-        $this->container->add('kernel.interceptFunctions', false);
         FrameworkServices::register($this->container);
     }
 
@@ -73,6 +72,7 @@ class ContainerTest extends TestCase
             AdviceMatcher::class       => [AdviceMatcher::class],
             AspectLoader::class        => [AspectLoader::class],
             CachedAspectLoader::class  => [CachedAspectLoader::class],
+            AdvisorIndex::class        => [AdvisorIndex::class],
             SyntaxTreeRewriter::class  => [SyntaxTreeRewriter::class],
             // [CachePathManager::class], // Need to politely switch to options instead of whole kernel
         ];

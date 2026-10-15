@@ -102,14 +102,13 @@ protected null $jsonSerializable;
 
 ## Function interception
 
-With `Features::INTERCEPT_FUNCTIONS`, `execution(App\Service\file_get_contents(*))` intercepts calls of
+`execution(App\Service\file_get_contents(*))` intercepts calls of
 `file_get_contents()` from code in the `App\Service` namespace that calls the function without a leading backslash.
 The advice receives a `FunctionInvocation`.
 
 ## Object creation
 
-With `Features::INTERCEPT_INITIALIZATIONS`, `initialization(App\Model\Order)` intercepts `new Order(...)` in woven
-files. The advice receives a `ConstructorInvocation`. `staticinitialization(App\Model\*)` runs once, after the class
+`initialization(App\Model\Order)` intercepts `new Order(...)` in woven files. The advice receives a `ConstructorInvocation`. `staticinitialization(App\Model\*)` runs once, after the class
 is loaded.
 
 ## Registering aspects

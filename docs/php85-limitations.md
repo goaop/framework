@@ -68,10 +68,10 @@ Backed enum cases declared with constant expressions (e.g. `case Negative = -1;`
 the generated proxy enum, producing a fatal error at load time. Fixed by re-emitting the original
 case expression verbatim in the proxy enum.
 
-### `new` in initializers under `INTERCEPT_INITIALIZATIONS` — tracked in [#603](https://github.com/goaop/framework/issues/603)
+### `new` in initializers with an `initialization(...)` pointcut — tracked in [#603](https://github.com/goaop/framework/issues/603)
 
-`new` expressions in property/parameter initializers do not work correctly when the
-`INTERCEPT_INITIALIZATIONS` kernel feature is enabled.
+`new` expressions in property/parameter initializers do not work correctly while an
+`initialization(...)` pointcut is registered.
 
 ### Global constants in attribute arguments — tracked in [#602](https://github.com/goaop/framework/issues/602)
 
@@ -104,7 +104,7 @@ properties from property join points. This is a PHP engine constraint, not a bug
 | Closures / FCC in attribute arguments | ❌ Limited | Tracked in [#601](https://github.com/goaop/framework/issues/601) |
 | Promoted-property interception | ❌ Limited | Tracked in [#599](https://github.com/goaop/framework/issues/599) |
 | Enum constant-expression case values | ❌→✅ Fixed | Tracked in [#600](https://github.com/goaop/framework/issues/600) |
-| `new` in initializers + `INTERCEPT_INITIALIZATIONS` | ❌ Limited | Tracked in [#603](https://github.com/goaop/framework/issues/603) |
+| `new` in initializers + `initialization(...)` pointcut | ❌ Limited | Tracked in [#603](https://github.com/goaop/framework/issues/603) |
 | Global constants in attribute arguments | ❌ Limited | Tracked in [#602](https://github.com/goaop/framework/issues/602) |
 | Class-level attributes on woven classes | ❌ Limited | Tracked in [#598](https://github.com/goaop/framework/issues/598) |
 | Static property interception via `access()` | ❌ Never | No property hooks for static properties (PHP engine constraint) |

@@ -55,6 +55,11 @@ use ReflectionClass;
 abstract class AspectKernel
 {
     /**
+     * Bits of the removed INTERCEPT_FUNCTIONS (1) and INTERCEPT_INITIALIZATIONS (2) features
+     */
+    private const int REMOVED_FEATURES = 1 | 2;
+
+    /**
      * Composer packages the framework runs on during weaving, always excluded from weaving
      */
     private const array RUNTIME_DEPENDENCIES = [
@@ -150,7 +155,6 @@ abstract class AspectKernel
 
         $container = $this->container = new $this->options['containerClass']($resourcesToTrack);
         $container->add(AspectKernel::class, $this);
-        $container->add('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
 
         // The framework's own services are deferred definitions registered through the
         // generic lazy container API - the container itself knows nothing about them.
@@ -319,6 +323,12 @@ abstract class AspectKernel
             ));
         }
         $features = $merged['features'] ?? 0;
+        if (is_int($features) && ($features & self::REMOVED_FEATURES) !== 0) {
+            throw new InvalidConfigurationException(
+                'Features INTERCEPT_FUNCTIONS and INTERCEPT_INITIALIZATIONS were removed, remove them from the "features" '
+                . 'option: function and initialization pointcuts are enabled automatically by the registered aspects.',
+            );
+        }
         if (!is_int($features) || ($features & ~Features::ALL) !== 0) {
             throw new InvalidConfigurationException(sprintf(
                 'Option "features" must be a combination of Go\\Aop\\Features constants, got %s.',
@@ -379,9 +389,10 @@ abstract class AspectKernel
      *
      * Every registered container service implementing SourceTransformer becomes part of
      * the chain, in registration order (registration order IS the transformation order);
-     * feature flags gate registration exactly as they used to gate construction. Nothing
-     * is constructed here - these are deferred definitions, materialized on the first
-     * cache miss only.
+     * feature flags gate registration exactly as they used to gate construction, and the
+     * rewriting of `new` turns itself on only while an initialization pointcut is
+     * registered (AdvisorIndex). Nothing is constructed here - these are deferred
+     * definitions, materialized on the first cache miss only.
      *
      * Rewrites of single syntax tree nodes are NodeRewriter services instead: the
      * SyntaxTreeRewriter stage, a framework service registered before this hook (so
@@ -395,12 +406,12 @@ abstract class AspectKernel
      */
     protected function registerTransformerServices(AspectContainer $container): void
     {
-        if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
-            $container->addLazyService(
-                ConstructorExecutionTransformer::class,
-                fn(): ConstructorExecutionTransformer => new ConstructorExecutionTransformer(),
-            );
-        }
+        $container->addLazyService(
+            ConstructorExecutionTransformer::class,
+            fn(AspectContainer $container): ConstructorExecutionTransformer => new ConstructorExecutionTransformer(
+                $container->getService(AdvisorIndex::class),
+            ),
+        );
         if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
             $container->addLazyService(
                 FilterInjectorTransformer::class,
