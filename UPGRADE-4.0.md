@@ -182,11 +182,6 @@ that relied on that inheritance layer:
   be implemented. `Features::ALL` combines every flag, and `AspectKernel::hasFeature()` throws on an unknown flag.
 - `Features::PARAMETER_WIDENING` is removed. Delete the flag from your kernel options if you
   passed it.
-- `Features::INTERCEPT_FUNCTIONS` and `Features::INTERCEPT_INITIALIZATIONS` are removed: function and
-  initialization interception are enabled by the registered `execution(Namespace\function(*))` and
-  `initialization(...)` pointcuts. Delete the flags from your kernel options. While an `initialization(...)`
-  pointcut is registered, every `new` in woven files is rewritten, so an aspect that declares one without the
-  flag starts intercepting object creation.
 
 Removed unused API
 ------------------
