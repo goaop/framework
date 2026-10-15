@@ -29,14 +29,18 @@ bit throws `Go\Aop\Exception\InvalidConfigurationException`.
 
 ## Features
 
-Combine the flags with `|`, e.g. `'features' => Features::INTERCEPT_FUNCTIONS | Features::PREBUILT_CACHE`.
+Combine the flags with `|`, e.g. `'features' => Features::INTERCEPT_INCLUDES | Features::PREBUILT_CACHE`.
 
 | Flag                        | Effect |
 |-----------------------------|--------|
-| `INTERCEPT_FUNCTIONS`       | Enables `execution(Namespace\function(*))` pointcuts for system functions called from your namespaced code. Expensive: every woven file is scanned for function calls. |
-| `INTERCEPT_INITIALIZATIONS` | Enables `initialization(...)` pointcuts by rewriting `new Foo(...)` expressions in woven files. |
 | `INTERCEPT_INCLUDES`        | Routes `include`/`require` in woven files through the weaver, for legacy code that is not loaded by Composer. |
 | `PREBUILT_CACHE`            | Trusts the cache built at deploy time completely. Skips the cache directory and writability probes, source `filemtime` comparisons, tracked-resource checks and advisor cache freshness checks, and never writes to the cache directory. Rebuilding the cache on every deploy is your responsibility. Works on read-only file systems. |
+
+Function and initialization pointcuts need no flag: the framework enables their machinery from the registered
+aspects, lazily registered ones included. An `execution(Namespace\function(*))` pointcut weaves function proxies into
+the matching namespaces. An `initialization(...)` pointcut turns on the rewriting of `new Foo(...)` expressions in
+woven files; while one is registered, every rewritten `new` goes through the interceptor, so keep such pointcuts to
+the code that needs them.
 
 ## Extending the transformation pipeline
 
@@ -46,7 +50,8 @@ order:
 1. `SyntaxTreeRewriter` walks the syntax tree of the file once, for all `NodeRewriter` rules. It is a framework
    service, so it always opens the chain.
 2. The transformers registered by `AspectKernel::registerTransformerServices()`: `WeavingTransformer`, plus the
-   `INTERCEPT_INITIALIZATIONS`, `INTERCEPT_INCLUDES` and magic-constant rules.
+   `new` rewriting rule (active while an `initialization(...)` pointcut is registered), the `INTERCEPT_INCLUDES`
+   rule and the magic-constant rule.
 3. Your own transformers.
 
 To change single syntax nodes, implement `NodeRewriter`. It declares the node classes it handles and rewrites

@@ -10,6 +10,7 @@
 
 ## Aspect loading
 - AspectLoader — scans aspect classes for pointcut/advice attributes → Advisor[]; CachedAspectLoader decorates it (both implement AspectLoaderInterface)
+- AdvisorIndex (@internal) — loads unloaded aspects, returns advisors, hasPointcutKind(Pointcut::KIND_*) = union of advisor pointcut kinds, recollected whenever getServicesByInterface(Advisor) returns another array (after any registration). Gates kind-specific machinery instead of feature flags (`new` rewriting ← KIND_INIT); function advices need no gate (AdviceMatcher skips non-KIND_FUNCTION advisors)
 
 ### Compiled advisor cache
 - Lives in the nested Go\Core\Cache namespace (CachedAspectLoader, AdvisorCacheCompiler, AdvisorCachePrinter, CacheFileWriter — all @internal); format, naming and error-handling rules: see src/Core/Cache/AGENTS.md

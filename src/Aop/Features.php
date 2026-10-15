@@ -14,21 +14,12 @@ namespace Go\Aop;
 
 /**
  * Framework feature flags for the `features` kernel option, combined with `|`
+ *
+ * Interception of system functions and of `new` needs no flag: it is enabled by the registered
+ * `execution(Namespace\function(*))` and `initialization(...)` pointcuts themselves.
  */
 final class Features
 {
-    /**
-     * Enables interception of system function.
-     * By default this feature is disabled, because this option is very expensive.
-     */
-    public const int INTERCEPT_FUNCTIONS = 1;
-
-    /**
-     * Enables interception of "new" operator in the source code
-     * By default this feature is disabled, because it's very tricky
-     */
-    public const int INTERCEPT_INITIALIZATIONS = 2;
-
     /**
      * Enables interception of "include"/"require" operations in legacy code
      * By default this feature is disabled, because only composer should be used
@@ -49,9 +40,7 @@ final class Features
     /**
      * Mask of every defined feature flag
      */
-    public const int ALL = self::INTERCEPT_FUNCTIONS
-        | self::INTERCEPT_INITIALIZATIONS
-        | self::INTERCEPT_INCLUDES
+    public const int ALL = self::INTERCEPT_INCLUDES
         | self::PREBUILT_CACHE;
 
     /**

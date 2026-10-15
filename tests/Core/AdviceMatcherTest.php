@@ -443,18 +443,19 @@ class AdviceMatcherTest extends TestCase
     }
 
     /**
-     * Verifies that getAdvicesForFunctions() short-circuits to an empty array when function
-     * interception is not enabled.
+     * Verifies that getAdvicesForFunctions() never matches an advisor without a function pointcut:
+     * function interception needs no feature flag, the pointcut kind enables it.
      */
-    public function testGetAdvicesForFunctionsReturnsEmptyArrayWhenFeatureDisabled(): void
+    public function testGetAdvicesForFunctionsSkipsAdvisorsWithoutFunctionPointcut(): void
     {
-        $adviceMatcher = new AdviceMatcher(isInterceptFunctions: false);
+        $adviceMatcher = new AdviceMatcher();
 
         $reflectionFile = new ReflectionFile(__FILE__);
         $namespace      = $reflectionFile->getFileNamespace(__NAMESPACE__);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->expects($this->never())->method('getKind');
+        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD | Pointcut::KIND_INIT | Pointcut::KIND_CLASS);
+        $pointcut->expects($this->never())->method('matches');
 
         $advice  = $this->createMock(Advice::class);
         $advisor = new GenericPointcutAdvisor($pointcut, $advice);
@@ -465,12 +466,11 @@ class AdviceMatcherTest extends TestCase
     }
 
     /**
-     * Verifies that getAdvicesForFunctions() matches an internal PHP function by name when
-     * function interception is enabled.
+     * Verifies that getAdvicesForFunctions() matches an internal PHP function by name for a function pointcut.
      */
     public function testGetAdvicesForFunctionsMatchesInternalFunction(): void
     {
-        $adviceMatcher = new AdviceMatcher(isInterceptFunctions: true);
+        $adviceMatcher = new AdviceMatcher();
 
         $reflectionFile = new ReflectionFile(__FILE__);
         $namespace      = $reflectionFile->getFileNamespace(__NAMESPACE__);
@@ -499,7 +499,7 @@ class AdviceMatcherTest extends TestCase
      */
     public function testGetAdvicesForFunctionsSkipsNonMatchingNamespace(): void
     {
-        $adviceMatcher = new AdviceMatcher(isInterceptFunctions: true);
+        $adviceMatcher = new AdviceMatcher();
 
         $reflectionFile = new ReflectionFile(__FILE__);
         $namespace      = $reflectionFile->getFileNamespace(__NAMESPACE__);

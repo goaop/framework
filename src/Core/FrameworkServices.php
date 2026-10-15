@@ -36,9 +36,7 @@ final class FrameworkServices
             new PointcutGrammar(),
         ));
 
-        $container->addLazyService(AdviceMatcher::class, fn(AspectContainer $container): AdviceMatcher => new AdviceMatcher(
-            (bool) $container->getValue('kernel.interceptFunctions'),
-        ));
+        $container->addLazyService(AdviceMatcher::class, fn(): AdviceMatcher => new AdviceMatcher());
 
         $container->addLazyService(AttributeAspectLoaderExtension::class, fn(AspectContainer $container): AttributeAspectLoaderExtension => new AttributeAspectLoaderExtension(
             $container->getService(PointcutLexer::class),
@@ -61,6 +59,11 @@ final class FrameworkServices
 
             return new CachedAspectLoader($container, AspectLoader::class, $options);
         });
+
+        $container->addLazyService(AdvisorIndex::class, fn(AspectContainer $container): AdvisorIndex => new AdvisorIndex(
+            $container,
+            $container->getService(CachedAspectLoader::class),
+        ));
 
         // Registered ahead of the kernel's transformer services, so the single syntax tree walk
         // opens the transformation chain even when AspectKernel::registerTransformerServices()

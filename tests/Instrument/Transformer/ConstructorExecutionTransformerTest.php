@@ -12,7 +12,14 @@ declare(strict_types=1);
 
 namespace Go\Instrument\Transformer;
 
+use Go\Aop\Advice;
 use Go\Aop\Exception\WeavingException;
+use Go\Aop\Pointcut;
+use Go\Aop\Pointcut\TruePointcut;
+use Go\Aop\Support\GenericPointcutAdvisor;
+use Go\Core\AdvisorIndex;
+use Go\Core\AspectLoaderInterface;
+use Go\Core\Container;
 use Go\Instrument\Transformer\Stubs\ConstructedStub;
 use Go\Instrument\Transformer\Stubs\InitializationAwareStub;
 use PhpParser\Node\Expr\New_;
@@ -194,6 +201,46 @@ class ConstructorExecutionTransformerTest extends TestCase
         } finally {
             spl_autoload_unregister($autoloader);
         }
+    }
+
+    /**
+     * Without an initialization pointcut there is nothing to route a `new` to, so the rule stays off
+     */
+    public function testRuleIsOffWithoutInitializationPointcut(): void
+    {
+        $container = new Container();
+        $container->add('advisor.method', new GenericPointcutAdvisor(new TruePointcut(Pointcut::KIND_METHOD), $this->createStub(Advice::class)));
+        $rewriter = new SyntaxTreeRewriter(new ConstructorExecutionTransformer(new AdvisorIndex($container, $this->createAspectLoader())));
+        $source   = '<?php $a = new \stdClass();';
+        $metadata = $this->createMetadata($source);
+
+        $this->assertSame(TransformerResult::Abstain, $rewriter->transform($metadata));
+        $this->assertSame($source, $metadata->source);
+    }
+
+    /**
+     * An initialization pointcut registered later, e.g. by a lazily loaded aspect, turns the rule on
+     */
+    public function testRuleIsOnOnceInitializationPointcutIsRegistered(): void
+    {
+        $container = new Container();
+        $rewriter  = new SyntaxTreeRewriter(new ConstructorExecutionTransformer(new AdvisorIndex($container, $this->createAspectLoader())));
+        $this->assertSame(TransformerResult::Abstain, $rewriter->transform($this->createMetadata('<?php $a = new \stdClass();')));
+
+        $initPointcut = new TruePointcut(Pointcut::KIND_INIT | Pointcut::KIND_CLASS);
+        $container->add('advisor.init', new GenericPointcutAdvisor($initPointcut, $this->createStub(Advice::class)));
+        $metadata = $this->createMetadata('<?php $a = new \stdClass();');
+
+        $this->assertSame(TransformerResult::Transformed, $rewriter->transform($metadata));
+        $this->assertStringContainsString(ConstructorExecutionTransformer::class . '::getInstance()->{\stdClass::class}', $metadata->source);
+    }
+
+    private function createAspectLoader(): AspectLoaderInterface
+    {
+        $loader = $this->createStub(AspectLoaderInterface::class);
+        $loader->method('getUnloadedAspects')->willReturn([]);
+
+        return $loader;
     }
 
     private function createMetadata(string $source): StreamMetaData
