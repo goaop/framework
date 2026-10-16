@@ -32,6 +32,7 @@ final class ExceptionHierarchyTest extends TestCase
             'invalid config'       => [InvalidConfigurationException::class, InvalidArgumentException::class],
             'pointcut syntax'      => [PointcutSyntaxException::class, AspectException::class],
             'service not found'    => [ServiceNotFoundException::class, OutOfBoundsException::class],
+            'container'            => [ContainerException::class, InvalidConfigurationException::class],
             'weaving'              => [WeavingException::class, RuntimeException::class],
             'not compilable'       => [NotCompilableException::class, AspectException::class],
         ];
@@ -55,7 +56,7 @@ final class ExceptionHierarchyTest extends TestCase
     public function testEveryThrowInSourcesUsesAFrameworkException(): void
     {
         $allowed   = ['AspectException', 'InvalidConfigurationException', 'PointcutSyntaxException',
-            'ServiceNotFoundException', 'WeavingException', 'NotCompilableException',
+            'ServiceNotFoundException', 'ContainerException', 'WeavingException', 'NotCompilableException',
             // Converts warnings inside the cache warmer loop, which catches it right away
             'ErrorException'];
         $offenders = [];

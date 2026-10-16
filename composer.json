@@ -32,6 +32,7 @@
         "ext-tokenizer": "*",
         "goaop/dissect": "^4.0",
         "goaop/parser-reflection": "^4.0.1 || ^5.0.1",
+        "psr/container": "^1.1 || ^2.0",
         "symfony/finder": "^7.4 || ^8.0"
     },
     "require-dev": {

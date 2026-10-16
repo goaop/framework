@@ -13,12 +13,13 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Closure;
+use Go\Aop\Exception\ContainerException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\ServiceNotFoundException;
 use ReflectionClass;
 
 /**
- * DI-container
+ * DI-container, PSR-11 compatible
  */
 final class Container implements AspectContainer
 {
@@ -132,26 +133,26 @@ final class Container implements AspectContainer
 
     public function getService(string $className): object
     {
-        $service = $this->getValue($className);
+        $service = $this->get($className);
         if (!$service instanceof $className) {
-            throw new InvalidConfigurationException("Service $className is not properly registered");
+            throw new ContainerException("Service $className is not properly registered");
         }
 
         return $service;
     }
 
-    public function getValue(string $key): mixed
+    public function get(string $id): mixed
     {
         // isset() first for speed, array_key_exists() keeps a stored null value retrievable
-        if (!isset($this->values[$key]) && !array_key_exists($key, $this->values)) {
-            if (isset($this->factories[$key])) {
-                $this->materializeService($key);
+        if (!isset($this->values[$id]) && !array_key_exists($id, $this->values)) {
+            if (isset($this->factories[$id])) {
+                $this->materializeService($id);
             } else {
-                throw new ServiceNotFoundException("Value $key is not defined in the container");
+                throw new ServiceNotFoundException("Value $id is not defined in the container");
             }
         }
 
-        return $this->values[$key];
+        return $this->values[$id];
     }
 
     public function has(string $id): bool
@@ -191,7 +192,7 @@ final class Container implements AspectContainer
         $version = $this->registrationVersion;
         $values  = [];
         foreach (($this->tags[$interfaceTagClassName] ?? []) as $containerKey) {
-            $values[$containerKey] = $this->getValue($containerKey);
+            $values[$containerKey] = $this->get($containerKey);
         }
         // A re-entrant registration while collecting the values invalidates this result
         if ($isConclusive && $version === $this->registrationVersion) {
@@ -239,7 +240,7 @@ final class Container implements AspectContainer
         return NativeLazyProxy::tryCreate($id, function () use ($id, $factory): object {
             $instance = $factory($this);
             if (!$instance instanceof $id) {
-                throw new InvalidConfigurationException("Service $id is not properly registered");
+                throw new ContainerException("Service $id is not properly registered");
             }
 
             return $instance;

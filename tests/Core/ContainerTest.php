@@ -25,6 +25,9 @@ use Go\Stubs\ReentrantAutoloadAspect;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use stdClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -86,7 +89,7 @@ class ContainerTest extends TestCase
         $pointcut = $this->createMock(Pointcut::class);
         $this->container->add('test', $pointcut);
 
-        $this->assertSame($pointcut, $this->container->getValue('test'));
+        $this->assertSame($pointcut, $this->container->get('test'));
         // Verify that tag is working
         $pointcuts = $this->container->getServicesByInterface(Pointcut::class);
         $this->assertSame(['test' => $pointcut], $pointcuts);
@@ -123,7 +126,7 @@ class ContainerTest extends TestCase
         $advisor = $this->createMock(Advisor::class);
         $this->container->add('test', $advisor);
 
-        $this->assertSame($advisor, $this->container->getValue('test'));
+        $this->assertSame($advisor, $this->container->get('test'));
 
         // Verify that tag is working
         $advisors = $this->container->getServicesByInterface(Advisor::class);
@@ -173,7 +176,7 @@ class ContainerTest extends TestCase
         $this->container->add('nothing', null);
 
         $this->assertTrue($this->container->has('nothing'));
-        $this->assertNull($this->container->getValue('nothing'));
+        $this->assertNull($this->container->get('nothing'));
     }
 
     public function testHasMethod(): void
@@ -193,11 +196,45 @@ class ContainerTest extends TestCase
         $this->container->getService(stdClass::class);
     }
 
-    public function testGetValueThrowsOutOfBoundsExceptionOnUnknown(): void
+    public function testGetThrowsOutOfBoundsExceptionOnUnknown(): void
     {
         $this->expectException(\OutOfBoundsException::class);
         $this->expectExceptionMessageMatches('/Value some.key is not defined/');
-        $this->container->getValue('some.key');
+        $this->container->get('some.key');
+    }
+
+    public function testContainerIsPsrContainer(): void
+    {
+        $this->assertContains(ContainerInterface::class, class_implements(Container::class));
+    }
+
+    public function testGetThrowsPsrNotFoundExceptionOnUnknown(): void
+    {
+        $this->expectException(NotFoundExceptionInterface::class);
+        $this->container->get('some.key');
+    }
+
+    public function testHasGuaranteesThatGetDoesNotThrowNotFound(): void
+    {
+        $this->container->add('nothing', null);
+        $this->container->add('eager', new stdClass());
+        $this->container->addLazyService(StatefulTestAspect::class, fn(): StatefulTestAspect => new StatefulTestAspect(1));
+
+        $this->assertTrue($this->container->has('nothing'));
+        $this->assertNull($this->container->get('nothing'));
+        $this->assertTrue($this->container->has('eager'));
+        $this->assertInstanceOf(stdClass::class, $this->container->get('eager'));
+        $this->assertTrue($this->container->has(StatefulTestAspect::class));
+        $this->assertSame(1, $this->container->get(StatefulTestAspect::class)->getState());
+        $this->assertFalse($this->container->has('some.key'));
+    }
+
+    public function testGetServiceThrowsPsrContainerExceptionOnTypeMismatch(): void
+    {
+        $this->expectException(ContainerExceptionInterface::class);
+
+        $this->container->add(First::class, new stdClass());
+        $this->container->getService(First::class);
     }
 
     public function testGetServiceEnsuresThatKeyAndReturnedTypeMatches(): void
