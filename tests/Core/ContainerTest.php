@@ -14,7 +14,9 @@ namespace Go\Core;
 
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
+use Go\Aop\Exception\ContainerException;
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\ServiceNotFoundException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
@@ -24,6 +26,7 @@ use Go\Stubs\First;
 use Go\Stubs\ReentrantAutoloadAspect;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
+use Go\Tests\TestProject\Container\ApplicationContainer;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -235,6 +238,145 @@ class ContainerTest extends TestCase
 
         $this->container->add(First::class, new stdClass());
         $this->container->getService(First::class);
+    }
+
+    public function testGetAndHasFallBackToDelegate(): void
+    {
+        $this->container->setDelegate(new ApplicationContainer(['app.service' => static fn(): stdClass => new stdClass()]));
+
+        $this->assertTrue($this->container->has('app.service'));
+        $this->assertSame($this->container->get('app.service'), $this->container->get('app.service'));
+        $this->assertFalse($this->container->has('missing'));
+
+        $this->expectException(ServiceNotFoundException::class);
+        $this->container->get('missing');
+    }
+
+    public function testLocalEntryTakesPrecedenceOverDelegate(): void
+    {
+        $local = new stdClass();
+        $this->container->add('shared', $local);
+        $this->container->setDelegate(new ApplicationContainer(['shared' => static fn(): stdClass => new stdClass()]));
+
+        $this->assertSame($local, $this->container->get('shared'));
+    }
+
+    public function testContainerCanNotBeItsOwnDelegate(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->container->setDelegate($this->container);
+    }
+
+    public function testCompositeDelegateContainingThisContainerDoesNotLoop(): void
+    {
+        $application = new ApplicationContainer(['app.service' => static fn(): stdClass => new stdClass()]);
+        // PSR-11 delegate lookup: a composite of the aspect container and the application container
+        $composite = new class ([$this->container, $application]) implements ContainerInterface {
+            /**
+             * @param list<ContainerInterface> $containers
+             */
+            public function __construct(private readonly array $containers) {}
+
+            public function get(string $id): mixed
+            {
+                foreach ($this->containers as $container) {
+                    if ($container->has($id)) {
+                        return $container->get($id);
+                    }
+                }
+                throw new ServiceNotFoundException("Value $id is not defined in the composite container");
+            }
+
+            public function has(string $id): bool
+            {
+                return array_any($this->containers, static fn(ContainerInterface $container): bool => $container->has($id));
+            }
+        };
+        $this->container->setDelegate($composite);
+
+        $this->assertTrue($this->container->has('app.service'));
+        $this->assertSame($application->get('app.service'), $this->container->get('app.service'));
+        $this->assertFalse($composite->has('missing'));
+        $this->assertFalse($this->container->has('missing'));
+
+        $this->expectException(ServiceNotFoundException::class);
+        $this->container->get('missing');
+    }
+
+    public function testDelegatedServiceIsFetchedFromDelegateAttachedLater(): void
+    {
+        $this->container->addDelegatedService(StatefulTestAspect::class);
+        // Collecting aspects (as the weaver does) needs no delegate yet: the service is a lazy proxy
+        $aspects = $this->container->getServicesByInterface(Aspect::class);
+        $this->assertArrayHasKey(StatefulTestAspect::class, $aspects);
+
+        $built       = new \ArrayObject();
+        $application = new ApplicationContainer([
+            StatefulTestAspect::class => static function () use ($built): StatefulTestAspect {
+                $built->append(StatefulTestAspect::class);
+
+                return new StatefulTestAspect(42);
+            },
+        ]);
+        $this->container->setDelegate($application);
+        $this->assertCount(0, $built, 'Delegated service must not be built before its first use');
+
+        $this->assertSame(42, $this->container->getService(StatefulTestAspect::class)->getState());
+        $this->assertCount(1, $built);
+        $this->assertSame($application->get(StatefulTestAspect::class), $this->getRealInstance(StatefulTestAspect::class));
+    }
+
+    public function testDelegatedServiceUsesGivenDelegateId(): void
+    {
+        $this->container->addDelegatedService(StatefulTestAspect::class, 'app.stateful_aspect');
+        $this->container->setDelegate(new ApplicationContainer([
+            'app.stateful_aspect' => static fn(): StatefulTestAspect => new StatefulTestAspect(7),
+        ]));
+
+        $this->assertSame(7, $this->container->getService(StatefulTestAspect::class)->getState());
+    }
+
+    public function testDelegatedServiceUsedBeforeDelegateIsSetFails(): void
+    {
+        $this->container->addDelegatedService(StatefulTestAspect::class);
+        $aspect = $this->container->getService(StatefulTestAspect::class);
+
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessageMatches('/no delegate is set yet/');
+        $aspect->getState();
+    }
+
+    public function testDelegatedServiceOfWrongTypeFailsOnFirstUse(): void
+    {
+        $this->container->addDelegatedService(StatefulTestAspect::class);
+        $this->container->setDelegate(new ApplicationContainer([StatefulTestAspect::class => static fn(): stdClass => new stdClass()]));
+        $aspect = $this->container->getService(StatefulTestAspect::class);
+
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessageMatches('/Delegate container returned stdClass/');
+        $aspect->getState();
+    }
+
+    public function testPropertylessDelegatedServiceNeedsDelegateAtMaterialization(): void
+    {
+        // A class without instance properties can not be lazy: it is built as soon as it materializes
+        $this->container->addDelegatedService(DoSomethingAspect::class);
+
+        $this->expectException(ContainerException::class);
+        $this->expectExceptionMessageMatches('/no delegate is set yet/');
+        $this->container->getService(DoSomethingAspect::class);
+    }
+
+    /**
+     * Returns the instance a lazy proxy of the container forwards to
+     *
+     * @param class-string $id
+     */
+    private function getRealInstance(string $id): object
+    {
+        $service = $this->container->getService($id);
+
+        return new \ReflectionClass($id)->initializeLazyObject($service);
     }
 
     public function testGetServiceEnsuresThatKeyAndReturnedTypeMatches(): void
