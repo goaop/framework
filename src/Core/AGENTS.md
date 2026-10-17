@@ -1,12 +1,12 @@
 # src/Core — Container and aspect loading
 
 ## Container (Container.php)
-- Generic, AOP-unaware DI container: add(by class-string|key), getService(), getValue(), addLazyService(Closure), onRegistration(interfaceFQCN, listener), addResource()
+- Generic, AOP-unaware DI container, PSR-11 (AspectContainer extends Psr\Container\ContainerInterface): add(by class-string|key), get(), has(), getService(), addLazyService(Closure), onRegistration(interfaceFQCN, listener), addResource()
 - Automatic tagging by interface; deferred services materialize as native lazy proxies via NativeLazyProxy (engine probe, no userland compatibility predicate)
 - add() runs on every request: tags via class_implements(), the class file of an added object becomes a resource only on the next isFreshSince() (no reflection or stat calls at registration)
 - onRegistration() never autoloads: ids of loaded classes are matched exactly, ids not loaded yet reach the listener as candidates
 - Aspects are typical services — no registerAspect(); the kernel arms a debug-only Aspect::class onRegistration listener for resource tracking (files resolved via AopComposerLoader::findOriginalFile(), aspects stay unloaded) and registers framework services via FrameworkServices::register(); CachePathManager is added eagerly by the kernel (the class loader reads its cache index right away)
-- Throws SPL exceptions only (InvalidArgumentException, UnexpectedValueException, OutOfBoundsException)
+- Throws framework exceptions: ServiceNotFoundException (unknown id, PSR NotFoundExceptionInterface), ContainerException (entry of the wrong type, PSR ContainerExceptionInterface), InvalidConfigurationException (invalid registration)
 
 ## Aspect loading
 - AspectLoader — scans aspect classes for pointcut/advice attributes → Advisor[]; CachedAspectLoader decorates it (both implement AspectLoaderInterface)

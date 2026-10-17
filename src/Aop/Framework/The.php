@@ -45,7 +45,7 @@ final class The
 
     public static function advice(string $advisorId): Closure
     {
-        $value = self::getContainer()->getValue($advisorId);
+        $value = self::getContainer()->get($advisorId);
 
         if ($value instanceof Advisor) {
             $value = $value->getAdvice();

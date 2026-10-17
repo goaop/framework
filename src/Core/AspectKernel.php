@@ -61,6 +61,7 @@ abstract class AspectKernel
         'goaop/dissect',
         'goaop/parser-reflection',
         'nikic/php-parser',
+        'psr/container',
         'symfony/finder',
     ];
 
