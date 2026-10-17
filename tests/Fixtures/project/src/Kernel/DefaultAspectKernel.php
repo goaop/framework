@@ -12,6 +12,7 @@ use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EdgeCaseAspect;
 use Go\Tests\TestProject\Aspect\EntityFieldAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
+use Go\Tests\TestProject\Aspect\GreetingAspect;
 use Go\Tests\TestProject\Aspect\InitializationAspect;
 use Go\Tests\TestProject\Aspect\Issue293Aspect;
 use Go\Tests\TestProject\Aspect\LoggingAspect;
@@ -44,5 +45,7 @@ class DefaultAspectKernel extends AspectKernel
         $container->addLazyService(AlphaCollisionAspect::class, fn(): AlphaCollisionAspect => new AlphaCollisionAspect());
         $container->addLazyService(BetaCollisionAspect::class, fn(): BetaCollisionAspect => new BetaCollisionAspect());
         $container->addLazyService(EdgeCaseAspect::class, fn(): EdgeCaseAspect => new EdgeCaseAspect());
+        // Built by the application container (see bin/delegated-aspect.php), which only exists after the kernel is up
+        $container->addDelegatedService(GreetingAspect::class);
     }
 }

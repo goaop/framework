@@ -1,7 +1,8 @@
 # src/Core — Container and aspect loading
 
 ## Container (Container.php)
-- Generic, AOP-unaware DI container, PSR-11 (AspectContainer extends Psr\Container\ContainerInterface): add(by class-string|key), get(), has(), getService(), addLazyService(Closure), onRegistration(interfaceFQCN, listener), addResource()
+- Generic, AOP-unaware DI container, PSR-11 (AspectContainer extends Psr\Container\ContainerInterface): add(by class-string|key), get(), has(), getService(), addLazyService(Closure), addDelegatedService(), setDelegate(), onRegistration(interfaceFQCN, listener), addResource()
+- Delegate (app's PSR-11 container, attached after init): get()/has() fall back to it on a miss only (hot path unchanged, delegated values are not stored); addDelegatedService() = addLazyService() whose factory fetches from the delegate, so registration/weaving/warm-up never need it. Property-less classes can't be lazy → built at materialization → ContainerException without delegate. getServicesByInterface() never enumerates the delegate
 - Automatic tagging by interface; deferred services materialize as native lazy proxies via NativeLazyProxy (engine probe, no userland compatibility predicate)
 - add() runs on every request: tags via class_implements(), the class file of an added object becomes a resource only on the next isFreshSince() (no reflection or stat calls at registration)
 - onRegistration() never autoloads: ids of loaded classes are matched exactly, ids not loaded yet reach the listener as candidates

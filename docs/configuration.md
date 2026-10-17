@@ -42,6 +42,39 @@ the matching namespaces. An `initialization(...)` pointcut turns on the rewritin
 woven files; while one is registered, every rewritten `new` goes through the interceptor, so keep such pointcuts to
 the code that needs them.
 
+## Aspects from the application container
+
+The aspect container is a PSR-11 container, and it can delegate to the container of your application
+(Symfony, Laravel, PHP-DI or any other PSR-11 container), so aspects get their dependencies from there.
+The kernel is initialized before the application builds its container, so the two steps are split:
+
+```php
+// configureAop(): the aspect is known by its class name, its instance comes from the application container
+protected function configureAop(AspectContainer $container): void
+{
+    $container->addDelegatedService(MonitorAspect::class);
+    // or, when the application knows the service by another id:
+    // $container->addDelegatedService(MonitorAspect::class, 'app.monitor_aspect');
+}
+
+// Once the application container exists, e.g. right after the framework kernel has booted
+ApplicationAspectKernel::getInstance()->getContainer()->setDelegate($psrContainer);
+```
+
+Weaving and the cache warm-up only need the class of the aspect, so they run before `setDelegate()`, even in
+`bin/aspect`. The instance is fetched from the application container on the first advice call, and must be
+an instance of the registered class. Using it before `setDelegate()` throws `ContainerException`.
+
+- `get()` and `has()` fall back to the delegate for ids that are not registered in the aspect container, so the
+  factories passed to `addLazyService()` can resolve their dependencies through it as well.
+- Aspects are never discovered in the delegate: PSR-11 cannot list services, so every aspect is registered in
+  `configureAop()`.
+- An aspect without instance properties cannot be created lazily, so it is built when the aspects are
+  collected for weaving, before the delegate exists. Such an aspect has no dependencies to inject, so register
+  it with `add()` or `addLazyService()`.
+- The aspect container hands out a native lazy proxy that forwards to the instance of the application container:
+  the state is shared, the identity (`===`) is not.
+
 ## Extending the transformation pipeline
 
 Every file is transformed by a chain of `Go\Instrument\Transformer\SourceTransformer` services, in registration

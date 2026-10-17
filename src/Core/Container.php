@@ -16,6 +16,7 @@ use Closure;
 use Go\Aop\Exception\ContainerException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\ServiceNotFoundException;
+use Psr\Container\ContainerInterface;
 use ReflectionClass;
 
 /**
@@ -27,6 +28,17 @@ final class Container implements AspectContainer
      * @var array<string, mixed> Hashmap of items/services in the container
      */
     private array $values = [];
+
+    /**
+     * Container that ids unknown here are looked up in, and that builds the delegated services
+     */
+    private ?ContainerInterface $delegate = null;
+
+    /**
+     * Set while the delegate is asked for an id: a delegate composed of this container (a composite
+     * container) asks this container back, which must not delegate again
+     */
+    private bool $isDelegating = false;
 
     /**
      * @var array<class-string, Closure(AspectContainer): object> Deferred service factories, keyed by class-name
@@ -147,6 +159,14 @@ final class Container implements AspectContainer
         if (!isset($this->values[$id]) && !array_key_exists($id, $this->values)) {
             if (isset($this->factories[$id])) {
                 $this->materializeService($id);
+            } elseif ($this->delegate !== null && $this->delegateHas($id)) {
+                // Delegated values are not stored: the delegate owns their lifecycle
+                $this->isDelegating = true;
+                try {
+                    return $this->delegate->get($id);
+                } finally {
+                    $this->isDelegating = false;
+                }
             } else {
                 throw new ServiceNotFoundException("Value $id is not defined in the container");
             }
@@ -157,7 +177,53 @@ final class Container implements AspectContainer
 
     public function has(string $id): bool
     {
-        return isset($this->values[$id]) || array_key_exists($id, $this->values) || isset($this->factories[$id]);
+        return isset($this->values[$id])
+            || array_key_exists($id, $this->values)
+            || isset($this->factories[$id])
+            || $this->delegateHas($id);
+    }
+
+    private function delegateHas(string $id): bool
+    {
+        if ($this->delegate === null || $this->isDelegating) {
+            return false;
+        }
+        $this->isDelegating = true;
+        try {
+            return $this->delegate->has($id);
+        } finally {
+            $this->isDelegating = false;
+        }
+    }
+
+    public function addDelegatedService(string $id, ?string $delegateId = null): void
+    {
+        $delegateId ??= $id;
+        $this->addLazyService($id, function () use ($id, $delegateId): object {
+            if ($this->delegate === null) {
+                throw new ContainerException(
+                    "Service $id is built by the delegate container, but no delegate is set yet: call setDelegate() "
+                    . 'before the service is used. A class without instance properties can not be created lazily '
+                    . 'and is built as soon as aspects are collected, register it with add() or addLazyService() instead',
+                );
+            }
+            $service = $this->delegate->get($delegateId);
+            if (!$service instanceof $id) {
+                throw new ContainerException(
+                    'Delegate container returned ' . get_debug_type($service) . " for service $id ($delegateId)",
+                );
+            }
+
+            return $service;
+        });
+    }
+
+    public function setDelegate(ContainerInterface $delegate): void
+    {
+        if ($delegate === $this) {
+            throw new InvalidConfigurationException('Container can not be its own delegate');
+        }
+        $this->delegate = $delegate;
     }
 
     public function getServicesByInterface(string $interfaceTagClassName): array
