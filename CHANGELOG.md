@@ -76,6 +76,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 * [Fixed] The weaving metadata files (`_transformation.cache`, `_include.cache`) carry a format version: a cache of another version is rebuilt, and with `Features::PREBUILT_CACHE` it fails with a hint to run `cache:warmup:aop`. Records keep the size and mtime of the woven source, so a source whose mtime moved backwards (rsync `-t`, checkout of an older revision) is woven again instead of serving the stale proxy (#685).
 * [Fixed] `cache:warmup:aop` and `debug:advisor` no longer fail with "Cannot rewind a generator that was already run" when more than one include path is configured (#751).
 * [Fixed] The proxy of a class declared in the second (or a later) block of a namespace that a file declares several times copies the imports of its own block instead of the first block's.
+* [Fixed] A file declaring several woven classes gets one proxy file per class, below the file name like a file inside a phar (`Holder.php/App/First.php`): the proxies used to share one cache file, so all classes but the last one were not found (#760).
 
 **Internal**
 * [Internal] Tooling: PHPUnit 13 with strict flags, PHPStan 2 at level 10 over `src/` and `tests/`, php-cs-fixer with the PER-CS rule set, and `composer test`/`analyze`/`cs`/`check` scripts.

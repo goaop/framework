@@ -142,6 +142,26 @@ class DebugWeavingCommandInProcessTest extends TestCase
         $this->assertStringContainsString('Bar.php" is consistently', $display);
     }
 
+    public function testProxiesOfFileWithSeveralWovenClassesAreCompared(): void
+    {
+        $cacheDir = $this->createEmptyCacheDir();
+        $calls    = 0;
+        // Per-class proxies live below the name of their source file, the woven source sits next to that name
+        $warmUp = static function () use (&$calls, $cacheDir): void {
+            ++$calls;
+            @mkdir($cacheDir . '/Holder.php/App', 0777, true);
+            file_put_contents($cacheDir . '/Holder.php/App/First.php', "<?php\n// pass {$calls}\n");
+            file_put_contents($cacheDir . '/Holder' . AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX, '<?php // trait');
+        };
+        $tester = new CommandTester($this->createCommandWithFakedKernel($cacheDir, $warmUp));
+
+        $exitCode = $tester->execute(['loader' => 'unused.php']);
+
+        $display = (string) preg_replace('/\s+/', ' ', $tester->getDisplay());
+        $this->assertSame(Command::FAILURE, $exitCode);
+        $this->assertStringContainsString('Holder.php/App/First.php" is weaved differently', $display);
+    }
+
     /**
      * Builds the command against a faked kernel: the AspectKernel is a per-process
      * singleton, so the kernel/container/warmer collaborators are replaced with

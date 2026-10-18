@@ -17,7 +17,7 @@ trait TestGroupedAttributeClassOriginalTrait
         return 'grouped';
     }
 }
-include_once AOP_CACHE_DIR . '/Transformer/_files/php80-attribute-class.php';
+include_once AOP_CACHE_DIR . '/Transformer/_files/php80-attribute-class.php/Test/ns1/TestGroupedAttributeClass.php';
 
 
 trait TestDynamicPropertiesClassOriginalTrait
@@ -27,7 +27,7 @@ trait TestDynamicPropertiesClassOriginalTrait
         return true;
     }
 }
-include_once AOP_CACHE_DIR . '/Transformer/_files/php80-attribute-class.php';
+include_once AOP_CACHE_DIR . '/Transformer/_files/php80-attribute-class.php/Test/ns1/TestDynamicPropertiesClass.php';
 
 
 trait TestCustomAttributeOriginalTrait
@@ -41,4 +41,4 @@ trait TestCustomAttributeOriginalTrait
         return $this->reason;
     }
 }
-include_once AOP_CACHE_DIR . '/Transformer/_files/php80-attribute-class.php';
+include_once AOP_CACHE_DIR . '/Transformer/_files/php80-attribute-class.php/Test/ns1/TestCustomAttribute.php';

@@ -30,6 +30,10 @@ trait FooOriginalTrait { /* original methods verbatim */ }
 include_once AOP_CACHE_DIR . '/Foo.php';
 ```
 
+Proxy path = source path below the cache dir (`/Foo.php`). A file with several woven class-likes gets one proxy per class
+below its name, like a file inside a phar: `/Holder.php/Ns/First.php` (#760). Proxies are saved once the whole file is
+woven (the layout depends on the woven class count); switching layouts removes the proxies of the other one.
+
 ### Proxy file (loaded by include_once)
 ```php
 class Foo extends OriginalParent implements OriginalInterfaces, \Go\Aop\Proxy

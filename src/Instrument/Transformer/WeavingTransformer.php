@@ -31,6 +31,7 @@ use Go\Proxy\EnumProxyGenerator;
 use Go\Proxy\FunctionProxyGenerator;
 use Go\Proxy\TraitProxyGenerator;
 use Closure;
+use FilesystemIterator;
 use PhpParser\Node\Attribute;
 use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Name;
@@ -38,7 +39,10 @@ use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Property;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionProperty;
+use SplFileInfo;
 use Throwable;
 
 /**
@@ -92,6 +96,8 @@ final class WeavingTransformer extends BaseSourceTransformer
         $advisors = $this->container->getServicesByInterface(Advisor::class);
 
         $namespaces = $parsedSource->getFileNamespaces();
+        // Proxies are saved once the whole file is woven: their file names depend on the number of woven classes
+        $wovenProxies = [];
 
         foreach ($namespaces as $namespace) {
             $classes = $namespace->getClasses();
@@ -105,18 +111,26 @@ final class WeavingTransformer extends BaseSourceTransformer
                 if ($class->isInterface()) {
                     continue;
                 }
-                $wasClassProcessed = $this->processSingleClass(
+                $wovenProxy = $this->processSingleClass(
                     $advisors,
                     $metadata,
                     $class,
                     $namespace,
                     $parsedSource->isStrictMode(),
                 );
-                $totalTransformations += (int) $wasClassProcessed;
+                if ($wovenProxy !== null) {
+                    $wovenProxies[] = $wovenProxy;
+                }
             }
             $wasFunctionsProcessed = $this->processFunctions($advisors, $metadata, $namespace);
             $totalTransformations += (int) $wasFunctionsProcessed;
         }
+
+        foreach ($wovenProxies as [$class, $childCode, $lastClassToken]) {
+            $contentToInclude = $this->saveProxyToCache($class, $childCode, count($wovenProxies) === 1);
+            $metadata->tokenStream[$lastClassToken]->text .= PHP_EOL . $contentToInclude;
+        }
+        $totalTransformations += count($wovenProxies);
 
         $result = ($totalTransformations > 0) ? TransformerResult::Transformed : TransformerResult::Abstain;
 
@@ -124,14 +138,15 @@ final class WeavingTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Performs weaving of single class if needed, returns true if the class was processed
+     * Performs weaving of single class if needed, returns its proxy code and the position of its last token
      *
      * @param Advisor[]               $advisors      List of advisors
      * @param StreamMetaData          $metadata
      * @param ReflectionClass         $class
      * @param ReflectionFileNamespace $namespace     Namespace block of the file that declares the class
      * @param bool                    $useStrictMode If the source file used strict mode, the proxy should too
-     * @return bool
+     *
+     * @return array{ReflectionClass, string, int}|null Null if the class was not woven
      */
     private function processSingleClass(
         array $advisors,
@@ -139,13 +154,13 @@ final class WeavingTransformer extends BaseSourceTransformer
         ReflectionClass $class,
         ReflectionFileNamespace $namespace,
         bool $useStrictMode,
-    ): bool {
+    ): ?array {
         try {
             $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
         } catch (Throwable $matchingError) {
             // Aspects used to be skipped before matching, so matching one must not fail the file
             if ($this->isAspectSafe($class)) {
-                return false;
+                return null;
             }
             throw $matchingError;
         }
@@ -153,12 +168,12 @@ final class WeavingTransformer extends BaseSourceTransformer
         if (empty($advices)) {
             // Fast return if there aren't any advices for that class. It comes before the aspect check,
             // as that one reflects (and parses) every ancestor and fails when one can't be located
-            return false;
+            return null;
         }
 
         // Aspects are never woven
         if ($class->implementsInterface(Aspect::class)) {
-            return false;
+            return null;
         }
 
         // Sort advices in advance to keep the correct order in cache, and leave only keys for the cache
@@ -197,18 +212,14 @@ final class WeavingTransformer extends BaseSourceTransformer
             $childCode = 'declare(strict_types=1);' . PHP_EOL . $childCode;
         }
 
-        $contentToInclude = $this->saveProxyToCache($class, $childCode);
-
         // Get last token for this class
         $classNode = $class->getNode();
         $lastClassToken = $classNode->getAttribute('endTokenPos');
         if (!is_int($lastClassToken)) {
-            return false;
+            return null;
         }
 
-        $metadata->tokenStream[$lastClassToken]->text .= PHP_EOL . $contentToInclude;
-
-        return true;
+        return [$class, $childCode, $lastClassToken];
     }
 
     /**
@@ -969,9 +980,12 @@ final class WeavingTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Save AOP proxy to the separate file anr returns the php source code for inclusion
+     * Save AOP proxy to the separate file and returns the php source code for inclusion
+     *
+     * The proxy of the only woven class of a source file is named like that file. A file with several woven classes
+     * gets one proxy per class below its name, used as a directory like a file inside a phar: `src/Holder.php/App/First.php`.
      */
-    private function saveProxyToCache(ReflectionClass $class, string $childCode): string
+    private function saveProxyToCache(ReflectionClass $class, string $childCode, bool $isOnlyClass): string
     {
         $cacheRootDir = $this->cachePathManager->getCacheDir();
         if ($cacheRootDir === null) {
@@ -984,12 +998,46 @@ final class WeavingTransformer extends BaseSourceTransformer
         // Classes outside the application root keep their absolute path below the cache root
         $relativePath      = ltrim(PathResolver::rebase($classFileName, $this->options['appDir'], '') ?? $classFileName, '/\\');
         $proxyRelativePath = str_replace('\\', '/', $relativePath);
-        $proxyFileName     = $cacheRootDir . '/' . $proxyRelativePath;
+        $sourceProxyPath   = $cacheRootDir . '/' . $proxyRelativePath;
+        if (!$isOnlyClass) {
+            $proxyRelativePath .= '/' . str_replace('\\', '/', $class->getName()) . '.php';
+        }
+        $proxyFileName = $cacheRootDir . '/' . $proxyRelativePath;
+
+        // The file switched between one and several woven classes since it was woven: drop the proxies of the other layout
+        if ($isOnlyClass ? is_dir($sourceProxyPath) : is_file($sourceProxyPath)) {
+            self::removeCachePath($sourceProxyPath);
+        }
 
         // Atomic write: a concurrent request including the proxy never sees a partial file
         $this->cachePathManager->getCacheFileWriter()->write($proxyFileName, '<?php' . PHP_EOL . $childCode);
 
         return 'include_once AOP_CACHE_DIR . ' . var_export('/' . $proxyRelativePath, true) . ';';
+    }
+
+    /**
+     * Removes a cache file or a cache directory with its content
+     */
+    private static function removeCachePath(string $path): void
+    {
+        if (is_file($path)) {
+            @unlink($path);
+
+            return;
+        }
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
+        );
+        /** @var SplFileInfo $fileInfo */
+        foreach ($iterator as $fileInfo) {
+            if ($fileInfo->isDir()) {
+                @rmdir($fileInfo->getPathname());
+            } else {
+                @unlink($fileInfo->getPathname());
+            }
+        }
+        @rmdir($path);
     }
 
     /**

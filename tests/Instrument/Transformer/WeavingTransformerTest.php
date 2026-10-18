@@ -883,10 +883,11 @@ class WeavingTransformerTest extends TestCase
         // The compatible part of the grouped attribute must survive
         $this->assertStringContainsString('#[\FakeMarkerAttr]', $actual);
 
-        // The proxy (last class in the file wins the shared cache path) must keep #[\Attribute(...)]
+        // Every woven class of the file has its own proxy, the one of the attribute class keeps #[\Attribute(...)]
         $matches = [];
-        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
-        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
+        $this->assertSame(3, preg_match_all("/AOP_CACHE_DIR \. '([^']+)';/", $actual, $matches));
+        $this->assertStringEndsWith('php80-attribute-class.php/Test/ns1/TestCustomAttribute.php', $matches[1][2]);
+        $proxyContent = (string) file_get_contents('vfs://' . $matches[1][2]);
         $this->assertStringContainsString(
             '#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]',
             $proxyContent,
@@ -1595,6 +1596,48 @@ class WeavingTransformerTest extends TestCase
         $actual   = $this->normalizeWhitespaces($metadata->source);
         $expected = $this->normalizeWhitespaces($this->loadTestMetadata('multiple-classes-woven')->source);
         $this->assertEquals($expected, $actual);
+
+        // Every woven class gets its own proxy below the source file name, like a file inside a phar (#760)
+        foreach (['TestClass1', 'TestClass11', 'TestClass2'] as $className) {
+            $proxyContent = (string) file_get_contents("vfs://Transformer/_files/multiple-classes.php/Test/ns3/{$className}.php");
+            $this->assertStringContainsString("class {$className} implements", $proxyContent);
+            $this->assertStringContainsString("use {$className}OriginalTrait", $proxyContent);
+        }
+    }
+
+    /**
+     * A file going from one woven class to several replaces the proxy named like the file with a directory of
+     * per-class proxies, and back
+     */
+    public function testProxyLayoutFollowsNumberOfWovenClasses(): void
+    {
+        mkdir('vfs://layout/Transformer/_files', 0777, true);
+        $container = $this->getContainerMock();
+        $kernel    = $this->getKernelMock(
+            [
+                'appDir'        => dirname(__DIR__),
+                'cacheDir'      => 'vfs://layout',
+                'includePaths'  => [],
+                'excludePaths'  => [],
+                'cacheFileMode' => 0770,
+            ],
+            $container,
+        );
+        $loader      = $this->getMockBuilder(AspectLoader::class)->setConstructorArgs([$container])->getMock();
+        $transformer = new WeavingTransformer($kernel, $this->adviceMatcher, new CachePathManager($kernel), $loader);
+        $proxyPath   = 'vfs://layout/Transformer/_files/multiple-classes.php';
+
+        file_put_contents($proxyPath, '<?php // proxy of a single woven class');
+        $transformer->transform($this->loadTestMetadata('multiple-classes'));
+        $this->assertFileExists($proxyPath . '/Test/ns3/TestClass1.php');
+
+        $proxyPath = 'vfs://layout/Transformer/_files/class.php';
+        mkdir($proxyPath . '/Test/ns1', 0777, true);
+        file_put_contents($proxyPath . '/Test/ns1/Stale.php', '<?php // proxy of several woven classes');
+        $metadata = $this->loadTestMetadata('class');
+        $transformer->transform($metadata);
+        $this->assertStringContainsString("include_once AOP_CACHE_DIR . '/Transformer/_files/class.php';", $metadata->source);
+        $this->assertFileIsReadable($proxyPath);
     }
 
     /**
