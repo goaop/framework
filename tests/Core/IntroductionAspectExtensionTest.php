@@ -15,7 +15,7 @@ namespace Go\Core;
 use Attribute;
 use Go\Aop\Advice;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutGrammar;

@@ -107,7 +107,7 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
         $reflectionAdvice     = new ReflectionFunction($this->adviceMethod);
         $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
         if (!isset($scopeReflectionClass) || !is_subclass_of($scopeReflectionClass->name, Aspect::class)) {
-            throw new NotCompilableException('Could not compile an interceptor without valid aspect');
+            throw NotCompilableException::interceptorWithoutAspect();
         }
 
         $factoryMethod = match ($this::class) {
@@ -115,9 +115,7 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
             AfterInterceptor::class         => 'after',
             AroundInterceptor::class        => 'around',
             AfterThrowingInterceptor::class => 'afterThrowing',
-            default                         => throw new NotCompilableException(
-                'Cannot compile an instance of ' . $this::class . ' into plain PHP',
-            ),
+            default                         => throw NotCompilableException::unsupportedInterceptor($this::class),
         };
 
         $args = [

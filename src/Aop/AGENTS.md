@@ -30,7 +30,7 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 | AbstractMethodInvocation          | MethodInvocation        | Base; protected readonly Closure $closureToCall (FCC); TRAIT_ALIAS_SUFFIX='OriginalAlias'; keeps method reflection           |
 | DynamicTraitAliasMethodInvocation | DynamicMethodInvocation | receives $this->mOriginalAlias(...) or parent::m(...); proceed() via ReflectionMethod::invokeArgs (handles by-ref correctly) |
 | StaticTraitAliasMethodInvocation  | StaticMethodInvocation  | FCC shim: static fn(array $args) => forward_static_call_array(...); bindTo(null, $scope) per call                      |
-| ReflectionConstructorInvocation   | ConstructorInvocation   | newInstanceWithoutConstructor() then call constructor (requires INTERCEPT_INITIALIZATIONS feature)                     |
+| ReflectionConstructorInvocation   | ConstructorInvocation   | newInstanceWithoutConstructor() then call constructor (`new` rewritten while an initialization pointcut is registered) |
 | ReflectionFunctionInvocation      | FunctionInvocation      | receives FCC to global fn (e.g. \strlen(...) with leading \ to avoid recursive proxy call)                             |
 | ClassFieldAccess                  | FieldAccess             | Property hooks call read()/write() by value; readByReference() only for the &get hook of arrays (binding released after) |
 | StaticInitializationJoinpoint     | ClassJoinpoint          | Fired once after proxy class loaded via `Proxy::__staticInitialization()`                                             |
@@ -69,5 +69,6 @@ when `$level > 0` and pops it in `finally`. Check every change with `composer te
 
 ## Features (src/Aop/Features.php)
 Final class with bitmask constants (`ALL` is the mask of every flag):
-- INTERCEPT_FUNCTIONS=1, INTERCEPT_INITIALIZATIONS=2, INTERCEPT_INCLUDES=4
+- INTERCEPT_INCLUDES=4
+- No flag for function/initialization interception: pointcut kinds decide (AdvisorIndex, see src/Core/AGENTS.md)
 - PREBUILT_CACHE=64 — assume cache already prepared, skip freshness checks

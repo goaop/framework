@@ -86,7 +86,7 @@ class AspectLoaderTest extends TestCase
         $loader = new AspectLoader($container, $extension);
         $loader->loadAndRegister(new AspectLoaderTestAspectOne());
 
-        $this->assertSame($advisor, $container->getValue('aspect.advisor'));
+        $this->assertSame($advisor, $container->get('aspect.advisor'));
     }
 
     public function testGetUnloadedAspectsReturnsOnlyAspectsNotYetLoaded(): void

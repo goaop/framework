@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\AspectException;
+use Go\Aop\Exception\InvocationException;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\MethodInvocation;
 use Go\Stubs\InheritedMethodProxy;
@@ -53,7 +53,7 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
 
     public function testRejectsClosureWithoutScopeClass(): void
     {
-        $this->expectException(AspectException::class);
+        $this->expectException(InvocationException::class);
         $this->expectExceptionMessage('Cannot determine the scope class of the closure');
 
         new DynamicTraitAliasMethodInvocation([], TraitAliasProxy::class, 'publicMethod', strlen(...));

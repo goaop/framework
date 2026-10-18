@@ -23,7 +23,6 @@ use Go\Aop\Pointcut\PointcutParser;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
-use UnexpectedValueException;
 
 /**
  * Abstract aspect loader
@@ -41,7 +40,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     /**
      * General method for parsing pointcuts
      *
-     * @throws UnexpectedValueException if there was an error during parsing
+     * @throws PointcutSyntaxException if there was an error during parsing
      * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
      * @template T of Aspect
      */
@@ -61,7 +60,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
      * @template T of Aspect
      *
-     * @throws UnexpectedValueException
+     * @throws PointcutSyntaxException
      */
     private function makeLexicalAnalyze(
         Aspect $aspect,
@@ -72,17 +71,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
             $resolvedThisPointcut = str_replace('$this', $aspect::class, $pointcutExpression);
             $stream = $this->pointcutLexer->lex($resolvedThisPointcut);
         } catch (RecognitionException $e) {
-            $message = 'Can not recognize the lexical structure `%s` before %s, defined in %s:%d';
-            $message = sprintf(
-                $message,
-                $pointcutExpression,
-                (($reflection instanceof ReflectionMethod || $reflection instanceof ReflectionProperty) ? $reflection->class . '->' : '') . $reflection->name,
-                $reflection instanceof ReflectionProperty
-                    ? $reflection->getDeclaringClass()->getFileName()
-                    : $reflection->getFileName(),
-                $reflection instanceof ReflectionProperty ? 0 : $reflection->getStartLine(),
-            );
-            throw new PointcutSyntaxException($message, 0, $e);
+            throw PointcutSyntaxException::unrecognizedLexicalStructure($pointcutExpression, $reflection, $e);
         }
 
         return $stream;
@@ -94,7 +83,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
      * @template T of Aspect
      *
-     * @throws UnexpectedValueException
+     * @throws PointcutSyntaxException
      */
     private function parseTokenStream(
         ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
@@ -104,21 +93,7 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
         try {
             $pointcut = $this->pointcutParser->parse($stream);
         } catch (UnexpectedTokenException $e) {
-            $token   = $e->getToken();
-            $message = 'Unexpected token %s in the `%s` before %s, defined in %s:%d.' . PHP_EOL;
-            $message .= 'Expected one of: %s';
-            $message = sprintf(
-                $message,
-                $token->getValue(),
-                $pointcutExpression,
-                (($reflection instanceof ReflectionMethod || $reflection instanceof ReflectionProperty) ? $reflection->class . '->' : '') . $reflection->name,
-                $reflection instanceof ReflectionProperty
-                    ? $reflection->getDeclaringClass()->getFileName()
-                    : $reflection->getFileName(),
-                $reflection instanceof ReflectionProperty ? 0 : $reflection->getStartLine(),
-                implode(', ', $e->getExpected()),
-            );
-            throw new PointcutSyntaxException($message, 0, $e);
+            throw PointcutSyntaxException::unexpectedToken($pointcutExpression, $reflection, $e);
         }
 
         return $pointcut;

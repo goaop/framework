@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Go\Aop\WeavingDriver;
-use Go\Aop\AspectException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
@@ -152,7 +151,7 @@ class AspectKernelTest extends TestCase
         $instanceProperty->setValue(null, null);
 
         try {
-            $this->expectException(AspectException::class);
+            $this->expectException(InvalidConfigurationException::class);
             $this->expectExceptionMessage('Aspect kernel is not initialized yet');
 
             AspectKernel::getInstance();
@@ -174,7 +173,7 @@ class AspectKernelTest extends TestCase
 
     public function testGetContainerBeforeInitThrowsClearException(): void
     {
-        $this->expectException(AspectException::class);
+        $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage('is not initialized yet, call init() first');
 
         $this->makeKernel()->getContainer();
@@ -185,12 +184,10 @@ class AspectKernelTest extends TestCase
         $kernel = $this->makeKernel();
 
         $this->setKernelOptions($kernel, [
-            'features' => Features::INTERCEPT_FUNCTIONS | Features::INTERCEPT_INCLUDES,
+            'features' => Features::INTERCEPT_INCLUDES,
         ]);
 
-        $this->assertTrue($kernel->hasFeature(Features::INTERCEPT_FUNCTIONS));
         $this->assertTrue($kernel->hasFeature(Features::INTERCEPT_INCLUDES));
-        $this->assertFalse($kernel->hasFeature(Features::INTERCEPT_INITIALIZATIONS));
         $this->assertFalse($kernel->hasFeature(Features::PREBUILT_CACHE));
     }
 
@@ -317,7 +314,7 @@ class AspectKernelTest extends TestCase
         $kernel = $this->makeKernel();
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('You need to provide valid cache directory for Go! AOP framework.');
+        $this->expectExceptionMessage('Option "cacheDir" is required: provide the path to the cache directory.');
 
         $this->invokeProtected($kernel, 'normalizeOptions', [[]]);
     }
@@ -393,7 +390,7 @@ class AspectKernelTest extends TestCase
     public static function invalidFeatures(): iterable
     {
         yield 'unknown bit' => [8];
-        yield 'known and unknown bits' => [Features::INTERCEPT_FUNCTIONS | 128];
+        yield 'known and unknown bits' => [Features::INTERCEPT_INCLUDES | 128];
         yield 'string' => ['1'];
         yield 'boolean' => [true];
     }
@@ -415,8 +412,7 @@ class AspectKernelTest extends TestCase
     public function testNormalizeOptionsAcceptsEveryKnownFeature(): void
     {
         $kernel   = $this->makeKernel();
-        $features = Features::INTERCEPT_FUNCTIONS | Features::INTERCEPT_INITIALIZATIONS
-            | Features::INTERCEPT_INCLUDES | Features::PREBUILT_CACHE;
+        $features = Features::INTERCEPT_INCLUDES | Features::PREBUILT_CACHE;
 
         $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [[
             'cacheDir' => '/some/cache/dir',
@@ -472,7 +468,7 @@ class AspectKernelTest extends TestCase
             'debug'          => true,
             'cacheDir'       => '/some/cache/dir',
             'cacheFileMode'  => 0644,
-            'features'       => Features::INTERCEPT_FUNCTIONS,
+            'features'       => Features::INTERCEPT_INCLUDES,
             'includePaths'   => ['/some/include'],
             'excludePaths'   => ['/some/exclude'],
             'containerClass' => Container::class,
@@ -480,7 +476,7 @@ class AspectKernelTest extends TestCase
 
         $this->assertTrue($normalized['debug']);
         $this->assertSame(0644, $normalized['cacheFileMode']);
-        $this->assertSame(Features::INTERCEPT_FUNCTIONS, $normalized['features']);
+        $this->assertSame(Features::INTERCEPT_INCLUDES, $normalized['features']);
         $this->assertSame(Container::class, $normalized['containerClass']);
 
         $cacheDir = $normalized['cacheDir'];
@@ -525,7 +521,7 @@ class AspectKernelTest extends TestCase
         }
     }
 
-    public function testRegisterTransformerServicesAlwaysRegistersWeavingAndMagicConstantTransformers(): void
+    public function testRegisterTransformerServicesAlwaysRegistersWeavingConstructorAndMagicConstantTransformers(): void
     {
         $kernel = $this->makeKernel();
 
@@ -536,19 +532,7 @@ class AspectKernelTest extends TestCase
 
         $this->assertTrue($container->has(WeavingTransformer::class));
         $this->assertTrue($container->has(MagicConstantTransformer::class));
-        $this->assertFalse($container->has(ConstructorExecutionTransformer::class));
-        $this->assertFalse($container->has(FilterInjectorTransformer::class));
-    }
-
-    public function testRegisterTransformerServicesRegistersConstructorExecutionTransformerWhenFeatureEnabled(): void
-    {
-        $kernel = $this->makeKernel();
-
-        $this->setKernelOptions($kernel, ['features' => Features::INTERCEPT_INITIALIZATIONS]);
-
-        $container = new Container();
-        $this->invokeProtected($kernel, 'registerTransformerServices', [$container]);
-
+        // Turns itself on only while an initialization pointcut is registered, see AdvisorIndex
         $this->assertTrue($container->has(ConstructorExecutionTransformer::class));
         $this->assertFalse($container->has(FilterInjectorTransformer::class));
     }
@@ -563,7 +547,6 @@ class AspectKernelTest extends TestCase
         $this->invokeProtected($kernel, 'registerTransformerServices', [$container]);
 
         $this->assertTrue($container->has(FilterInjectorTransformer::class));
-        $this->assertFalse($container->has(ConstructorExecutionTransformer::class));
     }
 
     /**
@@ -610,7 +593,6 @@ class AspectKernelTest extends TestCase
 
         $container = new Container();
         $container->add(AspectKernel::class, $kernel);
-        $container->add('kernel.interceptFunctions', false);
         FrameworkServices::register($container);
         // Invoked on the kernel class itself, so an overridden hook is the one that runs
         (new ReflectionMethod($kernel, 'registerTransformerServices'))->invoke($kernel, $container);

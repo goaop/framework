@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Intercept;
 
-use Go\Aop\AspectException;
+use Go\Aop\Exception\InvocationException;
 use ReflectionProperty;
 
 /**
@@ -60,7 +60,7 @@ interface FieldAccess extends ClassJoinpoint
     /**
      * Gets the current value of property
      *
-     * @throws AspectException if original property is not initialized yet
+     * @throws InvocationException if original property is not initialized yet
      * @return V
      * @api
      */
@@ -69,7 +69,7 @@ interface FieldAccess extends ClassJoinpoint
     /**
      * Gets the value that must be set to the field, applicable only for WRITE access type
      *
-     * @throws AspectException if called for READ access type, check {@see self::getAccessType()}
+     * @throws InvocationException if called for READ access type, check {@see self::getAccessType()}
      * @return V
      * @api
      */

@@ -20,6 +20,7 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
 use Go\PhpUnit\UsesTemporaryDirectory;
+use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
@@ -234,9 +235,24 @@ class CachePathManagerTest extends TestCase
     public function testCacheDirectoryWithMissingParentIsRejected(): void
     {
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('Can not create a directory');
+        $this->expectExceptionMessage('Can not create the cache directory');
 
         $this->createManager(cacheDir: self::$appDir . '/missing/parent/cache');
+    }
+
+    public function testReadOnlyCacheDirectoryIsRejected(): void
+    {
+        $fileSystem = FileSystem::mount('cpmreadonly');
+        $cacheDir   = $fileSystem->path('/cache');
+        mkdir($cacheDir, 0555, true);
+        try {
+            $this->createManager(cacheDir: $cacheDir);
+            $this->fail('A read-only cache directory must be rejected');
+        } catch (InvalidConfigurationException $exception) {
+            $this->assertSame("Cache directory {$cacheDir} is not writable", $exception->getMessage());
+        } finally {
+            $fileSystem->unmount();
+        }
     }
 
     public function testCachePathReplacesOnlyTheLeadingApplicationDirectory(): void

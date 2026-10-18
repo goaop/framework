@@ -6,7 +6,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
 use Go\Aop\AdviceTypeEnum;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\OrderedAdvice;
 use LogicException;
 use PhpParser\Node\Expr;

@@ -165,14 +165,24 @@ jobs:
       - name: "Install highest dependencies"
         run: "composer update --no-interaction --no-progress"
 
-      - name: "Run every demo showcase through the weaver"
+      - name: "Run every demo showcase with and without the weaver"
         run: |
-          for showcase in $(grep -o "case '[a-z-]*'" demos/index.php | cut -d"'" -f2); do
-            echo "::group::${showcase}"
-            php -r "\$_GET['showcase'] = '${showcase}'; include 'demos/index.php';" > "demo-${showcase}.html"
-            if grep -qiE '(fatal error|uncaught|warning|deprecated|notice)' "demo-${showcase}.html"; then
-              grep -iE '(fatal error|uncaught|warning|deprecated|notice)' "demo-${showcase}.html"
-              exit 1
-            fi
-            echo "::endgroup::"
+          showcases=$(php -r 'require "vendor/autoload.php"; foreach ((new Demo\Showcase\ShowcaseCatalog())->all() as $showcase) echo $showcase->id, PHP_EOL;')
+          for aop in on off; do
+            for showcase in "" ${showcases}; do
+              page="demo-${showcase:-index}-aop-${aop}.html"
+              echo "::group::${showcase:-index} (AOP ${aop})"
+              php -r "\$_COOKIE['aop'] = '${aop}'; \$_GET['showcase'] = '${showcase}'; include 'demos/index.php';" > "${page}"
+              if grep -qiE '(fatal error|uncaught|warning|deprecated|notice)' "${page}"; then
+                grep -iE '(fatal error|uncaught|warning|deprecated|notice)' "${page}"
+                exit 1
+              fi
+              # A page cut short leaves the navigation and the AOP switch without their script
+              if ! grep -q '</html>' "${page}"; then
+                echo "The page is not rendered completely"
+                tail -n 20 "${page}"
+                exit 1
+              fi
+              echo "::endgroup::"
+            done
           done

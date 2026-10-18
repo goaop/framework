@@ -24,7 +24,7 @@ class ClassFieldAccessTest extends TestCase
 
     public function testReadInvocationWithoutBackedValueFail(): void
     {
-        $this->expectException(\Go\Aop\AspectException::class);
+        $this->expectException(\Go\Aop\Exception\InvocationException::class);
         $this->expectExceptionMessage('Typed property Go\Aop\Framework\ClassFieldAccessTest::$classField must not be accessed before initialization');
         $this->classField->read($this);
     }
@@ -44,8 +44,8 @@ class ClassFieldAccessTest extends TestCase
         try {
             $this->classField->getValue();
             $this->fail('An uninitialized property has no value');
-        } catch (\Go\Aop\AspectException $exception) {
-            $this->assertSame('Property classField is not initialized yet', $exception->getMessage());
+        } catch (\Go\Aop\Exception\InvocationException $exception) {
+            $this->assertSame('Property ' . self::class . '::$classField is not initialized yet', $exception->getMessage());
         }
     }
 
@@ -125,7 +125,7 @@ class ClassFieldAccessTest extends TestCase
     {
         $this->classField->read($this, 'foo');
 
-        $this->expectException(\Go\Aop\AspectException::class);
+        $this->expectException(\Go\Aop\Exception\InvocationException::class);
         $this->expectExceptionMessage('Value to set is not available for READ access type');
         $this->classField->getValueToSet();
     }

@@ -25,7 +25,9 @@ interface PrefilteredNodeRewriter extends NodeRewriter
     /**
      * Substrings of which a source contains at least one if the rule can rewrite a node of it
      *
-     * @return non-empty-list<non-empty-string>
+     * An empty list turns the rule off for the file, e.g. while nothing registered needs it.
+     *
+     * @return list<non-empty-string>
      */
     public function getSourceMarkers(): array;
 }

@@ -15,6 +15,8 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Aop\InitializationAware;
+use Go\Aop\Pointcut;
+use Go\Core\AdvisorIndex;
 use PhpParser\Node;
 use PhpParser\Node\Attribute;
 use PhpParser\Node\Const_;
@@ -47,6 +49,12 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
     private static ?self $instance = null;
 
     /**
+     * @param AdvisorIndex|null $advisorIndex Index of the registered advisors: the rule is active only while one of
+     *                                        them has an initialization pointcut. Without it, the rule is always active
+     */
+    public function __construct(private readonly ?AdvisorIndex $advisorIndex = null) {}
+
+    /**
      * Singletone
      */
     public static function getInstance(): self
@@ -76,6 +84,11 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
 
     public function getSourceMarkers(): array
     {
+        // Without an initialization pointcut there is nothing to route a `new` to: the rule stays off
+        if ($this->advisorIndex?->hasPointcutKind(Pointcut::KIND_INIT) === false) {
+            return [];
+        }
+
         return ['new'];
     }
 
@@ -181,7 +194,7 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
         if ($invocation === null) {
             // A missing class is not cached: it may still become loadable later in the request
             if (!class_exists($fullClassName)) {
-                throw new WeavingException("Cannot instantiate non-existent class: {$fullClassName}");
+                throw WeavingException::constructorOfMissingClass($fullClassName);
             }
             $invocation = self::$constructorInvocationsCache[$fullClassName] = new ReflectionConstructorInvocation([], $fullClassName);
         }

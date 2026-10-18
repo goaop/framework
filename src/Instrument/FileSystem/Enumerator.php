@@ -219,7 +219,7 @@ class Enumerator
      * Returns collection of directories to look at
      *
      * @return string[]
-     * @throws UnexpectedValueException if directory not under the root
+     * @throws InvalidConfigurationException if directory not under the root
      */
     private function getInPaths(): array
     {
@@ -229,7 +229,7 @@ class Enumerator
             // Include paths must be below the root directory: this is a prefix check,
             // a path merely containing the root somewhere else must be rejected
             if (!PathResolver::isBelow($path, $this->rootDirectory)) {
-                throw new InvalidConfigurationException(sprintf('Path %s is not in %s', $path, $this->rootDirectory));
+                throw InvalidConfigurationException::pathOutsideRoot($path, $this->rootDirectory);
             }
 
             $inPaths[] = $path;

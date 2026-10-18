@@ -33,6 +33,7 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 | `src/Instrument/` | `src/Instrument/AGENTS.md` | Init flow, transformers, trait engine, line numbers, Override, zengine driver |
 | `src/Proxy/`      | `src/Proxy/AGENTS.md`      | Proxy generators, code-gen, readonly, hooks, enums            |
 | `src/Aop/`        | `src/Aop/AGENTS.md`        | Interfaces, generics, implementations, pointcuts, attributes  |
+| `src/Aop/Exception/` | `src/Aop/Exception/AGENTS.md` | Exception groups, static constructors                   |
 | `src/Core/`       | `src/Core/AGENTS.md`       | Container, aspect loading, advice matching, bridge            |
 | `src/Core/Cache/` | `src/Core/Cache/AGENTS.md` | Compiled advisor cache: compiler, printer, writer, loader     |
 | `tests/`          | `tests/AGENTS.md`          | Test conventions, fixtures, PHPUnit, PHPStan                  |
@@ -44,6 +45,7 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 - Before commit: phpunit and phpstan must pass. Fix errors before offering to commit.
 - Touching a SourceTransformer/NodeRewriter or the transformer wiring (AspectKernel, FrameworkServices, SourceTransformingLoader) â†’ run `composer test:performance:transformation` before and after; the numbers must not get worse (CI compares head with base on such PRs).
 - New classes are `final` unless they are meant to be extended.
+- Throwing or adding an exception â†’ read `src/Aop/Exception/AGENTS.md` first.
 - No anonymous classes in `src/`: extract a named `final` class (`@internal` for machinery); anonymous classes are for tests and mocks.
 - Commit messages and PR titles must follow Conventional Commits (`type(scope): summary`, e.g. `fix(proxy): ...`).
 - lisachenko/z-engine is an optional dependency (its branches target one PHP minor each): never add it to require/require-dev; `phpstan/zengine-stubs.php` (scanFiles) declares the API the zengine driver uses, keep it in sync; the `zengine` PHPUnit group runs with `composer test:zengine` (JIT off, ffi on) and self-skips without the engine; CI installs z-engine only in .github/workflows/zengine.yml (one leg per PHP minor, each with the z-engine branch of that minor).

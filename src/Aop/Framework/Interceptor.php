@@ -14,7 +14,7 @@ namespace Go\Aop\Framework;
 
 use Closure;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Core\NativeLazyProxy;
 
 /**
@@ -90,7 +90,7 @@ final class Interceptor
             return new $interceptorClass($aspectClassOrAdvice, $order, $expression);
         }
         if ($methodName === null) {
-            throw new AspectException('Advice method name is required when an aspect class name is given');
+            throw AspectException::adviceMethodNameRequired();
         }
 
         // Interceptor classes are framework-owned and lazy-compatible by construction,

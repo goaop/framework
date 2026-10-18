@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\Transformer;
 
 use Go\Aop\Advisor;
+use Go\Aop\Aspect;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Core\AdviceMatcherInterface;
@@ -235,6 +236,21 @@ class WeavingTransformerTest extends TestCase
 
         $this->assertSame(TransformerResult::Abstain, $transformer->transform($metadata));
         $this->assertSame($source, $metadata->source);
+    }
+
+    /**
+     * Aspects not loaded yet are loaded before matching: the AdvisorIndex usually loads them earlier, but a kernel
+     * overriding registerTransformerServices() may run the weaver without the `new` rewriting rule
+     */
+    public function testLoadsUnloadedAspectsBeforeMatching(): void
+    {
+        $aspect = $this->createStub(Aspect::class);
+        $loader = $this->createMock(AspectLoader::class);
+        $loader->method('getUnloadedAspects')->willReturn([$aspect]);
+        $loader->expects($this->once())->method('loadAndRegister')->with($aspect);
+
+        $transformer = new WeavingTransformer($this->kernel, $this->adviceMatcher, $this->cachePathManager, $loader);
+        $transformer->transform($this->loadTestMetadata('class-typehint'));
     }
 
     /**

@@ -59,11 +59,7 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
                 $this->container->getService(PointcutLexer::class)->lex($this->pointcutExpression),
             );
         } catch (RecognitionException|UnexpectedTokenException $exception) {
-            throw new PointcutSyntaxException(
-                "Invalid pointcut expression `{$this->pointcutExpression}`: {$exception->getMessage()}",
-                0,
-                $exception,
-            );
+            throw PointcutSyntaxException::invalidExpression($this->pointcutExpression, $exception);
         }
     }
 

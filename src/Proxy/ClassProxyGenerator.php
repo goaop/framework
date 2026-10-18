@@ -290,13 +290,7 @@ class ClassProxyGenerator
         foreach ($methodNames as $methodName) {
             $reflectionMethod = $this->getOriginalMethod($originalClass, $methodName);
             if ($reflectionMethod->returnsReference()) {
-                throw new WeavingException(sprintf(
-                    'Method %s::%s() returns by reference and can not be intercepted: the joinpoint returns '
-                    . 'values, so the reference would be lost. Exclude it from the pointcut with '
-                    . '"&& !matchReturningByReference()".',
-                    $originalClass->name,
-                    $methodName,
-                ));
+                throw WeavingException::methodReturnsByReference($originalClass->name, $methodName);
             }
             $interceptedMethods[$methodName] = new InterceptedMethodGenerator(
                 $reflectionMethod,

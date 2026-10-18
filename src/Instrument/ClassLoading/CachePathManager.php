@@ -141,15 +141,12 @@ class CachePathManager
                 if (!is_dir($this->cacheDir)) {
                     $cacheRootDir = dirname($this->cacheDir);
                     if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
-                        throw new InvalidConfigurationException(
-                            "Can not create a directory {$this->cacheDir} for the cache.
-                            Parent directory {$cacheRootDir} is not writable or not exist.",
-                        );
+                        throw InvalidConfigurationException::cacheDirectoryNotCreatable($this->cacheDir, $cacheRootDir);
                     }
                     mkdir($this->cacheDir, CacheFileWriter::directoryModeFor($this->fileMode), true);
                 }
                 if (!is_writable($this->cacheDir)) {
-                    throw new InvalidConfigurationException("Cache directory {$this->cacheDir} is not writable");
+                    throw InvalidConfigurationException::cacheDirectoryNotWritable($this->cacheDir);
                 }
             }
 
@@ -218,11 +215,7 @@ class CachePathManager
     private function rejectOutdatedFormat(): void
     {
         if ($this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
-            throw new WeavingException(sprintf(
-                'The AOP cache in %s was built by another version of the framework, '
-                . 'rebuild it with `bin/aspect cache:warmup:aop` before using Features::PREBUILT_CACHE',
-                $this->cacheDir,
-            ));
+            throw WeavingException::prebuiltCacheVersionMismatch((string) $this->cacheDir);
         }
     }
 

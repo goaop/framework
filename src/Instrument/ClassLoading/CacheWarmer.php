@@ -69,7 +69,7 @@ class CacheWarmer
         $options = $this->aspectKernel->getOptions();
 
         if (empty($options['cacheDir'])) {
-            throw new InvalidConfigurationException('Cache warmer require the `cacheDir` options to be configured');
+            throw InvalidConfigurationException::cacheWarmerWithoutCacheDir();
         }
         if ($options['driver'] === WeavingDriver::ZEngine) {
             throw new InvalidConfigurationException(

@@ -13,12 +13,14 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Closure;
+use Go\Aop\Exception\ContainerException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\ServiceNotFoundException;
+use Psr\Container\ContainerInterface;
 use ReflectionClass;
 
 /**
- * DI-container
+ * DI-container, PSR-11 compatible
  */
 final class Container implements AspectContainer
 {
@@ -26,6 +28,11 @@ final class Container implements AspectContainer
      * @var array<string, mixed> Hashmap of items/services in the container
      */
     private array $values = [];
+
+    /**
+     * Container that ids unknown here are looked up in
+     */
+    private ?ContainerInterface $delegate = null;
 
     /**
      * @var array<class-string, Closure(AspectContainer): object> Deferred service factories, keyed by class-name
@@ -110,7 +117,7 @@ final class Container implements AspectContainer
         // keys with is_subclass_of(), so an arbitrary string id must be rejected upfront
         // (checked syntactically to avoid autoloading anything at registration time).
         if (preg_match('/^\\\\?[A-Za-z_\x80-\xff][\w\x80-\xff]*(\\\\[A-Za-z_\x80-\xff][\w\x80-\xff]*)*$/', $id) !== 1) {
-            throw new InvalidConfigurationException("Lazy service id must be a valid class name, \"$id\" given");
+            throw InvalidConfigurationException::invalidLazyServiceId($id);
         }
         $this->factories[$id] = $lazyInitializationClosure;
         $this->registrationVersion++;
@@ -132,31 +139,47 @@ final class Container implements AspectContainer
 
     public function getService(string $className): object
     {
-        $service = $this->getValue($className);
+        $service = $this->get($className);
         if (!$service instanceof $className) {
-            throw new InvalidConfigurationException("Service $className is not properly registered");
+            throw ContainerException::serviceNotProperlyRegistered($className);
         }
 
         return $service;
     }
 
-    public function getValue(string $key): mixed
+    public function get(string $id): mixed
     {
         // isset() first for speed, array_key_exists() keeps a stored null value retrievable
-        if (!isset($this->values[$key]) && !array_key_exists($key, $this->values)) {
-            if (isset($this->factories[$key])) {
-                $this->materializeService($key);
-            } else {
-                throw new ServiceNotFoundException("Value $key is not defined in the container");
-            }
+        if (isset($this->values[$id]) || array_key_exists($id, $this->values)) {
+            return $this->values[$id];
+        }
+        if (isset($this->factories[$id])) {
+            $this->materializeService($id);
+
+            return $this->values[$id];
+        }
+        if ($this->delegate !== null) {
+            // Not stored here: the delegate owns the lifecycle of its services
+            return $this->delegate->get($id);
         }
 
-        return $this->values[$key];
+        throw ServiceNotFoundException::valueNotDefined($id);
     }
 
     public function has(string $id): bool
     {
-        return isset($this->values[$id]) || array_key_exists($id, $this->values) || isset($this->factories[$id]);
+        return isset($this->values[$id])
+            || array_key_exists($id, $this->values)
+            || isset($this->factories[$id])
+            || ($this->delegate?->has($id) ?? false);
+    }
+
+    public function setDelegate(ContainerInterface $delegate): void
+    {
+        if ($delegate === $this) {
+            throw InvalidConfigurationException::containerIsOwnDelegate();
+        }
+        $this->delegate = $delegate;
     }
 
     public function getServicesByInterface(string $interfaceTagClassName): array
@@ -191,7 +214,7 @@ final class Container implements AspectContainer
         $version = $this->registrationVersion;
         $values  = [];
         foreach (($this->tags[$interfaceTagClassName] ?? []) as $containerKey) {
-            $values[$containerKey] = $this->getValue($containerKey);
+            $values[$containerKey] = $this->get($containerKey);
         }
         // A re-entrant registration while collecting the values invalidates this result
         if ($isConclusive && $version === $this->registrationVersion) {
@@ -239,7 +262,7 @@ final class Container implements AspectContainer
         return NativeLazyProxy::tryCreate($id, function () use ($id, $factory): object {
             $instance = $factory($this);
             if (!$instance instanceof $id) {
-                throw new InvalidConfigurationException("Service $id is not properly registered");
+                throw ContainerException::serviceNotProperlyRegistered($id);
             }
 
             return $instance;

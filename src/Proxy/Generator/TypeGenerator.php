@@ -372,7 +372,7 @@ final class TypeGenerator
             return new IntersectionType($parts);
         }
 
-        throw new WeavingException('Unsupported type node ' . $node->getType());
+        throw WeavingException::unsupportedTypeNode($node->getType());
     }
 
     /**
@@ -449,7 +449,7 @@ final class TypeGenerator
                 // Intersection group
                 $closeParen = strpos($remaining, ')');
                 if ($closeParen === false) {
-                    throw new WeavingException("Malformed DNF type: $typeStr");
+                    throw WeavingException::malformedDnfType($typeStr);
                 }
                 $inner = substr($remaining, 1, $closeParen - 1);
                 /** @var list<Identifier|Name> $intersectionParts */

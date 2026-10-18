@@ -13,8 +13,15 @@ declare(strict_types=1);
 namespace Go\Aop\Exception;
 
 use OutOfBoundsException;
+use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * A service or value that is not registered in the aspect container
  */
-class ServiceNotFoundException extends OutOfBoundsException implements ExceptionInterface {}
+final class ServiceNotFoundException extends OutOfBoundsException implements ExceptionInterface, NotFoundExceptionInterface
+{
+    public static function valueNotDefined(string $id): self
+    {
+        return new self("Value {$id} is not defined in the container");
+    }
+}
