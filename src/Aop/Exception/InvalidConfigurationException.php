@@ -32,7 +32,7 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
 
     public static function kernelNotConfiguredInLoader(string $loaderPath): self
     {
-        return new self("Kernel was not initialized yet, please configure it in the {$loaderPath}");
+        return new self("Aspect kernel was not initialized by the loader {$loaderPath}: call init() on your kernel there");
     }
 
     public static function unknownFeature(int $feature): self
@@ -55,7 +55,7 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
 
     public static function missingCacheDir(): self
     {
-        return new self('You need to provide valid cache directory for Go! AOP framework.');
+        return new self('Option "cacheDir" is required: provide the path to the cache directory.');
     }
 
     public static function invalidCacheFileMode(mixed $cacheFileMode): self
@@ -96,8 +96,8 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
     public static function cacheDirectoryNotCreatable(string $cacheDir, string $cacheRootDir): self
     {
         return new self(
-            "Can not create a directory {$cacheDir} for the cache.\n"
-            . "                            Parent directory {$cacheRootDir} is not writable or not exist.",
+            "Can not create the cache directory {$cacheDir}: its parent directory {$cacheRootDir} does not exist "
+            . 'or is not writable',
         );
     }
 
@@ -108,12 +108,12 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
 
     public static function cacheWarmerWithoutCacheDir(): self
     {
-        return new self('Cache warmer require the `cacheDir` options to be configured');
+        return new self('Cache warmer requires the `cacheDir` kernel option to be configured');
     }
 
     public static function pathOutsideRoot(string $path, string $rootDirectory): self
     {
-        return new self(sprintf('Path %s is not in %s', $path, $rootDirectory));
+        return new self(sprintf('Include path %s is not below the application directory %s', $path, $rootDirectory));
     }
 
     public static function loaderArgumentNotString(): self
@@ -123,7 +123,7 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
 
     public static function invalidLoaderPath(string $loader): self
     {
-        return new self("Invalid loader path: {$loader}");
+        return new self("Loader file {$loader} does not exist or is not readable");
     }
 
     public static function nativeLazyObjectsRequired(string $entityClass, string $propertyName): self

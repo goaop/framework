@@ -91,13 +91,13 @@ final class SourceTransformingLoader extends PhpStreamFilter
     public static function register(string $filterId = self::FILTER_IDENTIFIER): void
     {
         if (!empty(self::$filterId)) {
-            throw WeavingException::streamFilterAlreadyRegistered();
+            throw WeavingException::streamFilterAlreadyRegistered(self::$filterId);
         }
 
         if (!isset(self::$registeredFilterIds[$filterId])) {
             $result = stream_filter_register($filterId, self::class);
             if ($result === false) {
-                throw WeavingException::streamFilterNotRegistered();
+                throw WeavingException::streamFilterRegistrationFailed($filterId);
             }
             self::$registeredFilterIds[$filterId] = true;
         }

@@ -232,7 +232,7 @@ class CachePathManagerTest extends TestCase
     public function testCacheDirectoryWithMissingParentIsRejected(): void
     {
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('Can not create a directory');
+        $this->expectExceptionMessage('Can not create the cache directory');
 
         $this->createManager(cacheDir: self::$appDir . '/missing/parent/cache');
     }

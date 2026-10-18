@@ -113,7 +113,7 @@ final class StreamMetaData
     public function __construct($stream, ?string $source = null)
     {
         if (!is_resource($stream)) {
-            throw WeavingException::invalidStream();
+            throw WeavingException::invalidStream($stream);
         }
         $metadata = stream_get_meta_data($stream);
         if (!isset($metadata['uri'])) {

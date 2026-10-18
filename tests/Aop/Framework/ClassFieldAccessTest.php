@@ -45,7 +45,7 @@ class ClassFieldAccessTest extends TestCase
             $this->classField->getValue();
             $this->fail('An uninitialized property has no value');
         } catch (\Go\Aop\Exception\InvocationException $exception) {
-            $this->assertSame('Property classField is not initialized yet', $exception->getMessage());
+            $this->assertSame('Property ' . self::class . '::$classField is not initialized yet', $exception->getMessage());
         }
     }
 

@@ -20,19 +20,24 @@ use Throwable;
  */
 class WeavingException extends RuntimeException implements ExceptionInterface
 {
-    public static function streamFilterAlreadyRegistered(): self
+    public static function streamFilterAlreadyRegistered(string $filterId): self
     {
-        return new self('Stream filter already registered');
+        return new self("Stream filter {$filterId} is already registered");
+    }
+
+    public static function streamFilterRegistrationFailed(string $filterId): self
+    {
+        return new self("Stream filter {$filterId} could not be registered, the name is taken by another filter");
     }
 
     public static function streamFilterNotRegistered(): self
     {
-        return new self('Stream filter was not registered');
+        return new self('Stream filter is not registered yet, call SourceTransformingLoader::register() first');
     }
 
-    public static function invalidStream(): self
+    public static function invalidStream(mixed $stream): self
     {
-        return new self('Stream should be valid resource');
+        return new self('Stream must be a valid resource, got ' . get_debug_type($stream));
     }
 
     public static function streamWithoutUri(): self
@@ -76,7 +81,7 @@ class WeavingException extends RuntimeException implements ExceptionInterface
 
     public static function invalidParseTable(): self
     {
-        return new self('Invalid PointcutParseTable format');
+        return new self('Pointcut parse table PointcutParseTable.php must return an array');
     }
 
     public static function invalidInterceptorDescriptor(mixed $interceptor): self

@@ -258,7 +258,7 @@ class AspectKernelTest extends TestCase
         $kernel = $this->makeKernel();
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('You need to provide valid cache directory for Go! AOP framework.');
+        $this->expectExceptionMessage('Option "cacheDir" is required: provide the path to the cache directory.');
 
         $this->invokeProtected($kernel, 'normalizeOptions', [[]]);
     }

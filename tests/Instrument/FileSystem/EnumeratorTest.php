@@ -181,7 +181,7 @@ class EnumeratorTest extends TestCase
         $enumerator = new Enumerator('/base', ['/somewhere/base/other']);
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('Path /somewhere/base/other is not in /base');
+        $this->expectExceptionMessage('Include path /somewhere/base/other is not below the application directory /base');
         $enumerator->enumerate();
     }
 

@@ -112,7 +112,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function getValue(): mixed
     {
         if (!$this->isInitialized) {
-            throw InvocationException::propertyNotInitialized($this->fieldName);
+            throw InvocationException::propertyNotInitialized($this->getField()->class, $this->fieldName);
         }
 
         return $this->value;

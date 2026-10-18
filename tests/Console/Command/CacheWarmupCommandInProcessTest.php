@@ -49,7 +49,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
         $tester = new CommandTester(new CacheWarmupCommand());
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid loader path');
+        $this->expectExceptionMessage('does not exist or is not readable');
 
         $tester->execute(['loader' => '/path/to/missing/loader.php']);
     }

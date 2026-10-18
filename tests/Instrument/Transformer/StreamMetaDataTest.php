@@ -64,7 +64,7 @@ class StreamMetaDataTest extends TestCase
     public function testRejectsNonResourceStream(): void
     {
         $this->expectException(WeavingException::class);
-        $this->expectExceptionMessage('Stream should be valid resource');
+        $this->expectExceptionMessage('Stream must be a valid resource');
 
         // @phpstan-ignore argument.type (the guard is exactly what is under test)
         new StreamMetaData('php://memory');

@@ -19,9 +19,9 @@ use RuntimeException;
  */
 final class InvocationException extends RuntimeException implements ExceptionInterface
 {
-    public static function propertyNotInitialized(string $fieldName): self
+    public static function propertyNotInitialized(string $className, string $fieldName): self
     {
-        return new self("Property {$fieldName} is not initialized yet");
+        return new self(sprintf('Property %s::$%s is not initialized yet', $className, $fieldName));
     }
 
     public static function typedPropertyNotInitialized(string $className, string $fieldName): self
