@@ -1,0 +1,43 @@
+{
+    "name": "goaop/ffi-driver",
+    "description": "Weaving driver of the Go! AOP framework that rewires loaded classes at runtime through lisachenko/z-engine (PHP FFI).",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "aop",
+        "php",
+        "aspect",
+        "ffi",
+        "z-engine"
+    ],
+    "authors": [
+        {
+            "name": "Lisachenko Alexander",
+            "homepage": "https://github.com/lisachenko"
+        }
+    ],
+    "require": {
+        "php": "~8.4.0 || ~8.5.0",
+        "ext-ffi": "*",
+        "goaop/framework": "^4.0",
+        "lisachenko/z-engine": "~8.4.3 || ~8.5.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Go\\Driver\\Ffi\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Go\\Driver\\Ffi\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "4.0-dev"
+        }
+    }
+}

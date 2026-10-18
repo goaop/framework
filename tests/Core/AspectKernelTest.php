@@ -12,7 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
-use Go\Aop\WeavingDriver;
+use Go\Driver\StreamFilter\StreamFilterDriver;
+use Go\Stubs\Driver\RewiringDriver;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
@@ -238,61 +239,54 @@ class AspectKernelTest extends TestCase
         $this->assertSame([], $default['includePaths']);
         $this->assertSame([], $default['excludePaths']);
         $this->assertSame(Container::class, $default['containerClass']);
-        $this->assertSame(WeavingDriver::Stream, $default['driver']);
+        $this->assertSame(StreamFilterDriver::class, $default['driver']);
     }
 
-    public function testNormalizeOptionsResolvesTheDriverFromItsName(): void
+    public function testNormalizeOptionsAcceptsTheClassOfAWeavingDriver(): void
     {
         $kernel = $this->makeKernel();
 
-        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => 'zengine']]);
+        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => RewiringDriver::class]]);
 
-        $this->assertSame(WeavingDriver::ZEngine, $normalized['driver']);
+        $this->assertSame(RewiringDriver::class, $normalized['driver']);
         $this->assertSame(
-            WeavingDriver::Stream,
+            StreamFilterDriver::class,
             $this->invokeProtectedArray($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir']])['driver'],
         );
     }
 
-    public function testNormalizeOptionsThrowsForAnUnknownDriver(): void
+    public function testNormalizeOptionsThrowsForAnUnknownDriverClass(): void
     {
         $kernel = $this->makeKernel();
 
         try {
-            $this->invokeProtected($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => 'ffi']]);
-            self::fail('An unknown driver must be refused');
+            $this->invokeProtected($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => 'Go\\Driver\\Missing\\MissingDriver']]);
+            self::fail('An unknown driver class must be refused');
         } catch (InvalidConfigurationException $exception) {
-            $this->assertStringStartsWith('Option "driver" must be one of "stream", "zengine"', $exception->getMessage());
+            $this->assertSame(
+                'Option "driver" must name the class of a weaving driver (an implementation of Go\\Driver\\WeavingDriver), '
+                . 'got the unknown class "Go\\Driver\\Missing\\MissingDriver".',
+                $exception->getMessage(),
+            );
+        }
+        try {
+            $this->invokeProtected($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => 42]]);
+            self::fail('A driver option that is no class name must be refused');
+        } catch (InvalidConfigurationException $exception) {
+            $this->assertStringEndsWith('got int.', $exception->getMessage());
         }
     }
 
-    public function testNormalizeOptionsRefusesStreamOnlyFeaturesWithTheEngineDriver(): void
+    public function testNormalizeOptionsThrowsForAClassThatIsNoWeavingDriver(): void
     {
         $kernel = $this->makeKernel();
 
         try {
-            $this->invokeProtected($kernel, 'normalizeOptions', [[
-                'cacheDir' => '/some/cache/dir',
-                'driver'   => WeavingDriver::ZEngine,
-                'features' => Features::INTERCEPT_INITIALIZATIONS,
-            ]]);
-            self::fail('Stream-only features must be refused with the engine driver');
+            $this->invokeProtected($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => \stdClass::class]]);
+            self::fail('A class that is no weaving driver must be refused');
         } catch (InvalidConfigurationException $exception) {
-            $this->assertStringContainsString('only available with the stream driver', $exception->getMessage());
+            $this->assertSame('Weaving driver class "stdClass" must implement Go\\Driver\\WeavingDriver.', $exception->getMessage());
         }
-    }
-
-    public function testNormalizeOptionsAcceptsFunctionInterceptionWithTheEngineDriver(): void
-    {
-        $kernel = $this->makeKernel();
-
-        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [[
-            'cacheDir' => '/some/cache/dir',
-            'driver'   => WeavingDriver::ZEngine,
-            'features' => Features::INTERCEPT_FUNCTIONS,
-        ]]);
-
-        $this->assertSame(Features::INTERCEPT_FUNCTIONS, $normalized['features']);
     }
 
     public function testNormalizeOptionsExcludesRuntimeDependenciesFromWeaving(): void

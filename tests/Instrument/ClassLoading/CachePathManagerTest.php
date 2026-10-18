@@ -15,7 +15,7 @@ namespace Go\Instrument\ClassLoading;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Features;
-use Go\Aop\WeavingDriver;
+use Go\Driver\StreamFilter\StreamFilterDriver;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
@@ -59,7 +59,7 @@ class CachePathManagerTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
-            'driver'         => WeavingDriver::Stream,
+            'driver'         => StreamFilterDriver::class,
         ]);
         $kernel->method('hasFeature')->willReturn($prebuiltCache);
 
@@ -414,7 +414,7 @@ class CachePathManagerTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
-            'driver'         => WeavingDriver::Stream,
+            'driver'         => StreamFilterDriver::class,
         ]);
         $this->expectException(InvalidConfigurationException::class);
         (new CachePathManager($kernel))->writeIndexFile('/_other.cache', []);

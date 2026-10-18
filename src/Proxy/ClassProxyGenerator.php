@@ -401,7 +401,7 @@ class ClassProxyGenerator
             $this->imports->import(InterceptorInjector::class),
             $isStatic ? 'forStaticMethod' : 'forMethod',
             [
-                new Arg($this->createJoinpointClassReference($originalClass)),
+                new Arg(new ClassConstFetch(new Name('self'), 'class')),
                 new Arg(new String_($method->name)),
                 new Arg((new InterceptorListGenerator($adviceNames, $this->imports))->getNode()),
                 new Arg($this->createOriginalMethodCallable($method, $originalClass)),
@@ -419,20 +419,6 @@ class ClassProxyGenerator
                 JoinPointStatementsGenerator::returnsResult($method),
             ),
         ];
-    }
-
-    /**
-     * Builds the expression naming the class the joinpoint is created for
-     *
-     * A proxy class IS the woven class, so `self::class` names it. A generator whose method bodies
-     * are compiled inside another class (the z-engine donor) overrides this: PHP resolves
-     * `self::class` in a class method to that class at compile time.
-     *
-     * @param ReflectionClass<covariant object>|null $originalClass
-     */
-    protected function createJoinpointClassReference(?ReflectionClass $originalClass): Expr
-    {
-        return new ClassConstFetch(new Name('self'), 'class');
     }
 
     /**

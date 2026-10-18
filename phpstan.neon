@@ -9,12 +9,10 @@ parameters:
   paths:
     - bin/aspect
     - demos
+    - packages/stream-wrapper-driver
     - src
     - tests
-  # lisachenko/z-engine is an optional dependency (installed only on the PHP minor its branch targets): the API the
-  # zengine weaving driver uses is declared in this file for the analysis of a host without the package
-  scanFiles:
-    - phpstan/zengine-stubs.php
+  # The ffi driver package needs lisachenko/z-engine for its analysis: `composer analyze:ffi` (packages/ffi-driver/phpstan.neon)
   strictRules:
     # PHPUnit's assertions are static methods that are idiomatically called as $this->assert*()
     dynamicCallOnStaticMethod: false

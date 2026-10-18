@@ -1,0 +1,85 @@
+name: "ffi weaving driver"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    paths:
+      - "packages/ffi-driver/**"
+      - "src/Driver/**"
+      - ".github/workflows/ffi-driver.yml"
+      - "composer.json"
+  push:
+    branches:
+      - master
+
+jobs:
+  ffi:
+    name: "ffi driver (PHP ${{ matrix.php-version }})"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php-version: "8.4"
+            coverage: "xdebug"
+          - php-version: "8.5"
+            coverage: "none"
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v7
+
+      - name: "Install PHP"
+        uses: shivammathur/setup-php@v2
+        with:
+          coverage: "${{ matrix.coverage }}"
+          php-version: "${{ matrix.php-version }}"
+          extensions: ffi, opcache
+          ini-values: memory_limit=-1, ffi.enable=1, opcache.enable=1
+          tools: composer:v2
+
+      - name: "Cache dependencies"
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.composer/cache
+            vendor
+          key: "composer-ffi-${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-ffi-${{ runner.os }}-php-${{ matrix.php-version }}-"
+
+      - name: "Install dependencies"
+        run: "composer update --no-interaction --no-progress"
+
+      # Optional engine of the driver: packagist resolves the release matching the PHP minor
+      - name: "Install lisachenko/z-engine"
+        run: "composer require --dev --no-interaction --no-progress lisachenko/z-engine"
+
+      - name: "Static analysis of the driver package"
+        run: "composer analyze:ffi"
+
+      - name: "ffi driver tests with coverage"
+        if: ${{ matrix.coverage == 'xdebug' }}
+        run: "composer test:ffi -- --coverage-clover build/logs/clover.xml"
+
+      - name: "ffi driver tests"
+        if: ${{ matrix.coverage != 'xdebug' }}
+        run: "composer test:ffi"
+
+      - name: "Default test suite with z-engine installed"
+        run: "composer test"
+
+      - name: "Upload coverage to Codecov"
+        if: ${{ matrix.coverage == 'xdebug' }}
+        uses: codecov/codecov-action@v7
+        with:
+          files: build/logs/clover.xml
+          fail_ci_if_error: false
+          slug: goaop/framework
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: ffi-driver

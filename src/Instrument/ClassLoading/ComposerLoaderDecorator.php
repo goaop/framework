@@ -17,10 +17,10 @@ use Composer\Autoload\ClassLoader;
 /**
  * A wrapper the kernel registers in place of composer's class loader
  *
- * Both weaving drivers decorate composer's loader (the stream driver to redirect advised files
- * through the stream filter, the z-engine driver to weave a class right after it was loaded),
- * so tools that look for a ClassLoader in spl_autoload_functions() unwrap either through this
- * interface.
+ * Weaving drivers decorate composer's loader (the stream filter driver to redirect advised files
+ * through the stream filter, the ffi driver to weave a class right after it was loaded), so tools
+ * that look for a ClassLoader in spl_autoload_functions() unwrap any of them through this
+ * interface, and a later kernel wraps the original loader again instead of the wrapper.
  */
 interface ComposerLoaderDecorator
 {

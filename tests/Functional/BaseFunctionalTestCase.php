@@ -24,7 +24,6 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
-use Go\Instrument\ZEngine\JitGuard;
 
 /**
  * Base class for functional tests.
@@ -170,14 +169,14 @@ abstract class BaseFunctionalTestCase extends TestCase
     /**
      * Command-line options of the PHP subprocess running the console, `-d` ini overrides included
      *
-     * On PHP 8.5 the tracing JIT is switched off: it miscompiles code the framework runs (a known PHP bug),
-     * so a php.ini enabling the JIT would make the whole functional suite fail. Override to add options.
+     * On PHP 8.5 the tracing JIT is switched off: a php.ini enabling it makes the functional suite fail there.
+     * Override to add options.
      *
      * @return list<string>
      */
     protected function getPhpOptions(): array
     {
-        if (JitGuard::hasTracingJitBug()) {
+        if (PHP_VERSION_ID >= 80500 && PHP_VERSION_ID < 80600) {
             return ['-d', 'opcache.jit=off', '-d', 'opcache.jit_buffer_size=0'];
         }
 

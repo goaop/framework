@@ -16,8 +16,10 @@ use Composer\InstalledVersions;
 use Go\Aop\Aspect;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
-use Go\Aop\WeavingDriver;
 use Go\Core\Cache\CachedAspectLoader;
+use Go\Driver\SourceTransformingDriver;
+use Go\Driver\StreamFilter\StreamFilterDriver;
+use Go\Driver\WeavingDriver;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
@@ -26,7 +28,6 @@ use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
-use Go\Instrument\ZEngine\ZEngineDriver;
 use ReflectionClass;
 
 /**
@@ -41,7 +42,7 @@ use ReflectionClass;
  *   includePaths: string[],
  *   excludePaths: string[],
  *   containerClass: class-string<AspectContainer>,
- *   driver: WeavingDriver
+ *   driver: class-string<WeavingDriver>
  * }
  * @phpstan-type UserKernelOptions array{
  *   debug?: bool,
@@ -52,7 +53,7 @@ use ReflectionClass;
  *   includePaths?: string[],
  *   excludePaths?: string[],
  *   containerClass?: class-string<AspectContainer>,
- *   driver?: WeavingDriver|string
+ *   driver?: class-string<WeavingDriver>
  * }
  */
 abstract class AspectKernel
@@ -63,18 +64,10 @@ abstract class AspectKernel
     private const array RUNTIME_DEPENDENCIES = [
         'goaop/dissect',
         'goaop/parser-reflection',
-        'lisachenko/z-engine',
         'nikic/php-parser',
         'psr/container',
         'symfony/finder',
     ];
-
-    /**
-     * Feature flags implemented by source transformers: meaningless for a driver that never rewrites sources
-     */
-    private const int STREAM_ONLY_FEATURES = Features::INTERCEPT_INITIALIZATIONS
-        | Features::INTERCEPT_INCLUDES
-        | Features::PREBUILT_CACHE;
 
     /**
      * Kernel options
@@ -90,7 +83,7 @@ abstract class AspectKernel
         'includePaths'   => [],
         'excludePaths'   => [],
         'containerClass' => Container::class,
-        'driver'         => WeavingDriver::Stream,
+        'driver'         => StreamFilterDriver::class,
     ];
 
     /**
@@ -170,21 +163,18 @@ abstract class AspectKernel
         // The class loader queries the cache index right below on every request, a lazy proxy would be pure overhead
         $container->add(CachePathManager::class, new CachePathManager($this));
 
-        if ($this->options['driver'] === WeavingDriver::ZEngine) {
-            // Runtime weaving: classes load natively and are rewired through z-engine right
-            // after loading; no transformer chain, no stream filter, no include interception
-            ZEngineDriver::boot($this, $container);
-        } else {
-            // The whole transformer pipeline (and the stream filter itself) is only needed on
-            // a cache miss, so every transformer is registered as a typical deferred container
-            // service and brought up by SourceTransformingLoader::ensureRegistered() from the
-            // miss path. Caching itself lives in SourceTransformingLoader, which serves cache
-            // hits before any transformer (or even the parser) is touched - the overridable
-            // hook below only registers the transformation chain.
+        // The driver decides how the classes of the application are woven (see WeavingDriver). The
+        // transformer chain only exists for a driver transforming sources, and even then only on a
+        // cache miss: every transformer is registered as a typical deferred container service and
+        // brought up by SourceTransformingLoader::ensureRegistered() from the miss path. Caching
+        // itself lives in SourceTransformingLoader, which serves cache hits before any transformer
+        // (or even the parser) is touched - the overridable hook only registers the chain.
+        $driver = new $this->options['driver']();
+        $container->add(WeavingDriver::class, $driver);
+        if ($driver instanceof SourceTransformingDriver) {
             $this->registerTransformerServices($container);
-
-            AopComposerLoader::init($this->options, $container);
         }
+        $driver->boot($this, $container);
 
         // In debug mode every lazily registered aspect's source file must be tracked as a
         // resource right away: the cache freshness checks consult it before any aspect
@@ -262,9 +252,8 @@ abstract class AspectKernel
      *   features - integer Binary mask of features
      *   includePaths - array Whitelist of directories where aspects should be applied. Empty for everywhere.
      *   excludePaths - array Blacklist of directories or files where aspects shouldn't be applied.
-     *   driver   - Go\Aop\WeavingDriver (or its string value) The weaving driver: "stream" (source
-     *              transformation at load time, the default) or "zengine" (runtime method-table
-     *              weaving through lisachenko/z-engine, see docs/zengine-driver.md)
+     *   driver   - class-string Class of the weaving driver (Go\Driver\WeavingDriver): the stream filter driver
+     *              (source transformation at load time, the default) or a driver of another package, see docs/driver/
      *
      * @phpstan-return KernelOptions
      */
@@ -279,7 +268,7 @@ abstract class AspectKernel
             'includePaths'    => [],
             'excludePaths'    => [],
             'containerClass'  => static::$containerClass,
-            'driver'          => WeavingDriver::Stream,
+            'driver'          => StreamFilterDriver::class,
         ];
     }
 
@@ -335,13 +324,12 @@ abstract class AspectKernel
         if (!is_int($features) || ($features & ~Features::ALL) !== 0) {
             throw InvalidConfigurationException::invalidFeatures($features);
         }
-        $driver = WeavingDriver::fromOption($merged['driver'] ?? WeavingDriver::Stream);
-        if ($driver === WeavingDriver::ZEngine && ($features & self::STREAM_ONLY_FEATURES) !== 0) {
-            throw new InvalidConfigurationException(
-                'The zengine weaving driver rewires loaded classes at runtime and never rewrites sources: '
-                . 'the INTERCEPT_INITIALIZATIONS, INTERCEPT_INCLUDES and PREBUILT_CACHE features are only '
-                . 'available with the stream driver.',
-            );
+        $driver = $merged['driver'] ?? StreamFilterDriver::class;
+        if (!is_string($driver) || !class_exists($driver)) {
+            throw InvalidConfigurationException::driverClassNotFound($driver);
+        }
+        if (!is_a($driver, WeavingDriver::class, true)) {
+            throw InvalidConfigurationException::driverClassNotWeavingDriver($driver);
         }
         $rawIncludePaths = is_array($merged['includePaths'] ?? null) ? $merged['includePaths'] : [];
         $includePaths    = array_values(array_filter($rawIncludePaths, is_string(...)));

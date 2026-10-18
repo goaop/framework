@@ -108,8 +108,8 @@ final class TypeGenerator
     /**
      * Returns the type with its `self` and `parent` keywords replaced by the classes they name in $selfClass
      *
-     * For a declaration compiled inside another class (the donor class of the z-engine driver), where the
-     * keywords would resolve to that class. `static` is kept: it binds to the called class at run time.
+     * For a declaration compiled outside the woven class (the donor trait of the ffi driver), where the engine
+     * would resolve the keywords against the declaring type. `static` is kept: it binds to the called class at run time.
      *
      * @param string      $selfClass   Class `self` stands for
      * @param string|null $parentClass Class `parent` stands for, null when $selfClass has no parent

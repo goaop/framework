@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/13.0/phpunit.xsd" colors="true" bootstrap="./vendor/autoload.php" cacheDirectory=".phpunit.cache" failOnWarning="true" failOnNotice="true" failOnDeprecation="true" failOnPhpunitDeprecation="true" failOnRisky="true" beStrictAboutOutputDuringTests="true">
   <testsuites>
-    <testsuite name="Go! AOP Test Suite">
+    <testsuite name="framework">
       <directory>./tests/</directory>
+    </testsuite>
+    <!-- Weaving drivers of their own packages: the stream wrapper driver runs with the default suite -->
+    <testsuite name="stream-wrapper-driver">
+      <directory>./packages/stream-wrapper-driver/tests/</directory>
+    </testsuite>
+    <!--
+      The ffi driver (lisachenko/z-engine, ext-ffi, JIT off) is excluded from `composer test` and run by
+      `composer test:ffi`; it self-skips where the engine cannot boot.
+    -->
+    <testsuite name="ffi-driver">
+      <directory>./packages/ffi-driver/tests/</directory>
     </testsuite>
   </testsuites>
   <groups>
@@ -21,17 +32,13 @@
         ratios from growing.
       -->
       <group>transformation-performance</group>
-      <!--
-        Functional tests of the z-engine weaving driver (tests/Functional/ZEngine/), excluded from the default run:
-        they need lisachenko/z-engine (the branch of the running PHP minor), ext-ffi and the JIT off, and boot the
-        engine in PHP subprocesses. Run `composer test:zengine`; the group self-skips where the engine cannot boot.
-      -->
-      <group>zengine</group>
     </exclude>
   </groups>
   <source>
     <include>
       <directory>./src/</directory>
+      <directory>./packages/stream-wrapper-driver/src/</directory>
+      <directory>./packages/ffi-driver/src/</directory>
     </include>
   </source>
 </phpunit>

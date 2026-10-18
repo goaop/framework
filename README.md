@@ -343,21 +343,26 @@ use Go\Core\AspectContainer;
 
 ### Optional configurations
 
-#### Runtime weaving with z-engine (experimental)
+#### Weaving drivers
 
-Instead of rewriting sources through the stream filter, the `zengine` driver rewires advised methods at runtime through
-[lisachenko/z-engine](https://github.com/lisachenko/z-engine) (PHP FFI): classes load natively, the original method body
-stays callable under a private alias and the generated dispatcher is swapped in. Method execution join points only.
+The `driver` kernel option names the class that decides how advised classes are woven; everything else (aspects,
+pointcuts, the advisor cache, the join-point API) is shared:
 
 ```php
 $applicationAspectKernel->init([
-    'driver'   => 'zengine',
+    'driver'   => Go\Driver\StreamFilter\StreamFilterDriver::class, // the default, may be omitted
     'cacheDir' => __DIR__ . '/../var/cache/aop',
     // ...
 ]);
 ```
 
-Requires `ext-ffi`, the z-engine branch of your PHP minor and the opcache JIT off, see [docs/zengine-driver.md](docs/zengine-driver.md).
+| Driver | Class |
+|--------|-------|
+| [Stream filter](docs/driver/stream-filter.md) (default, built in) | `Go\Driver\StreamFilter\StreamFilterDriver` — source transformation at load time through a `php://filter` stream filter behind Composer's loader |
+| [Stream wrapper](docs/driver/stream-wrapper.md) (`composer require goaop/stream-wrapper-driver`) | `Go\Driver\StreamWrapper\StreamWrapperDriver` — source transformation of every included file through a `file://` stream wrapper; includes are always intercepted, opcache caches the woven sources |
+| [ffi](docs/driver/ffi.md) (`composer require goaop/ffi-driver`, experimental) | `Go\Driver\Ffi\FfiDriver` — runtime rewiring of loaded classes through [lisachenko/z-engine](https://github.com/lisachenko/z-engine) (PHP FFI): no source rewriting, method execution join points only; needs `ext-ffi` and the opcache JIT off |
+
+See [docs/driver/](docs/driver/README.md) for the driver interface and how to write one.
 
 #### Weaving Doctrine entities
 
@@ -401,6 +406,8 @@ Documentation
 
 - [Configuration and deployment](docs/configuration.md): kernel options, `Features` flags, the `bin/aspect` console
   commands, the production deployment recipe and custom transformers or node rewriters
+- [Weaving drivers](docs/driver/README.md): the [stream filter](docs/driver/stream-filter.md) (default),
+  [stream wrapper](docs/driver/stream-wrapper.md) and [ffi](docs/driver/ffi.md) drivers, the driver interface
 - [Pointcut syntax](docs/pointcuts.md): every pointcut type, wildcards, modifiers, return types and operators
 - [Advices](docs/advices.md): advice types, joinpoints, property interception, introductions, function and
   object-creation interception

@@ -28,8 +28,9 @@ use RuntimeException;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\StreamOutput;
-use Go\Aop\WeavingDriver;
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Driver\StreamFilter\StreamFilterDriver;
+use Go\Stubs\Driver\RewiringDriver;
 
 // Separate processes: warming up registers the process-wide source transforming
 // stream filter, which must not leak into the rest of the PHPUnit process
@@ -60,7 +61,7 @@ class CacheWarmerTest extends TestCase
         self::removeTemporaryDirectory($this->appDir);
     }
 
-    public function testRefusesAKernelOfTheEngineDriver(): void
+    public function testRefusesAKernelOfADriverThatDoesNotTransformSources(): void
     {
         $kernel = $this->createMock(AspectKernel::class);
         $kernel->method('getOptions')->willReturn([
@@ -72,16 +73,16 @@ class CacheWarmerTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
-            'driver'         => WeavingDriver::ZEngine,
+            'driver'         => RewiringDriver::class,
         ]);
         $kernel->expects($this->never())->method('getContainer');
 
         try {
             (new CacheWarmer($kernel))->warmUp();
-            self::fail('The engine driver has nothing to warm up through the stream filter');
+            self::fail('A driver that rewires classes at runtime has nothing to warm up');
         } catch (InvalidConfigurationException $refusal) {
-            $this->assertStringContainsString('zengine weaving driver', $refusal->getMessage());
-            $this->assertStringContainsString('stream filter', $refusal->getMessage());
+            $this->assertStringContainsString(RewiringDriver::class . ' never uses', $refusal->getMessage());
+            $this->assertStringContainsString('no Go\\Driver\\SourceTransformingDriver', $refusal->getMessage());
         }
     }
 
@@ -111,7 +112,7 @@ class CacheWarmerTest extends TestCase
             'includePaths'   => $includePaths,
             'excludePaths'   => $excludePaths,
             'containerClass' => Container::class,
-            'driver'         => WeavingDriver::Stream,
+            'driver'         => StreamFilterDriver::class,
         ]);
 
         $container = $this->createMock(AspectContainer::class);

@@ -13,6 +13,8 @@ declare(strict_types=1);
 namespace Go\Aop\Exception;
 
 use Go\Core\AspectContainer;
+use Go\Driver\SourceTransformingDriver;
+use Go\Driver\WeavingDriver;
 use InvalidArgumentException;
 
 /**
@@ -86,6 +88,37 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
     public static function containerClassNotAspectContainer(string $containerClass): self
     {
         return new self(sprintf('Container class "%s" must extend %s.', $containerClass, AspectContainer::class));
+    }
+
+    public static function driverClassNotFound(mixed $driverClass): self
+    {
+        return new self(sprintf(
+            'Option "driver" must name the class of a weaving driver (an implementation of %s), got %s.',
+            WeavingDriver::class,
+            is_string($driverClass) ? 'the unknown class "' . $driverClass . '"' : get_debug_type($driverClass),
+        ));
+    }
+
+    public static function driverClassNotWeavingDriver(string $driverClass): self
+    {
+        return new self(sprintf('Weaving driver class "%s" must implement %s.', $driverClass, WeavingDriver::class));
+    }
+
+    public static function cacheWarmerRequiresSourceTransformingDriver(string $driverClass): self
+    {
+        return new self(sprintf(
+            'The cache warmer transforms sources through the transformer chain, which the weaving driver %s never '
+            . 'uses (it is no %s), so there is nothing to warm up ahead of time. Warm the application by loading '
+            . 'its classes (e.g. a smoke request), or warm the cache with a kernel configured for a '
+            . 'source-transforming driver.',
+            $driverClass,
+            SourceTransformingDriver::class,
+        ));
+    }
+
+    public static function cacheIndexWithoutCacheDir(string $relativeFileName): self
+    {
+        return new self(sprintf('The cache index %s needs the `cacheDir` option to be configured.', $relativeFileName));
     }
 
     public static function invalidLazyServiceId(string $id): self

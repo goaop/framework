@@ -332,7 +332,7 @@ class CachePathManager
      * Decides whether a cache record is still valid for the source it was built from
      *
      * The freshness rule itself, shared by every cache index of the framework (the transformation metadata
-     * of the stream driver and the donor index of the z-engine driver), so staleness is decided in one place.
+     * of the source-transforming drivers and the donor index of the ffi driver), so staleness is decided in one place.
      *
      * @param array<array-key, mixed> $record Cache record carrying `filemtime`, `filesize` and `cachedAt`
      */
@@ -483,7 +483,7 @@ class CachePathManager
     }
 
     /**
-     * Writes an index file of another cache (the donor index of the z-engine driver) in the metadata format of
+     * Writes an index file of another cache (the donor index of the ffi driver) in the metadata format of
      * this manager: a constant PHP return-array next to the transformation metadata, with portable paths
      *
      * @param string               $relativeFileName File name below the cache directory, with a leading slash
@@ -494,7 +494,7 @@ class CachePathManager
     public function writeIndexFile(string $relativeFileName, array $data): void
     {
         if ($this->cacheDir === null) {
-            throw new InvalidConfigurationException('Cache index files need the `cacheDir` option to be configured');
+            throw InvalidConfigurationException::cacheIndexWithoutCacheDir($relativeFileName);
         }
         $this->writeCacheFile($relativeFileName, $data);
     }

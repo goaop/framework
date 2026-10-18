@@ -100,7 +100,7 @@ final class AopComposerLoader implements ComposerLoaderDecorator
      * Initialize aspect autoloader and returns status whether initialization was successful or not
      *
      * Replaces original composer autoloader with wrapper. A loader wrapped by an earlier call
-     * (of either weaving driver) is wrapped again around its original composer loader, with the
+     * (of any weaving driver) is wrapped again around its original composer loader, with the
      * given options and container.
      *
      * @phpstan-param KernelOptions $options Aspect kernel options
@@ -147,7 +147,7 @@ final class AopComposerLoader implements ComposerLoaderDecorator
 
     /**
      * Finds the original source file of a class through the composer loaders wrapped by the kernel (by this
-     * loader or by the loader of the z-engine driver), without loading the class
+     * loader or by the loader of another weaving driver), without loading the class
      *
      * @return string|null Path given by composer, or null when no wrapped composer loader knows the class
      */

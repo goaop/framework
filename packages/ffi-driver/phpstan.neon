@@ -1,0 +1,15 @@
+# Static analysis of the ffi driver package: needs lisachenko/z-engine installed (`composer analyze:ffi`)
+includes:
+    - phpstan-baseline.php
+
+parameters:
+  level: 10
+  paths:
+    - src
+    - tests
+  strictRules:
+    # PHPUnit's assertions are static methods that are idiomatically called as $this->assert*()
+    dynamicCallOnStaticMethod: false
+  excludePaths:
+    # Weaving-input stubs woven by the in-process tests: their source shape is the test subject
+    - tests/Stubs

@@ -37,7 +37,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
 use SplFileInfo;
-use Go\Aop\WeavingDriver;
+use Go\Driver\StreamFilter\StreamFilterDriver;
 
 /**
  * Performance of the source transformation, which runs on every cache miss of a loaded file
@@ -327,7 +327,7 @@ final class TransformationPerformanceTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => AspectContainer::class,
-            'driver'         => WeavingDriver::Stream,
+            'driver'         => StreamFilterDriver::class,
         ]);
 
         return $kernel;

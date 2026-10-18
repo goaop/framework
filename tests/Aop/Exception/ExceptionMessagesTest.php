@@ -141,6 +141,35 @@ final class ExceptionMessagesTest extends TestCase
                 InvalidConfigurationException::class,
                 'Cache warmer requires the `cacheDir` kernel option to be configured',
             ],
+            'driver class not found'      => [
+                static fn() => InvalidConfigurationException::driverClassNotFound('App\Driver'),
+                InvalidConfigurationException::class,
+                'Option "driver" must name the class of a weaving driver (an implementation of Go\Driver\WeavingDriver), '
+                . 'got the unknown class "App\Driver".',
+            ],
+            'driver option not a string'  => [
+                static fn() => InvalidConfigurationException::driverClassNotFound(null),
+                InvalidConfigurationException::class,
+                'Option "driver" must name the class of a weaving driver (an implementation of Go\Driver\WeavingDriver), got null.',
+            ],
+            'driver class not a driver'   => [
+                static fn() => InvalidConfigurationException::driverClassNotWeavingDriver('App\Driver'),
+                InvalidConfigurationException::class,
+                'Weaving driver class "App\Driver" must implement Go\Driver\WeavingDriver.',
+            ],
+            'warmer needs transformation' => [
+                static fn() => InvalidConfigurationException::cacheWarmerRequiresSourceTransformingDriver('App\Driver'),
+                InvalidConfigurationException::class,
+                'The cache warmer transforms sources through the transformer chain, which the weaving driver App\Driver '
+                . 'never uses (it is no Go\Driver\SourceTransformingDriver), so there is nothing to warm up ahead of '
+                . 'time. Warm the application by loading its classes (e.g. a smoke request), or warm the cache with a '
+                . 'kernel configured for a source-transforming driver.',
+            ],
+            'cache index without dir'     => [
+                static fn() => InvalidConfigurationException::cacheIndexWithoutCacheDir('/_ffi.cache'),
+                InvalidConfigurationException::class,
+                'The cache index /_ffi.cache needs the `cacheDir` option to be configured.',
+            ],
             'path outside root'           => [
                 static fn() => InvalidConfigurationException::pathOutsideRoot('/other', '/app'),
                 InvalidConfigurationException::class,

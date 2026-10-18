@@ -11,6 +11,7 @@ $finder = Finder::create()
         __DIR__ . '/src',
         __DIR__ . '/tests',
         __DIR__ . '/demos',
+        __DIR__ . '/packages',
     ])
     // Same "source shape is the test subject" exclusions as phpstan.neon:
     // weaving-input fixtures/stubs and their generated woven/proxy snapshots
