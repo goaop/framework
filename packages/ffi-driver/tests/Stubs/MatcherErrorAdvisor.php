@@ -26,19 +26,17 @@ final class MatcherErrorAdvisor implements PointcutAdvisor, Pointcut
 {
     public const string FAILURE = 'The pointcut cannot decide on';
 
-    public function getPointcut(): Pointcut
-    {
-        return $this;
+    public Pointcut $pointcut {
+        get => $this;
+    }
+
+    public int $kind {
+        get => self::KIND_METHOD;
     }
 
     public function getAdvice(): Advice
     {
         return new BeforeInterceptor(static function (): void {});
-    }
-
-    public function getKind(): int
-    {
-        return self::KIND_METHOD;
     }
 
     public function matches(
