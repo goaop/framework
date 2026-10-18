@@ -30,6 +30,9 @@
   run; `composer test:performance:transformation` (JIT disabled) before and after touching a SourceTransformer, a
   NodeRewriter or their wiring. CI compares head with base on such PRs (.github/workflows/transformation-performance.yml,
   `GO_AOP_TRANSFORMATION_REPORT=<file>` writes the JSON report read by compare-transformation-performance.php)
+- PHP 8.5.11 only: a known tracing-JIT bug breaks pointcut parsing in the functional tests (subprocesses), e.g.
+  "Unexpected token Go"; not a framework bug, ignore it or run with `PHP_INI_SCAN_DIR=:<dir with opcache.jit=disable>`.
+  Agents: once `php -v` reports 8.5.12 or higher, verify the functional tests pass with JIT on and remove this item.
 - If phpstan fails: fix errors before offering to commit
 
 ## PHPStan gate
