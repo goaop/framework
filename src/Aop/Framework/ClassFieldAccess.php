@@ -39,16 +39,6 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     private ReflectionProperty $reflectionProperty;
 
     /**
-     * @var class-string<T>
-     */
-    private readonly string $className;
-
-    /**
-     * Name of the intercepted property
-     */
-    private readonly string $fieldName;
-
-    /**
      * Current value of property, bound to the stored array during {@see self::readByReference()}
      *
      * Holds null when the property is not initialized yet, see $isInitialized
@@ -85,13 +75,15 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Constructor for field access
      *
      * @param array<Interceptor> $advices List of advices for this invocation
-     * @param class-string<T> $className
      */
-    public function __construct(array $advices, string $className, string $fieldName)
-    {
+    public function __construct(
+        array $advices,
+        /** @var class-string<T> */
+        private readonly string $className,
+        /** Name of the intercepted property */
+        private readonly string $fieldName,
+    ) {
         parent::__construct($advices);
-        $this->className = $className;
-        $this->fieldName = $fieldName;
     }
 
     public function getAccessType(): FieldAccessType

@@ -43,10 +43,11 @@ abstract class AbstractJoinpoint implements Joinpoint
 
     /**
      * Initializes list of advices for current joinpoint
-     *
-     * @param array<Interceptor> $advices List of advices (interceptors)
      */
-    public function __construct(protected readonly array $advices = []) {}
+    public function __construct(
+        /** @var array<Interceptor> List of advices (interceptors) */
+        protected readonly array $advices = [],
+    ) {}
 
     /**
      * Sorts advices by priority

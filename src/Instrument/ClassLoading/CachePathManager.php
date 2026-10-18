@@ -122,8 +122,9 @@ class CachePathManager
      */
     protected array $newCacheState = [];
 
-    public function __construct(protected readonly AspectKernel $kernel)
-    {
+    public function __construct(
+        protected readonly AspectKernel $kernel,
+    ) {
         $options        = $kernel->getOptions();
         $this->options  = $options;
         $this->appDir   = $options['appDir'];

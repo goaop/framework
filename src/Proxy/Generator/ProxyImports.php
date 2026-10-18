@@ -56,11 +56,13 @@ final class ProxyImports
     private array $generatedImports = [];
 
     /**
-     * @param string                     $namespace       Namespace of the generated file, empty for the global one
      * @param array<string, string|null> $originalImports Imports of the original file: class name => alias
      */
-    public function __construct(private readonly string $namespace = '', array $originalImports = [])
-    {
+    public function __construct(
+        /** Namespace of the generated file, empty for the global one */
+        private readonly string $namespace = '',
+        array $originalImports = [],
+    ) {
         foreach ($originalImports as $className => $alias) {
             $className = ltrim($className, '\\');
             $alias     = ($alias === null || $alias === '') ? self::shortName($className) : $alias;

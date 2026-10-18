@@ -55,11 +55,12 @@ final class InterceptorListGenerator
     /**
      * @param array<GeneratedInterceptor|string> $interceptors Only generated interceptor descriptors are
      *                                                         accepted, string entries are rejected loudly
-     * @param ProxyImports|null                  $imports      Imports of the generated file; short class names
-     *                                                         are emitted when omitted
      */
-    public function __construct(array $interceptors, private readonly ?ProxyImports $imports = null)
-    {
+    public function __construct(
+        array $interceptors,
+        /** Imports of the generated file; short class names are emitted when omitted */
+        private readonly ?ProxyImports $imports = null,
+    ) {
         $descriptors = [];
         foreach ($interceptors as $interceptor) {
             if (!$interceptor instanceof GeneratedInterceptor) {
