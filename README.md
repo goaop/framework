@@ -333,6 +333,9 @@ use Go\Core\AspectContainer;
         $container->addLazyService(MonitorAspect::class, static fn() => new MonitorAspect());
 
         // Eager alternative: $container->add(MonitorAspect::class, new MonitorAspect());
+
+        // Dependencies from the PSR-11 container of your application, attached later via setDelegate():
+        // $container->addLazyService(MonitorAspect::class, static fn(AspectContainer $c) => new MonitorAspect($c->getService(LoggerInterface::class)));
     }
 
 //...

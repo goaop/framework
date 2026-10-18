@@ -14,6 +14,7 @@ namespace Go\Core;
 
 use Closure;
 use Go\Aop\Exception\ContainerException;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\ServiceNotFoundException;
 use Psr\Container\ContainerInterface;
 
@@ -104,7 +105,7 @@ interface AspectContainer extends ContainerInterface
      * @param string $id Identifier of the entry
      *
      * @return ($id is class-string<T> ? T : mixed)
-     * @throws ServiceNotFoundException if no entry was found for the identifier
+     * @throws ServiceNotFoundException if no entry was found for the identifier, neither here nor in the delegate
      *
      * @template T of object
      */
@@ -160,6 +161,22 @@ interface AspectContainer extends ContainerInterface
      * @template T of object
      */
     public function addLazyService(string $id, Closure $lazyInitializationClosure): void;
+
+    /**
+     * Attaches a delegate container, e.g. the PSR-11 container of the application.
+     *
+     * {@see get()} and {@see has()} fall back to the delegate for ids that are not registered in
+     * this container, so a factory passed to {@see addLazyService()} resolves its dependencies from
+     * the delegate: it runs on first use, after the application attached its container.
+     *
+     * A PSR-11 container can not be introspected: there is no standard way to look services up by
+     * interface or by tag, so {@see getServicesByInterface()} only returns services registered in this
+     * container. Integration bridges that can query their container by tags or interfaces register
+     * the services they collect (aspects, transformers) via {@see addLazyService()}.
+     *
+     * @throws InvalidConfigurationException if the container is given as its own delegate
+     */
+    public function setDelegate(ContainerInterface $delegate): void;
 
     /**
      * Adds a link to the file resource into the container

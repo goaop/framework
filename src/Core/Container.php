@@ -16,6 +16,7 @@ use Closure;
 use Go\Aop\Exception\ContainerException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\ServiceNotFoundException;
+use Psr\Container\ContainerInterface;
 use ReflectionClass;
 
 /**
@@ -27,6 +28,11 @@ final class Container implements AspectContainer
      * @var array<string, mixed> Hashmap of items/services in the container
      */
     private array $values = [];
+
+    /**
+     * Container that ids unknown here are looked up in
+     */
+    private ?ContainerInterface $delegate = null;
 
     /**
      * @var array<class-string, Closure(AspectContainer): object> Deferred service factories, keyed by class-name
@@ -144,20 +150,36 @@ final class Container implements AspectContainer
     public function get(string $id): mixed
     {
         // isset() first for speed, array_key_exists() keeps a stored null value retrievable
-        if (!isset($this->values[$id]) && !array_key_exists($id, $this->values)) {
-            if (isset($this->factories[$id])) {
-                $this->materializeService($id);
-            } else {
-                throw new ServiceNotFoundException("Value $id is not defined in the container");
-            }
+        if (isset($this->values[$id]) || array_key_exists($id, $this->values)) {
+            return $this->values[$id];
+        }
+        if (isset($this->factories[$id])) {
+            $this->materializeService($id);
+
+            return $this->values[$id];
+        }
+        if ($this->delegate !== null) {
+            // Not stored here: the delegate owns the lifecycle of its services
+            return $this->delegate->get($id);
         }
 
-        return $this->values[$id];
+        throw new ServiceNotFoundException("Value $id is not defined in the container");
     }
 
     public function has(string $id): bool
     {
-        return isset($this->values[$id]) || array_key_exists($id, $this->values) || isset($this->factories[$id]);
+        return isset($this->values[$id])
+            || array_key_exists($id, $this->values)
+            || isset($this->factories[$id])
+            || ($this->delegate?->has($id) ?? false);
+    }
+
+    public function setDelegate(ContainerInterface $delegate): void
+    {
+        if ($delegate === $this) {
+            throw new InvalidConfigurationException('Container can not be its own delegate');
+        }
+        $this->delegate = $delegate;
     }
 
     public function getServicesByInterface(string $interfaceTagClassName): array

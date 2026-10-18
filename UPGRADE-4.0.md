@@ -118,7 +118,9 @@ deferred registrations of services implementing an interface.
 
 `AspectContainer` extends `Psr\Container\ContainerInterface`, so the container can be passed to any code
 that expects a PSR-11 container. `getValue()` is renamed to `get()`, and `has()` comes from the PSR
-interface with the same signature. A custom `containerClass` implements `get()` instead of `getValue()`.
+interface with the same signature. A custom `containerClass` implements `get()` instead of `getValue()`, plus
+`setDelegate()`, which attaches the container of your application
+(see [Aspects from the application container](docs/configuration.md#aspects-from-the-application-container)).
 
 ```php
 // before
