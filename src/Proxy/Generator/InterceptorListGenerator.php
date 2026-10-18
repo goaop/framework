@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Go\Aop\AspectException;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Aop\Framework\Interceptor;
@@ -64,7 +63,7 @@ final class InterceptorListGenerator
         $descriptors = [];
         foreach ($interceptors as $interceptor) {
             if (!$interceptor instanceof GeneratedInterceptor) {
-                throw new AspectException(
+                throw new WeavingException(
                     'Interceptor list expects generated interceptor descriptors, got ' . get_debug_type($interceptor),
                 );
             }

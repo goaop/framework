@@ -12,9 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Exception;
 
-use Go\Aop\AspectException;
-
 /**
  * A pointcut expression that can not be lexed or parsed, or a pattern inside it that is invalid
  */
-class PointcutSyntaxException extends AspectException {}
+final class PointcutSyntaxException extends AspectException {}

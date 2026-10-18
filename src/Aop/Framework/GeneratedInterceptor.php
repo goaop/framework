@@ -14,7 +14,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use ReflectionFunction;
 
 /**

@@ -22,5 +22,5 @@
 ## Bridge
 src/Bridge/Doctrine (ORM 3.6+, persistence 4.1+ ClassLocator; no metadata surgery needed under the trait engine):
 - WovenEntityClassLocator — ClassLocator for mapping drivers: parses class names (parser-reflection ReflectionFile, never includes files) and loads them via class_exists() so the autoloader serves the woven class. Doctrine's FileClassLocator require_once's sources: bypasses weaving / misses already-loaded woven entities.
-- MetadataLoadInterceptor — loadClassMetadata guard: woven entity (implements Go\Aop\Proxy) with a hooked (intercepted) mapped property while native lazy objects are off → RuntimeException pointing to enableNativeLazyObjects(true).
+- MetadataLoadInterceptor — loadClassMetadata guard: woven entity (implements Go\Aop\Proxy) with a hooked (intercepted) mapped property while native lazy objects are off → InvalidConfigurationException pointing to enableNativeLazyObjects(true).
 - Functional coverage: tests/Functional/DoctrineBridgeTest.php (fixture script tests/Fixtures/project/bin/doctrine-metadata.php, no DB connection needed).

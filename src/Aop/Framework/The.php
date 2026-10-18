@@ -15,7 +15,7 @@ namespace Go\Aop\Framework;
 use Closure;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\InvocationException;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 
@@ -57,7 +57,7 @@ final class The
             return $value;
         }
 
-        throw new AspectException("Advisor {$advisorId} does not expose a closure advice");
+        throw new InvocationException("Advisor {$advisorId} does not expose a closure advice");
     }
 
     private static function getContainer(): AspectContainer

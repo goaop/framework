@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Aop\Exception;
 
-use Go\Aop\AspectException;
 use InvalidArgumentException;
 use OutOfBoundsException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -28,13 +27,14 @@ final class ExceptionHierarchyTest extends TestCase
     public static function exceptionTypes(): array
     {
         return [
-            'aspect'               => [AspectException::class, RuntimeException::class],
             'invalid config'       => [InvalidConfigurationException::class, InvalidArgumentException::class],
-            'pointcut syntax'      => [PointcutSyntaxException::class, AspectException::class],
-            'service not found'    => [ServiceNotFoundException::class, OutOfBoundsException::class],
             'container'            => [ContainerException::class, InvalidConfigurationException::class],
+            'service not found'    => [ServiceNotFoundException::class, OutOfBoundsException::class],
+            'aspect'               => [AspectException::class, RuntimeException::class],
+            'pointcut syntax'      => [PointcutSyntaxException::class, AspectException::class],
             'weaving'              => [WeavingException::class, RuntimeException::class],
-            'not compilable'       => [NotCompilableException::class, AspectException::class],
+            'not compilable'       => [NotCompilableException::class, WeavingException::class],
+            'invocation'           => [InvocationException::class, RuntimeException::class],
         ];
     }
 
@@ -53,10 +53,24 @@ final class ExceptionHierarchyTest extends TestCase
         $this->assertInstanceOf($parentClass, $exception);
     }
 
+    public function testEveryExceptionClassIsListedAndImplementsTheMarker(): void
+    {
+        $listed = array_column(self::exceptionTypes(), 0);
+        foreach (Finder::create()->files()->in(__DIR__ . '/../../../src/Aop/Exception')->name('*.php') as $file) {
+            $className = __NAMESPACE__ . '\\' . $file->getBasename('.php');
+            if ($className === ExceptionInterface::class) {
+                continue;
+            }
+            $this->assertTrue(is_subclass_of($className, ExceptionInterface::class), $className . ' must implement ExceptionInterface');
+            $this->assertContains($className, $listed, $className . ' must be listed in exceptionTypes()');
+        }
+    }
+
     public function testEveryThrowInSourcesUsesAFrameworkException(): void
     {
         $allowed   = ['AspectException', 'InvalidConfigurationException', 'PointcutSyntaxException',
             'ServiceNotFoundException', 'ContainerException', 'WeavingException', 'NotCompilableException',
+            'InvocationException',
             // Converts warnings inside the cache warmer loop, which catches it right away
             'ErrorException'];
         $offenders = [];

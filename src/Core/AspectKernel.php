@@ -14,7 +14,6 @@ namespace Go\Core;
 
 use Composer\InstalledVersions;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
 use Go\Core\Cache\CachedAspectLoader;
@@ -110,13 +109,13 @@ abstract class AspectKernel
     /**
      * Returns the single instance of kernel
      *
-     * @throws AspectException When called on an abstract kernel before the application kernel was created
+     * @throws InvalidConfigurationException When called on an abstract kernel before the application kernel was created
      */
     public static function getInstance(): self
     {
         if (self::$instance === null) {
             if (new ReflectionClass(static::class)->isAbstract()) {
-                throw new AspectException('Aspect kernel is not initialized yet, call init() on the kernel of the application first');
+                throw new InvalidConfigurationException('Aspect kernel is not initialized yet, call init() on the kernel of the application first');
             }
             // PhpStan complains about LSB and args for constructor, so constructor should be final
             self::$instance = new static();
@@ -203,7 +202,7 @@ abstract class AspectKernel
     public function getContainer(): AspectContainer
     {
         if (!isset($this->container)) {
-            throw new AspectException(static::class . ' is not initialized yet, call init() first');
+            throw new InvalidConfigurationException(static::class . ' is not initialized yet, call init() first');
         }
 
         return $this->container;

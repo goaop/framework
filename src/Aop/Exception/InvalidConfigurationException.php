@@ -15,6 +15,6 @@ namespace Go\Aop\Exception;
 use InvalidArgumentException;
 
 /**
- * Invalid kernel options, container registrations, console arguments or other user configuration
+ * Invalid kernel options or state, container registrations, console arguments or other user configuration
  */
 class InvalidConfigurationException extends InvalidArgumentException implements ExceptionInterface {}

@@ -9,7 +9,7 @@ use Go\Aop\Advice;
 use Go\Aop\AdviceTypeEnum;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\InvocationException;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
@@ -98,7 +98,7 @@ final class TheTest extends TestCase
             'manual-value' => new stdClass(),
         ]);
 
-        $this->expectException(AspectException::class);
+        $this->expectException(InvocationException::class);
         $this->expectExceptionMessage('does not expose a closure advice');
 
         The::advice('manual-value');
@@ -130,7 +130,7 @@ final class TheTest extends TestCase
             },
         ]);
 
-        $this->expectException(AspectException::class);
+        $this->expectException(InvocationException::class);
         $this->expectExceptionMessage('does not expose a closure advice');
 
         The::advice('manual-advisor');

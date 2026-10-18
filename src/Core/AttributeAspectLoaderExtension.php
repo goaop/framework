@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\Framework\AfterInterceptor;
 use Go\Aop\Framework\AfterThrowingInterceptor;
 use Go\Aop\Framework\AroundInterceptor;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Go\Aop\AspectException;
+use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\AfterInterceptor;
 use Go\Aop\Framework\AfterThrowingInterceptor;
 use Go\Aop\Framework\AroundInterceptor;
@@ -85,7 +85,7 @@ PHP,
 
     public function testRejectsPlainStringAdvisorIds(): void
     {
-        $this->expectException(AspectException::class);
+        $this->expectException(WeavingException::class);
         $this->expectExceptionMessage('expects generated interceptor descriptors');
 
         new InterceptorListGenerator(['advisor.Some\Aspect->advice']);

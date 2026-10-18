@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\IntroductionInfo;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;

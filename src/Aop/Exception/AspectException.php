@@ -10,13 +10,12 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Aop;
+namespace Go\Aop\Exception;
 
-use Go\Aop\Exception\ExceptionInterface;
 use RuntimeException;
 
 /**
- * Invalid aspect definitions and failures of the AOP runtime
+ * Invalid aspect definition: advice methods, attributes, pointcut references or advisors
  *
  * Catch {@see ExceptionInterface} to handle every exception thrown by the framework.
  */

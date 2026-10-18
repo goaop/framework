@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;

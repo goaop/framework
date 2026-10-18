@@ -14,7 +14,7 @@ namespace Go\Aop\Framework;
 
 use Closure;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Core\NativeLazyProxy;
 
 /**

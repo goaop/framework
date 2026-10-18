@@ -282,6 +282,7 @@ any Go! AOP failure. Several throw sites changed their type:
 | Container entry of the wrong type in `getService()`              | `InvalidArgumentException`                             | `ContainerException` (an `InvalidConfigurationException` and a PSR-11 `ContainerExceptionInterface`) |
 | Weaving, proxy generation, cache writes                          | `RuntimeException`, `LogicException`, `InvalidArgumentException` | `WeavingException` (a `RuntimeException`) |
 | Advisor that can not be cached                                   | `Go\Core\Cache\NotCompilableException`               | `Go\Aop\Exception\NotCompilableException` |
+| Invalid aspect definition, joinpoint runtime errors              | `Go\Aop\AspectException`                             | `Go\Aop\Exception\AspectException`, `Go\Aop\Exception\InvocationException` |
 
 **Action:** catch `ExceptionInterface` or the new types where you caught the SPL types listed above.
 

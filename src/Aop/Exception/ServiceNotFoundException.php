@@ -18,4 +18,4 @@ use Psr\Container\NotFoundExceptionInterface;
 /**
  * A service or value that is not registered in the aspect container
  */
-class ServiceNotFoundException extends OutOfBoundsException implements ExceptionInterface, NotFoundExceptionInterface {}
+final class ServiceNotFoundException extends OutOfBoundsException implements ExceptionInterface, NotFoundExceptionInterface {}
