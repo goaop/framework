@@ -32,6 +32,7 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use stdClass;
+use Go\Driver\StreamFilter\StreamFilterDriver;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class ContainerTest extends TestCase
@@ -51,6 +52,7 @@ class ContainerTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'driver'         => StreamFilterDriver::class,
         ]);
         $this->container->add(AspectKernel::class, $mockKernel);
         FrameworkServices::register($this->container);

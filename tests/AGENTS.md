@@ -30,6 +30,17 @@
   run; `composer test:performance:transformation` (JIT disabled) before and after touching a SourceTransformer, a
   NodeRewriter or their wiring. CI compares head with base on such PRs (.github/workflows/transformation-performance.yml,
   `GO_AOP_TRANSFORMATION_REPORT=<file>` writes the JSON report read by compare-transformation-performance.php)
+- Testsuites (phpunit.xml.dist): `framework` (tests/), `stream-wrapper-driver` (packages/stream-wrapper-driver/tests/,
+  part of the default run) and `ffi-driver` (packages/ffi-driver/tests/, excluded by `composer test`, run by
+  `composer test:ffi` with ffi on and the JIT off; needs lisachenko/z-engine, self-skips where the engine cannot boot).
+  Driver tests live in their package: packages/ffi-driver/tests/ (unit tests, InProcess/ boots z-engine inside the
+  runner and weaves packages/ffi-driver/tests/Stubs for real - the only coverage of the driver - kernel created without
+  the singleton, autoloaders restored, one stub class per test since a woven class stays woven; Functional/ runs the
+  shared probe tests/Fixtures/project/bin/driver-weaving.php in subprocesses, `GO_AOP_CONFIGURATION=ffi*`, both opcache
+  legs, `ZENGINE_AUTOBOOT=0`, and compares its JSON report with the stream filter driver on the same fixtures).
+  Fixture configurations in tests/Fixtures/project/web/configuration.php: `ffi`, `ffi_production`, `ffi_reference`
+  (StreamFilterDriver on the same fixtures), `ffi_unsupported`, and `stream_wrapper*` for the stream wrapper driver;
+  fixtures Application/Ffi*, Aspect/FfiAspect, Kernel/FfiAspectKernel. Driver package phpstan: `composer analyze:ffi`.
 - PHP 8.5.11 only: a known tracing-JIT bug breaks pointcut parsing in the functional tests (subprocesses), e.g.
   "Unexpected token Go"; not a framework bug, ignore it or run with `PHP_INI_SCAN_DIR=:<dir with opcache.jit=disable>`.
   Agents: once `php -v` reports 8.5.12 or higher, verify the functional tests pass with JIT on and remove this item.

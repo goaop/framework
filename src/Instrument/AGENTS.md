@@ -1,11 +1,18 @@
 # src/Instrument — AOP interception pipeline
 
 ## Init flow
-1. AspectKernel::init() — singleton, registers deferred transformer services, calls configureAop()
+1. AspectKernel::init() — singleton, registers the framework services + CachePathManager, instantiates the `driver` option, registers the deferred transformer services for a SourceTransformingDriver only, calls $driver->boot(), then configureAop()
 2. SourceTransformingLoader — PHP stream filter (php://filter/read=go.source.transforming.loader/resource=... protocol); registered lazily on the first cache miss via ensureRegistered()
 3. AopComposerLoader::init() — hooks Composer autoloader → redirects through stream filter (production: woven classes via composer's class map; debug: a fresh untransformed record → original path, so opcache caches it; woven/stale/miss → php://filter)
-4. Caching lives in SourceTransformingLoader::filter() — cache hit → cached content emitted as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → write cache
-5. Freshness rule lives in one place: CachePathManager::queryFreshCacheState() (record filemtime/filesize, container isFreshSince(cachedAt); PREBUILT_CACHE trusts records), used by the filter and the debug autoloader
+4. Caching lives in SourceTransformingLoader::transformSource() (filter() only buffers the stream and delegates, the stream wrapper delegates too) — no usable cache dir → source untouched; cache hit → cached content returned as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → saveToCache()
+5. Freshness rule lives in one place: CachePathManager::isFreshRecord() (record filemtime/filesize, container isFreshSince(cachedAt); PREBUILT_CACHE trusts records); queryFreshCacheState() = record lookup + that rule, used by transformSource() and the debug autoloader; the ffi DonorCacheIndex calls isFreshRecord() directly
+
+## Weaving drivers (src/Driver/, `driver` kernel option)
+- Go\Driver\WeavingDriver: `boot(AspectKernel, AspectContainer)`, called once from AspectKernel::init() after the framework services, before configureAop(); the option is the driver class-string (default Go\Driver\StreamFilter\StreamFilterDriver, validated with class_exists/is_a in normalizeOptions), the instance is registered under WeavingDriver::class.
+- Go\Driver\SourceTransformingDriver (marker): the kernel registers the transformer chain (registerTransformerServices()) for such a driver only; CacheWarmer refuses any other (InvalidConfigurationException::cacheWarmerRequiresSourceTransformingDriver).
+- StreamFilterDriver::boot() = AopComposerLoader::init() (steps 2-5 above). SourceTransformingLoader::transformSource($uri, $source, $stream) is the one entry point shared by the stream filter (filter()) and the stream wrapper: cache hit → cached content, miss → transformer chain + saveToCache(), no usable cache dir → source untouched.
+- ComposerLoaderDecorator: every composer loader wrapper (AopComposerLoader, the ffi loader) implements it, so tools unwrap it and a later kernel wraps the original loader again.
+- Drivers of their own packages: `packages/stream-wrapper-driver/AGENTS.md` (file:// stream wrapper, includes always intercepted) and `packages/ffi-driver/AGENTS.md` (z-engine runtime weaving, no transformer chain).
 
 ## Transformer chain (order matters)
 Applied per loaded file. Each returns TransformerResult: Transformed|Abstain|Aborted (skips the rest of the chain, reverts to the original source, recorded as untransformed).

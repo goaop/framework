@@ -22,20 +22,23 @@ AOP via source transformation at load time (stream filter, no PECL, no eval).
 
 ## Architecture overview
 Intercepts PHP class loading pipeline: source stream filter transforms source → injects interception hooks → caches result.
-- Init: AspectKernel::init() → stream filter → transformers → configureAop()
+- Init: AspectKernel::init() → transformer services (source-transforming drivers only) → driver boot (stream filter by default) → configureAop()
 - Main transformer: WeavingTransformer (class→trait, proxy class re-inherits parent+interfaces)
 - Proxy dispatch: per-method static $__joinPoint → InterceptorInjector → interceptor chain of first-class advice callables (The::aspect(X::class)->m(...), The::advice('id') for closure advices)
+- Weaving drivers (`driver` kernel option = class-string<Go\Driver\WeavingDriver>, validated with class_exists/is_a): AspectKernel::init() instantiates it, `$container->add(WeavingDriver::class, $driver)`, registers the transformer services only for a Go\Driver\SourceTransformingDriver, then `$driver->boot($kernel, $container)`. Built-in default Go\Driver\StreamFilter\StreamFilterDriver (AopComposerLoader + php://filter); other drivers are packages in `packages/` (goaop/stream-wrapper-driver → Go\Driver\StreamWrapper\StreamWrapperDriver, goaop/ffi-driver → Go\Driver\Ffi\FfiDriver). CacheWarmer refuses a driver that is no SourceTransformingDriver. docs/driver/
 
 ## Directory → AGENTS.md map
 | Directory         | Sub-AGENTS.md              | Covers                                                        |
 |-------------------|----------------------------|---------------------------------------------------------------|
-| `src/Instrument/` | `src/Instrument/AGENTS.md` | Init flow, transformers, trait engine, line numbers, Override |
+| `src/Instrument/` | `src/Instrument/AGENTS.md` | Init flow, transformers, trait engine, line numbers, Override, weaving drivers |
 | `src/Proxy/`      | `src/Proxy/AGENTS.md`      | Proxy generators, code-gen, readonly, hooks, enums            |
 | `src/Aop/`        | `src/Aop/AGENTS.md`        | Interfaces, generics, implementations, pointcuts, attributes  |
 | `src/Aop/Exception/` | `src/Aop/Exception/AGENTS.md` | Exception groups, static constructors                   |
 | `src/Core/`       | `src/Core/AGENTS.md`       | Container, aspect loading, advice matching, bridge            |
 | `src/Core/Cache/` | `src/Core/Cache/AGENTS.md` | Compiled advisor cache: compiler, printer, writer, loader     |
 | `tests/`          | `tests/AGENTS.md`          | Test conventions, fixtures, PHPUnit, PHPStan                  |
+| `packages/stream-wrapper-driver/` | `packages/stream-wrapper-driver/AGENTS.md` | goaop/stream-wrapper-driver: `file://` stream wrapper driver |
+| `packages/ffi-driver/` | `packages/ffi-driver/AGENTS.md` | goaop/ffi-driver: z-engine (FFI) runtime weaving driver, donor traits, JIT guard |
 
 ## Rules
 - Skip explanations unless asked. Show changes, not commentary.
@@ -53,4 +56,5 @@ Intercepts PHP class loading pipeline: source stream filter transforms source �
 - Throwing or adding an exception → read `src/Aop/Exception/AGENTS.md` first.
 - No anonymous classes in `src/`: extract a named `final` class (`@internal` for machinery); anonymous classes are for tests and mocks.
 - Commit messages and PR titles must follow Conventional Commits (`type(scope): summary`, e.g. `fix(proxy): ...`).
+- `packages/*` are separate composer packages (own composer.json and AGENTS.md), mapped by the root autoload-dev; never move their code into src/. The ffi package needs lisachenko/z-engine: never in the root require/require-dev, installed only by .github/workflows/ffi-driver.yml (`composer require --dev lisachenko/z-engine`, no vcs repo, no branch); its tests run with `composer test:ffi` (ffi on, JIT off, self-skip without the engine) and its analysis with `composer analyze:ffi`; the default `composer test` excludes the `ffi-driver` testsuite.
 - Generated code (proxies, woven traits, advisor caches) must stay clean and readable: reference classes through short `use` aliases, never replace them with fully-qualified names. Name collisions are detected and resolved by adjusting the imports automatically (`Go\Proxy\Generator\ProxyImports`, see `src/Proxy/AGENTS.md`).

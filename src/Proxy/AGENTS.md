@@ -9,6 +9,10 @@
 - FunctionProxyGenerator — function wrappers
 - TraitProxyGenerator — trait proxies
 - EnumProxyGenerator — enum proxies (trait extraction + case re-declaration)
+- Generators compiling dispatcher bodies OUTSIDE the woven class (the donor trait generator of packages/ffi-driver,
+  a ClassProxyGenerator subclass) use TypeGenerator::resolveScopeKeywords() (spells out `self`/`parent` in a
+  signature, `static` kept), ParameterGenerator::withType() and MethodGenerator::getParameters()/setParameters();
+  keep them when refactoring the generators
 
 ## Imports in generated code (issue #668)
 - Generated code stays clean and readable: framework and aspect classes are referenced through short `use` aliases

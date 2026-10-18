@@ -80,7 +80,7 @@ jobs:
         run: "composer update --no-interaction --no-progress${{ matrix.experimental && ' --ignore-platform-req=php+' || '' }}"
 
       - name: "Tests"
-        run: "vendor/bin/phpunit"
+        run: "vendor/bin/phpunit --exclude-testsuite ffi-driver"
 
   coverage:
     # Coverage is measured on the oldest supported PHP version
@@ -99,7 +99,8 @@ jobs:
         with:
           coverage: "xdebug"
           php-version: "8.4"
-          ini-values: memory_limit=-1
+          extensions: ffi, opcache
+          ini-values: memory_limit=-1, ffi.enable=1, opcache.enable=1
           tools: composer:v2
 
       - name: "Cache dependencies"
@@ -115,7 +116,7 @@ jobs:
         run: "composer update --no-interaction --no-progress"
 
       - name: "Tests with coverage"
-        run: "vendor/bin/phpunit --coverage-clover build/logs/clover.xml"
+        run: "vendor/bin/phpunit --exclude-group performance --exclude-group transformation-performance --exclude-testsuite ffi-driver --coverage-clover build/logs/clover.xml"
 
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v7"
@@ -124,6 +125,7 @@ jobs:
           fail_ci_if_error: false
           slug: goaop/framework
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: framework
 
   demos:
     name: "Demos smoke test"

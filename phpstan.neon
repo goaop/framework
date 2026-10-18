@@ -9,8 +9,10 @@ parameters:
   paths:
     - bin/aspect
     - demos
+    - packages/stream-wrapper-driver
     - src
     - tests
+  # The ffi driver package needs lisachenko/z-engine for its analysis: `composer analyze:ffi` (packages/ffi-driver/phpstan.neon)
   strictRules:
     # PHPUnit's assertions are static methods that are idiomatically called as $this->assert*()
     dynamicCallOnStaticMethod: false

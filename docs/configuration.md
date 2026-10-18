@@ -13,8 +13,8 @@ ApplicationAspectKernel::getInstance()->init([
 ]);
 ```
 
-Only the options below are accepted. An unknown key, an unknown `containerClass` or an unknown feature
-bit throws `Go\Aop\Exception\InvalidConfigurationException`.
+Only the options below are accepted. An unknown key, an unknown `containerClass` or `driver` class or an unknown
+feature bit throws `Go\Aop\Exception\InvalidConfigurationException`.
 
 | Option           | Type       | Default                     | Purpose |
 |------------------|------------|-----------------------------|---------|
@@ -26,6 +26,7 @@ bit throws `Go\Aop\Exception\InvalidConfigurationException`.
 | `features`       | `int`      | `0`                         | Bitmask of `Go\Aop\Features` flags, see below. |
 | `cacheFileMode`  | `int`      | `0770` minus the umask      | Permissions of cache files. Must be between `0600` and `0777` and give the owner read and write access; directories get matching search bits. |
 | `containerClass` | `class-string` | `Go\Core\Container`     | Aspect container implementation, must implement `Go\Core\AspectContainer` (a PSR-11 `ContainerInterface`). |
+| `driver`         | `class-string<Go\Driver\WeavingDriver>` | `Go\Driver\StreamFilter\StreamFilterDriver::class` | Class of the weaving driver, which decides how advised classes are woven: the built-in stream filter driver, `Go\Driver\StreamWrapper\StreamWrapperDriver` (`goaop/stream-wrapper-driver`) or `Go\Driver\Ffi\FfiDriver` (`goaop/ffi-driver`, experimental). See [docs/driver/](driver/README.md). |
 
 ## Features
 

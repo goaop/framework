@@ -65,7 +65,15 @@
         "psr-4": {
             "Demo\\": "demos/Demo/",
             "Go\\": "tests/",
-            "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
+            "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/",
+            "Go\\Driver\\Ffi\\": [
+                "packages/ffi-driver/src/",
+                "packages/ffi-driver/tests/"
+            ],
+            "Go\\Driver\\StreamWrapper\\": [
+                "packages/stream-wrapper-driver/src/",
+                "packages/stream-wrapper-driver/tests/"
+            ]
         },
         "files": [
             "tests/functions.php",
@@ -92,6 +100,7 @@
     },
     "scripts": {
         "analyze": "phpstan analyze --memory-limit=512M",
+        "analyze:ffi": "phpstan analyze -c packages/ffi-driver/phpstan.neon --memory-limit=512M",
         "check": [
             "@cs",
             "@analyze",
@@ -99,9 +108,13 @@
         ],
         "cs": "php-cs-fixer check --diff",
         "cs:fix": "php-cs-fixer fix",
-        "test": "phpunit",
+        "test": [
+            "@putenv ZENGINE_AUTOBOOT=0",
+            "phpunit --exclude-testsuite ffi-driver"
+        ],
         "test:performance": "phpunit --group performance",
         "test:performance:transformation": "@php -d opcache.jit=disable vendor/bin/phpunit --group transformation-performance",
+        "test:ffi": "@php -d ffi.enable=1 -d opcache.jit=off -d opcache.jit_buffer_size=0 vendor/bin/phpunit --testsuite ffi-driver",
         "regenerate:parse-table": [
             "dissect Go/Aop/Pointcut/PointcutGrammar",
             "@php -r \"rename('src/Aop/Pointcut/parse_table.php', 'src/Aop/Pointcut/PointcutParseTable.php');\""
@@ -109,12 +122,14 @@
     },
     "scripts-descriptions": {
         "analyze": "Run PHPStan static analysis (level 10)",
+        "analyze:ffi": "Run PHPStan on the ffi driver package (needs lisachenko/z-engine installed)",
         "check": "Run coding-standards check, static analysis and the test suite",
         "cs": "Check coding standards (PER-CS, php-cs-fixer) without changing files",
         "cs:fix": "Fix coding-standards violations (PER-CS, php-cs-fixer)",
         "test": "Run the PHPUnit test suite",
         "regenerate:parse-table": "Regenerate the pointcut parse table after a change of PointcutGrammar",
         "test:performance": "Run the joinpoint hot-path performance group",
-        "test:performance:transformation": "Run the source transformation performance group (JIT disabled)"
+        "test:performance:transformation": "Run the source transformation performance group (JIT disabled)",
+        "test:ffi": "Run the ffi driver package tests (needs lisachenko/z-engine and ext-ffi, JIT disabled)"
     }
 }

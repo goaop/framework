@@ -128,6 +128,7 @@ abstract class BaseFunctionalTestCase extends TestCase
         assert($phpExecutable !== false);
         $commandLine   = [
             $phpExecutable,
+            ...$this->getPhpOptions(),
             $this->configuration['console'],
             '--no-ansi',
             $command,
@@ -163,6 +164,23 @@ abstract class BaseFunctionalTestCase extends TestCase
         }
 
         return $process->getOutput();
+    }
+
+    /**
+     * Command-line options of the PHP subprocess running the console, `-d` ini overrides included
+     *
+     * On PHP 8.5 the subprocess runs with the opcache JIT off (`opcache.jit=off`, `opcache.jit_buffer_size=0`),
+     * whatever php.ini says. Override to add options.
+     *
+     * @return list<string>
+     */
+    protected function getPhpOptions(): array
+    {
+        if (PHP_VERSION_ID >= 80500 && PHP_VERSION_ID < 80600) {
+            return ['-d', 'opcache.jit=off', '-d', 'opcache.jit_buffer_size=0'];
+        }
+
+        return [];
     }
 
     /**

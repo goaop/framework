@@ -247,4 +247,20 @@ class MethodGeneratorTest extends TestCase
         $output = $gen->generate();
         $this->assertStringNotContainsString('#[', $output);
     }
+
+    public function testParametersCanBeReadAndReplaced(): void
+    {
+        $generator = new MethodGenerator('swap');
+        $this->assertSame([], $generator->getParameters());
+
+        $first  = new ParameterGenerator('first', TypeGenerator::fromTypeString('int'));
+        $second = new ParameterGenerator('second');
+        $generator->addParameter($first);
+        $generator->addParameter($second);
+        $this->assertSame([$first, $second], $generator->getParameters());
+
+        $generator->setParameters([$second->withType(TypeGenerator::fromTypeString('string'))]);
+        $this->assertCount(1, $generator->getParameters());
+        $this->assertSame('public function swap(string $second)' . "\n" . '{' . "\n" . '}', $generator->generate());
+    }
 }

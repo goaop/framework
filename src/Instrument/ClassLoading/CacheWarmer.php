@@ -15,6 +15,7 @@ namespace Go\Instrument\ClassLoading;
 use ErrorException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Core\AspectKernel;
+use Go\Driver\SourceTransformingDriver;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Symfony\Component\Console\Formatter\OutputFormatter;
@@ -68,6 +69,10 @@ class CacheWarmer
 
         if (empty($options['cacheDir'])) {
             throw InvalidConfigurationException::cacheWarmerWithoutCacheDir();
+        }
+        // Only a driver weaving by source transformation has a cache the warmer can build ahead of time
+        if (!is_a($options['driver'], SourceTransformingDriver::class, true)) {
+            throw InvalidConfigurationException::cacheWarmerRequiresSourceTransformingDriver($options['driver']);
         }
 
         // The transformation pipeline is registered lazily; the filter URIs built below

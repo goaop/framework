@@ -1,0 +1,40 @@
+{
+    "name": "goaop/stream-wrapper-driver",
+    "description": "Weaving driver of the Go! AOP framework that replaces the file:// stream wrapper and weaves every included file of the application at load time (opcache keeps caching the woven files).",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "aop",
+        "php",
+        "aspect",
+        "stream-wrapper"
+    ],
+    "authors": [
+        {
+            "name": "Lisachenko Alexander",
+            "homepage": "https://github.com/lisachenko"
+        }
+    ],
+    "require": {
+        "php": "^8.4.0",
+        "goaop/framework": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Go\\Driver\\StreamWrapper\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Go\\Driver\\StreamWrapper\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "4.0-dev"
+        }
+    }
+}

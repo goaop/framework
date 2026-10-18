@@ -167,39 +167,53 @@ final class SourceTransformingLoader extends PhpStreamFilter
             $consumed = strlen($this->data);
 
             // $this->stream contains pointer to the source
-            $originalUri = $this->resolveOriginalUri();
-            $cacheUri    = self::$cachePathManager?->getCachePathForResource($originalUri);
-
-            // Guard to disable overwriting of original files or when cache is unavailable:
-            // the source passes through untouched (previously an aborted result in the wrapper)
-            if ($cacheUri === null || $cacheUri === $originalUri) {
-                stream_bucket_append($out, stream_bucket_new($this->stream, $this->data));
-
-                return PSFS_PASS_ON;
-            }
-
-            // Cache hit: return the cached content as a result right from here -
-            // no StreamMetaData, no parsing, no transformers
-            $cachedContent = self::findCachedContent($originalUri, $this->data);
-            if ($cachedContent !== null) {
-                stream_bucket_append($out, stream_bucket_new($this->stream, $cachedContent));
-
-                return PSFS_PASS_ON;
-            }
-
-            // Cache miss: parse the source, run the transformer chain and persist the result
-            $metadata = new StreamMetaData($this->stream, $this->data);
-            $result   = self::transformCode($metadata);
-            // An aborted chain reverts every change: the original source is served and recorded as untransformed
-            $source   = $result === TransformerResult::Aborted ? $this->data : $metadata->source;
-            self::saveToCache($originalUri, $cacheUri, $source, $result);
-
+            $source = self::transformSource($this->resolveOriginalUri(), $this->data, $this->stream);
             stream_bucket_append($out, stream_bucket_new($this->stream, $source));
 
             return PSFS_PASS_ON;
         }
 
         return PSFS_FEED_ME;
+    }
+
+    /**
+     * Returns the source of a file the way the application must see it
+     *
+     * The one entry point of the source-transforming drivers: the stream filter calls it with the
+     * buffered filtered stream, a stream wrapper with the file it opened for inclusion. A usable cache
+     * record serves the cached woven source (or the source itself, when it is known to need no
+     * transformation) without parsing anything; a miss runs the transformer chain and persists the
+     * result; without a usable cache directory the source passes through untouched.
+     *
+     * @param string   $originalUri Resolved path of the source file
+     * @param string   $source      Content of the source file
+     * @param resource $stream      Open stream of the source file, the transformer metadata is built from it
+     */
+    public static function transformSource(string $originalUri, string $source, $stream): string
+    {
+        $cacheUri = self::$cachePathManager?->getCachePathForResource($originalUri);
+
+        // Guard to disable overwriting of original files or when cache is unavailable:
+        // the source passes through untouched (previously an aborted result in the wrapper)
+        if ($cacheUri === null || $cacheUri === $originalUri) {
+            return $source;
+        }
+
+        // Cache hit: return the cached content as a result right from here -
+        // no StreamMetaData, no parsing, no transformers
+        $cachedContent = self::findCachedContent($originalUri, $source);
+        if ($cachedContent !== null) {
+            return $cachedContent;
+        }
+
+        // Cache miss: parse the source, run the transformer chain and persist the result
+        $metadata = new StreamMetaData($stream, $source);
+        $result   = self::transformCode($metadata);
+        // An aborted chain reverts every change: the original source is served and recorded as untransformed
+        $transformedSource = $result === TransformerResult::Aborted ? $source : $metadata->source;
+        self::saveToCache($originalUri, $cacheUri, $transformedSource, $result);
+
+        return $transformedSource;
     }
 
     /**

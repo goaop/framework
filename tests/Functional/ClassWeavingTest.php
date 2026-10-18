@@ -208,7 +208,7 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         );
         assert($phpExecutable !== false);
         $process = new Process(
-            [$phpExecutable, '-r', $script],
+            [$phpExecutable, ...$this->getPhpOptions(), '-r', $script],
             null,
             ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
         );
@@ -249,7 +249,7 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         );
         assert($phpExecutable !== false);
         $process = new Process(
-            [$phpExecutable, '-r', $script],
+            [$phpExecutable, ...$this->getPhpOptions(), '-r', $script],
             null,
             ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
         );
@@ -280,7 +280,7 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         );
         assert($phpExecutable !== false);
         $process = new Process(
-            [$phpExecutable, '-r', $script],
+            [$phpExecutable, ...$this->getPhpOptions(), '-r', $script],
             null,
             ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
         );
@@ -314,7 +314,7 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         );
         assert($phpExecutable !== false);
         $process = new Process(
-            [$phpExecutable, '-r', $script],
+            [$phpExecutable, ...$this->getPhpOptions(), '-r', $script],
             null,
             ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
         );

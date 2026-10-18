@@ -12,6 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
+use Go\Driver\StreamFilter\StreamFilterDriver;
+use Go\Driver\WeavingDriver;
+use Go\Stubs\Driver\RewiringDriver;
+use Go\Stubs\Driver\TransformingDriver;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
@@ -26,6 +30,8 @@ use Go\Instrument\Transformer\WeavingTransformer;
 use PhpParser\Node;
 use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -228,7 +234,7 @@ class AspectKernelTest extends TestCase
         $default = $this->invokeProtectedArray($kernel, 'getDefaultOptions');
 
         $this->assertSame(
-            ['debug', 'appDir', 'cacheDir', 'cacheFileMode', 'features', 'includePaths', 'excludePaths', 'containerClass'],
+            ['debug', 'appDir', 'cacheDir', 'cacheFileMode', 'features', 'includePaths', 'excludePaths', 'containerClass', 'driver'],
             array_keys($default),
         );
         $this->assertFalse($default['debug']);
@@ -237,6 +243,83 @@ class AspectKernelTest extends TestCase
         $this->assertSame([], $default['includePaths']);
         $this->assertSame([], $default['excludePaths']);
         $this->assertSame(Container::class, $default['containerClass']);
+        $this->assertSame(StreamFilterDriver::class, $default['driver']);
+    }
+
+    public function testNormalizeOptionsAcceptsTheClassOfAWeavingDriver(): void
+    {
+        $kernel = $this->makeKernel();
+
+        $normalized = $this->invokeProtectedArray($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => RewiringDriver::class]]);
+
+        $this->assertSame(RewiringDriver::class, $normalized['driver']);
+        $this->assertSame(
+            StreamFilterDriver::class,
+            $this->invokeProtectedArray($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir']])['driver'],
+        );
+    }
+
+    public function testNormalizeOptionsThrowsForAnUnknownDriverClass(): void
+    {
+        $kernel = $this->makeKernel();
+
+        try {
+            $this->invokeProtected($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => 'Go\\Driver\\Missing\\MissingDriver']]);
+            self::fail('An unknown driver class must be refused');
+        } catch (InvalidConfigurationException $exception) {
+            $this->assertSame(
+                'Option "driver" must name the class of a weaving driver (an implementation of Go\\Driver\\WeavingDriver), '
+                . 'got the unknown class "Go\\Driver\\Missing\\MissingDriver".',
+                $exception->getMessage(),
+            );
+        }
+        try {
+            $this->invokeProtected($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => 42]]);
+            self::fail('A driver option that is no class name must be refused');
+        } catch (InvalidConfigurationException $exception) {
+            $this->assertStringEndsWith('got int.', $exception->getMessage());
+        }
+    }
+
+    public function testNormalizeOptionsThrowsForAClassThatIsNoWeavingDriver(): void
+    {
+        $kernel = $this->makeKernel();
+
+        try {
+            $this->invokeProtected($kernel, 'normalizeOptions', [['cacheDir' => '/some/cache/dir', 'driver' => \stdClass::class]]);
+            self::fail('A class that is no weaving driver must be refused');
+        } catch (InvalidConfigurationException $exception) {
+            $this->assertSame('Weaving driver class "stdClass" must implement Go\\Driver\\WeavingDriver.', $exception->getMessage());
+        }
+    }
+
+    /**
+     * In a process of its own: init() defines the AOP_ROOT_DIR / AOP_CACHE_DIR constants for the rest of the process
+     */
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testInitBootsTheConfiguredDriverOnceAndRegistersTheChainForSourceTransformingDriversOnly(): void
+    {
+        RewiringDriver::reset();
+        AspectKernelTestDriverOrderKernel::$bootsWhenConfigured = null;
+        $kernel  = (new ReflectionClass(AspectKernelTestDriverOrderKernel::class))->newInstanceWithoutConstructor();
+        $options = ['appDir' => __DIR__, 'cacheDir' => sys_get_temp_dir(), 'driver' => RewiringDriver::class];
+
+        $kernel->init($options);
+        $kernel->init($options);
+
+        $container = $kernel->getContainer();
+        $this->assertSame(1, RewiringDriver::$boots, 'The driver is booted once, a second init() is a no-op');
+        $this->assertInstanceOf(RewiringDriver::class, $container->get(WeavingDriver::class));
+        $this->assertTrue(RewiringDriver::$registeredWhenBooted, 'The driver is in the container when it boots');
+        $this->assertSame(1, AspectKernelTestDriverOrderKernel::$bootsWhenConfigured, 'The driver boots before configureAop()');
+        $this->assertFalse($container->has(WeavingTransformer::class), 'No transformer chain for a driver that does not transform sources');
+
+        $transforming = (new ReflectionClass(AspectKernelTestConcreteKernel::class))->newInstanceWithoutConstructor();
+        $transforming->init(['appDir' => __DIR__, 'cacheDir' => sys_get_temp_dir(), 'driver' => TransformingDriver::class]);
+
+        $this->assertInstanceOf(TransformingDriver::class, $transforming->getContainer()->get(WeavingDriver::class));
+        $this->assertTrue($transforming->getContainer()->has(WeavingTransformer::class), 'The transformer chain is registered for a source-transforming driver');
     }
 
     public function testNormalizeOptionsExcludesRuntimeDependenciesFromWeaving(): void
@@ -622,5 +705,18 @@ final class AspectKernelTestCustomNodeRewriter implements NodeRewriter
         $file->tokenStream[$position]->text = '"custom"';
 
         return true;
+    }
+}
+
+/**
+ * Kernel recording how often the driver had booted when configureAop() ran
+ */
+final class AspectKernelTestDriverOrderKernel extends AspectKernel
+{
+    public static ?int $bootsWhenConfigured = null;
+
+    protected function configureAop(AspectContainer $container): void
+    {
+        self::$bootsWhenConfigured = RewiringDriver::$boots;
     }
 }

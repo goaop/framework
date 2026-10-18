@@ -343,6 +343,27 @@ use Go\Core\AspectContainer;
 
 ### Optional configurations
 
+#### Weaving drivers
+
+The `driver` kernel option names the class that decides how advised classes are woven; everything else (aspects,
+pointcuts, the advisor cache, the join-point API) is shared:
+
+```php
+$applicationAspectKernel->init([
+    'driver'   => Go\Driver\StreamFilter\StreamFilterDriver::class, // the default, may be omitted
+    'cacheDir' => __DIR__ . '/../var/cache/aop',
+    // ...
+]);
+```
+
+| Driver | Class |
+|--------|-------|
+| [Stream filter](docs/driver/stream-filter.md) (default, built in) | `Go\Driver\StreamFilter\StreamFilterDriver` — source transformation at load time through a `php://filter` stream filter behind Composer's loader |
+| [Stream wrapper](docs/driver/stream-wrapper.md) (`composer require goaop/stream-wrapper-driver`) | `Go\Driver\StreamWrapper\StreamWrapperDriver` — source transformation of every included file through a `file://` stream wrapper; includes are always intercepted, opcache caches the woven sources |
+| [ffi](docs/driver/ffi.md) (`composer require goaop/ffi-driver`, experimental) | `Go\Driver\Ffi\FfiDriver` — runtime rewiring of loaded classes through [lisachenko/z-engine](https://github.com/lisachenko/z-engine) (PHP FFI): no source rewriting, method execution and function join points only; needs `ext-ffi` and the opcache JIT off |
+
+See [docs/driver/](docs/driver/README.md) for the driver interface and how to write one.
+
 #### Weaving Doctrine entities
 
 Doctrine ORM (3.6+) maps a woven entity as is: the woven class keeps its name and all mapping
@@ -385,6 +406,8 @@ Documentation
 
 - [Configuration and deployment](docs/configuration.md): kernel options, `Features` flags, the `bin/aspect` console
   commands, the production deployment recipe and custom transformers or node rewriters
+- [Weaving drivers](docs/driver/README.md): the [stream filter](docs/driver/stream-filter.md) (default),
+  [stream wrapper](docs/driver/stream-wrapper.md) and [ffi](docs/driver/ffi.md) drivers, the driver interface
 - [Pointcut syntax](docs/pointcuts.md): every pointcut type, wildcards, modifiers, return types and operators
 - [Advices](docs/advices.md): advice types, joinpoints, property interception, introductions, function and
   object-creation interception
