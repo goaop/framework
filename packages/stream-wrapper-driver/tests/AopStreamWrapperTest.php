@@ -301,6 +301,80 @@ final class AopStreamWrapperTest extends TestCase
         $this->assertContains('file', stream_get_wrappers(), 'A second unregister() is harmless');
     }
 
+    public function testOwnershipMetadataAndSymlinkStatsAreDelegatedToTheNativeWrapper(): void
+    {
+        $this->registerWrapper();
+        $file = $this->appDir . '/lib/owned.txt';
+        file_put_contents($file, 'mine');
+
+        // chown/chgrp to the current owner and group are allowed without privileges
+        $this->assertTrue(chown($file, (int) getmyuid()));
+        $this->assertTrue(chgrp($file, (int) getmygid()));
+        $this->assertSame((int) getmyuid(), fileowner($file));
+
+        $link = $this->appDir . '/lib/owned.link';
+        $this->assertTrue(symlink($file, $link));
+        $this->assertTrue(is_link($link), 'lstat() goes through url_stat() with STREAM_URL_STAT_LINK');
+        $this->assertSame('mine', file_get_contents($link));
+        $linkStat = lstat($link);
+        $this->assertIsArray($linkStat);
+        $this->assertNotSame(filesize($file), $linkStat['size'], 'The stat of the link itself, not of its target');
+        $this->assertTrue(unlink($link));
+    }
+
+    public function testAnUnopenedWrapperInstanceAnswersEveryStreamAndDirectoryOperationWithFalse(): void
+    {
+        $this->registerWrapper();
+        $wrapper = new AopStreamWrapper();
+
+        $this->assertFalse($wrapper->stream_read(8));
+        $this->assertFalse($wrapper->stream_write('x'));
+        $this->assertTrue($wrapper->stream_eof());
+        $this->assertFalse($wrapper->stream_flush());
+        $this->assertFalse($wrapper->stream_seek(0));
+        $this->assertFalse($wrapper->stream_tell());
+        $this->assertFalse($wrapper->stream_stat());
+        $this->assertFalse($wrapper->stream_truncate(0));
+        $this->assertFalse($wrapper->stream_lock(LOCK_SH));
+        $this->assertFalse($wrapper->stream_cast(STREAM_CAST_FOR_SELECT));
+        $this->assertFalse($wrapper->dir_readdir());
+        $this->assertFalse($wrapper->dir_rewinddir());
+        $this->assertTrue($wrapper->dir_closedir());
+        $this->assertFalse($wrapper->stream_metadata($this->appDir . '/lib/none.txt', 999, null), 'An unknown metadata option');
+        $this->assertFalse($wrapper->dir_opendir($this->appDir . '/lib/none', 0));
+        $wrapper->stream_close();
+    }
+
+    public function testAnIncludeStreamOfADeletedFileHasNoStatAnyMore(): void
+    {
+        $this->registerWrapper();
+        $file = $this->appDir . '/src/Vanishing.php';
+        file_put_contents($file, "<?php\nreturn 'MARKER';\n");
+        $wrapper = new AopStreamWrapper();
+        $openedPath = null;
+
+        $this->assertTrue($wrapper->stream_open($file, 'rb', self::STREAM_OPEN_FOR_INCLUDE, $openedPath));
+        $this->assertStringContainsString('REWRITTEN', (string) $wrapper->stream_read(1024), 'Served from memory');
+        $this->assertTrue(unlink($file));
+
+        $this->assertFalse($wrapper->stream_stat(), 'The original file is gone, so is its stat');
+        $wrapper->stream_close();
+    }
+
+    public function testAnIncludeThroughAnUnregisteredWrapperIsServedUntouched(): void
+    {
+        $file = $this->appDir . '/src/Unwired.php';
+        file_put_contents($file, "<?php\nreturn 'MARKER';\n");
+        $this->assertFalse(AopStreamWrapper::isRegistered());
+        $wrapper = new AopStreamWrapper();
+        $openedPath = null;
+
+        // No container, no scope: the instance behaves like the native wrapper
+        $this->assertTrue($wrapper->stream_open($file, 'rb', self::STREAM_OPEN_FOR_INCLUDE, $openedPath));
+        $this->assertSame("<?php\nreturn 'MARKER';\n", $wrapper->stream_read(1024));
+        $wrapper->stream_close();
+    }
+
     /**
      * Registers the wrapper for a container serving the marker-rewriting chain, with the application sources
      * (appDir/src) as the weaving scope

@@ -133,9 +133,11 @@ final class AopStreamWrapper
         class_exists(SourceTransformingLoader::class);
         stream_wrapper_unregister(self::PROTOCOL);
         if (!stream_wrapper_register(self::PROTOCOL, self::class)) {
+            // @codeCoverageIgnoreStart (PHP refuses only a protocol still taken or an unknown class)
             stream_wrapper_restore(self::PROTOCOL);
 
             throw StreamWrapperRegistrationException::fileWrapperNotReplaced(self::class);
+            // @codeCoverageIgnoreEnd
         }
         self::$registered  = true;
         self::$nativeDepth = 0;
@@ -419,7 +421,9 @@ final class AopStreamWrapper
 
         $source = stream_get_contents($stream);
         if ($source === false) {
+            // @codeCoverageIgnoreStart (a readable native file handle never fails here)
             return;
+            // @codeCoverageIgnoreEnd
         }
         SourceTransformingLoader::ensureRegistered($container);
         // The transformer metadata reads the uri of the given stream: the native handle of the file
@@ -432,9 +436,11 @@ final class AopStreamWrapper
 
         $memory = fopen('php://memory', 'r+b');
         if ($memory === false) {
+            // @codeCoverageIgnoreStart (php://memory always opens)
             rewind($stream);
 
             return;
+            // @codeCoverageIgnoreEnd
         }
         fwrite($memory, $served);
         rewind($memory);
