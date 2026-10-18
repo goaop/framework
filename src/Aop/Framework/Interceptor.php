@@ -90,7 +90,7 @@ final class Interceptor
             return new $interceptorClass($aspectClassOrAdvice, $order, $expression);
         }
         if ($methodName === null) {
-            throw new AspectException('Advice method name is required when an aspect class name is given');
+            throw AspectException::adviceMethodNameRequired();
         }
 
         // Interceptor classes are framework-owned and lazy-compatible by construction,

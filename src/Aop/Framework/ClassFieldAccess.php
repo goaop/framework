@@ -112,7 +112,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function getValue(): mixed
     {
         if (!$this->isInitialized) {
-            throw new InvocationException("Property {$this->fieldName} is not initialized yet");
+            throw InvocationException::propertyNotInitialized($this->fieldName);
         }
 
         return $this->value;
@@ -126,7 +126,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function getValueToSet(): mixed
     {
         if ($this->accessType === FieldAccessType::Read) {
-            throw new InvocationException("Value to set is not available for READ access type");
+            throw InvocationException::valueToSetUnavailable();
         }
         return $this->newValue;
     }
@@ -149,11 +149,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         }
 
         // Reading the property without interception fails the same way: an around advice can return a value instead
-        throw new InvocationException(sprintf(
-            'Typed property %s::$%s must not be accessed before initialization',
-            $this->getField()->class,
-            $this->fieldName,
-        ));
+        throw InvocationException::typedPropertyNotInitialized($this->getField()->class, $this->fieldName);
     }
 
     /**

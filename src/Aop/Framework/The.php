@@ -57,7 +57,7 @@ final class The
             return $value;
         }
 
-        throw new InvocationException("Advisor {$advisorId} does not expose a closure advice");
+        throw InvocationException::advisorWithoutClosure($advisorId);
     }
 
     private static function getContainer(): AspectContainer

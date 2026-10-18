@@ -15,7 +15,6 @@ namespace Go\Bridge\Doctrine;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Proxy;
-use RuntimeException;
 
 /**
  * Validates the Doctrine configuration for woven entities.
@@ -37,7 +36,7 @@ final class MetadataLoadInterceptor
     /**
      * Handles \Doctrine\ORM\Events::loadClassMetadata event
      *
-     * @throws RuntimeException When a mapped property of a woven entity is intercepted while native
+     * @throws InvalidConfigurationException When a mapped property of a woven entity is intercepted while native
      *                          lazy objects are disabled
      */
     public function loadClassMetadata(LoadClassMetadataEventArgs $args): void
@@ -54,12 +53,7 @@ final class MetadataLoadInterceptor
         $mappedProperties = [...array_keys($metadata->fieldMappings), ...array_keys($metadata->associationMappings)];
         foreach ($mappedProperties as $propertyName) {
             if ($reflectionClass->hasProperty($propertyName) && $reflectionClass->getProperty($propertyName)->hasHooks()) {
-                throw new InvalidConfigurationException(sprintf(
-                    'Mapped property %s::$%s of a woven entity is intercepted by an aspect, which requires '
-                    . 'Doctrine native lazy objects: call $configuration->enableNativeLazyObjects(true).',
-                    $metadata->getName(),
-                    $propertyName,
-                ));
+                throw InvalidConfigurationException::nativeLazyObjectsRequired($metadata->getName(), $propertyName);
             }
         }
     }

@@ -82,7 +82,7 @@ final readonly class ReturnTypePointcut implements Pointcut
     {
         $returnTypeName = trim($returnTypeName, " \t\\");
         if (strlen($returnTypeName) === 0) {
-            throw new PointcutSyntaxException("Return type name must not be empty");
+            throw PointcutSyntaxException::emptyReturnType();
         }
         $this->returnTypeName        = $returnTypeName;
         $this->patternGroups         = self::normalizeTypeExpression($returnTypeName);
@@ -233,7 +233,7 @@ final readonly class ReturnTypePointcut implements Pointcut
 
         $isMatched = preg_match($this->atomRegexps[$pattern], $actual);
         if ($isMatched === false) {
-            throw new PointcutSyntaxException("Return type pattern `{$pattern}` can not be matched: " . preg_last_error_msg());
+            throw PointcutSyntaxException::returnTypePatternNotMatchable($pattern, preg_last_error_msg());
         }
 
         return $isMatched === 1;

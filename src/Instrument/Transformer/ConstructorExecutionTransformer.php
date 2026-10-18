@@ -194,7 +194,7 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
         if ($invocation === null) {
             // A missing class is not cached: it may still become loadable later in the request
             if (!class_exists($fullClassName)) {
-                throw new WeavingException("Cannot instantiate non-existent class: {$fullClassName}");
+                throw WeavingException::constructorOfMissingClass($fullClassName);
             }
             $invocation = self::$constructorInvocationsCache[$fullClassName] = new ReflectionConstructorInvocation([], $fullClassName);
         }

@@ -19,7 +19,6 @@ use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
 use php_user_filter as PhpStreamFilter;
-use RuntimeException;
 use Throwable;
 
 use function is_string;
@@ -87,18 +86,18 @@ final class SourceTransformingLoader extends PhpStreamFilter
      *
      * @internal Registers the filter only, use {@see ensureRegistered()} to bring up the whole pipeline
      *
-     * @throws RuntimeException If registration was failed
+     * @throws WeavingException If registration was failed
      */
     public static function register(string $filterId = self::FILTER_IDENTIFIER): void
     {
         if (!empty(self::$filterId)) {
-            throw new WeavingException('Stream filter already registered');
+            throw WeavingException::streamFilterAlreadyRegistered();
         }
 
         if (!isset(self::$registeredFilterIds[$filterId])) {
             $result = stream_filter_register($filterId, self::class);
             if ($result === false) {
-                throw new WeavingException('Stream filter was not registered');
+                throw WeavingException::streamFilterNotRegistered();
             }
             self::$registeredFilterIds[$filterId] = true;
         }
@@ -147,12 +146,12 @@ final class SourceTransformingLoader extends PhpStreamFilter
     /**
      * Returns the name of registered filter
      *
-     * @throws RuntimeException if filter was not registered
+     * @throws WeavingException if filter was not registered
      */
     public static function getId(): string
     {
         if (empty(self::$filterId)) {
-            throw new WeavingException('Stream filter was not registered');
+            throw WeavingException::streamFilterNotRegistered();
         }
 
         return self::$filterId;
@@ -219,10 +218,7 @@ final class SourceTransformingLoader extends PhpStreamFilter
             try {
                 $transformationResult = $transformer->transform($metadata);
             } catch (Throwable $exception) {
-                throw new WeavingException(
-                    $transformer::class . " failed to transform {$metadata->uri}: {$exception->getMessage()}",
-                    previous: $exception,
-                );
+                throw WeavingException::transformerFailed($transformer::class, $metadata->uri, $exception);
             }
             if ($overallResult === TransformerResult::Abstain
                 && $transformationResult === TransformerResult::Transformed

@@ -87,11 +87,7 @@ final class ParameterGenerator
                 if (!isset($defaultValue)) {
                     $rawDefault = $param->getDefaultValue();
                     if ($rawDefault instanceof \Closure) {
-                        throw new WeavingException(sprintf(
-                            'Cannot generate proxy for parameter $%s: PHP 8.5 Closure default values '
-                            . 'require goaop/parser-reflection for AST access.',
-                            $param->getName(),
-                        ));
+                        throw WeavingException::parameterClosureDefault($param->getName());
                     }
                     $defaultValue = new ValueGenerator($rawDefault);
                 }

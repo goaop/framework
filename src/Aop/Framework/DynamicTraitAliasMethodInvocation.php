@@ -76,7 +76,7 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
         $reflectionClosure = new ReflectionFunction($closureToCall);
         $closureScopeClass = $reflectionClosure->getClosureScopeClass();
         if ($closureScopeClass === null) {
-            throw new InvocationException('Cannot determine the scope class of the closure');
+            throw InvocationException::closureScopeUnresolvable();
         }
         $this->originalMethodToCall = new ReflectionMethod(
             $closureScopeClass->getName(),

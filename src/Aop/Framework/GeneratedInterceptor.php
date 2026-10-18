@@ -36,7 +36,7 @@ final readonly class GeneratedInterceptor
     public static function fromAdvice(string $advisorId, Advice $advice): self
     {
         if (!$advice instanceof AbstractInterceptor) {
-            throw new AspectException("Advisor {$advisorId} uses unsupported advice " . get_debug_type($advice) . '; only framework aspect-method interceptors can be generated');
+            throw AspectException::unsupportedAdvice($advisorId, $advice);
         }
 
         $reflectionAdvice    = new ReflectionFunction($advice->getRawAdvice());

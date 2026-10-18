@@ -63,9 +63,7 @@ final class InterceptorListGenerator
         $descriptors = [];
         foreach ($interceptors as $interceptor) {
             if (!$interceptor instanceof GeneratedInterceptor) {
-                throw new WeavingException(
-                    'Interceptor list expects generated interceptor descriptors, got ' . get_debug_type($interceptor),
-                );
+                throw WeavingException::invalidInterceptorDescriptor($interceptor);
             }
             $descriptors[] = $interceptor;
         }
@@ -135,7 +133,7 @@ final class InterceptorListGenerator
         }
 
         if ($interceptor->aspectClass === null || $interceptor->adviceMethod === null) {
-            throw new WeavingException('Aspect-backed interceptor descriptor is incomplete');
+            throw WeavingException::incompleteInterceptorDescriptor();
         }
 
         // The eager first-class-callable form is deliberate for generated proxies: this code

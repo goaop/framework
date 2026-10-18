@@ -56,7 +56,7 @@ final readonly class WovenEntityClassLocator implements ClassLocator
     ): self {
         foreach ($directories as $directory) {
             if (!is_dir($directory)) {
-                throw new InvalidConfigurationException(sprintf('Entity directory "%s" does not exist.', $directory));
+                throw InvalidConfigurationException::entityDirectoryNotFound($directory);
             }
         }
         $finder = new Finder()

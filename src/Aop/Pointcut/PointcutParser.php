@@ -27,7 +27,7 @@ final class PointcutParser extends Parser
     {
         $parseTable = include __DIR__ . '/PointcutParseTable.php';
         if (!is_array($parseTable)) {
-            throw new WeavingException('Invalid PointcutParseTable format');
+            throw WeavingException::invalidParseTable();
         }
         /** @var array{action: array<int, array<string, int>>, goto: array<int, array<string, int>>} $parseTable */
         parent::__construct($grammar, $parseTable);
@@ -40,7 +40,7 @@ final class PointcutParser extends Parser
     {
         $result = parent::parse($stream);
         if (!$result instanceof Pointcut) {
-            throw new PointcutSyntaxException("Expected instance of Pointcut to be received during parsing");
+            throw PointcutSyntaxException::unexpectedParseResult();
         }
 
         return $result;

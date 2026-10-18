@@ -103,7 +103,7 @@ final class ValueGenerator
             return $this->buildArrayNode($value, $currentDepth);
         }
 
-        throw new WeavingException('Cannot generate AST node for value of type: ' . get_debug_type($value));
+        throw WeavingException::unsupportedValueType($value);
     }
 
     /**

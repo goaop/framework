@@ -17,4 +17,10 @@ use Psr\Container\ContainerExceptionInterface;
 /**
  * A container entry that is registered, but can not be retrieved as declared
  */
-final class ContainerException extends InvalidConfigurationException implements ContainerExceptionInterface {}
+final class ContainerException extends InvalidConfigurationException implements ContainerExceptionInterface
+{
+    public static function serviceNotProperlyRegistered(string $id): self
+    {
+        return new self("Service {$id} is not properly registered");
+    }
+}

@@ -17,4 +17,30 @@ use RuntimeException;
 /**
  * Failure while a joinpoint is executed: invalid field access, advice lookup or invocation state
  */
-final class InvocationException extends RuntimeException implements ExceptionInterface {}
+final class InvocationException extends RuntimeException implements ExceptionInterface
+{
+    public static function propertyNotInitialized(string $fieldName): self
+    {
+        return new self("Property {$fieldName} is not initialized yet");
+    }
+
+    public static function typedPropertyNotInitialized(string $className, string $fieldName): self
+    {
+        return new self(sprintf('Typed property %s::$%s must not be accessed before initialization', $className, $fieldName));
+    }
+
+    public static function valueToSetUnavailable(): self
+    {
+        return new self('Value to set is not available for READ access type');
+    }
+
+    public static function advisorWithoutClosure(string $advisorId): self
+    {
+        return new self("Advisor {$advisorId} does not expose a closure advice");
+    }
+
+    public static function closureScopeUnresolvable(): self
+    {
+        return new self('Cannot determine the scope class of the closure');
+    }
+}

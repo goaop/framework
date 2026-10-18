@@ -15,7 +15,6 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Exception\WeavingException;
 use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionEngine;
-use InvalidArgumentException;
 use PhpParser\Node;
 use PhpToken;
 
@@ -109,16 +108,16 @@ final class StreamMetaData
      *
      * @param resource $stream Instance of stream
      * @param string $source Source code or null
-     * @throws InvalidArgumentException for invalid stream
+     * @throws WeavingException for invalid stream
      */
     public function __construct($stream, ?string $source = null)
     {
         if (!is_resource($stream)) {
-            throw new WeavingException('Stream should be valid resource');
+            throw WeavingException::invalidStream();
         }
         $metadata = stream_get_meta_data($stream);
         if (!isset($metadata['uri'])) {
-            throw new WeavingException('Stream has no uri, only file streams can be transformed');
+            throw WeavingException::streamWithoutUri();
         }
         if (preg_match('/resource=(.+)$/', $metadata['uri'], $matches)) {
             $resolvedUri     = PathResolver::realpath($matches[1]);

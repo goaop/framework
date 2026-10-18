@@ -96,9 +96,7 @@ abstract class AbstractJoinpoint implements Joinpoint
                         continue;
                     }
                     if (!$advice instanceof Advice) {
-                        throw new AspectException(
-                            "Advisor {$advisorId} provides " . get_debug_type($advice) . ' instead of advice instance',
-                        );
+                        throw AspectException::advisorWithoutAdvice((string) $advisorId, $advice);
                     }
                     $flattenAdvices[$type][$name][] = GeneratedInterceptor::fromAdvice((string) $advisorId, $advice);
                 }

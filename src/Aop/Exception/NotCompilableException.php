@@ -24,4 +24,15 @@ namespace Go\Aop\Exception;
  * The exception propagates out of the cache writer: such an aspect cannot be used with
  * the advisor cache enabled - fix the item or run without a cache directory.
  */
-final class NotCompilableException extends WeavingException {}
+final class NotCompilableException extends WeavingException
+{
+    public static function interceptorWithoutAspect(): self
+    {
+        return new self('Could not compile an interceptor without valid aspect');
+    }
+
+    public static function unsupportedInterceptor(string $interceptorClass): self
+    {
+        return new self('Cannot compile an instance of ' . $interceptorClass . ' into plain PHP');
+    }
+}
