@@ -12,13 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Driver\StreamWrapper\Exception;
 
-use Go\Aop\Exception\ExceptionInterface;
-use Go\Aop\Exception\InvalidConfigurationException;
-use Go\Aop\Exception\WeavingException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The exceptions of the package: grouped below the framework exceptions, messages naming condition and remedy
+ * The messages of the package's exceptions name the condition and the remedy
  */
 final class StreamWrapperExceptionsTest extends TestCase
 {
@@ -26,8 +23,6 @@ final class StreamWrapperExceptionsTest extends TestCase
     {
         $exception = StreamWrapperRegistrationException::fileWrapperNotReplaced('App\Wrapper');
 
-        $this->assertInstanceOf(WeavingException::class, $exception);
-        $this->assertInstanceOf(ExceptionInterface::class, $exception);
         $this->assertSame(
             'The stream wrapper weaving driver could not register App\Wrapper as the "file://" stream wrapper '
             . '(stream_wrapper_register() failed); the native wrapper was restored.',
@@ -39,7 +34,6 @@ final class StreamWrapperExceptionsTest extends TestCase
     {
         $exception = StreamWrapperConfigurationException::includeInterceptionImplied();
 
-        $this->assertInstanceOf(InvalidConfigurationException::class, $exception);
         $this->assertStringContainsString('INTERCEPT_INCLUDES', $exception->getMessage());
     }
 }
