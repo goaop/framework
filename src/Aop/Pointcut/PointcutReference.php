@@ -34,6 +34,10 @@ use ReflectionProperty;
  */
 final class PointcutReference implements Pointcut
 {
+    public int $kind {
+        get => $this->getPointcut()->kind;
+    }
+
     private ?Pointcut $pointcut = null;
 
     /**
@@ -45,21 +49,17 @@ final class PointcutReference implements Pointcut
 
     /**
      * Pointcut reference constructor
-     *
-     * @param string $pointcutId Name of the pointcut to fetch from the container
      */
-    public function __construct(private readonly string $pointcutId) {}
+    public function __construct(
+        /** Name of the pointcut to fetch from the container */
+        private readonly string $pointcutId,
+    ) {}
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
         return $this->getPointcut()->matches($context, $reflector);
-    }
-
-    public function getKind(): int
-    {
-        return $this->getPointcut()->getKind();
     }
 
     public function compileToPhp(): Expr

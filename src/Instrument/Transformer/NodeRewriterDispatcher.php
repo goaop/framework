@@ -80,7 +80,7 @@ final class NodeRewriterDispatcher extends NodeVisitorAbstract
     {
         $matchingRules = [];
         foreach ($this->rules as $rule) {
-            if (array_any($rule->getNodeTypes(), static fn(string $nodeType): bool => $node instanceof $nodeType)) {
+            if (array_any($rule->nodeTypes, static fn(string $nodeType): bool => $node instanceof $nodeType)) {
                 $matchingRules[] = $rule;
             }
         }

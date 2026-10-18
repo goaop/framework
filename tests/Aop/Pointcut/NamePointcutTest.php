@@ -137,7 +137,7 @@ class NamePointcutTest extends TestCase
     public function testGetKind(): void
     {
         $pointcut = new NamePointcut(Pointcut::KIND_METHOD, '*Method');
-        $this->assertSame(Pointcut::KIND_METHOD, $pointcut->getKind());
+        $this->assertSame(Pointcut::KIND_METHOD, $pointcut->kind);
     }
 
     public function testRegexpFailureIsReportedAsSyntaxError(): void

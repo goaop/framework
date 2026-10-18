@@ -69,7 +69,7 @@ abstract class AbstractJoinpoint implements Joinpoint
                 }
 
                 return $first instanceof OrderedAdvice && $second instanceof OrderedAdvice
-                    ? $first->getAdviceOrder() - $second->getAdviceOrder()
+                    ? $first->adviceOrder - $second->adviceOrder
                     : 0;
             },
         );

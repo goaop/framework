@@ -26,12 +26,21 @@ use ReflectionProperty;
 /**
  * Logical "not" pointcut filter.
  */
-final readonly class NotPointcut implements Pointcut
+final class NotPointcut implements Pointcut
 {
+    /**
+     * Kind of the negated pointcut, read on access so that a referenced pointcut is resolved lazily
+     */
+    public int $kind {
+        get => $this->pointcut->kind;
+    }
+
     /**
      * Not constructor
      */
-    public function __construct(private Pointcut $pointcut) {}
+    public function __construct(
+        private readonly Pointcut $pointcut,
+    ) {}
 
     /**
      * @return ($reflector is null ? true : bool)
@@ -47,11 +56,6 @@ final readonly class NotPointcut implements Pointcut
 
         // Otherwise we return inverted result from static matching
         return !$this->pointcut->matches($context, $reflector);
-    }
-
-    public function getKind(): int
-    {
-        return $this->pointcut->getKind();
     }
 
     public function compileToPhp(): Expr

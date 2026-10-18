@@ -47,6 +47,17 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
 
     protected static ?CachePathManager $cachePathManager = null;
 
+    public array $nodeTypes {
+        get => [Include_::class];
+    }
+
+    /**
+     * include, include_once, require and require_once
+     */
+    public array $sourceMarkers {
+        get => ['include', 'require'];
+    }
+
     /**
      * Class constructor
      */
@@ -152,19 +163,6 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
         }
 
         return $cachedResource;
-    }
-
-    public function getNodeTypes(): array
-    {
-        return [Include_::class];
-    }
-
-    /**
-     * include, include_once, require and require_once
-     */
-    public function getSourceMarkers(): array
-    {
-        return ['include', 'require'];
     }
 
     /**

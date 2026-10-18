@@ -52,6 +52,6 @@ class ClassInheritancePointcutTest extends TestCase
     public function testGetKindReturnsCorrectValue(): void
     {
         $pointcut = new ClassInheritancePointcut(self::class);
-        $this->assertSame(Pointcut::KIND_CLASS, $pointcut->getKind());
+        $this->assertSame(Pointcut::KIND_CLASS, $pointcut->kind);
     }
 }

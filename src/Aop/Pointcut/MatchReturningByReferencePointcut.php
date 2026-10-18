@@ -30,6 +30,10 @@ use ReflectionProperty;
  */
 final class MatchReturningByReferencePointcut implements Pointcut
 {
+    public int $kind {
+        get => Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION;
+    }
+
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
@@ -41,11 +45,6 @@ final class MatchReturningByReferencePointcut implements Pointcut
 
         return ($reflector instanceof ReflectionMethod || $reflector instanceof ReflectionFunction)
             && $reflector->returnsReference();
-    }
-
-    public function getKind(): int
-    {
-        return Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION;
     }
 
     public function compileToPhp(): Expr

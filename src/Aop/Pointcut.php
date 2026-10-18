@@ -54,9 +54,9 @@ interface Pointcut extends Compilable
     public const int KIND_INTRODUCTION = 512;
 
     /**
-     * Returns the kind of point filter
+     * Kind of point filter, a bitmask of KIND_* constants
      */
-    public function getKind(): int;
+    public int $kind { get; }
 
     /**
      * Performs matching of point of code, returns true if point matches

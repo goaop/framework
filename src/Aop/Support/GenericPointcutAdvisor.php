@@ -28,16 +28,14 @@ use PhpParser\Node\Name\FullyQualified;
  */
 final readonly class GenericPointcutAdvisor implements PointcutAdvisor
 {
-    public function __construct(private Pointcut $pointcut, private Advice $advice) {}
+    public function __construct(
+        public Pointcut $pointcut,
+        private Advice $advice,
+    ) {}
 
     public function getAdvice(): Advice
     {
         return $this->advice;
-    }
-
-    public function getPointcut(): Pointcut
-    {
-        return $this->pointcut;
     }
 
     public function compileToPhp(): Expr

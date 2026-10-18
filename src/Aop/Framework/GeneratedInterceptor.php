@@ -47,7 +47,7 @@ final readonly class GeneratedInterceptor
             $advice->getType()->value,
             $usesContainerAdvice ? null : $scopeClass->name,
             $usesContainerAdvice ? null : $reflectionAdvice->name,
-            $advice->getAdviceOrder(),
+            $advice->adviceOrder,
             $advisorId,
             $usesContainerAdvice,
         );

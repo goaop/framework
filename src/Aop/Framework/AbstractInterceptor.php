@@ -56,33 +56,19 @@ use ReflectionFunction;
 abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvice
 {
     /**
-     * Order of advice invocation, lower values are invoked first
-     */
-    private int $adviceOrder = 0;
-
-    /**
-     * Pointcut expression that was used to create this interceptor
-     *
-     * @internal Framework-internal introspection point (e.g. debug:advisor command), not a public API
-     */
-    public private(set) string $pointcutExpression = '';
-
-    /**
      * Default constructor for interceptor
      */
     public function __construct(
         protected readonly Closure $adviceMethod,
-        int $adviceOrder = 0,
-        string $pointcutExpression = '',
-    ) {
-        $this->adviceOrder        = $adviceOrder;
-        $this->pointcutExpression = $pointcutExpression;
-    }
-
-    public function getAdviceOrder(): int
-    {
-        return $this->adviceOrder;
-    }
+        /** Order of advice invocation, lower values are invoked first */
+        public readonly int $adviceOrder = 0,
+        /**
+         * Pointcut expression that was used to create this interceptor
+         *
+         * @internal Framework-internal introspection point (e.g. debug:advisor command), not a public API
+         */
+        public private(set) string $pointcutExpression = '',
+    ) {}
 
     /**
      * Getter for extracting the advice closure from Interceptor

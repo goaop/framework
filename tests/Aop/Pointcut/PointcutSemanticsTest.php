@@ -118,7 +118,7 @@ final class PointcutSemanticsTest extends TestCase
         $this->assertTrue($byReference->matches($class, $class->getMethod('items')));
         $this->assertTrue($byReference->matches($class), 'Without a member the class context must stay open');
         $this->assertFalse($byReference->matches($class, $class->getProperty('items')), 'Properties never return by reference');
-        $this->assertSame(Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION, $byReference->getKind());
+        $this->assertSame(Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION, $byReference->kind);
         $this->assertSame(
             'new \\' . MatchReturningByReferencePointcut::class . '()',
             new Standard()->prettyPrintExpr($byReference->compileToPhp()),

@@ -149,6 +149,6 @@ class ModifierPointcutTest extends TestCase
 
     public function testGetKind(): void
     {
-        $this->assertSame(Pointcut::KIND_ALL, $this->pointcut->getKind());
+        $this->assertSame(Pointcut::KIND_ALL, $this->pointcut->kind);
     }
 }

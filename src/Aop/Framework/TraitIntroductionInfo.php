@@ -27,24 +27,13 @@ final readonly class TraitIntroductionInfo implements IntroductionInfo
 {
     /**
      * Creates a TraitIntroductionInfo with given trait name and interface name.
-     *
-     * @param trait-string $introducedTrait     Trait name
-     * @param class-string $introducedInterface Interface name
      */
     public function __construct(
-        private string $introducedTrait,
-        private string $introducedInterface,
+        /** @var trait-string */
+        public string $trait,
+        /** @var class-string */
+        public string $interface,
     ) {}
-
-    public function getInterface(): string
-    {
-        return $this->introducedInterface;
-    }
-
-    public function getTrait(): string
-    {
-        return $this->introducedTrait;
-    }
 
     public function getType(): AdviceTypeEnum
     {
@@ -55,8 +44,8 @@ final readonly class TraitIntroductionInfo implements IntroductionInfo
     {
         // Trait and interface names come from existing code, so ::class fetches are always safe
         return new New_(new FullyQualified(self::class), [
-            new Arg(new ClassConstFetch(new FullyQualified($this->introducedTrait), 'class')),
-            new Arg(new ClassConstFetch(new FullyQualified($this->introducedInterface), 'class')),
+            new Arg(new ClassConstFetch(new FullyQualified($this->trait), 'class')),
+            new Arg(new ClassConstFetch(new FullyQualified($this->interface), 'class')),
         ]);
     }
 }
