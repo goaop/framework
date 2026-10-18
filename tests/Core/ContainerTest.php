@@ -12,9 +12,11 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
+use ArrayObject;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\ServiceNotFoundException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
@@ -24,6 +26,7 @@ use Go\Stubs\First;
 use Go\Stubs\ReentrantAutoloadAspect;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
+use Go\Tests\TestProject\Container\ApplicationContainer;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -235,6 +238,67 @@ class ContainerTest extends TestCase
 
         $this->container->add(First::class, new stdClass());
         $this->container->getService(First::class);
+    }
+
+    public function testGetAndHasFallBackToDelegate(): void
+    {
+        $this->container->setDelegate(new ApplicationContainer(['app.service' => static fn(): stdClass => new stdClass()]));
+
+        $this->assertTrue($this->container->has('app.service'));
+        $this->assertSame($this->container->get('app.service'), $this->container->get('app.service'));
+        $this->assertFalse($this->container->has('missing'));
+
+        // Not found in either container: the delegate reports it
+        $this->expectException(NotFoundExceptionInterface::class);
+        $this->container->get('missing');
+    }
+
+    public function testLocalEntryTakesPrecedenceOverDelegate(): void
+    {
+        $local = new stdClass();
+        $this->container->add('shared', $local);
+        $this->container->setDelegate(new ApplicationContainer(['shared' => static fn(): stdClass => new stdClass()]));
+
+        $this->assertSame($local, $this->container->get('shared'));
+    }
+
+    public function testContainerCanNotBeItsOwnDelegate(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->container->setDelegate($this->container);
+    }
+
+    public function testLazyServiceResolvesDependencyFromDelegateAttachedLater(): void
+    {
+        $this->container->addLazyService(
+            StatefulTestAspect::class,
+            fn(AspectContainer $container): StatefulTestAspect => new StatefulTestAspect(
+                $container->getService(ArrayObject::class)->count(),
+            ),
+        );
+        // Collecting aspects (as the weaver does) needs no delegate yet: the service is a lazy proxy
+        $aspects = $this->container->getServicesByInterface(Aspect::class);
+        $this->assertArrayHasKey(StatefulTestAspect::class, $aspects);
+
+        $this->container->setDelegate(new ApplicationContainer([
+            ArrayObject::class => static fn(): ArrayObject => new ArrayObject([1, 2, 3]),
+        ]));
+
+        $this->assertSame(3, $this->container->getService(StatefulTestAspect::class)->getState());
+    }
+
+    public function testLazyServiceUsedBeforeDelegateIsAttachedFails(): void
+    {
+        $this->container->addLazyService(
+            StatefulTestAspect::class,
+            fn(AspectContainer $container): StatefulTestAspect => new StatefulTestAspect(
+                $container->getService(ArrayObject::class)->count(),
+            ),
+        );
+        $aspect = $this->container->getService(StatefulTestAspect::class);
+
+        $this->expectException(ServiceNotFoundException::class);
+        $aspect->getState();
     }
 
     public function testGetServiceEnsuresThatKeyAndReturnedTypeMatches(): void

@@ -93,6 +93,11 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
         return new self("Lazy service id must be a valid class name, \"{$id}\" given");
     }
 
+    public static function containerIsOwnDelegate(): self
+    {
+        return new self('Container can not be its own delegate');
+    }
+
     public static function cacheDirectoryNotCreatable(string $cacheDir, string $cacheRootDir): self
     {
         return new self(
