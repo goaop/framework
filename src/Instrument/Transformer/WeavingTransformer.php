@@ -266,15 +266,11 @@ final class WeavingTransformer extends BaseSourceTransformer
                     if (!self::isOverrideAttribute($attribute)) {
                         continue;
                     }
-                    throw new WeavingException(sprintf(
-                        'Method %s::%s() is imported from trait %s and has #[\Override], so it can not be '
-                        . 'intercepted: PHP copies the attribute to the private "%sOriginalAlias" alias of the '
-                        . 'proxy, which overrides nothing. Exclude it from the pointcut with "&& !matchInherited()".',
+                    throw WeavingException::traitImportedOverrideNotInterceptable(
                         $class->name,
                         $methodName,
                         $declaringClass->name,
-                        $methodName,
-                    ));
+                    );
                 }
             }
         }
