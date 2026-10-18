@@ -212,12 +212,8 @@ final class WeavingTransformer extends BaseSourceTransformer
             $childCode = 'declare(strict_types=1);' . PHP_EOL . $childCode;
         }
 
-        // Get last token for this class
-        $classNode = $class->getNode();
-        $lastClassToken = $classNode->getAttribute('endTokenPos');
-        if (!is_int($lastClassToken)) {
-            return null;
-        }
+        // The include of the proxy goes after the last token of the class
+        [, $lastClassToken] = $this->getDeclarationTokenRange($class->getNode());
 
         return [$class, $childCode, $lastClassToken];
     }
