@@ -163,29 +163,16 @@ interface AspectContainer extends ContainerInterface
     public function addLazyService(string $id, Closure $lazyInitializationClosure): void;
 
     /**
-     * Adds a deferred service that is built by the delegate container ({@see setDelegate()}).
-     *
-     * The service is registered like {@see addLazyService()}: it is known by its id (an aspect
-     * is collected through its interface tag), but its instance is fetched from the delegate
-     * container on first use only. So the service can be registered in configureAop(), long
-     * before the application builds its own container and attaches it via setDelegate().
-     * A class without instance properties can not be created lazily: its instance is fetched
-     * as soon as the service materializes, e.g. when aspects are collected for weaving.
-     *
-     * @param class-string<T> $id Identifier of the service, must be equal to the class-name
-     * @param string|null $delegateId Identifier of the service in the delegate container, defaults to $id
-     *
-     * @template T of object
-     */
-    public function addDelegatedService(string $id, ?string $delegateId = null): void;
-
-    /**
      * Attaches a delegate container, e.g. the PSR-11 container of the application.
      *
      * {@see get()} and {@see has()} fall back to the delegate for ids that are not registered in
-     * this container, and services added via {@see addDelegatedService()} are fetched from it.
-     * Services are never enumerated from the delegate: {@see getServicesByInterface()} only
-     * returns services registered in this container.
+     * this container, so a factory passed to {@see addLazyService()} resolves its dependencies from
+     * the delegate: it runs on first use, after the application attached its container.
+     *
+     * A PSR-11 container can not be introspected: there is no standard way to look services up by
+     * interface or by tag, so {@see getServicesByInterface()} only returns services registered in this
+     * container. Integration bridges that can query their container by tags or interfaces register
+     * the services they collect (aspects, transformers) via {@see addLazyService()}.
      *
      * @throws InvalidConfigurationException if the container is given as its own delegate
      */

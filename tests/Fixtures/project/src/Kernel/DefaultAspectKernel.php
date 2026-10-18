@@ -5,6 +5,7 @@ namespace Go\Tests\TestProject\Kernel;
 
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Tests\TestProject\Application\Salutation;
 use Go\Tests\TestProject\Aspect\Alpha\CollisionAspect as AlphaCollisionAspect;
 use Go\Tests\TestProject\Aspect\ArrayPropertyInterceptAspect;
 use Go\Tests\TestProject\Aspect\Beta\CollisionAspect as BetaCollisionAspect;
@@ -45,7 +46,10 @@ class DefaultAspectKernel extends AspectKernel
         $container->addLazyService(AlphaCollisionAspect::class, fn(): AlphaCollisionAspect => new AlphaCollisionAspect());
         $container->addLazyService(BetaCollisionAspect::class, fn(): BetaCollisionAspect => new BetaCollisionAspect());
         $container->addLazyService(EdgeCaseAspect::class, fn(): EdgeCaseAspect => new EdgeCaseAspect());
-        // Built by the application container (see bin/delegated-aspect.php), which only exists after the kernel is up
-        $container->addDelegatedService(GreetingAspect::class);
+        // Salutation comes from the application container, attached as delegate once it exists (see bin/delegated-aspect.php)
+        $container->addLazyService(
+            GreetingAspect::class,
+            fn(AspectContainer $container): GreetingAspect => new GreetingAspect($container->getService(Salutation::class)),
+        );
     }
 }

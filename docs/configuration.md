@@ -45,16 +45,20 @@ the code that needs them.
 ## Aspects from the application container
 
 The aspect container is a PSR-11 container, and it can delegate to the container of your application
-(Symfony, Laravel, PHP-DI or any other PSR-11 container), so aspects get their dependencies from there.
-The kernel is initialized before the application builds its container, so the two steps are split:
+(Symfony, Laravel, PHP-DI or any other PSR-11 container): `get()`, `getService()` and `has()` fall back to the
+delegate for ids that are not registered in the aspect container. The kernel is initialized before the
+application builds its container, so aspects are registered as usual and resolve their dependencies lazily:
 
 ```php
-// configureAop(): the aspect is known by its class name, its instance comes from the application container
 protected function configureAop(AspectContainer $container): void
 {
-    $container->addDelegatedService(MonitorAspect::class);
-    // or, when the application knows the service by another id:
-    // $container->addDelegatedService(MonitorAspect::class, 'app.monitor_aspect');
+    // Runs on the first advice call, when the application container is already attached
+    $container->addLazyService(
+        MonitorAspect::class,
+        static fn(AspectContainer $container) => new MonitorAspect($container->getService(LoggerInterface::class)),
+    );
+    // or take the whole aspect from the application container, by the id it has there
+    // $container->addLazyService(MonitorAspect::class, static fn(AspectContainer $c) => $c->get('app.monitor_aspect'));
 }
 
 // Once the application container exists, e.g. right after the framework kernel has booted
@@ -62,18 +66,17 @@ ApplicationAspectKernel::getInstance()->getContainer()->setDelegate($psrContaine
 ```
 
 Weaving and the cache warm-up only need the class of the aspect, so they run before `setDelegate()`, even in
-`bin/aspect`. The instance is fetched from the application container on the first advice call, and must be
-an instance of the registered class. Using it before `setDelegate()` throws `ContainerException`.
+`bin/aspect`. The factory runs on the first advice call; a dependency that is still missing then throws
+`ServiceNotFoundException`.
 
-- `get()` and `has()` fall back to the delegate for ids that are not registered in the aspect container, so the
-  factories passed to `addLazyService()` can resolve their dependencies through it as well.
-- Aspects are never discovered in the delegate: PSR-11 cannot list services, so every aspect is registered in
-  `configureAop()`.
-- An aspect without instance properties cannot be created lazily, so it is built when the aspects are
-  collected for weaving, before the delegate exists. Such an aspect has no dependencies to inject, so register
-  it with `add()` or `addLazyService()`.
-- The aspect container hands out a native lazy proxy that forwards to the instance of the application container:
-  the state is shared, the identity (`===`) is not.
+- A factory never asks the aspect container for its own id: that id resolves to the aspect being built.
+  Take the aspect from the application container by the id it has there, or build it from its dependencies.
+- A PSR-11 container cannot be introspected: there is no standard way to look services up by interface or by tag
+  (some containers can, each in its own way). Aspects are therefore never discovered in the delegate, every aspect
+  is registered in `configureAop()`. An integration bridge for a specific framework can collect the services by
+  tag or interface from its container and register them with `addLazyService()`.
+- An aspect without instance properties cannot be created lazily, so its factory runs when the aspects are
+  collected for weaving, before the delegate exists. Such an aspect has no dependencies to inject.
 
 ## Extending the transformation pipeline
 

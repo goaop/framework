@@ -17,8 +17,8 @@ use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
- * An aspect built by the application container is woven without that container (cache warm-up runs
- * before it exists) and is fetched from it on first use, once the application attached it as delegate
+ * An aspect whose dependency comes from the application container is woven without that container (cache
+ * warm-up runs before it exists): its factory resolves the dependency through the delegate on first use
  */
 class DelegatedServiceTest extends BaseFunctionalTestCase
 {
