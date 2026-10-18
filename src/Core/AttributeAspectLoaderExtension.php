@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\Framework\AfterInterceptor;
 use Go\Aop\Framework\AfterThrowingInterceptor;
 use Go\Aop\Framework\AroundInterceptor;
@@ -51,14 +51,7 @@ final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
             $pointcutAttributes = $aspectMethod->getAttributes(Attribute\Pointcut::class);
             $adviceAttributes   = $aspectMethod->getAttributes(AbstractInterceptor::class, ReflectionAttribute::IS_INSTANCEOF);
             if (count($adviceAttributes) > 1) {
-                throw new AspectException(sprintf(
-                    'Advice method %s::%s() declares %d advice attributes, only one is supported per method (%s:%d)',
-                    $aspectMethod->class,
-                    $aspectMethod->name,
-                    count($adviceAttributes),
-                    $aspectMethod->getFileName(),
-                    $aspectMethod->getStartLine(),
-                ));
+                throw AspectException::multipleAdviceAttributes($aspectMethod, count($adviceAttributes));
             }
 
             foreach ($pointcutAttributes as $reflectionAttribute) {
@@ -89,7 +82,7 @@ final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
         ReflectionMethod $aspectMethod,
     ): Interceptor {
         if (!$aspectMethod->isPublic()) {
-            throw new AspectException("Advice method {$aspectMethod->class}::{$aspectMethod->name}() must be public; first-class advice callables require all advice methods to be public");
+            throw AspectException::nonPublicAdviceMethod($aspectMethod);
         }
 
         $adviceCallback     = $aspectMethod->getClosure($aspect);
@@ -100,7 +93,7 @@ final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
             $interceptorAttribute instanceof After => new AfterInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
             $interceptorAttribute instanceof Around => new AroundInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
             $interceptorAttribute instanceof AfterThrowing => new AfterThrowingInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
-            default => throw new AspectException('Unsupported method meta class: ' . $interceptorAttribute::class),
+            default => throw AspectException::unsupportedAdviceAttribute($interceptorAttribute),
         };
     }
 }

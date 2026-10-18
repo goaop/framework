@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
-use Go\Aop\AspectException;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\Aop\Framework\Interceptor;
@@ -64,9 +63,7 @@ final class InterceptorListGenerator
         $descriptors = [];
         foreach ($interceptors as $interceptor) {
             if (!$interceptor instanceof GeneratedInterceptor) {
-                throw new AspectException(
-                    'Interceptor list expects generated interceptor descriptors, got ' . get_debug_type($interceptor),
-                );
+                throw WeavingException::invalidInterceptorDescriptor($interceptor);
             }
             $descriptors[] = $interceptor;
         }
@@ -136,7 +133,7 @@ final class InterceptorListGenerator
         }
 
         if ($interceptor->aspectClass === null || $interceptor->adviceMethod === null) {
-            throw new WeavingException('Aspect-backed interceptor descriptor is incomplete');
+            throw WeavingException::incompleteInterceptorDescriptor();
         }
 
         // The eager first-class-callable form is deliberate for generated proxies: this code

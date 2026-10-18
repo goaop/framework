@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Core\Cache;
 
 use Go\Aop\Exception\WeavingException;
-use RuntimeException;
 
 use function function_exists;
 
@@ -50,7 +49,7 @@ final readonly class CacheFileWriter
     /**
      * Writes the content into the file, creating the parent directory when needed
      *
-     * @throws RuntimeException When the directory or the file can not be written
+     * @throws WeavingException When the directory or the file can not be written
      */
     public function write(string $fileName, string $content): void
     {
@@ -59,7 +58,7 @@ final readonly class CacheFileWriter
         // A concurrent request may create the directory between the check and the mkdir() call,
         // so a failed mkdir() is only an error when the directory still does not exist.
         if (!is_dir($directoryName) && !@mkdir($directoryName, $directoryMode, true) && !is_dir($directoryName)) {
-            throw new WeavingException(sprintf('Unable to create cache directory "%s".', $directoryName));
+            throw WeavingException::cacheDirectoryNotCreated($directoryName);
         }
 
         // The temporary name is unique per call, so no file locking is needed: the content
@@ -74,7 +73,7 @@ final readonly class CacheFileWriter
         }
         if (!$isWritten || !@rename($temporaryName, $fileName)) {
             @unlink($temporaryName);
-            throw new WeavingException(sprintf('Unable to write cache file "%s".', $fileName));
+            throw WeavingException::cacheFileNotWritten($fileName);
         }
 
         if (function_exists('opcache_invalidate')) {

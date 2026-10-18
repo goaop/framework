@@ -68,7 +68,7 @@ class CacheWarmer
         $options = $this->aspectKernel->getOptions();
 
         if (empty($options['cacheDir'])) {
-            throw new InvalidConfigurationException('Cache warmer require the `cacheDir` options to be configured');
+            throw InvalidConfigurationException::cacheWarmerWithoutCacheDir();
         }
 
         // The transformation pipeline is registered lazily; the filter URIs built below

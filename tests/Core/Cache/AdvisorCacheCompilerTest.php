@@ -235,7 +235,7 @@ class AdvisorCacheCompilerTest extends TestCase
         // The closure is scoped to this test case, which is not an Aspect implementation
         $interceptor = new AfterInterceptor(function (): void {});
 
-        $this->expectException(\Go\Aop\AspectException::class);
+        $this->expectException(NotCompilableException::class);
         $this->expectExceptionMessage('Could not compile an interceptor without valid aspect');
 
         $interceptor->compileToPhp();

@@ -12,8 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Aop\Exception;
 
-use Go\Aop\AspectException;
-
 /**
  * Thrown when an advisor cache item cannot be compiled into plain PHP.
  *
@@ -26,4 +24,15 @@ use Go\Aop\AspectException;
  * The exception propagates out of the cache writer: such an aspect cannot be used with
  * the advisor cache enabled - fix the item or run without a cache directory.
  */
-final class NotCompilableException extends AspectException {}
+final class NotCompilableException extends WeavingException
+{
+    public static function interceptorWithoutAspect(): self
+    {
+        return new self('Could not compile an interceptor without valid aspect');
+    }
+
+    public static function unsupportedInterceptor(string $interceptorClass): self
+    {
+        return new self('Cannot compile an instance of ' . $interceptorClass . ' into plain PHP');
+    }
+}

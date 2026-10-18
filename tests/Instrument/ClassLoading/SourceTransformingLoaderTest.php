@@ -135,7 +135,7 @@ class SourceTransformingLoaderTest extends TestCase
     public function testFilterIdIsNotAvailableBeforeRegistration(): void
     {
         $this->expectException(WeavingException::class);
-        $this->expectExceptionMessage('Stream filter was not registered');
+        $this->expectExceptionMessage('Stream filter is not registered yet');
 
         SourceTransformingLoader::getId();
     }
@@ -145,7 +145,7 @@ class SourceTransformingLoaderTest extends TestCase
         $this->registerLoader([]);
 
         $this->expectException(WeavingException::class);
-        $this->expectExceptionMessage('Stream filter already registered');
+        $this->expectExceptionMessage('is already registered');
 
         SourceTransformingLoader::register();
     }
@@ -155,7 +155,7 @@ class SourceTransformingLoaderTest extends TestCase
         stream_filter_register('go.aop.taken', \php_user_filter::class);
 
         $this->expectException(WeavingException::class);
-        $this->expectExceptionMessage('Stream filter was not registered');
+        $this->expectExceptionMessage('Stream filter go.aop.taken could not be registered');
 
         SourceTransformingLoader::register('go.aop.taken');
     }

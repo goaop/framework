@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -77,7 +77,7 @@ final class PointcutReference implements Pointcut
         if (!isset($this->pointcut)) {
             $pointcutValue = $this->container->get($this->pointcutId);
             if (!$pointcutValue instanceof Pointcut) {
-                throw new AspectException("Pointcut reference {$this->pointcutId} resolves to " . get_debug_type($pointcutValue) . ', not to a pointcut');
+                throw AspectException::pointcutReferenceNotPointcut($this->pointcutId, $pointcutValue);
             }
             $this->pointcut = $pointcutValue;
         }

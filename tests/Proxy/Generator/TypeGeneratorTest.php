@@ -14,6 +14,7 @@ namespace Go\Proxy\Generator;
 
 use Go\Aop\Exception\WeavingException;
 use Go\ParserReflection\Resolver\TypeExpressionResolver;
+use PhpParser\Node\ComplexType;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
@@ -153,6 +154,28 @@ class TypeGeneratorTest extends TestCase
         $this->expectException(WeavingException::class);
         $this->expectExceptionMessage('Malformed DNF type');
         TypeGenerator::fromTypeString('(Countable&Iterator|null');
+    }
+
+    public function testFromResolvedAstNodeRejectsUnknownComplexType(): void
+    {
+        $unknownType = new class extends ComplexType {
+            public function getType(): string
+            {
+                return 'CustomType';
+            }
+
+            public function getSubNodeNames(): array
+            {
+                return [];
+            }
+        };
+
+        try {
+            TypeGenerator::fromResolvedAstNode($unknownType);
+            $this->fail('An unknown complex type node must be rejected');
+        } catch (WeavingException $exception) {
+            $this->assertSame('Unsupported type node CustomType', $exception->getMessage());
+        }
     }
 
     /**

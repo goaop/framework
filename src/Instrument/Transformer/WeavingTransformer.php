@@ -266,7 +266,7 @@ final class WeavingTransformer extends BaseSourceTransformer
         $position     = $classNode->getAttribute('startTokenPos');
         $lastPosition = $classNode->getAttribute('endTokenPos');
         if (!is_int($position) || !is_int($lastPosition)) {
-            throw new WeavingException("Declaration of {$classNode->name} has no token positions to weave");
+            throw WeavingException::declarationWithoutTokenPositions((string) $classNode->name);
         }
         $lastAttrGroup = end($classNode->attrGroups);
         if ($lastAttrGroup !== false) {

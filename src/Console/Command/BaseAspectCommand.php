@@ -51,11 +51,11 @@ abstract class BaseAspectCommand extends Command
     {
         $loader = $input->getArgument('loader');
         if (!is_string($loader)) {
-            throw new InvalidConfigurationException('Loader argument must be a string');
+            throw InvalidConfigurationException::loaderArgumentNotString();
         }
         $path = stream_resolve_include_path($loader);
         if ($path === false || !is_readable($path)) {
-            throw new InvalidConfigurationException("Invalid loader path: {$loader}");
+            throw InvalidConfigurationException::invalidLoaderPath($loader);
         }
 
         // The loader is executed only to boot the kernel: anything it prints is discarded
@@ -67,8 +67,7 @@ abstract class BaseAspectCommand extends Command
         }
 
         if (!class_exists(AspectKernel::class, false)) {
-            $message = "Kernel was not initialized yet, please configure it in the {$path}";
-            throw new InvalidConfigurationException($message);
+            throw InvalidConfigurationException::kernelNotConfiguredInLoader($path);
         }
 
         $this->aspectKernel = AspectKernel::getInstance();

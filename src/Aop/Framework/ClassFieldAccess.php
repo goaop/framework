@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\AspectException;
+use Go\Aop\Exception\InvocationException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldAccessType;
 use Go\Aop\Intercept\Interceptor;
@@ -112,7 +112,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function getValue(): mixed
     {
         if (!$this->isInitialized) {
-            throw new AspectException("Property {$this->fieldName} is not initialized yet");
+            throw InvocationException::propertyNotInitialized($this->getField()->class, $this->fieldName);
         }
 
         return $this->value;
@@ -126,7 +126,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function getValueToSet(): mixed
     {
         if ($this->accessType === FieldAccessType::Read) {
-            throw new AspectException("Value to set is not available for READ access type");
+            throw InvocationException::valueToSetUnavailable();
         }
         return $this->newValue;
     }
@@ -149,11 +149,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         }
 
         // Reading the property without interception fails the same way: an around advice can return a value instead
-        throw new AspectException(sprintf(
-            'Typed property %s::$%s must not be accessed before initialization',
-            $this->getField()->class,
-            $this->fieldName,
-        ));
+        throw InvocationException::typedPropertyNotInitialized($this->getField()->class, $this->fieldName);
     }
 
     /**

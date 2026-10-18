@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\IntroductionInfo;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
@@ -96,9 +96,7 @@ abstract class AbstractJoinpoint implements Joinpoint
                         continue;
                     }
                     if (!$advice instanceof Advice) {
-                        throw new AspectException(
-                            "Advisor {$advisorId} provides " . get_debug_type($advice) . ' instead of advice instance',
-                        );
+                        throw AspectException::advisorWithoutAdvice((string) $advisorId, $advice);
                     }
                     $flattenAdvices[$type][$name][] = GeneratedInterceptor::fromAdvice((string) $advisorId, $advice);
                 }

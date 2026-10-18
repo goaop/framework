@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
-use Go\Aop\AspectException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
@@ -151,7 +150,7 @@ class AspectKernelTest extends TestCase
         $instanceProperty->setValue(null, null);
 
         try {
-            $this->expectException(AspectException::class);
+            $this->expectException(InvalidConfigurationException::class);
             $this->expectExceptionMessage('Aspect kernel is not initialized yet');
 
             AspectKernel::getInstance();
@@ -173,7 +172,7 @@ class AspectKernelTest extends TestCase
 
     public function testGetContainerBeforeInitThrowsClearException(): void
     {
-        $this->expectException(AspectException::class);
+        $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage('is not initialized yet, call init() first');
 
         $this->makeKernel()->getContainer();
@@ -259,7 +258,7 @@ class AspectKernelTest extends TestCase
         $kernel = $this->makeKernel();
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('You need to provide valid cache directory for Go! AOP framework.');
+        $this->expectExceptionMessage('Option "cacheDir" is required: provide the path to the cache directory.');
 
         $this->invokeProtected($kernel, 'normalizeOptions', [[]]);
     }

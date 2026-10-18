@@ -90,11 +90,7 @@ final class FunctionProxyGenerator
         foreach (array_keys($functionAdvices) as $functionName) {
             $functionReflection = new ReflectionFunction($functionName);
             if ($functionReflection->returnsReference()) {
-                throw new WeavingException(sprintf(
-                    'Function %s() returns by reference and can not be intercepted: the joinpoint returns values, '
-                    . 'so the reference would be lost. Exclude it from the pointcut with "&& !matchReturningByReference()".',
-                    $functionName,
-                ));
+                throw WeavingException::functionReturnsByReference($functionName);
             }
             $funcGenerator        = FunctionGenerator::fromReflection($functionReflection);
             $funcGenerator->stmts = $this->getJoinpointInvocationStatements($functionReflection);

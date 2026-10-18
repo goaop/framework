@@ -184,6 +184,19 @@ class PointcutParserTest extends TestCase
         $this->assertFalse($pointcut->matches($class, $class->getMethod('publicMethodWithUnionTypeReturn')));
     }
 
+    public function testOnlyOneGroupOfModifierAlternativesIsSupported(): void
+    {
+        try {
+            $this->parser->parse($this->lexer->lex('execution(public|protected final|private **->*(*))'));
+            $this->fail('Two groups of modifier alternatives must be rejected');
+        } catch (PointcutSyntaxException $exception) {
+            $this->assertSame(
+                'Only one group of modifier alternatives (a|b) is supported per member pattern',
+                $exception->getMessage(),
+            );
+        }
+    }
+
     /**
      * If the underlying LALR parser ever finishes a token stream without reaching an
      * "accept" state (e.g. a stream with no tokens at all, or missing the trailing

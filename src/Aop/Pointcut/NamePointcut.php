@@ -81,7 +81,7 @@ final readonly class NamePointcut implements Pointcut
         }
         $isMatched = preg_match($this->regexp, $name);
         if ($isMatched === false) {
-            throw new PointcutSyntaxException("Name pattern `{$this->name}` can not be matched: " . preg_last_error_msg());
+            throw PointcutSyntaxException::namePatternNotMatchable($this->name, preg_last_error_msg());
         }
 
         return $isMatched === 1;

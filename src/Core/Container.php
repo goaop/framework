@@ -117,7 +117,7 @@ final class Container implements AspectContainer
         // keys with is_subclass_of(), so an arbitrary string id must be rejected upfront
         // (checked syntactically to avoid autoloading anything at registration time).
         if (preg_match('/^\\\\?[A-Za-z_\x80-\xff][\w\x80-\xff]*(\\\\[A-Za-z_\x80-\xff][\w\x80-\xff]*)*$/', $id) !== 1) {
-            throw new InvalidConfigurationException("Lazy service id must be a valid class name, \"$id\" given");
+            throw InvalidConfigurationException::invalidLazyServiceId($id);
         }
         $this->factories[$id] = $lazyInitializationClosure;
         $this->registrationVersion++;
@@ -141,7 +141,7 @@ final class Container implements AspectContainer
     {
         $service = $this->get($className);
         if (!$service instanceof $className) {
-            throw new ContainerException("Service $className is not properly registered");
+            throw ContainerException::serviceNotProperlyRegistered($className);
         }
 
         return $service;
@@ -163,7 +163,7 @@ final class Container implements AspectContainer
             return $this->delegate->get($id);
         }
 
-        throw new ServiceNotFoundException("Value $id is not defined in the container");
+        throw ServiceNotFoundException::valueNotDefined($id);
     }
 
     public function has(string $id): bool
@@ -177,7 +177,7 @@ final class Container implements AspectContainer
     public function setDelegate(ContainerInterface $delegate): void
     {
         if ($delegate === $this) {
-            throw new InvalidConfigurationException('Container can not be its own delegate');
+            throw InvalidConfigurationException::containerIsOwnDelegate();
         }
         $this->delegate = $delegate;
     }
@@ -262,7 +262,7 @@ final class Container implements AspectContainer
         return NativeLazyProxy::tryCreate($id, function () use ($id, $factory): object {
             $instance = $factory($this);
             if (!$instance instanceof $id) {
-                throw new ContainerException("Service $id is not properly registered");
+                throw ContainerException::serviceNotProperlyRegistered($id);
             }
 
             return $instance;
