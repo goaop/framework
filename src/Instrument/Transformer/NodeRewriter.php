@@ -26,9 +26,9 @@ interface NodeRewriter
     /**
      * Node classes (or their parents) this rule rewrites
      *
-     * @return list<class-string<Node>>
+     * @var list<class-string<Node>>
      */
-    public function getNodeTypes(): array;
+    public array $nodeTypes { get; }
 
     /**
      * Rewrites the source tokens of the given node in the token stream of the file

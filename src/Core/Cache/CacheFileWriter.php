@@ -30,10 +30,10 @@ use function function_exists;
  */
 final readonly class CacheFileWriter
 {
-    /**
-     * @param int $fileMode Binary mask of permission bits that is set to cache files
-     */
-    public function __construct(private int $fileMode) {}
+    public function __construct(
+        /** Binary mask of permission bits that is set to cache files */
+        private int $fileMode,
+    ) {}
 
     /**
      * Returns the permission bits for cache directories derived from the cache file mode

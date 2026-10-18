@@ -32,11 +32,17 @@ use function in_array;
  */
 final readonly class ClassInheritancePointcut implements Pointcut
 {
+    public int $kind;
+
     /**
      * Inheritance class matcher constructor
-     * @param string $parentClassOrInterfaceName Parent class or interface name to match in hierarchy
      */
-    public function __construct(private string $parentClassOrInterfaceName) {}
+    public function __construct(
+        /** Parent class or interface name to match in hierarchy */
+        private string $parentClassOrInterfaceName,
+    ) {
+        $this->kind = self::KIND_CLASS;
+    }
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
@@ -62,11 +68,6 @@ final readonly class ClassInheritancePointcut implements Pointcut
         }
 
         return false;
-    }
-
-    public function getKind(): int
-    {
-        return self::KIND_CLASS;
     }
 
     public function compileToPhp(): Expr

@@ -131,6 +131,6 @@ class AttributePointcutTest extends TestCase
             true,
         );
 
-        $this->assertEquals(Pointcut::KIND_CLASS, $pointcut->getKind());
+        $this->assertEquals(Pointcut::KIND_CLASS, $pointcut->kind);
     }
 }

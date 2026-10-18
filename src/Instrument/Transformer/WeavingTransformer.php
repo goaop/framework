@@ -62,15 +62,14 @@ final class WeavingTransformer extends BaseSourceTransformer
 
     /**
      * Constructs a weaving transformer
-     *
-     * @param AdviceMatcherInterface $adviceMatcher    Advice matcher for class
-     * @param CachePathManager       $cachePathManager Cache manager
-     * @param AspectLoaderInterface  $aspectLoader     Loader for aspects
      */
     public function __construct(
         AspectKernel $kernel,
+        /** Advice matcher for class */
         protected readonly AdviceMatcherInterface $adviceMatcher,
+        /** Cache manager */
         private readonly CachePathManager $cachePathManager,
+        /** Loader for aspects */
         protected readonly AspectLoaderInterface $aspectLoader,
     ) {
         parent::__construct($kernel);

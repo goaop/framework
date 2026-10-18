@@ -312,7 +312,7 @@ class AdvisorCacheCompilerTest extends TestCase
         foreach ($items as $itemId => $originalPointcut) {
             $loadedPointcut = $loadedData['advisors'][$itemId];
             $this->assertInstanceOf($originalPointcut::class, $loadedPointcut);
-            $this->assertSame($originalPointcut->getKind(), $loadedPointcut->getKind());
+            $this->assertSame($originalPointcut->kind, $loadedPointcut->kind);
             $this->assertSame(
                 $originalPointcut->matches($reflectionClass),
                 $loadedPointcut->matches($reflectionClass),

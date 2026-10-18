@@ -65,7 +65,7 @@ final class SyntaxTreeRewriter implements SourceTransformer
         $rules = [];
         foreach ($this->rules as $index => $rule) {
             if (!$rule instanceof PrefilteredNodeRewriter
-                || array_any($rule->getSourceMarkers(), static fn(string $marker): bool => stripos($source, $marker) !== false)
+                || array_any($rule->sourceMarkers, static fn(string $marker): bool => stripos($source, $marker) !== false)
             ) {
                 $rules[$index] = $rule;
             }

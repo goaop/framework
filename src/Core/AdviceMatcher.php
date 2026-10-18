@@ -50,8 +50,8 @@ class AdviceMatcher implements AdviceMatcherInterface
 
         foreach ($advisors as $advisorId => $advisor) {
             if ($advisor instanceof PointcutAdvisor) {
-                $pointcut = $advisor->getPointcut();
-                $isFunctionAdvisor = $pointcut->getKind() & Pointcut::KIND_FUNCTION;
+                $pointcut = $advisor->pointcut;
+                $isFunctionAdvisor = $pointcut->kind & Pointcut::KIND_FUNCTION;
                 if ($isFunctionAdvisor && $pointcut->matches($namespace)) {
                     foreach ($this->getFunctionAdvicesFromAdvisor($namespace, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
                         foreach ($prefixAdvices as $name => $nameAdvices) {
@@ -81,9 +81,9 @@ class AdviceMatcher implements AdviceMatcherInterface
 
         foreach ($advisors as $advisorId => $advisor) {
             if ($advisor instanceof PointcutAdvisor) {
-                $pointcut     = $advisor->getPointcut();
+                $pointcut     = $advisor->pointcut;
                 $matchesClass = $pointcut->matches($class);
-                if ($matchesClass && ($pointcut->getKind() & Pointcut::KIND_CLASS)) {
+                if ($matchesClass && ($pointcut->kind & Pointcut::KIND_CLASS)) {
                     foreach ($this->getClassAdvicesFromAdvisor($class, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
                         foreach ($prefixAdvices as $name => $nameAdvices) {
                             foreach ($nameAdvices as $advisorKey => $advice) {
@@ -121,7 +121,7 @@ class AdviceMatcher implements AdviceMatcherInterface
         Pointcut $pointcut,
     ): array {
         $classAdvices = [];
-        $pointcutKind = $pointcut->getKind();
+        $pointcutKind = $pointcut->kind;
         $advice       = $advisor->getAdvice();
 
         // Dynamic initialization (creation of instance with new)
@@ -153,7 +153,7 @@ class AdviceMatcher implements AdviceMatcherInterface
         Pointcut $pointcut,
     ): array {
         $classAdvices = [];
-        $pointcutKind = $pointcut->getKind();
+        $pointcutKind = $pointcut->kind;
 
         // Check methods in class only for method filters
         if (($pointcutKind & Pointcut::KIND_METHOD) !== 0) {
@@ -213,13 +213,13 @@ class AdviceMatcher implements AdviceMatcherInterface
     {
         $classAdvices = [];
 
-        $introducedTrait = $introduction->getTrait();
+        $introducedTrait = $introduction->trait;
         if (!empty($introducedTrait)) {
             $introducedTrait = '\\' . ltrim($introducedTrait, '\\');
 
             $classAdvices[AspectContainer::INTRODUCTION_TRAIT_PREFIX] = ['root' => [$introducedTrait => $introduction]];
         }
-        $introducedInterface = $introduction->getInterface();
+        $introducedInterface = $introduction->interface;
         if (!empty($introducedInterface)) {
             $introducedInterface = '\\' . ltrim($introducedInterface, '\\');
 

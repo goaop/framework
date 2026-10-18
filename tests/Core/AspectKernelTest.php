@@ -609,9 +609,8 @@ final class AspectKernelTestCustomTransformer implements SourceTransformer
 
 final class AspectKernelTestCustomNodeRewriter implements NodeRewriter
 {
-    public function getNodeTypes(): array
-    {
-        return [String_::class];
+    public array $nodeTypes {
+        get => [String_::class];
     }
 
     public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool

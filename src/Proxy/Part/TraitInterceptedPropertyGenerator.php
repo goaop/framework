@@ -38,11 +38,11 @@ use ReflectionProperty;
 final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropertyGenerator implements PropertyNodeProvider
 {
     /**
-     * @param list<GeneratedInterceptor|string> $adviceNames
-     * @param ProxyImports|null                 $imports     Imports of the generated file
+     * @param ProxyImports|null $imports Imports of the generated file
      */
     public function __construct(
         ReflectionProperty $property,
+        /** @var list<GeneratedInterceptor|string> */
         private readonly array $adviceNames,
         ?ProxyImports $imports = null,
     ) {

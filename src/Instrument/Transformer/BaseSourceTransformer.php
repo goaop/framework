@@ -37,8 +37,9 @@ abstract class BaseSourceTransformer implements SourceTransformer
     /**
      * Default constructor for transformer
      */
-    public function __construct(protected readonly AspectKernel $kernel)
-    {
+    public function __construct(
+        protected readonly AspectKernel $kernel,
+    ) {
         $this->container = $kernel->getContainer();
         $this->options   = $kernel->getOptions();
     }

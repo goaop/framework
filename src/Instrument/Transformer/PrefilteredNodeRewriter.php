@@ -27,7 +27,7 @@ interface PrefilteredNodeRewriter extends NodeRewriter
      *
      * An empty list turns the rule off for the file, e.g. while nothing registered needs it.
      *
-     * @return list<non-empty-string>
+     * @var list<non-empty-string>
      */
-    public function getSourceMarkers(): array;
+    public array $sourceMarkers { get; }
 }

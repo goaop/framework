@@ -47,6 +47,8 @@ use ReflectionProperty;
  */
 final readonly class ReturnTypePointcut implements Pointcut
 {
+    public int $kind;
+
     /**
      * Trimmed constructor pattern, retained verbatim for re-emission into compiled advisor caches.
      */
@@ -84,6 +86,7 @@ final readonly class ReturnTypePointcut implements Pointcut
         if (strlen($returnTypeName) === 0) {
             throw PointcutSyntaxException::emptyReturnType();
         }
+        $this->kind                  = Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION;
         $this->returnTypeName        = $returnTypeName;
         $this->patternGroups         = self::normalizeTypeExpression($returnTypeName);
         $this->isSingleAtomicPattern = count($this->patternGroups) === 1 && count($this->patternGroups[0]) === 1;
@@ -142,11 +145,6 @@ final readonly class ReturnTypePointcut implements Pointcut
                 fn(string $patternAtom, string $actualAtom): bool => $this->atomMatches($patternAtom, $actualAtom),
             ),
         );
-    }
-
-    public function getKind(): int
-    {
-        return Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION;
     }
 
     public function compileToPhp(): Expr

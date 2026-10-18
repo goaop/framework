@@ -29,6 +29,10 @@ use ReflectionProperty;
  */
 final class MatchInheritedPointcut implements Pointcut
 {
+    public int $kind {
+        get => Pointcut::KIND_METHOD | Pointcut::KIND_PROPERTY;
+    }
+
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
@@ -52,11 +56,6 @@ final class MatchInheritedPointcut implements Pointcut
         $contextTraits      = $context->getTraitNames();
 
         return $context->getName() !== $declaringClassName && ($context->isSubclassOf($declaringClassName) || in_array($declaringClassName, $contextTraits));
-    }
-
-    public function getKind(): int
-    {
-        return Pointcut::KIND_METHOD | Pointcut::KIND_PROPERTY;
     }
 
     public function compileToPhp(): Expr

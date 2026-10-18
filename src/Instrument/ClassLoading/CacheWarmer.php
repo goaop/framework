@@ -39,14 +39,13 @@ class CacheWarmer
 
     /**
      * CacheWarmer constructor.
-     *
-     * @param AspectKernel    $aspectKernel Instance of aspect kernel
-     * @param OutputInterface $output       Output instance, errors go to its error output when it has one
-     * @param bool            $failFast     Whether to stop after the first file that fails to process
      */
     public function __construct(
+        /** Instance of aspect kernel */
         protected AspectKernel $aspectKernel,
+        /** Output instance, errors go to its error output when it has one */
         protected OutputInterface $output = new NullOutput(),
+        /** Whether to stop after the first file that fails to process */
         protected bool $failFast = false,
     ) {}
 

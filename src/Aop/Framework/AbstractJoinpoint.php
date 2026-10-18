@@ -43,10 +43,11 @@ abstract class AbstractJoinpoint implements Joinpoint
 
     /**
      * Initializes list of advices for current joinpoint
-     *
-     * @param array<Interceptor> $advices List of advices (interceptors)
      */
-    public function __construct(protected readonly array $advices = []) {}
+    public function __construct(
+        /** @var array<Interceptor> List of advices (interceptors) */
+        protected readonly array $advices = [],
+    ) {}
 
     /**
      * Sorts advices by priority
@@ -69,7 +70,7 @@ abstract class AbstractJoinpoint implements Joinpoint
                 }
 
                 return $first instanceof OrderedAdvice && $second instanceof OrderedAdvice
-                    ? $first->getAdviceOrder() - $second->getAdviceOrder()
+                    ? $first->adviceOrder - $second->adviceOrder
                     : 0;
             },
         );

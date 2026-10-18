@@ -31,14 +31,13 @@ class Enumerator
 {
     /**
      * Initializes an enumerator
-     *
-     * @param string   $rootDirectory Path to the root directory, where enumeration should start
-     * @param string[] $includePaths  List of additional include paths, should be below rootDirectory
-     * @param string[] $excludePaths  List of additional exclude paths, should be below rootDirectory
      */
     public function __construct(
+        /** Path to the root directory, where enumeration should start */
         private readonly string $rootDirectory,
+        /** @var string[] List of additional include paths, should be below rootDirectory */
         private readonly array $includePaths = [],
+        /** @var string[] List of additional exclude paths, should be below rootDirectory */
         private readonly array $excludePaths = [],
     ) {}
 

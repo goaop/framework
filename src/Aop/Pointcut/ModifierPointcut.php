@@ -43,18 +43,21 @@ use ReflectionProperty;
  */
 final readonly class ModifierPointcut implements Pointcut
 {
+    public int $kind;
+
     /**
      * Initialize the filter with pre-resolved bit masks
-     *
-     * @param int $andMask Bit mask whose bits must all be present
-     * @param int $orMask  Bit mask of alternatives, at least one of them must be present (ignored when 0)
-     * @param int $notMask Bit mask to exclude specific value from matching, for example, !public
      */
     public function __construct(
+        /** Bit mask whose bits must all be present */
         private int $andMask = 0,
+        /** Bit mask of alternatives, at least one of them must be present (ignored when 0) */
         private int $orMask = 0,
+        /** Bit mask to exclude specific value from matching, for example, !public */
         private int $notMask = 0,
-    ) {}
+    ) {
+        $this->kind = Pointcut::KIND_ALL;
+    }
 
     /**
      * @return ($reflector is null ? true : bool)
@@ -111,11 +114,6 @@ final readonly class ModifierPointcut implements Pointcut
     public function notMatch(int $bitMask): self
     {
         return new self($this->andMask, $this->orMask, $this->notMask | $bitMask);
-    }
-
-    public function getKind(): int
-    {
-        return Pointcut::KIND_ALL;
     }
 
     public function compileToPhp(): Expr

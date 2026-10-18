@@ -65,11 +65,9 @@ final class PropertyGenerator implements PropertyNodeProvider
     /** @var list<PropertyHook> */
     private array $hooks = [];
 
-    /**
-     * @param list<PropertyModifier> $modifiers Property declaration modifiers
-     */
     public function __construct(
         public readonly string $name,
+        /** @var list<PropertyModifier> Property declaration modifiers */
         private readonly array $modifiers = [PropertyModifier::Public],
     ) {}
 

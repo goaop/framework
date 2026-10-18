@@ -49,24 +49,20 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
     private readonly ReflectionFunction $reflectionFunction;
 
     /**
-     * First-class callable to the original global function.
-     */
-    private readonly Closure $closureToCall;
-
-    /**
      * Constructor for function invocation
      *
-     * @param array<Interceptor> $advices       List of advices for this invocation
-     * @param Closure            $closureToCall First-class callable to the original global function
-     *                                          (e.g. `\file_get_contents(...)`).
+     * @param array<Interceptor> $advices List of advices for this invocation
      *
      * @throws ReflectionException
      */
-    public function __construct(array $advices, string $functionName, Closure $closureToCall)
-    {
+    public function __construct(
+        array $advices,
+        string $functionName,
+        /** First-class callable to the original global function (e.g. `\file_get_contents(...)`) */
+        private readonly Closure $closureToCall,
+    ) {
         parent::__construct($advices);
         $this->reflectionFunction = new ReflectionFunction($functionName);
-        $this->closureToCall      = $closureToCall;
     }
 
     /**

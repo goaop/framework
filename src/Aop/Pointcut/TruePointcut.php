@@ -32,7 +32,9 @@ final readonly class TruePointcut implements Pointcut
     /**
      * Default constructor can be used to specify concrete pointcut kind
      */
-    public function __construct(private int $pointcutKind = self::KIND_ALL) {}
+    public function __construct(
+        public int $kind = self::KIND_ALL,
+    ) {}
 
     /**
      * @inheritdoc
@@ -45,15 +47,10 @@ final readonly class TruePointcut implements Pointcut
         return true;
     }
 
-    public function getKind(): int
-    {
-        return $this->pointcutKind;
-    }
-
     public function compileToPhp(): Expr
     {
         return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([
-            ['pointcutKind', new Int_($this->pointcutKind), $this->pointcutKind === self::KIND_ALL],
+            ['kind', new Int_($this->kind), $this->kind === self::KIND_ALL],
         ]));
     }
 }

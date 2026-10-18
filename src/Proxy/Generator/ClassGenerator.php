@@ -57,17 +57,17 @@ final class ClassGenerator implements GeneratorInterface
     public array $attrGroups = [];
 
     /**
-     * @param list<ClassModifier>    $modifiers   Class declaration modifiers (final/abstract/readonly)
-     * @param string[]               $interfaces  FQCNs of interfaces to implement
-     * @param PropertyNodeProvider[] $properties
-     * @param MethodGenerator[]      $methods
+     * @param MethodGenerator[] $methods
      */
     public function __construct(
         public readonly string $name,
         private readonly ?string $namespace,
+        /** @var list<ClassModifier> Class declaration modifiers (final/abstract/readonly) */
         private readonly array $modifiers,
         private readonly ?string $parentClass,
+        /** @var string[] FQCNs of interfaces to implement */
         private readonly array $interfaces = [],
+        /** @var PropertyNodeProvider[] */
         private readonly array $properties = [],
         array $methods = [],
     ) {

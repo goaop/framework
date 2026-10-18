@@ -78,11 +78,11 @@ class CachedAspectLoader implements AspectLoaderInterface
     /**
      * Cached loader constructor
      *
-     * @param class-string<AspectLoaderInterface> $loaderId Identifier of original loader
      * @phpstan-param KernelOptions $options List of kernel options
      */
     public function __construct(
         private readonly AspectContainer $container,
+        /** @var class-string<AspectLoaderInterface> Identifier of original loader */
         private readonly string $loaderId,
         array $options,
     ) {

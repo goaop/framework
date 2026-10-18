@@ -201,22 +201,14 @@ class SyntaxTreeRewriterTest extends TestCase
     private function createPrefilteredRule(array $markers, array $nodeTypes, Closure $rewrite): PrefilteredNodeRewriter
     {
         return new readonly class ($markers, $nodeTypes, $rewrite) implements PrefilteredNodeRewriter {
-            /**
-             * @param non-empty-list<non-empty-string>               $markers
-             * @param list<class-string<Node>>                        $nodeTypes
-             * @param Closure(Node, StreamMetaData, list<Node>): bool $rewrite
-             */
-            public function __construct(private array $markers, private array $nodeTypes, private Closure $rewrite) {}
-
-            public function getSourceMarkers(): array
-            {
-                return $this->markers;
-            }
-
-            public function getNodeTypes(): array
-            {
-                return $this->nodeTypes;
-            }
+            public function __construct(
+                /** @var non-empty-list<non-empty-string> */
+                public array $sourceMarkers,
+                /** @var list<class-string<Node>> */
+                public array $nodeTypes,
+                /** @var Closure(Node, StreamMetaData, list<Node>): bool */
+                private Closure $rewrite,
+            ) {}
 
             public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
             {
@@ -232,16 +224,12 @@ class SyntaxTreeRewriterTest extends TestCase
     private function createRule(array $nodeTypes, Closure $rewrite): NodeRewriter
     {
         return new readonly class ($nodeTypes, $rewrite) implements NodeRewriter {
-            /**
-             * @param list<class-string<Node>>                        $nodeTypes
-             * @param Closure(Node, StreamMetaData, list<Node>): bool $rewrite
-             */
-            public function __construct(private array $nodeTypes, private Closure $rewrite) {}
-
-            public function getNodeTypes(): array
-            {
-                return $this->nodeTypes;
-            }
+            public function __construct(
+                /** @var list<class-string<Node>> */
+                public array $nodeTypes,
+                /** @var Closure(Node, StreamMetaData, list<Node>): bool */
+                private Closure $rewrite,
+            ) {}
 
             public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
             {

@@ -46,11 +46,9 @@ use ReflectionUnionType;
 
 abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvider
 {
-    /**
-     * @param ProxyImports|null $imports Imports of the generated file; short class names are emitted when omitted
-     */
     public function __construct(
         protected readonly ReflectionProperty $property,
+        /** Imports of the generated file; short class names are emitted when omitted */
         protected readonly ?ProxyImports $imports = null,
     ) {
         if ($this->property->isStatic() || $this->property->isReadOnly() || $this->property->hasHooks()) {

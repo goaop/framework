@@ -52,16 +52,16 @@ class IntroductionAspectExtensionTest extends TestCase
         $advisor = $loadedItems[$propertyId];
         $this->assertInstanceOf(GenericPointcutAdvisor::class, $advisor);
 
-        $pointcut = $advisor->getPointcut();
+        $pointcut = $advisor->pointcut;
         $this->assertSame(
             Pointcut::KIND_INTRODUCTION | Pointcut::KIND_CLASS,
-            $pointcut->getKind() & (Pointcut::KIND_INTRODUCTION | Pointcut::KIND_CLASS),
+            $pointcut->kind & (Pointcut::KIND_INTRODUCTION | Pointcut::KIND_CLASS),
         );
 
         $advice = $advisor->getAdvice();
         $this->assertInstanceOf(TraitIntroductionInfo::class, $advice);
-        $this->assertSame(IntroductionAspectExtensionTestTrait::class, $advice->getTrait());
-        $this->assertSame(IntroductionAspectExtensionTestInterface::class, $advice->getInterface());
+        $this->assertSame(IntroductionAspectExtensionTestTrait::class, $advice->trait);
+        $this->assertSame(IntroductionAspectExtensionTestInterface::class, $advice->interface);
     }
 
     public function testForeignAttributeOnPropertyIsIgnored(): void
