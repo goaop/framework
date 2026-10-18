@@ -35,6 +35,16 @@ final class EngineConfigurationException extends InvalidConfigurationException
         return new self('The ffi weaving driver cannot boot z-engine: ' . $previous->getMessage(), 0, $previous);
     }
 
+    public static function engineWithoutMethodTableApi(string $installedVersion): self
+    {
+        return new self(sprintf(
+            'The ffi weaving driver requires lisachenko/z-engine ~8.4.3 || ~8.5.1 (ReflectionMethod::redefine() with '
+            . 'preserveAs, ReflectionClass::addMethod() and fromClassTable()), %s is installed: '
+            . 'composer require lisachenko/z-engine installs the release of the running PHP minor.',
+            $installedVersion,
+        ));
+    }
+
     public static function jitStillOn(): self
     {
         return new self(

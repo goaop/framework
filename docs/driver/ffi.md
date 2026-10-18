@@ -22,7 +22,9 @@ limits listed below.
   composer require lisachenko/z-engine
   ```
 
-  A project installed on several PHP minors constrains the engine accordingly, e.g. `"lisachenko/z-engine": "~8.4.0|~8.5.0"`.
+  The releases carrying the method-table API the driver is built on are 8.4.3 and 8.5.1; a project installed on
+  several PHP minors constrains the engine accordingly, e.g. `"lisachenko/z-engine": "~8.4.3 || ~8.5.1"` (the
+  constraint of `goaop/ffi-driver` itself). An older release is refused by `init()`.
 - The opcache JIT **off** for the whole process: `opcache.jit=off` and `opcache.jit_buffer_size=0` in `php.ini`, the
   FPM pool or `php -d`. z-engine hooks the executor internals the JIT bypasses. A JIT found active is switched off
   at runtime as a safety net and reported in the [boot report](#boot-report); the process-level setting stays the

@@ -17,11 +17,13 @@ use Go\Core\AspectContainer;
 use Go\Core\Container;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\PhpUnit\UsesTemporaryDirectory;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
  * The composer loader wrapper of the ffi driver: native loading, weaving only within the woven paths
  */
+#[Group('ffi')]
 final class FfiComposerLoaderTest extends TestCase
 {
     use UsesTemporaryDirectory;

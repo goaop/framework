@@ -16,7 +16,7 @@ ApplicationAspectKernel::getInstance()->init([
 |--------|---------|-----------|
 | [`Go\Driver\StreamFilter\StreamFilterDriver`](stream-filter.md) (default) | `goaop/framework` (built in) | Source transformation of advised files at load time through a `php://filter` stream filter behind composer's loader. Pure PHP. |
 | [`Go\Driver\StreamWrapper\StreamWrapperDriver`](stream-wrapper.md) | `goaop/stream-wrapper-driver` | Source transformation of every included file within the weaving scope through a `file://` stream wrapper; includes are always intercepted, opcache caches the woven sources. Pure PHP. |
-| [`Go\Driver\Ffi\FfiDriver`](ffi.md) (experimental) | `goaop/ffi-driver` | Runtime rewiring of the methods of a loaded class through [lisachenko/z-engine](https://github.com/lisachenko/z-engine) (PHP FFI): no source rewriting, method execution join points only. |
+| [`Go\Driver\Ffi\FfiDriver`](ffi.md) (experimental) | `goaop/ffi-driver` | Runtime rewiring of the methods of a loaded class through [lisachenko/z-engine](https://github.com/lisachenko/z-engine) (PHP FFI): no source rewriting, method execution and function join points only. |
 
 An option value that is not an existing class, or a class that does not implement `Go\Driver\WeavingDriver`, throws
 `Go\Aop\Exception\InvalidConfigurationException` from `init()`.

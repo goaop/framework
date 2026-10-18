@@ -169,8 +169,8 @@ abstract class BaseFunctionalTestCase extends TestCase
     /**
      * Command-line options of the PHP subprocess running the console, `-d` ini overrides included
      *
-     * On PHP 8.5 the tracing JIT is switched off: a php.ini enabling it makes the functional suite fail there.
-     * Override to add options.
+     * On PHP 8.5 the subprocess runs with the opcache JIT off (`opcache.jit=off`, `opcache.jit_buffer_size=0`),
+     * whatever php.ini says. Override to add options.
      *
      * @return list<string>
      */

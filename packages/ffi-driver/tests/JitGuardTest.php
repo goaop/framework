@@ -13,8 +13,10 @@ declare(strict_types=1);
 namespace Go\Driver\Ffi;
 
 use Go\Driver\Ffi\Exception\EngineConfigurationException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('ffi')]
 final class JitGuardTest extends TestCase
 {
     /**

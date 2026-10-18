@@ -23,12 +23,14 @@ use Go\Proxy\ClassProxyGenerator;
 use Go\Tests\TestProject\Application\FfiChild;
 use Go\Tests\TestProject\Application\FfiParent;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 /**
  * The donor trait of the ffi driver: dispatcher bodies compiled outside the woven class
  */
+#[Group('ffi')]
 final class DonorTraitGeneratorTest extends TestCase
 {
     use AssertsCompilablePhp;

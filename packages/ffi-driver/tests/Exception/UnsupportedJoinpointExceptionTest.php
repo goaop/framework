@@ -12,9 +12,11 @@ declare(strict_types=1);
 
 namespace Go\Driver\Ffi\Exception;
 
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;
 
+#[Group('ffi')]
 final class UnsupportedJoinpointExceptionTest extends TestCase
 {
     public function testNamesTheAdvisorsAndKindsTheDriverCannotWeave(): void

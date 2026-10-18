@@ -106,6 +106,7 @@ final class ClassWeaver
      */
     public function weave(string $className): WeaveResult
     {
+        $className = self::declaredName($className);
         if (isset($this->failures[$className])) {
             throw $this->failures[$className];
         }
@@ -132,6 +133,7 @@ final class ClassWeaver
      */
     public function weaveLoadedClass(string $className, string $file): WeaveResult
     {
+        $className = self::declaredName($className);
         if (isset($this->failures[$className])) {
             throw $this->failures[$className];
         }
@@ -182,16 +184,24 @@ final class ClassWeaver
         if (array_key_exists($namespace, $this->functionNamespaces)) {
             return $this->functionNamespaces[$namespace];
         }
-        $this->functionNamespaces[$namespace] = null;
+        // A file outside the application root decides nothing for its namespace
         if (!$this->donorCache->isApplicationSource($file)) {
             return null;
         }
+        $this->functionNamespaces[$namespace] = null;
 
         // A fresh record decides without the aspects; only a miss asks the advisor index, which loads them
         $record = $this->donorCache->findFreshFunctions($namespace, $this->container);
         if ($record === null) {
             if (!$this->advisorIndex->hasPointcutKind(Pointcut::KIND_FUNCTION)) {
-                // No function pointcut registered at all: recorded, so a warm request does not ask again
+                if ($this->advisorIndex->getAdvisors() === []) {
+                    // No advisor at all yet (a class loaded while the kernel is still being configured):
+                    // nothing is decided, the question is asked again for the next class of the namespace
+                    unset($this->functionNamespaces[$namespace]);
+
+                    return null;
+                }
+                // No function pointcut registered: recorded, so a warm request does not ask again
                 $this->donorCache->recordFunctions($namespace, null, []);
 
                 return null;
@@ -244,6 +254,15 @@ final class ClassWeaver
         $this->donorCache->recordFunctions($namespace, $proxyFile, $functions);
 
         return ['file' => $proxyFile, 'functions' => $functions];
+    }
+
+    /**
+     * The name a loaded class was declared with: the loader hands over the name as the code spelled it, which
+     * may differ in case; the results, the index records and the engine lookups all use the declared spelling
+     */
+    private static function declaredName(string $className): string
+    {
+        return class_exists($className, false) ? new ReflectionClass($className)->getName() : $className;
     }
 
     /**

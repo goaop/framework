@@ -1,11 +1,11 @@
 # src/Instrument — AOP interception pipeline
 
 ## Init flow
-1. AspectKernel::init() — singleton, registers deferred transformer services, calls configureAop()
+1. AspectKernel::init() — singleton, registers the framework services + CachePathManager, instantiates the `driver` option, registers the deferred transformer services for a SourceTransformingDriver only, calls $driver->boot(), then configureAop()
 2. SourceTransformingLoader — PHP stream filter (php://filter/read=go.source.transforming.loader/resource=... protocol); registered lazily on the first cache miss via ensureRegistered()
 3. AopComposerLoader::init() — hooks Composer autoloader → redirects through stream filter (production: woven classes via composer's class map; debug: a fresh untransformed record → original path, so opcache caches it; woven/stale/miss → php://filter)
-4. Caching lives in SourceTransformingLoader::filter() — cache hit → cached content emitted as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → write cache
-5. Freshness rule lives in one place: CachePathManager::queryFreshCacheState() (record filemtime/filesize, container isFreshSince(cachedAt); PREBUILT_CACHE trusts records), used by the filter and the debug autoloader
+4. Caching lives in SourceTransformingLoader::transformSource() (filter() only buffers the stream and delegates, the stream wrapper delegates too) — no usable cache dir → source untouched; cache hit → cached content returned as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → saveToCache()
+5. Freshness rule lives in one place: CachePathManager::isFreshRecord() (record filemtime/filesize, container isFreshSince(cachedAt); PREBUILT_CACHE trusts records); queryFreshCacheState() = record lookup + that rule, used by transformSource() and the debug autoloader; the ffi DonorCacheIndex calls isFreshRecord() directly
 
 ## Weaving drivers (src/Driver/, `driver` kernel option)
 - Go\Driver\WeavingDriver: `boot(AspectKernel, AspectContainer)`, called once from AspectKernel::init() after the framework services, before configureAop(); the option is the driver class-string (default Go\Driver\StreamFilter\StreamFilterDriver, validated with class_exists/is_a in normalizeOptions), the instance is registered under WeavingDriver::class.

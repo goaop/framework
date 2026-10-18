@@ -41,6 +41,17 @@ final class UnsupportedJoinpointException extends FfiWeavingException
     }
 
     /**
+     * The class is loaded by PHP but has no entry in the engine class table, so there is nothing to rewire
+     */
+    public static function classNotInEngineClassTable(string $className): self
+    {
+        return new self(sprintf(
+            'The ffi weaving driver cannot weave %s: the class is not published in the engine class table',
+            $className,
+        ));
+    }
+
+    /**
      * The class cannot be rewired because z-engine refused the engine mutation
      */
     public static function engineRefusal(string $className, Throwable $reason): self

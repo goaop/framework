@@ -75,6 +75,10 @@ abstract class InProcessTestCase extends TestCase
 
     protected function tearDown(): void
     {
+        if (!isset($this->cacheDir)) {
+            // setUp() skipped the test before the fixture was built
+            return;
+        }
         foreach (spl_autoload_functions() as $loader) {
             spl_autoload_unregister($loader);
         }

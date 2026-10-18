@@ -13,7 +13,9 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Go\Driver\StreamFilter\StreamFilterDriver;
+use Go\Driver\WeavingDriver;
 use Go\Stubs\Driver\RewiringDriver;
+use Go\Stubs\Driver\TransformingDriver;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
@@ -28,6 +30,8 @@ use Go\Instrument\Transformer\WeavingTransformer;
 use PhpParser\Node;
 use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -287,6 +291,35 @@ class AspectKernelTest extends TestCase
         } catch (InvalidConfigurationException $exception) {
             $this->assertSame('Weaving driver class "stdClass" must implement Go\\Driver\\WeavingDriver.', $exception->getMessage());
         }
+    }
+
+    /**
+     * In a process of its own: init() defines the AOP_ROOT_DIR / AOP_CACHE_DIR constants for the rest of the process
+     */
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testInitBootsTheConfiguredDriverOnceAndRegistersTheChainForSourceTransformingDriversOnly(): void
+    {
+        RewiringDriver::reset();
+        AspectKernelTestDriverOrderKernel::$bootsWhenConfigured = null;
+        $kernel  = (new ReflectionClass(AspectKernelTestDriverOrderKernel::class))->newInstanceWithoutConstructor();
+        $options = ['appDir' => __DIR__, 'cacheDir' => sys_get_temp_dir(), 'driver' => RewiringDriver::class];
+
+        $kernel->init($options);
+        $kernel->init($options);
+
+        $container = $kernel->getContainer();
+        $this->assertSame(1, RewiringDriver::$boots, 'The driver is booted once, a second init() is a no-op');
+        $this->assertInstanceOf(RewiringDriver::class, $container->get(WeavingDriver::class));
+        $this->assertTrue(RewiringDriver::$registeredWhenBooted, 'The driver is in the container when it boots');
+        $this->assertSame(1, AspectKernelTestDriverOrderKernel::$bootsWhenConfigured, 'The driver boots before configureAop()');
+        $this->assertFalse($container->has(WeavingTransformer::class), 'No transformer chain for a driver that does not transform sources');
+
+        $transforming = (new ReflectionClass(AspectKernelTestConcreteKernel::class))->newInstanceWithoutConstructor();
+        $transforming->init(['appDir' => __DIR__, 'cacheDir' => sys_get_temp_dir(), 'driver' => TransformingDriver::class]);
+
+        $this->assertInstanceOf(TransformingDriver::class, $transforming->getContainer()->get(WeavingDriver::class));
+        $this->assertTrue($transforming->getContainer()->has(WeavingTransformer::class), 'The transformer chain is registered for a source-transforming driver');
     }
 
     public function testNormalizeOptionsExcludesRuntimeDependenciesFromWeaving(): void
@@ -673,5 +706,18 @@ final class AspectKernelTestCustomNodeRewriter implements NodeRewriter
         $file->tokenStream[$position]->text = '"custom"';
 
         return true;
+    }
+}
+
+/**
+ * Kernel recording how often the driver had booted when configureAop() ran
+ */
+final class AspectKernelTestDriverOrderKernel extends AspectKernel
+{
+    public static ?int $bootsWhenConfigured = null;
+
+    protected function configureAop(AspectContainer $container): void
+    {
+        self::$bootsWhenConfigured = RewiringDriver::$boots;
     }
 }

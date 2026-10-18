@@ -17,6 +17,7 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
 use Go\Driver\Ffi\Exception\EngineConfigurationException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -25,6 +26,7 @@ use RuntimeException;
  * driver cannot honour (the successful boot is covered in-process, see InProcess/FfiDriverInProcessTest)
  */
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[Group('ffi')]
 final class FfiDriverTest extends TestCase
 {
     public function testRefusesToBootWithoutZEngine(): void

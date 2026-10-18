@@ -23,8 +23,12 @@ use Go\Driver\Ffi\Exception\EngineConfigurationException;
 use Go\Driver\WeavingDriver;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
+use ReflectionClass;
+use ReflectionParameter;
 use Throwable;
 use ZEngine\Core;
+use ZEngine\Reflection\ReflectionClass as EngineClass;
+use ZEngine\Reflection\ReflectionMethod as EngineMethod;
 
 /**
  * The ffi weaving driver: runtime method-table weaving through lisachenko/z-engine (PHP FFI)
@@ -66,12 +70,14 @@ final class FfiDriver implements WeavingDriver
     /**
      * The kernel creates the driver without arguments; the closures are seams for the tests
      *
-     * @param (Closure(): bool)|null $isEngineInstalled Whether z-engine is installed, class_exists(Core::class) by default
+     * @param (Closure(): bool)|null $isEngineInstalled Whether z-engine is installed: loaded already, or known to composer,
+     *                                                  by default (nothing of the engine is autoloaded before the JIT guard ran)
      * @param (Closure(): void)|null $bootEngine        Boots z-engine unless it is initialized, Core::init() by default
      */
     public function __construct(?Closure $isEngineInstalled = null, ?Closure $bootEngine = null)
     {
-        $this->isEngineInstalled = $isEngineInstalled ?? static fn(): bool => class_exists(Core::class);
+        $this->isEngineInstalled = $isEngineInstalled ?? static fn(): bool => class_exists(Core::class, false)
+            || InstalledVersions::isInstalled(self::ENGINE_PACKAGE);
         $this->bootEngine        = $bootEngine ?? static function (): void {
             if (!Core::isInitialized()) {
                 Core::init();
@@ -80,7 +86,7 @@ final class FfiDriver implements WeavingDriver
     }
 
     /**
-     * @throws EngineConfigurationException When z-engine is missing or cannot boot, the JIT stays on, or the
+     * @throws EngineConfigurationException When z-engine is missing, too old or cannot boot, the JIT stays on, or the
      *                                      kernel options enable include interception
      */
     public function boot(AspectKernel $kernel, AspectContainer $container): void
@@ -90,11 +96,16 @@ final class FfiDriver implements WeavingDriver
         if (($options['features'] & Features::INTERCEPT_INCLUDES) !== 0) {
             throw EngineConfigurationException::includeInterceptionNotSupported();
         }
+
+        // Before anything of the engine is autoloaded: its classes must be compiled with the JIT off
+        $jitReport = JitGuard::enforce();
+
         if (!($this->isEngineInstalled)()) {
             throw EngineConfigurationException::engineNotInstalled();
         }
-
-        $jitReport = JitGuard::enforce();
+        if (!self::hasMethodTableApi()) {
+            throw EngineConfigurationException::engineWithoutMethodTableApi(self::installedEngineVersion());
+        }
 
         try {
             ($this->bootEngine)();
@@ -131,6 +142,41 @@ final class FfiDriver implements WeavingDriver
         ));
 
         FfiComposerLoader::init($options, $container);
+    }
+
+    /**
+     * Whether the installed engine has the method-table API the rewriter is built on: `redefine()` keeping the
+     * previous body under `preserveAs`, `addMethod()` adopting a donor method and `fromClassTable()`
+     * (lisachenko/z-engine 8.4.3 / 8.5.1 and later); an older release would fail at the first weave instead
+     */
+    private static function hasMethodTableApi(): bool
+    {
+        if (!class_exists(EngineClass::class) || !class_exists(EngineMethod::class)) {
+            return false;
+        }
+        $engineClass  = new ReflectionClass(EngineClass::class);
+        $engineMethod = new ReflectionClass(EngineMethod::class);
+        if (!$engineClass->hasMethod('addMethod') || !$engineClass->hasMethod('fromClassTable') || !$engineMethod->hasMethod('redefine')) {
+            return false;
+        }
+        $parameters = array_map(
+            static fn(ReflectionParameter $parameter): string => $parameter->getName(),
+            $engineMethod->getMethod('redefine')->getParameters(),
+        );
+
+        return in_array('preserveAs', $parameters, true);
+    }
+
+    /**
+     * Version of the installed engine package as composer knows it, for messages
+     */
+    private static function installedEngineVersion(): string
+    {
+        if (!InstalledVersions::isInstalled(self::ENGINE_PACKAGE)) {
+            return 'an unknown version';
+        }
+
+        return InstalledVersions::getPrettyVersion(self::ENGINE_PACKAGE) ?? 'an unknown version';
     }
 
     /**

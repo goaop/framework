@@ -3,4 +3,9 @@ flag_management:
     carryforward: true
   individual_flags:
     - name: framework
+      paths:
+        - src/
+        - packages/stream-wrapper-driver/src/
     - name: ffi-driver
+      paths:
+        - packages/ffi-driver/src/

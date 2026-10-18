@@ -19,12 +19,14 @@ use Go\Core\AspectKernel;
 use Go\Core\Container;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\PhpUnit\UsesTemporaryDirectory;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
 /**
  * The donor index of the ffi driver: records per class, freshness through the shared rule, persisted as PHP
  */
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[Group('ffi')]
 final class DonorCacheIndexTest extends TestCase
 {
     use UsesTemporaryDirectory;

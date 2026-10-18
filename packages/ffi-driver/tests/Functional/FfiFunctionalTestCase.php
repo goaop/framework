@@ -219,13 +219,18 @@ abstract class FfiFunctionalTestCase extends TestCase
                 ...self::PHP_OPTIONS,
                 '-d', 'opcache.enable_cli=0',
                 '-r',
-                'require $argv[1]; ZEngine\Core::init(); echo "booted";',
+                'require $argv[1]; ZEngine\Core::init(); echo "booted";'
+                . ' echo in_array("preserveAs", array_map(fn($p) => $p->getName(), (new ReflectionMethod(ZEngine\Reflection\ReflectionMethod::class, "redefine"))->getParameters()), true) ? ":api" : ":old";',
                 __DIR__ . '/../../../../vendor/autoload.php',
             ],
             null,
             ['ZENGINE_AUTOBOOT' => '0'],
         );
         $process->run();
+        if ($process->isSuccessful() && str_contains($process->getOutput(), 'booted:old')) {
+            return self::$engineUnavailableReason = 'The installed lisachenko/z-engine lacks the method-table API '
+                . '(redefine() with preserveAs): the ffi driver needs ~8.4.3 || ~8.5.1';
+        }
         if (!$process->isSuccessful() || !str_contains($process->getOutput(), 'booted')) {
             $failure = trim($process->getErrorOutput() . "\n" . $process->getOutput());
 

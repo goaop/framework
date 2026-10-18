@@ -38,7 +38,6 @@ final class MethodTableRewriterInProcessTest extends InProcessTestCase
         } catch (UnsupportedJoinpointException $refusal) {
             $this->assertStringContainsString('Go\Driver\Ffi\Stubs\NeverDeclared', $refusal->getMessage());
             $this->assertStringContainsString('not published in the engine class table', $refusal->getMessage());
-            $this->assertInstanceOf(ReflectionException::class, $refusal->getPrevious());
         }
     }
 

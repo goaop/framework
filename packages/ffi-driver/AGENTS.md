@@ -1,7 +1,7 @@
 # packages/ffi-driver — goaop/ffi-driver (Go\Driver\Ffi\)
 
 Weaving driver of Go! AOP: runtime method-table weaving through lisachenko/z-engine (ext-ffi), `'driver' => FfiDriver::class`.
-Separate composer package (own composer.json: php ~8.4 || ~8.5, ext-ffi, goaop/framework ^4.0, lisachenko/z-engine),
+Separate composer package (own composer.json: php ~8.4.0 || ~8.5.0, ext-ffi, goaop/framework ^4.0, lisachenko/z-engine ~8.4.3 || ~8.5.1),
 mapped by the root autoload-dev (`Go\Driver\Ffi\` → src/ and tests/). Docs: docs/driver/ffi.md.
 
 ## Commands (repo root)
@@ -12,8 +12,8 @@ mapped by the root autoload-dev (`Go\Driver\Ffi\` → src/ and tests/). Docs: do
 
 ## Boot (FfiDriver::boot(), WeavingDriver, NOT a SourceTransformingDriver → no transformer chain)
 1. refuses Features::INTERCEPT_INCLUDES (EngineConfigurationException::includeInterceptionNotSupported)
-2. requires z-engine (class_exists ZEngine\Core) → EngineConfigurationException::engineNotInstalled
-3. JitGuard::enforce() BEFORE Core::init() (z-engine's classes must compile with the JIT off): detection via `opcache_get_status()['jit']['on']` (ini value unusable); active → `ini_set('opcache.jit', 'off')` (never 'disable', it locks the directive), still on → jitStillOn; report {jitWasActive, previousMode, disabledAtRuntime}. Process-level `opcache.jit=off` + `opcache.jit_buffer_size=0` stays the documented requirement (code compiled before the kernel keeps its JIT state)
+2. JitGuard::enforce() BEFORE anything of z-engine is autoloaded (z-engine's classes must compile with the JIT off) (z-engine's classes must compile with the JIT off): detection via `opcache_get_status()['jit']['on']` (ini value unusable); active → `ini_set('opcache.jit', 'off')` (never 'disable', it locks the directive), still on → jitStillOn; report {jitWasActive, previousMode, disabledAtRuntime}. Process-level `opcache.jit=off` + `opcache.jit_buffer_size=0` stays the documented requirement (code compiled before the kernel keeps its JIT state)
+3. requires z-engine (loaded, or known to composer: InstalledVersions) → engineNotInstalled; requires the method-table API (redefine() with preserveAs, addMethod(), fromClassTable(): releases 8.4.3 / 8.5.1) → engineWithoutMethodTableApi
 4. Core::init() unless initialized (failure → engineBootFailed)
 5. boot report in the container under `kernel.ffi.boot` (FfiDriver::BOOT_REPORT; getBootReport($container)): driver, php, opcache, jit
 6. installed z-engine package joins excludePaths; lazy services DonorCacheIndex, MethodTableRewriter, ClassWeaver
@@ -42,9 +42,9 @@ mapped by the root autoload-dev (`Go\Driver\Ffi\` → src/ and tests/). Docs: do
 - donorFileFor()/functionsFileFor() need cacheDir (InvalidConfigurationException::cacheIndexWithoutCacheDir); isApplicationSource() = below appDir
 
 ## Exceptions (src/Exception/)
-- EngineConfigurationException extends Go\Aop\Exception\InvalidConfigurationException: engineNotInstalled, engineBootFailed, jitStillOn, includeInterceptionNotSupported
+- EngineConfigurationException extends Go\Aop\Exception\InvalidConfigurationException: engineNotInstalled, engineWithoutMethodTableApi, engineBootFailed, jitStillOn, includeInterceptionNotSupported
 - FfiWeavingException extends Go\Aop\Exception\WeavingException: unsupportedDonorKinds, sourceOutsideApplicationRoot, donorNotDeclared
-- UnsupportedJoinpointException extends FfiWeavingException: forClass, engineRefusal
+- UnsupportedJoinpointException extends FfiWeavingException: forClass, classNotInEngineClassTable, engineRefusal
 
 ## Not supported (source-transforming drivers only)
 property access, introductions, initialization/staticinitialization, Features::INTERCEPT_INCLUDES, traits/enums/interfaces as targets, CacheWarmer / cache:warmup:aop / debug:weaving (refused by the framework: no SourceTransformingDriver). Known deviations: reflection of an advised method reports the donor file; a single-literal private/final body may be inlined by the optimizer before the swap; a call site run before the function proxies were declared keeps the global function.

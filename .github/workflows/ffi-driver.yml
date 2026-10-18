@@ -12,6 +12,8 @@ on:
     paths:
       - "packages/ffi-driver/**"
       - "src/Driver/**"
+      - "tests/Fixtures/project/**"
+      - "phpunit.xml.dist"
       - ".github/workflows/ffi-driver.yml"
       - "composer.json"
   push:

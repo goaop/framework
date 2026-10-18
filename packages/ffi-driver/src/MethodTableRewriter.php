@@ -59,10 +59,7 @@ final class MethodTableRewriter
             // class-table bucket at a writable per-process copy
             $class = EngineClass::fromClassTable($className);
             if ($class === null) {
-                throw UnsupportedJoinpointException::engineRefusal(
-                    $className,
-                    new ReflectionException("Class {$className} is not published in the engine class table"),
-                );
+                throw UnsupportedJoinpointException::classNotInEngineClassTable($className);
             }
             $native = new ReflectionMethod($className, $methodName);
             try {

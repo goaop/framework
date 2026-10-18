@@ -360,7 +360,7 @@ $applicationAspectKernel->init([
 |--------|-------|
 | [Stream filter](docs/driver/stream-filter.md) (default, built in) | `Go\Driver\StreamFilter\StreamFilterDriver` — source transformation at load time through a `php://filter` stream filter behind Composer's loader |
 | [Stream wrapper](docs/driver/stream-wrapper.md) (`composer require goaop/stream-wrapper-driver`) | `Go\Driver\StreamWrapper\StreamWrapperDriver` — source transformation of every included file through a `file://` stream wrapper; includes are always intercepted, opcache caches the woven sources |
-| [ffi](docs/driver/ffi.md) (`composer require goaop/ffi-driver`, experimental) | `Go\Driver\Ffi\FfiDriver` — runtime rewiring of loaded classes through [lisachenko/z-engine](https://github.com/lisachenko/z-engine) (PHP FFI): no source rewriting, method execution join points only; needs `ext-ffi` and the opcache JIT off |
+| [ffi](docs/driver/ffi.md) (`composer require goaop/ffi-driver`, experimental) | `Go\Driver\Ffi\FfiDriver` — runtime rewiring of loaded classes through [lisachenko/z-engine](https://github.com/lisachenko/z-engine) (PHP FFI): no source rewriting, method execution and function join points only; needs `ext-ffi` and the opcache JIT off |
 
 See [docs/driver/](docs/driver/README.md) for the driver interface and how to write one.
 
