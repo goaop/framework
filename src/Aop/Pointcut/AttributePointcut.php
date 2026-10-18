@@ -40,14 +40,13 @@ final readonly class AttributePointcut implements Pointcut
 {
     /**
      * Attribute matcher constructor
-     *
-     * @param int $pointcutKind Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY
-     * @param string $attributeClassName Attribute class to match
      */
     public function __construct(
-        private int    $pointcutKind,
+        /** Kind of current filter, can be KIND_CLASS, KIND_METHOD, KIND_PROPERTY */
+        public int $kind,
+        /** Attribute class to match */
         private string $attributeClassName,
-        private bool   $useContextForMatching = false,
+        private bool $useContextForMatching = false,
     ) {}
 
     public function matches(
@@ -75,16 +74,11 @@ final readonly class AttributePointcut implements Pointcut
         return count($instanceToCheck->getAttributes($this->attributeClassName, ReflectionAttribute::IS_INSTANCEOF)) > 0;
     }
 
-    public function getKind(): int
-    {
-        return $this->pointcutKind;
-    }
-
     public function compileToPhp(): Expr
     {
         // The attribute class name comes from existing code, so a ::class fetch is always safe
         return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([
-            ['pointcutKind', new Int_($this->pointcutKind), false],
+            ['kind', new Int_($this->kind), false],
             ['attributeClassName', new ClassConstFetch(new FullyQualified($this->attributeClassName), 'class'), false],
             ['useContextForMatching', new ConstFetch(new Name('true')), !$this->useContextForMatching],
         ]));

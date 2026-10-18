@@ -39,14 +39,14 @@ final class NodeRewriterDispatcher extends NodeVisitorAbstract
     private array $rulesByNodeClass;
 
     /**
-     * @param list<NodeRewriter>                            $rules            Rules applicable to the file, in their order
      * @param array<class-string<Node>, list<NodeRewriter>> $rulesByNodeClass Rules per node class, filled on the first
      *                                                                        node of each class
-     * @param StreamMetaData                                $file             File whose token stream is rewritten
      */
     public function __construct(
+        /** @var list<NodeRewriter> Rules applicable to the file, in their order */
         private readonly array $rules,
         array &$rulesByNodeClass,
+        /** File whose token stream is rewritten */
         private readonly StreamMetaData $file,
     ) {
         $this->rulesByNodeClass = &$rulesByNodeClass;
@@ -80,7 +80,7 @@ final class NodeRewriterDispatcher extends NodeVisitorAbstract
     {
         $matchingRules = [];
         foreach ($this->rules as $rule) {
-            if (array_any($rule->getNodeTypes(), static fn(string $nodeType): bool => $node instanceof $nodeType)) {
+            if (array_any($rule->nodeTypes, static fn(string $nodeType): bool => $node instanceof $nodeType)) {
                 $matchingRules[] = $rule;
             }
         }

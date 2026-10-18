@@ -48,11 +48,22 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
      */
     private static ?self $instance = null;
 
-    /**
-     * @param AdvisorIndex|null $advisorIndex Index of the registered advisors: the rule is active only while one of
-     *                                        them has an initialization pointcut. Without it, the rule is always active
-     */
-    public function __construct(private readonly ?AdvisorIndex $advisorIndex = null) {}
+    public array $nodeTypes {
+        get => [New_::class];
+    }
+
+    public array $sourceMarkers {
+        // Without an initialization pointcut there is nothing to route a `new` to: the rule stays off
+        get => $this->advisorIndex?->hasPointcutKind(Pointcut::KIND_INIT) === false ? [] : ['new'];
+    }
+
+    public function __construct(
+        /**
+         * Index of the registered advisors: the rule is active only while one of them has an initialization
+         * pointcut. Without it, the rule is always active
+         */
+        private readonly ?AdvisorIndex $advisorIndex = null,
+    ) {}
 
     /**
      * Singletone
@@ -75,21 +86,6 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
     {
         self::$instance                    = null;
         self::$constructorInvocationsCache = [];
-    }
-
-    public function getNodeTypes(): array
-    {
-        return [New_::class];
-    }
-
-    public function getSourceMarkers(): array
-    {
-        // Without an initialization pointcut there is nothing to route a `new` to: the rule stays off
-        if ($this->advisorIndex?->hasPointcutKind(Pointcut::KIND_INIT) === false) {
-            return [];
-        }
-
-        return ['new'];
     }
 
     /**

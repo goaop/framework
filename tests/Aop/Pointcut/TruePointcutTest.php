@@ -41,7 +41,7 @@ class TruePointcutTest extends TestCase
 
     public function testItMatchesWithDefaultKinds(): void
     {
-        $kind = $this->pointcut->getKind();
+        $kind = $this->pointcut->kind;
         $this->assertTrue((bool) ($kind & Pointcut::KIND_METHOD));
         $this->assertTrue((bool) ($kind & Pointcut::KIND_PROPERTY));
         $this->assertTrue((bool) ($kind & Pointcut::KIND_CLASS));
@@ -52,7 +52,7 @@ class TruePointcutTest extends TestCase
 
     public function testItDoesNotMatchWithIntroductionKindByDefault(): void
     {
-        $kind = $this->pointcut->getKind();
+        $kind = $this->pointcut->kind;
         $this->assertFalse((bool) ($kind & Pointcut::KIND_INTRODUCTION));
     }
 }

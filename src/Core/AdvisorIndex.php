@@ -72,7 +72,7 @@ final class AdvisorIndex
             $pointcutKinds = 0;
             foreach ($advisors as $advisor) {
                 if ($advisor instanceof PointcutAdvisor) {
-                    $pointcutKinds |= $advisor->getPointcut()->getKind();
+                    $pointcutKinds |= $advisor->pointcut->kind;
                 }
             }
             $this->indexedAdvisors = $advisors;

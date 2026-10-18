@@ -103,9 +103,8 @@ use PhpParser\Node\Expr\FuncCall;
 
 final class DebugCallRemover implements NodeRewriter
 {
-    public function getNodeTypes(): array
-    {
-        return [FuncCall::class];
+    public array $nodeTypes {
+        get => [FuncCall::class];
     }
 
     public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
@@ -118,7 +117,7 @@ final class DebugCallRemover implements NodeRewriter
 ```
 
 When the nodes of a rule can only occur in a source that contains certain text, implement
-`PrefilteredNodeRewriter` instead and return it from `getSourceMarkers()`, e.g. `['var_dump', 'print_r']` for the
+`PrefilteredNodeRewriter` instead and list it in the `$sourceMarkers` property, e.g. `['var_dump', 'print_r']` for the
 rule above. The rule is skipped for a file without any of the markers, compared case-insensitively, and the syntax
 tree is not walked at all when no rule is left.
 

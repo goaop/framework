@@ -46,12 +46,9 @@ final class TypeGenerator
 
     private static ?Standard $printer = null;
 
-    private Identifier|Name|NullableType|UnionType|IntersectionType $typeNode;
-
-    private function __construct(Identifier|Name|NullableType|UnionType|IntersectionType $typeNode)
-    {
-        $this->typeNode = $typeNode;
-    }
+    private function __construct(
+        private readonly Identifier|Name|NullableType|UnionType|IntersectionType $typeNode,
+    ) {}
 
     /**
      * Creates a TypeGenerator from a PHP reflection type.

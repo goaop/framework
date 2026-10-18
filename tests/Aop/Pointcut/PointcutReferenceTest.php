@@ -52,7 +52,7 @@ class PointcutReferenceTest extends TestCase
         $reference = new PointcutReference('app.pointcut.foo');
 
         $this->assertTrue($reference->matches(new ReflectionClass(self::class)));
-        $this->assertSame(Pointcut::KIND_METHOD, $reference->getKind());
+        $this->assertSame(Pointcut::KIND_METHOD, $reference->kind);
     }
 
     public function testGetPointcutIsMemoizedAcrossCalls(): void
@@ -66,7 +66,7 @@ class PointcutReferenceTest extends TestCase
         // without going through the container again (covered via identical results).
         $this->assertTrue($reference->matches(new ReflectionClass(self::class)));
         $this->assertTrue($reference->matches(new ReflectionClass(self::class)));
-        $this->assertSame($truePointcut->getKind(), $reference->getKind());
+        $this->assertSame($truePointcut->kind, $reference->kind);
     }
 
     public function testGetPointcutThrowsWhenContainerValueIsNotAPointcut(): void
@@ -78,7 +78,7 @@ class PointcutReferenceTest extends TestCase
         $this->expectException(AspectException::class);
         $this->expectExceptionMessage('Pointcut reference app.pointcut.broken resolves to stdClass, not to a pointcut');
 
-        $reference->getKind();
+        $reference->matches(new ReflectionClass(self::class));
     }
 
     /**

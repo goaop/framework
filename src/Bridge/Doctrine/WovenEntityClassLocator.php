@@ -38,10 +38,10 @@ use Symfony\Component\Finder\Finder;
  */
 final readonly class WovenEntityClassLocator implements ClassLocator
 {
-    /**
-     * @param iterable<SplFileInfo|string> $files Source files to scan
-     */
-    public function __construct(private iterable $files) {}
+    public function __construct(
+        /** @var iterable<SplFileInfo|string> Source files to scan */
+        private iterable $files,
+    ) {}
 
     /**
      * Creates a locator for all files with the given extension below the directories

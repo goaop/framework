@@ -41,6 +41,9 @@
   Fixture configurations in tests/Fixtures/project/web/configuration.php: `ffi`, `ffi_production`, `ffi_reference`
   (StreamFilterDriver on the same fixtures), `ffi_unsupported`, and `stream_wrapper*` for the stream wrapper driver;
   fixtures Application/Ffi*, Aspect/FfiAspect, Kernel/FfiAspectKernel. Driver package phpstan: `composer analyze:ffi`.
+- PHP 8.5.11 only: a known tracing-JIT bug breaks pointcut parsing in the functional tests (subprocesses), e.g.
+  "Unexpected token Go"; not a framework bug, ignore it or run with `PHP_INI_SCAN_DIR=:<dir with opcache.jit=disable>`.
+  Agents: once `php -v` reports 8.5.12 or higher, verify the functional tests pass with JIT on and remove this item.
 - If phpstan fails: fix errors before offering to commit
 
 ## PHPStan gate

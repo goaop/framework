@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Pointcut;
 
 use Go\Aop\Pointcut;
+use PHPUnit\Framework\MockObject\Runtime\PropertyHook;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -27,17 +28,17 @@ class OrPointcutTest extends TestCase
     {
         $first = $this->createMock(Pointcut::class);
         $first
-            ->method('getKind')
+            ->method(PropertyHook::get('kind'))
             ->willReturn(Pointcut::KIND_METHOD | Pointcut::KIND_PROPERTY);
 
         $second = $this->createMock(Pointcut::class);
         $second
-            ->method('getKind')
+            ->method(PropertyHook::get('kind'))
             ->willReturn(Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION);
 
         $filter   = new OrPointcut($first, $second);
         $expected = Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION | Pointcut::KIND_PROPERTY;
-        $this->assertEquals($expected, $filter->getKind());
+        $this->assertEquals($expected, $filter->kind);
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('logicCases')]

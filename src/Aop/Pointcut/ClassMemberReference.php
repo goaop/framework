@@ -21,16 +21,15 @@ final readonly class ClassMemberReference
 {
     /**
      * Default constructor
-     *
-     * @param Pointcut         $classFilter Filter for class names
-     * @param ModifierPointcut $visibilityFilter Member visibility filter (public/protected/etc)
-     * @param ModifierPointcut $accessTypeFilter Filter for access type (statically "::" or dynamically "->")
-     * @param string           $memberNamePattern Expression for the name
      */
     public function __construct(
-        public Pointcut         $classFilter,
+        /** Filter for class names */
+        public Pointcut $classFilter,
+        /** Member visibility filter (public/protected/etc) */
         public ModifierPointcut $visibilityFilter,
+        /** Filter for access type (statically "::" or dynamically "->") */
         public ModifierPointcut $accessTypeFilter,
-        public string           $memberNamePattern,
+        /** Expression for the name */
+        public string $memberNamePattern,
     ) {}
 }

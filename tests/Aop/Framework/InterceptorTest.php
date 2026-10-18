@@ -41,7 +41,7 @@ final class InterceptorTest extends TestCase
     {
         $interceptor = Interceptor::before(static function (Joinpoint $joinpoint): void {}, order: 10);
 
-        $this->assertSame(10, $interceptor->getAdviceOrder());
+        $this->assertSame(10, $interceptor->adviceOrder);
     }
 
     public function testAspectClassRequiresAdviceMethodName(): void
@@ -58,7 +58,7 @@ final class InterceptorTest extends TestCase
     {
         $interceptor = Interceptor::after(static function (Joinpoint $joinpoint): void {});
 
-        $this->assertSame(0, $interceptor->getAdviceOrder());
+        $this->assertSame(0, $interceptor->adviceOrder);
     }
 
     public function testCreatesAroundInterceptor(): void
@@ -118,7 +118,7 @@ final class InterceptorTest extends TestCase
 
         $this->assertFalse($reflection->isUninitializedLazyObject($interceptor));
         $this->assertSame([$joinpoint], InterceptorTestAspect::$invocations);
-        $this->assertSame(7, $interceptor->getAdviceOrder());
+        $this->assertSame(7, $interceptor->adviceOrder);
         $this->assertSame('some(expression)', $interceptor->pointcutExpression);
     }
 }

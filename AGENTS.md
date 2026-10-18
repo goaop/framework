@@ -47,6 +47,12 @@ Intercepts PHP class loading pipeline: source stream filter transforms source �
 - Before commit: phpunit and phpstan must pass. Fix errors before offering to commit.
 - Touching a SourceTransformer/NodeRewriter or the transformer wiring (AspectKernel, FrameworkServices, SourceTransformingLoader) → run `composer test:performance:transformation` before and after; the numbers must not get worse (CI compares head with base on such PRs).
 - New classes are `final` unless they are meant to be extended.
+- Constructor arguments stored as-is are promoted properties, one per line (multiline signature, trailing comma).
+  Their phpstan type and description go into an inline `/** @var list<Foo> Description */` (or a plain `/** Description */`)
+  above the promoted parameter, not into a constructor `@param` tag.
+- Framework-internal contracts expose stored values as interface properties (`public int $kind { get; }`), implemented
+  by promoted/readonly properties or `get` hooks, not as getter methods. `@api` contracts (`Advice`, `Advisor`,
+  `Aop\Intercept\*`) keep their getter methods.
 - Throwing or adding an exception → read `src/Aop/Exception/AGENTS.md` first.
 - No anonymous classes in `src/`: extract a named `final` class (`@internal` for machinery); anonymous classes are for tests and mocks.
 - Commit messages and PR titles must follow Conventional Commits (`type(scope): summary`, e.g. `fix(proxy): ...`).

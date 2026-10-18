@@ -81,7 +81,9 @@ final class FunctionGenerator
         }
     }
 
-    public function __construct(public readonly string $name) {}
+    public function __construct(
+        public readonly string $name,
+    ) {}
 
     /**
      * Creates a FunctionGenerator from a reflection function.

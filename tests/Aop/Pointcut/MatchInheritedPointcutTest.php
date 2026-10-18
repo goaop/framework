@@ -98,7 +98,7 @@ class MatchInheritedPointcutTest extends TestCase
     {
         $pointcut = new MatchInheritedPointcut();
 
-        $this->assertTrue(($pointcut->getKind() & Pointcut::KIND_PROPERTY) > 0, 'Pointcut should be for properties');
-        $this->assertTrue(($pointcut->getKind() & Pointcut::KIND_METHOD) > 0, 'Pointcut should be for methods');
+        $this->assertTrue(($pointcut->kind & Pointcut::KIND_PROPERTY) > 0, 'Pointcut should be for properties');
+        $this->assertTrue(($pointcut->kind & Pointcut::KIND_METHOD) > 0, 'Pointcut should be for methods');
     }
 }

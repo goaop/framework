@@ -29,7 +29,9 @@ final class PointcutBuilder
     /**
      * Default constructor for the builder
      */
-    public function __construct(private readonly AspectContainer $container) {}
+    public function __construct(
+        private readonly AspectContainer $container,
+    ) {}
 
     /**
      * Declares the "Before" hook for specific pointcut expression

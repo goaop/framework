@@ -170,12 +170,9 @@ class AbstractJoinpointTest extends TestCase
     private static function makeOrderedAdvice(int $order): OrderedAdvice
     {
         return new class ($order) implements OrderedAdvice {
-            public function __construct(private readonly int $order) {}
-
-            public function getAdviceOrder(): int
-            {
-                return $this->order;
-            }
+            public function __construct(
+                public readonly int $adviceOrder,
+            ) {}
 
             public function getType(): AdviceTypeEnum
             {

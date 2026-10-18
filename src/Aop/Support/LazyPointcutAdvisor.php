@@ -34,19 +34,18 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
     /**
      * Instance of parsed pointcut, parsed lazily on first access and memoized in the backing store
      */
-    private Pointcut $pointcut {
+    public private(set) Pointcut $pointcut {
         get => $this->pointcut ??= $this->parsePointcut();
     }
 
     /**
      * Creates the LazyPointcutAdvisor by specifying textual pointcut expression and Advice to run when Pointcut matches.
-     *
-     * @param string $pointcutExpression Pointcut expression represented with string
      */
     public function __construct(
         private readonly AspectContainer $container,
-        private readonly string          $pointcutExpression,
-        private readonly Advice          $advice,
+        /** Pointcut expression represented with string */
+        private readonly string $pointcutExpression,
+        private readonly Advice $advice,
     ) {}
 
     /**
@@ -61,11 +60,6 @@ final class LazyPointcutAdvisor implements PointcutAdvisor
         } catch (RecognitionException|UnexpectedTokenException $exception) {
             throw PointcutSyntaxException::invalidExpression($this->pointcutExpression, $exception);
         }
-    }
-
-    public function getPointcut(): Pointcut
-    {
-        return $this->pointcut;
     }
 
     public function getAdvice(): Advice

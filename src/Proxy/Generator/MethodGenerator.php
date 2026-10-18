@@ -104,7 +104,9 @@ final class MethodGenerator
         }
     }
 
-    public function __construct(public readonly string $name) {}
+    public function __construct(
+        public readonly string $name,
+    ) {}
 
     /**
      * Creates a MethodGenerator from a reflection method.
