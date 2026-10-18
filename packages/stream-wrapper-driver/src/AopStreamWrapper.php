@@ -133,14 +133,24 @@ final class AopStreamWrapper
         class_exists(SourceTransformingLoader::class);
         stream_wrapper_unregister(self::PROTOCOL);
         if (!stream_wrapper_register(self::PROTOCOL, self::class)) {
-            // @codeCoverageIgnoreStart (PHP refuses only a protocol still taken or an unknown class)
-            stream_wrapper_restore(self::PROTOCOL);
-
-            throw StreamWrapperRegistrationException::fileWrapperNotReplaced(self::class);
-            // @codeCoverageIgnoreEnd
+            self::refuseRegistration();
         }
         self::$registered  = true;
         self::$nativeDepth = 0;
+    }
+
+    /**
+     * PHP refused to register this class: the native wrapper is restored before the failure is reported
+     *
+     * Not reachable in practice (PHP refuses only a protocol still taken or an unknown class)
+     *
+     * @codeCoverageIgnore
+     */
+    private static function refuseRegistration(): never
+    {
+        stream_wrapper_restore(self::PROTOCOL);
+
+        throw StreamWrapperRegistrationException::fileWrapperNotReplaced(self::class);
     }
 
     /**

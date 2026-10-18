@@ -206,7 +206,8 @@ final class AopStreamWrapperTest extends TestCase
         $cachedFile = $this->cacheDir . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'inside.php';
         $this->assertFileExists($cachedFile);
         $this->assertStringContainsString('REWRITTEN', (string) file_get_contents($cachedFile));
-        $this->assertNotNull($this->cachePathManager?->queryCacheState($file), 'The transformation is recorded');
+        // Recorded under the resolved path (backslashes on Windows)
+        $this->assertNotNull($this->cachePathManager?->queryCacheState((string) realpath($file)), 'The transformation is recorded');
 
         // A fresh cache record serves the cached content without running the chain again
         $this->assertSame(['value' => 'REWRITTEN', 'file' => $file], include $file);
