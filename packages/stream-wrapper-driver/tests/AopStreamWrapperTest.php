@@ -165,7 +165,10 @@ final class AopStreamWrapperTest extends TestCase
         $this->assertSame(1_000_000_000, filemtime($file));
         $this->assertTrue(chmod($file, 0600));
         clearstatcache();
-        $this->assertSame(0600, fileperms($file) & 0777);
+        if (DIRECTORY_SEPARATOR === '/') {
+            // Windows keeps only the read-only bit of a mode
+            $this->assertSame(0600, fileperms($file) & 0777);
+        }
     }
 
     public function testAMissingFileFailsNatively(): void
@@ -185,7 +188,8 @@ final class AopStreamWrapperTest extends TestCase
         $file = $this->appDir . '/lib/outside.php';
         file_put_contents($file, "<?php return ['value' => 'MARKER', 'file' => __FILE__];");
 
-        $this->assertSame(['value' => 'MARKER', 'file' => $file], include $file);
+        // __FILE__ is the path as the platform spells it (backslashes on Windows)
+        $this->assertSame(['value' => 'MARKER', 'file' => realpath($file)], include $file);
         $this->assertSame(0, $this->transformer->callCount, 'A file outside the scope never reaches the chain');
         $this->assertFileDoesNotExist($this->cacheDir . '/lib/outside.php');
     }
@@ -197,7 +201,7 @@ final class AopStreamWrapperTest extends TestCase
         file_put_contents($file, "<?php return ['value' => 'MARKER', 'file' => __FILE__];");
 
         // Served from memory under the original path: the magic constants resolve to the original file
-        $this->assertSame(['value' => 'REWRITTEN', 'file' => $file], include $file);
+        $this->assertSame(['value' => 'REWRITTEN', 'file' => realpath($file)], include $file);
         $this->assertSame(1, $this->transformer->callCount);
         $cachedFile = $this->cacheDir . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'inside.php';
         $this->assertFileExists($cachedFile);
@@ -262,7 +266,8 @@ final class AopStreamWrapperTest extends TestCase
         $wrapper    = new AopStreamWrapper();
         $openedPath = null;
         $this->assertTrue($wrapper->stream_open('on-include-path.php', 'r', STREAM_USE_PATH, $openedPath));
-        $this->assertSame($file, $openedPath);
+        $this->assertNotNull($openedPath);
+        $this->assertSame(realpath($file), realpath($openedPath));
         $wrapper->stream_close();
         $this->assertSame("<?php return 'found';", file_get_contents('on-include-path.php', true));
     }
@@ -303,6 +308,9 @@ final class AopStreamWrapperTest extends TestCase
 
     public function testOwnershipMetadataAndSymlinkStatsAreDelegatedToTheNativeWrapper(): void
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            self::markTestSkipped('chown(), chgrp() and unprivileged symlinks are not available on Windows');
+        }
         $this->registerWrapper();
         $file = $this->appDir . '/lib/owned.txt';
         file_put_contents($file, 'mine');
