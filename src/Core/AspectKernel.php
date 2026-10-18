@@ -14,7 +14,6 @@ namespace Go\Core;
 
 use Composer\InstalledVersions;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
 use Go\Core\Cache\CachedAspectLoader;
@@ -61,6 +60,7 @@ abstract class AspectKernel
         'goaop/dissect',
         'goaop/parser-reflection',
         'nikic/php-parser',
+        'psr/container',
         'symfony/finder',
     ];
 
@@ -109,13 +109,13 @@ abstract class AspectKernel
     /**
      * Returns the single instance of kernel
      *
-     * @throws AspectException When called on an abstract kernel before the application kernel was created
+     * @throws InvalidConfigurationException When called on an abstract kernel before the application kernel was created
      */
     public static function getInstance(): self
     {
         if (self::$instance === null) {
             if (new ReflectionClass(static::class)->isAbstract()) {
-                throw new AspectException('Aspect kernel is not initialized yet, call init() on the kernel of the application first');
+                throw InvalidConfigurationException::kernelNotCreated();
             }
             // PhpStan complains about LSB and args for constructor, so constructor should be final
             self::$instance = new static();
@@ -150,7 +150,6 @@ abstract class AspectKernel
 
         $container = $this->container = new $this->options['containerClass']($resourcesToTrack);
         $container->add(AspectKernel::class, $this);
-        $container->add('kernel.interceptFunctions', $this->hasFeature(Features::INTERCEPT_FUNCTIONS));
 
         // The framework's own services are deferred definitions registered through the
         // generic lazy container API - the container itself knows nothing about them.
@@ -203,7 +202,7 @@ abstract class AspectKernel
     public function getContainer(): AspectContainer
     {
         if (!isset($this->container)) {
-            throw new AspectException(static::class . ' is not initialized yet, call init() first');
+            throw InvalidConfigurationException::kernelNotInitialized(static::class);
         }
 
         return $this->container;
@@ -217,7 +216,7 @@ abstract class AspectKernel
     public function hasFeature(int $featureToCheck): bool
     {
         if ($featureToCheck === 0 || ($featureToCheck & ~Features::ALL) !== 0) {
-            throw new InvalidConfigurationException(sprintf('Unknown feature %d, use Go\\Aop\\Features constants', $featureToCheck));
+            throw InvalidConfigurationException::unknownFeature($featureToCheck);
         }
 
         return ($this->options['features'] & $featureToCheck) !== 0;
@@ -280,18 +279,13 @@ abstract class AspectKernel
                     break;
                 }
             }
-            throw new InvalidConfigurationException(sprintf(
-                'Unknown kernel option "%s"%s. Known options are: %s.',
-                $unknownOption,
-                $suggestion !== null ? sprintf(', did you mean "%s"?', $suggestion) : '',
-                implode(', ', array_keys($defaultOptions)),
-            ));
+            throw InvalidConfigurationException::unknownOption($unknownOption, $suggestion, array_keys($defaultOptions));
         }
         $merged = [...$defaultOptions, ...$options];
 
         $cacheDir = is_string($merged['cacheDir'] ?? null) ? $merged['cacheDir'] : null;
         if ($cacheDir === null || $cacheDir === '') {
-            throw new InvalidConfigurationException('You need to provide valid cache directory for Go! AOP framework.');
+            throw InvalidConfigurationException::missingCacheDir();
         }
 
         $rawExcludePaths = is_array($merged['excludePaths'] ?? null) ? $merged['excludePaths'] : [];
@@ -312,18 +306,11 @@ abstract class AspectKernel
         if ($cacheFileMode === null) {
             $cacheFileMode = 0770 & ~umask();
         } elseif (!is_int($cacheFileMode) || $cacheFileMode < 0 || $cacheFileMode > 0777 || ($cacheFileMode & 0600) !== 0600) {
-            throw new InvalidConfigurationException(sprintf(
-                'Option "cacheFileMode" must be an integer permission mask between 0600 and 0777 '
-                . 'that grants the owner read and write access, got %s.',
-                is_int($cacheFileMode) ? sprintf('0%o', $cacheFileMode) : get_debug_type($cacheFileMode),
-            ));
+            throw InvalidConfigurationException::invalidCacheFileMode($cacheFileMode);
         }
         $features = $merged['features'] ?? 0;
         if (!is_int($features) || ($features & ~Features::ALL) !== 0) {
-            throw new InvalidConfigurationException(sprintf(
-                'Option "features" must be a combination of Go\\Aop\\Features constants, got %s.',
-                is_int($features) ? (string) $features : get_debug_type($features),
-            ));
+            throw InvalidConfigurationException::invalidFeatures($features);
         }
         $rawIncludePaths = is_array($merged['includePaths'] ?? null) ? $merged['includePaths'] : [];
         $includePaths    = array_values(array_filter($rawIncludePaths, is_string(...)));
@@ -333,17 +320,10 @@ abstract class AspectKernel
         $containerClassOption = $merged['containerClass'] ?? null;
         if ($containerClassOption !== null) {
             if (!is_string($containerClassOption) || !class_exists($containerClassOption)) {
-                throw new InvalidConfigurationException(sprintf(
-                    'Container class %s does not exist.',
-                    is_string($containerClassOption) ? '"' . $containerClassOption . '"' : get_debug_type($containerClassOption),
-                ));
+                throw InvalidConfigurationException::containerClassNotFound($containerClassOption);
             }
             if (!is_a($containerClassOption, AspectContainer::class, true)) {
-                throw new InvalidConfigurationException(sprintf(
-                    'Container class "%s" must extend %s.',
-                    $containerClassOption,
-                    AspectContainer::class,
-                ));
+                throw InvalidConfigurationException::containerClassNotAspectContainer($containerClassOption);
             }
             $containerClass = $containerClassOption;
         }
@@ -379,9 +359,10 @@ abstract class AspectKernel
      *
      * Every registered container service implementing SourceTransformer becomes part of
      * the chain, in registration order (registration order IS the transformation order);
-     * feature flags gate registration exactly as they used to gate construction. Nothing
-     * is constructed here - these are deferred definitions, materialized on the first
-     * cache miss only.
+     * feature flags gate registration exactly as they used to gate construction, and the
+     * rewriting of `new` turns itself on only while an initialization pointcut is
+     * registered (AdvisorIndex). Nothing is constructed here - these are deferred
+     * definitions, materialized on the first cache miss only.
      *
      * Rewrites of single syntax tree nodes are NodeRewriter services instead: the
      * SyntaxTreeRewriter stage, a framework service registered before this hook (so
@@ -395,12 +376,12 @@ abstract class AspectKernel
      */
     protected function registerTransformerServices(AspectContainer $container): void
     {
-        if ($this->hasFeature(Features::INTERCEPT_INITIALIZATIONS)) {
-            $container->addLazyService(
-                ConstructorExecutionTransformer::class,
-                fn(): ConstructorExecutionTransformer => new ConstructorExecutionTransformer(),
-            );
-        }
+        $container->addLazyService(
+            ConstructorExecutionTransformer::class,
+            fn(AspectContainer $container): ConstructorExecutionTransformer => new ConstructorExecutionTransformer(
+                $container->getService(AdvisorIndex::class),
+            ),
+        );
         if ($this->hasFeature(Features::INTERCEPT_INCLUDES)) {
             $container->addLazyService(
                 FilterInjectorTransformer::class,

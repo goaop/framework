@@ -42,13 +42,6 @@ use ReflectionFunction;
 final class FunctionProxyGenerator
 {
     /**
-     * List of advices that are used for generation of child
-     *
-     * @var array<string, array<string, array<GeneratedInterceptor|string>>>
-     */
-    protected array $adviceNames = [];
-
-    /**
      * Instance of file generator
      */
     protected FileGenerator $fileGenerator;
@@ -61,16 +54,15 @@ final class FunctionProxyGenerator
     /**
      * Constructs functions stub class from namespace Reflection
      *
-     * @param ReflectionFileNamespace $namespace   Reflection of namespace
-     * @param array<string, array<string, array<GeneratedInterceptor|string>>> $adviceNames List of function advices
+     * @param ReflectionFileNamespace $namespace Reflection of namespace
      *
      * @throws ReflectionException If there is an advice for unknown function
      */
     public function __construct(
         ReflectionFileNamespace $namespace,
-        array $adviceNames = [],
+        /** @var array<string, array<string, array<GeneratedInterceptor|string>>> List of function advices */
+        private readonly array $adviceNames = [],
     ) {
-        $this->adviceNames   = $adviceNames;
         $this->fileGenerator = new FileGenerator();
         $this->fileGenerator->namespace = $namespace->getName();
         $this->imports = new ProxyImports($namespace->getName());
@@ -90,11 +82,7 @@ final class FunctionProxyGenerator
         foreach (array_keys($functionAdvices) as $functionName) {
             $functionReflection = new ReflectionFunction($functionName);
             if ($functionReflection->returnsReference()) {
-                throw new WeavingException(sprintf(
-                    'Function %s() returns by reference and can not be intercepted: the joinpoint returns values, '
-                    . 'so the reference would be lost. Exclude it from the pointcut with "&& !matchReturningByReference()".',
-                    $functionName,
-                ));
+                throw WeavingException::functionReturnsByReference($functionName);
             }
             $funcGenerator        = FunctionGenerator::fromReflection($functionReflection);
             $funcGenerator->stmts = $this->getJoinpointInvocationStatements($functionReflection);

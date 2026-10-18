@@ -46,12 +46,9 @@ final class TypeGenerator
 
     private static ?Standard $printer = null;
 
-    private Identifier|Name|NullableType|UnionType|IntersectionType $typeNode;
-
-    private function __construct(Identifier|Name|NullableType|UnionType|IntersectionType $typeNode)
-    {
-        $this->typeNode = $typeNode;
-    }
+    private function __construct(
+        private readonly Identifier|Name|NullableType|UnionType|IntersectionType $typeNode,
+    ) {}
 
     /**
      * Creates a TypeGenerator from a PHP reflection type.
@@ -307,7 +304,7 @@ final class TypeGenerator
             return new IntersectionType($parts);
         }
 
-        throw new WeavingException('Unsupported type node ' . $node->getType());
+        throw WeavingException::unsupportedTypeNode($node->getType());
     }
 
     /**
@@ -384,7 +381,7 @@ final class TypeGenerator
                 // Intersection group
                 $closeParen = strpos($remaining, ')');
                 if ($closeParen === false) {
-                    throw new WeavingException("Malformed DNF type: $typeStr");
+                    throw WeavingException::malformedDnfType($typeStr);
                 }
                 $inner = substr($remaining, 1, $closeParen - 1);
                 /** @var list<Identifier|Name> $intersectionParts */

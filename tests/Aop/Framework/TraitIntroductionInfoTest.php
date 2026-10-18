@@ -22,14 +22,14 @@ class TraitIntroductionInfoTest extends TestCase
     {
         $info = new TraitIntroductionInfo(SampleIntroducedTrait::class, SampleIntroducedInterface::class);
 
-        $this->assertSame(SampleIntroducedTrait::class, $info->getTrait());
+        $this->assertSame(SampleIntroducedTrait::class, $info->trait);
     }
 
     public function testGetInterfaceReturnsInterfacePassedToConstructor(): void
     {
         $info = new TraitIntroductionInfo(SampleIntroducedTrait::class, SampleIntroducedInterface::class);
 
-        $this->assertSame(SampleIntroducedInterface::class, $info->getInterface());
+        $this->assertSame(SampleIntroducedInterface::class, $info->interface);
     }
 
     public function testGetTypeIsAlwaysIntroduction(): void

@@ -62,15 +62,14 @@ final class WeavingTransformer extends BaseSourceTransformer
 
     /**
      * Constructs a weaving transformer
-     *
-     * @param AdviceMatcherInterface $adviceMatcher    Advice matcher for class
-     * @param CachePathManager       $cachePathManager Cache manager
-     * @param AspectLoaderInterface  $aspectLoader     Loader for aspects
      */
     public function __construct(
         AspectKernel $kernel,
+        /** Advice matcher for class */
         protected readonly AdviceMatcherInterface $adviceMatcher,
+        /** Cache manager */
         private readonly CachePathManager $cachePathManager,
+        /** Loader for aspects */
         protected readonly AspectLoaderInterface $aspectLoader,
     ) {
         parent::__construct($kernel);
@@ -324,7 +323,7 @@ final class WeavingTransformer extends BaseSourceTransformer
         $position     = $classNode->getAttribute('startTokenPos');
         $lastPosition = $classNode->getAttribute('endTokenPos');
         if (!is_int($position) || !is_int($lastPosition)) {
-            throw new WeavingException("Declaration of {$classNode->name} has no token positions to weave");
+            throw WeavingException::declarationWithoutTokenPositions((string) $classNode->name);
         }
         $lastAttrGroup = end($classNode->attrGroups);
         if ($lastAttrGroup !== false) {

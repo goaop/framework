@@ -40,14 +40,13 @@ final readonly class NamePointcut implements Pointcut
 
     /**
      * Name matcher constructor
-     *
-     * @param string $name                  Element name to match, can contain wildcards **,*,|
-     * @param bool   $useContextForMatching Switch to matching context name instead of reflector
      */
     public function __construct(
-        private int    $pointcutKind,
+        public int $kind,
+        /** Element name to match, can contain wildcards **,*,| */
         private string $name,
-        private bool   $useContextForMatching = false,
+        /** Switch to matching context name instead of reflector */
+        private bool $useContextForMatching = false,
     ) {
         // Special parenthesis is needed for stricter matching, see https://github.com/goaop/framework/issues/115
         $this->regexp = '/^(' . strtr(
@@ -81,21 +80,16 @@ final readonly class NamePointcut implements Pointcut
         }
         $isMatched = preg_match($this->regexp, $name);
         if ($isMatched === false) {
-            throw new PointcutSyntaxException("Name pattern `{$this->name}` can not be matched: " . preg_last_error_msg());
+            throw PointcutSyntaxException::namePatternNotMatchable($this->name, preg_last_error_msg());
         }
 
         return $isMatched === 1;
     }
 
-    public function getKind(): int
-    {
-        return $this->pointcutKind;
-    }
-
     public function compileToPhp(): Expr
     {
         return new New_(new FullyQualified(self::class), AdvisorCacheCompiler::compileArgs([
-            ['pointcutKind', new Int_($this->pointcutKind), false],
+            ['kind', new Int_($this->kind), false],
             ['name', new String_($this->name), false],
             ['useContextForMatching', new ConstFetch(new Name('true')), !$this->useContextForMatching],
         ]));

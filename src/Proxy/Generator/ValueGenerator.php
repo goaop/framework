@@ -37,7 +37,9 @@ final class ValueGenerator
     /** Pre-built AST expression node for defaults that can't be represented as PHP scalars. */
     private ?Expr $astNode = null;
 
-    public function __construct(private readonly mixed $value) {}
+    public function __construct(
+        private readonly mixed $value,
+    ) {}
 
     /**
      * Creates a ValueGenerator from an existing AST expression node.
@@ -103,7 +105,7 @@ final class ValueGenerator
             return $this->buildArrayNode($value, $currentDepth);
         }
 
-        throw new WeavingException('Cannot generate AST node for value of type: ' . get_debug_type($value));
+        throw WeavingException::unsupportedValueType($value);
     }
 
     /**

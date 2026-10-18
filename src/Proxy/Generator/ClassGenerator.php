@@ -57,17 +57,17 @@ final class ClassGenerator implements GeneratorInterface
     public array $attrGroups = [];
 
     /**
-     * @param list<ClassModifier>    $modifiers   Class declaration modifiers (final/abstract/readonly)
-     * @param string[]               $interfaces  FQCNs of interfaces to implement
-     * @param PropertyNodeProvider[] $properties
-     * @param MethodGenerator[]      $methods
+     * @param MethodGenerator[] $methods
      */
     public function __construct(
         public readonly string $name,
         private readonly ?string $namespace,
+        /** @var list<ClassModifier> Class declaration modifiers (final/abstract/readonly) */
         private readonly array $modifiers,
         private readonly ?string $parentClass,
+        /** @var string[] FQCNs of interfaces to implement */
         private readonly array $interfaces = [],
+        /** @var PropertyNodeProvider[] */
         private readonly array $properties = [],
         array $methods = [],
     ) {
@@ -108,7 +108,8 @@ final class ClassGenerator implements GeneratorInterface
     {
         $this->traits[]       = $traitFqcn;
         $this->traitAliases[] = [
-            'trait'      => ltrim($traitFqcn, '\\'),
+            // Kept as given: a leading backslash roots the name in classNameNode()
+            'trait'      => $traitFqcn,
             'method'     => $methodName,
             'alias'      => $alias,
             'visibility' => $visibility,
@@ -122,7 +123,8 @@ final class ClassGenerator implements GeneratorInterface
      * short name resolves in the generated class's own namespace (e.g. the
      * FooOriginalTrait body trait). Global-namespace names coming from
      * ::class constants are rooted upstream (AdviceMatcher, proxy generators)
-     * before they reach this generator.
+     * before they reach this generator; ClassProxyGenerator also roots the
+     * parent class name it takes from reflection (#759).
      */
     private static function classNameNode(string $name): Name
     {

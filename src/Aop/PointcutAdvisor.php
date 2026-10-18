@@ -18,7 +18,7 @@ namespace Go\Aop;
 interface PointcutAdvisor extends Advisor
 {
     /**
-     * Gets the Pointcut that drives this advisor.
+     * Pointcut that drives this advisor.
      */
-    public function getPointcut(): Pointcut;
+    public Pointcut $pointcut { get; }
 }

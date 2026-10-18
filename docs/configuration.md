@@ -22,21 +22,61 @@ bit throws `Go\Aop\Exception\InvalidConfigurationException`.
 | `appDir`         | `string`   | the directory that contains `vendor/` | Application root. Cache paths mirror source paths relative to it, and only files below it are woven. |
 | `debug`          | `bool`     | `false`                     | Development mode: changes of the kernel file and of aspect files invalidate the cache, and every class and `include` is loaded through the weaving stream filter. With `false`, woven classes are loaded from the cache through Composer's class map. Use `false` in production. |
 | `includePaths`   | `string[]` | `[]` (everything below `appDir`) | Directories that are woven. Keep it narrow: weaving vendor code is slow and rarely needed. |
-| `excludePaths`   | `string[]` | `[]`                        | Directories that are never woven. The cache directory, the framework itself and its runtime dependencies (goaop/dissect, goaop/parser-reflection, nikic/php-parser, symfony/finder) are always excluded. |
+| `excludePaths`   | `string[]` | `[]`                        | Directories that are never woven. The cache directory, the framework itself and its runtime dependencies (goaop/dissect, goaop/parser-reflection, nikic/php-parser, psr/container, symfony/finder) are always excluded. |
 | `features`       | `int`      | `0`                         | Bitmask of `Go\Aop\Features` flags, see below. |
 | `cacheFileMode`  | `int`      | `0770` minus the umask      | Permissions of cache files. Must be between `0600` and `0777` and give the owner read and write access; directories get matching search bits. |
-| `containerClass` | `class-string` | `Go\Core\Container`     | Aspect container implementation, must implement `Go\Core\AspectContainer`. |
+| `containerClass` | `class-string` | `Go\Core\Container`     | Aspect container implementation, must implement `Go\Core\AspectContainer` (a PSR-11 `ContainerInterface`). |
 
 ## Features
 
-Combine the flags with `|`, e.g. `'features' => Features::INTERCEPT_FUNCTIONS | Features::PREBUILT_CACHE`.
+Combine the flags with `|`, e.g. `'features' => Features::INTERCEPT_INCLUDES | Features::PREBUILT_CACHE`.
 
 | Flag                        | Effect |
 |-----------------------------|--------|
-| `INTERCEPT_FUNCTIONS`       | Enables `execution(Namespace\function(*))` pointcuts for system functions called from your namespaced code. Expensive: every woven file is scanned for function calls. |
-| `INTERCEPT_INITIALIZATIONS` | Enables `initialization(...)` pointcuts by rewriting `new Foo(...)` expressions in woven files. |
 | `INTERCEPT_INCLUDES`        | Routes `include`/`require` in woven files through the weaver, for legacy code that is not loaded by Composer. |
 | `PREBUILT_CACHE`            | Trusts the cache built at deploy time completely. Skips the cache directory and writability probes, source `filemtime` comparisons, tracked-resource checks and advisor cache freshness checks, and never writes to the cache directory. Rebuilding the cache on every deploy is your responsibility. Works on read-only file systems. |
+
+Function and initialization pointcuts need no flag: the framework enables their machinery from the registered
+aspects, lazily registered ones included. An `execution(Namespace\function(*))` pointcut weaves function proxies into
+the matching namespaces. An `initialization(...)` pointcut turns on the rewriting of `new Foo(...)` expressions in
+woven files; while one is registered, every rewritten `new` goes through the interceptor, so keep such pointcuts to
+the code that needs them.
+
+## Aspects from the application container
+
+The aspect container is a PSR-11 container, and it can delegate to the container of your application
+(Symfony, Laravel, PHP-DI or any other PSR-11 container): `get()`, `getService()` and `has()` fall back to the
+delegate for ids that are not registered in the aspect container. The kernel is initialized before the
+application builds its container, so aspects are registered as usual and resolve their dependencies lazily:
+
+```php
+protected function configureAop(AspectContainer $container): void
+{
+    // Runs on the first advice call, when the application container is already attached
+    $container->addLazyService(
+        MonitorAspect::class,
+        static fn(AspectContainer $container) => new MonitorAspect($container->getService(LoggerInterface::class)),
+    );
+    // or take the whole aspect from the application container, by the id it has there
+    // $container->addLazyService(MonitorAspect::class, static fn(AspectContainer $c) => $c->get('app.monitor_aspect'));
+}
+
+// Once the application container exists, e.g. right after the framework kernel has booted
+ApplicationAspectKernel::getInstance()->getContainer()->setDelegate($psrContainer);
+```
+
+Weaving and the cache warm-up only need the class of the aspect, so they run before `setDelegate()`, even in
+`bin/aspect`. The factory runs on the first advice call; a dependency that is still missing then throws
+`ServiceNotFoundException`.
+
+- A factory never asks the aspect container for its own id: that id resolves to the aspect being built.
+  Take the aspect from the application container by the id it has there, or build it from its dependencies.
+- A PSR-11 container cannot be introspected: there is no standard way to look services up by interface or by tag
+  (some containers can, each in its own way). Aspects are therefore never discovered in the delegate, every aspect
+  is registered in `configureAop()`. An integration bridge for a specific framework can collect the services by
+  tag or interface from its container and register them with `addLazyService()`.
+- An aspect without instance properties cannot be created lazily, so its factory runs when the aspects are
+  collected for weaving, before the delegate exists. Such an aspect has no dependencies to inject.
 
 ## Extending the transformation pipeline
 
@@ -46,7 +86,8 @@ order:
 1. `SyntaxTreeRewriter` walks the syntax tree of the file once, for all `NodeRewriter` rules. It is a framework
    service, so it always opens the chain.
 2. The transformers registered by `AspectKernel::registerTransformerServices()`: `WeavingTransformer`, plus the
-   `INTERCEPT_INITIALIZATIONS`, `INTERCEPT_INCLUDES` and magic-constant rules.
+   `new` rewriting rule (active while an `initialization(...)` pointcut is registered), the `INTERCEPT_INCLUDES`
+   rule and the magic-constant rule.
 3. Your own transformers.
 
 To change single syntax nodes, implement `NodeRewriter`. It declares the node classes it handles and rewrites
@@ -61,9 +102,8 @@ use PhpParser\Node\Expr\FuncCall;
 
 final class DebugCallRemover implements NodeRewriter
 {
-    public function getNodeTypes(): array
-    {
-        return [FuncCall::class];
+    public array $nodeTypes {
+        get => [FuncCall::class];
     }
 
     public function rewriteNode(Node $node, StreamMetaData $file, array $ancestors): bool
@@ -76,7 +116,7 @@ final class DebugCallRemover implements NodeRewriter
 ```
 
 When the nodes of a rule can only occur in a source that contains certain text, implement
-`PrefilteredNodeRewriter` instead and return it from `getSourceMarkers()`, e.g. `['var_dump', 'print_r']` for the
+`PrefilteredNodeRewriter` instead and list it in the `$sourceMarkers` property, e.g. `['var_dump', 'print_r']` for the
 rule above. The rule is skipped for a file without any of the markers, compared case-insensitively, and the syntax
 tree is not walked at all when no rule is left.
 

@@ -12,9 +12,11 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
+use ArrayObject;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\ServiceNotFoundException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
@@ -24,7 +26,11 @@ use Go\Stubs\First;
 use Go\Stubs\ReentrantAutoloadAspect;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
+use Go\Tests\TestProject\Container\ApplicationContainer;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use stdClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -47,7 +53,6 @@ class ContainerTest extends TestCase
             'containerClass' => Container::class,
         ]);
         $this->container->add(AspectKernel::class, $mockKernel);
-        $this->container->add('kernel.interceptFunctions', false);
         FrameworkServices::register($this->container);
     }
 
@@ -73,6 +78,7 @@ class ContainerTest extends TestCase
             AdviceMatcher::class       => [AdviceMatcher::class],
             AspectLoader::class        => [AspectLoader::class],
             CachedAspectLoader::class  => [CachedAspectLoader::class],
+            AdvisorIndex::class        => [AdvisorIndex::class],
             SyntaxTreeRewriter::class  => [SyntaxTreeRewriter::class],
             // [CachePathManager::class], // Need to politely switch to options instead of whole kernel
         ];
@@ -86,7 +92,7 @@ class ContainerTest extends TestCase
         $pointcut = $this->createMock(Pointcut::class);
         $this->container->add('test', $pointcut);
 
-        $this->assertSame($pointcut, $this->container->getValue('test'));
+        $this->assertSame($pointcut, $this->container->get('test'));
         // Verify that tag is working
         $pointcuts = $this->container->getServicesByInterface(Pointcut::class);
         $this->assertSame(['test' => $pointcut], $pointcuts);
@@ -123,7 +129,7 @@ class ContainerTest extends TestCase
         $advisor = $this->createMock(Advisor::class);
         $this->container->add('test', $advisor);
 
-        $this->assertSame($advisor, $this->container->getValue('test'));
+        $this->assertSame($advisor, $this->container->get('test'));
 
         // Verify that tag is working
         $advisors = $this->container->getServicesByInterface(Advisor::class);
@@ -173,7 +179,7 @@ class ContainerTest extends TestCase
         $this->container->add('nothing', null);
 
         $this->assertTrue($this->container->has('nothing'));
-        $this->assertNull($this->container->getValue('nothing'));
+        $this->assertNull($this->container->get('nothing'));
     }
 
     public function testHasMethod(): void
@@ -193,11 +199,106 @@ class ContainerTest extends TestCase
         $this->container->getService(stdClass::class);
     }
 
-    public function testGetValueThrowsOutOfBoundsExceptionOnUnknown(): void
+    public function testGetThrowsOutOfBoundsExceptionOnUnknown(): void
     {
         $this->expectException(\OutOfBoundsException::class);
         $this->expectExceptionMessageMatches('/Value some.key is not defined/');
-        $this->container->getValue('some.key');
+        $this->container->get('some.key');
+    }
+
+    public function testContainerIsPsrContainer(): void
+    {
+        $this->assertContains(ContainerInterface::class, class_implements(Container::class));
+    }
+
+    public function testGetThrowsPsrNotFoundExceptionOnUnknown(): void
+    {
+        $this->expectException(NotFoundExceptionInterface::class);
+        $this->container->get('some.key');
+    }
+
+    public function testHasGuaranteesThatGetDoesNotThrowNotFound(): void
+    {
+        $this->container->add('nothing', null);
+        $this->container->add('eager', new stdClass());
+        $this->container->addLazyService(StatefulTestAspect::class, fn(): StatefulTestAspect => new StatefulTestAspect(1));
+
+        $this->assertTrue($this->container->has('nothing'));
+        $this->assertNull($this->container->get('nothing'));
+        $this->assertTrue($this->container->has('eager'));
+        $this->assertInstanceOf(stdClass::class, $this->container->get('eager'));
+        $this->assertTrue($this->container->has(StatefulTestAspect::class));
+        $this->assertSame(1, $this->container->get(StatefulTestAspect::class)->getState());
+        $this->assertFalse($this->container->has('some.key'));
+    }
+
+    public function testGetServiceThrowsPsrContainerExceptionOnTypeMismatch(): void
+    {
+        $this->expectException(ContainerExceptionInterface::class);
+
+        $this->container->add(First::class, new stdClass());
+        $this->container->getService(First::class);
+    }
+
+    public function testGetAndHasFallBackToDelegate(): void
+    {
+        $this->container->setDelegate(new ApplicationContainer(['app.service' => static fn(): stdClass => new stdClass()]));
+
+        $this->assertTrue($this->container->has('app.service'));
+        $this->assertSame($this->container->get('app.service'), $this->container->get('app.service'));
+        $this->assertFalse($this->container->has('missing'));
+
+        // Not found in either container: the delegate reports it
+        $this->expectException(NotFoundExceptionInterface::class);
+        $this->container->get('missing');
+    }
+
+    public function testLocalEntryTakesPrecedenceOverDelegate(): void
+    {
+        $local = new stdClass();
+        $this->container->add('shared', $local);
+        $this->container->setDelegate(new ApplicationContainer(['shared' => static fn(): stdClass => new stdClass()]));
+
+        $this->assertSame($local, $this->container->get('shared'));
+    }
+
+    public function testContainerCanNotBeItsOwnDelegate(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->container->setDelegate($this->container);
+    }
+
+    public function testLazyServiceResolvesDependencyFromDelegateAttachedLater(): void
+    {
+        $this->container->addLazyService(
+            StatefulTestAspect::class,
+            fn(AspectContainer $container): StatefulTestAspect => new StatefulTestAspect(
+                $container->getService(ArrayObject::class)->count(),
+            ),
+        );
+        // Collecting aspects (as the weaver does) needs no delegate yet: the service is a lazy proxy
+        $aspects = $this->container->getServicesByInterface(Aspect::class);
+        $this->assertArrayHasKey(StatefulTestAspect::class, $aspects);
+
+        $this->container->setDelegate(new ApplicationContainer([
+            ArrayObject::class => static fn(): ArrayObject => new ArrayObject([1, 2, 3]),
+        ]));
+
+        $this->assertSame(3, $this->container->getService(StatefulTestAspect::class)->getState());
+    }
+
+    public function testLazyServiceUsedBeforeDelegateIsAttachedFails(): void
+    {
+        $this->container->addLazyService(
+            StatefulTestAspect::class,
+            fn(AspectContainer $container): StatefulTestAspect => new StatefulTestAspect(
+                $container->getService(ArrayObject::class)->count(),
+            ),
+        );
+        $aspect = $this->container->getService(StatefulTestAspect::class);
+
+        $this->expectException(ServiceNotFoundException::class);
+        $aspect->getState();
     }
 
     public function testGetServiceEnsuresThatKeyAndReturnedTypeMatches(): void

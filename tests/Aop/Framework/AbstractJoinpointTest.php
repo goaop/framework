@@ -6,7 +6,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
 use Go\Aop\AdviceTypeEnum;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\OrderedAdvice;
 use LogicException;
 use PhpParser\Node\Expr;
@@ -170,12 +170,9 @@ class AbstractJoinpointTest extends TestCase
     private static function makeOrderedAdvice(int $order): OrderedAdvice
     {
         return new class ($order) implements OrderedAdvice {
-            public function __construct(private readonly int $order) {}
-
-            public function getAdviceOrder(): int
-            {
-                return $this->order;
-            }
+            public function __construct(
+                public readonly int $adviceOrder,
+            ) {}
 
             public function getType(): AdviceTypeEnum
             {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Aspect;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\NamePointcut;
@@ -40,14 +41,24 @@ final class InterceptorTest extends TestCase
     {
         $interceptor = Interceptor::before(static function (Joinpoint $joinpoint): void {}, order: 10);
 
-        $this->assertSame(10, $interceptor->getAdviceOrder());
+        $this->assertSame(10, $interceptor->adviceOrder);
+    }
+
+    public function testAspectClassRequiresAdviceMethodName(): void
+    {
+        try {
+            Interceptor::before(InterceptorTestAspect::class);
+            $this->fail('An aspect class without advice method must be rejected');
+        } catch (AspectException $exception) {
+            $this->assertSame('Advice method name is required when an aspect class name is given', $exception->getMessage());
+        }
     }
 
     public function testCreatesAfterInterceptor(): void
     {
         $interceptor = Interceptor::after(static function (Joinpoint $joinpoint): void {});
 
-        $this->assertSame(0, $interceptor->getAdviceOrder());
+        $this->assertSame(0, $interceptor->adviceOrder);
     }
 
     public function testCreatesAroundInterceptor(): void
@@ -107,7 +118,7 @@ final class InterceptorTest extends TestCase
 
         $this->assertFalse($reflection->isUninitializedLazyObject($interceptor));
         $this->assertSame([$joinpoint], InterceptorTestAspect::$invocations);
-        $this->assertSame(7, $interceptor->getAdviceOrder());
+        $this->assertSame(7, $interceptor->adviceOrder);
         $this->assertSame('some(expression)', $interceptor->pointcutExpression);
     }
 }

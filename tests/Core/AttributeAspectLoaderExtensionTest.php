@@ -6,7 +6,7 @@ namespace Go\Core;
 
 use Attribute;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutGrammar;

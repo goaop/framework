@@ -21,16 +21,16 @@ namespace Go\Aop;
 interface IntroductionInfo extends Advice
 {
     /**
-     * Returns the additional interface introduced by this Advisor or Advice.
+     * Additional interface introduced by this Advisor or Advice.
      *
-     * @return class-string
+     * @var class-string
      */
-    public function getInterface(): string;
+    public string $interface { get; }
 
     /**
-     * Return the additional trait with realization of introduced interface
+     * Additional trait with realization of introduced interface
      *
-     * @return trait-string
+     * @var trait-string
      */
-    public function getTrait(): string;
+    public string $trait { get; }
 }

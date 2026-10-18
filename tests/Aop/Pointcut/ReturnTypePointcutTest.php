@@ -119,8 +119,8 @@ final class ReturnTypePointcutTest extends TestCase
     {
         $pointcut = new ReturnTypePointcut('test');
 
-        $this->assertTrue(($pointcut->getKind() & Pointcut::KIND_FUNCTION) > 0, 'Pointcut should be for functions');
-        $this->assertTrue(($pointcut->getKind() & Pointcut::KIND_METHOD) > 0, 'Pointcut should be for methods');
+        $this->assertTrue(($pointcut->kind & Pointcut::KIND_FUNCTION) > 0, 'Pointcut should be for functions');
+        $this->assertTrue(($pointcut->kind & Pointcut::KIND_METHOD) > 0, 'Pointcut should be for methods');
     }
 
     public function testRegexpFailureIsReportedAsSyntaxError(): void

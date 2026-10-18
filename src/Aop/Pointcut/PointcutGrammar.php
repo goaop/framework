@@ -366,7 +366,7 @@ final class PointcutGrammar extends Grammar
             return $matcher->andMatch($group);
         }
         if ($matcher->hasAlternatives()) {
-            throw new PointcutSyntaxException('Only one group of modifier alternatives (a|b) is supported per member pattern');
+            throw PointcutSyntaxException::multipleModifierAlternatives();
         }
 
         return $matcher->orMatch($group);
@@ -399,7 +399,7 @@ final class PointcutGrammar extends Grammar
         return function (Token $token) {
             $value = $token->getValue();
             if (!is_string($value)) {
-                throw new PointcutSyntaxException('Token value must be a string');
+                throw PointcutSyntaxException::tokenValueNotString();
             }
             $name = strtoupper($value);
 

@@ -13,12 +13,15 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use Closure;
-use OutOfBoundsException;
+use Go\Aop\Exception\ContainerException;
+use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\ServiceNotFoundException;
+use Psr\Container\ContainerInterface;
 
 /**
- * Aspect container interface
+ * Aspect container interface, a PSR-11 container with the registration API of the framework
  */
-interface AspectContainer
+interface AspectContainer extends ContainerInterface
 {
     /**
      * Prefix for function interceptor
@@ -81,7 +84,8 @@ interface AspectContainer
      *
      * @template T of object
      *
-     * @throws OutOfBoundsException if service was not found
+     * @throws ServiceNotFoundException if service was not found
+     * @throws ContainerException if the entry is not an instance of the given class
      */
     public function getService(string $className): object;
 
@@ -98,19 +102,14 @@ interface AspectContainer
     /**
      * Returns a value from the container
      *
-     * @param string $key Given key
+     * @param string $id Identifier of the entry
      *
-     * @return ($key is class-string<T> ? T : mixed)
-     * @throws OutOfBoundsException if key was not found
+     * @return ($id is class-string<T> ? T : mixed)
+     * @throws ServiceNotFoundException if no entry was found for the identifier, neither here nor in the delegate
      *
      * @template T of object
      */
-    public function getValue(string $key): mixed;
-
-    /**
-     * Checks if item with specified id is present in the container
-     */
-    public function has(string $id): bool;
+    public function get(string $id): mixed;
 
     /**
      * Registers a listener that is called whenever a deferred service whose id may be a
@@ -162,6 +161,22 @@ interface AspectContainer
      * @template T of object
      */
     public function addLazyService(string $id, Closure $lazyInitializationClosure): void;
+
+    /**
+     * Attaches a delegate container, e.g. the PSR-11 container of the application.
+     *
+     * {@see get()} and {@see has()} fall back to the delegate for ids that are not registered in
+     * this container, so a factory passed to {@see addLazyService()} resolves its dependencies from
+     * the delegate: it runs on first use, after the application attached its container.
+     *
+     * A PSR-11 container can not be introspected: there is no standard way to look services up by
+     * interface or by tag, so {@see getServicesByInterface()} only returns services registered in this
+     * container. Integration bridges that can query their container by tags or interfaces register
+     * the services they collect (aspects, transformers) via {@see addLazyService()}.
+     *
+     * @throws InvalidConfigurationException if the container is given as its own delegate
+     */
+    public function setDelegate(ContainerInterface $delegate): void;
 
     /**
      * Adds a link to the file resource into the container

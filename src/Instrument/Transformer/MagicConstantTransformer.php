@@ -40,6 +40,17 @@ final class MagicConstantTransformer implements PrefilteredNodeRewriter
      */
     protected static string $rewriteToPath = '';
 
+    public array $nodeTypes {
+        get => [Dir::class, File::class, MethodCall::class];
+    }
+
+    /**
+     * __DIR__, __FILE__ and ReflectionClass::getFileName() calls
+     */
+    public array $sourceMarkers {
+        get => ['__DIR__', '__FILE__', 'getFileName'];
+    }
+
     /**
      * Class constructor
      */
@@ -68,19 +79,6 @@ final class MagicConstantTransformer implements PrefilteredNodeRewriter
     {
         self::$rootPath      = '';
         self::$rewriteToPath = '';
-    }
-
-    public function getNodeTypes(): array
-    {
-        return [Dir::class, File::class, MethodCall::class];
-    }
-
-    /**
-     * __DIR__, __FILE__ and ReflectionClass::getFileName() calls
-     */
-    public function getSourceMarkers(): array
-    {
-        return ['__DIR__', '__FILE__', 'getFileName'];
     }
 
     /**

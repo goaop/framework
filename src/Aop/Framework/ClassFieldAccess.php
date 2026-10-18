@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Go\Aop\AspectException;
+use Go\Aop\Exception\InvocationException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Aop\Intercept\FieldAccessType;
 use Go\Aop\Intercept\Interceptor;
@@ -37,16 +37,6 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Reflection of the intercepted property, created on first use: only advices ask for it
      */
     private ReflectionProperty $reflectionProperty;
-
-    /**
-     * @var class-string<T>
-     */
-    private readonly string $className;
-
-    /**
-     * Name of the intercepted property
-     */
-    private readonly string $fieldName;
 
     /**
      * Current value of property, bound to the stored array during {@see self::readByReference()}
@@ -85,13 +75,15 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
      * Constructor for field access
      *
      * @param array<Interceptor> $advices List of advices for this invocation
-     * @param class-string<T> $className
      */
-    public function __construct(array $advices, string $className, string $fieldName)
-    {
+    public function __construct(
+        array $advices,
+        /** @var class-string<T> */
+        private readonly string $className,
+        /** Name of the intercepted property */
+        private readonly string $fieldName,
+    ) {
         parent::__construct($advices);
-        $this->className = $className;
-        $this->fieldName = $fieldName;
     }
 
     public function getAccessType(): FieldAccessType
@@ -112,7 +104,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function getValue(): mixed
     {
         if (!$this->isInitialized) {
-            throw new AspectException("Property {$this->fieldName} is not initialized yet");
+            throw InvocationException::propertyNotInitialized($this->getField()->class, $this->fieldName);
         }
 
         return $this->value;
@@ -126,7 +118,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
     public function getValueToSet(): mixed
     {
         if ($this->accessType === FieldAccessType::Read) {
-            throw new AspectException("Value to set is not available for READ access type");
+            throw InvocationException::valueToSetUnavailable();
         }
         return $this->newValue;
     }
@@ -149,11 +141,7 @@ final class ClassFieldAccess extends AbstractJoinpoint implements FieldAccess
         }
 
         // Reading the property without interception fails the same way: an around advice can return a value instead
-        throw new AspectException(sprintf(
-            'Typed property %s::$%s must not be accessed before initialization',
-            $this->getField()->class,
-            $this->fieldName,
-        ));
+        throw InvocationException::typedPropertyNotInitialized($this->getField()->class, $this->fieldName);
     }
 
     /**

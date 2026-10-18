@@ -9,10 +9,10 @@ creation. It is the argument of an advice attribute, e.g. `#[Before('execution(p
 |------------------------------------------|---------|
 | `execution(modifiers Class->method(*))`  | Execution of a dynamic method |
 | `execution(modifiers Class::method(*))`  | Execution of a static method |
-| `execution(Namespace\function(*))`       | Calls of a system function from that namespace (`Features::INTERCEPT_FUNCTIONS`) |
+| `execution(Namespace\function(*))`       | Calls of a system function from that namespace |
 | `access(modifiers Class->property)`      | Reads and writes of an instance property |
 | `within(ClassFilter)`                    | Every member (methods and properties) of the matching classes |
-| `initialization(ClassFilter)`            | Object creation with `new` (`Features::INTERCEPT_INITIALIZATIONS`) |
+| `initialization(ClassFilter)`            | Object creation with `new` |
 | `staticinitialization(ClassFilter)`      | The first load of the matching classes |
 | `@execution(Attribute)`                  | Methods that carry the attribute |
 | `@access(Attribute)`                     | Properties that carry the attribute |

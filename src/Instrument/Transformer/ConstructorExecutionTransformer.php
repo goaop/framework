@@ -15,6 +15,8 @@ namespace Go\Instrument\Transformer;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\ReflectionConstructorInvocation;
 use Go\Aop\InitializationAware;
+use Go\Aop\Pointcut;
+use Go\Core\AdvisorIndex;
 use PhpParser\Node;
 use PhpParser\Node\Attribute;
 use PhpParser\Node\Const_;
@@ -46,6 +48,23 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
      */
     private static ?self $instance = null;
 
+    public array $nodeTypes {
+        get => [New_::class];
+    }
+
+    public array $sourceMarkers {
+        // Without an initialization pointcut there is nothing to route a `new` to: the rule stays off
+        get => $this->advisorIndex?->hasPointcutKind(Pointcut::KIND_INIT) === false ? [] : ['new'];
+    }
+
+    public function __construct(
+        /**
+         * Index of the registered advisors: the rule is active only while one of them has an initialization
+         * pointcut. Without it, the rule is always active
+         */
+        private readonly ?AdvisorIndex $advisorIndex = null,
+    ) {}
+
     /**
      * Singletone
      */
@@ -67,16 +86,6 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
     {
         self::$instance                    = null;
         self::$constructorInvocationsCache = [];
-    }
-
-    public function getNodeTypes(): array
-    {
-        return [New_::class];
-    }
-
-    public function getSourceMarkers(): array
-    {
-        return ['new'];
     }
 
     /**
@@ -181,7 +190,7 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
         if ($invocation === null) {
             // A missing class is not cached: it may still become loadable later in the request
             if (!class_exists($fullClassName)) {
-                throw new WeavingException("Cannot instantiate non-existent class: {$fullClassName}");
+                throw WeavingException::constructorOfMissingClass($fullClassName);
             }
             $invocation = self::$constructorInvocationsCache[$fullClassName] = new ReflectionConstructorInvocation([], $fullClassName);
         }

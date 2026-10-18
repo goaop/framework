@@ -11,7 +11,6 @@ declare(strict_types=1);
  */
 
 use Demo\Aspect\AwesomeAspectKernel;
-use Go\Aop\Features;
 
 include __DIR__ . '/../vendor/autoload.php';
 
@@ -20,6 +19,4 @@ AwesomeAspectKernel::getInstance()->init([
     'debug'    => true,
     'appDir'   => __DIR__,
     'cacheDir' => __DIR__ . '/cache',
-
-    'features' => Features::INTERCEPT_FUNCTIONS,
 ]);

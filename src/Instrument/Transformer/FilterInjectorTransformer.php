@@ -47,6 +47,17 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
 
     protected static ?CachePathManager $cachePathManager = null;
 
+    public array $nodeTypes {
+        get => [Include_::class];
+    }
+
+    /**
+     * include, include_once, require and require_once
+     */
+    public array $sourceMarkers {
+        get => ['include', 'require'];
+    }
+
     /**
      * Class constructor
      */
@@ -130,6 +141,20 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
                 ?: PathResolver::realpath("{$originalDir}/{$resource}", $shouldCheckExistence)
                 ?: $originalResource;
         }
+
+        // In production a source known to the include map is included natively, like a class of the class map:
+        // its cached file when it was woven, the source itself otherwise (no filter, no freshness check).
+        // Records are keyed by resolved paths, so `__DIR__ . '/../file.php'` is resolved first
+        if (!$debug && $cacheDir !== null && $cacheDir !== '') {
+            $resolvedResource = str_contains($resource, '/.') ? PathResolver::realpath($resource) : $resource;
+            $includeFile      = self::$cachePathManager?->findIncludeFile(
+                is_string($resolvedResource) ? $resolvedResource : $resource,
+            );
+            if ($includeFile !== null) {
+                return $includeFile;
+            }
+        }
+
         $cachedResource = self::$cachePathManager?->getCachePathForResource($resource);
 
         // If the cache is disabled, resource path not resolvable, or no cache yet, then use on-fly method
@@ -138,19 +163,6 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
         }
 
         return $cachedResource;
-    }
-
-    public function getNodeTypes(): array
-    {
-        return [Include_::class];
-    }
-
-    /**
-     * include, include_once, require and require_once
-     */
-    public function getSourceMarkers(): array
-    {
-        return ['include', 'require'];
     }
 
     /**

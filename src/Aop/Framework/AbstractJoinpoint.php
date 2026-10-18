@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\IntroductionInfo;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\Joinpoint;
@@ -43,10 +43,11 @@ abstract class AbstractJoinpoint implements Joinpoint
 
     /**
      * Initializes list of advices for current joinpoint
-     *
-     * @param array<Interceptor> $advices List of advices (interceptors)
      */
-    public function __construct(protected readonly array $advices = []) {}
+    public function __construct(
+        /** @var array<Interceptor> List of advices (interceptors) */
+        protected readonly array $advices = [],
+    ) {}
 
     /**
      * Sorts advices by priority
@@ -69,7 +70,7 @@ abstract class AbstractJoinpoint implements Joinpoint
                 }
 
                 return $first instanceof OrderedAdvice && $second instanceof OrderedAdvice
-                    ? $first->getAdviceOrder() - $second->getAdviceOrder()
+                    ? $first->adviceOrder - $second->adviceOrder
                     : 0;
             },
         );
@@ -96,9 +97,7 @@ abstract class AbstractJoinpoint implements Joinpoint
                         continue;
                     }
                     if (!$advice instanceof Advice) {
-                        throw new AspectException(
-                            "Advisor {$advisorId} provides " . get_debug_type($advice) . ' instead of advice instance',
-                        );
+                        throw AspectException::advisorWithoutAdvice((string) $advisorId, $advice);
                     }
                     $flattenAdvices[$type][$name][] = GeneratedInterceptor::fromAdvice((string) $advisorId, $advice);
                 }

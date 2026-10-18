@@ -29,10 +29,7 @@ use ReflectionProperty;
  */
 final readonly class AndPointcut implements Pointcut
 {
-    /**
-     * Kind of pointcut
-     */
-    private int $pointcutKind;
+    public int $kind;
 
     /**
      * List of Pointcut to combine with "AND"
@@ -44,17 +41,17 @@ final readonly class AndPointcut implements Pointcut
     /**
      * And constructor
      */
-    public function __construct(?int $pointcutKind = null, Pointcut ...$pointcuts)
+    public function __construct(?int $kind = null, Pointcut ...$pointcuts)
     {
         // If we don't have specified kind, it will be calculated as intersection then
-        if (!isset($pointcutKind)) {
-            $pointcutKind = -1;
+        if (!isset($kind)) {
+            $kind = -1;
             foreach ($pointcuts as $singlePointcut) {
-                $pointcutKind &= $singlePointcut->getKind();
+                $kind &= $singlePointcut->kind;
             }
         }
-        $this->pointcutKind = $pointcutKind;
-        $this->pointcuts    = $pointcuts;
+        $this->kind      = $kind;
+        $this->pointcuts = $pointcuts;
     }
 
     public function matches(
@@ -67,14 +64,9 @@ final readonly class AndPointcut implements Pointcut
         );
     }
 
-    public function getKind(): int
-    {
-        return $this->pointcutKind;
-    }
-
     public function compileToPhp(): Expr
     {
-        $args = [new Arg(new Int_($this->pointcutKind))];
+        $args = [new Arg(new Int_($this->kind))];
         foreach ($this->pointcuts as $singlePointcut) {
             $args[] = new Arg($singlePointcut->compileToPhp());
         }

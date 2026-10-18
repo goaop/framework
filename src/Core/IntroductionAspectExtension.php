@@ -14,7 +14,7 @@ namespace Go\Core;
 
 use Go\Aop\Advice;
 use Go\Aop\Aspect;
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\GenericPointcutAdvisor;
@@ -54,12 +54,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 
                     $loadedItems[$propertyId] = $advisor;
                 } else {
-                    throw new AspectException(sprintf(
-                        'Attribute %s is not supported on aspect property %s::$%s, only #[DeclareParents] is',
-                        $reflectionAttribute->getName(),
-                        $aspectProperty->class,
-                        $aspectProperty->name,
-                    ));
+                    throw AspectException::unsupportedPropertyAttribute($reflectionAttribute->getName(), $aspectProperty);
                 }
             }
         }
@@ -81,7 +76,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
             $interceptorAttribute instanceof DeclareParents
                 => new TraitIntroductionInfo($interceptorAttribute->traitName, $interceptorAttribute->interfaceName),
             default
-            => throw new AspectException('Unsupported attribute class: ' . $interceptorAttribute::class),
+            => throw AspectException::unsupportedIntroductionAttribute($interceptorAttribute),
         };
     }
 }

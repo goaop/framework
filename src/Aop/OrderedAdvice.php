@@ -18,7 +18,7 @@ namespace Go\Aop;
 interface OrderedAdvice extends Advice
 {
     /**
-     * Returns the advice order
+     * Advice order, advices with lower order are applied first
      */
-    public function getAdviceOrder(): int;
+    public int $adviceOrder { get; }
 }

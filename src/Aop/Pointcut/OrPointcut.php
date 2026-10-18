@@ -28,10 +28,7 @@ use ReflectionProperty;
  */
 final readonly class OrPointcut implements Pointcut
 {
-    /**
-     * Kind of filter
-     */
-    private int $pointcutKind;
+    public int $kind;
 
     /**
      * List of Pointcut to combine
@@ -45,12 +42,12 @@ final readonly class OrPointcut implements Pointcut
      */
     public function __construct(Pointcut ...$pointcuts)
     {
-        $pointcutKind = 0;
+        $kind = 0;
         foreach ($pointcuts as $singlePointcut) {
-            $pointcutKind |= $singlePointcut->getKind();
+            $kind |= $singlePointcut->kind;
         }
-        $this->pointcutKind  = $pointcutKind;
-        $this->pointcuts     = $pointcuts;
+        $this->kind      = $kind;
+        $this->pointcuts = $pointcuts;
     }
 
     public function matches(
@@ -61,11 +58,6 @@ final readonly class OrPointcut implements Pointcut
             $this->pointcuts,
             fn(Pointcut $singlePointcut): bool => $singlePointcut->matches($context, $reflector),
         );
-    }
-
-    public function getKind(): int
-    {
-        return $this->pointcutKind;
     }
 
     public function compileToPhp(): Expr

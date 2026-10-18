@@ -46,11 +46,9 @@ use ReflectionUnionType;
 
 abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvider
 {
-    /**
-     * @param ProxyImports|null $imports Imports of the generated file; short class names are emitted when omitted
-     */
     public function __construct(
         protected readonly ReflectionProperty $property,
+        /** Imports of the generated file; short class names are emitted when omitted */
         protected readonly ?ProxyImports $imports = null,
     ) {
         if ($this->property->isStatic() || $this->property->isReadOnly() || $this->property->hasHooks()) {
@@ -63,11 +61,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             // helper methods is theoretically possible but would break the woven-file line
             // number invariant required for XDebug compatibility and adds disproportionate
             // complexity for a niche use case. See https://github.com/goaop/framework/issues/561
-            throw new WeavingException(sprintf(
-                'Property %s::$%s cannot be intercepted with native hooks',
-                $this->property->getDeclaringClass()->getName(),
-                $this->property->getName(),
-            ));
+            throw WeavingException::propertyNotHookable($this->property->getDeclaringClass()->getName(), $this->property->getName());
         }
     }
 
@@ -92,12 +86,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         } elseif ($this->property->hasDefaultValue() && !method_exists($this->property, 'getNode')) {
             $rawDefault = $this->property->getDefaultValue();
             if ($rawDefault instanceof \Closure) {
-                throw new WeavingException(sprintf(
-                    'Cannot generate proxy for property %s::$%s: PHP 8.5 Closure default values '
-                    . 'require goaop/parser-reflection for AST access.',
-                    $this->property->getDeclaringClass()->getName(),
-                    $this->property->getName(),
-                ));
+                throw WeavingException::propertyClosureDefault($this->property->getDeclaringClass()->getName(), $this->property->getName());
             }
             $generator->defaultValue = $rawDefault;
         }

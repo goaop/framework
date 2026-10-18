@@ -25,6 +25,7 @@ use Go\Stubs\First;
 use Go\Stubs\PropertyHookSupport;
 use Go\Stubs\PropertyHookSupportPromoted;
 use Go\Stubs\PropertyInheritanceChild;
+use PHPUnit\Framework\MockObject\Runtime\PropertyHook;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionFunction;
@@ -85,7 +86,7 @@ class AdviceMatcherTest extends TestCase
             )
         ;
         $pointcut
-            ->method('getKind')
+            ->method(PropertyHook::get('kind'))
             ->willReturn(Pointcut::KIND_METHOD)
         ;
 
@@ -109,7 +110,7 @@ class AdviceMatcherTest extends TestCase
         $methodName      = 'privateMethod'; // private function privateMethod(): int
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD);
         $pointcut->method('matches')->willReturnCallback(
             static fn(ReflectionClass $c, ?ReflectionMethod $m = null): bool
                 => $m === null || $m->name === $methodName,
@@ -133,7 +134,7 @@ class AdviceMatcherTest extends TestCase
         $methodName      = 'staticSelfPrivate'; // private static function staticSelfPrivate(): int
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD);
         $pointcut->method('matches')->willReturnCallback(
             static fn(ReflectionClass $c, ?ReflectionMethod $m = null): bool
                 => $m === null || $m->name === $methodName,
@@ -159,7 +160,7 @@ class AdviceMatcherTest extends TestCase
         $reflectionClass = new ReflectionClass($child);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD);
         $pointcut->method('matches')->willReturn(true); // match everything
 
         $advice  = $this->createMock(Advice::class);
@@ -191,7 +192,7 @@ class AdviceMatcherTest extends TestCase
             )
         ;
         $pointcut
-            ->method('getKind')
+            ->method(PropertyHook::get('kind'))
             ->willReturn(Pointcut::KIND_PROPERTY)
         ;
 
@@ -209,7 +210,7 @@ class AdviceMatcherTest extends TestCase
         $reflectionClass = new ReflectionClass(PropertyHookSupport::class);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_PROPERTY);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_PROPERTY);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = $this->createMock(Advice::class);
@@ -228,7 +229,7 @@ class AdviceMatcherTest extends TestCase
         $reflectionClass = new ReflectionClass(PropertyHookSupportPromoted::class);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_PROPERTY);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_PROPERTY);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = $this->createMock(Advice::class);
@@ -247,7 +248,7 @@ class AdviceMatcherTest extends TestCase
         $reflectionClass = new ReflectionClass(PropertyInheritanceChild::class);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_PROPERTY);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_PROPERTY);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = $this->createMock(Advice::class);
@@ -267,7 +268,7 @@ class AdviceMatcherTest extends TestCase
         $reflectionClass = new ReflectionClass(PropertyInheritanceChild::class);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_PROPERTY);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_PROPERTY);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = $this->createMock(Advice::class);
@@ -284,7 +285,7 @@ class AdviceMatcherTest extends TestCase
         $reflectionClass = new ReflectionClass(PropertyInheritanceChild::class);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_PROPERTY);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_PROPERTY);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = $this->createMock(Advice::class);
@@ -305,7 +306,7 @@ class AdviceMatcherTest extends TestCase
         $reflectionClass = new ReflectionClass($child);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = $this->createMock(Advice::class);
@@ -325,7 +326,7 @@ class AdviceMatcherTest extends TestCase
         $reflectionClass = new ReflectionClass(AdviceMatcherTestAbstractClass::class);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = $this->createMock(Advice::class);
@@ -344,7 +345,7 @@ class AdviceMatcherTest extends TestCase
     public function testGetAdvicesForClassCollectsInitAdvice(): void
     {
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INIT);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INIT);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = $this->createMock(Advice::class);
@@ -361,7 +362,7 @@ class AdviceMatcherTest extends TestCase
     public function testGetAdvicesForClassCollectsStaticInitAdvice(): void
     {
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_STATIC_INIT);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_STATIC_INIT);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = $this->createMock(Advice::class);
@@ -378,7 +379,7 @@ class AdviceMatcherTest extends TestCase
     public function testGetAdvicesForClassCollectsIntroductionAdviceWithTraitAndInterface(): void
     {
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INTRODUCTION);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INTRODUCTION);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = new TraitIntroductionInfo(AdviceMatcherTestIntroducedTrait::class, AdviceMatcherTestIntroducedInterface::class);
@@ -403,12 +404,12 @@ class AdviceMatcherTest extends TestCase
     public function testGetAdvicesForClassCollectsIntroductionAdviceWithOnlyInterface(): void
     {
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INTRODUCTION);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INTRODUCTION);
         $pointcut->method('matches')->willReturn(true);
 
         $advice = $this->createMock(IntroductionInfo::class);
-        $advice->method('getTrait')->willReturn('');
-        $advice->method('getInterface')->willReturn(AdviceMatcherTestIntroducedInterface::class);
+        $advice->method(PropertyHook::get('trait'))->willReturn('');
+        $advice->method(PropertyHook::get('interface'))->willReturn(AdviceMatcherTestIntroducedInterface::class);
 
         $advisor = new GenericPointcutAdvisor($pointcut, $advice);
 
@@ -430,7 +431,7 @@ class AdviceMatcherTest extends TestCase
         $reflectionClass = new ReflectionClass(AdviceMatcherTestIntroducedTrait::class);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INTRODUCTION);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_CLASS | Pointcut::KIND_INTRODUCTION);
         $pointcut->method('matches')->willReturn(true);
 
         $advice  = new TraitIntroductionInfo(AdviceMatcherTestIntroducedTrait::class, AdviceMatcherTestIntroducedInterface::class);
@@ -443,18 +444,19 @@ class AdviceMatcherTest extends TestCase
     }
 
     /**
-     * Verifies that getAdvicesForFunctions() short-circuits to an empty array when function
-     * interception is not enabled.
+     * Verifies that getAdvicesForFunctions() never matches an advisor without a function pointcut:
+     * function interception needs no feature flag, the pointcut kind enables it.
      */
-    public function testGetAdvicesForFunctionsReturnsEmptyArrayWhenFeatureDisabled(): void
+    public function testGetAdvicesForFunctionsSkipsAdvisorsWithoutFunctionPointcut(): void
     {
-        $adviceMatcher = new AdviceMatcher(isInterceptFunctions: false);
+        $adviceMatcher = new AdviceMatcher();
 
         $reflectionFile = new ReflectionFile(__FILE__);
         $namespace      = $reflectionFile->getFileNamespace(__NAMESPACE__);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->expects($this->never())->method('getKind');
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD | Pointcut::KIND_INIT | Pointcut::KIND_CLASS);
+        $pointcut->expects($this->never())->method('matches');
 
         $advice  = $this->createMock(Advice::class);
         $advisor = new GenericPointcutAdvisor($pointcut, $advice);
@@ -465,18 +467,17 @@ class AdviceMatcherTest extends TestCase
     }
 
     /**
-     * Verifies that getAdvicesForFunctions() matches an internal PHP function by name when
-     * function interception is enabled.
+     * Verifies that getAdvicesForFunctions() matches an internal PHP function by name for a function pointcut.
      */
     public function testGetAdvicesForFunctionsMatchesInternalFunction(): void
     {
-        $adviceMatcher = new AdviceMatcher(isInterceptFunctions: true);
+        $adviceMatcher = new AdviceMatcher();
 
         $reflectionFile = new ReflectionFile(__FILE__);
         $namespace      = $reflectionFile->getFileNamespace(__NAMESPACE__);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_FUNCTION);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_FUNCTION);
         $pointcut->method('matches')->willReturnCallback(
             static fn(ReflectionClass|ReflectionFileNamespace $context, ?ReflectionFunction $reflector = null): bool
                 => $reflector === null || $reflector->name === 'strlen',
@@ -499,13 +500,13 @@ class AdviceMatcherTest extends TestCase
      */
     public function testGetAdvicesForFunctionsSkipsNonMatchingNamespace(): void
     {
-        $adviceMatcher = new AdviceMatcher(isInterceptFunctions: true);
+        $adviceMatcher = new AdviceMatcher();
 
         $reflectionFile = new ReflectionFile(__FILE__);
         $namespace      = $reflectionFile->getFileNamespace(__NAMESPACE__);
 
         $pointcut = $this->createMock(Pointcut::class);
-        $pointcut->method('getKind')->willReturn(Pointcut::KIND_FUNCTION);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_FUNCTION);
         $pointcut->method('matches')->willReturn(false);
 
         $advice  = $this->createMock(Advice::class);

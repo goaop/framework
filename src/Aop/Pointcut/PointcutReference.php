@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Pointcut;
 
-use Go\Aop\AspectException;
+use Go\Aop\Exception\AspectException;
 use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -34,6 +34,10 @@ use ReflectionProperty;
  */
 final class PointcutReference implements Pointcut
 {
+    public int $kind {
+        get => $this->getPointcut()->kind;
+    }
+
     private ?Pointcut $pointcut = null;
 
     /**
@@ -45,21 +49,17 @@ final class PointcutReference implements Pointcut
 
     /**
      * Pointcut reference constructor
-     *
-     * @param string $pointcutId Name of the pointcut to fetch from the container
      */
-    public function __construct(private readonly string $pointcutId) {}
+    public function __construct(
+        /** Name of the pointcut to fetch from the container */
+        private readonly string $pointcutId,
+    ) {}
 
     public function matches(
         ReflectionClass|ReflectionFileNamespace                $context,
         ReflectionMethod|ReflectionProperty|ReflectionFunction|null $reflector = null,
     ): bool {
         return $this->getPointcut()->matches($context, $reflector);
-    }
-
-    public function getKind(): int
-    {
-        return $this->getPointcut()->getKind();
     }
 
     public function compileToPhp(): Expr
@@ -75,9 +75,9 @@ final class PointcutReference implements Pointcut
     private function getPointcut(): Pointcut
     {
         if (!isset($this->pointcut)) {
-            $pointcutValue = $this->container->getValue($this->pointcutId);
+            $pointcutValue = $this->container->get($this->pointcutId);
             if (!$pointcutValue instanceof Pointcut) {
-                throw new AspectException("Pointcut reference {$this->pointcutId} resolves to " . get_debug_type($pointcutValue) . ', not to a pointcut');
+                throw AspectException::pointcutReferenceNotPointcut($this->pointcutId, $pointcutValue);
             }
             $this->pointcut = $pointcutValue;
         }

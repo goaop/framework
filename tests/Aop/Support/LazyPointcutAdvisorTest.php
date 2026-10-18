@@ -47,7 +47,7 @@ class LazyPointcutAdvisorTest extends TestCase
         $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessage('Invalid pointcut expression `execution(public Foo->)`');
 
-        $this->fail('Parsed into ' . $advisor->getPointcut()::class);
+        $this->fail('Parsed into ' . $advisor->pointcut::class);
     }
 
     public function testGetPointcutParsesExpressionLazilyOnFirstAccess(): void
@@ -55,7 +55,7 @@ class LazyPointcutAdvisorTest extends TestCase
         $advice  = new AfterInterceptor(static function (): void {});
         $advisor = new LazyPointcutAdvisor($this->container, 'execution(public Foo->bar(*))', $advice);
 
-        $pointcut = $advisor->getPointcut();
+        $pointcut = $advisor->pointcut;
 
         // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertInstanceOf(Pointcut::class, $pointcut);
@@ -66,8 +66,8 @@ class LazyPointcutAdvisorTest extends TestCase
         $advice  = new AfterInterceptor(static function (): void {});
         $advisor = new LazyPointcutAdvisor($this->container, 'execution(public Foo->bar(*))', $advice);
 
-        $first  = $advisor->getPointcut();
-        $second = $advisor->getPointcut();
+        $first  = $advisor->pointcut;
+        $second = $advisor->pointcut;
 
         $this->assertSame($first, $second);
     }

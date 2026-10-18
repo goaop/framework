@@ -14,12 +14,10 @@ namespace Go\Lang\Attribute;
 
 abstract class AbstractAttribute
 {
-    /**
-     * @param string $expression Advice pointcut expression
-     * @param int $order         Order for advice/interceptor (used for sorting)
-     */
     public function __construct(
+        /** Advice pointcut expression */
         public readonly string $expression = '',
-        public readonly int    $order = 0,
+        /** Order for advice/interceptor (used for sorting) */
+        public readonly int $order = 0,
     ) {}
 }

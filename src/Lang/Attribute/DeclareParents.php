@@ -20,15 +20,13 @@ use Attribute;
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final class DeclareParents extends AbstractAttribute
 {
-    /**
-     * @param class-string $interfaceName Interface name to add
-     * @param trait-string $traitName     Default implementation (trait name)
-     */
     public function __construct(
-        string                 $expression,
+        string $expression,
+        /** @var class-string Interface name to add */
         public readonly string $interfaceName,
+        /** @var trait-string Default implementation (trait name) */
         public readonly string $traitName,
-        int                    $order = 0,
+        int $order = 0,
     ) {
         parent::__construct($expression, $order);
     }

@@ -39,14 +39,13 @@ class CacheWarmer
 
     /**
      * CacheWarmer constructor.
-     *
-     * @param AspectKernel    $aspectKernel Instance of aspect kernel
-     * @param OutputInterface $output       Output instance, errors go to its error output when it has one
-     * @param bool            $failFast     Whether to stop after the first file that fails to process
      */
     public function __construct(
+        /** Instance of aspect kernel */
         protected AspectKernel $aspectKernel,
+        /** Output instance, errors go to its error output when it has one */
         protected OutputInterface $output = new NullOutput(),
+        /** Whether to stop after the first file that fails to process */
         protected bool $failFast = false,
     ) {}
 
@@ -68,7 +67,7 @@ class CacheWarmer
         $options = $this->aspectKernel->getOptions();
 
         if (empty($options['cacheDir'])) {
-            throw new InvalidConfigurationException('Cache warmer require the `cacheDir` options to be configured');
+            throw InvalidConfigurationException::cacheWarmerWithoutCacheDir();
         }
 
         // The transformation pipeline is registered lazily; the filter URIs built below

@@ -12,11 +12,13 @@ declare(strict_types=1);
 
 namespace Go\Aop\Exception;
 
-use Go\Aop\AspectException;
 use InvalidArgumentException;
 use OutOfBoundsException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionNamedType;
 use RuntimeException;
 use Symfony\Component\Finder\Finder;
 
@@ -28,13 +30,23 @@ final class ExceptionHierarchyTest extends TestCase
     public static function exceptionTypes(): array
     {
         return [
-            'aspect'               => [AspectException::class, RuntimeException::class],
             'invalid config'       => [InvalidConfigurationException::class, InvalidArgumentException::class],
-            'pointcut syntax'      => [PointcutSyntaxException::class, AspectException::class],
+            'container'            => [ContainerException::class, InvalidConfigurationException::class],
             'service not found'    => [ServiceNotFoundException::class, OutOfBoundsException::class],
+            'aspect'               => [AspectException::class, RuntimeException::class],
+            'pointcut syntax'      => [PointcutSyntaxException::class, AspectException::class],
             'weaving'              => [WeavingException::class, RuntimeException::class],
-            'not compilable'       => [NotCompilableException::class, AspectException::class],
+            'not compilable'       => [NotCompilableException::class, WeavingException::class],
+            'invocation'           => [InvocationException::class, RuntimeException::class],
         ];
+    }
+
+    /**
+     * @return array<string, array{class-string<\Throwable>}>
+     */
+    public static function exceptionClasses(): array
+    {
+        return array_map(static fn(array $types): array => [$types[0]], self::exceptionTypes());
     }
 
     /**
@@ -52,23 +64,59 @@ final class ExceptionHierarchyTest extends TestCase
         $this->assertInstanceOf($parentClass, $exception);
     }
 
-    public function testEveryThrowInSourcesUsesAFrameworkException(): void
+    public function testEveryExceptionClassIsListedAndImplementsTheMarker(): void
     {
-        $allowed   = ['AspectException', 'InvalidConfigurationException', 'PointcutSyntaxException',
-            'ServiceNotFoundException', 'WeavingException', 'NotCompilableException',
-            // Converts warnings inside the cache warmer loop, which catches it right away
-            'ErrorException'];
+        $listed = array_column(self::exceptionTypes(), 0);
+        foreach (Finder::create()->files()->in(__DIR__ . '/../../../src/Aop/Exception')->name('*.php') as $file) {
+            $className = __NAMESPACE__ . '\\' . $file->getBasename('.php');
+            if ($className === ExceptionInterface::class) {
+                continue;
+            }
+            $this->assertTrue(is_subclass_of($className, ExceptionInterface::class), $className . ' must implement ExceptionInterface');
+            $this->assertContains($className, $listed, $className . ' must be listed in exceptionTypes()');
+        }
+    }
+
+    /**
+     * Messages live in the exception classes: everything else creates exceptions through named constructors
+     */
+    public function testExceptionsAreCreatedOnlyThroughNamedConstructors(): void
+    {
+        // Converts warnings inside the cache warmer loop, which catches it right away
+        $allowed   = ['Instrument/ClassLoading/CacheWarmer.php: ErrorException'];
         $offenders = [];
-        foreach (Finder::create()->files()->in(__DIR__ . '/../../../src')->name('*.php') as $file) {
-            preg_match_all('/throw new \\\\?([\w\\\\]+)\(/', $file->getContents(), $matches);
-            foreach ($matches[1] as $thrownClass) {
-                $shortName = substr((string) strrchr('\\' . $thrownClass, '\\'), 1);
-                if (!in_array($shortName, $allowed, true)) {
-                    $offenders[] = $file->getRelativePathname() . ': ' . $thrownClass;
+        $sources   = Finder::create()->files()->in(__DIR__ . '/../../../src')->exclude('Aop/Exception')->name('*.php');
+        foreach ($sources as $file) {
+            preg_match_all('/\bnew \\\\?([\w\\\\]*Exception)\(/', $file->getContents(), $matches);
+            foreach ($matches[1] as $exceptionClass) {
+                $offender = str_replace('\\', '/', $file->getRelativePathname()) . ': ' . $exceptionClass;
+                if (!in_array($offender, $allowed, true)) {
+                    $offenders[] = $offender;
                 }
             }
         }
 
         $this->assertSame([], $offenders);
+    }
+
+    /**
+     * @param class-string<\Throwable> $exceptionClass
+     */
+    #[DataProvider('exceptionClasses')]
+    public function testNamedConstructorsReturnTheirOwnClass(string $exceptionClass): void
+    {
+        $reflection = new ReflectionClass($exceptionClass);
+        foreach ($reflection->getMethods(ReflectionMethod::IS_STATIC) as $method) {
+            if ($method->class !== $exceptionClass || !$method->isPublic()) {
+                continue;
+            }
+            $returnType = $method->getReturnType();
+            $this->assertInstanceOf(ReflectionNamedType::class, $returnType);
+            $this->assertContains(
+                $returnType->getName(),
+                ['self', $exceptionClass],
+                $exceptionClass . '::' . $method->name . '() must return self',
+            );
+        }
     }
 }

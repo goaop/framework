@@ -37,13 +37,6 @@ final class EnumGenerator implements GeneratorInterface
     private static ?Standard $printer      = null;
     private static ?BuilderFactory $factory = null;
 
-    public readonly string $name;
-    private ?string $namespace;
-    private ?string $backingType;
-
-    /** @var string[] FQCNs of interfaces to implement */
-    private array $interfaces;
-
     /** @var MethodGenerator[] */
     private array $methods;
 
@@ -60,21 +53,17 @@ final class EnumGenerator implements GeneratorInterface
     private array $enumCases = [];
 
     /**
-     * @param string[]          $interfaces FQCNs of interfaces to implement
      * @param MethodGenerator[] $methods
      */
     public function __construct(
-        string $name,
-        ?string $namespace,
-        ?string $backingType,
-        array $interfaces = [],
+        public readonly string $name,
+        private readonly ?string $namespace,
+        private readonly ?string $backingType,
+        /** @var string[] FQCNs of interfaces to implement */
+        private readonly array $interfaces = [],
         array $methods = [],
     ) {
-        $this->name        = $name;
-        $this->namespace   = $namespace;
-        $this->backingType = $backingType;
-        $this->interfaces  = $interfaces;
-        $this->methods     = array_values($methods);
+        $this->methods = array_values($methods);
     }
 
     /**

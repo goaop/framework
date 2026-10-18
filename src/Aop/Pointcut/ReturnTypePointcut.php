@@ -47,6 +47,8 @@ use ReflectionProperty;
  */
 final readonly class ReturnTypePointcut implements Pointcut
 {
+    public int $kind;
+
     /**
      * Trimmed constructor pattern, retained verbatim for re-emission into compiled advisor caches.
      */
@@ -82,8 +84,9 @@ final readonly class ReturnTypePointcut implements Pointcut
     {
         $returnTypeName = trim($returnTypeName, " \t\\");
         if (strlen($returnTypeName) === 0) {
-            throw new PointcutSyntaxException("Return type name must not be empty");
+            throw PointcutSyntaxException::emptyReturnType();
         }
+        $this->kind                  = Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION;
         $this->returnTypeName        = $returnTypeName;
         $this->patternGroups         = self::normalizeTypeExpression($returnTypeName);
         $this->isSingleAtomicPattern = count($this->patternGroups) === 1 && count($this->patternGroups[0]) === 1;
@@ -142,11 +145,6 @@ final readonly class ReturnTypePointcut implements Pointcut
                 fn(string $patternAtom, string $actualAtom): bool => $this->atomMatches($patternAtom, $actualAtom),
             ),
         );
-    }
-
-    public function getKind(): int
-    {
-        return Pointcut::KIND_METHOD | Pointcut::KIND_FUNCTION;
     }
 
     public function compileToPhp(): Expr
@@ -233,7 +231,7 @@ final readonly class ReturnTypePointcut implements Pointcut
 
         $isMatched = preg_match($this->atomRegexps[$pattern], $actual);
         if ($isMatched === false) {
-            throw new PointcutSyntaxException("Return type pattern `{$pattern}` can not be matched: " . preg_last_error_msg());
+            throw PointcutSyntaxException::returnTypePatternNotMatchable($pattern, preg_last_error_msg());
         }
 
         return $isMatched === 1;

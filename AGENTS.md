@@ -32,6 +32,7 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 | `src/Instrument/` | `src/Instrument/AGENTS.md` | Init flow, transformers, trait engine, line numbers, Override |
 | `src/Proxy/`      | `src/Proxy/AGENTS.md`      | Proxy generators, code-gen, readonly, hooks, enums            |
 | `src/Aop/`        | `src/Aop/AGENTS.md`        | Interfaces, generics, implementations, pointcuts, attributes  |
+| `src/Aop/Exception/` | `src/Aop/Exception/AGENTS.md` | Exception groups, static constructors                   |
 | `src/Core/`       | `src/Core/AGENTS.md`       | Container, aspect loading, advice matching, bridge            |
 | `src/Core/Cache/` | `src/Core/Cache/AGENTS.md` | Compiled advisor cache: compiler, printer, writer, loader     |
 | `tests/`          | `tests/AGENTS.md`          | Test conventions, fixtures, PHPUnit, PHPStan                  |
@@ -43,6 +44,13 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 - Before commit: phpunit and phpstan must pass. Fix errors before offering to commit.
 - Touching a SourceTransformer/NodeRewriter or the transformer wiring (AspectKernel, FrameworkServices, SourceTransformingLoader) â†’ run `composer test:performance:transformation` before and after; the numbers must not get worse (CI compares head with base on such PRs).
 - New classes are `final` unless they are meant to be extended.
+- Constructor arguments stored as-is are promoted properties, one per line (multiline signature, trailing comma).
+  Their phpstan type and description go into an inline `/** @var list<Foo> Description */` (or a plain `/** Description */`)
+  above the promoted parameter, not into a constructor `@param` tag.
+- Framework-internal contracts expose stored values as interface properties (`public int $kind { get; }`), implemented
+  by promoted/readonly properties or `get` hooks, not as getter methods. `@api` contracts (`Advice`, `Advisor`,
+  `Aop\Intercept\*`) keep their getter methods.
+- Throwing or adding an exception â†’ read `src/Aop/Exception/AGENTS.md` first.
 - No anonymous classes in `src/`: extract a named `final` class (`@internal` for machinery); anonymous classes are for tests and mocks.
 - Commit messages and PR titles must follow Conventional Commits (`type(scope): summary`, e.g. `fix(proxy): ...`).
 - Generated code (proxies, woven traits, advisor caches) must stay clean and readable: reference classes through short `use` aliases, never replace them with fully-qualified names. Name collisions are detected and resolved by adjusting the imports automatically (`Go\Proxy\Generator\ProxyImports`, see `src/Proxy/AGENTS.md`).
