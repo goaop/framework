@@ -144,6 +144,19 @@ class WeavingException extends RuntimeException implements ExceptionInterface
         ));
     }
 
+    public static function traitImportedOverrideNotInterceptable(string $className, string $methodName, string $traitName): self
+    {
+        return new self(sprintf(
+            'Method %s::%s() is imported from trait %s and has #[\Override], so it can not be intercepted: PHP copies '
+            . 'the attribute to the private "%sOriginalAlias" alias of the proxy, which overrides nothing. Exclude it '
+            . 'from the pointcut with "&& !matchInherited()".',
+            $className,
+            $methodName,
+            $traitName,
+            $methodName,
+        ));
+    }
+
     public static function functionReturnsByReference(string $functionName): self
     {
         return new self(sprintf(

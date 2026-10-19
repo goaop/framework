@@ -397,6 +397,13 @@ final class ExceptionMessagesTest extends TestCase
                 . 'values, so the reference would be lost. Exclude it from the pointcut with '
                 . '"&& !matchReturningByReference()".',
             ],
+            'trait override'              => [
+                static fn() => WeavingException::traitImportedOverrideNotInterceptable('App\\Foo', 'bar', 'App\\BarTrait'),
+                WeavingException::class,
+                'Method App\\Foo::bar() is imported from trait App\\BarTrait and has #[\\Override], so it can not be '
+                . 'intercepted: PHP copies the attribute to the private "barOriginalAlias" alias of the proxy, which '
+                . 'overrides nothing. Exclude it from the pointcut with "&& !matchInherited()".',
+            ],
             'function by reference'       => [
                 static fn() => WeavingException::functionReturnsByReference('App\foo'),
                 WeavingException::class,

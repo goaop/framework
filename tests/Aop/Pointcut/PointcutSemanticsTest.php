@@ -15,6 +15,8 @@ namespace Go\Aop\Pointcut;
 use Attribute;
 use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
+use Go\Instrument\Transformer\Stubs\ClassUsingOverrideTrait;
+use Go\ParserReflection\ReflectionClass as ParserReflectionClass;
 use Go\Stubs\ByReferenceStub;
 use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -123,6 +125,20 @@ final class PointcutSemanticsTest extends TestCase
             'new \\' . MatchReturningByReferencePointcut::class . '()',
             new Standard()->prettyPrintExpr($byReference->compileToPhp()),
         );
+    }
+
+    /**
+     * `!matchInherited()` also excludes the methods imported from a trait: the workaround for trait methods with
+     * #[\Override], which can not be intercepted (issue #761). Parser reflection is used, as the weaver does:
+     * native reflection reports the using class as the declaring class of a trait method.
+     */
+    public function testNotMatchInheritedExcludesTraitImportedMethods(): void
+    {
+        $class    = new ParserReflectionClass(ClassUsingOverrideTrait::class);
+        $pointcut = self::parse('execution(public ' . ClassUsingOverrideTrait::class . '->*(*)) && !matchInherited()');
+
+        $this->assertTrue($pointcut->matches($class, $class->getMethod('ownMethod')));
+        $this->assertFalse($pointcut->matches($class, $class->getMethod('count')));
     }
 
     public function testNullableReturnTypeMarker(): void
