@@ -165,8 +165,10 @@ class DebugWeavingCommand extends BaseAspectCommand
             if (str_ends_with($pathname, AspectContainer::ORIGINAL_TRAIT_FILE_SUFFIX)) {
                 continue;
             }
-            // Only collect proxy files: they have a sibling `<Class>OriginalTrait.php` file
-            $traitSibling = PathResolver::withSuffixBeforeExtension($pathname, AspectContainer::ORIGINAL_TRAIT_SUFFIX);
+            // Only collect proxy files: they have a sibling `<Class>OriginalTrait.php` file. Proxies of a file with
+            // several woven classes live below its name (`Holder.php/App/First.php`), next to `HolderOriginalTrait.php`
+            $proxiedFile  = $path . preg_replace('#(?<=\.php)/.*$#', '', substr($pathname, strlen($path)));
+            $traitSibling = PathResolver::withSuffixBeforeExtension($proxiedFile, AspectContainer::ORIGINAL_TRAIT_SUFFIX);
             if (!file_exists($traitSibling)) {
                 continue;
             }

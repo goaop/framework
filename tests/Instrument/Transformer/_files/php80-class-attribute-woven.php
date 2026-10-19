@@ -17,7 +17,7 @@ trait TestClassWithPlainAttributeOriginalTrait
         return 42;
     }
 }
-include_once AOP_CACHE_DIR . '/Transformer/_files/php80-class-attribute.php';
+include_once AOP_CACHE_DIR . '/Transformer/_files/php80-class-attribute.php/Test/ns1/TestClassWithPlainAttribute.php';
 
 
 #[\FakeMarkerAttr]
@@ -28,4 +28,4 @@ trait TestClassWithArgumentAttributeOriginalTrait
         return 'else';
     }
 }
-include_once AOP_CACHE_DIR . '/Transformer/_files/php80-class-attribute.php';
+include_once AOP_CACHE_DIR . '/Transformer/_files/php80-class-attribute.php/Test/ns1/TestClassWithArgumentAttribute.php';
