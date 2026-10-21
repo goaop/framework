@@ -56,7 +56,17 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
         $this->expectException(InvocationException::class);
         $this->expectExceptionMessage('Cannot determine the scope class of the closure');
 
-        new DynamicTraitAliasMethodInvocation([], TraitAliasProxy::class, 'publicMethod', strlen(...));
+        // The original method is resolved lazily, on the first call that reaches the method body
+        $invocation = new DynamicTraitAliasMethodInvocation([], TraitAliasProxy::class, 'publicMethod', strlen(...));
+        $invocation(new TraitAliasProxy());
+    }
+
+    public function testOriginalMethodIsNotResolvedWhenAdviceDoesNotProceed(): void
+    {
+        $around     = new AroundInterceptor(static fn(): string => 'cached');
+        $invocation = new DynamicTraitAliasMethodInvocation([$around], TraitAliasProxy::class, 'publicMethod', strlen(...));
+
+        $this->assertSame('cached', $invocation(new TraitAliasProxy()));
     }
 
     public function testAdviceIsCalledBeforeProceeding(): void

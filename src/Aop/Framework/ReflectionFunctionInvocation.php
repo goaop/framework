@@ -44,25 +44,23 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
     private array $stackFrames = [];
 
     /**
-     * Instance of reflection function
+     * Reflection of the intercepted function, created on first use: only advices ask for it
      */
-    private readonly ReflectionFunction $reflectionFunction;
+    private ReflectionFunction $reflectionFunction;
 
     /**
      * Constructor for function invocation
      *
      * @param array<Interceptor> $advices List of advices for this invocation
-     *
-     * @throws ReflectionException
      */
     public function __construct(
         array $advices,
-        string $functionName,
+        /** Name of the intercepted function */
+        private readonly string $functionName,
         /** First-class callable to the original global function (e.g. `\file_get_contents(...)`) */
         private readonly Closure $closureToCall,
     ) {
         parent::__construct($advices);
-        $this->reflectionFunction = new ReflectionFunction($functionName);
     }
 
     /**
@@ -83,9 +81,12 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
         return ($this->closureToCall)(...$this->arguments);
     }
 
+    /**
+     * @throws ReflectionException If the function does not exist
+     */
     public function getFunction(): ReflectionFunction
     {
-        return $this->reflectionFunction;
+        return $this->reflectionFunction ??= new ReflectionFunction($this->functionName);
     }
 
     /**
@@ -135,7 +136,7 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
     {
         return sprintf(
             'execution(%s())',
-            $this->reflectionFunction->getName(),
+            $this->getFunction()->getName(),
         );
     }
 }

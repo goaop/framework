@@ -12,10 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
-use Closure;
 use Go\Aop\Exception\InvocationException;
 use Go\Aop\Intercept\DynamicMethodInvocation;
-use Go\Aop\Intercept\Interceptor;
 use ReflectionFunction;
 use ReflectionMethod;
 
@@ -54,35 +52,12 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     private object $instance;
 
     /**
-     * ReflectionMethod pointing to the original method body:
+     * ReflectionMethod pointing to the original method body, resolved on the first call that reaches it
+     * (an around advice may never proceed):
      *  - For methods with a trait alias: the private `<method>OriginalAlias` alias.
      *  - For inherited methods without a trait alias: the prototype method from the parent class.
      */
-    private readonly ReflectionMethod $originalMethodToCall;
-
-    /**
-     * @param array<Interceptor> $advices       List of advices for this invocation
-     * @param class-string<T>    $className     Class, containing method to invoke
-     * @param non-empty-string   $methodName    Name of the method to invoke
-     * @param Closure            $closureToCall First-class callable to the original method body,
-     *                                          e.g. `$this->methodOriginalAlias(...)` for trait-aliased
-     *                                          methods or `parent::method(...)` for inherited ones.
-     */
-    public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)
-    {
-        parent::__construct($advices, $className, $methodName, $closureToCall);
-
-        // Logic with reflection is used as workaround for PHP bug https://bugs.php.net/bug.php?id=72326
-        $reflectionClosure = new ReflectionFunction($closureToCall);
-        $closureScopeClass = $reflectionClosure->getClosureScopeClass();
-        if ($closureScopeClass === null) {
-            throw InvocationException::closureScopeUnresolvable();
-        }
-        $this->originalMethodToCall = new ReflectionMethod(
-            $closureScopeClass->getName(),
-            $reflectionClosure->getName(),
-        );
-    }
+    private ReflectionMethod $originalMethodToCall;
 
     /**
      * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
@@ -127,7 +102,7 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
             return $this->advices[$this->current++]->invoke($this);
         }
 
-        return $this->originalMethodToCall->invokeArgs($this->instance, $this->arguments);
+        return ($this->originalMethodToCall ??= $this->resolveOriginalMethod())->invokeArgs($this->instance, $this->arguments);
     }
 
     /**
@@ -149,5 +124,21 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
     public function getScope(): string
     {
         return $this->instance::class;
+    }
+
+    /**
+     * Resolves the method behind the original-body callable.
+     *
+     * Reflection is used as workaround for PHP bug https://bugs.php.net/bug.php?id=72326
+     */
+    private function resolveOriginalMethod(): ReflectionMethod
+    {
+        $reflectionClosure = new ReflectionFunction($this->closureToCall);
+        $closureScopeClass = $reflectionClosure->getClosureScopeClass();
+        if ($closureScopeClass === null) {
+            throw InvocationException::closureScopeUnresolvable();
+        }
+
+        return new ReflectionMethod($closureScopeClass->getName(), $reflectionClosure->getName());
     }
 }
