@@ -35,6 +35,20 @@ class ReflectionFunctionInvocationTest extends TestCase
     }
 
     /**
+     * The function is reflected on first use only: an around advice that does not proceed never needs it.
+     */
+    public function testFunctionIsNotReflectedUntilRequested(): void
+    {
+        $around     = new AroundInterceptor(static fn(): string => 'cached');
+        $invocation = new ReflectionFunctionInvocation([$around], 'go_aop_missing_function', \strlen(...));
+
+        $this->assertSame('cached', $invocation(['hello']));
+
+        $this->expectException(\ReflectionException::class);
+        $invocation->getFunction();
+    }
+
+    /**
      * With a first-class callable, proceed() calls the callable directly, bypassing reflection.
      */
     public function testInvokeWithFirstClassCallableCallsItDirectly(): void

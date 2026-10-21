@@ -27,13 +27,16 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 ## Implementations (src/Aop/Framework/)
 | Class                             | Implements              | Key behavior                                                                                                           |
 |-----------------------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------|
-| AbstractMethodInvocation          | MethodInvocation        | Base; protected readonly Closure $closureToCall (FCC); TRAIT_ALIAS_SUFFIX='OriginalAlias'; keeps method reflection           |
-| DynamicTraitAliasMethodInvocation | DynamicMethodInvocation | receives $this->mOriginalAlias(...) or parent::m(...); proceed() via ReflectionMethod::invokeArgs (handles by-ref correctly) |
+| AbstractMethodInvocation          | MethodInvocation        | Base; protected readonly Closure $closureToCall (FCC); TRAIT_ALIAS_SUFFIX='OriginalAlias'; getMethod() reflection created on first use |
+| DynamicTraitAliasMethodInvocation | DynamicMethodInvocation | receives $this->mOriginalAlias(...) or parent::m(...); proceed() via ReflectionMethod::invokeArgs (handles by-ref correctly), resolved on the first call reaching the body |
 | StaticTraitAliasMethodInvocation  | StaticMethodInvocation  | FCC shim: static fn(array $args) => forward_static_call_array(...); bindTo(null, $scope) per call                      |
-| ReflectionConstructorInvocation   | ConstructorInvocation   | newInstanceWithoutConstructor() then call constructor (`new` rewritten while an initialization pointcut is registered) |
-| ReflectionFunctionInvocation      | FunctionInvocation      | receives FCC to global fn (e.g. \strlen(...) with leading \ to avoid recursive proxy call)                             |
+| ReflectionConstructorInvocation   | ConstructorInvocation   | newInstanceWithoutConstructor() then call constructor (`new` rewritten while an initialization pointcut is registered); class/constructor reflection created on first use |
+| ReflectionFunctionInvocation      | FunctionInvocation      | receives FCC to global fn (e.g. \strlen(...) with leading \ to avoid recursive proxy call); getFunction() reflection created on first use |
 | ClassFieldAccess                  | FieldAccess             | Property hooks call read()/write() by value; readByReference() only for the &get hook of arrays (binding released after) |
 | StaticInitializationJoinpoint     | ClassJoinpoint          | Fired once after proxy class loaded via `Proxy::__staticInitialization()`                                             |
+
+Reflection is created on first use (`$this->x ??= new Reflection...`), never in joinpoint constructors: joinpoints are
+built once per member, and many advices (an around advice that never proceeds) never ask for reflection.
 
 HOT PATH: `__invoke()`/`proceed()` of these classes (`read()`/`readByReference()`/`write()` of ClassFieldAccess) run on every intercepted call. Code there is embedded on purpose:
 never extract parts into methods or a base class, never add object allocations, reflection or extra method calls

@@ -48,6 +48,14 @@ class ReflectionConstructorInvocationTest extends AbstractInterceptorTestCase
         $this->assertEquals('__construct', $ctor->name);
     }
 
+    public function testReturnsNullForClassWithoutConstructor(): void
+    {
+        $invocation = new ReflectionConstructorInvocation([], \stdClass::class);
+
+        $this->assertNull($invocation->getConstructor());
+        $this->assertSame(\stdClass::class, $invocation->__invoke()::class);
+    }
+
     public function testReturnsThis(): void
     {
         $observed   = [];
