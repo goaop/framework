@@ -26,9 +26,9 @@ use ReflectionMethod;
 final class ReflectionConstructorInvocation extends AbstractInvocation implements ConstructorInvocation
 {
     /**
-     * @var ReflectionClass<T> Reflection of given class, created on first use: only proceeding or advices ask for it
+     * @var ReflectionClass<T> Reflection of given class
      */
-    private ReflectionClass $class;
+    private readonly ReflectionClass $class;
 
     /**
      * @phpstan-var null|T Instance of created class, can be used for Around or After types of advices.
@@ -43,20 +43,21 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
     private array $stackFrames = [];
 
     /**
-     * Reflection of the class constructor, false when the class has none; created on first use
+     * Instance of reflection constructor for class (if present)
      */
-    private ReflectionMethod|false $constructor;
+    private readonly ?ReflectionMethod $constructor;
 
     /**
      * Constructor for constructor invocation :)
      *
-     * @param array<Interceptor> $advices List of advices for this invocation
+     * @param array<Interceptor>    $advices List of advices for this invocation
+     * @param class-string<T>       $className Name of the class
      */
-    public function __construct(
-        array $advices,
-        /** @var class-string<T> Name of the class */
-        private readonly string $className,
-    ) {
+    public function __construct(array $advices, string $className)
+    {
+        $this->class       = new ReflectionClass($className);
+        $this->constructor = $this->class->getConstructor();
+
         parent::__construct($advices);
     }
 
@@ -81,23 +82,17 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
 
         // A nested `new` of the same class inside the constructor replaces $this->instance until it returns,
         // so the created object is kept locally
-        $class    = $this->class ??= new ReflectionClass($this->className);
-        $instance = $this->instance = $class->newInstanceWithoutConstructor();
+        $instance = $this->instance = $this->class->newInstanceWithoutConstructor();
 
-        $constructor = $this->constructor ??= $class->getConstructor() ?? false;
-        if ($constructor !== false) {
-            $constructor->invoke($instance, ...$this->arguments);
-        }
+        // Null-safe invocation of constructor with constructor arguments
+        $this->getConstructor()?->invoke($instance, ...$this->arguments);
 
         return $instance;
     }
 
     public function getConstructor(): ?ReflectionMethod
     {
-        $class       = $this->class ??= new ReflectionClass($this->className);
-        $constructor = $this->constructor ??= $class->getConstructor() ?? false;
-
-        return $constructor !== false ? $constructor : null;
+        return $this->constructor;
     }
 
     /**
@@ -154,7 +149,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
 
     public function getScope(): string
     {
-        return ($this->class ??= new ReflectionClass($this->className))->getName();
+        return $this->class->getName();
     }
 
     /**
