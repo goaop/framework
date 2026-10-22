@@ -24,4 +24,13 @@ class EntityFieldAspect implements Aspect
     {
         echo 'persist;';
     }
+
+    /**
+     * Every public method of the two associated entities, as in the pointcut reported in issue #327
+     */
+    #[Pointcut\Before("execution(public Go\Tests\TestProject\Entity\Sensor->*(*)) || execution(public Go\Tests\TestProject\Entity\SensorValue->*(*))")]
+    public function beforeSensorMethod(MethodInvocation $invocation): void
+    {
+        echo $invocation->getMethod()->getName() . ';';
+    }
 }
