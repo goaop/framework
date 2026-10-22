@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 /**
  * Boots the fixture project with the AOP kernel and runs two associated woven entities (bidirectional
- * one-to-many / many-to-one) through Doctrine ORM against an in-memory SQLite database: schema, persist,
- * a DQL join, lazy loading of the many-to-one side and of the collection. Prints what Doctrine sees and
- * the SQL it executed as JSON (issue #327).
+ * one-to-many / many-to-one, one column mapped in a trait) through Doctrine ORM against an in-memory SQLite
+ * database: schema, persist, a DQL join, lazy loading of the many-to-one side and of the collection. Prints
+ * what Doctrine sees and the SQL it executed as JSON (issue #327).
  */
 
 use Doctrine\DBAL\DriverManager;
@@ -81,6 +81,7 @@ $lazySensor            = $value->getSensor();
 $lazySensorClass       = $lazySensor::class;
 $lazySensorUninitialized = $entityManager->isUninitializedObject($lazySensor);
 $lazySensorName        = $lazySensor->getName();
+$lazySensorCreatedAt   = $lazySensor->getCreatedAt()->format('Y-m-d H:i:s');
 $lazySensorInitialized = !$entityManager->isUninitializedObject($lazySensor);
 $entityManager->clear();
 $lazyOutput = ob_get_clean();
@@ -112,6 +113,7 @@ echo json_encode([
         'class'         => $lazySensorClass,
         'uninitialized' => $lazySensorUninitialized,
         'name'          => $lazySensorName,
+        'createdAt'     => $lazySensorCreatedAt,
         'initialized'   => $lazySensorInitialized,
     ],
     'lazyOutput'       => $lazyOutput,

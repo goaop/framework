@@ -63,7 +63,8 @@ class DoctrineBridgeTest extends BaseFunctionalTestCase
      * (`Entity__AopProxied`): the table name got the suffix, every association pointed at the parent,
      * joins were built with mismatched aliases and lazy loading was broken (issue #327). The trait-based
      * engine keeps the mapping on the woven class itself, so a bidirectional association between two
-     * woven entities works as it does without weaving.
+     * woven entities works as it does without weaving. Columns mapped in a trait the entity uses (the
+     * Gedmo Timestampable case the 3.x metadata listener special-cased) are mapped on the woven class too.
      */
     public function testDoctrineMapsAssociationsBetweenWovenEntities(): void
     {
@@ -90,12 +91,19 @@ class DoctrineBridgeTest extends BaseFunctionalTestCase
         $this->assertSame([20, 25], $result['joinedValues']);
         $this->assertSame('getValues;getValue;getValue;', $result['joinOutput']);
 
-        // The many-to-one side is a native lazy object of the woven class, loaded on first access
+        // The many-to-one side is a native lazy object of the woven class, loaded on first access;
+        // the column mapped in TimestampableTrait is hydrated and its accessor advised like the others
         $this->assertSame(
-            ['class' => Sensor::class, 'uninitialized' => true, 'name' => 'thermometer', 'initialized' => true],
+            [
+                'class'         => Sensor::class,
+                'uninitialized' => true,
+                'name'          => 'thermometer',
+                'createdAt'     => '2017-07-07 21:33:35',
+                'initialized'   => true,
+            ],
             $result['lazySensor'],
         );
-        $this->assertSame('getSensor;getName;', $result['lazyOutput']);
+        $this->assertSame('getSensor;getName;getCreatedAt;', $result['lazyOutput']);
 
         // The collection is loaded lazily with one query over the join column
         $this->assertSame(2, $result['collectionCount']);
@@ -112,7 +120,8 @@ class DoctrineBridgeTest extends BaseFunctionalTestCase
         $joinQuery = array_values(array_filter($result['queries'], static fn(mixed $sql): bool => is_string($sql) && str_contains($sql, 'INNER JOIN')));
         $this->assertCount(1, $joinQuery);
         $this->assertSame(
-            'SELECT s0_.id AS id_0, s0_.name AS name_1, s1_.id AS id_2, s1_.value AS value_3, s1_.sensor_id AS sensor_id_4'
+            'SELECT s0_.id AS id_0, s0_.name AS name_1, s0_.createdAt AS createdAt_2,'
+            . ' s1_.id AS id_3, s1_.value AS value_4, s1_.sensor_id AS sensor_id_5'
             . ' FROM sensor s0_ INNER JOIN sensor_value s1_ ON s0_.id = s1_.sensor_id WHERE s0_.id = ? ORDER BY s1_.value ASC',
             $joinQuery[0],
         );

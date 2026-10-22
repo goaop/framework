@@ -3,17 +3,20 @@ declare(strict_types=1);
 
 namespace Go\Tests\TestProject\Entity;
 
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Inverse side of a bidirectional one-to-many between two woven entities (issue #327)
+ * Inverse side of a bidirectional one-to-many between two woven entities, with a column mapped in a trait (issue #327)
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'sensor')]
 class Sensor
 {
+    use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\Column(type: 'integer')]
     #[ORM\GeneratedValue]
@@ -27,7 +30,8 @@ class Sensor
         #[ORM\Column(type: 'string', length: 64)]
         private string $name,
     ) {
-        $this->values = new ArrayCollection();
+        $this->values    = new ArrayCollection();
+        $this->createdAt = new DateTimeImmutable('2017-07-07 21:33:35');
     }
 
     public function getId(): ?int
