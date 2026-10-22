@@ -178,6 +178,13 @@ Pointcuts
 - **`Foo+` includes `Foo`.** It now also matches the class or interface `Foo` itself and classes that use the trait
   `Foo`. Add `&& !within(Foo)` to exclude the type itself.
 - **Attribute pointcuts match subclasses.** `@execution(Attr)` and friends also match attributes extending `Attr`.
+- **`*` also matches nothing (#774).** In name and return-type patterns `*` stands for any characters of one name
+  part, including none, as `docs/pointcuts.md` always said. In 3.x it needed at least one character: `Sensor*`
+  skipped the class `Sensor` itself and `set*` skipped a method named `set()`. Such pointcuts now match them as well;
+  exclude them with `&& !execution(public Foo->set(*))` or `&& !within(Foo)` if needed.
+- **`|` alternatives stay inside their name part (#774).** `Ns\A|B` selects `Ns\A` and `Ns\B`. In 3.x it meant `Ns\A`
+  or the global class `B`. A pattern that listed classes of different namespaces (`Foo\A|Bar\B`) has to be written
+  as two pointcuts: `execution(public Foo\A->*(*)) || execution(public Bar\B->*(*))`.
 - **`ModifierPointcut` is final and immutable.** The masks are constructor arguments, and
   `andMatch()`, `orMatch()` and `notMatch()` return a new instance.
 

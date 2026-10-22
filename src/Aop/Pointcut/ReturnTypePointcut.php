@@ -94,7 +94,7 @@ final readonly class ReturnTypePointcut implements Pointcut
         $atomRegexps = [];
         foreach ($this->patternGroups as $patternGroup) {
             foreach ($patternGroup as $patternAtom) {
-                $atomRegexps[$patternAtom] = '/^(' . strtr(preg_quote($patternAtom, '/'), ['\\*' => '[^\\\\]+']) . ')$/';
+                $atomRegexps[$patternAtom] = '/^(' . strtr(preg_quote($patternAtom, '/'), ['\\*' => '[^\\\\]*']) . ')$/';
             }
         }
         $this->atomRegexps = $atomRegexps;
@@ -221,7 +221,8 @@ final readonly class ReturnTypePointcut implements Pointcut
     }
 
     /**
-     * Checks whether one atomic type pattern (with a possible '*' wildcard) matches an atomic type.
+     * Checks whether one atomic type pattern (with a possible '*' wildcard, any characters inside one name part,
+     * including none) matches an atomic type.
      */
     private function atomMatches(string $pattern, string $actual): bool
     {

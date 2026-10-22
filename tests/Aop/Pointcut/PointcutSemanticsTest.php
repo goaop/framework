@@ -17,7 +17,10 @@ use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
 use Go\Instrument\Transformer\Stubs\ClassUsingOverrideTrait;
 use Go\ParserReflection\ReflectionClass as ParserReflectionClass;
+use ClassWithoutNamespace;
 use Go\Stubs\ByReferenceStub;
+use Go\Stubs\First;
+use Go\Stubs\FirstStatic;
 use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -139,6 +142,39 @@ final class PointcutSemanticsTest extends TestCase
 
         $this->assertTrue($pointcut->matches($class, $class->getMethod('ownMethod')));
         $this->assertFalse($pointcut->matches($class, $class->getMethod('count')));
+    }
+
+    /**
+     * Wildcards and alternatives of class and member names, see the "Names and wildcards" table of docs/pointcuts.md
+     *
+     * @return array<string, array{string, class-string, string, bool}>
+     */
+    public static function nameCases(): array
+    {
+        return [
+            'star matches no characters of a class name'        => ['execution(public Go\Stubs\First*->publicMethod(*))', First::class, 'publicMethod', true],
+            'star matches characters of a class name'           => ['execution(public Go\Stubs\First*->publicMethod(*))', FirstStatic::class, 'publicMethod', true],
+            'star matches no characters of a member name'       => ['execution(public Go\Stubs\First->publicMethod*(*))', First::class, 'publicMethod', true],
+            'star in a class name skips other namespaces'       => ['execution(public Go\Stubs\First*->publicMethod(*))', ClassWithoutNamespace::class, 'publicMethod', false],
+            'star does not cross a namespace separator'         => ['execution(public Go*->publicMethod(*))', First::class, 'publicMethod', false],
+            'alternatives of a class name: first'               => ['execution(public Go\Stubs\First|FirstStatic->publicMethod(*))', First::class, 'publicMethod', true],
+            'alternatives of a class name: second'              => ['execution(public Go\Stubs\First|FirstStatic->publicMethod(*))', FirstStatic::class, 'publicMethod', true],
+            'alternatives stay inside the namespace'            => ['execution(public Go\Stubs\First|ClassWithoutNamespace->publicMethod(*))', ClassWithoutNamespace::class, 'publicMethod', false],
+            'alternatives of a member name: first'              => ['execution(public Go\Stubs\First->publicMethod|publicFinalMethod(*))', First::class, 'publicMethod', true],
+            'alternatives of a member name: second'             => ['execution(public Go\Stubs\First->publicMethod|publicFinalMethod(*))', First::class, 'publicFinalMethod', true],
+            'alternatives of a member name match strictly'      => ['execution(public Go\Stubs\First->publicMethod|publicFinalMethod(*))', First::class, 'publicMethodWithAttribute', false],
+        ];
+    }
+
+    /**
+     * @param class-string $className
+     */
+    #[DataProvider('nameCases')]
+    public function testNamePatternsFollowTheDocumentedWildcards(string $expression, string $className, string $methodName, bool $expected): void
+    {
+        $class = new ReflectionClass($className);
+
+        $this->assertSame($expected, self::parse($expression)->matches($class, $class->getMethod($methodName)));
     }
 
     public function testNullableReturnTypeMarker(): void

@@ -43,20 +43,39 @@ final readonly class NamePointcut implements Pointcut
      */
     public function __construct(
         public int $kind,
-        /** Element name to match, can contain wildcards **,*,| */
+        /** Element name to match, can contain wildcards `**`, `*` and `|`, see compilePattern() */
         private string $name,
         /** Switch to matching context name instead of reflector */
         private bool $useContextForMatching = false,
     ) {
-        // Special parenthesis is needed for stricter matching, see https://github.com/goaop/framework/issues/115
-        $this->regexp = '/^(' . strtr(
-            preg_quote($this->name, '/'),
-            [
-                '\\*'    => '[^\\\\]+?',
-                '\\*\\*' => '.+?',
-                '\\|'    => '|',
-            ],
-        ) . ')$/';
+        $this->regexp = self::compilePattern($this->name);
+    }
+
+    /**
+     * Translates a name pattern into a regular expression, one name part (a segment between namespace separators)
+     * at a time:
+     *  - `*` is any characters, including none, inside the name part, it never crosses a namespace separator;
+     *  - `**` is any characters, including namespace separators (at least one);
+     *  - `|` separates alternatives of the name part it is written in, so `Ns\A|B` is `Ns\A` or `Ns\B`, never a
+     *    global class `B`. The group around the alternatives keeps the anchors strict for each of them, see
+     *    https://github.com/goaop/framework/issues/115
+     */
+    private static function compilePattern(string $pattern): string
+    {
+        $nameParts = [];
+        foreach (explode('\\', $pattern) as $namePart) {
+            $regexp = strtr(
+                preg_quote($namePart, '/'),
+                [
+                    '\\*'    => '[^\\\\]*?',
+                    '\\*\\*' => '.+?',
+                    '\\|'    => '|',
+                ],
+            );
+            $nameParts[] = str_contains($namePart, '|') ? "(?:{$regexp})" : $regexp;
+        }
+
+        return '/^' . implode('\\\\', $nameParts) . '$/';
     }
 
     public function matches(

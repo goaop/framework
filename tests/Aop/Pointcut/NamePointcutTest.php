@@ -14,7 +14,9 @@ namespace Go\Aop\Pointcut;
 
 use Go\Aop\Exception\PointcutSyntaxException;
 use Go\Aop\Pointcut;
+use ArrayObject;
 use Go\Stubs\First;
+use Go\Stubs\FirstStatic;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -101,6 +103,62 @@ class NamePointcutTest extends TestCase
 
         $matched = $pointcut->matches(new ReflectionClass(First::class), new ReflectionMethod(First::class, 'staticLsbPublic'));
         $this->assertFalse($matched, "Pointcut should match strict");
+    }
+
+    /**
+     * Star is any characters of one name part, including none: `get*` is also `get`, `Foo*` is also `Foo`
+     */
+    public function testStarMatchesEmptyString(): void
+    {
+        $method  = new ReflectionMethod(First::class, 'publicMethod');
+        $context = new ReflectionClass(First::class);
+
+        $this->assertTrue((new NamePointcut(Pointcut::KIND_METHOD, 'publicMethod*'))->matches($context, $method));
+        $this->assertTrue((new NamePointcut(Pointcut::KIND_METHOD, '*publicMethod'))->matches($context, $method));
+        $this->assertTrue((new NamePointcut(Pointcut::KIND_ALL, First::class . '*', true))->matches($context));
+        $this->assertTrue((new NamePointcut(Pointcut::KIND_ALL, First::class . '*', true))->matches(new ReflectionClass(FirstStatic::class)));
+    }
+
+    /**
+     * Star never crosses a namespace separator, double star does
+     */
+    public function testStarStaysInsideOneNamePart(): void
+    {
+        $context = new ReflectionClass(First::class);
+
+        $this->assertFalse((new NamePointcut(Pointcut::KIND_ALL, 'Go*', true))->matches($context));
+        $this->assertFalse((new NamePointcut(Pointcut::KIND_ALL, 'Go\\*', true))->matches($context));
+        $this->assertTrue((new NamePointcut(Pointcut::KIND_ALL, 'Go\\*\\First', true))->matches($context));
+        $this->assertTrue((new NamePointcut(Pointcut::KIND_ALL, 'Go\\**', true))->matches($context));
+    }
+
+    /**
+     * Alternatives belong to the name part they are written in: `Go\Stubs\First|FirstStatic` is
+     * `Go\Stubs\First` or `Go\Stubs\FirstStatic`, not `Go\Stubs\First` or a global class `FirstStatic`
+     */
+    public function testAlternativesAreScopedToTheirNamePart(): void
+    {
+        $pointcut = new NamePointcut(Pointcut::KIND_ALL, 'Go\\Stubs\\First|FirstStatic', true);
+
+        $this->assertTrue($pointcut->matches(new ReflectionClass(First::class)));
+        $this->assertTrue($pointcut->matches(new ReflectionClass(FirstStatic::class)));
+
+        // ArrayObject is a global class: it must not match the alternative of a nested name part
+        $globalPointcut = new NamePointcut(Pointcut::KIND_ALL, 'Go\\Stubs\\First|ArrayObject', true);
+        $this->assertFalse($globalPointcut->matches(new ReflectionClass(ArrayObject::class)));
+        $this->assertTrue($globalPointcut->matches(new ReflectionClass(First::class)));
+    }
+
+    /**
+     * Alternatives of an inner name part keep the rest of the namespace on both sides
+     */
+    public function testAlternativesInTheMiddleOfAName(): void
+    {
+        $pointcut = new NamePointcut(Pointcut::KIND_ALL, 'Go\\Stubs|Aop\\First', true);
+
+        $this->assertTrue($pointcut->matches(new ReflectionClass(First::class)));
+        $this->assertFalse($pointcut->matches(new ReflectionClass(FirstStatic::class)));
+        $this->assertFalse($pointcut->matches(new ReflectionClass(ArrayObject::class)));
     }
 
     public function testMatchesAnyContextWithoutReflector(): void
