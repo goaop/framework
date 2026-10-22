@@ -79,6 +79,7 @@ See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 * [Fixed] `cache:warmup:aop` and `debug:advisor` no longer fail with "Cannot rewind a generator that was already run" when more than one include path is configured (#751).
 * [Fixed] The proxy of a class declared in the second (or a later) block of a namespace that a file declares several times copies the imports of its own block instead of the first block's.
 * [Fixed] A file declaring several woven classes gets one proxy file per class, below the file name like a file inside a phar (`Holder.php/App/First.php`): the proxies used to share one cache file, so all classes but the last one were not found (#760).
+* [Fixed] [BC BREAK] Name patterns follow `docs/pointcuts.md` (#774): `*` matches any characters of one name part, including none (`Sensor*` now matches `Sensor`, `get*` a method named `get`, the return type pattern `Exc*` the type `Exc`), and `|` alternatives apply to the name part they are written in (`Ns\A|B` is `Ns\A` or `Ns\B`, no longer `Ns\A` or the global class `B`). `NamePointcut` translates a pattern part by part.
 
 **Internal**
 * [Internal] Tooling: PHPUnit 13 with strict flags, PHPStan 2 at level 10 over `src/` and `tests/`, php-cs-fixer with the PER-CS rule set, and `composer test`/`analyze`/`cs`/`check` scripts.

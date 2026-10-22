@@ -39,10 +39,14 @@ final class ReturnTypePointcutTest extends TestCase
         $intersectionMethod = new ReflectionMethod(ClassWithComplexTypes::class, 'publicMethodWithIntersectionTypeReturn');
         $dnfMethod          = new ReflectionMethod(ClassWithComplexTypes::class, 'publicMethodWithDNFTypeReturn');
         $nullableMethod     = new ReflectionMethod(CachePathManager::class, 'queryCacheState');
+        $namespacedMethod   = new ReflectionMethod(NamePointcut::class, 'compileToPhp');
 
         return [
             'Exact match (int)' => ['int', new ReflectionFunction('strlen'), true],
             'Star match (bool)' => ['b*l', new ReflectionMethod(ReturnTypePointcut::class, 'matches'), true],
+            'Star matches no characters (int)' => ['int*', new ReflectionFunction('strlen'), true],
+            'Star matches no characters (namespaced type)' => ['PhpParser\\Node\\Expr*', $namespacedMethod, true],
+            'Star does not cross a namespace separator' => ['*Expr', $namespacedMethod, false],
             'Question mark is not a wildcard' => ['?nt', new ReflectionFunction('strlen'), false],
             'No match (int)' => ['array', new ReflectionFunction('strlen'), false],
 

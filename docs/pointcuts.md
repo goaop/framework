@@ -28,9 +28,9 @@ The argument list is always `(*)`: arguments are not matched.
 
 | Pattern       | Meaning |
 |---------------|---------|
-| `*`           | Any part of a name, e.g. `get*`, `*Service`, `App\*\Controller` |
+| `*`           | Any characters of one name part, including none, never crossing a `\`: `get*` (also `get`), `*Service` (also `Service`), `App\*\Controller` (exactly one namespace level between) |
 | `**`          | Any namespace depth: `App\**` is every class below `App`, `**->*(*)` is every method |
-| `a\|b`        | Alternatives within one name part, e.g. `get*\|is*` |
+| `a\|b`        | Alternatives within one name part, e.g. `get*\|is*`. They apply to the part they are written in: `App\Cart\|Order` is `App\Cart` or `App\Order`, never a global `Order`. For classes of different namespaces join two pointcuts with `\|\|` |
 | `Foo+`        | `Foo` itself, its subclasses and implementers, and classes that use the trait `Foo` (directly or through a parent class) |
 
 Names are matched case-sensitively. Write namespaces with a single backslash; in a PHP string with single quotes
