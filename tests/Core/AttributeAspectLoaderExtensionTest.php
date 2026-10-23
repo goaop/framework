@@ -14,6 +14,7 @@ use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Aop\Support\GenericPointcutAdvisor;
+use Go\Lang\Attribute\AbstractInterceptor as AbstractInterceptorAttribute;
 use Go\Lang\Attribute\After;
 use Go\Lang\Attribute\Before;
 use Go\Lang\Attribute\Pointcut as PointcutAttribute;
@@ -52,6 +53,19 @@ final class AttributeAspectLoaderExtensionTest extends TestCase
         $this->assertSame('advice', $interceptor->adviceMethodName);
         $this->assertSame(3, $interceptor->adviceOrder);
         $this->assertTrue(new ReflectionClass($interceptor::class)->isUninitializedLazyObject($interceptor));
+    }
+
+    public function testUnsupportedAdviceAttributeIsReported(): void
+    {
+        try {
+            $this->extension->load(new ReflectionClass(AttributeAspectLoaderExtensionTestUnknownAdviceAspect::class));
+            $this->fail('An advice attribute no interceptor handles must be rejected');
+        } catch (AspectException $exception) {
+            $this->assertSame(
+                'Unsupported method meta class: ' . AttributeAspectLoaderExtensionTestUnknownAdvice::class,
+                $exception->getMessage(),
+            );
+        }
     }
 
     public function testRejectsNonPublicAdviceMethod(): void
@@ -110,6 +124,18 @@ final class AttributeAspectLoaderExtensionTest extends TestCase
 
 #[Attribute(Attribute::TARGET_METHOD)]
 final class AttributeAspectLoaderExtensionTestForeignAttribute {}
+
+/**
+ * An advice attribute of the framework hierarchy that no interceptor type handles
+ */
+#[Attribute(Attribute::TARGET_METHOD)]
+final class AttributeAspectLoaderExtensionTestUnknownAdvice extends AbstractInterceptorAttribute {}
+
+final class AttributeAspectLoaderExtensionTestUnknownAdviceAspect implements Aspect
+{
+    #[AttributeAspectLoaderExtensionTestUnknownAdvice('execution(public NonExistent\\**->*(*))')]
+    public function advice(): void {}
+}
 
 /**
  * Aspect without instance properties (PHP can not make it lazy) that must never be created by loading it
