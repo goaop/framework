@@ -44,7 +44,7 @@ class IntroductionAspectExtensionTest extends TestCase
     public function testLoadsIntroductionAdvisorForDeclareParentsProperty(): void
     {
         $aspect      = new IntroductionAspectExtensionTestAspect();
-        $loadedItems = $this->extension->load($aspect, new ReflectionClass($aspect));
+        $loadedItems = $this->extension->load(new ReflectionClass($aspect));
 
         $propertyId = IntroductionAspectExtensionTestAspect::class . '->introduction';
         $this->assertArrayHasKey($propertyId, $loadedItems);
@@ -68,7 +68,7 @@ class IntroductionAspectExtensionTest extends TestCase
     {
         $aspect = new IntroductionAspectExtensionTestForeignAttributeAspect();
 
-        $this->assertSame([], $this->extension->load($aspect, new ReflectionClass($aspect)));
+        $this->assertSame([], $this->extension->load(new ReflectionClass($aspect)));
     }
 
     public function testThrowsForAdviceAttributeOnProperty(): void
@@ -81,13 +81,13 @@ class IntroductionAspectExtensionTest extends TestCase
             . IntroductionAspectExtensionTestInvalidAspect::class . '::$invalidIntroduction',
         );
 
-        $this->extension->load($aspect, new ReflectionClass($aspect));
+        $this->extension->load(new ReflectionClass($aspect));
     }
 
     public function testReturnsEmptyArrayForAspectWithoutAnnotatedProperties(): void
     {
         $aspect      = new IntroductionAspectExtensionTestEmptyAspect();
-        $loadedItems = $this->extension->load($aspect, new ReflectionClass($aspect));
+        $loadedItems = $this->extension->load(new ReflectionClass($aspect));
 
         $this->assertSame([], $loadedItems);
     }
@@ -97,10 +97,9 @@ class IntroductionAspectExtensionTest extends TestCase
         $extension = new class (new PointcutLexer(), new PointcutParser(new PointcutGrammar())) extends IntroductionAspectExtension {
             public function doGetAdvice(
                 AbstractAttribute $interceptorAttribute,
-                Aspect $aspect,
                 ReflectionProperty $aspectProperty,
             ): Advice {
-                return $this->getAdvice($interceptorAttribute, $aspect, $aspectProperty);
+                return $this->getAdvice($interceptorAttribute, $aspectProperty);
             }
         };
 
@@ -112,7 +111,7 @@ class IntroductionAspectExtensionTest extends TestCase
         $this->expectException(AspectException::class);
         $this->expectExceptionMessage('Unsupported attribute class: ' . $unsupportedAttribute::class);
 
-        $extension->doGetAdvice($unsupportedAttribute, $aspect, $reflection);
+        $extension->doGetAdvice($unsupportedAttribute, $reflection);
     }
 }
 

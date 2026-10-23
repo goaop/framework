@@ -20,7 +20,6 @@ use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Tests\TestProject\Aspect\LoggingAspect;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 use stdClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -49,7 +48,7 @@ class DebugAspectCommandInProcessTest extends TestCase
     {
         $container = $this->createMock(AspectContainer::class);
         $container->expects($this->once())
-            ->method('getServicesByInterface')
+            ->method('getServiceIdsByInterface')
             ->with(Aspect::class)
             ->willReturn([]);
 
@@ -70,7 +69,7 @@ class DebugAspectCommandInProcessTest extends TestCase
     {
         $container = $this->createStub(AspectContainer::class);
         $container->method('has')->willReturn(false);
-        $container->method('getServicesByInterface')->willReturn([LoggingAspect::class => new LoggingAspect($this->createStub(LoggerInterface::class))]);
+        $container->method('getServiceIdsByInterface')->willReturn([LoggingAspect::class]);
 
         $kernel = $this->createStub(AspectKernel::class);
         $kernel->method('getContainer')->willReturn($container);
@@ -89,9 +88,6 @@ class DebugAspectCommandInProcessTest extends TestCase
 
     public function testExecuteFiltersByAspectOptionAndShowsPointcutsAndAdvisors(): void
     {
-        $logger = $this->createStub(LoggerInterface::class);
-        $aspect = new LoggingAspect($logger);
-
         $aspectLoader = $this->createStub(AspectLoader::class);
         $aspectLoader->method('load')->willReturn([
             'a.pointcut' => $this->createStub(Pointcut::class),
@@ -101,9 +97,9 @@ class DebugAspectCommandInProcessTest extends TestCase
 
         $container = $this->createStub(AspectContainer::class);
         $container->method('has')->willReturn(true);
+        // The aspect is read from its class, never created
         $container->method('getService')->willReturnMap([
             [AspectLoader::class, $aspectLoader],
-            [LoggingAspect::class, $aspect],
         ]);
 
         $kernel = $this->createStub(AspectKernel::class);

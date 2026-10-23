@@ -29,7 +29,7 @@ use ReflectionProperty;
  */
 class IntroductionAspectExtension extends AbstractAspectLoaderExtension
 {
-    public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
+    public function load(ReflectionClass $reflectionAspect): array
     {
         $loadedItems = [];
         foreach ($reflectionAspect->getProperties() as $aspectProperty) {
@@ -43,13 +43,13 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                     ? $reflectionAttribute->newInstance()
                     : null;
                 if ($attribute instanceof DeclareParents) {
-                    $pointcut = $this->parsePointcut($aspect, $aspectProperty, $attribute->expression);
+                    $pointcut = $this->parsePointcut($reflectionAspect->getName(), $aspectProperty, $attribute->expression);
                     // Introduction doesn't have own syntax and uses any suitable class-filter
                     $pointcut = new Pointcut\AndPointcut(
                         Pointcut::KIND_INTRODUCTION | Pointcut::KIND_CLASS,
                         $pointcut,
                     );
-                    $advice  = $this->getAdvice($attribute, $aspect, $aspectProperty);
+                    $advice  = $this->getAdvice($attribute, $aspectProperty);
                     $advisor = new GenericPointcutAdvisor($pointcut, $advice);
 
                     $loadedItems[$propertyId] = $advisor;
@@ -69,7 +69,6 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
      */
     protected function getAdvice(
         AbstractAttribute $interceptorAttribute,
-        Aspect $aspect,
         ReflectionProperty $aspectProperty,
     ): Advice {
         return match (true) {

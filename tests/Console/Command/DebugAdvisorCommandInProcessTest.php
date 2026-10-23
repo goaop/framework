@@ -75,7 +75,7 @@ class DebugAdvisorCommandInProcessTest extends TestCase
 
     public function testShowAdvisorsListRegistersUnloadedAspects(): void
     {
-        $aspect = $this->createStub(\Go\Aop\Aspect::class);
+        $aspect = $this->createStub(\Go\Aop\Aspect::class)::class;
 
         $aspectLoader = $this->createMock(CachedAspectLoader::class);
         $aspectLoader->method('getUnloadedAspects')->willReturn([$aspect]);

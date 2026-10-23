@@ -15,6 +15,7 @@ namespace Go\Core;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
+use LogicException;
 use PHPUnit\Framework\TestCase;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -25,7 +26,7 @@ class AspectLoaderTest extends TestCase
         $container = new Container();
         $loader    = new AspectLoader($container);
 
-        $items = $loader->load(new AspectLoaderTestAspectOne());
+        $items = $loader->load(AspectLoaderTestAspectOne::class);
 
         $this->assertSame([], $items);
     }
@@ -45,8 +46,7 @@ class AspectLoaderTest extends TestCase
 
         $loader = new AspectLoader($container, $extensionOne, $extensionTwo);
 
-        $aspect = new AspectLoaderTestAspectOne();
-        $items  = $loader->load($aspect);
+        $items = $loader->load(AspectLoaderTestAspectOne::class);
 
         $this->assertSame(
             ['item.one' => $pointcutOne, 'item.two' => $pointcutTwo],
@@ -69,7 +69,7 @@ class AspectLoaderTest extends TestCase
 
         $loader = new AspectLoader($container, $extensionOne, $extensionTwo);
 
-        $items = $loader->load(new AspectLoaderTestAspectOne());
+        $items = $loader->load(AspectLoaderTestAspectOne::class);
 
         // array union (+=) semantics: the first loader's item for a colliding key wins
         $this->assertSame($pointcutFromFirst, $items['shared.key']);
@@ -84,7 +84,7 @@ class AspectLoaderTest extends TestCase
         $extension->method('load')->willReturn(['aspect.advisor' => $advisor]);
 
         $loader = new AspectLoader($container, $extension);
-        $loader->loadAndRegister(new AspectLoaderTestAspectOne());
+        $loader->loadAndRegister(AspectLoaderTestAspectOne::class);
 
         $this->assertSame($advisor, $container->get('aspect.advisor'));
     }
@@ -92,23 +92,37 @@ class AspectLoaderTest extends TestCase
     public function testGetUnloadedAspectsReturnsOnlyAspectsNotYetLoaded(): void
     {
         $container = new Container();
-        $aspectOne = new AspectLoaderTestAspectOne();
-        $aspectTwo = new AspectLoaderTestAspectTwo();
-
-        $container->add(AspectLoaderTestAspectOne::class, $aspectOne);
-        $container->add(AspectLoaderTestAspectTwo::class, $aspectTwo);
+        $container->add(AspectLoaderTestAspectOne::class, new AspectLoaderTestAspectOne());
+        $container->add(AspectLoaderTestAspectTwo::class, new AspectLoaderTestAspectTwo());
 
         $loader = new AspectLoader($container);
 
         // Before anything is loaded, both aspects are unloaded
         $this->assertSame(
-            [$aspectOne, $aspectTwo],
+            [AspectLoaderTestAspectOne::class, AspectLoaderTestAspectTwo::class],
             $loader->getUnloadedAspects(),
         );
 
-        $loader->loadAndRegister($aspectOne);
+        $loader->loadAndRegister(AspectLoaderTestAspectOne::class);
 
-        $this->assertSame([$aspectTwo], $loader->getUnloadedAspects());
+        $this->assertSame([AspectLoaderTestAspectTwo::class], $loader->getUnloadedAspects());
+    }
+
+    public function testDeferredAspectsAreLoadedWithoutCreatingThem(): void
+    {
+        $container = new Container();
+        $container->addLazyService(
+            AspectLoaderTestAspectOne::class,
+            static fn(): never => throw new LogicException('The aspect must not be created to load it'),
+        );
+        $extension = $this->createMock(AspectLoaderExtension::class);
+        $extension->method('load')->willReturn([]);
+        $loader = new AspectLoader($container, $extension);
+
+        $this->assertSame([AspectLoaderTestAspectOne::class], $loader->getUnloadedAspects());
+        $loader->loadAndRegister(AspectLoaderTestAspectOne::class);
+
+        $this->assertSame([], $loader->getUnloadedAspects());
     }
 }
 

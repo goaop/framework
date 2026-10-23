@@ -66,7 +66,7 @@ ApplicationAspectKernel::getInstance()->getContainer()->setDelegate($psrContaine
 ```
 
 Weaving and the cache warm-up only need the class of the aspect, so they run before `setDelegate()`, even in
-`bin/aspect`. The factory runs on the first advice call; a dependency that is still missing then throws
+`bin/aspect`, and never create an aspect. The factory runs on the first advice call; a dependency that is still missing then throws
 `ServiceNotFoundException`.
 
 - A factory never asks the aspect container for its own id: that id resolves to the aspect being built.
@@ -75,8 +75,9 @@ Weaving and the cache warm-up only need the class of the aspect, so they run bef
   (some containers can, each in its own way). Aspects are therefore never discovered in the delegate, every aspect
   is registered in `configureAop()`. An integration bridge for a specific framework can collect the services by
   tag or interface from its container and register them with `addLazyService()`.
-- An aspect without instance properties cannot be created lazily, so its factory runs when the aspects are
-  collected for weaving, before the delegate exists. Such an aspect has no dependencies to inject.
+- Weaving never creates an aspect: it reads the aspect class, and the advices refer to the aspect by class and
+  method name. Every aspect, also one without instance properties (which PHP can not make lazy), is created by its
+  factory on the first call of one of its advices, once the application container is attached.
 
 ## Extending the transformation pipeline
 

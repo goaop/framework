@@ -40,7 +40,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $aspect     = new AbstractAspectLoaderExtensionTestAspect();
         $reflection = new ReflectionMethod($aspect, 'someMethod');
 
-        $pointcut = $this->extension->doParsePointcut($aspect, $reflection, 'execution(public Foo->bar(*))');
+        $pointcut = $this->extension->doParsePointcut($aspect::class, $reflection, 'execution(public Foo->bar(*))');
 
         // @phpstan-ignore method.alreadyNarrowedType (runtime double-check of the declared return type)
         $this->assertInstanceOf(Pointcut::class, $pointcut);
@@ -53,7 +53,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
 
         // "$this" must be replaced with the aspect's own class name before lexing
         $pointcut = $this->extension->doParsePointcut(
-            $aspect,
+            $aspect::class,
             $reflection,
             'execution(public $this->someMethod(*))',
         );
@@ -70,7 +70,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Can not recognize the lexical structure/');
 
-        $this->extension->doParsePointcut($aspect, $reflection, 'execution(public Foo->@#$%^bar(*))');
+        $this->extension->doParsePointcut($aspect::class, $reflection, 'execution(public Foo->@#$%^bar(*))');
     }
 
     public function testThrowsUnexpectedValueExceptionOnLexicalErrorForPropertyReflection(): void
@@ -81,7 +81,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Can not recognize the lexical structure/');
 
-        $this->extension->doParsePointcut($aspect, $reflection, 'execution(public Foo->@#$%^bar(*))');
+        $this->extension->doParsePointcut($aspect::class, $reflection, 'execution(public Foo->@#$%^bar(*))');
     }
 
     public function testThrowsUnexpectedValueExceptionOnLexicalErrorForClassReflection(): void
@@ -92,7 +92,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Can not recognize the lexical structure/');
 
-        $this->extension->doParsePointcut($aspect, $reflection, 'execution(public Foo->@#$%^bar(*))');
+        $this->extension->doParsePointcut($aspect::class, $reflection, 'execution(public Foo->@#$%^bar(*))');
     }
 
     public function testThrowsUnexpectedValueExceptionOnParserErrorForMethodReflection(): void
@@ -103,7 +103,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Unexpected token/');
 
-        $this->extension->doParsePointcut($aspect, $reflection, 'public execution(*)');
+        $this->extension->doParsePointcut($aspect::class, $reflection, 'public execution(*)');
     }
 
     public function testThrowsUnexpectedValueExceptionOnParserErrorForPropertyReflection(): void
@@ -114,7 +114,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Unexpected token/');
 
-        $this->extension->doParsePointcut($aspect, $reflection, 'public execution(*)');
+        $this->extension->doParsePointcut($aspect::class, $reflection, 'public execution(*)');
     }
 
     public function testThrowsUnexpectedValueExceptionOnParserErrorForClassReflection(): void
@@ -125,7 +125,7 @@ class AbstractAspectLoaderExtensionTest extends TestCase
         $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessageMatches('/Unexpected token/');
 
-        $this->extension->doParsePointcut($aspect, $reflection, 'public execution(*)');
+        $this->extension->doParsePointcut($aspect::class, $reflection, 'public execution(*)');
     }
 }
 
@@ -134,21 +134,22 @@ class AbstractAspectLoaderExtensionTest extends TestCase
  */
 final class AbstractAspectLoaderExtensionTestExtension extends AbstractAspectLoaderExtension implements AspectLoaderExtension
 {
-    public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
+    public function load(ReflectionClass $reflectionAspect): array
     {
         return [];
     }
 
     /**
      * @template T of Aspect
+     * @param class-string<T>                                         $aspectClass
      * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
      */
     public function doParsePointcut(
-        Aspect $aspect,
+        string $aspectClass,
         ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
         string $pointcutExpression,
     ): Pointcut {
-        return $this->parsePointcut($aspect, $reflection, $pointcutExpression);
+        return $this->parsePointcut($aspectClass, $reflection, $pointcutExpression);
     }
 }
 

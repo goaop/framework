@@ -68,6 +68,18 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
          * @internal Framework-internal introspection point (e.g. debug:advisor command), not a public API
          */
         public private(set) string $pointcutExpression = '',
+        /**
+         * @var class-string<Aspect>|null Aspect class of an advice method, null for a plain closure advice
+         *
+         * @internal Set by the lazy {@see Interceptor} facade: the weaver reads it without creating the aspect
+         */
+        public private(set) ?string $aspectClass = null,
+        /**
+         * Name of the advice method of {@see $aspectClass}
+         *
+         * @internal Set together with {@see $aspectClass}
+         */
+        public private(set) ?string $adviceMethodName = null,
     ) {}
 
     /**
@@ -90,10 +102,18 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
      */
     final public function compileToPhp(): Expr
     {
-        $reflectionAdvice     = new ReflectionFunction($this->adviceMethod);
-        $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
-        if (!isset($scopeReflectionClass) || !is_subclass_of($scopeReflectionClass->name, Aspect::class)) {
-            throw NotCompilableException::interceptorWithoutAspect();
+        // A lazy interceptor knows its aspect method: reading the advice closure would create the aspect
+        if ($this->aspectClass !== null && $this->adviceMethodName !== null) {
+            $aspectClass = $this->aspectClass;
+            $methodName  = $this->adviceMethodName;
+        } else {
+            $reflectionAdvice     = new ReflectionFunction($this->adviceMethod);
+            $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
+            if (!isset($scopeReflectionClass) || !is_subclass_of($scopeReflectionClass->name, Aspect::class)) {
+                throw NotCompilableException::interceptorWithoutAspect();
+            }
+            $aspectClass = $scopeReflectionClass->name;
+            $methodName  = $reflectionAdvice->name;
         }
 
         $factoryMethod = match ($this::class) {
@@ -105,8 +125,8 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
         };
 
         $args = [
-            new Arg(new ClassConstFetch(new FullyQualified($scopeReflectionClass->name), 'class')),
-            new Arg(new String_($reflectionAdvice->name)),
+            new Arg(new ClassConstFetch(new FullyQualified($aspectClass), 'class')),
+            new Arg(new String_($methodName)),
         ];
         if ($this->adviceOrder !== 0) {
             $args[] = new Arg(new Int_($this->adviceOrder), name: new Identifier('order'));

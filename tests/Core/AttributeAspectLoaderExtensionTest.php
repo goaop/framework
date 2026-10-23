@@ -8,6 +8,7 @@ use Attribute;
 use Go\Aop\Aspect;
 use Go\Aop\Exception\AspectException;
 use Go\Aop\Exception\PointcutSyntaxException;
+use Go\Aop\Framework\AbstractInterceptor as AbstractInterceptorClass;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutLexer;
@@ -18,6 +19,7 @@ use Go\Lang\Attribute\Before;
 use Go\Lang\Attribute\Pointcut as PointcutAttribute;
 use Go\Stubs\AttributeAspectLoaderExtensionTestPrivateAspect;
 use Go\Stubs\AttributeAspectLoaderExtensionTestPublicAspect;
+use LogicException;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -33,9 +35,23 @@ final class AttributeAspectLoaderExtensionTest extends TestCase
     public function testLoadsAdvisorForPublicAdviceMethod(): void
     {
         $aspect      = new AttributeAspectLoaderExtensionTestPublicAspect();
-        $loadedItems = $this->extension->load($aspect, new ReflectionClass($aspect));
+        $loadedItems = $this->extension->load(new ReflectionClass($aspect));
 
         $this->assertArrayHasKey($aspect::class . '->publicAdvice', $loadedItems);
+    }
+
+    public function testLoadsAdvicesWithoutCreatingTheAspect(): void
+    {
+        $loadedItems = $this->extension->load(new ReflectionClass(AttributeAspectLoaderExtensionTestUncreatableAspect::class));
+
+        $advisor = $loadedItems[AttributeAspectLoaderExtensionTestUncreatableAspect::class . '->advice'] ?? null;
+        $this->assertInstanceOf(GenericPointcutAdvisor::class, $advisor);
+        $interceptor = $advisor->getAdvice();
+        $this->assertInstanceOf(AbstractInterceptorClass::class, $interceptor);
+        $this->assertSame(AttributeAspectLoaderExtensionTestUncreatableAspect::class, $interceptor->aspectClass);
+        $this->assertSame('advice', $interceptor->adviceMethodName);
+        $this->assertSame(3, $interceptor->adviceOrder);
+        $this->assertTrue(new ReflectionClass($interceptor::class)->isUninitializedLazyObject($interceptor));
     }
 
     public function testRejectsNonPublicAdviceMethod(): void
@@ -45,13 +61,13 @@ final class AttributeAspectLoaderExtensionTest extends TestCase
         $this->expectException(AspectException::class);
         $this->expectExceptionMessage('first-class advice callables require all advice methods to be public');
 
-        $this->extension->load($aspect, new ReflectionClass($aspect));
+        $this->extension->load(new ReflectionClass($aspect));
     }
 
     public function testForeignAttributeOnAdviceMethodIsIgnored(): void
     {
         $aspect      = new AttributeAspectLoaderExtensionTestForeignAttributeAspect();
-        $loadedItems = $this->extension->load($aspect, new ReflectionClass($aspect));
+        $loadedItems = $this->extension->load(new ReflectionClass($aspect));
 
         $this->assertSame([$aspect::class . '->advice'], array_keys($loadedItems));
     }
@@ -59,7 +75,7 @@ final class AttributeAspectLoaderExtensionTest extends TestCase
     public function testPointcutAndAdviceOnOneMethodAreBothLoaded(): void
     {
         $aspect      = new AttributeAspectLoaderExtensionTestPointcutAndAdviceAspect();
-        $loadedItems = $this->extension->load($aspect, new ReflectionClass($aspect));
+        $loadedItems = $this->extension->load(new ReflectionClass($aspect));
 
         $methodId = $aspect::class . '->pointcutAndAdvice';
         $this->assertInstanceOf(Pointcut::class, $loadedItems[$methodId] ?? null);
@@ -78,7 +94,7 @@ final class AttributeAspectLoaderExtensionTest extends TestCase
             'Advice method ' . AttributeAspectLoaderExtensionTestTwoAdvicesAspect::class . '::twoAdvices() declares 2 advice attributes',
         );
 
-        $this->extension->load($aspect, new ReflectionClass($aspect));
+        $this->extension->load(new ReflectionClass($aspect));
     }
 
     public function testPointcutSyntaxErrorCitesTheMethod(): void
@@ -88,12 +104,26 @@ final class AttributeAspectLoaderExtensionTest extends TestCase
         $this->expectException(PointcutSyntaxException::class);
         $this->expectExceptionMessage(AttributeAspectLoaderExtensionTestBrokenPointcutAspect::class . '->brokenAdvice');
 
-        $this->extension->load($aspect, new ReflectionClass($aspect));
+        $this->extension->load(new ReflectionClass($aspect));
     }
 }
 
 #[Attribute(Attribute::TARGET_METHOD)]
 final class AttributeAspectLoaderExtensionTestForeignAttribute {}
+
+/**
+ * Aspect without instance properties (PHP can not make it lazy) that must never be created by loading it
+ */
+final class AttributeAspectLoaderExtensionTestUncreatableAspect implements Aspect
+{
+    public function __construct()
+    {
+        throw new LogicException('Loading an aspect must not create it');
+    }
+
+    #[Before('execution(public NonExistent\**->*(*))', order: 3)]
+    public function advice(): void {}
+}
 
 final class AttributeAspectLoaderExtensionTestForeignAttributeAspect implements Aspect
 {
