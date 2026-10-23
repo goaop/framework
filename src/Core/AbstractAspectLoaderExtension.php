@@ -41,15 +41,16 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * General method for parsing pointcuts
      *
      * @throws PointcutSyntaxException if there was an error during parsing
+     * @param class-string<T>                                         $aspectClass Aspect the expression belongs to, `$this` in it
      * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
      * @template T of Aspect
      */
     final protected function parsePointcut(
-        Aspect $aspect,
+        string $aspectClass,
         ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
         string $pointcutExpression,
     ): Pointcut {
-        $stream = $this->makeLexicalAnalyze($aspect, $reflection, $pointcutExpression);
+        $stream = $this->makeLexicalAnalyze($aspectClass, $reflection, $pointcutExpression);
 
         return $this->parseTokenStream($reflection, $pointcutExpression, $stream);
     }
@@ -57,18 +58,19 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     /**
      * Performs lexical analyze of pointcut
      *
+     * @param class-string<T>                                         $aspectClass
      * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
      * @template T of Aspect
      *
      * @throws PointcutSyntaxException
      */
     private function makeLexicalAnalyze(
-        Aspect $aspect,
+        string $aspectClass,
         ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
         string $pointcutExpression,
     ): TokenStream {
         try {
-            $resolvedThisPointcut = str_replace('$this', $aspect::class, $pointcutExpression);
+            $resolvedThisPointcut = str_replace('$this', $aspectClass, $pointcutExpression);
             $stream = $this->pointcutLexer->lex($resolvedThisPointcut);
         } catch (RecognitionException $e) {
             throw PointcutSyntaxException::unrecognizedLexicalStructure($pointcutExpression, $reflection, $e);

@@ -432,6 +432,28 @@ class ContainerTest extends TestCase
         $this->assertFalse((new \ReflectionClass(StatefulTestAspect::class))->isUninitializedLazyObject($aspect));
     }
 
+    public function testServiceIdsByInterfaceNeverCreateServices(): void
+    {
+        $constructed = false;
+        $this->container->add(StatefulTestAspect::class, new StatefulTestAspect(1));
+        // A property-less class: materializing it would run the factory right away
+        $this->container->addLazyService(
+            DoSomethingAspect::class,
+            function () use (&$constructed): DoSomethingAspect {
+                $constructed = true;
+
+                return new DoSomethingAspect();
+            },
+        );
+
+        $this->assertSame(
+            [StatefulTestAspect::class, DoSomethingAspect::class],
+            $this->container->getServiceIdsByInterface(Aspect::class),
+        );
+        $this->assertFalse($constructed, 'Listing the ids must not run any factory');
+        $this->assertSame([], $this->container->getServiceIdsByInterface(\Countable::class));
+    }
+
     public function testPropertylessServiceFallsBackToEagerConstruction(): void
     {
         // PHP creates lazy objects of property-less classes as already initialized,

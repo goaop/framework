@@ -49,15 +49,17 @@ class AspectLoader implements AspectLoaderInterface
      *
      * @see loadAndRegister() method for registration
      *
+     * @param class-string<Aspect> $aspectClass
+     *
      * @return array<string, Pointcut|Advisor>
      */
-    public function load(Aspect $aspect): array
+    public function load(string $aspectClass): array
     {
-        $refAspect   = new ReflectionClass($aspect);
+        $refAspect   = new ReflectionClass($aspectClass);
         $loadedItems = [];
 
         foreach ($this->aspectLoaders as $loader) {
-            $loadedItems += $loader->load($aspect, $refAspect);
+            $loadedItems += $loader->load($refAspect);
         }
 
         return $loadedItems;
@@ -65,28 +67,30 @@ class AspectLoader implements AspectLoaderInterface
 
     /**
      * Loads and register all items of aspect in the container
+     *
+     * @param class-string<Aspect> $aspectClass
      */
-    public function loadAndRegister(Aspect $aspect): void
+    public function loadAndRegister(string $aspectClass): void
     {
-        $loadedItems = $this->load($aspect);
+        $loadedItems = $this->load($aspectClass);
         foreach ($loadedItems as $itemId => $item) {
             $this->container->add($itemId, $item);
         }
-        $this->loadedAspects[$aspect::class] = $aspect::class;
+        $this->loadedAspects[$aspectClass] = $aspectClass;
     }
 
     /**
-     * Returns list of unloaded aspects in the container
+     * Returns the classes of the aspects registered in the container that are not loaded yet
      *
-     * @return list<Aspect>
+     * @return list<class-string<Aspect>>
      */
     public function getUnloadedAspects(): array
     {
         $unloadedAspects = [];
 
-        foreach ($this->container->getServicesByInterface(Aspect::class) as $aspect) {
-            if (!isset($this->loadedAspects[$aspect::class])) {
-                $unloadedAspects[] = $aspect;
+        foreach ($this->container->getServiceIdsByInterface(Aspect::class) as $aspectClass) {
+            if (!isset($this->loadedAspects[$aspectClass]) && is_subclass_of($aspectClass, Aspect::class)) {
+                $unloadedAspects[] = $aspectClass;
             }
         }
 

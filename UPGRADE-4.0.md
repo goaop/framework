@@ -114,6 +114,25 @@ object of the wrong type now fails on first use, not at registration.
 `AspectContainer::addResource()` is part of the interface. `onRegistration()` lets you react to
 deferred registrations of services implementing an interface.
 
+Weaving never creates aspects: the aspect loader reads an aspect from its class, and each advice refers to it by
+class and method name. A deferred aspect is created on the first call of one of its advices, including an aspect
+without instance properties, which PHP can not make lazy (its factory used to run as soon as the weaver collected
+the aspects). Register aspects under their class name: generated code resolves them with
+`$container->getService(MonitorAspect::class)`. `AspectContainer::getServiceIdsByInterface()` lists the ids of the
+services implementing an interface without creating them; a custom `containerClass` implements it too.
+
+Custom aspect loader extensions get the reflection of the aspect only:
+
+```php
+// before
+public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
+
+// 4.0
+public function load(ReflectionClass $reflectionAspect): array
+```
+
+`AbstractAspectLoaderExtension::parsePointcut()` takes the aspect class name instead of the aspect instance.
+
 ### PSR-11 container
 
 `AspectContainer` extends `Psr\Container\ContainerInterface`, so the container can be passed to any code

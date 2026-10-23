@@ -16,7 +16,7 @@ use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use Go\Core\AspectLoader;
-use ReflectionObject;
+use ReflectionClass;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -61,16 +61,16 @@ class DebugAspectCommand extends BaseAspectCommand
         $aspectName = $input->getOption('aspect');
         if (!is_string($aspectName) || $aspectName === '') {
             $io->text('<info>' . $this->aspectKernel::class . '</info> has following enabled aspects:');
-            $aspects = $container->getServicesByInterface(Aspect::class);
+            $aspects = $container->getServiceIdsByInterface(Aspect::class);
         } else {
             $aspectName = ltrim($aspectName, '\\');
             if (!$container->has($aspectName) || !is_subclass_of($aspectName, Aspect::class)) {
-                $registeredAspects = array_keys($container->getServicesByInterface(Aspect::class));
+                $registeredAspects = $container->getServiceIdsByInterface(Aspect::class);
                 $io->error(sprintf('Aspect "%s" is not registered in the kernel.', $aspectName) . self::suggestAlternative($aspectName, $registeredAspects));
 
                 return Command::FAILURE;
             }
-            $aspects[] = $container->getService($aspectName);
+            $aspects[] = $aspectName;
         }
         $this->showRegisteredAspectsInfo($io, $aspects);
 
@@ -78,23 +78,27 @@ class DebugAspectCommand extends BaseAspectCommand
     }
 
     /**
-     * Shows an information about registered aspects
+     * Shows an information about registered aspects, read from their classes: no aspect is created
      *
-     * @param Aspect[] $aspects List of aspects
+     * @param list<string> $aspects Classes of the aspects
      */
     private function showRegisteredAspectsInfo(SymfonyStyle $io, array $aspects): void
     {
-        foreach ($aspects as $aspect) {
-            $this->showAspectInfo($io, $aspect);
+        foreach ($aspects as $aspectClass) {
+            if (is_subclass_of($aspectClass, Aspect::class)) {
+                $this->showAspectInfo($io, $aspectClass);
+            }
         }
     }
 
     /**
      * Displays an information about single aspect
+     *
+     * @param class-string<Aspect> $aspectClass
      */
-    private function showAspectInfo(SymfonyStyle $io, Aspect $aspect): void
+    private function showAspectInfo(SymfonyStyle $io, string $aspectClass): void
     {
-        $refAspect  = new ReflectionObject($aspect);
+        $refAspect  = new ReflectionClass($aspectClass);
         $aspectName = $refAspect->getName();
         $io->section($aspectName);
         $io->writeln('Defined in: <info>' . $refAspect->getFileName() . '</info>');
@@ -102,20 +106,22 @@ class DebugAspectCommand extends BaseAspectCommand
         if ($docComment) {
             $io->writeln($this->getPrettyText($docComment));
         }
-        $this->showAspectPointcutsAndAdvisors($io, $aspect);
+        $this->showAspectPointcutsAndAdvisors($io, $aspectClass);
     }
 
     /**
      * Shows an information about aspect pointcuts and advisors
+     *
+     * @param class-string<Aspect> $aspectClass
      */
-    private function showAspectPointcutsAndAdvisors(SymfonyStyle $io, Aspect $aspect): void
+    private function showAspectPointcutsAndAdvisors(SymfonyStyle $io, string $aspectClass): void
     {
         $container = $this->aspectKernel->getContainer();
 
         $aspectLoader = $container->getService(AspectLoader::class);
         $io->writeln('<comment>Pointcuts and advices</comment>');
 
-        $aspectItems     = $aspectLoader->load($aspect);
+        $aspectItems     = $aspectLoader->load($aspectClass);
         $aspectItemsInfo = [];
         foreach ($aspectItems as $itemId => $item) {
             $itemType = 'Unknown';

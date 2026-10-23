@@ -39,6 +39,18 @@ final readonly class GeneratedInterceptor
             throw AspectException::unsupportedAdvice($advisorId, $advice);
         }
 
+        // A lazy interceptor knows its aspect method: reading the advice closure would create the aspect
+        if ($advice->aspectClass !== null && $advice->adviceMethodName !== null) {
+            return new self(
+                $advice->getType()->value,
+                $advice->aspectClass,
+                $advice->adviceMethodName,
+                $advice->adviceOrder,
+                $advisorId,
+                false,
+            );
+        }
+
         $reflectionAdvice    = new ReflectionFunction($advice->getRawAdvice());
         $scopeClass          = $reflectionAdvice->getClosureScopeClass();
         $usesContainerAdvice = $scopeClass === null || !is_subclass_of($scopeClass->name, Aspect::class);

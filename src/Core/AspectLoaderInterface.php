@@ -26,21 +26,28 @@ interface AspectLoaderInterface
     /**
      * Loads an aspect with the help of aspect loaders, but don't register it in the container
      *
+     * Only the class is read: the aspect itself is never created, its advices resolve it from the container when
+     * they run for the first time.
+     *
      * @see loadAndRegister() method for registration
+     *
+     * @param class-string<Aspect> $aspectClass
      *
      * @return array<string, Pointcut|Advisor>
      */
-    public function load(Aspect $aspect): array;
+    public function load(string $aspectClass): array;
 
     /**
      * Loads and register all items of aspect in the container
+     *
+     * @param class-string<Aspect> $aspectClass
      */
-    public function loadAndRegister(Aspect $aspect): void;
+    public function loadAndRegister(string $aspectClass): void;
 
     /**
-     * Returns list of unloaded aspects in the container
+     * Returns the classes of the aspects registered in the container that are not loaded yet
      *
-     * @return list<Aspect>
+     * @return list<class-string<Aspect>>
      */
     public function getUnloadedAspects(): array;
 }

@@ -1,7 +1,7 @@
 # src/Core — Container and aspect loading
 
 ## Container (Container.php)
-- Generic, AOP-unaware DI container, PSR-11 (AspectContainer extends Psr\Container\ContainerInterface): add(by class-string|key), get(), has(), getService(), addLazyService(Closure), setDelegate(), onRegistration(interfaceFQCN, listener), addResource()
+- Generic, AOP-unaware DI container, PSR-11 (AspectContainer extends Psr\Container\ContainerInterface): add(by class-string|key), get(), has(), getService(), addLazyService(Closure), setDelegate(), onRegistration(interfaceFQCN, listener), addResource(), getServiceIdsByInterface() (ids of eager/materialized entries, then matching deferred ids; never materializes)
 - Delegate (app's PSR-11 container, attached after init via setDelegate()): get()/has() fall back to it on a miss only (hot path unchanged, delegated values are not stored); no dedicated registration API: addLazyService() factories resolve dependencies through get()/getService() on first use, so registration/weaving/warm-up never need the delegate. getServicesByInterface() never enumerates it (PSR-11 has no lookup by interface/tag; bridges collect tagged services and register them)
 - Automatic tagging by interface; deferred services materialize as native lazy proxies via NativeLazyProxy (engine probe, no userland compatibility predicate)
 - add() runs on every request: tags via class_implements(), the class file of an added object becomes a resource only on the next isFreshSince() (no reflection or stat calls at registration)
@@ -11,6 +11,7 @@
 
 ## Aspect loading
 - AspectLoader — scans aspect classes for pointcut/advice attributes → Advisor[]; CachedAspectLoader decorates it (both implement AspectLoaderInterface)
+- Aspects are loaded BY CLASS, never by instance: getUnloadedAspects() lists ids via AspectContainer::getServiceIdsByInterface() (no factory runs), AspectLoaderExtension::load(ReflectionClass) reads attributes only, AttributeAspectLoaderExtension builds advices with the lazy Interceptor facade (aspectClass/adviceMethodName/order/expression readable without initialization). Weaving, warm-up and the advisor cache never create an aspect — also not one PHP can't make lazy (no instance properties); it is created on its first advice call (`The::aspect()`). Never reintroduce `getServicesByInterface(Aspect::class)` or `getClosure($aspect)` on the weaving path
 - AdvisorIndex (@internal) — loads unloaded aspects, returns advisors, hasPointcutKind(Pointcut::KIND_*) = union of advisor pointcut kinds, recollected whenever getServicesByInterface(Advisor) returns another array (after any registration). Gates kind-specific machinery instead of feature flags (`new` rewriting ← KIND_INIT); function advices need no gate (AdviceMatcher skips non-KIND_FUNCTION advisors)
 
 ### Compiled advisor cache

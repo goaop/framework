@@ -100,6 +100,19 @@ interface AspectContainer extends ContainerInterface
     public function getServicesByInterface(string $interfaceTagClassName): array;
 
     /**
+     * Returns the ids of the services tagged with the marker interface, without creating any of them
+     *
+     * Unlike {@see getServicesByInterface()}, a deferred service is not materialized: its id (a class-name) is matched
+     * against the interface, which autoloads the class but never runs its factory. The weaver reads aspects this way,
+     * by class, so an aspect is only created when one of its advices runs.
+     *
+     * @param class-string $interfaceTagClassName Interface name of services to look up
+     *
+     * @return list<string> Ids of eagerly added and materialized services first, then the deferred ones
+     */
+    public function getServiceIdsByInterface(string $interfaceTagClassName): array;
+
+    /**
      * Returns a value from the container
      *
      * @param string $id Identifier of the entry

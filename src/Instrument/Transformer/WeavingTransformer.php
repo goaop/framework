@@ -1103,7 +1103,7 @@ final class WeavingTransformer extends BaseSourceTransformer
     /**
      * Utility method to load and register unloaded aspects
      *
-     * @param Aspect[] $unloadedAspects List of unloaded aspects
+     * @param list<class-string<Aspect>> $unloadedAspects Classes of the unloaded aspects
      */
     private function loadAndRegisterAspects(array $unloadedAspects): void
     {

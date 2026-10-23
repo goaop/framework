@@ -14,11 +14,8 @@ namespace Go\Core;
 
 use Go\Aop\Aspect;
 use Go\Aop\Exception\AspectException;
-use Go\Aop\Framework\AfterInterceptor;
-use Go\Aop\Framework\AfterThrowingInterceptor;
-use Go\Aop\Framework\AroundInterceptor;
-use Go\Aop\Framework\BeforeInterceptor;
-use Go\Aop\Intercept\Interceptor;
+use Go\Aop\Framework\Interceptor;
+use Go\Aop\Intercept\Interceptor as InterceptorInterface;
 use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\Lang\Attribute;
 use Go\Lang\Attribute\After;
@@ -41,8 +38,9 @@ final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
      */
     public const string ADVISOR_ID_SUFFIX = '.advice';
 
-    public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
+    public function load(ReflectionClass $reflectionAspect): array
     {
+        $aspectClass = $reflectionAspect->getName();
         $loadedItems = [];
         foreach ($reflectionAspect->getMethods() as $aspectMethod) {
             $methodId = $reflectionAspect->getName() . '->' . $aspectMethod->getName();
@@ -56,12 +54,12 @@ final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
 
             foreach ($pointcutAttributes as $reflectionAttribute) {
                 $attribute = $reflectionAttribute->newInstance();
-                $loadedItems[$methodId] = $this->parsePointcut($aspect, $aspectMethod, $attribute->expression);
+                $loadedItems[$methodId] = $this->parsePointcut($aspectClass, $aspectMethod, $attribute->expression);
             }
             foreach ($adviceAttributes as $reflectionAttribute) {
                 $attribute   = $reflectionAttribute->newInstance();
-                $pointcut    = $this->parsePointcut($aspect, $aspectMethod, $attribute->expression);
-                $interceptor = $this->getAdvice($attribute, $aspect, $aspectMethod);
+                $pointcut    = $this->parsePointcut($aspectClass, $aspectMethod, $attribute->expression);
+                $interceptor = $this->getAdvice($attribute, $aspectClass, $aspectMethod);
                 $advisorId   = $pointcutAttributes === [] ? $methodId : $methodId . self::ADVISOR_ID_SUFFIX;
 
                 $loadedItems[$advisorId] = new GenericPointcutAdvisor($pointcut, $interceptor);
@@ -72,27 +70,33 @@ final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
     }
 
     /**
-     * Returns an advice (interceptor) instance by meta-type attribute and closure
+     * Returns an advice (interceptor) for the advice method, without creating the aspect
+     *
+     * The interceptor is the lazy form of the {@see Interceptor} facade: it carries the aspect class, the method name,
+     * the order and the expression as plain data, and resolves the aspect from the container on first use only.
+     *
+     * @param class-string<Aspect> $aspectClass
      *
      * @throws AspectException If the advice method is not public or the attribute is unsupported
      */
     protected function getAdvice(
         AbstractInterceptor $interceptorAttribute,
-        Aspect $aspect,
+        string $aspectClass,
         ReflectionMethod $aspectMethod,
-    ): Interceptor {
+    ): InterceptorInterface {
         if (!$aspectMethod->isPublic()) {
             throw AspectException::nonPublicAdviceMethod($aspectMethod);
         }
 
-        $adviceCallback     = $aspectMethod->getClosure($aspect);
-        $adviceOrder        = $interceptorAttribute->order;
-        $pointcutExpression = $interceptorAttribute->expression;
+        $methodName = $aspectMethod->getName();
+        $order      = $interceptorAttribute->order;
+        $expression = $interceptorAttribute->expression;
+
         return match (true) {
-            $interceptorAttribute instanceof Before => new BeforeInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
-            $interceptorAttribute instanceof After => new AfterInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
-            $interceptorAttribute instanceof Around => new AroundInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
-            $interceptorAttribute instanceof AfterThrowing => new AfterThrowingInterceptor($adviceCallback, $adviceOrder, $pointcutExpression),
+            $interceptorAttribute instanceof Before => Interceptor::before($aspectClass, $methodName, $order, $expression),
+            $interceptorAttribute instanceof After => Interceptor::after($aspectClass, $methodName, $order, $expression),
+            $interceptorAttribute instanceof Around => Interceptor::around($aspectClass, $methodName, $order, $expression),
+            $interceptorAttribute instanceof AfterThrowing => Interceptor::afterThrowing($aspectClass, $methodName, $order, $expression),
             default => throw AspectException::unsupportedAdviceAttribute($interceptorAttribute),
         };
     }
