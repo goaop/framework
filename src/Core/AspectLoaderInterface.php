@@ -15,6 +15,7 @@ namespace Go\Core;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
+use ReflectionClass;
 
 /**
  * Contract for loading aspects into the container
@@ -31,23 +32,31 @@ interface AspectLoaderInterface
      *
      * @see loadAndRegister() method for registration
      *
-     * @param class-string<Aspect> $aspectClass
+     * @internal
+     *
+     * @param ReflectionClass<covariant Aspect> $aspect
      *
      * @return array<string, Pointcut|Advisor>
      */
-    public function load(string $aspectClass): array;
+    public function load(ReflectionClass $aspect): array;
 
     /**
      * Loads and register all items of aspect in the container
      *
-     * @param class-string<Aspect> $aspectClass
+     * @internal
+     *
+     * @param ReflectionClass<covariant Aspect> $aspect
      */
-    public function loadAndRegister(string $aspectClass): void;
+    public function loadAndRegister(ReflectionClass $aspect): void;
 
     /**
-     * Returns the classes of the aspects registered in the container that are not loaded yet
+     * Returns the aspects registered in the container that are not loaded yet
      *
-     * @return list<class-string<Aspect>>
+     * The reflection of each aspect is created once here and passed on to the loaders.
+     *
+     * @internal
+     *
+     * @return list<ReflectionClass<covariant Aspect>>
      */
     public function getUnloadedAspects(): array;
 }

@@ -94,18 +94,17 @@ class CachedAspectLoader implements AspectLoaderInterface
         $this->advisorCacheCompiler = new AdvisorCacheCompiler();
     }
 
-    public function load(string $aspectClass): array
+    public function load(ReflectionClass $aspect): array
     {
         if ($this->cacheDir === null || $this->cacheDir === '') {
-            return $this->loader->load($aspectClass);
+            return $this->loader->load($aspect);
         }
 
-        $refAspect      = new ReflectionClass($aspectClass);
-        $aspectFileName = $refAspect->getFileName();
+        $aspectFileName = $aspect->getFileName();
         $cacheFileName  = $aspectFileName !== false ? $this->resolveCacheFileName($aspectFileName) : null;
         if ($aspectFileName === false || $cacheFileName === null) {
             // Aspects without a resolvable source file below the application root are not cached
-            return $this->loader->load($aspectClass);
+            return $this->loader->load($aspect);
         }
 
         // With a prebuilt cache an existing advisor cache file is trusted without any
@@ -114,7 +113,7 @@ class CachedAspectLoader implements AspectLoaderInterface
         if ($this->isPrebuiltCache) {
             $loadedItems = file_exists($cacheFileName) ? $this->loadFromCache($cacheFileName) : null;
 
-            return $loadedItems ?? $this->loader->load($aspectClass);
+            return $loadedItems ?? $this->loader->load($aspect);
         }
 
         // A fresh cache file is used when it is compatible, even when it holds no items (an aspect
@@ -126,8 +125,8 @@ class CachedAspectLoader implements AspectLoaderInterface
             }
         }
 
-        $loadedItems = $this->loader->load($aspectClass);
-        $this->saveToCache($refAspect->getName(), $loadedItems, $cacheFileName);
+        $loadedItems = $this->loader->load($aspect);
+        $this->saveToCache($aspect->name, $loadedItems, $cacheFileName);
 
         return $loadedItems;
     }
@@ -135,19 +134,19 @@ class CachedAspectLoader implements AspectLoaderInterface
     /**
      * Loads and register all items of aspect in the container
      */
-    public function loadAndRegister(string $aspectClass): void
+    public function loadAndRegister(ReflectionClass $aspect): void
     {
-        $loadedItems = $this->load($aspectClass);
+        $loadedItems = $this->load($aspect);
         foreach ($loadedItems as $itemId => $item) {
             $this->container->add($itemId, $item);
         }
-        $this->loadedAspects[$aspectClass] = $aspectClass;
+        $this->loadedAspects[$aspect->name] = $aspect->name;
     }
 
     /**
-     * Returns the classes of the aspects registered in the container that are not loaded yet
+     * Returns the aspects registered in the container that are not loaded yet
      *
-     * @return list<class-string<Aspect>>
+     * @return list<ReflectionClass<covariant Aspect>>
      */
     public function getUnloadedAspects(): array
     {
@@ -155,7 +154,7 @@ class CachedAspectLoader implements AspectLoaderInterface
 
         foreach ($this->container->getServiceIdsByInterface(Aspect::class) as $aspectClass) {
             if (!isset($this->loadedAspects[$aspectClass]) && is_subclass_of($aspectClass, Aspect::class)) {
-                $unloadedAspects[] = $aspectClass;
+                $unloadedAspects[] = new ReflectionClass($aspectClass);
             }
         }
 

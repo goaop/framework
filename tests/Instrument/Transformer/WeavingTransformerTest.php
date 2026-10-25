@@ -244,7 +244,7 @@ class WeavingTransformerTest extends TestCase
      */
     public function testLoadsUnloadedAspectsBeforeMatching(): void
     {
-        $aspect = $this->createStub(Aspect::class)::class;
+        $aspect = new ReflectionClass($this->createStub(Aspect::class));
         $loader = $this->createMock(AspectLoader::class);
         $loader->method('getUnloadedAspects')->willReturn([$aspect]);
         $loader->expects($this->once())->method('loadAndRegister')->with($aspect);

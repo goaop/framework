@@ -106,22 +106,22 @@ class DebugAspectCommand extends BaseAspectCommand
         if ($docComment) {
             $io->writeln($this->getPrettyText($docComment));
         }
-        $this->showAspectPointcutsAndAdvisors($io, $aspectClass);
+        $this->showAspectPointcutsAndAdvisors($io, $refAspect);
     }
 
     /**
      * Shows an information about aspect pointcuts and advisors
      *
-     * @param class-string<Aspect> $aspectClass
+     * @param ReflectionClass<covariant Aspect> $aspect
      */
-    private function showAspectPointcutsAndAdvisors(SymfonyStyle $io, string $aspectClass): void
+    private function showAspectPointcutsAndAdvisors(SymfonyStyle $io, ReflectionClass $aspect): void
     {
         $container = $this->aspectKernel->getContainer();
 
         $aspectLoader = $container->getService(AspectLoader::class);
         $io->writeln('<comment>Pointcuts and advices</comment>');
 
-        $aspectItems     = $aspectLoader->load($aspectClass);
+        $aspectItems     = $aspectLoader->load($aspect);
         $aspectItemsInfo = [];
         foreach ($aspectItems as $itemId => $item) {
             $itemType = 'Unknown';

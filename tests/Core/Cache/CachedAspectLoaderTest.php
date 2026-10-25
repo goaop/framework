@@ -24,6 +24,7 @@ use Go\Core\AspectLoaderInterface;
 use Go\Core\Container;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class CachedAspectLoaderTest extends TestCase
@@ -38,8 +39,8 @@ class CachedAspectLoaderTest extends TestCase
 
     private string $cacheDir;
 
-    /** @var class-string<Aspect> */
-    private string $aspectClass;
+    /** @var ReflectionClass<Aspect> */
+    private ReflectionClass $aspect;
 
     /**
      * Path of the fake aspect source file below the application root
@@ -73,7 +74,7 @@ class CachedAspectLoaderTest extends TestCase
         require $this->aspectFileName;
         $className = 'Go\\Core\\TestFixture\\' . $shortClassName;
         assert(is_subclass_of($className, Aspect::class));
-        $this->aspectClass = $className;
+        $this->aspect = new ReflectionClass($className);
 
         // The naming scheme: app-root prefix replaced by the cache dir, '.php' by '.cache.php'
         $this->cacheFileName = $this->cacheDir . '/src/Aspect/' . $shortClassName . '.cache.php';
@@ -132,7 +133,7 @@ class CachedAspectLoaderTest extends TestCase
         $this->writeCacheFile($this->validCacheFileContent(), stale: true);
         $this->innerLoader->expects($this->never())->method('load');
 
-        $loadedItems = $loader->load($this->aspectClass);
+        $loadedItems = $loader->load($this->aspect);
 
         $this->assertArrayHasKey('pc', $loadedItems);
         $this->assertInstanceOf(TruePointcut::class, $loadedItems['pc']);
@@ -148,7 +149,7 @@ class CachedAspectLoaderTest extends TestCase
         // A corrupt cache file is external interference and fails loudly - no fallback
         $thrownError = null;
         try {
-            $loader->load($this->aspectClass);
+            $loader->load($this->aspect);
         } catch (\ParseError $parseError) {
             $thrownError = $parseError;
         }
@@ -166,7 +167,7 @@ class CachedAspectLoaderTest extends TestCase
         $this->innerLoader->expects($this->once())->method('load')->willReturn([]);
 
         // A clean version mismatch is the expected upgrade path: silent direct-loader fallback
-        $this->assertSame([], $loader->load($this->aspectClass));
+        $this->assertSame([], $loader->load($this->aspect));
         $this->assertSame($wrongVersionContent, file_get_contents($this->cacheFileName));
     }
 
@@ -177,7 +178,7 @@ class CachedAspectLoaderTest extends TestCase
         $freshItems = ['pointcut.fresh' => new TruePointcut()];
         $this->innerLoader->expects($this->once())->method('load')->willReturn($freshItems);
 
-        $this->assertSame($freshItems, $loader->load($this->aspectClass));
+        $this->assertSame($freshItems, $loader->load($this->aspect));
 
         // The stale file must have been replaced by a freshly compiled one that includes cleanly
         $rewrittenData = include $this->cacheFileName;
@@ -198,7 +199,7 @@ class CachedAspectLoaderTest extends TestCase
 
         $thrownError = null;
         try {
-            $loader->load($this->aspectClass);
+            $loader->load($this->aspect);
         } catch (\ParseError $parseError) {
             $thrownError = $parseError;
         }
@@ -213,7 +214,7 @@ class CachedAspectLoaderTest extends TestCase
         $this->writeCacheFile($this->validCacheFileContent(), stale: false);
         $this->innerLoader->expects($this->never())->method('load');
 
-        $loadedItems = $loader->load($this->aspectClass);
+        $loadedItems = $loader->load($this->aspect);
 
         $this->assertArrayHasKey('pc', $loadedItems);
         $this->assertInstanceOf(TruePointcut::class, $loadedItems['pc']);
@@ -232,7 +233,7 @@ class CachedAspectLoaderTest extends TestCase
         $this->innerLoader->expects($this->once())->method('load')->willReturn($freshItems);
 
         // Using the valid rest would silently lose advices: the file is rebuilt instead
-        $this->assertSame($freshItems, $loader->load($this->aspectClass));
+        $this->assertSame($freshItems, $loader->load($this->aspect));
         $this->assertStringContainsString('pointcut.fresh', (string) file_get_contents($this->cacheFileName));
     }
 
@@ -241,12 +242,12 @@ class CachedAspectLoaderTest extends TestCase
         $loader = $this->createLoader(0);
         $this->innerLoader->expects($this->once())->method('load')->willReturn([]);
 
-        $this->assertSame([], $loader->load($this->aspectClass));
+        $this->assertSame([], $loader->load($this->aspect));
         $this->assertFileExists($this->cacheFileName);
         $cacheModificationTime = filemtime($this->cacheFileName);
 
         // An empty compatible cache is a hit: the loader is not called again and nothing is rewritten
-        $this->assertSame([], $loader->load($this->aspectClass));
+        $this->assertSame([], $loader->load($this->aspect));
         clearstatcache();
         $this->assertSame($cacheModificationTime, filemtime($this->cacheFileName));
     }
@@ -259,7 +260,7 @@ class CachedAspectLoaderTest extends TestCase
         $freshItems = ['pointcut.fresh' => new TruePointcut()];
         $this->innerLoader->expects($this->once())->method('load')->willReturn($freshItems);
 
-        $this->assertSame($freshItems, $loader->load($this->aspectClass));
+        $this->assertSame($freshItems, $loader->load($this->aspect));
         $this->assertFileDoesNotExist($this->cacheFileName);
     }
 
@@ -284,7 +285,7 @@ class CachedAspectLoaderTest extends TestCase
         // failure propagates instead of degrading to silent uncached operation
         $thrownException = null;
         try {
-            $loader->load($this->aspectClass);
+            $loader->load($this->aspect);
         } catch (NotCompilableException $notCompilableException) {
             $thrownException = $notCompilableException;
         }
@@ -301,7 +302,7 @@ class CachedAspectLoaderTest extends TestCase
         $loadedItems = ['pc' => new TruePointcut()];
         $this->innerLoader->expects($this->once())->method('load')->willReturn($loadedItems);
 
-        $this->assertSame($loadedItems, $loader->load($this->aspectClass));
+        $this->assertSame($loadedItems, $loader->load($this->aspect));
         $this->assertFileDoesNotExist($this->cacheFileName);
     }
 
@@ -313,7 +314,7 @@ class CachedAspectLoaderTest extends TestCase
         $loadedItems   = ['pc' => new TruePointcut()];
         $this->innerLoader->expects($this->once())->method('load')->willReturn($loadedItems);
 
-        $this->assertSame($loadedItems, $loader->load($foreignAspect::class));
+        $this->assertSame($loadedItems, $loader->load(new ReflectionClass($foreignAspect)));
 
         // No shadow file may appear anywhere below the cache directory
         $cacheEntries = scandir($this->cacheDir);

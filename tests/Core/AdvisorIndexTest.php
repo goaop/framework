@@ -23,6 +23,7 @@ use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\Lang\Attribute\Before;
 use LogicException;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 final class AdvisorIndexTest extends TestCase
 {
@@ -78,14 +79,14 @@ final class AdvisorIndexTest extends TestCase
                 private readonly GenericPointcutAdvisor $advisor,
             ) {}
 
-            public function load(string $aspectClass): array
+            public function load(ReflectionClass $aspect): array
             {
                 return ['advisor.lazy' => $this->advisor];
             }
 
-            public function loadAndRegister(string $aspectClass): void
+            public function loadAndRegister(ReflectionClass $aspect): void
             {
-                foreach ($this->load($aspectClass) as $itemId => $item) {
+                foreach ($this->load($aspect) as $itemId => $item) {
                     $this->container->add($itemId, $item);
                 }
                 $this->isLoaded = true;
@@ -93,7 +94,7 @@ final class AdvisorIndexTest extends TestCase
 
             public function getUnloadedAspects(): array
             {
-                return $this->isLoaded ? [] : [$this->aspectClass];
+                return $this->isLoaded ? [] : [new ReflectionClass($this->aspectClass)];
             }
         };
         $index = new AdvisorIndex($container, $loader);

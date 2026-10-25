@@ -11,7 +11,7 @@
 
 ## Aspect loading
 - AspectLoader — scans aspect classes for pointcut/advice attributes → Advisor[]; CachedAspectLoader decorates it (both implement AspectLoaderInterface)
-- Aspects are loaded BY CLASS, never by instance: getUnloadedAspects() lists ids via AspectContainer::getServiceIdsByInterface() (no factory runs), AspectLoaderExtension::load(ReflectionClass) reads attributes only, AttributeAspectLoaderExtension builds advices with the lazy Interceptor facade (aspectClass/adviceMethodName/order/expression readable without initialization). Weaving, warm-up and the advisor cache never create an aspect — also not one PHP can't make lazy (no instance properties); it is created on its first advice call (`The::aspect()`). Never reintroduce `getServicesByInterface(Aspect::class)` or `getClosure($aspect)` on the weaving path
+- Aspects are loaded BY CLASS, never by instance: getUnloadedAspects() returns a ReflectionClass per unloaded id (AspectContainer::getServiceIdsByInterface(), no factory runs), which the loaders and extensions share; advices are built with the lazy Interceptor facade. Weaving, warm-up and the advisor cache never create an aspect, also not one PHP can't make lazy (no instance properties). Never reintroduce `getServicesByInterface(Aspect::class)` or `getClosure($aspect)` on the weaving path
 - AdvisorIndex (@internal) — loads unloaded aspects, returns advisors, hasPointcutKind(Pointcut::KIND_*) = union of advisor pointcut kinds, recollected whenever getServicesByInterface(Advisor) returns another array (after any registration). Gates kind-specific machinery instead of feature flags (`new` rewriting ← KIND_INIT); function advices need no gate (AdviceMatcher skips non-KIND_FUNCTION advisors)
 
 ### Compiled advisor cache

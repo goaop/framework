@@ -17,6 +17,7 @@ use Go\Aop\Aspect;
 use Go\Aop\Pointcut;
 use LogicException;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class AspectLoaderTest extends TestCase
@@ -26,7 +27,7 @@ class AspectLoaderTest extends TestCase
         $container = new Container();
         $loader    = new AspectLoader($container);
 
-        $items = $loader->load(AspectLoaderTestAspectOne::class);
+        $items = $loader->load(new ReflectionClass(AspectLoaderTestAspectOne::class));
 
         $this->assertSame([], $items);
     }
@@ -46,7 +47,7 @@ class AspectLoaderTest extends TestCase
 
         $loader = new AspectLoader($container, $extensionOne, $extensionTwo);
 
-        $items = $loader->load(AspectLoaderTestAspectOne::class);
+        $items = $loader->load(new ReflectionClass(AspectLoaderTestAspectOne::class));
 
         $this->assertSame(
             ['item.one' => $pointcutOne, 'item.two' => $pointcutTwo],
@@ -69,7 +70,7 @@ class AspectLoaderTest extends TestCase
 
         $loader = new AspectLoader($container, $extensionOne, $extensionTwo);
 
-        $items = $loader->load(AspectLoaderTestAspectOne::class);
+        $items = $loader->load(new ReflectionClass(AspectLoaderTestAspectOne::class));
 
         // array union (+=) semantics: the first loader's item for a colliding key wins
         $this->assertSame($pointcutFromFirst, $items['shared.key']);
@@ -84,7 +85,7 @@ class AspectLoaderTest extends TestCase
         $extension->method('load')->willReturn(['aspect.advisor' => $advisor]);
 
         $loader = new AspectLoader($container, $extension);
-        $loader->loadAndRegister(AspectLoaderTestAspectOne::class);
+        $loader->loadAndRegister(new ReflectionClass(AspectLoaderTestAspectOne::class));
 
         $this->assertSame($advisor, $container->get('aspect.advisor'));
     }
@@ -100,12 +101,12 @@ class AspectLoaderTest extends TestCase
         // Before anything is loaded, both aspects are unloaded
         $this->assertSame(
             [AspectLoaderTestAspectOne::class, AspectLoaderTestAspectTwo::class],
-            $loader->getUnloadedAspects(),
+            self::names($loader->getUnloadedAspects()),
         );
 
-        $loader->loadAndRegister(AspectLoaderTestAspectOne::class);
+        $loader->loadAndRegister(new ReflectionClass(AspectLoaderTestAspectOne::class));
 
-        $this->assertSame([AspectLoaderTestAspectTwo::class], $loader->getUnloadedAspects());
+        $this->assertSame([AspectLoaderTestAspectTwo::class], self::names($loader->getUnloadedAspects()));
     }
 
     public function testDeferredAspectsAreLoadedWithoutCreatingThem(): void
@@ -119,10 +120,20 @@ class AspectLoaderTest extends TestCase
         $extension->method('load')->willReturn([]);
         $loader = new AspectLoader($container, $extension);
 
-        $this->assertSame([AspectLoaderTestAspectOne::class], $loader->getUnloadedAspects());
-        $loader->loadAndRegister(AspectLoaderTestAspectOne::class);
+        $this->assertSame([AspectLoaderTestAspectOne::class], self::names($loader->getUnloadedAspects()));
+        $loader->loadAndRegister(new ReflectionClass(AspectLoaderTestAspectOne::class));
 
         $this->assertSame([], $loader->getUnloadedAspects());
+    }
+
+    /**
+     * @param list<ReflectionClass<covariant Aspect>> $aspects
+     *
+     * @return list<class-string<Aspect>>
+     */
+    private static function names(array $aspects): array
+    {
+        return array_map(static fn(ReflectionClass $aspect): string => $aspect->name, $aspects);
     }
 }
 
