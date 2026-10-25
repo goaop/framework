@@ -49,8 +49,7 @@ final class AttributeAspectLoaderExtensionTest extends TestCase
         $this->assertInstanceOf(GenericPointcutAdvisor::class, $advisor);
         $interceptor = $advisor->getAdvice();
         $this->assertInstanceOf(AbstractInterceptorClass::class, $interceptor);
-        $this->assertSame(AttributeAspectLoaderExtensionTestUncreatableAspect::class, $interceptor->aspectClass);
-        $this->assertSame('advice', $interceptor->adviceMethodName);
+        $this->assertSame([AttributeAspectLoaderExtensionTestUncreatableAspect::class, 'advice'], $interceptor->aspectMethod);
         $this->assertSame(3, $interceptor->adviceOrder);
         $this->assertTrue(new ReflectionClass($interceptor::class)->isUninitializedLazyObject($interceptor));
     }

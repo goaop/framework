@@ -16,7 +16,6 @@ use Closure;
 use Go\Aop\Aspect;
 use Go\Aop\Exception\AspectException;
 use Go\Core\NativeLazyProxy;
-use ReflectionProperty;
 
 /**
  * Factory facade for generated interceptor declarations, with two construction modes.
@@ -38,13 +37,6 @@ use ReflectionProperty;
  */
 final class Interceptor
 {
-    /**
-     * Properties describing the advice, set on the lazy proxies without initializing them
-     *
-     * @var array{ReflectionProperty, ReflectionProperty, ReflectionProperty, ReflectionProperty}|null
-     */
-    private static ?array $descriptionProperties = null;
-
     /**
      * @param class-string<Aspect>|Closure $aspectClassOrAdvice
      */
@@ -101,31 +93,15 @@ final class Interceptor
             throw AspectException::adviceMethodNameRequired();
         }
 
+        $aspectMethod = [$aspectClassOrAdvice, $methodName];
+
         // Interceptor classes are framework-owned and lazy-compatible by construction,
         // so they take the probe-free trusted path.
-        $interceptor = NativeLazyProxy::create(
+        return NativeLazyProxy::create(
             $interceptorClass,
-            static fn(): AbstractInterceptor => new $interceptorClass(
-                The::aspect($aspectClassOrAdvice)->$methodName(...),
-                $order,
-                $expression,
-                $aspectClassOrAdvice,
-                $methodName,
-            ),
+            static fn(): AbstractInterceptor => new $interceptorClass($aspectMethod, $order, $expression),
+            // What weaving, ordering and cache compilation read: the aspect is only created when the advice runs
+            ['adviceOrder' => $order, 'pointcutExpression' => $expression, 'aspectMethod' => $aspectMethod],
         );
-        // The descriptive data is readable without initializing the proxy: weaving, ordering and cache compilation
-        // read it, the aspect is only created when the advice runs
-        [$orderProperty, $expressionProperty, $aspectProperty, $methodProperty] = self::$descriptionProperties ??= [
-            new ReflectionProperty(AbstractInterceptor::class, 'adviceOrder'),
-            new ReflectionProperty(AbstractInterceptor::class, 'pointcutExpression'),
-            new ReflectionProperty(AbstractInterceptor::class, 'aspectClass'),
-            new ReflectionProperty(AbstractInterceptor::class, 'adviceMethodName'),
-        ];
-        $orderProperty->setRawValueWithoutLazyInitialization($interceptor, $order);
-        $expressionProperty->setRawValueWithoutLazyInitialization($interceptor, $expression);
-        $aspectProperty->setRawValueWithoutLazyInitialization($interceptor, $aspectClassOrAdvice);
-        $methodProperty->setRawValueWithoutLazyInitialization($interceptor, $methodName);
-
-        return $interceptor;
     }
 }

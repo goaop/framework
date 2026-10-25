@@ -87,6 +87,22 @@ class NativeLazyProxyTest extends TestCase
         $this->assertTrue((new ReflectionClass(LazyProxyFixture::class))->isUninitializedLazyObject($proxy));
         $this->assertSame(7, $proxy->getValue());
     }
+
+    public function testTrustedCreateSetsRawValuesWithoutInitializing(): void
+    {
+        $proxy = NativeLazyProxy::create(
+            RawValueChildFixture::class,
+            static fn(): RawValueChildFixture => new RawValueChildFixture('described', 7),
+            ['description' => 'described'],
+        );
+        $reflection = new ReflectionClass(RawValueChildFixture::class);
+
+        // An inherited private(set) property, which PHP refuses to set in the scope of the child class
+        $this->assertSame('described', $proxy->description);
+        $this->assertTrue($reflection->isUninitializedLazyObject($proxy));
+        $this->assertSame(7, $proxy->getValue());
+        $this->assertFalse($reflection->isUninitializedLazyObject($proxy));
+    }
 }
 
 class LazyProxyFixture
@@ -98,6 +114,18 @@ class LazyProxyFixture
         return $this->value;
     }
 }
+
+abstract class RawValueParentFixture
+{
+    public function __construct(public private(set) string $description, private readonly int $value) {}
+
+    public function getValue(): int
+    {
+        return $this->value;
+    }
+}
+
+final class RawValueChildFixture extends RawValueParentFixture {}
 
 class PropertylessFixture
 {

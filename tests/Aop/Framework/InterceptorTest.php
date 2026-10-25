@@ -49,8 +49,7 @@ final class InterceptorTest extends TestCase
         $interceptor = Interceptor::around(InterceptorTestAspect::class, 'recordInvocation', 7, 'execution(public Foo->bar(*))');
         $reflection  = new ReflectionClass(AroundInterceptor::class);
 
-        $this->assertSame(InterceptorTestAspect::class, $interceptor->aspectClass);
-        $this->assertSame('recordInvocation', $interceptor->adviceMethodName);
+        $this->assertSame([InterceptorTestAspect::class, 'recordInvocation'], $interceptor->aspectMethod);
         $this->assertSame(7, $interceptor->adviceOrder);
         $this->assertSame('execution(public Foo->bar(*))', $interceptor->pointcutExpression);
 
