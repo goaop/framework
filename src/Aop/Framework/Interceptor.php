@@ -93,15 +93,15 @@ final class Interceptor
             throw AspectException::adviceMethodNameRequired();
         }
 
+        $aspectMethod = [$aspectClassOrAdvice, $methodName];
+
         // Interceptor classes are framework-owned and lazy-compatible by construction,
         // so they take the probe-free trusted path.
         return NativeLazyProxy::create(
             $interceptorClass,
-            static fn(): AbstractInterceptor => new $interceptorClass(
-                The::aspect($aspectClassOrAdvice)->$methodName(...),
-                $order,
-                $expression,
-            ),
+            static fn(): AbstractInterceptor => new $interceptorClass($aspectMethod, $order, $expression),
+            // What weaving, ordering and cache compilation read: the aspect is only created when the advice runs
+            ['adviceOrder' => $order, 'pointcutExpression' => $expression, 'aspectMethod' => $aspectMethod],
         );
     }
 }

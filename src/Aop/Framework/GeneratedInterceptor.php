@@ -39,14 +39,22 @@ final readonly class GeneratedInterceptor
             throw AspectException::unsupportedAdvice($advisorId, $advice);
         }
 
-        $reflectionAdvice    = new ReflectionFunction($advice->getRawAdvice());
-        $scopeClass          = $reflectionAdvice->getClosureScopeClass();
-        $usesContainerAdvice = $scopeClass === null || !is_subclass_of($scopeClass->name, Aspect::class);
+        if ($advice->aspectMethod !== null) {
+            // An advice given by name: reading its closure would create the aspect
+            [$aspectClass, $adviceMethod] = $advice->aspectMethod;
+            $usesContainerAdvice          = false;
+        } else {
+            $reflectionAdvice    = new ReflectionFunction($advice->getRawAdvice());
+            $scopeClass          = $reflectionAdvice->getClosureScopeClass();
+            $usesContainerAdvice = $scopeClass === null || !is_subclass_of($scopeClass->name, Aspect::class);
+            $aspectClass         = $usesContainerAdvice ? null : $scopeClass->name;
+            $adviceMethod        = $usesContainerAdvice ? null : $reflectionAdvice->name;
+        }
 
         return new self(
             $advice->getType()->value,
-            $usesContainerAdvice ? null : $scopeClass->name,
-            $usesContainerAdvice ? null : $reflectionAdvice->name,
+            $aspectClass,
+            $adviceMethod,
             $advice->adviceOrder,
             $advisorId,
             $usesContainerAdvice,

@@ -44,6 +44,25 @@ final class InterceptorTest extends TestCase
         $this->assertSame(10, $interceptor->adviceOrder);
     }
 
+    public function testLazyInterceptorDescribesItsAdviceWithoutCreatingTheAspect(): void
+    {
+        $interceptor = Interceptor::around(InterceptorTestAspect::class, 'recordInvocation', 7, 'execution(public Foo->bar(*))');
+        $reflection  = new ReflectionClass(AroundInterceptor::class);
+
+        $this->assertSame([InterceptorTestAspect::class, 'recordInvocation'], $interceptor->aspectMethod);
+        $this->assertSame(7, $interceptor->adviceOrder);
+        $this->assertSame('execution(public Foo->bar(*))', $interceptor->pointcutExpression);
+
+        // What the weaver and the advisor cache read about the advice does not initialize the interceptor
+        $descriptor = GeneratedInterceptor::fromAdvice('advisor.id', $interceptor);
+        $this->assertSame(InterceptorTestAspect::class, $descriptor->aspectClass);
+        $this->assertSame('recordInvocation', $descriptor->adviceMethod);
+        $this->assertSame(7, $descriptor->order);
+        $this->assertFalse($descriptor->usesContainerAdvice);
+        $interceptor->compileToPhp();
+        $this->assertTrue($reflection->isUninitializedLazyObject($interceptor), 'No aspect may be resolved');
+    }
+
     public function testAspectClassRequiresAdviceMethodName(): void
     {
         try {

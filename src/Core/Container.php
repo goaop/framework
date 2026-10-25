@@ -224,6 +224,19 @@ final class Container implements AspectContainer
         return $values;
     }
 
+    public function getServiceIdsByInterface(string $interfaceTagClassName): array
+    {
+        $ids = $this->tags[$interfaceTagClassName] ?? [];
+        // A snapshot of the ids: the is_subclass_of() autoload can re-enter the container (see above)
+        foreach (array_keys($this->factories) as $id) {
+            if (is_subclass_of($id, $interfaceTagClassName) && !in_array($id, $ids, true)) {
+                $ids[] = $id;
+            }
+        }
+
+        return $ids;
+    }
+
     /**
      * Materializes a deferred service into a container entry and tags it by its interfaces.
      *

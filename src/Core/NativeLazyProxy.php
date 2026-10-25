@@ -16,6 +16,7 @@ use Closure;
 use Error;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionProperty;
 
 /**
  * Creates native lazy proxies ({@see ReflectionClass::newLazyProxy()}) through a single
@@ -45,6 +46,11 @@ final class NativeLazyProxy
      *      workers skip the throwing attempt on repeated registrations
      */
     private static array $unsupported = [];
+
+    /**
+     * @var array<class-string, array<string, ReflectionProperty>> Properties set by {@see create()}, by class and name
+     */
+    private static array $rawProperties = [];
 
     /**
      * Creates a lazy proxy of the class, or returns null when PHP cannot make the class
@@ -86,15 +92,33 @@ final class NativeLazyProxy
      * Creates a lazy proxy of a class known to be proxy-compatible by construction
      * (framework-owned classes), skipping the probe and the memo
      *
+     * The properties given in $rawValues are set on the proxy without initializing it, so they can be read
+     * without running the initializer. The initializer must give the real instance the same values: once the
+     * proxy is initialized, reads go to the real instance. At least one property has to stay unset, or PHP
+     * marks the proxy as initialized and the initializer never runs.
+     *
      * @template T of object
      *
-     * @param class-string<T> $className
-     * @param Closure(T): T   $initializer
+     * @param class-string<T>      $className
+     * @param Closure(T): T        $initializer
+     * @param array<string, mixed> $rawValues Values of properties, by property name
      *
      * @return T
      */
-    public static function create(string $className, Closure $initializer): object
+    public static function create(string $className, Closure $initializer, array $rawValues = []): object
     {
-        return new ReflectionClass($className)->newLazyProxy($initializer);
+        $reflection = new ReflectionClass($className);
+        $proxy      = $reflection->newLazyProxy($initializer);
+        foreach ($rawValues as $propertyName => $value) {
+            // Taken from the declaring class: PHP refuses to set an inherited private(set) property in the scope
+            // of a child class
+            $property = self::$rawProperties[$className][$propertyName] ??= new ReflectionProperty(
+                $reflection->getProperty($propertyName)->class,
+                $propertyName,
+            );
+            $property->setRawValueWithoutLazyInitialization($proxy, $value);
+        }
+
+        return $proxy;
     }
 }

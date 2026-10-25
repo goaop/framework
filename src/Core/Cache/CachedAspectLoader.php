@@ -94,14 +94,13 @@ class CachedAspectLoader implements AspectLoaderInterface
         $this->advisorCacheCompiler = new AdvisorCacheCompiler();
     }
 
-    public function load(Aspect $aspect): array
+    public function load(ReflectionClass $aspect): array
     {
         if ($this->cacheDir === null || $this->cacheDir === '') {
             return $this->loader->load($aspect);
         }
 
-        $refAspect      = new ReflectionClass($aspect);
-        $aspectFileName = $refAspect->getFileName();
+        $aspectFileName = $aspect->getFileName();
         $cacheFileName  = $aspectFileName !== false ? $this->resolveCacheFileName($aspectFileName) : null;
         if ($aspectFileName === false || $cacheFileName === null) {
             // Aspects without a resolvable source file below the application root are not cached
@@ -127,7 +126,7 @@ class CachedAspectLoader implements AspectLoaderInterface
         }
 
         $loadedItems = $this->loader->load($aspect);
-        $this->saveToCache($refAspect->getName(), $loadedItems, $cacheFileName);
+        $this->saveToCache($aspect->name, $loadedItems, $cacheFileName);
 
         return $loadedItems;
     }
@@ -135,27 +134,27 @@ class CachedAspectLoader implements AspectLoaderInterface
     /**
      * Loads and register all items of aspect in the container
      */
-    public function loadAndRegister(Aspect $aspect): void
+    public function loadAndRegister(ReflectionClass $aspect): void
     {
         $loadedItems = $this->load($aspect);
         foreach ($loadedItems as $itemId => $item) {
             $this->container->add($itemId, $item);
         }
-        $this->loadedAspects[$aspect::class] = $aspect::class;
+        $this->loadedAspects[$aspect->name] = $aspect->name;
     }
 
     /**
-     * Returns list of unloaded aspects in the container
+     * Returns the aspects registered in the container that are not loaded yet
      *
-     * @return list<Aspect>
+     * @return list<ReflectionClass<covariant Aspect>>
      */
     public function getUnloadedAspects(): array
     {
         $unloadedAspects = [];
 
-        foreach ($this->container->getServicesByInterface(Aspect::class) as $aspect) {
-            if (!isset($this->loadedAspects[$aspect::class])) {
-                $unloadedAspects[] = $aspect;
+        foreach ($this->container->getServiceIdsByInterface(Aspect::class) as $aspectClass) {
+            if (!isset($this->loadedAspects[$aspectClass]) && is_subclass_of($aspectClass, Aspect::class)) {
+                $unloadedAspects[] = new ReflectionClass($aspectClass);
             }
         }
 

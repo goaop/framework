@@ -41,11 +41,12 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
      * General method for parsing pointcuts
      *
      * @throws PointcutSyntaxException if there was an error during parsing
+     * @param ReflectionClass<covariant Aspect>                       $aspect     Aspect the expression belongs to, `$this` in it
      * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
      * @template T of Aspect
      */
     final protected function parsePointcut(
-        Aspect $aspect,
+        ReflectionClass $aspect,
         ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
         string $pointcutExpression,
     ): Pointcut {
@@ -57,18 +58,19 @@ abstract class AbstractAspectLoaderExtension implements AspectLoaderExtension
     /**
      * Performs lexical analyze of pointcut
      *
+     * @param ReflectionClass<covariant Aspect>                       $aspect
      * @param ReflectionMethod|ReflectionProperty|ReflectionClass<T> $reflection
      * @template T of Aspect
      *
      * @throws PointcutSyntaxException
      */
     private function makeLexicalAnalyze(
-        Aspect $aspect,
+        ReflectionClass $aspect,
         ReflectionMethod|ReflectionProperty|ReflectionClass $reflection,
         string $pointcutExpression,
     ): TokenStream {
         try {
-            $resolvedThisPointcut = str_replace('$this', $aspect::class, $pointcutExpression);
+            $resolvedThisPointcut = str_replace('$this', $aspect->name, $pointcutExpression);
             $stream = $this->pointcutLexer->lex($resolvedThisPointcut);
         } catch (RecognitionException $e) {
             throw PointcutSyntaxException::unrecognizedLexicalStructure($pointcutExpression, $reflection, $e);

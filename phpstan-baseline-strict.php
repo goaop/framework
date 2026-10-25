@@ -11,7 +11,7 @@ $ignoreErrors[] = [
 	'message' => '#^Variable method call on Go\\\\Aop\\\\Aspect\\.$#',
 	'identifier' => 'method.dynamicName',
 	'count' => 1,
-	'path' => __DIR__ . '/src/Aop/Framework/Interceptor.php',
+	'path' => __DIR__ . '/src/Aop/Framework/AbstractInterceptor.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Only booleans are allowed in &&, list\\<int\\|list\\<mixed\\>\\|\\(T of object \\= object\\)\\|null\\>\\|null given on the right side\\.$#',

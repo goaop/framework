@@ -24,6 +24,7 @@ use Go\Core\AspectLoaderInterface;
 use Go\Core\Container;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class CachedAspectLoaderTest extends TestCase
@@ -38,7 +39,8 @@ class CachedAspectLoaderTest extends TestCase
 
     private string $cacheDir;
 
-    private Aspect $aspect;
+    /** @var ReflectionClass<Aspect> */
+    private ReflectionClass $aspect;
 
     /**
      * Path of the fake aspect source file below the application root
@@ -71,9 +73,8 @@ class CachedAspectLoaderTest extends TestCase
         );
         require $this->aspectFileName;
         $className = 'Go\\Core\\TestFixture\\' . $shortClassName;
-        $aspect    = new $className();
-        assert($aspect instanceof Aspect);
-        $this->aspect = $aspect;
+        assert(is_subclass_of($className, Aspect::class));
+        $this->aspect = new ReflectionClass($className);
 
         // The naming scheme: app-root prefix replaced by the cache dir, '.php' by '.cache.php'
         $this->cacheFileName = $this->cacheDir . '/src/Aspect/' . $shortClassName . '.cache.php';
@@ -313,7 +314,7 @@ class CachedAspectLoaderTest extends TestCase
         $loadedItems   = ['pc' => new TruePointcut()];
         $this->innerLoader->expects($this->once())->method('load')->willReturn($loadedItems);
 
-        $this->assertSame($loadedItems, $loader->load($foreignAspect));
+        $this->assertSame($loadedItems, $loader->load(new ReflectionClass($foreignAspect)));
 
         // No shadow file may appear anywhere below the cache directory
         $cacheEntries = scandir($this->cacheDir);
