@@ -40,7 +40,6 @@ final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
 
     public function load(ReflectionClass $reflectionAspect): array
     {
-        $aspectClass = $reflectionAspect->getName();
         $loadedItems = [];
         foreach ($reflectionAspect->getMethods() as $aspectMethod) {
             $methodId = $reflectionAspect->getName() . '->' . $aspectMethod->getName();
@@ -54,12 +53,12 @@ final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
 
             foreach ($pointcutAttributes as $reflectionAttribute) {
                 $attribute = $reflectionAttribute->newInstance();
-                $loadedItems[$methodId] = $this->parsePointcut($aspectClass, $aspectMethod, $attribute->expression);
+                $loadedItems[$methodId] = $this->parsePointcut($reflectionAspect, $aspectMethod, $attribute->expression);
             }
             foreach ($adviceAttributes as $reflectionAttribute) {
                 $attribute   = $reflectionAttribute->newInstance();
-                $pointcut    = $this->parsePointcut($aspectClass, $aspectMethod, $attribute->expression);
-                $interceptor = $this->getAdvice($attribute, $aspectClass, $aspectMethod);
+                $pointcut    = $this->parsePointcut($reflectionAspect, $aspectMethod, $attribute->expression);
+                $interceptor = $this->getAdvice($attribute, $reflectionAspect, $aspectMethod);
                 $advisorId   = $pointcutAttributes === [] ? $methodId : $methodId . self::ADVISOR_ID_SUFFIX;
 
                 $loadedItems[$advisorId] = new GenericPointcutAdvisor($pointcut, $interceptor);
@@ -75,22 +74,23 @@ final class AttributeAspectLoaderExtension extends AbstractAspectLoaderExtension
      * The interceptor is the lazy form of the {@see Interceptor} facade: it carries the aspect class, the method name,
      * the order and the expression as plain data, and resolves the aspect from the container on first use only.
      *
-     * @param class-string<Aspect> $aspectClass
+     * @param ReflectionClass<covariant Aspect> $aspect
      *
      * @throws AspectException If the advice method is not public or the attribute is unsupported
      */
     protected function getAdvice(
         AbstractInterceptor $interceptorAttribute,
-        string $aspectClass,
+        ReflectionClass $aspect,
         ReflectionMethod $aspectMethod,
     ): InterceptorInterface {
         if (!$aspectMethod->isPublic()) {
             throw AspectException::nonPublicAdviceMethod($aspectMethod);
         }
 
-        $methodName = $aspectMethod->getName();
-        $order      = $interceptorAttribute->order;
-        $expression = $interceptorAttribute->expression;
+        $aspectClass = $aspect->name;
+        $methodName  = $aspectMethod->getName();
+        $order       = $interceptorAttribute->order;
+        $expression  = $interceptorAttribute->expression;
 
         return match (true) {
             $interceptorAttribute instanceof Before => Interceptor::before($aspectClass, $methodName, $order, $expression),

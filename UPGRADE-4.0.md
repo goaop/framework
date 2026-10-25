@@ -124,7 +124,7 @@ public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
 public function load(ReflectionClass $reflectionAspect): array
 ```
 
-`AbstractAspectLoaderExtension::parsePointcut()` takes the aspect class name instead of the aspect instance.
+`AbstractAspectLoaderExtension::parsePointcut()` takes the `ReflectionClass` of the aspect instead of the aspect instance.
 
 ### PSR-11 container
 

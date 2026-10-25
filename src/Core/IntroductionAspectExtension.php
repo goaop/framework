@@ -43,7 +43,7 @@ class IntroductionAspectExtension extends AbstractAspectLoaderExtension
                     ? $reflectionAttribute->newInstance()
                     : null;
                 if ($attribute instanceof DeclareParents) {
-                    $pointcut = $this->parsePointcut($reflectionAspect->getName(), $aspectProperty, $attribute->expression);
+                    $pointcut = $this->parsePointcut($reflectionAspect, $aspectProperty, $attribute->expression);
                     // Introduction doesn't have own syntax and uses any suitable class-filter
                     $pointcut = new Pointcut\AndPointcut(
                         Pointcut::KIND_INTRODUCTION | Pointcut::KIND_CLASS,
