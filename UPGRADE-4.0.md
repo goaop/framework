@@ -114,26 +114,13 @@ object of the wrong type now fails on first use, not at registration.
 `AspectContainer::addResource()` is part of the interface. `onRegistration()` lets you react to
 deferred registrations of services implementing an interface.
 
-Custom aspect loader extensions get the reflection of the aspect only:
-
-```php
-// before
-public function load(Aspect $aspect, ReflectionClass $reflectionAspect): array
-
-// 4.0
-public function load(ReflectionClass $reflectionAspect): array
-```
-
-`AbstractAspectLoaderExtension::parsePointcut()` takes the `ReflectionClass` of the aspect instead of the aspect instance.
-
 ### PSR-11 container
 
 `AspectContainer` extends `Psr\Container\ContainerInterface`, so the container can be passed to any code
 that expects a PSR-11 container. `getValue()` is renamed to `get()`, and `has()` comes from the PSR
 interface with the same signature. A custom `containerClass` implements `get()` instead of `getValue()`, plus
 `setDelegate()`, which attaches the container of your application
-(see [Aspects from the application container](docs/configuration.md#aspects-from-the-application-container)),
-and `getServiceIdsByInterface()`, which lists service ids without creating the services.
+(see [Aspects from the application container](docs/configuration.md#aspects-from-the-application-container)).
 
 ```php
 // before
