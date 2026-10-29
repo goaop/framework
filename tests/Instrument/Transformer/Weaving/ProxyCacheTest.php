@@ -42,7 +42,7 @@ final class ProxyCacheTest extends TestCase
         $include = $this->createProxyCache()->saveClassProxy(self::createClass('App\First', '/app/src/Holder.php'), 'class First {}', true);
 
         $this->assertSame("include_once AOP_CACHE_DIR . '/src/Holder.php';", $include);
-        $this->assertSame("<?php\nclass First {}", file_get_contents($this->cacheDir . '/src/Holder.php'));
+        $this->assertSame("<?php" . PHP_EOL . "class First {}", file_get_contents($this->cacheDir . '/src/Holder.php'));
     }
 
     public function testSwitchingLayoutsRemovesProxiesOfOtherLayout(): void
