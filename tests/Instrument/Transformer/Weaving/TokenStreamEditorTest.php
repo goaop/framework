@@ -12,58 +12,66 @@ declare(strict_types=1);
 
 namespace Go\Instrument\Transformer\Weaving;
 
-use Closure;
 use Go\Aop\Exception\WeavingException;
 use Go\Instrument\Transformer\StreamMetaData;
-use PhpParser\Node\Attribute;
+use PhpParser\Node\Param;
+use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\NodeFinder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class TokenStreamEditorTest extends TestCase
 {
-    private const string SOURCE = <<<'PHP'
-        <?php
-        #[First, Second(['a' => [1]])]
-        final class Foo extends Bar
-        {
-        }
-        PHP;
+    private const string SOURCE = "<?php\n#[First, Second(['a' => [1]])]\nfinal class Foo extends Bar\n{\n}";
 
-    public function testRangeOfReturnsTokenPositionsOfNode(): void
-    {
-        $metadata = self::createMetadata(self::SOURCE);
-        $range    = TokenStreamEditor::rangeOf(self::findClass($metadata));
-
-        $this->assertNotNull($range);
-        $this->assertSame('#[', $metadata->tokenStream[$range[0]]->text);
-        $this->assertSame('}', $metadata->tokenStream[$range[1]]->text);
-    }
-
-    public function testRangeOfNodeWithoutTokenPositionsIsNull(): void
-    {
-        $this->assertNull(TokenStreamEditor::rangeOf(new Class_('Detached')));
-    }
-
-    public function testDeclarationRangeStartsAfterAttributeGroups(): void
+    public function testRangeReturnsTokenPositionsOfNode(): void
     {
         $metadata = self::createMetadata(self::SOURCE);
 
-        [$start, $end] = TokenStreamEditor::declarationRange(self::findClass($metadata));
+        [$start, $end] = TokenStreamEditor::range(self::findClass($metadata));
+
+        $this->assertSame('#[', $metadata->tokenStream[$start]->text);
+        $this->assertSame('}', $metadata->tokenStream[$end]->text);
+    }
+
+    public function testRangeAfterAttributesStartsAfterLastAttributeGroup(): void
+    {
+        $metadata = self::createMetadata(self::SOURCE);
+
+        [$start, $end] = TokenStreamEditor::rangeAfterAttributes(self::findClass($metadata));
 
         $this->assertSame("\n", $metadata->tokenStream[$start]->text);
         $this->assertSame('final', $metadata->tokenStream[$start + 1]->text);
         $this->assertSame('}', $metadata->tokenStream[$end]->text);
     }
 
-    public function testDeclarationWithoutTokenPositionsIsRejected(): void
+    public function testRangeAfterAttributesOfNodeWithoutAttributesIsItsRange(): void
+    {
+        $metadata = self::createMetadata("<?php\nclass Foo {}");
+        $class    = self::findClass($metadata);
+
+        $this->assertSame(TokenStreamEditor::range($class), TokenStreamEditor::rangeAfterAttributes($class));
+    }
+
+    /**
+     * @return iterable<string, array{\PhpParser\Node, string}>
+     */
+    public static function nodesWithoutTokenPositions(): iterable
+    {
+        yield 'declaration' => [new Class_('Detached'), 'Declaration of Detached has no token positions to weave'];
+        yield 'other node' => [new Param(new Variable('x')), 'Declaration of Param has no token positions to weave'];
+    }
+
+    #[DataProvider('nodesWithoutTokenPositions')]
+    public function testNodeWithoutTokenPositionsIsRejected(\PhpParser\Node $node, string $message): void
     {
         try {
-            TokenStreamEditor::declarationRange(new Class_('Detached'));
-            $this->fail('A declaration without token positions must be rejected');
+            TokenStreamEditor::range($node);
+            $this->fail('A node without token positions must be rejected');
         } catch (WeavingException $exception) {
-            $this->assertSame('Declaration of Detached has no token positions to weave', $exception->getMessage());
+            $this->assertSame($message, $exception->getMessage());
         }
     }
 
@@ -71,19 +79,38 @@ final class TokenStreamEditorTest extends TestCase
     {
         $metadata = self::createMetadata("<?php\n\$a = [\n    1,\n];\necho 1;\n");
         $editor   = new TokenStreamEditor($metadata);
-        $end      = (int) $editor->find(';', 0, count($metadata->tokenStream) - 1);
 
-        $editor->blank(1, $end);
+        $editor->blank(1, (int) $editor->find(';', 0, 20));
 
         $this->assertSame("<?php\n\n\n\necho 1;\n", $metadata->source);
     }
 
-    public function testRemoveDropsTokensAndSkipsRemovedPositions(): void
+    public function testBlankPutsReplacementBeforeFirstRemainingToken(): void
     {
         $metadata = self::createMetadata("<?php echo 1; echo 2;\n");
         $editor   = new TokenStreamEditor($metadata);
 
-        $editor->remove(1, 4);
+        $editor->remove(1, 1);
+        $editor->blank(1, 4, '/* gone */');
+
+        $this->assertSame("<?php /* gone */ echo 2;\n", $metadata->source);
+    }
+
+    public function testBlankCanKeepWhitespace(): void
+    {
+        $metadata = self::createMetadata("<?php echo 1, 2;\n");
+        $editor   = new TokenStreamEditor($metadata);
+
+        $editor->blank(1, 6, keepWhitespace: true);
+
+        $this->assertSame("<?php   ;\n", $metadata->source);
+    }
+
+    public function testRemoveDropsTokens(): void
+    {
+        $metadata = self::createMetadata("<?php echo 1; echo 2;\n");
+        $editor   = new TokenStreamEditor($metadata);
+
         $editor->remove(1, 4);
 
         $this->assertSame("<?php  echo 2;\n", $metadata->source);
@@ -110,7 +137,7 @@ final class TokenStreamEditorTest extends TestCase
         $this->assertSame("<?php\n\nclass Foo {}\n", $metadata->source);
     }
 
-    public function testReplaceAppendAndPrependChangeTokenText(): void
+    public function testReplaceAndAppendChangeTokenTextAndSkipRemovedTokens(): void
     {
         $metadata = self::createMetadata("<?php echo 1;\n");
         $editor   = new TokenStreamEditor($metadata);
@@ -119,56 +146,18 @@ final class TokenStreamEditorTest extends TestCase
         $editor->replace($echo, 'print');
         $editor->append($echo, '/* a */');
         $editor->remove(0, 0);
-        $editor->prependToFirstToken(0, 10, '<?php ');
+        $editor->replace(0, 'lost');
+        $editor->append(0, 'lost');
 
-        $this->assertSame("<?php print/* a */ 1;\n", $metadata->source);
+        $this->assertSame("print/* a */ 1;\n", $metadata->source);
     }
 
-    public function testFindReturnsNullOutsideRange(): void
+    public function testFindReturnsNullWithoutMatchInRange(): void
     {
         $editor = new TokenStreamEditor(self::createMetadata("<?php echo 1;\n"));
 
-        $this->assertNull($editor->find(';', 0, 2));
-        $this->assertNull($editor->find('?', 0, 10));
-    }
-
-    public function testSkipAttributeGroupHandlesNestedBrackets(): void
-    {
-        $metadata = self::createMetadata(self::SOURCE);
-        $editor   = new TokenStreamEditor($metadata);
-        $start    = (int) $editor->find('#[', 0, 10);
-
-        $afterGroup = $editor->skipAttributeGroup($start, count($metadata->tokenStream) - 1);
-
-        $this->assertSame("\n", $metadata->tokenStream[$afterGroup]->text);
-        $this->assertSame(']', $metadata->tokenStream[$afterGroup - 1]->text);
-    }
-
-    public function testRemoveAttributesBlanksGroupWithoutRemainingAttributes(): void
-    {
-        $metadata = self::createMetadata(self::SOURCE);
-
-        new TokenStreamEditor($metadata)->removeAttributes(self::findClass($metadata)->attrGroups, static fn(): bool => true);
-
-        $this->assertSame("<?php\n\nfinal class Foo extends Bar\n{\n}", $metadata->source);
-    }
-
-    public function testRemoveAttributesRemovesEntryWithTrailingComma(): void
-    {
-        $metadata = self::createMetadata(self::SOURCE);
-
-        new TokenStreamEditor($metadata)->removeAttributes(self::findClass($metadata)->attrGroups, self::named('First'));
-
-        $this->assertSame("<?php\n#[Second(['a' => [1]])]\nfinal class Foo extends Bar\n{\n}", $metadata->source);
-    }
-
-    public function testRemoveAttributesRemovesLastEntryWithLeadingComma(): void
-    {
-        $metadata = self::createMetadata(self::SOURCE);
-
-        new TokenStreamEditor($metadata)->removeAttributes(self::findClass($metadata)->attrGroups, self::named('Second'));
-
-        $this->assertSame("<?php\n#[First ]\nfinal class Foo extends Bar\n{\n}", $metadata->source);
+        $this->assertSame(4, $editor->find(';', 0, 10));
+        $this->assertNull($editor->find(';', 0, 3));
     }
 
     private static function createMetadata(string $source): StreamMetaData
@@ -185,13 +174,5 @@ final class TokenStreamEditorTest extends TestCase
         assert($class instanceof ClassLike);
 
         return $class;
-    }
-
-    /**
-     * @return Closure(Attribute): bool
-     */
-    private static function named(string $name): Closure
-    {
-        return static fn(Attribute $attribute): bool => $attribute->name->toString() === $name;
     }
 }

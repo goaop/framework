@@ -18,12 +18,10 @@ Applied per loaded file. Each returns TransformerResult: Transformed|Abstain|Abo
 
 ## Weaving internals (src/Instrument/Transformer/Weaving/, all `@internal`)
 WeavingTransformer only orchestrates: load aspects → match advisors per class-like/namespace → TraitConverter → proxy generator → ProxyCache.
-- TokenStreamEditor — line-preserving token surgery on one StreamMetaData (blank keeps newlines, remove, removeWithInlineWhitespace, removeAttributes, skipAttributeGroup, find, append/prepend); static rangeOf(Node) / declarationRange(ClassLike) (skips class attribute groups, #598; throws without token positions). One instance per transform(); unit-tested directly (TokenStreamEditorTest).
-- TraitConverter — class/enum/trait → woven trait: header rewrite (modifiers, keyword → `trait`, rename, extends/implements/backed type blanked), enum cases removed, trait-incompatible class attributes (#615). Delegates to OverrideAttributeStripper and InterceptedPropertyRemover (→ PromotedPropertyDemoter). Edit order per kind is fixed (blanked `#[` tokens would break later bracket scans).
-- InterceptedMembers — intercepted method/property names from the sorted advices; the converters never read the advice array layout.
-- AttributeName — resolved attribute class name, isOverride().
+- TokenStreamEditor — line-preserving edits of one StreamMetaData addressed by AST token positions: static range(Node) (throws without positions) / rangeAfterAttributes(ClassLike|Param) (#598); token, find, replace, append, blank (keeps newlines, optional replacement / keepWhitespace), remove, removeWithInlineWhitespace. One instance per transform().
+- TraitConverter — convert(): class/enum/trait → woven trait. Every edit is located through nodes (name, extends/implements/scalarType, attrGroups/attrs, EnumCase, PropertyItem, Param type/var, constructor params); token loops stay inside those ranges. Also: trait-incompatible class attributes (#615), #[\Override] guard (#761) + strip, intercepted property items (#669), promoted property demotion + constructor assignment (#599). Edit order per kind is fixed and output is byte-identical to the former token scans.
 - ProxyCache — writes class proxies (one-class/multi-class layouts, #760) and namespace function proxies (`/_functions/`, freshness via container), returns the include statements.
-- WovenClass — class + proxy code + last token, buffered until the file is woven.
+- No format-preserving printing: it drops lines when removing multi-line clauses/statements and can not turn `class` into `trait` without reprinting the class.
 
 ### Performance gate
 Touching a SourceTransformer/NodeRewriter or the transformer wiring → run `composer test:performance:transformation` before and after; the numbers must not get worse.
@@ -76,7 +74,7 @@ see src/Proxy/AGENTS.md. WeavingTransformer passes the original imports to the p
 - Proxy re-inherits parent+interfaces via reflection (not from woven source)
 - self:: in trait body → proxy class (no rewrite needed)
 - Private methods interceptable (impossible with old extend-based engine)
-- Intercepted properties are REMOVED from the trait body per PropertyItem (InterceptedPropertyRemover): whole statement blanked when all items move, else only the item + its separating comma; blanked tokens keep their newlines (line numbers), a newline-free `/* Moved by weaving interceptor … */` marker is left; never use a `//` prefix (multi-line declarations would stay live, issue #669)
+- Intercepted properties are REMOVED from the trait body per PropertyItem (TraitConverter): whole statement blanked when all items move, else only the item + its separating comma; blanked tokens keep their newlines (line numbers), a newline-free `/* Moved by weaving interceptor … */` marker is left; never use a `//` prefix (multi-line declarations would stay live, issue #669)
 - FCC 4th arg to InterceptorInjector:
   - `$this->mOriginalAlias(...)` — own dynamic methods
   - `self::mOriginalAlias(...)` — own static methods
@@ -91,8 +89,8 @@ Woven trait MUST preserve original source line numbers for XDebug breakpoints.
 
 ## PHP compat: #[\Override] on intercepted methods (8.3+)
 When intercepted method has #[\Override], PHP copies attribute to trait alias — fatal error (alias doesn't override anything).
-OverrideAttributeStripper::strip() strips #[\Override] from the woven source for every intercepted own method: classes, enums and woven traits (renamed original trait, its methods aliased by TraitProxyGenerator). Attribute preserved on the proxy method (MethodGenerator copies it from the AST), so PHP still checks the override.
-- Limitation (#761): a method a class/enum/trait imports from ANOTHER trait with #[\Override] can not be intercepted — the attribute lives in the shared trait file, can't be stripped per class. OverrideAttributeStripper::assertStrippable() (first step of TraitConverter::convert(), before any edit and the generators; native reflection hides the trait) throws WeavingException naming class, method, trait. Covers aliases, static methods, enums, woven traits using a trait.
+TraitConverter strips #[\Override] from the woven source for every intercepted own method: classes, enums and woven traits (renamed original trait, its methods aliased by TraitProxyGenerator). Attribute preserved on the proxy method (MethodGenerator copies it from the AST), so PHP still checks the override.
+- Limitation (#761): a method a class/enum/trait imports from ANOTHER trait with #[\Override] can not be intercepted — the attribute lives in the shared trait file, can't be stripped per class. TraitConverter::assertNoTraitImportedOverride() (first step of convert(), before any edit and the generators; native reflection hides the trait) throws WeavingException naming class, method, trait. Covers aliases, static methods, enums, woven traits using a trait.
 - Workaround: `&& !matchInherited()` (excludes trait-imported methods too), narrower `&& !execution(public Foo->hello(*))`, drop #[\Override] from the trait method, or advise the trait itself (`execution(public HelloTrait->hello(*))`, intercepts it in every class using the trait).
 - Trait methods inherited via a parent class are fine: proxy calls `parent::m(...)`, no alias.
 

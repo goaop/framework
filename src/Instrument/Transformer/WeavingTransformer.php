@@ -20,11 +20,9 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoaderInterface;
 use Go\Instrument\ClassLoading\CachePathManager;
-use Go\Instrument\Transformer\Weaving\InterceptedMembers;
 use Go\Instrument\Transformer\Weaving\ProxyCache;
 use Go\Instrument\Transformer\Weaving\TokenStreamEditor;
 use Go\Instrument\Transformer\Weaving\TraitConverter;
-use Go\Instrument\Transformer\Weaving\WovenClass;
 use Go\ParserReflection\ReflectionClass;
 use Go\ParserReflection\ReflectionFile;
 use Go\ParserReflection\ReflectionFileNamespace;
@@ -78,7 +76,8 @@ final class WeavingTransformer extends BaseSourceTransformer
         $advisors = $this->container->getServicesByInterface(Advisor::class);
 
         $totalTransformations = 0;
-        $wovenClasses         = [];
+        // Proxies are saved once the whole file is woven: their file names depend on the number of woven classes
+        $wovenClasses = [];
         foreach ($parsedSource->getFileNamespaces() as $namespace) {
             foreach ($namespace->getClasses() as $class) {
                 // Every discovered class (woven or not) is recorded so the runtime class
@@ -98,14 +97,9 @@ final class WeavingTransformer extends BaseSourceTransformer
             $totalTransformations += (int) $this->weaveFunctions($advisors, $editor, $namespace);
         }
 
-        // Proxies are saved once the whole file is woven: their file names depend on the number of woven classes
-        foreach ($wovenClasses as $wovenClass) {
-            $includeProxy = $this->proxyCache->saveClassProxy(
-                $wovenClass->class,
-                $wovenClass->proxyCode,
-                count($wovenClasses) === 1,
-            );
-            $editor->append($wovenClass->lastTokenPosition, PHP_EOL . $includeProxy);
+        foreach ($wovenClasses as [$class, $proxyCode, $lastTokenPosition]) {
+            $includeProxy = $this->proxyCache->saveClassProxy($class, $proxyCode, count($wovenClasses) === 1);
+            $editor->append($lastTokenPosition, PHP_EOL . $includeProxy);
         }
         $totalTransformations += count($wovenClasses);
 
@@ -113,11 +107,14 @@ final class WeavingTransformer extends BaseSourceTransformer
     }
 
     /**
-     * Converts an advised class-like into a trait and generates its proxy, returns null if the class was not woven
+     * Converts an advised class-like into a trait and generates its proxy
      *
      * @param Advisor[]               $advisors      List of advisors
      * @param ReflectionFileNamespace $namespace     Namespace block of the file that declares the class
      * @param bool                    $useStrictMode If the source file used strict mode, the proxy should too
+     *
+     * @return array{ReflectionClass, string, int}|null The class, its proxy code and the position of its last token,
+     *                                                  null if the class was not woven
      */
     private function weaveClass(
         array $advisors,
@@ -125,7 +122,7 @@ final class WeavingTransformer extends BaseSourceTransformer
         ReflectionClass $class,
         ReflectionFileNamespace $namespace,
         bool $useStrictMode,
-    ): ?WovenClass {
+    ): ?array {
         try {
             $advices = $this->adviceMatcher->getAdvicesForClass($class, $advisors);
         } catch (Throwable $matchingError) {
@@ -161,7 +158,7 @@ final class WeavingTransformer extends BaseSourceTransformer
         // Intercepted methods are looked up by name several times per method, here and in the proxy generators
         $methods = ClassProxyGenerator::indexMethods($class);
 
-        $this->traitConverter->convert($class, InterceptedMembers::fromAdvices($advices), $methods, $editor, $traitName);
+        $this->traitConverter->convert($class, $advices, $methods, $editor, $traitName);
 
         $proxyGenerator = match (true) {
             $class->isTrait() => new TraitProxyGenerator($class, $traitFqcn, $advices, $originalImports, $methods),
@@ -173,9 +170,10 @@ final class WeavingTransformer extends BaseSourceTransformer
             $proxyCode = 'declare(strict_types=1);' . PHP_EOL . $proxyCode;
         }
 
-        [, $lastTokenPosition] = TokenStreamEditor::declarationRange($class->getNode());
+        // The include of the proxy goes after the last token of the class
+        [, $lastTokenPosition] = TokenStreamEditor::range($class->getNode());
 
-        return new WovenClass($class, $proxyCode, $lastTokenPosition);
+        return [$class, $proxyCode, $lastTokenPosition];
     }
 
     /**
