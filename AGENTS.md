@@ -29,7 +29,7 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 ## Directory â†’ AGENTS.md map
 | Directory         | Sub-AGENTS.md              | Covers                                                        |
 |-------------------|----------------------------|---------------------------------------------------------------|
-| `src/Instrument/` | `src/Instrument/AGENTS.md` | Init flow, transformers, trait engine, line numbers, Override |
+| `src/Instrument/` | `src/Instrument/AGENTS.md` | Init flow, transformers, weaving internals, trait engine, line numbers, Override |
 | `src/Proxy/`      | `src/Proxy/AGENTS.md`      | Proxy generators, code-gen, readonly, hooks, enums            |
 | `src/Aop/`        | `src/Aop/AGENTS.md`        | Interfaces, generics, implementations, pointcuts, attributes  |
 | `src/Aop/Exception/` | `src/Aop/Exception/AGENTS.md` | Exception groups, static constructors                   |
