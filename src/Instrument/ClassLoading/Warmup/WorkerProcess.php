@@ -136,10 +136,6 @@ final class WorkerProcess
     public function read(): array
     {
         $this->readErrorOutput();
-        if ($this->finished) {
-            return [];
-        }
-
         while (($chunk = fread($this->output, 65536)) !== false && $chunk !== '') {
             $this->buffer .= $chunk;
         }
@@ -173,15 +169,12 @@ final class WorkerProcess
     public function close(): int
     {
         $this->closeInput();
-        // The rest of the error output, e.g. a fatal error, explains why a worker exited
+        // The rest of the error output, e.g. a fatal error, explains why a worker exited: read up to its end
         if (!$this->errorOutputClosed) {
             stream_set_blocking($this->errorOutput, true);
-            $this->readErrorOutput();
         }
+        $this->readErrorOutput();
         fclose($this->output);
-        if (!$this->errorOutputClosed) {
-            fclose($this->errorOutput);
-        }
 
         return proc_close($this->process);
     }
@@ -228,13 +221,10 @@ final class WorkerProcess
 
     private function readErrorOutput(): void
     {
-        if ($this->errorOutputClosed) {
-            return;
-        }
-        while (($chunk = fread($this->errorOutput, 65536)) !== false && $chunk !== '') {
+        while (!$this->errorOutputClosed && ($chunk = fread($this->errorOutput, 65536)) !== false && $chunk !== '') {
             $this->addDiagnostics($chunk);
         }
-        if (feof($this->errorOutput)) {
+        if (!$this->errorOutputClosed && feof($this->errorOutput)) {
             $this->errorOutputClosed = true;
             fclose($this->errorOutput);
         }

@@ -25,20 +25,20 @@ final class CpuCoreCounter
      * On Linux the CPU affinity of the process and the CPU quota of its cgroup (containers) are honoured.
      *
      * @param string $osFamily Family of the operating system, PHP_OS_FAMILY
+     * @param string $rootDir  Root directory of the Linux /proc and /sys files
      */
-    public static function count(string $osFamily = PHP_OS_FAMILY): int
+    public static function count(string $osFamily = PHP_OS_FAMILY, string $rootDir = ''): int
     {
         $count = match ($osFamily) {
             'Windows' => self::fromWindowsEnvironment(),
-            'Linux'   => self::fromLinuxAffinity() ?? self::fromLinuxCpuInfo(),
+            'Linux'   => self::fromLinuxAffinity($rootDir) ?? self::fromLinuxCpuInfo($rootDir),
             default   => self::fromSysctl(),
         };
-        $quota = $osFamily === 'Linux' ? self::fromCgroupQuota() : null;
-        if ($quota !== null) {
-            $count = $count === null ? $quota : min($count, $quota);
-        }
+        $quota = $osFamily === 'Linux' ? self::fromCgroupQuota($rootDir) : null;
 
-        return max(1, $count ?? 1);
+        $limits = array_filter([$count, $quota], is_int(...));
+
+        return $limits !== [] ? max(1, min($limits)) : 1;
     }
 
     private static function fromWindowsEnvironment(): ?int
@@ -51,9 +51,9 @@ final class CpuCoreCounter
     /**
      * Counts the CPUs of the affinity mask of the process, e.g. `Cpus_allowed_list:	0-3,8`
      */
-    private static function fromLinuxAffinity(): ?int
+    private static function fromLinuxAffinity(string $rootDir): ?int
     {
-        $status = @file_get_contents('/proc/self/status');
+        $status = @file_get_contents($rootDir . '/proc/self/status');
         if ($status === false || preg_match('/^Cpus_allowed_list:\s*(\S+)/m', $status, $matches) !== 1) {
             return null;
         }
@@ -63,16 +63,13 @@ final class CpuCoreCounter
             $count += count($bounds) === 2 ? (int) $bounds[1] - (int) $bounds[0] + 1 : 1;
         }
 
-        return $count > 0 ? $count : null;
+        return $count;
     }
 
-    private static function fromLinuxCpuInfo(): ?int
+    private static function fromLinuxCpuInfo(string $rootDir): ?int
     {
-        $cpuInfo = @file_get_contents('/proc/cpuinfo');
-        if ($cpuInfo === false) {
-            return null;
-        }
-        $count = preg_match_all('/^processor\s*:/m', $cpuInfo);
+        $cpuInfo = @file_get_contents($rootDir . '/proc/cpuinfo');
+        $count   = $cpuInfo !== false ? preg_match_all('/^processor\s*:/m', $cpuInfo) : 0;
 
         return $count > 0 ? $count : null;
     }
@@ -80,9 +77,9 @@ final class CpuCoreCounter
     /**
      * Reads the CPU quota of a cgroup v2, e.g. `200000 100000` for two CPUs or `max 100000` for no quota
      */
-    private static function fromCgroupQuota(): ?int
+    private static function fromCgroupQuota(string $rootDir): ?int
     {
-        $cpuMax = @file_get_contents('/sys/fs/cgroup/cpu.max');
+        $cpuMax = @file_get_contents($rootDir . '/sys/fs/cgroup/cpu.max');
         if ($cpuMax === false || preg_match('/^(\d+)\s+(\d+)/', $cpuMax, $matches) !== 1 || (int) $matches[2] === 0) {
             return null;
         }

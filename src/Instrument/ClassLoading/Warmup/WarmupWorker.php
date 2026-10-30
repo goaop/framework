@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Instrument\ClassLoading\Warmup;
 
 use Composer\Autoload\ClassLoader;
-use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Console\KernelLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
@@ -46,11 +45,8 @@ final class WarmupWorker
      */
     public static function commandLine(string $loader): array
     {
-        if (!class_exists(ClassLoader::class, false) || !function_exists('proc_open')) {
-            return [];
-        }
-        $classLoaderFile = new ReflectionClass(ClassLoader::class)->getFileName();
-        if ($classLoaderFile === false) {
+        $classLoaderFile = class_exists(ClassLoader::class, false) ? new ReflectionClass(ClassLoader::class)->getFileName() : false;
+        if ($classLoaderFile === false || !function_exists('proc_open')) {
             return [];
         }
 
@@ -104,12 +100,8 @@ final class WarmupWorker
         }
 
         try {
-            $kernel = KernelLoader::load($loader);
-            $cacheDir = $kernel->getOptions()['cacheDir'];
-            if ($cacheDir === null || $cacheDir === '') {
-                throw InvalidConfigurationException::cacheWarmerWithoutCacheDir();
-            }
-            $container = $kernel->getContainer();
+            // The kernel refuses to start without a cache directory
+            $container = KernelLoader::load($loader)->getContainer();
             SourceTransformingLoader::ensureRegistered($container);
             $cachePathManager = $container->getService(CachePathManager::class);
         } catch (Throwable $e) {

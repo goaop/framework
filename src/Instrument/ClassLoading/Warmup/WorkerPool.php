@@ -57,7 +57,6 @@ final class WorkerPool
         $retries    = [];
         $nextFile   = 0;
         $fileCount  = count($files);
-        $spareStarts = $this->size;
 
         try {
             for ($i = 0; $i < min($this->size, $fileCount); $i++) {
@@ -107,16 +106,12 @@ final class WorkerPool
                     $onResult($crashedFile, self::describeCrash($exitCode, $worker->diagnostics), []);
                     array_push($retries, ...$pendingFiles);
 
-                    // Every crash fails a file, so the replacements are bounded by the number of files; a crash of an
-                    // idle worker fails none and uses one of the spare starts
+                    // Every crash fails a file, so the replacements are bounded by the number of files. A worker never
+                    // dies idle while files are left: it always has files in flight then
                     $hasWork = $retries !== [] || $nextFile < $fileCount;
                     if ($hasWork && !$isStopped()) {
                         $workers[] = WorkerProcess::start($this->commandLine);
                     }
-                }
-                // A worker that died between two files leaves its queue to the others; restart one if none is left
-                if ($workers === [] && ($retries !== [] || $nextFile < $fileCount) && !$isStopped() && $spareStarts-- > 0) {
-                    $workers[] = WorkerProcess::start($this->commandLine);
                 }
             }
         } finally {
@@ -137,13 +132,12 @@ final class WorkerPool
         foreach ($workers as $worker) {
             array_push($read, ...$worker->streams());
         }
-        if ($read === []) {
-            return;
-        }
         $write  = null;
         $except = null;
         // Interrupted by a signal (Ctrl+C) it returns false: the loop checks whether it should stop and waits again
-        @stream_select($read, $write, $except, 1);
+        if ($read !== []) {
+            @stream_select($read, $write, $except, 1);
+        }
     }
 
     private static function describeCrash(int $exitCode, string $diagnostics): string

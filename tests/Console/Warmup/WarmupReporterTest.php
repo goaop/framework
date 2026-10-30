@@ -182,6 +182,29 @@ final class WarmupReporterTest extends TestCase
         $this->assertInstanceOf(MilestoneReporter::class, WarmupReporterFactory::create(new BufferedOutput()));
     }
 
+    public function testFactoryDrawsAProgressBarOnAnInteractiveTerminal(): void
+    {
+        $output   = new ConsoleOutput(OutputInterface::VERBOSITY_NORMAL, true);
+        $terminal = new TerminalCapabilities(true, true, 80);
+        $output->setErrorOutput($this->createStreamOutput());
+
+        $this->assertInstanceOf(ProgressBarReporter::class, WarmupReporterFactory::create($output, '/app', $terminal));
+
+        $output->setVerbosity(OutputInterface::VERBOSITY_QUIET);
+        $this->assertInstanceOf(MilestoneReporter::class, WarmupReporterFactory::create($output, '/app', $terminal), 'Quiet shows no bar');
+    }
+
+    public function testWindowsTerminalsRenderUnicodeInWindowsTerminal(): void
+    {
+        $previous = getenv('WT_SESSION');
+        try {
+            putenv('WT_SESSION=8a5f5b3e');
+            $this->assertTrue(TerminalCapabilities::detect($this->createStreamOutput(), 'Windows')->unicode);
+        } finally {
+            putenv($previous === false ? 'WT_SESSION' : 'WT_SESSION=' . $previous);
+        }
+    }
+
     public function testTerminalOfAMemoryStreamIsNotInteractive(): void
     {
         $terminal = TerminalCapabilities::detect($this->createStreamOutput());

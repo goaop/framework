@@ -69,7 +69,7 @@ final class ProgressBarReporter extends AbstractWarmupReporter
             $progressBar->setEmptyBarCharacter('-');
         }
         $this->progressBar = $progressBar;
-        $this->updateMessages('');
+        $this->updateMessages($progressBar, '');
         $progressBar->start();
     }
 
@@ -77,19 +77,17 @@ final class ProgressBarReporter extends AbstractWarmupReporter
     {
         parent::advance($file, $error);
         $progressBar = $this->progressBar;
-        if ($progressBar === null) {
-            return;
-        }
-
-        if ($error !== null) {
-            $progressBar->clear();
-            $this->writeError($file, $error);
-        }
-        $this->updateMessages($file);
-        $progressBar->advance();
-        if ($error !== null) {
-            // The bar is back below the error at once, even when the advance skipped a redraw
-            $progressBar->display();
+        if ($progressBar !== null) {
+            if ($error !== null) {
+                $progressBar->clear();
+                $this->writeError($file, $error);
+            }
+            $this->updateMessages($progressBar, $file);
+            $progressBar->advance();
+            if ($error !== null) {
+                // The bar is back below the error at once, even when the advance skipped a redraw
+                $progressBar->display();
+            }
         }
     }
 
@@ -104,7 +102,7 @@ final class ProgressBarReporter extends AbstractWarmupReporter
     {
         $progressBar = $this->progressBar;
         if ($progressBar !== null && $processed === $this->total) {
-            $this->updateMessages('', finished: true);
+            $this->updateMessages($progressBar, '', finished: true);
             // The line of the file at hand is gone, only the bar stays
             $progressBar->setFormat(self::FINISHED_FORMAT);
             $progressBar->finish();
@@ -118,11 +116,8 @@ final class ProgressBarReporter extends AbstractWarmupReporter
         parent::finish($processed, $errors);
     }
 
-    private function updateMessages(string $file, bool $finished = false): void
+    private function updateMessages(ProgressBar $progressBar, string $file, bool $finished = false): void
     {
-        if ($this->progressBar === null) {
-            return;
-        }
         // The timing of the bar itself counts whole seconds only
         $elapsed = $this->elapsedSeconds();
         $rate    = $this->rate();
@@ -130,10 +125,10 @@ final class ProgressBarReporter extends AbstractWarmupReporter
         if (!$finished && $this->processed > 0 && $this->processed < $this->total && $rate > 0) {
             $timing .= sprintf(', ~%s left', Helper::formatTime(($this->total - $this->processed) / $rate));
         }
-        $this->progressBar->setMessage($timing, 'timing');
-        $this->progressBar->setMessage(sprintf('%.1f files/s', $rate), 'rate');
-        $this->progressBar->setMessage($this->errors > 0 ? sprintf('  <fg=red>%d errors</>', $this->errors) : '', 'errors');
-        $this->progressBar->setMessage($this->shortenPath($file), 'file');
+        $progressBar->setMessage($timing, 'timing');
+        $progressBar->setMessage(sprintf('%.1f files/s', $rate), 'rate');
+        $progressBar->setMessage($this->errors > 0 ? sprintf('  <fg=red>%d errors</>', $this->errors) : '', 'errors');
+        $progressBar->setMessage($this->shortenPath($file), 'file');
     }
 
     /**

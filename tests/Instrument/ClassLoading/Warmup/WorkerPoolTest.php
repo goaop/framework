@@ -121,7 +121,7 @@ final class WorkerPoolTest extends TestCase
     public function testWorkerThatCanNotBootAbortsTheWarmup(): void
     {
         $this->expectException(WeavingException::class);
-        $this->expectExceptionMessageMatches('/exited with code 3 before it was ready to weave:\nKernel boot failure/');
+        $this->expectExceptionMessageMatches('/exited with code 3 before it was ready to weave:\n(?=.*PHP Warning: something on the way)(?=.*Kernel boot failure)/s');
 
         $this->runPool(new WorkerPool(self::workerCommandLine('broken'), 2), ['/app/A.php', '/app/B.php']);
     }

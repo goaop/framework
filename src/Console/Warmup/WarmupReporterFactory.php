@@ -30,9 +30,10 @@ use Symfony\Component\Console\Output\StreamOutput;
 final class WarmupReporterFactory
 {
     /**
-     * @param string|null $baseDir Directory the files in the progress bar are shown relative to
+     * @param string|null               $baseDir  Directory the files in the progress bar are shown relative to
+     * @param TerminalCapabilities|null $terminal Capabilities of the terminal of the error output, detected by default
      */
-    public static function create(OutputInterface $output, ?string $baseDir = null): WarmupReporter
+    public static function create(OutputInterface $output, ?string $baseDir = null, ?TerminalCapabilities $terminal = null): WarmupReporter
     {
         if ($output->isVerbose()) {
             return new FileListReporter($output);
@@ -40,7 +41,7 @@ final class WarmupReporterFactory
 
         $progressOutput = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
         if ($progressOutput instanceof StreamOutput && !$output->isQuiet()) {
-            $terminal = TerminalCapabilities::detect($progressOutput);
+            $terminal ??= TerminalCapabilities::detect($progressOutput);
             if ($terminal->interactive) {
                 return new ProgressBarReporter($output, $terminal, $baseDir);
             }
