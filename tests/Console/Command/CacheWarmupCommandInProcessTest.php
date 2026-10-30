@@ -15,6 +15,7 @@ namespace Go\Console\Command;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CacheWarmer;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
@@ -84,7 +85,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1): CacheWarmer
             {
                 return new class extends CacheWarmer {
                     public function __construct()
@@ -131,7 +132,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1): CacheWarmer
             {
                 return new class ($this) extends CacheWarmer {
                     public function __construct(private readonly CacheWarmupCommand $command)
@@ -162,14 +163,17 @@ class CacheWarmupCommandInProcessTest extends TestCase
         $command = new class extends CacheWarmupCommand {
             public ?bool $failFast = null;
 
+            public ?int $workers = null;
+
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1): CacheWarmer
             {
                 $this->failFast = $failFast;
+                $this->workers  = $workers;
 
                 return new class extends CacheWarmer {
                     public function __construct()
@@ -190,5 +194,31 @@ class CacheWarmupCommandInProcessTest extends TestCase
 
         $this->assertSame(Command::FAILURE, $tester->execute(['loader' => 'unused.php', '--fail-fast' => true]));
         $this->assertTrue($command->failFast);
+        $this->assertSame(CacheWarmer::AUTO_WORKERS, $command->workers, 'One worker per CPU core by default');
+
+        $tester->execute(['loader' => 'unused.php', '--workers' => '6']);
+        $this->assertSame(6, $command->workers);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function invalidWorkerCounts(): iterable
+    {
+        yield 'zero'     => ['0'];
+        yield 'negative' => ['-2'];
+        yield 'word'     => ['many'];
+        yield 'fraction' => ['1.5'];
+    }
+
+    #[DataProvider('invalidWorkerCounts')]
+    public function testInvalidNumberOfWorkersIsRejectedBeforeTheKernelIsLoaded(string $workers): void
+    {
+        $tester = new CommandTester(new CacheWarmupCommand());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches(sprintf('/^Number of workers must be a positive integer or "auto", got "%s"$/', preg_quote($workers, '/')));
+
+        $tester->execute(['loader' => '/path/to/missing/loader.php', '--workers' => $workers]);
     }
 }

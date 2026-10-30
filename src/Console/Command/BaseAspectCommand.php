@@ -13,8 +13,10 @@ declare(strict_types=1);
 namespace Go\Console\Command;
 
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Console\KernelLoader;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CacheWarmer;
+use Go\Instrument\ClassLoading\Warmup\WarmupWorker;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,6 +31,11 @@ abstract class BaseAspectCommand extends Command
      * Stores an instance of aspect kernel
      */
     protected AspectKernel $aspectKernel;
+
+    /**
+     * Absolute path of the loader file that booted the kernel, null until loadAspectKernel() ran
+     */
+    protected ?string $loaderPath = null;
 
     protected function configure(): void
     {
@@ -53,24 +60,8 @@ abstract class BaseAspectCommand extends Command
         if (!is_string($loader)) {
             throw InvalidConfigurationException::loaderArgumentNotString();
         }
-        $path = stream_resolve_include_path($loader);
-        if ($path === false || !is_readable($path)) {
-            throw InvalidConfigurationException::invalidLoaderPath($loader);
-        }
-
-        // The loader is executed only to boot the kernel: anything it prints is discarded
-        ob_start();
-        try {
-            include_once $path;
-        } finally {
-            ob_end_clean();
-        }
-
-        if (!class_exists(AspectKernel::class, false)) {
-            throw InvalidConfigurationException::kernelNotConfiguredInLoader($path);
-        }
-
-        $this->aspectKernel = AspectKernel::getInstance();
+        $this->loaderPath   = KernelLoader::resolve($loader);
+        $this->aspectKernel = KernelLoader::load($this->loaderPath);
     }
 
     /**
@@ -100,9 +91,25 @@ abstract class BaseAspectCommand extends Command
      * Creates the cache warmer for the loaded aspect kernel
      *
      * @param bool $failFast Whether the warmer stops after the first file that fails to process
+     * @param int  $workers  Number of worker processes, CacheWarmer::AUTO_WORKERS for one per CPU core
      */
-    protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
+    protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1): CacheWarmer
     {
-        return new CacheWarmer($this->aspectKernel, $output, $failFast);
+        $workerCommandLine = $workers !== 1 ? $this->getWorkerCommandLine() : [];
+
+        return new CacheWarmer($this->aspectKernel, $output, $failFast, $workers, $workerCommandLine);
+    }
+
+    /**
+     * Returns the command line that starts one cache warmup worker process
+     *
+     * A worker boots the kernel with the loader file, like loadAspectKernel() does. A command that boots the kernel
+     * differently returns the command line of its own worker here, or an empty list to weave in this process only.
+     *
+     * @return list<string>
+     */
+    protected function getWorkerCommandLine(): array
+    {
+        return $this->loaderPath !== null ? WarmupWorker::commandLine($this->loaderPath) : [];
     }
 }

@@ -142,17 +142,42 @@ stay in place.
 
 `bin/aspect` needs `symfony/console` (`^7.4 || ^8.0`). Every command takes the path to the file that initializes your kernel, usually the front controller. That file is executed.
 
-| Command                                   | Purpose |
-|-------------------------------------------|---------|
-| `cache:warmup:aop <loader> [--fail-fast]` | Weaves every file below the include paths into the cache. Fails when a file cannot be woven and writes the errors to stderr. |
-| `debug:aspect <loader> [--aspect=...]`    | Lists the registered aspects and their advices. |
-| `debug:advisor <loader> [--advisor=...]`  | Lists the advisors; with `--advisor` shows the joinpoints that advisor matches. |
-| `debug:weaving <loader>`                  | Warms up the cache twice and reports proxies that are woven differently, which points to non-deterministic aspects. |
+| Command                                                 | Purpose |
+|---------------------------------------------------------|---------|
+| `cache:warmup:aop <loader> [--fail-fast] [--workers=N]` | Weaves every file below the include paths into the cache, in parallel worker processes. Fails when a file cannot be woven and writes the errors to stderr. |
+| `debug:aspect <loader> [--aspect=...]`                  | Lists the registered aspects and their advices. |
+| `debug:advisor <loader> [--advisor=...]`                | Lists the advisors; with `--advisor` shows the joinpoints that advisor matches. |
+| `debug:weaving <loader>`                                | Warms up the cache twice and reports proxies that are woven differently, which points to non-deterministic aspects. |
+
+### Cache warm-up
+
+`--workers` sets how many processes weave in parallel. The default, `auto`, starts one worker per CPU core (honouring
+the CPU affinity and the cgroup quota of a container), but never more than one per 50 files: a worker boots the kernel
+again, which only pays off for enough files. `--workers=1` weaves in the command process itself.
+
+The command process coordinates the workers. It loads the aspects once, so their advisor caches are written before the
+workers start. It hands the files out from a queue, largest first, and keeps each worker two files ahead, so a worker
+stuck on large files simply takes fewer of them. Every worker answers each file with the cache records it produced;
+the command merges them and writes `_transformation.cache` and `_include.cache` once at the end (also when the warm-up
+is interrupted, so the files done so far stay cached), because workers writing their own copy would overwrite each
+other. A worker that dies (a fatal error, out of memory) fails the file it was weaving, with its error output, and a
+new worker takes over its other files. Ctrl+C or SIGTERM stops handing out files, and the workers finish the files
+they have.
+
+The progress adapts to where it is written (the error output):
+
+- an interactive terminal shows a progress bar redrawn in place, with the file at hand below it, the rate, the time
+  left and the error count; Unicode bar characters are used when the locale is UTF-8;
+- a CI log, a file, a pipe or `TERM=dumb` gets a progress line at every tenth of the files (or every ten seconds);
+- `-v` lists every file, `-q` shows nothing but the exit code.
+
+A command that boots the kernel in its own way (an overridden `loadAspectKernel()`) also overrides
+`getWorkerCommandLine()` to start its own workers, or returns `[]` there to weave in one process.
 
 ## Deployment
 
 1. Clear the cache directory.
-2. Warm up the cache: `vendor/bin/aspect cache:warmup:aop public/index.php`. The command fails when a file cannot be woven, so a deploy script stops instead of shipping an incomplete cache.
+2. Warm up the cache: `vendor/bin/aspect cache:warmup:aop public/index.php`. The command fails when a file cannot be woven, so a deploy script stops instead of shipping an incomplete cache. Large projects are woven in parallel, one worker per CPU core; set `--workers=N` to limit it on a shared build machine.
 3. Run with `'debug' => false` and `Features::PREBUILT_CACHE`.
 
 Rebuild the cache whenever the code or the aspects change. When upgrading from 3.x, see the [upgrade guide](../UPGRADE-4.0.md).

@@ -147,6 +147,47 @@ class CachePathManagerTest extends TestCase
         $this->assertNull($manager->findIncludeFile($original));
     }
 
+    /**
+     * A warmup worker hands its records to the coordinator, which writes the records of all workers at once
+     */
+    public function testRecordsTakenFromOneManagerAreMergedIntoAnother(): void
+    {
+        $original    = self::$appDir . '/src/Some.php';
+        $transformed = self::$cacheDir . '/src/Some.php';
+        $known       = self::$appDir . '/src/Untransformed.php';
+
+        $worker = $this->createManager();
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
+        $worker->registerClassForResource($original, 'App\Some');
+        $worker->setCacheState($original, ['filemtime' => 12345, 'cacheUri' => $transformed]);
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
+        $worker->registerClassForResource($known, 'App\Untransformed');
+        $worker->setCacheState($known, ['filemtime' => 12345, 'cacheUri' => null]);
+
+        $records = $worker->takeNewCacheState();
+        $this->assertSame(['/src/Some.php', '/src/Untransformed.php'], array_keys($records));
+        $this->assertSame([], $worker->takeNewCacheState(), 'Taken records are forgotten');
+        $worker->flushCacheState();
+        $this->assertFileDoesNotExist(self::$cacheDir . '/_include.cache', 'A worker with nothing left writes nothing');
+
+        $coordinator = $this->createManager();
+        $coordinator->mergeCacheState($records);
+        // The runtime maps follow the merged records right away
+        // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
+        $this->assertSame(['App\Some' => $transformed], $coordinator->queryClassMap());
+        // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
+        $this->assertSame(['App\Untransformed' => true], $coordinator->querySkippedClasses());
+        $this->assertSame($transformed, $coordinator->findIncludeFile($original));
+        $coordinator->flushCacheState();
+
+        $reader = $this->createManager();
+        // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
+        $this->assertSame(['App\Some' => $transformed], $reader->queryClassMap());
+        // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
+        $this->assertSame(['App\Untransformed' => true], $reader->querySkippedClasses());
+        $this->assertSame(12345, $reader->queryCacheState($original)['filemtime'] ?? null);
+    }
+
     public function testLegacyCacheDirectoryWithoutClassMapIsTreatedAsStale(): void
     {
         $original    = self::$appDir . '/src/Legacy.php';

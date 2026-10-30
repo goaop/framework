@@ -211,7 +211,7 @@ class DebugWeavingCommandInProcessTest extends TestCase
                 $this->aspectKernel = $this->kernel;
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1): CacheWarmer
             {
                 return $this->warmer;
             }

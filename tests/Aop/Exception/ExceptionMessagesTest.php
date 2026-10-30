@@ -156,6 +156,11 @@ final class ExceptionMessagesTest extends TestCase
                 InvalidConfigurationException::class,
                 'Loader file aop.php does not exist or is not readable',
             ],
+            'invalid worker count'        => [
+                static fn() => InvalidConfigurationException::invalidWorkerCount('many'),
+                InvalidConfigurationException::class,
+                'Number of workers must be a positive integer or "auto", got "many"',
+            ],
             'native lazy objects'         => [
                 static fn() => InvalidConfigurationException::nativeLazyObjectsRequired('App\User', 'name'),
                 InvalidConfigurationException::class,
@@ -316,6 +321,16 @@ final class ExceptionMessagesTest extends TestCase
                 static fn() => WeavingException::transformerFailed('App\Transformer', '/app/Foo.php', new LogicException('boom')),
                 WeavingException::class,
                 'App\Transformer failed to transform /app/Foo.php: boom',
+            ],
+            'warmup worker not started'   => [
+                static fn() => WeavingException::warmupWorkerNotStarted('php -r ...'),
+                WeavingException::class,
+                'Cache warmup worker process could not be started: php -r ...',
+            ],
+            'warmup worker failed'        => [
+                static fn() => WeavingException::warmupWorkerFailedToStart(255, "PHP Fatal error: boom\n"),
+                WeavingException::class,
+                "Cache warmup worker process exited with code 255 before it was ready to weave:\nPHP Fatal error: boom",
             ],
             'prebuilt cache version'      => [
                 static fn() => WeavingException::prebuiltCacheVersionMismatch('/cache'),

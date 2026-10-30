@@ -7,6 +7,23 @@
 4. Caching lives in SourceTransformingLoader::filter() — cache hit → cached content emitted as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → write cache
 5. Freshness rule lives in one place: CachePathManager::queryFreshCacheState() (record filemtime/filesize, container isFreshSince(cachedAt); PREBUILT_CACHE trusts records), used by the filter and the debug autoloader
 
+## Cache warmup (cache:warmup:aop)
+- CacheWarmer (orchestrator): enumerates the files, weaves them in-process (Warmup\FileWarmer: php://filter read +
+  ErrorException handler) or with Warmup\WorkerPool when `--workers` > 1 (default `auto` = CpuCoreCounter, ≥ 50 files
+  per worker; no worker command line → in-process).
+- Workers: `php -r` WarmupWorker::main() (autoloader + loader file as arguments, Console\KernelLoader boots like the
+  command), SIGINT ignored, stray output swallowed by ob_start. Protocol (Warmup\WorkerProtocol): one line per message,
+  marker + base64(serialize()); coordinator → `['file']`, closing stdin stops the worker; worker → ready/failed/result.
+- Coordinator owns the queue (largest files first, FILES_IN_FLIGHT = 2 per worker) and the metadata: each result carries
+  CachePathManager::takeNewCacheState() of the worker, merged with mergeCacheState() and flushed once at the end (also
+  on interrupt). Workers never flush (several writers of _transformation.cache would drop each other's records).
+- Worker death: first pending file fails with the stderr tail, the rest is requeued, a new worker starts; death before
+  `ready` aborts (WeavingException::warmupWorkerFailedToStart). Windows: stdout/stderr are `['socket']` descriptors,
+  stream_select() can not wait on pipes there.
+- UI (Console\Warmup): WarmupReporterFactory picks FileListReporter (-v), ProgressBarReporter (decorated tty error
+  output, TERM != dumb; Unicode by locale) or MilestoneReporter (logs: every tenth / 10 s). Progress + errors → stderr,
+  header + summary → stdout.
+
 ## Transformer chain (order matters)
 Applied per loaded file. Each returns TransformerResult: Transformed|Abstain|Aborted (skips the rest of the chain, reverts to the original source, recorded as untransformed).
 
