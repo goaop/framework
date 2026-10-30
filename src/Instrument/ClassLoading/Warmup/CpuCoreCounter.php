@@ -23,15 +23,17 @@ final class CpuCoreCounter
      * Returns the number of usable CPU cores, at least 1
      *
      * On Linux the CPU affinity of the process and the CPU quota of its cgroup (containers) are honoured.
+     *
+     * @param string $osFamily Family of the operating system, PHP_OS_FAMILY
      */
-    public static function count(): int
+    public static function count(string $osFamily = PHP_OS_FAMILY): int
     {
-        $count = match (PHP_OS_FAMILY) {
+        $count = match ($osFamily) {
             'Windows' => self::fromWindowsEnvironment(),
             'Linux'   => self::fromLinuxAffinity() ?? self::fromLinuxCpuInfo(),
             default   => self::fromSysctl(),
         };
-        $quota = PHP_OS_FAMILY === 'Linux' ? self::fromCgroupQuota() : null;
+        $quota = $osFamily === 'Linux' ? self::fromCgroupQuota() : null;
         if ($quota !== null) {
             $count = $count === null ? $quota : min($count, $quota);
         }

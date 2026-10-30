@@ -12,8 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Core\AdvisorIndex;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Core\AspectLoaderInterface;
 use Go\Core\Container;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
@@ -75,6 +77,9 @@ class CacheWarmerTest extends TestCase
         array $includePaths = [],
         array $excludePaths = [],
     ): AspectKernel {
+        $aspectLoader = $this->createMock(AspectLoaderInterface::class);
+        $aspectLoader->method('getUnloadedAspects')->willReturn([]);
+
         $kernel = $this->createMock(AspectKernel::class);
         $kernel->method('getOptions')->willReturn([
             'debug'          => true,
@@ -91,6 +96,7 @@ class CacheWarmerTest extends TestCase
         $container->method('getService')->willReturnMap([
             [AspectKernel::class, $kernel],
             [CachePathManager::class, new CachePathManager($kernel)],
+            [AdvisorIndex::class, new AdvisorIndex($container, $aspectLoader)],
         ]);
         // Without transformers, streamed files pass through the filter untransformed
         $container->method('getServicesByInterface')->willReturn($transformers);
@@ -199,6 +205,74 @@ class CacheWarmerTest extends TestCase
         $this->assertSame([$appDir . '/src/Some.php', $appDir . '/vendor/acme/lib/src/Acme.php', $appDir . '/vendor/autoload.php'], $processed);
         $this->assertStringContainsString('Total 3 files to process.', $display);
         $this->assertStringContainsString('[DONE]: Total processed 3, 0 errors in ', $display);
+    }
+
+    /**
+     * Starts tests/Fixtures/warmup/fake-worker.php as the workers: it answers every file with a record of its process
+     *
+     * @return list<string>
+     */
+    private static function fakeWorkerCommandLine(): array
+    {
+        return [PHP_BINARY, __DIR__ . '/../../Fixtures/warmup/fake-worker.php'];
+    }
+
+    public function testWorkersWeaveTheFilesAndTheirRecordsAreWrittenOnce(): void
+    {
+        for ($i = 0; $i < 9; $i++) {
+            file_put_contents($this->appDir . "/src/File{$i}.php", "<?php\n" . str_repeat('// padding' . "\n", $i));
+        }
+        file_put_contents($this->appDir . '/src/error-file.php', "<?php\n");
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), $output, workers: 3, workerCommandLine: self::fakeWorkerCommandLine());
+
+        $this->assertSame(1, $warmer->warmUp());
+        $display = $output->fetch();
+
+        $this->assertStringContainsString('Weaving in 3 parallel worker processes.', $display);
+        $this->assertSame(10, substr_count($display, '[OK]'));
+        $this->assertStringContainsString('error-file.php: Cannot weave error-file.php', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 11, 1 errors in ', $display);
+        $this->assertStringContainsString(' with 3 workers.', $display);
+
+        // The records of every worker end up in one metadata file
+        $metadata = include $this->cacheDir . '/_transformation.cache';
+        $this->assertIsArray($metadata);
+        $this->assertIsArray($metadata['files']);
+        $this->assertCount(11, $metadata['files']);
+        $this->assertArrayHasKey('/File8.php', $metadata['files']);
+    }
+
+    public function testInterruptedWorkersGetNoFiles(): void
+    {
+        $output = new BufferedOutput();
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), $output, workers: 2, workerCommandLine: self::fakeWorkerCommandLine());
+        file_put_contents($this->appDir . '/src/Other.php', "<?php\n");
+
+        $warmer->interrupt();
+        $this->assertSame(0, $warmer->warmUp());
+        $display = $output->fetch();
+
+        $this->assertStringContainsString('[STOP]: Warmup was interrupted, stopping...', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 0, 0 errors in ', $display);
+        $this->assertFileDoesNotExist($this->cacheDir . '/_transformation.cache');
+    }
+
+    /**
+     * A project too small for a second worker is woven in the command process
+     */
+    public function testAutomaticNumberOfWorkersKeepsSmallProjectsInProcess(): void
+    {
+        $output = new BufferedOutput();
+        $warmer = new CacheWarmer(
+            $this->createKernel($this->cacheDir),
+            $output,
+            workers: CacheWarmer::AUTO_WORKERS,
+            workerCommandLine: self::fakeWorkerCommandLine(),
+        );
+
+        $this->assertSame(0, $warmer->warmUp());
+        $this->assertStringNotContainsString('parallel worker processes', $output->fetch());
     }
 
     public function testInterruptStopsWarmupLoopBeforeNextFile(): void

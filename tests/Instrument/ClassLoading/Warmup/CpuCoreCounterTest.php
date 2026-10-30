@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading\Warmup;
 
+use PHPUnit\Framework\Attributes\RequiresOperatingSystemFamily;
 use PHPUnit\Framework\TestCase;
 
 final class CpuCoreCounterTest extends TestCase
@@ -19,5 +20,35 @@ final class CpuCoreCounterTest extends TestCase
     public function testCountsAtLeastOneCore(): void
     {
         $this->assertGreaterThanOrEqual(1, CpuCoreCounter::count());
+    }
+
+    #[RequiresOperatingSystemFamily('Linux')]
+    public function testLinuxCountIsLimitedByTheAffinityOfTheProcess(): void
+    {
+        $status = (string) file_get_contents('/proc/self/status');
+        if (preg_match('/^Cpus_allowed_list:\s*(\S+)/m', $status) !== 1) {
+            $this->markTestSkipped('No affinity list in /proc/self/status');
+        }
+
+        $this->assertLessThanOrEqual(substr_count((string) file_get_contents('/proc/cpuinfo'), "\nprocessor") + 1, CpuCoreCounter::count('Linux'));
+    }
+
+    public function testWindowsCountComesFromTheEnvironment(): void
+    {
+        $previous = getenv('NUMBER_OF_PROCESSORS');
+        try {
+            putenv('NUMBER_OF_PROCESSORS=6');
+            $this->assertSame(6, CpuCoreCounter::count('Windows'));
+            putenv('NUMBER_OF_PROCESSORS=many');
+            $this->assertSame(1, CpuCoreCounter::count('Windows'));
+        } finally {
+            putenv($previous === false ? 'NUMBER_OF_PROCESSORS' : 'NUMBER_OF_PROCESSORS=' . $previous);
+        }
+    }
+
+    public function testOtherSystemsAskSysctl(): void
+    {
+        // sysctl answers hw.ncpu on macOS and the BSDs only: anything else falls back to one core
+        $this->assertGreaterThanOrEqual(1, CpuCoreCounter::count('Darwin'));
     }
 }

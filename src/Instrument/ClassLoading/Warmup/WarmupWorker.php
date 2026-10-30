@@ -84,6 +84,19 @@ final class WarmupWorker
 
         // Anything the application prints is discarded, messages are written to the stream directly
         ob_start(static fn(): string => '');
+        try {
+            return self::serve($loader, $input, $output);
+        } finally {
+            ob_end_clean();
+        }
+    }
+
+    /**
+     * @param resource $input
+     * @param resource $output
+     */
+    private static function serve(string $loader, mixed $input, mixed $output): int
+    {
         // Ctrl+C reaches the whole process group: the coordinator decides when to stop, by closing the input,
         // and the worker finishes the file at hand first
         if (function_exists('pcntl_signal')) {
