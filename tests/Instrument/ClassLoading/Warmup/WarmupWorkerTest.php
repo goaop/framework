@@ -123,7 +123,8 @@ final class WarmupWorkerTest extends TestCase
         $this->assertSame($file, $messages[1]['file']);
         $this->assertNull($messages[1]['error']);
         $this->assertIsArray($messages[1]['records']);
-        $this->assertSame(['/src/Some.php'], array_keys($messages[1]['records']));
+        // Record keys are relative paths with the separators of the system
+        $this->assertSame(['/src/Some.php'], array_map(static fn(int|string $key): string => str_replace('\\', '/', (string) $key), array_keys($messages[1]['records'])));
 
         $this->assertSame($missing, $messages[2]['file']);
         $this->assertIsString($messages[2]['error']);
