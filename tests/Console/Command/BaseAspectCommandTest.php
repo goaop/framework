@@ -44,12 +44,33 @@ final class BaseAspectCommandTestCommandStub extends BaseAspectCommand
     public ?AspectKernel $exposedKernel = null;
     public ?CacheWarmer $exposedWarmer  = null;
 
+    public int $workers = 1;
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->loadAspectKernel($input, $output);
         $this->exposedKernel = $this->aspectKernel;
-        $this->exposedWarmer = $this->createCacheWarmer($output);
+        $this->exposedWarmer = $this->createCacheWarmer($output, false, $this->workers);
 
+        return Command::SUCCESS;
+    }
+}
+
+/**
+ * Command exposing the worker command line, without a loaded kernel
+ */
+abstract class BaseAspectCommandTestCommandStubBase extends BaseAspectCommand
+{
+    /**
+     * @return list<string>
+     */
+    public function exposeWorkerCommandLine(): array
+    {
+        return $this->getWorkerCommandLine();
+    }
+
+    protected function execute(InputInterface $input, OutputInterface $output): int
+    {
         return Command::SUCCESS;
     }
 }
@@ -125,6 +146,45 @@ class BaseAspectCommandTest extends TestCase
                 ob_end_clean();
             }
         }
+    }
+
+    /**
+     * Workers boot the kernel with the loader of the command
+     */
+    public function testWarmerWithWorkersStartsThemWithTheLoader(): void
+    {
+        $kernel           = (new ReflectionClass(BaseAspectCommandTestKernelStub::class))->newInstanceWithoutConstructor();
+        $instanceProperty = new ReflectionProperty(AspectKernel::class, 'instance');
+        $previousInstance = $instanceProperty->getValue();
+        $instanceProperty->setValue(null, $kernel);
+        $obLevelBefore = ob_get_level();
+        $loader        = (string) realpath(__DIR__ . '/../../../vendor/autoload.php');
+
+        try {
+            $command          = $this->makeCommand();
+            $command->workers = 4;
+            new CommandTester($command)->execute(['loader' => $loader]);
+
+            $warmer = $command->exposedWarmer;
+            $this->assertInstanceOf(CacheWarmer::class, $warmer);
+            $commandLine = new ReflectionProperty(CacheWarmer::class, 'workerCommandLine')->getValue($warmer);
+            $this->assertIsArray($commandLine);
+            $this->assertSame(PHP_BINARY, $commandLine[0]);
+            $this->assertSame($loader, end($commandLine));
+            $this->assertSame(4, new ReflectionProperty(CacheWarmer::class, 'workers')->getValue($warmer));
+        } finally {
+            $instanceProperty->setValue(null, $previousInstance);
+            while (ob_get_level() > $obLevelBefore) {
+                ob_end_clean();
+            }
+        }
+    }
+
+    public function testWarmerWithoutLoadedKernelHasNoWorkers(): void
+    {
+        $command = new class extends BaseAspectCommandTestCommandStubBase {};
+
+        $this->assertSame([], $command->exposeWorkerCommandLine());
     }
 
     public function testSuggestionIsOnlyGivenForCloseNames(): void

@@ -12,8 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Core\AdvisorIndex;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
+use Go\Core\AspectLoaderInterface;
 use Go\Core\Container;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
@@ -27,6 +29,7 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\StreamOutput;
 
 // Separate processes: warming up registers the process-wide source transforming
@@ -74,6 +77,9 @@ class CacheWarmerTest extends TestCase
         array $includePaths = [],
         array $excludePaths = [],
     ): AspectKernel {
+        $aspectLoader = $this->createMock(AspectLoaderInterface::class);
+        $aspectLoader->method('getUnloadedAspects')->willReturn([]);
+
         $kernel = $this->createMock(AspectKernel::class);
         $kernel->method('getOptions')->willReturn([
             'debug'          => true,
@@ -90,6 +96,7 @@ class CacheWarmerTest extends TestCase
         $container->method('getService')->willReturnMap([
             [AspectKernel::class, $kernel],
             [CachePathManager::class, new CachePathManager($kernel)],
+            [AdvisorIndex::class, new AdvisorIndex($container, $aspectLoader)],
         ]);
         // Without transformers, streamed files pass through the filter untransformed
         $container->method('getServicesByInterface')->willReturn($transformers);
@@ -110,7 +117,7 @@ class CacheWarmerTest extends TestCase
 
     public function testWarmUpProcessesAllEnumeratedFiles(): void
     {
-        $output = new BufferedOutput();
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
         $warmer = new CacheWarmer($this->createKernel($this->cacheDir), $output);
 
         $warmer->warmUp();
@@ -118,7 +125,43 @@ class CacheWarmerTest extends TestCase
 
         $this->assertStringContainsString('Total 1 files to process.', $display);
         $this->assertStringContainsString('[OK]', $display);
-        $this->assertStringContainsString('[DONE]: Total processed 1, 0 errors.', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 1, 0 errors in ', $display);
+    }
+
+    /**
+     * An output that is not a terminal (a CI log, a file) gets progress lines instead of a list of every file
+     */
+    public function testWarmUpWritesProgressLinesWhenNotVerbose(): void
+    {
+        for ($i = 0; $i < 20; $i++) {
+            file_put_contents($this->appDir . "/src/File{$i}.php", "<?php\n");
+        }
+        $output = new BufferedOutput();
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), $output);
+
+        $this->assertSame(0, $warmer->warmUp());
+        $display = $output->fetch();
+
+        $this->assertStringNotContainsString('[OK]', $display);
+        $this->assertStringContainsString(' 3/21 [ 14%]', $display);
+        $this->assertStringContainsString('21/21 [100%]', $display);
+        $this->assertSame(7, substr_count($display, ' elapsed, '), 'A progress line at every tenth of the files');
+        $this->assertStringContainsString('[DONE]: Total processed 21, 0 errors in ', $display);
+    }
+
+    /**
+     * Without a command line to start them, workers are not used, whatever their number
+     */
+    public function testWarmUpWithoutWorkerCommandLineWeavesInProcess(): void
+    {
+        $output = new BufferedOutput();
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), $output, workers: 4);
+
+        $this->assertSame(0, $warmer->warmUp());
+        $display = $output->fetch();
+
+        $this->assertStringNotContainsString('parallel worker processes', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 1, 0 errors in ', $display);
     }
 
     /**
@@ -148,7 +191,7 @@ class CacheWarmerTest extends TestCase
         $includePaths = [$this->appDir . '/src', $this->appDir . '/vendor', $this->appDir . '/var'];
         $excludePaths = [$cacheDir, $this->appDir . '/src/Legacy', $this->appDir . '/src/*/Proxy', $this->appDir . '/vendor/*/tests', $this->appDir . '/*Test.php'];
 
-        $output = new BufferedOutput();
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
         $warmer = new CacheWarmer($this->createKernel($cacheDir, [], $includePaths, $excludePaths), $output);
 
         $this->assertSame(0, $warmer->warmUp());
@@ -161,7 +204,75 @@ class CacheWarmerTest extends TestCase
         $appDir = str_replace('\\', '/', $this->appDir);
         $this->assertSame([$appDir . '/src/Some.php', $appDir . '/vendor/acme/lib/src/Acme.php', $appDir . '/vendor/autoload.php'], $processed);
         $this->assertStringContainsString('Total 3 files to process.', $display);
-        $this->assertStringContainsString('[DONE]: Total processed 3, 0 errors.', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 3, 0 errors in ', $display);
+    }
+
+    /**
+     * Starts tests/Fixtures/warmup/fake-worker.php as the workers: it answers every file with a record of its process
+     *
+     * @return list<string>
+     */
+    private static function fakeWorkerCommandLine(): array
+    {
+        return [PHP_BINARY, __DIR__ . '/../../Fixtures/warmup/fake-worker.php'];
+    }
+
+    public function testWorkersWeaveTheFilesAndTheirRecordsAreWrittenOnce(): void
+    {
+        for ($i = 0; $i < 9; $i++) {
+            file_put_contents($this->appDir . "/src/File{$i}.php", "<?php\n" . str_repeat('// padding' . "\n", $i));
+        }
+        file_put_contents($this->appDir . '/src/error-file.php', "<?php\n");
+        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), $output, workers: 3, workerCommandLine: self::fakeWorkerCommandLine());
+
+        $this->assertSame(1, $warmer->warmUp());
+        $display = $output->fetch();
+
+        $this->assertStringContainsString('Weaving in 3 parallel worker processes.', $display);
+        $this->assertSame(10, substr_count($display, '[OK]'));
+        $this->assertStringContainsString('error-file.php: Cannot weave error-file.php', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 11, 1 errors in ', $display);
+        $this->assertStringContainsString(' with 3 workers.', $display);
+
+        // The records of every worker end up in one metadata file
+        $metadata = include $this->cacheDir . '/_transformation.cache';
+        $this->assertIsArray($metadata);
+        $this->assertIsArray($metadata['files']);
+        $this->assertCount(11, $metadata['files']);
+        $this->assertArrayHasKey('/File8.php', $metadata['files']);
+    }
+
+    public function testInterruptedWorkersGetNoFiles(): void
+    {
+        $output = new BufferedOutput();
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), $output, workers: 2, workerCommandLine: self::fakeWorkerCommandLine());
+        file_put_contents($this->appDir . '/src/Other.php', "<?php\n");
+
+        $warmer->interrupt();
+        $this->assertSame(0, $warmer->warmUp());
+        $display = $output->fetch();
+
+        $this->assertStringContainsString('[STOP]: Warmup was interrupted, stopping...', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 0, 0 errors in ', $display);
+        $this->assertFileDoesNotExist($this->cacheDir . '/_transformation.cache');
+    }
+
+    /**
+     * A project too small for a second worker is woven in the command process
+     */
+    public function testAutomaticNumberOfWorkersKeepsSmallProjectsInProcess(): void
+    {
+        $output = new BufferedOutput();
+        $warmer = new CacheWarmer(
+            $this->createKernel($this->cacheDir),
+            $output,
+            workers: CacheWarmer::AUTO_WORKERS,
+            workerCommandLine: self::fakeWorkerCommandLine(),
+        );
+
+        $this->assertSame(0, $warmer->warmUp());
+        $this->assertStringNotContainsString('parallel worker processes', $output->fetch());
     }
 
     public function testInterruptStopsWarmupLoopBeforeNextFile(): void
@@ -175,7 +286,7 @@ class CacheWarmerTest extends TestCase
 
         $this->assertStringContainsString('[STOP]: Warmup was interrupted, stopping...', $display);
         $this->assertStringNotContainsString('[OK]', $display);
-        $this->assertStringContainsString('[DONE]: Total processed 0, 0 errors.', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 0, 0 errors in ', $display);
     }
 
     /**
@@ -237,6 +348,7 @@ class CacheWarmerTest extends TestCase
 
         $errorOutput = $this->createMemoryOutput();
         $output      = $this->createConsoleOutput($errorOutput);
+        $output->setVerbosity(OutputInterface::VERBOSITY_VERBOSE);
         $warmer = new CacheWarmer($this->createKernel($this->cacheDir, [$this->createFailingTransformer()]), $output);
 
         $previousHandler = static fn(): bool => false;
@@ -262,7 +374,7 @@ class CacheWarmerTest extends TestCase
 
         $display = $this->readStream($output);
         $this->assertStringContainsString('Silenced.php', $display);
-        $this->assertStringContainsString('[DONE]: Total processed 4, 2 errors.', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 4, 2 errors in ', $display);
     }
 
     public function testFailFastStopsAfterFirstError(): void
@@ -276,6 +388,8 @@ class CacheWarmerTest extends TestCase
         $warmer = new CacheWarmer($kernel, $output, failFast: true);
 
         $this->assertSame(1, $warmer->warmUp());
-        $this->assertStringContainsString('1 errors.', $output->fetch());
+        $display = $output->fetch();
+        $this->assertStringContainsString('[STOP]: Warmup was interrupted, stopping...', $display);
+        $this->assertStringContainsString('Total processed 1, 1 errors in ', $display);
     }
 }

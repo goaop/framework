@@ -50,6 +50,20 @@ class WeavingException extends RuntimeException implements ExceptionInterface
         return new self("{$transformerClass} failed to transform {$uri}: {$previous->getMessage()}", previous: $previous);
     }
 
+    public static function warmupWorkerNotStarted(string $commandLine): self
+    {
+        return new self("Cache warmup worker process could not be started: {$commandLine}");
+    }
+
+    public static function warmupWorkerFailedToStart(int $exitCode, string $output): self
+    {
+        return new self(rtrim(sprintf(
+            "Cache warmup worker process exited with code %d before it was ready to weave:\n%s",
+            $exitCode,
+            $output,
+        )));
+    }
+
     public static function prebuiltCacheVersionMismatch(string $cacheDir): self
     {
         return new self(sprintf(
