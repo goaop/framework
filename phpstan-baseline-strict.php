@@ -209,12 +209,6 @@ $ignoreErrors[] = [
 	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
 	'identifier' => 'empty.notAllowed',
 	'count' => 3,
-	'path' => __DIR__ . '/src/Instrument/Transformer/WeavingTransformer.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
-	'identifier' => 'empty.notAllowed',
-	'count' => 3,
 	'path' => __DIR__ . '/src/Proxy/ClassProxyGenerator.php',
 ];
 $ignoreErrors[] = [
@@ -537,13 +531,6 @@ $ignoreErrors[] = [
 	'identifier' => 'cast.useless',
 	'count' => 1,
 	'path' => __DIR__ . '/tests/Instrument/Transformer/SyntaxFixturesWeavingTest.php',
-];
-$ignoreErrors[] = [
-	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
-https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
-	'identifier' => 'method.deprecated',
-	'count' => 1,
-	'path' => __DIR__ . '/tests/Instrument/Transformer/WeavingTransformerTest.php',
 ];
 $ignoreErrors[] = [
 	'message' => '#^Casting to string something that\'s already string\\.$#',

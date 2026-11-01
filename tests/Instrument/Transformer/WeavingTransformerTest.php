@@ -23,13 +23,11 @@ use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\MockObject\MockObject;
-use PhpParser\Node\Stmt\Class_;
 use Go\Instrument\Transformer\Stubs\MultiLinePropertiesClass;
 use Go\Instrument\Transformer\Stubs\TokenSurgeryClass;
 use Go\PhpUnit\AssertsCompilablePhp;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use ReflectionMethod;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 class WeavingTransformerTest extends TestCase
@@ -334,7 +332,7 @@ class WeavingTransformerTest extends TestCase
     /**
      * Regression test: final readonly class must be proxied without a parse error.
      *
-     * WeavingTransformer::convertClassToTrait() must strip T_FINAL, T_ABSTRACT, and T_READONLY
+     * TraitConverter must strip T_FINAL, T_ABSTRACT, and T_READONLY
      * before the class keyword because PHP traits do not support these modifiers.
      * The proxy class is intentionally non-readonly.
      */
@@ -379,16 +377,6 @@ class WeavingTransformerTest extends TestCase
     /**
      * PHP 8.1 backed enums must be woven: methods go into a trait, cases are re-declared in the proxy enum.
      */
-    public function testDeclarationWithoutTokenPositionsIsRejected(): void
-    {
-        $getDeclarationTokenRange = new ReflectionMethod(WeavingTransformer::class, 'getDeclarationTokenRange');
-
-        $this->expectException(WeavingException::class);
-        $this->expectExceptionMessage('Declaration of Detached has no token positions to weave');
-
-        $getDeclarationTokenRange->invoke($this->transformer, new Class_('Detached'));
-    }
-
     public function testWeaverForEnum(): void
     {
         $metadata = $this->loadTestMetadata('php81-enum');
@@ -1102,7 +1090,7 @@ class WeavingTransformerTest extends TestCase
 
     /**
      * Traits keep the legacy weaving strategy: the original trait is renamed to
-     * <Name>Original in place (adjustOriginalTrait) and TraitProxyGenerator emits a child
+     * <Name>Original in place (TraitConverter) and TraitProxyGenerator emits a child
      * trait with the original name. Intercepted properties are commented out of the original
      * trait body — the child trait re-declares them with interception hooks.
      */
@@ -1206,7 +1194,7 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
-     * `abstract` is a class-only modifier — convertClassToTrait() must drop it, otherwise the
+     * `abstract` is a class-only modifier — TraitConverter must drop it, otherwise the
      * woven file would contain the invalid `abstract trait ...` declaration. Abstract *methods*
      * remain legal inside the trait and must be kept.
      */
