@@ -142,17 +142,23 @@ stay in place.
 
 `bin/aspect` needs `symfony/console` (`^7.4 || ^8.0`). Every command takes the path to the file that initializes your kernel, usually the front controller. That file is executed.
 
-| Command                                   | Purpose |
-|-------------------------------------------|---------|
-| `cache:warmup:aop <loader> [--fail-fast]` | Weaves every file below the include paths into the cache. Fails when a file cannot be woven and writes the errors to stderr. |
-| `debug:aspect <loader> [--aspect=...]`    | Lists the registered aspects and their advices. |
-| `debug:advisor <loader> [--advisor=...]`  | Lists the advisors; with `--advisor` shows the joinpoints that advisor matches. |
-| `debug:weaving <loader>`                  | Warms up the cache twice and reports proxies that are woven differently, which points to non-deterministic aspects. |
+| Command                                                                    | Purpose |
+|----------------------------------------------------------------------------|---------|
+| `cache:warmup:aop <loader> [--fail-fast] [--workers=N] [--cached-files=N]` | Weaves every file below the include paths into the cache, in parallel worker processes. Fails when a file cannot be woven and writes the errors to stderr. |
+| `debug:aspect <loader> [--aspect=...]`                                     | Lists the registered aspects and their advices. |
+| `debug:advisor <loader> [--advisor=...]`                                   | Lists the advisors; with `--advisor` shows the joinpoints that advisor matches. |
+| `debug:weaving <loader>`                                                   | Warms up the cache twice and reports proxies that are woven differently, which points to non-deterministic aspects. |
+
+### Cache warm-up
+
+`cache:warmup:aop --workers=N` weaves in N parallel worker processes (default 1: in the command process), each keeping
+the last `--cached-files=N` parsed files in memory (default 100). It shows a progress bar, with `-v` every file. How the workers share the files and the cache metadata is described on
+`Go\Console\Command\CacheWarmupCommand`.
 
 ## Deployment
 
 1. Clear the cache directory.
-2. Warm up the cache: `vendor/bin/aspect cache:warmup:aop public/index.php`. The command fails when a file cannot be woven, so a deploy script stops instead of shipping an incomplete cache.
+2. Warm up the cache: `vendor/bin/aspect cache:warmup:aop public/index.php`. The command fails when a file cannot be woven, so a deploy script stops instead of shipping an incomplete cache. Large projects are woven faster in parallel, e.g. `--workers=8`.
 3. Run with `'debug' => false` and `Features::PREBUILT_CACHE`.
 
 Rebuild the cache whenever the code or the aspects change. When upgrading from 3.x, see the [upgrade guide](../UPGRADE-4.0.md).

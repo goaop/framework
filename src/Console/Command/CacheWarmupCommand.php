@@ -12,7 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Console\Command;
 
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Instrument\ClassLoading\CacheWarmer;
+use Go\Instrument\ClassLoading\Warmup\FileWarmer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\SignalableCommandInterface;
@@ -22,6 +24,24 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Console command for warming the cache
+ *
+ * Workers: `--workers=N` weaves in N worker processes, each of them boots the kernel with the loader again. The
+ * default, 1, weaves in the command process itself.
+ *
+ * Cooperation: the command process coordinates the workers (see CacheWarmer and WorkerPool). It loads the aspects
+ * once, so their advisor caches are written before the workers start. It hands the files out from a queue, largest
+ * first, and keeps each worker two files ahead, so a worker stuck on large files simply takes fewer of them. Every
+ * worker answers each file with the cache records it produced; the command merges them and writes
+ * `_transformation.cache` and `_include.cache` once at the end (also when the warmup is interrupted, so the files done
+ * so far stay cached), because workers writing their own copy would overwrite each other. A worker that dies (a fatal
+ * error, out of memory) fails the file it was weaving, with its error output, and a new worker takes over its other
+ * files. Ctrl+C or SIGTERM stops handing out files, and the workers finish the files they have.
+ *
+ * Progress: a progress bar on the error output (see ProgressBarReporter), redrawn in place on a terminal and written
+ * as a line at every tenth of the files elsewhere; `-v` lists every file, `-q` shows nothing but the exit code.
+ *
+ * A command that boots the kernel in its own way (an overridden loadAspectKernel()) also overrides
+ * getWorkerCommandLine() to start its own workers, or returns `[]` there to weave in one process.
  */
 #[AsCommand(
     name: 'cache:warmup:aop',
@@ -35,6 +55,17 @@ By default, the cache directory is taken from configured AspectKernel class.
 The command fails when a file cannot be woven, so a deploy never ships an
 incomplete prebuilt cache. Errors are written to stderr; use --fail-fast to
 stop at the first one.
+
+Large projects are woven faster in parallel worker processes. Every worker
+boots the kernel with the loader again; the command hands the files out and
+writes the cache metadata of all workers at the end:
+
+  <info>%command.full_name% web/index.php --workers=8</info>
+
+Each weaving process keeps the last 100 parsed files in memory; set
+<info>--cached-files</info> higher to re-parse less, lower to use less memory.
+
+The progress is shown as a progress bar; <info>-v</info> lists every file.
 EOT,
 )]
 class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandInterface
@@ -53,13 +84,29 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
     {
         parent::configure();
         $this->addOption('fail-fast', null, InputOption::VALUE_NONE, 'Stop after the first file that fails to weave');
+        $this->addOption(
+            'workers',
+            'w',
+            InputOption::VALUE_REQUIRED,
+            'Number of parallel worker processes',
+            '1',
+        );
+        $this->addOption(
+            'cached-files',
+            null,
+            InputOption::VALUE_REQUIRED,
+            'Number of parsed files each weaving process keeps in memory: more is faster, fewer uses less memory',
+            (string) FileWarmer::DEFAULT_CACHED_FILES,
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $workers     = self::parsePositiveInteger($input, 'workers');
+        $cachedFiles = self::parsePositiveInteger($input, 'cached-files');
         $this->loadAspectKernel($input, $output);
 
-        $this->cacheWarmer = $this->createCacheWarmer($output, (bool) $input->getOption('fail-fast'));
+        $this->cacheWarmer = $this->createCacheWarmer($output, (bool) $input->getOption('fail-fast'), $workers, $cachedFiles);
         $errors            = $this->cacheWarmer->warmUp();
 
         if ($this->receivedSignal !== null) {
@@ -69,6 +116,19 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
         }
 
         return $errors > 0 ? Command::FAILURE : Command::SUCCESS;
+    }
+
+    /**
+     * Parses an option that takes a positive number
+     */
+    private static function parsePositiveInteger(InputInterface $input, string $option): int
+    {
+        $value = $input->getOption($option);
+        if (!is_string($value) || !ctype_digit($value) || (int) $value < 1) {
+            throw InvalidConfigurationException::optionNotPositiveInteger($option, is_string($value) ? $value : get_debug_type($value));
+        }
+
+        return (int) $value;
     }
 
     /**

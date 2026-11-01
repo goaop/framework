@@ -11,7 +11,7 @@ Read before throwing, adding or re-grouping an exception anywhere in `src/`.
   - Wrapping another throwable → the constructor takes `Throwable $previous` and chains it.
   - Reuse an existing constructor when the condition is the same; add a new one otherwise.
 - Never `new XxxException(...)` outside this directory. `tests/Aop/Exception/ExceptionHierarchyTest.php` enforces it
-  (single allow-listed exception: `ErrorException` in `CacheWarmer`, converts warnings and is caught in the same loop).
+  (single allow-listed exception: `ErrorException` in `Warmup\FileWarmer`, converts warnings and is caught in the same method).
 - New exception class → add it to `ExceptionHierarchyTest::exceptionTypes()` with its SPL parent. Leaves are `final`; group bases stay open.
 
 ## Groups (pick by the phase that detects the error)

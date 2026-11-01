@@ -118,7 +118,7 @@ class CachePathManager
     /**
      * New metadata items, that was not present in $cacheState, keyed by {@see self::getRecordKey()}
      *
-     * @var array<string, mixed>
+     * @var array<string, array<string, mixed>>
      */
     protected array $newCacheState = [];
 
@@ -375,13 +375,57 @@ class CachePathManager
         unset($this->pendingClasses[$resource]);
         $metadata['classes'] = $classNames;
 
-        $recordKey = $this->getRecordKey($resource);
+        $this->storeRecord($this->getRecordKey($resource), $metadata);
+    }
+
+    /**
+     * Returns the records put since the last flush and forgets them
+     *
+     * A cache warmup worker hands its records over to the coordinating process, which persists the records of all
+     * workers at once: several processes flushing their own view of the metadata would overwrite each other.
+     *
+     * @return array<string, array<string, mixed>> Records keyed by {@see self::getRecordKey()}
+     */
+    public function takeNewCacheState(): array
+    {
+        $records             = $this->newCacheState;
+        $this->newCacheState = [];
+
+        return $records;
+    }
+
+    /**
+     * Puts records produced by another process (a cache warmup worker) in the cache
+     *
+     * Like setCacheState(), the records are persisted on the next flush.
+     *
+     * @param array<string, array<string, mixed>> $records Records keyed by {@see self::getRecordKey()}, as returned by
+     *                                                    {@see self::takeNewCacheState()}
+     */
+    public function mergeCacheState(array $records): void
+    {
+        foreach ($records as $recordKey => $metadata) {
+            $this->storeRecord($recordKey, $metadata);
+        }
+    }
+
+    /**
+     * Stores a record to be flushed and keeps the in-memory runtime maps coherent within this request
+     *
+     * @param array<string, mixed> $metadata
+     */
+    private function storeRecord(string $recordKey, array $metadata): void
+    {
         $this->newCacheState[$recordKey] = $metadata;
 
-        // Keep the in-memory runtime maps coherent within this request
-        $cacheUri = $metadata['cacheUri'] ?? null;
+        $classNames = is_array($metadata['classes'] ?? null) ? $metadata['classes'] : [];
+        $cacheUri   = $metadata['cacheUri'] ?? null;
         $this->fileMap[$recordKey] = is_string($cacheUri) ? $cacheUri : null;
         foreach ($classNames as $className) {
+            if (!is_string($className)) {
+                continue;
+            }
+            /** @var class-string $className */
             if (is_string($cacheUri)) {
                 $this->classMap[$className] = $cacheUri;
                 unset($this->skippedClasses[$className]);

@@ -82,8 +82,8 @@ final class ExceptionHierarchyTest extends TestCase
      */
     public function testExceptionsAreCreatedOnlyThroughNamedConstructors(): void
     {
-        // Converts warnings inside the cache warmer loop, which catches it right away
-        $allowed   = ['Instrument/ClassLoading/CacheWarmer.php: ErrorException'];
+        // Converts warnings while the cache warmer weaves a file, which catches it right away
+        $allowed   = ['Instrument/ClassLoading/Warmup/FileWarmer.php: ErrorException'];
         $offenders = [];
         $sources   = Finder::create()->files()->in(__DIR__ . '/../../../src')->exclude('Aop/Exception')->name('*.php');
         foreach ($sources as $file) {

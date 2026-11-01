@@ -15,6 +15,7 @@ namespace Go\Console\Command;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CacheWarmer;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
@@ -84,7 +85,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100): CacheWarmer
             {
                 return new class extends CacheWarmer {
                     public function __construct()
@@ -131,7 +132,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100): CacheWarmer
             {
                 return new class ($this) extends CacheWarmer {
                     public function __construct(private readonly CacheWarmupCommand $command)
@@ -162,14 +163,20 @@ class CacheWarmupCommandInProcessTest extends TestCase
         $command = new class extends CacheWarmupCommand {
             public ?bool $failFast = null;
 
+            public ?int $workers = null;
+
+            public ?int $cachedFiles = null;
+
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100): CacheWarmer
             {
-                $this->failFast = $failFast;
+                $this->failFast    = $failFast;
+                $this->workers     = $workers;
+                $this->cachedFiles = $cachedFiles;
 
                 return new class extends CacheWarmer {
                     public function __construct()
@@ -190,5 +197,35 @@ class CacheWarmupCommandInProcessTest extends TestCase
 
         $this->assertSame(Command::FAILURE, $tester->execute(['loader' => 'unused.php', '--fail-fast' => true]));
         $this->assertTrue($command->failFast);
+        $this->assertSame(1, $command->workers, 'Weaves in the command process by default');
+        $this->assertSame(100, $command->cachedFiles);
+
+        $tester->execute(['loader' => 'unused.php', '--workers' => '6', '--cached-files' => '25']);
+        $this->assertSame(6, $command->workers);
+        $this->assertSame(25, $command->cachedFiles);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function invalidPositiveIntegers(): iterable
+    {
+        yield 'zero workers'          => ['workers', '0'];
+        yield 'negative workers'      => ['workers', '-2'];
+        yield 'word'                  => ['workers', 'many'];
+        yield 'fraction'              => ['workers', '1.5'];
+        yield 'no cached files'       => ['cached-files', '0'];
+        yield 'unlimited cached files' => ['cached-files', 'all'];
+    }
+
+    #[DataProvider('invalidPositiveIntegers')]
+    public function testInvalidNumberIsRejectedBeforeTheKernelIsLoaded(string $option, string $value): void
+    {
+        $tester = new CommandTester(new CacheWarmupCommand());
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches(sprintf('/^Option --%s must be a positive integer, got "%s"$/', $option, preg_quote($value, '/')));
+
+        $tester->execute(['loader' => '/path/to/missing/loader.php', '--' . $option => $value]);
     }
 }
