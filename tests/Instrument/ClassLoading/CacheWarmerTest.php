@@ -20,6 +20,7 @@ use Go\Core\Container;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
+use Go\ParserReflection\ReflectionEngine;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -146,6 +147,15 @@ class CacheWarmerTest extends TestCase
         $this->assertStringNotContainsString('File3.php', $display);
         $this->assertStringContainsString('21/21 [============================] 100%', $display);
         $this->assertStringContainsString('[DONE]: Total processed 21, 0 errors in ', $display);
+    }
+
+    public function testWarmerKeepsTheGivenNumberOfParsedFiles(): void
+    {
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), new BufferedOutput(), cachedFiles: 3);
+
+        $warmer->warmUp();
+
+        $this->assertSame(3, new \ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles')->getValue());
     }
 
     /**

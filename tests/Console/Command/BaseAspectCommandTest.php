@@ -170,7 +170,7 @@ class BaseAspectCommandTest extends TestCase
             $commandLine = new ReflectionProperty(CacheWarmer::class, 'workerCommandLine')->getValue($warmer);
             $this->assertIsArray($commandLine);
             $this->assertSame(PHP_BINARY, $commandLine[0]);
-            $this->assertSame($loader, end($commandLine));
+            $this->assertSame([$loader, '100'], array_slice($commandLine, -2), 'The loader and the parsed files to keep');
             $this->assertSame(4, new ReflectionProperty(CacheWarmer::class, 'workers')->getValue($warmer));
         } finally {
             $instanceProperty->setValue(null, $previousInstance);

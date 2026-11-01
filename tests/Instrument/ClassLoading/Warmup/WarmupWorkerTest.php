@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading\Warmup;
 
+use Go\ParserReflection\ReflectionEngine;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\TestCase;
@@ -108,12 +109,13 @@ final class WarmupWorkerTest extends TestCase
         // PHPUnit lowers error_reporting() while a test runs, the worker honours the application's level
         $previousLevel = error_reporting(E_ALL);
         try {
-            $exitCode = WarmupWorker::main($this->loader, $input, $output);
+            $exitCode = WarmupWorker::main($this->loader, 7, $input, $output);
         } finally {
             error_reporting($previousLevel);
         }
 
         $this->assertSame(0, $exitCode);
+        $this->assertSame(7, new \ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles')->getValue(), 'The worker keeps as many parsed files as asked');
         $this->assertSame($obLevel, ob_get_level(), 'The worker closes its output buffer');
         $messages = self::readMessages($output);
         $this->assertCount(3, $messages);
@@ -137,7 +139,7 @@ final class WarmupWorkerTest extends TestCase
     {
         $output = self::createStream();
 
-        $exitCode = WarmupWorker::main($this->appDir . '/missing-loader.php', self::createStream(), $output);
+        $exitCode = WarmupWorker::main($this->appDir . '/missing-loader.php', 100, self::createStream(), $output);
 
         $this->assertSame(1, $exitCode);
         $messages = self::readMessages($output);
@@ -149,12 +151,12 @@ final class WarmupWorkerTest extends TestCase
 
     public function testCommandLineRunsTheWorkerWithTheLoader(): void
     {
-        $commandLine = WarmupWorker::commandLine($this->loader);
+        $commandLine = WarmupWorker::commandLine($this->loader, 42);
 
         $this->assertSame(PHP_BINARY, $commandLine[0]);
         $this->assertContains('-r', $commandLine);
         $this->assertContains('display_errors=stderr', $commandLine);
-        $this->assertSame((string) realpath($this->loader), end($commandLine));
-        $this->assertFileExists($commandLine[count($commandLine) - 2], 'The composer autoloader');
+        $this->assertSame([(string) realpath($this->loader), '42'], array_slice($commandLine, -2));
+        $this->assertFileExists($commandLine[count($commandLine) - 3], 'The composer autoloader');
     }
 }

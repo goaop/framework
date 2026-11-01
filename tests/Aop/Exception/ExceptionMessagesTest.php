@@ -156,10 +156,10 @@ final class ExceptionMessagesTest extends TestCase
                 InvalidConfigurationException::class,
                 'Loader file aop.php does not exist or is not readable',
             ],
-            'invalid worker count'        => [
-                static fn() => InvalidConfigurationException::invalidWorkerCount('many'),
+            'option not positive integer' => [
+                static fn() => InvalidConfigurationException::optionNotPositiveInteger('workers', 'many'),
                 InvalidConfigurationException::class,
-                'Number of workers must be a positive integer, got "many"',
+                'Option --workers must be a positive integer, got "many"',
             ],
             'native lazy objects'         => [
                 static fn() => InvalidConfigurationException::nativeLazyObjectsRequired('App\User', 'name'),

@@ -11,7 +11,9 @@
 - CacheWarmer (orchestrator): enumerates the files, weaves them in-process (Warmup\FileWarmer: php://filter read +
   ErrorException handler) or with Warmup\WorkerPool when `--workers` > 1 (default 1; no worker command line →
   in-process).
-- Workers: `php -r` WarmupWorker::main() (autoloader + loader file as arguments, Console\KernelLoader boots like the
+- Memory: FileWarmer caps ReflectionEngine::setMaximumCachedFiles() (`--cached-files`, default 100); the engine keeps
+  every parsed syntax tree otherwise (~0.2 MB per file).
+- Workers: `php -r` WarmupWorker::main() (autoloader + loader file + cached files as arguments, Console\KernelLoader boots like the
   command), SIGINT ignored, stray output swallowed by ob_start. Protocol (Warmup\WorkerProtocol): one line per message,
   marker + base64(serialize()); coordinator → `['file']`, closing stdin stops the worker; worker → ready/failed/result.
 - Coordinator owns the queue (largest files first, FILES_IN_FLIGHT = 2 per worker) and the metadata: each result carries

@@ -15,6 +15,7 @@ namespace Go\Instrument\ClassLoading\Warmup;
 use ErrorException;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
+use Go\ParserReflection\ReflectionEngine;
 use Throwable;
 
 /**
@@ -26,6 +27,21 @@ use Throwable;
  */
 final class FileWarmer
 {
+    /**
+     * Default number of parsed files the reflection engine keeps in memory
+     */
+    public const int DEFAULT_CACHED_FILES = 100;
+
+    /**
+     * @param int $cachedFiles Number of parsed files the reflection engine keeps in memory: it keeps every file by
+     *                         default, so a warmup of a few thousand files would exhaust any memory limit. More files
+     *                         save re-parsing parent classes, fewer save memory
+     */
+    public function __construct(int $cachedFiles = self::DEFAULT_CACHED_FILES)
+    {
+        ReflectionEngine::setMaximumCachedFiles($cachedFiles);
+    }
+
     /**
      * Weaves the file through the source transforming stream filter, which writes the cache
      *

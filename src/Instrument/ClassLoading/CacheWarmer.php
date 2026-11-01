@@ -56,6 +56,8 @@ class CacheWarmer
         protected int $workers = 1,
         /** @var list<string> Command line that starts one worker process (WarmupWorker::commandLine()), none weaves in this process */
         protected array $workerCommandLine = [],
+        /** Number of parsed files kept in memory when weaving in this process, see FileWarmer */
+        protected int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES,
     ) {}
 
     /**
@@ -124,7 +126,7 @@ class CacheWarmer
         // FilterInjectorTransformer::rewrite(), so bring it up explicitly
         SourceTransformingLoader::ensureRegistered($this->aspectKernel->getContainer());
 
-        $fileWarmer = new FileWarmer();
+        $fileWarmer = new FileWarmer($this->cachedFiles);
         foreach ($files as $file) {
             if ($this->interrupted) {
                 $reporter->interrupt();

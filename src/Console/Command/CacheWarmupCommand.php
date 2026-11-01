@@ -14,6 +14,7 @@ namespace Go\Console\Command;
 
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Instrument\ClassLoading\CacheWarmer;
+use Go\Instrument\ClassLoading\Warmup\FileWarmer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\SignalableCommandInterface;
@@ -61,6 +62,9 @@ writes the cache metadata of all workers at the end:
 
   <info>%command.full_name% web/index.php --workers=8</info>
 
+Each weaving process keeps the last 100 parsed files in memory; set
+<info>--cached-files</info> higher to re-parse less, lower to use less memory.
+
 The progress is shown as a progress bar; <info>-v</info> lists every file.
 EOT,
 )]
@@ -87,14 +91,22 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
             'Number of parallel worker processes',
             '1',
         );
+        $this->addOption(
+            'cached-files',
+            null,
+            InputOption::VALUE_REQUIRED,
+            'Number of parsed files each weaving process keeps in memory: more is faster, fewer uses less memory',
+            (string) FileWarmer::DEFAULT_CACHED_FILES,
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $workers = self::parseWorkers($input->getOption('workers'));
+        $workers     = self::parsePositiveInteger($input, 'workers');
+        $cachedFiles = self::parsePositiveInteger($input, 'cached-files');
         $this->loadAspectKernel($input, $output);
 
-        $this->cacheWarmer = $this->createCacheWarmer($output, (bool) $input->getOption('fail-fast'), $workers);
+        $this->cacheWarmer = $this->createCacheWarmer($output, (bool) $input->getOption('fail-fast'), $workers, $cachedFiles);
         $errors            = $this->cacheWarmer->warmUp();
 
         if ($this->receivedSignal !== null) {
@@ -107,15 +119,16 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
     }
 
     /**
-     * Parses the --workers option: a positive number
+     * Parses an option that takes a positive number
      */
-    private static function parseWorkers(mixed $workers): int
+    private static function parsePositiveInteger(InputInterface $input, string $option): int
     {
-        if (!is_string($workers) || !ctype_digit($workers) || (int) $workers < 1) {
-            throw InvalidConfigurationException::invalidWorkerCount(is_string($workers) ? $workers : get_debug_type($workers));
+        $value = $input->getOption($option);
+        if (!is_string($value) || !ctype_digit($value) || (int) $value < 1) {
+            throw InvalidConfigurationException::optionNotPositiveInteger($option, is_string($value) ? $value : get_debug_type($value));
         }
 
-        return (int) $workers;
+        return (int) $value;
     }
 
     /**

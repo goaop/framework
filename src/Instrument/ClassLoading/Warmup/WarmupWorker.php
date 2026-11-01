@@ -32,18 +32,21 @@ use Throwable;
 final class WarmupWorker
 {
     /**
-     * PHP code of a worker process, run with `php -r`: arguments are the composer autoloader and the loader file
+     * PHP code of a worker process, run with `php -r`: arguments are the composer autoloader, the loader file and the
+     * number of parsed files to keep in memory
      */
-    private const string BOOTSTRAP_CODE = 'require $argv[1]; exit(\\' . self::class . '::main($argv[2]));';
+    private const string BOOTSTRAP_CODE = 'require $argv[1]; exit(\\' . self::class . '::main($argv[2], (int) $argv[3]));';
 
     /**
      * Returns the command line that starts a worker process for the given loader file
      *
      * The worker runs the same PHP binary with the memory limit of this process.
      *
+     * @param int $cachedFiles Number of parsed files the worker keeps in memory, see FileWarmer
+     *
      * @return list<string> Command line, or an empty list when a worker process can not be started from here
      */
-    public static function commandLine(string $loader): array
+    public static function commandLine(string $loader, int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES): array
     {
         $classLoaderFile = class_exists(ClassLoader::class, false) ? new ReflectionClass(ClassLoader::class)->getFileName() : false;
         if ($classLoaderFile === false || !function_exists('proc_open')) {
@@ -62,26 +65,32 @@ final class WarmupWorker
             '--',
             dirname($classLoaderFile, 2) . '/autoload.php',
             KernelLoader::resolve($loader),
+            (string) $cachedFiles,
         ];
     }
 
     /**
      * Runs the worker until its input is closed
      *
-     * @param resource|null $input  Stream of the messages from the coordinator, STDIN by default
-     * @param resource|null $output Stream of the messages to the coordinator, STDOUT by default
+     * @param int           $cachedFiles Number of parsed files to keep in memory, see FileWarmer
+     * @param resource|null $input       Stream of the messages from the coordinator, STDIN by default
+     * @param resource|null $output      Stream of the messages to the coordinator, STDOUT by default
      *
      * @return int Exit code of the process
      */
-    public static function main(string $loader, mixed $input = null, mixed $output = null): int
-    {
+    public static function main(
+        string $loader,
+        int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES,
+        mixed $input = null,
+        mixed $output = null,
+    ): int {
         $input  ??= STDIN;
         $output ??= STDOUT;
 
         // Anything the application prints is discarded, messages are written to the stream directly
         ob_start(static fn(): string => '');
         try {
-            return self::serve($loader, $input, $output);
+            return self::serve($loader, $cachedFiles, $input, $output);
         } finally {
             ob_end_clean();
         }
@@ -91,7 +100,7 @@ final class WarmupWorker
      * @param resource $input
      * @param resource $output
      */
-    private static function serve(string $loader, mixed $input, mixed $output): int
+    private static function serve(string $loader, int $cachedFiles, mixed $input, mixed $output): int
     {
         // Ctrl+C reaches the whole process group: the coordinator decides when to stop, by closing the input,
         // and the worker finishes the file at hand first
@@ -112,7 +121,7 @@ final class WarmupWorker
 
         fwrite($output, WorkerProtocol::encode(['type' => 'ready']));
 
-        $fileWarmer = new FileWarmer();
+        $fileWarmer = new FileWarmer($cachedFiles);
         while (($line = fgets($input)) !== false) {
             $file = WorkerProtocol::decode($line)['file'] ?? null;
             if (!is_string($file)) {

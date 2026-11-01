@@ -131,9 +131,9 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
         return new self("Loader file {$loader} does not exist or is not readable");
     }
 
-    public static function invalidWorkerCount(string $workers): self
+    public static function optionNotPositiveInteger(string $option, string $value): self
     {
-        return new self("Number of workers must be a positive integer, got \"{$workers}\"");
+        return new self("Option --{$option} must be a positive integer, got \"{$value}\"");
     }
 
     public static function nativeLazyObjectsRequired(string $entityClass, string $propertyName): self
