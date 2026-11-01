@@ -143,9 +143,8 @@ class CacheWarmerTest extends TestCase
         $display = $output->fetch();
 
         $this->assertStringNotContainsString('[OK]', $display);
-        $this->assertStringContainsString(' 3/21 [ 14%]', $display);
-        $this->assertStringContainsString('21/21 [100%]', $display);
-        $this->assertSame(7, substr_count($display, ' elapsed, '), 'A progress line at every tenth of the files');
+        $this->assertStringNotContainsString('File3.php', $display);
+        $this->assertStringContainsString('21/21 [============================] 100%', $display);
         $this->assertStringContainsString('[DONE]: Total processed 21, 0 errors in ', $display);
     }
 
@@ -259,20 +258,16 @@ class CacheWarmerTest extends TestCase
     }
 
     /**
-     * A project too small for a second worker is woven in the command process
+     * No more workers than files
      */
-    public function testAutomaticNumberOfWorkersKeepsSmallProjectsInProcess(): void
+    public function testWorkersAreLimitedByTheNumberOfFiles(): void
     {
         $output = new BufferedOutput();
-        $warmer = new CacheWarmer(
-            $this->createKernel($this->cacheDir),
-            $output,
-            workers: CacheWarmer::AUTO_WORKERS,
-            workerCommandLine: self::fakeWorkerCommandLine(),
-        );
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), $output, workers: 8, workerCommandLine: self::fakeWorkerCommandLine());
+        file_put_contents($this->appDir . '/src/Other.php', "<?php\n");
 
         $this->assertSame(0, $warmer->warmUp());
-        $this->assertStringNotContainsString('parallel worker processes', $output->fetch());
+        $this->assertStringContainsString('Weaving in 2 parallel worker processes.', $output->fetch());
     }
 
     public function testInterruptStopsWarmupLoopBeforeNextFile(): void

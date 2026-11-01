@@ -103,14 +103,4 @@ abstract class AbstractWarmupReporter implements WarmupReporter
     {
         return microtime(true) - $this->startTime;
     }
-
-    /**
-     * Returns the number of files processed per second
-     */
-    protected function rate(): float
-    {
-        $elapsed = $this->elapsedSeconds();
-
-        return $elapsed > 0 ? $this->processed / $elapsed : 0.0;
-    }
 }

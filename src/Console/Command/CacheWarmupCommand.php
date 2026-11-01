@@ -24,9 +24,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Console command for warming the cache
  *
- * Workers: `--workers` sets how many processes weave in parallel. The default, `auto`, starts one worker per CPU core
- * (honouring the CPU affinity and the cgroup quota of a container), but never more than one per 50 files: a worker
- * boots the kernel again, which only pays off for enough files. `--workers=1` weaves in the command process itself.
+ * Workers: `--workers=N` weaves in N worker processes, each of them boots the kernel with the loader again. The
+ * default, 1, weaves in the command process itself.
  *
  * Cooperation: the command process coordinates the workers (see CacheWarmer and WorkerPool). It loads the aspects
  * once, so their advisor caches are written before the workers start. It hands the files out from a queue, largest
@@ -37,10 +36,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * error, out of memory) fails the file it was weaving, with its error output, and a new worker takes over its other
  * files. Ctrl+C or SIGTERM stops handing out files, and the workers finish the files they have.
  *
- * Progress: it adapts to where it is written, the error output (see WarmupReporterFactory). An interactive terminal
- * shows a progress bar redrawn in place, with the file at hand below it, the rate, the time left and the error count,
- * in Unicode when the locale is UTF-8; a CI log, a file, a pipe or `TERM=dumb` gets a progress line at every tenth of
- * the files (or every ten seconds); `-v` lists every file, `-q` shows nothing but the exit code.
+ * Progress: a progress bar on the error output (see ProgressBarReporter), redrawn in place on a terminal and written
+ * as a line at every tenth of the files elsewhere; `-v` lists every file, `-q` shows nothing but the exit code.
  *
  * A command that boots the kernel in its own way (an overridden loadAspectKernel()) also overrides
  * getWorkerCommandLine() to start its own workers, or returns `[]` there to weave in one process.
@@ -58,16 +55,13 @@ The command fails when a file cannot be woven, so a deploy never ships an
 incomplete prebuilt cache. Errors are written to stderr; use --fail-fast to
 stop at the first one.
 
-Files are woven in parallel worker processes, one per CPU core by default
-(<info>auto</info>, only for projects large enough to gain from it). Every worker boots
-the kernel with the loader again; the command hands the files out and writes
-the cache metadata of all workers at the end:
+Large projects are woven faster in parallel worker processes. Every worker
+boots the kernel with the loader again; the command hands the files out and
+writes the cache metadata of all workers at the end:
 
   <info>%command.full_name% web/index.php --workers=8</info>
-  <info>%command.full_name% web/index.php --workers=1</info>   weaves in this process only
 
-On an interactive terminal the progress is a progress bar, in a CI log or a
-file a progress line at every tenth of the files; <info>-v</info> lists every file.
+The progress is shown as a progress bar; <info>-v</info> lists every file.
 EOT,
 )]
 class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandInterface
@@ -90,8 +84,8 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
             'workers',
             'w',
             InputOption::VALUE_REQUIRED,
-            'Number of parallel worker processes, or "auto" for one per CPU core',
-            'auto',
+            'Number of parallel worker processes',
+            '1',
         );
     }
 
@@ -113,13 +107,10 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
     }
 
     /**
-     * Parses the --workers option: a positive number, or "auto" for one worker per CPU core
+     * Parses the --workers option: a positive number
      */
     private static function parseWorkers(mixed $workers): int
     {
-        if ($workers === 'auto') {
-            return CacheWarmer::AUTO_WORKERS;
-        }
         if (!is_string($workers) || !ctype_digit($workers) || (int) $workers < 1) {
             throw InvalidConfigurationException::invalidWorkerCount(is_string($workers) ? $workers : get_debug_type($workers));
         }

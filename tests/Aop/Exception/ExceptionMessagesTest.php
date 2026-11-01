@@ -159,7 +159,7 @@ final class ExceptionMessagesTest extends TestCase
             'invalid worker count'        => [
                 static fn() => InvalidConfigurationException::invalidWorkerCount('many'),
                 InvalidConfigurationException::class,
-                'Number of workers must be a positive integer or "auto", got "many"',
+                'Number of workers must be a positive integer, got "many"',
             ],
             'native lazy objects'         => [
                 static fn() => InvalidConfigurationException::nativeLazyObjectsRequired('App\User', 'name'),

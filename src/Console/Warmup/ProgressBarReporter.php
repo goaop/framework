@@ -16,36 +16,26 @@ use Go\Instrument\PathResolver;
 use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Terminal;
 
 /**
- * Redraws a progress bar in place, with the file at hand below it: for an interactive terminal
+ * Shows the progress as a progress bar
  *
- * Errors are written above the bar, which is drawn again below them.
+ * On a decorated output (a terminal) the bar is redrawn in place, with the file at hand below it, and errors are
+ * written above it. On any other output (a CI log, a file) the bar is written as a new line at every tenth of the files.
  *
  * @internal
  */
 final class ProgressBarReporter extends AbstractWarmupReporter
 {
-    /**
-     * Line of the bar and line of the file at hand
-     */
-    private const string FORMAT = " %current%/%max% [<fg=green>%bar%</>] %percent:3s%%  %timing%  %rate%%errors%\n %file%";
-
-    /**
-     * Line of the finished bar
-     */
-    private const string FINISHED_FORMAT = ' %current%/%max% [<fg=green>%bar%</>] %percent:3s%%  %timing%  %rate%%errors%';
+    private const string FORMAT = ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s%%errors%';
 
     private ?ProgressBar $progressBar = null;
 
     public function __construct(
         OutputInterface $output,
-        /** What the terminal can render */
-        private readonly TerminalCapabilities $terminal,
         /** Directory the shown files are relative to, usually the application directory */
         private readonly ?string $baseDir = null,
-        /** Shortest time between two redraws, in seconds: a fast warmup must not spend its time on drawing */
-        private readonly float $minSecondsBetweenRedraws = 0.1,
     ) {
         parent::__construct($output);
     }
@@ -54,23 +44,20 @@ final class ProgressBarReporter extends AbstractWarmupReporter
     {
         parent::start($total, $workers);
 
-        // Every file is drawn, unless the previous redraw is too recent
-        $progressBar = new ProgressBar($this->progressOutput, $total, $this->minSecondsBetweenRedraws);
-        $progressBar->setRedrawFrequency(1);
-        $progressBar->setFormat(self::FORMAT);
-        $progressBar->setBarWidth(max(10, min(40, $this->terminal->width - 60)));
-        if ($this->terminal->unicode) {
-            $progressBar->setBarCharacter('█');
-            $progressBar->setProgressCharacter('');
-            $progressBar->setEmptyBarCharacter('░');
+        $progressBar = new ProgressBar($this->progressOutput, $total);
+        if ($this->progressOutput->isDecorated()) {
+            $progressBar->setFormat(self::FORMAT . "\n %message%");
+            $progressBar->setRedrawFrequency(1);
         } else {
-            $progressBar->setBarCharacter('=');
-            $progressBar->setProgressCharacter('>');
-            $progressBar->setEmptyBarCharacter('-');
+            // A line at every tenth of the files only, also when they are woven fast
+            $progressBar->setFormat(self::FORMAT);
+            $progressBar->minSecondsBetweenRedraws(0);
+            $progressBar->maxSecondsBetweenRedraws(10);
         }
-        $this->progressBar = $progressBar;
-        $this->updateMessages($progressBar, '');
+        $progressBar->setMessage('');
+        $progressBar->setMessage('', 'errors');
         $progressBar->start();
+        $this->progressBar = $progressBar;
     }
 
     public function advance(string $file, ?string $error): void
@@ -81,11 +68,12 @@ final class ProgressBarReporter extends AbstractWarmupReporter
             if ($error !== null) {
                 $progressBar->clear();
                 $this->writeError($file, $error);
+                $progressBar->setMessage(sprintf(', <fg=red>%d errors</>', $this->errors), 'errors');
             }
-            $this->updateMessages($progressBar, $file);
+            $progressBar->setMessage($this->shortenPath($file));
             $progressBar->advance();
-            if ($error !== null) {
-                // The bar is back below the error at once, even when the advance skipped a redraw
+            if ($error !== null && $this->progressOutput->isDecorated()) {
+                // The cleared bar is back below the error at once, even when the advance skipped a redraw
                 $progressBar->display();
             }
         }
@@ -95,57 +83,35 @@ final class ProgressBarReporter extends AbstractWarmupReporter
     {
         $this->progressBar?->clear();
         parent::interrupt();
-        $this->progressBar?->display();
     }
 
     public function finish(int $processed, int $errors): void
     {
-        $progressBar = $this->progressBar;
-        if ($progressBar !== null && $processed === $this->total) {
-            $this->updateMessages($progressBar, '', finished: true);
+        if ($this->progressBar !== null && $processed === $this->total) {
             // The line of the file at hand is gone, only the bar stays
-            $progressBar->setFormat(self::FINISHED_FORMAT);
-            $progressBar->finish();
+            $this->progressBar->setFormat(self::FORMAT);
+            $this->progressBar->finish();
             $this->progressOutput->writeln('');
         } else {
             // An unfinished bar is gone, the summary tells how far the warmup got
-            $progressBar?->clear();
+            $this->progressBar?->clear();
         }
         $this->progressBar = null;
 
         parent::finish($processed, $errors);
     }
 
-    private function updateMessages(ProgressBar $progressBar, string $file, bool $finished = false): void
-    {
-        // The timing of the bar itself counts whole seconds only
-        $elapsed = $this->elapsedSeconds();
-        $rate    = $this->rate();
-        $timing  = Helper::formatTime($elapsed);
-        if (!$finished && $this->processed > 0 && $this->processed < $this->total && $rate > 0) {
-            $timing .= sprintf(', ~%s left', Helper::formatTime(($this->total - $this->processed) / $rate));
-        }
-        $progressBar->setMessage($timing, 'timing');
-        $progressBar->setMessage(sprintf('%.1f files/s', $rate), 'rate');
-        $progressBar->setMessage($this->errors > 0 ? sprintf('  <fg=red>%d errors</>', $this->errors) : '', 'errors');
-        $progressBar->setMessage($this->shortenPath($file), 'file');
-    }
-
     /**
-     * Shows the file relative to the base directory, cut from the left to fit on its line
+     * Shows the file relative to the base directory, cut from the left to fit on its line: a wrapped line would
+     * break the redraw of the bar
      */
     private function shortenPath(string $file): string
     {
         if ($this->baseDir !== null) {
-            $file = PathResolver::rebase($file, $this->baseDir, '') ?? $file;
-            $file = ltrim($file, '/\\');
+            $file = ltrim(PathResolver::rebase($file, $this->baseDir, '') ?? $file, '/\\');
         }
-        $maxWidth = max(10, $this->terminal->width - 2);
-        if (Helper::width($file) > $maxWidth) {
-            $ellipsis = $this->terminal->unicode ? '…' : '...';
-            $file     = $ellipsis . Helper::substr($file, -($maxWidth - Helper::width($ellipsis)));
-        }
+        $maxWidth = max(10, new Terminal()->getWidth() - 2);
 
-        return $file;
+        return Helper::width($file) > $maxWidth ? '...' . Helper::substr($file, 3 - $maxWidth) : $file;
     }
 }

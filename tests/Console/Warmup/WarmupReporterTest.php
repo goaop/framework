@@ -12,10 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Console\Warmup;
 
-use PHPUnit\Framework\Attributes\RequiresOperatingSystemFamily;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\StreamOutput;
 
@@ -66,13 +64,15 @@ final class WarmupReporterTest extends TestCase
         return implode("\n", $lines);
     }
 
-    public function testProgressBarIsRedrawnInPlaceWithTheFileAtHand(): void
+    public function testProgressBarIsRedrawnInPlaceWithTheFileAtHandOnATerminal(): void
     {
         $output   = $this->createStreamOutput();
-        $reporter = new ProgressBarReporter($output, new TerminalCapabilities(true, true, 100), '/app', 0.0);
+        $reporter = new ProgressBarReporter($output, '/app');
 
         $reporter->start(4, 2);
         $reporter->advance('/app/src/First.php', null);
+        // The bar is drawn at most 25 times a second
+        usleep(50_000);
         $reporter->advance('/app/src/Broken.php', 'Cannot weave <it>');
         $display = self::readStream($output);
 
@@ -80,41 +80,68 @@ final class WarmupReporterTest extends TestCase
         $screen = self::renderScreen($display);
         $this->assertStringContainsString('Weaving in 2 parallel worker processes.', $screen);
         $this->assertStringContainsString('[ERR]: /app/src/Broken.php: Cannot weave <it>', $screen);
-        $this->assertMatchesRegularExpression('/ 2\/4 \[█+░+]  50%  .*1 errors\n src\/Broken\.php$/u', $screen);
+        $this->assertMatchesRegularExpression('/ 2\/4 \[[^\]]+]  50% .*, 1 errors\n src\/Broken\.php$/', $screen);
 
         $reporter->advance('/app/src/Third.php', null);
         $reporter->advance('/app/src/Fourth.php', null);
         $reporter->finish(4, 1);
         $screen = self::renderScreen(self::readStream($output));
 
-        $this->assertMatchesRegularExpression('/ 4\/4 \[█+] 100%  /u', $screen);
+        $this->assertMatchesRegularExpression('/ 4\/4 \[=+] 100% /', $screen);
         $this->assertStringNotContainsString('Fourth.php', $screen, 'The line of the file at hand is gone');
         $this->assertStringContainsString('[DONE]: Total processed 4, 1 errors in ', $screen);
         $this->assertSame(1, substr_count($screen, '[ERR]'));
     }
 
-    public function testProgressBarFallsBackToAsciiAndShortensLongPaths(): void
+    public function testLongPathsAreCutToTheWidthOfTheTerminal(): void
     {
-        $output   = $this->createStreamOutput();
-        $reporter = new ProgressBarReporter($output, new TerminalCapabilities(true, false, 40), '/app', 0.0);
+        $previous = getenv('COLUMNS');
+        putenv('COLUMNS=40');
+        try {
+            $output   = $this->createStreamOutput();
+            $reporter = new ProgressBarReporter($output, '/app');
+            $reporter->start(2, 1);
+            usleep(50_000);
+            $reporter->advance('/app/src/Some/Very/Deeply/Nested/Directory/WithAVeryLongFileName.php', null);
+        } finally {
+            putenv($previous === false ? 'COLUMNS' : 'COLUMNS=' . $previous);
+        }
 
-        $reporter->start(2, 1);
-        $reporter->advance('/app/src/Some/Very/Deeply/Nested/Directory/WithAVeryLongFileName.php', null);
-        $screen = self::renderScreen(self::readStream($output));
+        $this->assertStringContainsString(' ...Directory/WithAVeryLongFileName.php', self::renderScreen(self::readStream($output)));
+    }
 
-        $this->assertStringContainsString('1/2 [', $screen);
-        $this->assertStringContainsString('=', $screen);
-        $this->assertStringNotContainsString('█', $screen);
-        $this->assertStringContainsString(' ...Directory/WithAVeryLongFileName.php', $screen);
-        $this->assertStringNotContainsString('Weaving in', $screen, 'No workers, no worker line');
+    /**
+     * An output that is no terminal is a CI log or a file: a redrawn bar would leave every redraw behind
+     */
+    public function testProgressBarWritesALineAtEveryTenthOfTheFilesElsewhere(): void
+    {
+        $output   = new BufferedOutput();
+        $reporter = new ProgressBarReporter($output);
+
+        $reporter->start(100, 4);
+        for ($i = 1; $i <= 100; $i++) {
+            $reporter->advance("/app/File{$i}.php", $i === 42 ? 'boom' : null);
+        }
+        $reporter->finish(100, 1);
+        $display = $output->fetch();
+
+        $this->assertStringNotContainsString("\e[", $display);
+        $this->assertSame(11, preg_match_all('/^ +\d+\/100 \[/m', $display), 'The start and every tenth of the files');
+        $this->assertStringContainsString(' 50/100 [', $display);
+        $this->assertStringNotContainsString('File50.php', $display);
+        $this->assertStringContainsString('[ERR]: /app/File42.php: boom', $display);
+        $this->assertStringContainsString('100/100 [============================] 100%', $display);
+        $this->assertStringContainsString('[DONE]: Total processed 100, 1 errors in ', $display);
+        $this->assertStringContainsString(' with 4 workers.', $display);
     }
 
     public function testInterruptedProgressBarIsCleared(): void
     {
         $output   = $this->createStreamOutput();
-        $reporter = new ProgressBarReporter($output, new TerminalCapabilities(true, true, 100), null, 0.0);
+        $reporter = new ProgressBarReporter($output);
 
         $reporter->start(10, 1);
+        usleep(50_000);
         $reporter->advance('/app/One.php', null);
         $reporter->interrupt();
         $reporter->finish(1, 0);
@@ -139,91 +166,5 @@ final class WarmupReporterTest extends TestCase
         $this->assertStringContainsString('[OK]: /app/A.php', $display);
         $this->assertStringContainsString('[ERR]: /app/B.php: boom', $display);
         $this->assertStringContainsString('[DONE]: Total processed 2, 1 errors in ', $display);
-    }
-
-    public function testMilestoneReporterWritesEveryTenthOfTheFiles(): void
-    {
-        $output   = new BufferedOutput();
-        $reporter = new MilestoneReporter($output);
-
-        $reporter->start(100, 4);
-        for ($i = 1; $i <= 100; $i++) {
-            $reporter->advance("/app/File{$i}.php", $i === 42 ? 'boom' : null);
-        }
-        $reporter->finish(100, 1);
-        $display = $output->fetch();
-
-        $this->assertSame(10, substr_count($display, ' elapsed, '));
-        $this->assertStringContainsString(' 10/100 [ 10%]', $display);
-        $this->assertStringContainsString(' 50/100 [ 50%]', $display);
-        $this->assertStringContainsString('100/100 [100%]', $display);
-        $this->assertStringContainsString('files/s, 1 errors', $display);
-        $this->assertStringContainsString('[ERR]: /app/File42.php: boom', $display);
-        $this->assertStringContainsString('[DONE]: Total processed 100, 1 errors in ', $display);
-        $this->assertStringContainsString(' with 4 workers.', $display);
-    }
-
-    public function testFactoryListsFilesInVerboseMode(): void
-    {
-        $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE, true);
-
-        $this->assertInstanceOf(FileListReporter::class, WarmupReporterFactory::create($output));
-    }
-
-    /**
-     * A decorated output that is no terminal is a CI log with colors: a redrawn bar would leave every redraw behind
-     */
-    public function testFactoryWritesProgressLinesWhenTheErrorOutputIsNoTerminal(): void
-    {
-        $output = new ConsoleOutput(OutputInterface::VERBOSITY_NORMAL, true);
-        $output->setErrorOutput($this->createStreamOutput());
-
-        $this->assertInstanceOf(MilestoneReporter::class, WarmupReporterFactory::create($output));
-        $this->assertInstanceOf(MilestoneReporter::class, WarmupReporterFactory::create(new BufferedOutput()));
-    }
-
-    public function testFactoryDrawsAProgressBarOnAnInteractiveTerminal(): void
-    {
-        $output   = new ConsoleOutput(OutputInterface::VERBOSITY_NORMAL, true);
-        $terminal = new TerminalCapabilities(true, true, 80);
-        $output->setErrorOutput($this->createStreamOutput());
-
-        $this->assertInstanceOf(ProgressBarReporter::class, WarmupReporterFactory::create($output, '/app', $terminal));
-
-        $output->setVerbosity(OutputInterface::VERBOSITY_QUIET);
-        $this->assertInstanceOf(MilestoneReporter::class, WarmupReporterFactory::create($output, '/app', $terminal), 'Quiet shows no bar');
-    }
-
-    public function testWindowsTerminalsRenderUnicodeInWindowsTerminal(): void
-    {
-        $previous = getenv('WT_SESSION');
-        try {
-            putenv('WT_SESSION=8a5f5b3e');
-            $this->assertTrue(TerminalCapabilities::detect($this->createStreamOutput(), 'Windows')->unicode);
-        } finally {
-            putenv($previous === false ? 'WT_SESSION' : 'WT_SESSION=' . $previous);
-        }
-    }
-
-    public function testTerminalOfAMemoryStreamIsNotInteractive(): void
-    {
-        $terminal = TerminalCapabilities::detect($this->createStreamOutput());
-
-        $this->assertFalse($terminal->interactive);
-        $this->assertGreaterThan(0, $terminal->width);
-    }
-
-    #[RequiresOperatingSystemFamily('Linux')]
-    public function testUnicodeSupportFollowsTheLocale(): void
-    {
-        $previous = getenv('LC_ALL');
-        try {
-            putenv('LC_ALL=en_US.UTF-8');
-            $this->assertTrue(TerminalCapabilities::detect($this->createStreamOutput())->unicode);
-            putenv('LC_ALL=C');
-            $this->assertFalse(TerminalCapabilities::detect($this->createStreamOutput())->unicode);
-        } finally {
-            putenv($previous === false ? 'LC_ALL' : 'LC_ALL=' . $previous);
-        }
     }
 }

@@ -13,11 +13,11 @@ declare(strict_types=1);
 namespace Go\Instrument\ClassLoading;
 
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Console\Warmup\FileListReporter;
+use Go\Console\Warmup\ProgressBarReporter;
 use Go\Console\Warmup\WarmupReporter;
-use Go\Console\Warmup\WarmupReporterFactory;
 use Go\Core\AdvisorIndex;
 use Go\Core\AspectKernel;
-use Go\Instrument\ClassLoading\Warmup\CpuCoreCounter;
 use Go\Instrument\ClassLoading\Warmup\FileWarmer;
 use Go\Instrument\ClassLoading\Warmup\WorkerPool;
 use Go\Instrument\FileSystem\Enumerator;
@@ -38,17 +38,6 @@ use function count;
 class CacheWarmer
 {
     /**
-     * Number of workers that means one per CPU core, as long as every worker gets enough files
-     */
-    public const int AUTO_WORKERS = 0;
-
-    /**
-     * Fewest files per worker the automatic number of workers allows: starting a worker boots the kernel again,
-     * which pays off only when the worker weaves enough files
-     */
-    private const int MIN_FILES_PER_AUTO_WORKER = 50;
-
-    /**
      * Whether the warmup loop was asked to stop (e.g. by a signal handler)
      */
     private bool $interrupted = false;
@@ -63,7 +52,7 @@ class CacheWarmer
         protected OutputInterface $output = new NullOutput(),
         /** Whether to stop after the first file that fails to process */
         protected bool $failFast = false,
-        /** Number of worker processes, {@see self::AUTO_WORKERS} for one per CPU core, 1 weaves in this process */
+        /** Number of worker processes, 1 weaves in this process */
         protected int $workers = 1,
         /** @var list<string> Command line that starts one worker process (WarmupWorker::commandLine()), none weaves in this process */
         protected array $workerCommandLine = [],
@@ -93,9 +82,12 @@ class CacheWarmer
         // One walk of the application tree: the collected list is counted and then processed
         $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
         $files      = iterator_to_array($enumerator->enumerate(), false);
-        $workers    = $this->resolveWorkerCount(count($files));
+        // No more workers than files; without a command line to start them, the files are woven here
+        $workers    = $this->workerCommandLine !== [] ? max(1, min($this->workers, count($files))) : 1;
 
-        $reporter = WarmupReporterFactory::create($this->output, $options['appDir']);
+        $reporter = $this->output->isVerbose()
+            ? new FileListReporter($this->output)
+            : new ProgressBarReporter($this->output, $options['appDir']);
         $reporter->start(count($files), $workers);
 
         $processed = 0;
@@ -120,22 +112,6 @@ class CacheWarmer
         $reporter->finish($processed, $errors);
 
         return $errors;
-    }
-
-    /**
-     * Returns the number of worker processes for the given number of files, 1 to weave in this process
-     */
-    private function resolveWorkerCount(int $fileCount): int
-    {
-        if ($this->workerCommandLine === []) {
-            return 1;
-        }
-        $workers = $this->workers;
-        if ($workers === self::AUTO_WORKERS) {
-            $workers = min(CpuCoreCounter::count(), intdiv($fileCount, self::MIN_FILES_PER_AUTO_WORKER));
-        }
-
-        return max(1, min($workers, $fileCount));
     }
 
     /**

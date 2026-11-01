@@ -133,7 +133,7 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
 
     public static function invalidWorkerCount(string $workers): self
     {
-        return new self("Number of workers must be a positive integer or \"auto\", got \"{$workers}\"");
+        return new self("Number of workers must be a positive integer, got \"{$workers}\"");
     }
 
     public static function nativeLazyObjectsRequired(string $entityClass, string $propertyName): self

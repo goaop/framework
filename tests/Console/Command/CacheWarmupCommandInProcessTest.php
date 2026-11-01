@@ -194,7 +194,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
 
         $this->assertSame(Command::FAILURE, $tester->execute(['loader' => 'unused.php', '--fail-fast' => true]));
         $this->assertTrue($command->failFast);
-        $this->assertSame(CacheWarmer::AUTO_WORKERS, $command->workers, 'One worker per CPU core by default');
+        $this->assertSame(1, $command->workers, 'Weaves in the command process by default');
 
         $tester->execute(['loader' => 'unused.php', '--workers' => '6']);
         $this->assertSame(6, $command->workers);
@@ -217,7 +217,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
         $tester = new CommandTester(new CacheWarmupCommand());
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageMatches(sprintf('/^Number of workers must be a positive integer or "auto", got "%s"$/', preg_quote($workers, '/')));
+        $this->expectExceptionMessageMatches(sprintf('/^Number of workers must be a positive integer, got "%s"$/', preg_quote($workers, '/')));
 
         $tester->execute(['loader' => '/path/to/missing/loader.php', '--workers' => $workers]);
     }

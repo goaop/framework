@@ -91,11 +91,11 @@ abstract class BaseAspectCommand extends Command
      * Creates the cache warmer for the loaded aspect kernel
      *
      * @param bool $failFast Whether the warmer stops after the first file that fails to process
-     * @param int  $workers  Number of worker processes, CacheWarmer::AUTO_WORKERS for one per CPU core
+     * @param int  $workers  Number of worker processes, 1 weaves in this process
      */
     protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1): CacheWarmer
     {
-        $workerCommandLine = $workers !== 1 ? $this->getWorkerCommandLine() : [];
+        $workerCommandLine = $workers > 1 ? $this->getWorkerCommandLine() : [];
 
         return new CacheWarmer($this->aspectKernel, $output, $failFast, $workers, $workerCommandLine);
     }

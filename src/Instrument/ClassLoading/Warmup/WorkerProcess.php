@@ -78,9 +78,8 @@ final class WorkerProcess
      */
     public static function start(array $commandLine): self
     {
-        // stream_select() can wait on sockets only on Windows, pipes everywhere else
-        $outputSpec  = PHP_OS_FAMILY === 'Windows' ? ['socket'] : ['pipe', 'w'];
-        $descriptors = [0 => ['pipe', 'r'], 1 => $outputSpec, 2 => $outputSpec];
+        // Sockets, not pipes: stream_select() can wait on sockets on every system, Windows included
+        $descriptors = [0 => ['pipe', 'r'], 1 => ['socket'], 2 => ['socket']];
         $process     = proc_open($commandLine, $descriptors, $pipes, null, null, ['bypass_shell' => true]);
         if (!is_resource($process)) {
             throw WeavingException::warmupWorkerNotStarted(implode(' ', $commandLine));

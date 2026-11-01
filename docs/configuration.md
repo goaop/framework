@@ -151,15 +151,14 @@ stay in place.
 
 ### Cache warm-up
 
-`cache:warmup:aop` weaves in parallel worker processes, one per CPU core by default (`--workers=auto`);
-`--workers=N` sets their number and `--workers=1` weaves in the command process. On an interactive terminal it shows a
-progress bar, in a CI log a progress line at every tenth of the files, with `-v` every file. How the workers share the
-files and the cache metadata is described on `Go\Console\Command\CacheWarmupCommand`.
+`cache:warmup:aop --workers=N` weaves in N parallel worker processes (default 1: in the command process). It shows a
+progress bar, with `-v` every file. How the workers share the files and the cache metadata is described on
+`Go\Console\Command\CacheWarmupCommand`.
 
 ## Deployment
 
 1. Clear the cache directory.
-2. Warm up the cache: `vendor/bin/aspect cache:warmup:aop public/index.php`. The command fails when a file cannot be woven, so a deploy script stops instead of shipping an incomplete cache. Large projects are woven in parallel, one worker per CPU core; set `--workers=N` to limit it on a shared build machine.
+2. Warm up the cache: `vendor/bin/aspect cache:warmup:aop public/index.php`. The command fails when a file cannot be woven, so a deploy script stops instead of shipping an incomplete cache. Large projects are woven faster in parallel, e.g. `--workers=8`.
 3. Run with `'debug' => false` and `Features::PREBUILT_CACHE`.
 
 Rebuild the cache whenever the code or the aspects change. When upgrading from 3.x, see the [upgrade guide](../UPGRADE-4.0.md).
