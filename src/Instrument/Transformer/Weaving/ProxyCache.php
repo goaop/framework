@@ -32,6 +32,12 @@ use SplFileInfo;
  */
 final readonly class ProxyCache
 {
+    /**
+     * Start of the statement a woven source includes its proxies with: the cache directory of the kernel is a
+     * constant, so a cached file holds no absolute path and the cache can be moved
+     */
+    public const string CACHE_DIR_INCLUDE = 'include_once AOP_CACHE_DIR . ';
+
     private const string FUNCTIONS_DIR = '/_functions/';
 
     public function __construct(
@@ -109,7 +115,7 @@ final readonly class ProxyCache
 
     private static function includeStatement(string $proxyRelativePath): string
     {
-        return 'include_once AOP_CACHE_DIR . ' . var_export($proxyRelativePath, true) . ';';
+        return self::CACHE_DIR_INCLUDE . var_export($proxyRelativePath, true) . ';';
     }
 
     /**

@@ -9,6 +9,9 @@
 - Aspects are typical services — no registerAspect(); the kernel arms a debug-only Aspect::class onRegistration listener for resource tracking (files resolved via AopComposerLoader::findOriginalFile(), aspects stay unloaded) and registers framework services via FrameworkServices::register(); CachePathManager is added eagerly by the kernel (the class loader reads its cache index right away)
 - Throws framework exceptions: ServiceNotFoundException (unknown id, PSR NotFoundExceptionInterface), ContainerException (entry of the wrong type, PSR ContainerExceptionInterface), InvalidConfigurationException (invalid registration)
 
+## Console (src/Console)
+- BaseAspectCommand: `loader` argument optional; without it the command uses the kernel of the process when `AspectKernel::isInitialized()` (framework integrations register the commands as services), otherwise InvalidConfigurationException::kernelNotInitializedWithoutLoader(). `cache:warmup:aop --cache-dir=DIR` builds another directory (`new CacheWarmer(..., cacheDir: $dir)`, workers included).
+
 ## Aspect loading
 - AspectLoader — scans aspect classes for pointcut/advice attributes → Advisor[]; CachedAspectLoader decorates it (both implement AspectLoaderInterface)
 - Aspects are loaded BY CLASS, never by instance: getUnloadedAspects() returns a ReflectionClass per unloaded id (AspectContainer::getServiceIdsByInterface(), no factory runs), which the loaders and extensions share; advices are built with the lazy Interceptor facade. Weaving, warm-up and the advisor cache never create an aspect, also not one PHP can't make lazy (no instance properties). Never reintroduce `getServicesByInterface(Aspect::class)` or `getClosure($aspect)` on the weaving path

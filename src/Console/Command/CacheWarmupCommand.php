@@ -66,6 +66,11 @@ Each weaving process keeps the last 100 parsed files in memory; set
 <info>--cached-files</info> higher to re-parse less, lower to use less memory.
 
 The progress is shown as a progress bar; <info>-v</info> lists every file.
+
+With <info>--cache-dir</info> the cache is built in another directory, next to the
+one the kernel runs on, e.g. to prepare the cache of a deployment: the kernel and
+the workers keep using their own directory, and a cache built this way is
+complete and location independent.
 EOT,
 )]
 class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandInterface
@@ -98,15 +103,20 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
             'Number of parsed files each weaving process keeps in memory: more is faster, fewer uses less memory',
             (string) FileWarmer::DEFAULT_CACHED_FILES,
         );
+        $this->addOption('cache-dir', null, InputOption::VALUE_REQUIRED, 'Build the cache in this directory instead of the one of the kernel');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $workers     = self::parsePositiveInteger($input, 'workers');
         $cachedFiles = self::parsePositiveInteger($input, 'cached-files');
+        $cacheDir    = $input->getOption('cache-dir');
+        if ($cacheDir !== null && !is_string($cacheDir)) {
+            throw InvalidConfigurationException::cacheDirOptionNotString();
+        }
         $this->loadAspectKernel($input, $output);
 
-        $this->cacheWarmer = $this->createCacheWarmer($output, (bool) $input->getOption('fail-fast'), $workers, $cachedFiles);
+        $this->cacheWarmer = $this->createCacheWarmer($output, (bool) $input->getOption('fail-fast'), $workers, $cachedFiles, $cacheDir);
         $errors            = $this->cacheWarmer->warmUp();
 
         if ($this->receivedSignal !== null) {

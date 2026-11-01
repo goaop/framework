@@ -18,6 +18,7 @@ use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
+use Go\Instrument\Transformer\Weaving\ProxyCache;
 use php_user_filter as PhpStreamFilter;
 use Throwable;
 
@@ -182,7 +183,7 @@ final class SourceTransformingLoader extends PhpStreamFilter
             // no StreamMetaData, no parsing, no transformers
             $cachedContent = self::findCachedContent($originalUri, $this->data);
             if ($cachedContent !== null) {
-                stream_bucket_append($out, stream_bucket_new($this->stream, $cachedContent));
+                stream_bucket_append($out, stream_bucket_new($this->stream, self::relocateProxyIncludes($cachedContent)));
 
                 return PSFS_PASS_ON;
             }
@@ -194,12 +195,34 @@ final class SourceTransformingLoader extends PhpStreamFilter
             $source   = $result === TransformerResult::Aborted ? $this->data : $metadata->source;
             self::saveToCache($originalUri, $cacheUri, $source, $result);
 
-            stream_bucket_append($out, stream_bucket_new($this->stream, $source));
+            stream_bucket_append($out, stream_bucket_new($this->stream, self::relocateProxyIncludes($source)));
 
             return PSFS_PASS_ON;
         }
 
         return PSFS_FEED_ME;
+    }
+
+    /**
+     * Points the proxy includes of a served woven source at the cache directory it was woven into.
+     *
+     * A woven source includes its proxies through the AOP_CACHE_DIR constant, the cache directory of the kernel.
+     * While the cache is built in another directory ({@see CachePathManager::withCacheDir()}), a class loaded
+     * through the filter is woven into that directory, so the source served to PHP must include the proxies
+     * from there; the cached file keeps the constant and is valid once the directory is the one of a kernel.
+     */
+    private static function relocateProxyIncludes(string $source): string
+    {
+        $cacheDir = self::$cachePathManager?->getCacheDir();
+        if ($cacheDir === null || !defined('AOP_CACHE_DIR') || $cacheDir === AOP_CACHE_DIR) {
+            return $source;
+        }
+
+        return str_replace(
+            ProxyCache::CACHE_DIR_INCLUDE,
+            'include_once ' . var_export($cacheDir, true) . ' . ',
+            $source,
+        );
     }
 
     /**

@@ -187,6 +187,42 @@ class BaseAspectCommandTest extends TestCase
         $this->assertSame([], $command->exposeWorkerCommandLine());
     }
 
+    public function testWithoutLoaderTheInitializedKernelOfTheProcessIsUsed(): void
+    {
+        $kernel              = (new ReflectionClass(BaseAspectCommandTestKernelStub::class))->newInstanceWithoutConstructor();
+        $instanceProperty    = new ReflectionProperty(AspectKernel::class, 'instance');
+        $initializedProperty = new ReflectionProperty(AspectKernel::class, 'wasInitialized');
+        $previousInstance    = $instanceProperty->getValue();
+        $instanceProperty->setValue(null, $kernel);
+        $initializedProperty->setValue($kernel, true);
+
+        try {
+            $command  = $this->makeCommand();
+            $exitCode = (new CommandTester($command))->execute([]);
+
+            $this->assertSame(Command::SUCCESS, $exitCode);
+            $this->assertSame($kernel, $command->exposedKernel);
+        } finally {
+            $instanceProperty->setValue(null, $previousInstance);
+        }
+    }
+
+    public function testWithoutLoaderAndWithoutInitializedKernelTheLoaderIsRequired(): void
+    {
+        $instanceProperty = new ReflectionProperty(AspectKernel::class, 'instance');
+        $previousInstance = $instanceProperty->getValue();
+        $instanceProperty->setValue(null, null);
+
+        try {
+            (new CommandTester($this->makeCommand()))->execute([]);
+            $this->fail('The loader argument must be required without an initialized kernel');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString('No aspect kernel is initialized in this process: pass the loader argument', $exception->getMessage());
+        } finally {
+            $instanceProperty->setValue(null, $previousInstance);
+        }
+    }
+
     public function testSuggestionIsOnlyGivenForCloseNames(): void
     {
         $suggest = new \ReflectionMethod(BaseAspectCommand::class, 'suggestAlternative');

@@ -159,6 +159,26 @@ class AspectKernelTest extends TestCase
         }
     }
 
+    public function testIsInitializedReportsTheStateOfTheKernelOfTheProcess(): void
+    {
+        $instanceProperty    = new ReflectionProperty(AspectKernel::class, 'instance');
+        $initializedProperty = new ReflectionProperty(AspectKernel::class, 'wasInitialized');
+        $existingInstance    = $instanceProperty->getValue();
+        $instanceProperty->setValue(null, null);
+
+        try {
+            $this->assertFalse(AspectKernel::isInitialized(), 'No kernel exists');
+
+            $kernel = AspectKernelTestConcreteKernel::getInstance();
+            $this->assertFalse(AspectKernel::isInitialized(), 'The kernel exists but init() was not called');
+
+            $initializedProperty->setValue($kernel, true);
+            $this->assertTrue(AspectKernel::isInitialized());
+        } finally {
+            $instanceProperty->setValue(null, $existingInstance);
+        }
+    }
+
     public function testGetContainerReturnsInjectedContainer(): void
     {
         $kernel    = $this->makeKernel();

@@ -99,6 +99,57 @@ class CachePathManagerTest extends TestCase
         $this->assertTrue($loadedFlag->getValue($reader));
     }
 
+    public function testWithCacheDirBuildsAnotherDirectoryAndRestoresTheCurrentOne(): void
+    {
+        $original = self::$appDir . '/src/Some.php';
+        $otherDir = self::$cacheDir . '-other';
+        self::removeTemporaryDirectory($otherDir);
+
+        $manager = $this->createManager();
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
+        $manager->registerClassForResource($original, 'App\Some');
+        $manager->setCacheState($original, ['filemtime' => 1, 'cacheUri' => self::$cacheDir . '/src/Some.php']);
+
+        $result = $manager->withCacheDir($otherDir, function () use ($manager, $original, $otherDir): ?string {
+            // The other directory starts empty, whatever the current one knows
+            $this->assertSame($otherDir, $manager->getCacheDir());
+            $this->assertSame([], $manager->queryClassMap());
+            $this->assertNull($manager->queryCacheState($original));
+            $this->assertSame($otherDir . '/src/Some.php', $manager->getCachePathForResource($original));
+
+            // @phpstan-ignore argument.type (fixture class name that is never loaded)
+            $manager->registerClassForResource($original, 'App\Some');
+            $manager->setCacheState($original, ['filemtime' => 2, 'cacheUri' => $otherDir . '/src/Some.php']);
+
+            return $manager->getCacheDir();
+        });
+
+        $this->assertSame($otherDir, $result, 'The result of the operation is returned');
+        // The other directory was flushed with the records of the operation only...
+        $this->assertFileExists($otherDir . '/_include.cache');
+        $otherReader = $this->createManager(cacheDir: $otherDir);
+        // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
+        $this->assertSame(['App\Some' => $otherDir . '/src/Some.php'], $otherReader->queryClassMap());
+        $this->assertSame(2, $otherReader->queryCacheState($original)['filemtime'] ?? null);
+
+        // ...and the current directory is back, with its own state
+        $this->assertSame(self::$cacheDir, $manager->getCacheDir());
+        $this->assertSame(1, $manager->queryCacheState($original)['filemtime'] ?? null);
+        // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
+        $this->assertSame(['App\Some' => self::$cacheDir . '/src/Some.php'], $manager->queryClassMap());
+        self::removeTemporaryDirectory($otherDir);
+    }
+
+    public function testWithCacheDirOfTheCurrentDirectoryRunsTheOperationInPlace(): void
+    {
+        $manager = $this->createManager();
+        $manager->setCacheState(self::$appDir . '/src/Some.php', ['filemtime' => 1, 'cacheUri' => null]);
+
+        $manager->withCacheDir(self::$cacheDir, function () use ($manager): void {
+            $this->assertNotNull($manager->queryCacheState(self::$appDir . '/src/Some.php'), 'The pending state is kept');
+        });
+    }
+
     public function testIncludeMapServesKnownFilesWithoutFullMetadata(): void
     {
         $woven         = self::$appDir . '/src/woven.php';

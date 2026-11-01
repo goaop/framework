@@ -149,6 +149,31 @@ final class WarmupWorkerTest extends TestCase
         $this->assertStringContainsString('missing-loader.php does not exist or is not readable', $messages[0]['error']);
     }
 
+    public function testWorkerBuildsAnotherCacheDirectoryWhenAsked(): void
+    {
+        $file     = $this->appDir . '/src/Some.php';
+        $otherDir = $this->cacheDir . '-other';
+        $input    = self::createStream([WorkerProtocol::encode(['file' => $file])]);
+        $output   = self::createStream();
+
+        $previousLevel = error_reporting(E_ALL);
+        try {
+            $exitCode = WarmupWorker::main($this->loader, 7, $input, $output, $otherDir);
+        } finally {
+            error_reporting($previousLevel);
+        }
+
+        $this->assertSame(0, $exitCode);
+        $messages = self::readMessages($output);
+        $this->assertCount(2, $messages);
+        $this->assertSame('result', $messages[1]['type']);
+        $this->assertIsArray($messages[1]['records']);
+        $this->assertNotSame([], $messages[1]['records'], 'The records of the file, for the coordinator');
+        $this->assertFileDoesNotExist($this->cacheDir . '/_transformation.cache', 'The coordinator writes the metadata');
+        $this->assertDirectoryExists($otherDir, 'The other directory was created for the woven files');
+        self::removeTemporaryDirectory($otherDir);
+    }
+
     public function testCommandLineRunsTheWorkerWithTheLoader(): void
     {
         $commandLine = WarmupWorker::commandLine($this->loader, 42);
@@ -158,5 +183,12 @@ final class WarmupWorkerTest extends TestCase
         $this->assertContains('display_errors=stderr', $commandLine);
         $this->assertSame([(string) realpath($this->loader), '42'], array_slice($commandLine, -2));
         $this->assertFileExists($commandLine[count($commandLine) - 3], 'The composer autoloader');
+    }
+
+    public function testCommandLinePassesTheCacheDirectoryToBuild(): void
+    {
+        $commandLine = WarmupWorker::commandLine($this->loader, 42, '/srv/next/cache/aop');
+
+        $this->assertSame([(string) realpath($this->loader), '42', '/srv/next/cache/aop'], array_slice($commandLine, -3));
     }
 }

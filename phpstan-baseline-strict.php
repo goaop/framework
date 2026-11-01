@@ -116,12 +116,6 @@ $ignoreErrors[] = [
 	'path' => __DIR__ . '/src/Instrument/ClassLoading/CachePathManager.php',
 ];
 $ignoreErrors[] = [
-	'message' => '#^Only booleans are allowed in an if condition, string\\|null given\\.$#',
-	'identifier' => 'if.condNotBoolean',
-	'count' => 1,
-	'path' => __DIR__ . '/src/Instrument/ClassLoading/CachePathManager.php',
-];
-$ignoreErrors[] = [
 	'message' => '#^Construct empty\\(\\) is not allowed\\. Use more strict comparison\\.$#',
 	'identifier' => 'empty.notAllowed',
 	'count' => 1,
@@ -402,7 +396,7 @@ $ignoreErrors[] = [
 	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
 https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'identifier' => 'method.deprecated',
-	'count' => 2,
+	'count' => 1,
 	'path' => __DIR__ . '/tests/Console/Command/CacheWarmupCommandInProcessTest.php',
 ];
 $ignoreErrors[] = [
@@ -415,7 +409,7 @@ $ignoreErrors[] = [
 	'message' => '#^Call to deprecated method expectExceptionMessage\\(\\) of class PHPUnit\\\\Framework\\\\TestCase\\:
 https\\://github\\.com/sebastianbergmann/phpunit/issues/6560$#',
 	'identifier' => 'method.deprecated',
-	'count' => 2,
+	'count' => 1,
 	'path' => __DIR__ . '/tests/Console/Command/DebugWeavingCommandInProcessTest.php',
 ];
 $ignoreErrors[] = [

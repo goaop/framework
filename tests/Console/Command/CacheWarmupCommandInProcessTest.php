@@ -18,8 +18,8 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -55,14 +55,33 @@ class CacheWarmupCommandInProcessTest extends TestCase
         $tester->execute(['loader' => '/path/to/missing/loader.php']);
     }
 
-    public function testRequiresLoaderArgument(): void
+    public function testRequiresLoaderArgumentWhenNoKernelIsInitialized(): void
     {
-        $tester = new CommandTester(new CacheWarmupCommand());
+        $instanceProperty = new ReflectionProperty(AspectKernel::class, 'instance');
+        $previousInstance = $instanceProperty->getValue();
+        $instanceProperty->setValue(null, null);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('loader');
+        try {
+            (new CommandTester(new CacheWarmupCommand()))->execute([]);
+            $this->fail('The loader argument must be required without an initialized kernel');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString('pass the loader argument', $exception->getMessage());
+        } finally {
+            $instanceProperty->setValue(null, $previousInstance);
+        }
+    }
 
-        $tester->execute([]);
+    public function testCacheDirOptionMustBeAPath(): void
+    {
+        try {
+            (new CommandTester(new CacheWarmupCommand()))->execute([
+                'loader'      => __DIR__ . '/../../../vendor/autoload.php',
+                '--cache-dir' => ['not', 'a', 'path'],
+            ]);
+            $this->fail('An array is no cache directory');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString('--cache-dir option must be a path', $exception->getMessage());
+        }
     }
 
     #[RequiresPhpExtension('pcntl')]
@@ -85,7 +104,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null): CacheWarmer
             {
                 return new class extends CacheWarmer {
                     public function __construct()
@@ -132,7 +151,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null): CacheWarmer
             {
                 return new class ($this) extends CacheWarmer {
                     public function __construct(private readonly CacheWarmupCommand $command)
@@ -172,7 +191,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 // No-op: kernel is not needed, warmup below is simulated
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null): CacheWarmer
             {
                 $this->failFast    = $failFast;
                 $this->workers     = $workers;

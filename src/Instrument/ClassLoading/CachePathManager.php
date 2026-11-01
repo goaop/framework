@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Closure;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Features;
@@ -131,54 +132,130 @@ class CachePathManager
         $this->cacheDir = $options['cacheDir'];
         $this->fileMode = $options['cacheFileMode'];
 
-        if ($this->cacheDir) {
-            $hasIncludeMap = file_exists($this->cacheDir . self::INCLUDE_MAP_FILE_NAME);
-            // With a prebuilt cache the directory is guaranteed to exist (built at deploy
-            // time), so all directory/writability stat checks are skipped - this also
-            // covers read-only file systems (GAE, phar, etc). An existing include map
-            // proves the directory too: a warm cache costs no stat calls, and a cache
-            // that became read-only fails on the next write only, not on every request
-            if (!$hasIncludeMap && !$this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
-                if (!is_dir($this->cacheDir)) {
-                    $cacheRootDir = dirname($this->cacheDir);
-                    if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
-                        throw InvalidConfigurationException::cacheDirectoryNotCreatable($this->cacheDir, $cacheRootDir);
-                    }
-                    mkdir($this->cacheDir, CacheFileWriter::directoryModeFor($this->fileMode), true);
-                }
-                if (!is_writable($this->cacheDir)) {
-                    throw InvalidConfigurationException::cacheDirectoryNotWritable($this->cacheDir);
-                }
-            }
-
-            if ($hasIncludeMap) {
-                $includeData = include $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
-                if (!$this->isCurrentFormat($includeData)) {
-                    $this->rejectOutdatedFormat();
-                    // Outdated format: everything re-weaves once and both files are rewritten
-                    $this->cacheStateLoaded = true;
-                } else {
-                    // A file of the current format is written by flushCacheState() only, so its arrays are used
-                    // as they are: checking every entry would cost a loop over the whole map on every request
-                    /** @var array{map: array<class-string, string>, skip: array<class-string, true>, files: array<string, string|null>} $includeData */
-                    $this->classMap       = $includeData['map'];
-                    $this->skippedClasses = $includeData['skip'];
-                    $this->fileMap        = $includeData['files'];
-                }
-            } elseif (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
-                // Legacy cache directory (pre-class-map format): the metadata records carry
-                // no class names, so the cache cannot serve the class map. Treat the whole
-                // cache as stale - everything re-weaves once and both files are rewritten
-                // in the new format (or run `cache:warmup:aop` at deploy time).
-                $this->rejectOutdatedFormat();
-                $this->cacheStateLoaded = true;
-            }
-        }
+        $this->loadCacheDirectory();
 
         // Flush pending cache records while the runtime environment is still fully
         // intact: object destruction order during shutdown is unspecified, so relying
         // on __destruct() alone can run the write after collaborators are torn down
         register_shutdown_function($this->flushSilently(...));
+    }
+
+    /**
+     * Prepares the cache directory and reads its include map: the woven class map, the skipped classes and the
+     * known files, which serve every request without the full metadata
+     */
+    private function loadCacheDirectory(): void
+    {
+        if ($this->cacheDir === null || $this->cacheDir === '') {
+            return;
+        }
+        $hasIncludeMap = file_exists($this->cacheDir . self::INCLUDE_MAP_FILE_NAME);
+        // With a prebuilt cache the directory is guaranteed to exist (built at deploy
+        // time), so all directory/writability stat checks are skipped - this also
+        // covers read-only file systems (GAE, phar, etc). An existing include map
+        // proves the directory too: a warm cache costs no stat calls, and a cache
+        // that became read-only fails on the next write only, not on every request
+        if (!$hasIncludeMap && !$this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
+            $this->ensureCacheDirectoryIsWritable($this->cacheDir);
+        }
+
+        if ($hasIncludeMap) {
+            $includeData = include $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
+            if (!$this->isCurrentFormat($includeData)) {
+                $this->rejectOutdatedFormat();
+                // Outdated format: everything re-weaves once and both files are rewritten
+                $this->cacheStateLoaded = true;
+            } else {
+                // A file of the current format is written by flushCacheState() only, so its arrays are used
+                // as they are: checking every entry would cost a loop over the whole map on every request
+                /** @var array{map: array<class-string, string>, skip: array<class-string, true>, files: array<string, string|null>} $includeData */
+                $this->classMap       = $includeData['map'];
+                $this->skippedClasses = $includeData['skip'];
+                $this->fileMap        = $includeData['files'];
+            }
+        } elseif (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
+            // Legacy cache directory (pre-class-map format): the metadata records carry
+            // no class names, so the cache cannot serve the class map. Treat the whole
+            // cache as stale - everything re-weaves once and both files are rewritten
+            // in the new format (or run `cache:warmup:aop` at deploy time).
+            $this->rejectOutdatedFormat();
+            $this->cacheStateLoaded = true;
+        }
+    }
+
+    /**
+     * Creates the cache directory when it is missing and checks that it can be written
+     */
+    private function ensureCacheDirectoryIsWritable(string $cacheDir): void
+    {
+        if (!is_dir($cacheDir)) {
+            $cacheRootDir = dirname($cacheDir);
+            if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
+                throw InvalidConfigurationException::cacheDirectoryNotCreatable($cacheDir, $cacheRootDir);
+            }
+            mkdir($cacheDir, CacheFileWriter::directoryModeFor($this->fileMode), true);
+        }
+        if (!is_writable($cacheDir)) {
+            throw InvalidConfigurationException::cacheDirectoryNotWritable($cacheDir);
+        }
+    }
+
+    /**
+     * Runs an operation with the cache in another directory, built from scratch.
+     *
+     * The pending records of the current directory are flushed and its state is kept aside; the operation
+     * works on the other directory as if the kernel had been configured with it (its include map is read
+     * when it exists, the directory is created otherwise), and the current directory is restored
+     * afterwards, with its state untouched. Used by the cache warmer to build the cache of a deployment
+     * next to the running one: the kernel keeps serving this process from its own directory.
+     *
+     * @template T
+     *
+     * @param Closure(): T $operation
+     *
+     * @return T
+     */
+    public function withCacheDir(string $cacheDir, Closure $operation): mixed
+    {
+        $resolvedCacheDir = PathResolver::realpath($cacheDir);
+        $cacheDir         = is_string($resolvedCacheDir) ? $resolvedCacheDir : $cacheDir;
+        if ($cacheDir === $this->cacheDir) {
+            return $operation();
+        }
+
+        $this->flushCacheState();
+        $state = [
+            $this->cacheDir,
+            $this->cacheState,
+            $this->cacheStateLoaded,
+            $this->classMap,
+            $this->skippedClasses,
+            $this->fileMap,
+            $this->pendingClasses,
+            $this->newCacheState,
+        ];
+
+        $this->resetCacheState();
+        $this->cacheDir = $cacheDir;
+        try {
+            // The other directory is written in any case, also by a kernel that never writes its own one
+            $this->ensureCacheDirectoryIsWritable($cacheDir);
+            $this->loadCacheDirectory();
+
+            return $operation();
+        } finally {
+            $this->flushCacheState();
+            [
+                $this->cacheDir,
+                $this->cacheState,
+                $this->cacheStateLoaded,
+                $this->classMap,
+                $this->skippedClasses,
+                $this->fileMap,
+                $this->pendingClasses,
+                $this->newCacheState,
+            ] = $state;
+        }
     }
 
     /**
@@ -543,14 +620,23 @@ class CachePathManager
      */
     public function clearCacheState(): void
     {
-        $this->cacheState       = [];
+        $this->resetCacheState();
         $this->cacheStateLoaded = true;
+
+        $this->flushCacheState(true);
+    }
+
+    /**
+     * Forgets everything known about the cache directory, in memory only
+     */
+    private function resetCacheState(): void
+    {
+        $this->cacheState       = [];
+        $this->cacheStateLoaded = false;
         $this->classMap         = [];
         $this->skippedClasses   = [];
         $this->fileMap          = [];
         $this->pendingClasses   = [];
         $this->newCacheState    = [];
-
-        $this->flushCacheState(true);
     }
 }
