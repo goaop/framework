@@ -18,10 +18,10 @@ use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\CacheWarmer;
 use Go\VirtualFileSystem\FileSystem;
 use InvalidArgumentException;
+use ReflectionProperty;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -64,14 +64,20 @@ class DebugWeavingCommandInProcessTest extends TestCase
         $tester->execute(['loader' => '/path/to/missing/loader.php']);
     }
 
-    public function testRequiresLoaderArgument(): void
+    public function testRequiresLoaderArgumentWhenNoKernelIsInitialized(): void
     {
-        $tester = new CommandTester(new DebugWeavingCommand());
+        $instanceProperty = new ReflectionProperty(AspectKernel::class, 'instance');
+        $previousInstance = $instanceProperty->getValue();
+        $instanceProperty->setValue(null, null);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('loader');
-
-        $tester->execute([]);
+        try {
+            (new CommandTester(new DebugWeavingCommand()))->execute([]);
+            $this->fail('The loader argument must be required without an initialized kernel');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString('pass the loader argument', $exception->getMessage());
+        } finally {
+            $instanceProperty->setValue(null, $previousInstance);
+        }
     }
 
     public function testBaseAspectCommandIsAbstract(): void
@@ -211,7 +217,7 @@ class DebugWeavingCommandInProcessTest extends TestCase
                 $this->aspectKernel = $this->kernel;
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null): CacheWarmer
             {
                 return $this->warmer;
             }

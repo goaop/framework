@@ -136,6 +136,19 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
         return new self("Option --{$option} must be a positive integer, got \"{$value}\"");
     }
 
+    public static function cacheDirOptionNotString(): self
+    {
+        return new self('The --cache-dir option must be a path');
+    }
+
+    public static function kernelNotInitializedWithoutLoader(): self
+    {
+        return new self(
+            'No aspect kernel is initialized in this process: pass the loader argument, the path to the file '
+            . 'that initializes your kernel (usually the front controller)',
+        );
+    }
+
     public static function nativeLazyObjectsRequired(string $entityClass, string $propertyName): self
     {
         return new self(sprintf(

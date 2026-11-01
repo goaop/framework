@@ -197,6 +197,17 @@ abstract class AspectKernel
     }
 
     /**
+     * Tells whether the kernel of the process exists and was initialized
+     *
+     * Tooling that runs inside an application (a framework console, a cache warmer) discovers the
+     * running kernel this way instead of executing a loader file: {@see getInstance()} then returns it.
+     */
+    public static function isInitialized(): bool
+    {
+        return self::$instance !== null && self::$instance->wasInitialized;
+    }
+
+    /**
      * Returns an aspect container
      */
     public function getContainer(): AspectContainer

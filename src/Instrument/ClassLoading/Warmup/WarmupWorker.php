@@ -32,28 +32,29 @@ use Throwable;
 final class WarmupWorker
 {
     /**
-     * PHP code of a worker process, run with `php -r`: arguments are the composer autoloader, the loader file and the
-     * number of parsed files to keep in memory
+     * PHP code of a worker process, run with `php -r`: arguments are the composer autoloader, the loader file, the
+     * number of parsed files to keep in memory and, when the cache is built elsewhere, that directory
      */
-    private const string BOOTSTRAP_CODE = 'require $argv[1]; exit(\\' . self::class . '::main($argv[2], (int) $argv[3]));';
+    private const string BOOTSTRAP_CODE = 'require $argv[1]; exit(\\' . self::class . '::main($argv[2], (int) $argv[3], null, null, $argv[4] ?? null));';
 
     /**
      * Returns the command line that starts a worker process for the given loader file
      *
      * The worker runs the same PHP binary with the memory limit of this process.
      *
-     * @param int $cachedFiles Number of parsed files the worker keeps in memory, see FileWarmer
+     * @param int         $cachedFiles Number of parsed files the worker keeps in memory, see FileWarmer
+     * @param string|null $cacheDir    Directory the worker builds the cache in instead of the one of its kernel
      *
      * @return list<string> Command line, or an empty list when a worker process can not be started from here
      */
-    public static function commandLine(string $loader, int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES): array
+    public static function commandLine(string $loader, int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES, ?string $cacheDir = null): array
     {
         $classLoaderFile = class_exists(ClassLoader::class, false) ? new ReflectionClass(ClassLoader::class)->getFileName() : false;
         if ($classLoaderFile === false || !function_exists('proc_open')) {
             return [];
         }
 
-        return [
+        $commandLine = [
             PHP_BINARY,
             '-d',
             'memory_limit=' . ini_get('memory_limit'),
@@ -67,6 +68,11 @@ final class WarmupWorker
             KernelLoader::resolve($loader),
             (string) $cachedFiles,
         ];
+        if ($cacheDir !== null && $cacheDir !== '') {
+            $commandLine[] = $cacheDir;
+        }
+
+        return $commandLine;
     }
 
     /**
@@ -75,6 +81,7 @@ final class WarmupWorker
      * @param int           $cachedFiles Number of parsed files to keep in memory, see FileWarmer
      * @param resource|null $input       Stream of the messages from the coordinator, STDIN by default
      * @param resource|null $output      Stream of the messages to the coordinator, STDOUT by default
+     * @param string|null   $cacheDir    Directory to build the cache in instead of the one of the kernel
      *
      * @return int Exit code of the process
      */
@@ -83,6 +90,7 @@ final class WarmupWorker
         int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES,
         mixed $input = null,
         mixed $output = null,
+        ?string $cacheDir = null,
     ): int {
         $input  ??= STDIN;
         $output ??= STDOUT;
@@ -90,7 +98,7 @@ final class WarmupWorker
         // Anything the application prints is discarded, messages are written to the stream directly
         ob_start(static fn(): string => '');
         try {
-            return self::serve($loader, $cachedFiles, $input, $output);
+            return self::serve($loader, $cachedFiles, $input, $output, $cacheDir);
         } finally {
             ob_end_clean();
         }
@@ -100,7 +108,7 @@ final class WarmupWorker
      * @param resource $input
      * @param resource $output
      */
-    private static function serve(string $loader, int $cachedFiles, mixed $input, mixed $output): int
+    private static function serve(string $loader, int $cachedFiles, mixed $input, mixed $output, ?string $cacheDir): int
     {
         // Ctrl+C reaches the whole process group: the coordinator decides when to stop, by closing the input,
         // and the worker finishes the file at hand first
@@ -121,21 +129,26 @@ final class WarmupWorker
 
         fwrite($output, WorkerProtocol::encode(['type' => 'ready']));
 
-        $fileWarmer = new FileWarmer($cachedFiles);
-        while (($line = fgets($input)) !== false) {
-            $file = WorkerProtocol::decode($line)['file'] ?? null;
-            if (!is_string($file)) {
-                continue;
+        $weave = static function () use ($cachedFiles, $input, $output, $cachePathManager): int {
+            $fileWarmer = new FileWarmer($cachedFiles);
+            while (($line = fgets($input)) !== false) {
+                $file = WorkerProtocol::decode($line)['file'] ?? null;
+                if (!is_string($file)) {
+                    continue;
+                }
+                $error = $fileWarmer->warmUp($file);
+                fwrite($output, WorkerProtocol::encode([
+                    'type'    => 'result',
+                    'file'    => $file,
+                    'error'   => $error,
+                    'records' => $cachePathManager->takeNewCacheState(),
+                ]));
             }
-            $error = $fileWarmer->warmUp($file);
-            fwrite($output, WorkerProtocol::encode([
-                'type'    => 'result',
-                'file'    => $file,
-                'error'   => $error,
-                'records' => $cachePathManager->takeNewCacheState(),
-            ]));
-        }
 
-        return 0;
+            return 0;
+        };
+
+        // The records are keyed relative to the application root: the coordinator merges them into the same directory
+        return $cacheDir !== null && $cacheDir !== '' ? $cachePathManager->withCacheDir($cacheDir, $weave) : $weave();
     }
 }

@@ -13,7 +13,12 @@ declare(strict_types=1);
 namespace Go\Console\Command;
 
 use Go\Functional\BaseFunctionalTestCase;
+use Go\Tests\TestProject\Application\EdgeCaseDemo;
 use Go\Tests\TestProject\Application\Main;
+use Go\Tests\TestProject\Aspect\EdgeCaseAspect;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Process\PhpExecutableFinder;
+use Symfony\Component\Process\Process;
 
 class CacheWarmupCommandTest extends BaseFunctionalTestCase
 {
@@ -89,5 +94,43 @@ class CacheWarmupCommandTest extends BaseFunctionalTestCase
         ksort($data);
 
         return $data;
+    }
+
+    /**
+     * The cache of a deployment is built next to the running one: the other directory is complete and serves
+     * the application as a prebuilt cache, while the directory of the kernel holds nothing woven by the warm-up
+     */
+    public function testItWarmsUpCacheIntoAnotherDirectory(): void
+    {
+        $otherCacheDir = $this->configuration['cacheDir'] . '-moved';
+        $filesystem    = new Filesystem();
+        $filesystem->remove($otherCacheDir);
+
+        try {
+            // Two workers: they build the other directory too, the command merges their records into it
+            $output = $this->execute('cache:warmup:aop', ['--cache-dir=' . $otherCacheDir, '--workers=2']);
+            $this->assertStringContainsString('Weaving in 2 parallel worker processes.', $output);
+
+            $this->assertFileExists($otherCacheDir . '/_include.cache');
+            $this->assertFileExists($otherCacheDir . '/src/Application/Main.php', 'Woven into the other directory');
+            $this->assertFileDoesNotExist($this->configuration['cacheDir'] . '/src/Application/Main.php', 'Not woven into the directory of the kernel');
+
+            // The "moved_cache" configuration runs on that directory as a prebuilt cache
+            $phpExecutable = (new PhpExecutableFinder())->find();
+            assert($phpExecutable !== false);
+            $script = sprintf(
+                'include %s; echo (new %s())->describe(second: 7), "|", %s::$calls;',
+                var_export($this->configuration['frontController'], true),
+                '\\' . EdgeCaseDemo::class,
+                '\\' . EdgeCaseAspect::class,
+            );
+            $process = new Process([$phpExecutable, '-r', $script], null, ['GO_AOP_CONFIGURATION' => 'moved_cache']);
+            $process->run();
+
+            $this->assertTrue($process->isSuccessful(), $process->getOutput() . $process->getErrorOutput());
+            $this->assertSame('1,7,3|1', trim($process->getOutput()), 'The advice ran: the class was served from the other directory');
+        } finally {
+            $filesystem->remove($otherCacheDir);
+        }
     }
 }

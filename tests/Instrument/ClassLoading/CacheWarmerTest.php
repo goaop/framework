@@ -26,6 +26,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PHPUnit\Framework\MockObject\MockObject;
+use PhpToken;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -278,6 +279,31 @@ class CacheWarmerTest extends TestCase
 
         $this->assertSame(0, $warmer->warmUp());
         $this->assertStringContainsString('Weaving in 2 parallel worker processes.', $output->fetch());
+    }
+
+    public function testWarmUpIntoAnotherDirectoryLeavesTheDirectoryOfTheKernelAlone(): void
+    {
+        $otherDir = $this->cacheDir . '-other';
+        // A transformer that marks every file, so a woven file lands in the cache
+        $transformer = new class implements SourceTransformer {
+            public function transform(StreamMetaData $metadata): TransformerResult
+            {
+                $metadata->setTokenStreamFromRawTokens(...PhpToken::tokenize($metadata->source . '// woven'));
+
+                return TransformerResult::Transformed;
+            }
+        };
+        $output = new BufferedOutput();
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir, [$transformer]), $output, cacheDir: $otherDir);
+
+        $this->assertSame(0, $warmer->warmUp());
+
+        $this->assertStringContainsString('[DONE]: Total processed 1, 0 errors', $output->fetch());
+        $this->assertFileExists($otherDir . '/src/Some.php');
+        $this->assertFileExists($otherDir . '/_include.cache');
+        $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
+        $this->assertFileDoesNotExist($this->cacheDir . '/_include.cache');
+        self::removeTemporaryDirectory($otherDir);
     }
 
     public function testInterruptStopsWarmupLoopBeforeNextFile(): void

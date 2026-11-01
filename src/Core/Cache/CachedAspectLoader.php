@@ -20,6 +20,7 @@ use Go\Aop\Pointcut;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoaderInterface;
+use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\PathResolver;
 use ReflectionClass;
 
@@ -46,9 +47,19 @@ class CachedAspectLoader implements AspectLoaderInterface
     }
 
     /**
-     * Path to the cache directory
+     * Path to the cache directory: the one the cache is currently built in when the path manager is around
+     * ({@see CachePathManager::withCacheDir()}), the configured one otherwise
      */
-    private readonly ?string $cacheDir;
+    private ?string $cacheDir {
+        get => $this->container->has(CachePathManager::class)
+            ? $this->container->getService(CachePathManager::class)->getCacheDir()
+            : $this->configuredCacheDir;
+    }
+
+    /**
+     * Cache directory of the kernel options
+     */
+    private readonly ?string $configuredCacheDir;
 
     /**
      * Path to the application root directory
@@ -86,7 +97,7 @@ class CachedAspectLoader implements AspectLoaderInterface
         private readonly string $loaderId,
         array $options,
     ) {
-        $this->cacheDir             = $options['cacheDir'];
+        $this->configuredCacheDir   = $options['cacheDir'];
         $this->appDir               = $options['appDir'];
         // The loader gets the normalized options, not the kernel, so the flag is read from the bitmask directly
         $this->isPrebuiltCache      = ($options['features'] & Features::PREBUILT_CACHE) !== 0;

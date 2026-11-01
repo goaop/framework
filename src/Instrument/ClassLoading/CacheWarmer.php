@@ -58,6 +58,8 @@ class CacheWarmer
         protected array $workerCommandLine = [],
         /** Number of parsed files kept in memory when weaving in this process, see FileWarmer */
         protected int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES,
+        /** Directory to build the cache in instead of the one of the kernel, see warmUp() */
+        protected ?string $cacheDir = null,
     ) {}
 
     /**
@@ -69,7 +71,12 @@ class CacheWarmer
     }
 
     /**
-     * Warms up cache
+     * Warms up the cache
+     *
+     * With a cache directory of its own the warmer builds the cache there instead of the directory of the kernel,
+     * from scratch: the kernel keeps serving the classes of this process from its own directory, and the files of
+     * the other directory are woven again whatever it contains (the workers build it too). That is how a deployment
+     * prepares the cache of the next release next to the running one: the cache files are location independent.
      *
      * @return int Number of files that failed to process
      */
@@ -80,6 +87,24 @@ class CacheWarmer
         if (empty($options['cacheDir'])) {
             throw InvalidConfigurationException::cacheWarmerWithoutCacheDir();
         }
+
+        if ($this->cacheDir !== null && $this->cacheDir !== '') {
+            $cachePathManager = $this->aspectKernel->getContainer()->getService(CachePathManager::class);
+
+            return $cachePathManager->withCacheDir($this->cacheDir, $this->weaveApplication(...));
+        }
+
+        return $this->weaveApplication();
+    }
+
+    /**
+     * Weaves every file below the include paths, in this process or in the workers
+     *
+     * @return int Number of files that failed to process
+     */
+    private function weaveApplication(): int
+    {
+        $options = $this->aspectKernel->getOptions();
 
         // One walk of the application tree: the collected list is counted and then processed
         $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);

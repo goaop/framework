@@ -42,22 +42,31 @@ abstract class BaseAspectCommand extends Command
     {
         $this->addArgument(
             'loader',
-            InputArgument::REQUIRED,
+            InputArgument::OPTIONAL,
             'Path to the PHP file that initializes your aspect kernel (usually the front controller or a bootstrap '
-            . 'file). The file is executed, so it must not dispatch a request or produce side effects',
+            . 'file). The file is executed, so it must not dispatch a request or produce side effects. Omit it when '
+            . 'the kernel of the process is already initialized, e.g. in the console of an application framework',
         );
     }
 
     /**
      * Loads aspect kernel.
      *
-     * Aspect kernel is loaded by executing loader and fetching singleton instance.
-     * If your application environment initializes aspect kernel differently, you may
-     * modify this method to get aspect kernel suitable to your needs.
+     * The kernel of the process is used when it is initialized already (the command runs inside an
+     * application that booted its kernel, e.g. a framework console). Otherwise the loader file is
+     * executed and the singleton instance it initialized is fetched.
      */
     protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
     {
         $loader = $input->getArgument('loader');
+        if ($loader === null) {
+            if (!AspectKernel::isInitialized()) {
+                throw InvalidConfigurationException::kernelNotInitializedWithoutLoader();
+            }
+            $this->aspectKernel = AspectKernel::getInstance();
+
+            return;
+        }
         if (!is_string($loader)) {
             throw InvalidConfigurationException::loaderArgumentNotString();
         }
@@ -94,16 +103,18 @@ abstract class BaseAspectCommand extends Command
      * @param bool $failFast Whether the warmer stops after the first file that fails to process
      * @param int  $workers     Number of worker processes, 1 weaves in this process
      * @param int  $cachedFiles Number of parsed files kept in memory by each weaving process, see FileWarmer
+     * @param string|null $cacheDir Directory to build the cache in instead of the one of the kernel
      */
     protected function createCacheWarmer(
         OutputInterface $output,
         bool $failFast = false,
         int $workers = 1,
         int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES,
+        ?string $cacheDir = null,
     ): CacheWarmer {
-        $workerCommandLine = $workers > 1 ? $this->getWorkerCommandLine($cachedFiles) : [];
+        $workerCommandLine = $workers > 1 ? $this->getWorkerCommandLine($cachedFiles, $cacheDir) : [];
 
-        return new CacheWarmer($this->aspectKernel, $output, $failFast, $workers, $workerCommandLine, $cachedFiles);
+        return new CacheWarmer($this->aspectKernel, $output, $failFast, $workers, $workerCommandLine, $cachedFiles, $cacheDir);
     }
 
     /**
@@ -112,12 +123,13 @@ abstract class BaseAspectCommand extends Command
      * A worker boots the kernel with the loader file, like loadAspectKernel() does. A command that boots the kernel
      * differently returns the command line of its own worker here, or an empty list to weave in this process only.
      *
-     * @param int $cachedFiles Number of parsed files the worker keeps in memory, see FileWarmer
+     * @param int         $cachedFiles Number of parsed files the worker keeps in memory, see FileWarmer
+     * @param string|null $cacheDir    Directory the worker builds the cache in instead of the one of its kernel
      *
      * @return list<string>
      */
-    protected function getWorkerCommandLine(int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES): array
+    protected function getWorkerCommandLine(int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES, ?string $cacheDir = null): array
     {
-        return $this->loaderPath !== null ? WarmupWorker::commandLine($this->loaderPath, $cachedFiles) : [];
+        return $this->loaderPath !== null ? WarmupWorker::commandLine($this->loaderPath, $cachedFiles, $cacheDir) : [];
     }
 }
