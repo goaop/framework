@@ -16,17 +16,15 @@ Applied per loaded file. Each returns TransformerResult: Transformed|Abstain|Abo
    - MagicConstantTransformer — `__FILE__`/`__DIR__` → original paths, wraps `getFileName()`; never counts as a transformation (only cache-dir files need it; PHP resolves magic constants of a `php://filter/.../resource=<path>` include to <path>)
 2. WeavingTransformer — main; AdviceMatcher + CachedAspectLoader → proxy generators. Sees the token edits of the rules.
 
-## Weaving internals (src/Instrument/Transformer/Weaving/, all `@internal`)
-WeavingTransformer only orchestrates: load aspects → match advisors per class-like/namespace → TraitConverter → proxy generator → ProxyCache.
-- TokenStreamEditor — line-preserving edits of one StreamMetaData addressed by AST token positions: static range(Node) (throws without positions) / rangeAfterAttributes(ClassLike|Param) (#598); token, find, replace, append, blank (keeps newlines, optional replacement / keepWhitespace), remove, removeWithInlineWhitespace. One instance per transform().
-- TraitConverter — convert(): class/enum/trait → woven trait. Every edit is located through nodes (name, extends/implements/scalarType, attrGroups/attrs, EnumCase, PropertyItem, Param type/var, constructor params); token loops stay inside those ranges. Also: trait-incompatible class attributes (#615), #[\Override] guard (#761) + strip, intercepted property items (#669), promoted property demotion + constructor assignment (#599). Edit order per kind is fixed and output is byte-identical to the former token scans.
-- ProxyCache — writes class proxies (one-class/multi-class layouts, #760) and namespace function proxies (`/_functions/`, freshness via container), returns the include statements.
-- No format-preserving printing: it drops lines when removing multi-line clauses/statements and can not turn `class` into `trait` without reprinting the class.
-
 ### Performance gate
 Touching a SourceTransformer/NodeRewriter or the transformer wiring → run `composer test:performance:transformation` before and after; the numbers must not get worse.
 - tests/Performance/TransformationPerformanceTest.php (`#[Group('transformation-performance')]`, excluded from the default run): times `transform()` of SyntaxTreeRewriter (default rules, all rules) over the nikic/php-parser sources and of WeavingTransformer over the weaving fixtures; ratio to a plain no-op NodeTraverser walk of the php-parser trees vs a budget constant.
 - CI (.github/workflows/transformation-performance.yml) runs only for PRs touching src/Instrument/Transformer/**, SourceTransformingLoader, AspectKernel or FrameworkServices: alternates base/head `src/` 3× on one runner, fails on a head budget failure or a head ratio >10% above base (tests/Performance/compare-transformation-performance.php).
+
+## Weaving internals
+WeavingTransformer only orchestrates: load aspects → match advisors → TraitConverter → proxy generator → ProxyCache.
+TokenStreamEditor, TraitConverter and ProxyCache (src/Instrument/Transformer/Weaving/) and how every step works:
+src/Instrument/Transformer/Weaving/AGENTS.md.
 
 ## Trait-based proxy engine (4.0)
 WeavingTransformer converts original class to trait + proxy class. Two generated files for class Ns\Foo:
@@ -74,7 +72,7 @@ see src/Proxy/AGENTS.md. WeavingTransformer passes the original imports to the p
 - Proxy re-inherits parent+interfaces via reflection (not from woven source)
 - self:: in trait body → proxy class (no rewrite needed)
 - Private methods interceptable (impossible with old extend-based engine)
-- Intercepted properties are REMOVED from the trait body per PropertyItem (TraitConverter): whole statement blanked when all items move, else only the item + its separating comma; blanked tokens keep their newlines (line numbers), a newline-free `/* Moved by weaving interceptor … */` marker is left; never use a `//` prefix (multi-line declarations would stay live, issue #669)
+- Intercepted properties are REMOVED from the trait body per PropertyItem, lines kept, `/* Moved by weaving interceptor … */` marker, never `//` (#669); details in Weaving/AGENTS.md
 - FCC 4th arg to InterceptorInjector:
   - `$this->mOriginalAlias(...)` — own dynamic methods
   - `self::mOriginalAlias(...)` — own static methods
@@ -82,17 +80,15 @@ see src/Proxy/AGENTS.md. WeavingTransformer passes the original imports to the p
   - `\fn(...)` — function proxies
 
 ## Line preservation: Woven trait line numbers (XDebug)
-Woven trait MUST preserve original source line numbers for XDebug breakpoints.
-- Class→trait: TraitConverter replaces `class` keyword, strips modifiers/extends/implements. All other tokens (incl. blank lines) kept in place.
-- Enum→trait: TraitConverter blanks the backed type and implements (newlines kept) and removes the case tokens, keeping the whitespace after each case, so methods stay at their original line positions.
-- Proxy file (ClassProxyGenerator/EnumProxyGenerator): thin dispatch wrapper — line numbers don't matter.
+Woven trait MUST preserve original source line numbers for XDebug breakpoints: every edit keeps the newlines of the
+tokens it touches (class/enum header, enum cases, attributes, properties, promoted parameters), see
+src/Instrument/Transformer/Weaving/AGENTS.md. Proxy file (ClassProxyGenerator/EnumProxyGenerator): thin dispatch
+wrapper — line numbers don't matter.
 
 ## PHP compat: #[\Override] on intercepted methods (8.3+)
-When intercepted method has #[\Override], PHP copies attribute to trait alias — fatal error (alias doesn't override anything).
-TraitConverter strips #[\Override] from the woven source for every intercepted own method: classes, enums and woven traits (renamed original trait, its methods aliased by TraitProxyGenerator). Attribute preserved on the proxy method (MethodGenerator copies it from the AST), so PHP still checks the override.
-- Limitation (#761): a method a class/enum/trait imports from ANOTHER trait with #[\Override] can not be intercepted — the attribute lives in the shared trait file, can't be stripped per class. TraitConverter::assertNoTraitImportedOverride() (first step of convert(), before any edit and the generators; native reflection hides the trait) throws WeavingException naming class, method, trait. Covers aliases, static methods, enums, woven traits using a trait.
-- Workaround: `&& !matchInherited()` (excludes trait-imported methods too), narrower `&& !execution(public Foo->hello(*))`, drop #[\Override] from the trait method, or advise the trait itself (`execution(public HelloTrait->hello(*))`, intercepts it in every class using the trait).
-- Trait methods inherited via a parent class are fine: proxy calls `parent::m(...)`, no alias.
+PHP copies #[\Override] to the trait alias of an intercepted method (fatal error): TraitConverter strips it from the
+woven source, the proxy method keeps it. A trait-imported method with #[\Override] can not be intercepted (#761,
+WeavingException). Details and workarounds: src/Instrument/Transformer/Weaving/AGENTS.md.
 
 ## Aspects themselves
 Classes implementing \Go\Aop\Aspect: unconditionally skipped by WeavingTransformer. Aspects cannot weave themselves.
