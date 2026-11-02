@@ -60,6 +60,8 @@ final class AopComposerLoader
 
     /**
      * Lazy-initialized filter for allowed files
+     *
+     * @var (Closure(string): bool)|null
      */
     private ?Closure $isAllowedFilter = null;
 
