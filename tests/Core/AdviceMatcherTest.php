@@ -444,6 +444,97 @@ class AdviceMatcherTest extends TestCase
     }
 
     /**
+     * A method inherited from a woven parent is intercepted by the parent only (issue #781): the advice runs once
+     */
+    public function testInheritedMethodOfWovenParentIsNotInterceptedInChild(): void
+    {
+        $advices = $this->getInheritanceAdvices(AdviceMatcherTestChild::class, static fn(string $file): bool => true);
+
+        $this->assertSame(['childMethod'], array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []));
+        $this->assertArrayNotHasKey(AspectContainer::STATIC_METHOD_PREFIX, $advices);
+    }
+
+    /**
+     * The interceptor of the woven grandparent covers the grandchild too, an intermediate class overrides nothing
+     */
+    public function testInheritedMethodOfWovenGrandparentIsNotInterceptedInGrandchild(): void
+    {
+        $advices = $this->getInheritanceAdvices(AdviceMatcherTestGrandchild::class, static fn(string $file): bool => true);
+
+        $this->assertSame([], $advices);
+    }
+
+    /**
+     * A parent that is not woven (outside of the include paths) leaves the interception to the child
+     */
+    public function testInheritedMethodOfUnwovenParentIsInterceptedInChild(): void
+    {
+        $advices = $this->getInheritanceAdvices(AdviceMatcherTestChild::class, static fn(string $file): bool => false);
+
+        $this->assertSame(['childMethod', 'parentMethod'], array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []));
+        $this->assertSame(['parentStaticMethod'], array_keys($advices[AspectContainer::STATIC_METHOD_PREFIX] ?? []));
+    }
+
+    /**
+     * Without the woven file filter no ancestor counts as woven: inherited methods are intercepted in the child
+     */
+    public function testInheritedMethodIsInterceptedInChildWithoutWovenFileFilter(): void
+    {
+        $advices = $this->getInheritanceAdvices(AdviceMatcherTestGrandchild::class, null);
+
+        $this->assertSame(['childMethod', 'parentMethod'], array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []));
+        $this->assertSame(['parentStaticMethod'], array_keys($advices[AspectContainer::STATIC_METHOD_PREFIX] ?? []));
+    }
+
+    /**
+     * A woven parent the pointcut does not match does not intercept the method, the child does
+     */
+    public function testInheritedMethodIsInterceptedInChildWhenPointcutDoesNotMatchParent(): void
+    {
+        $advices = $this->getInheritanceAdvices(
+            AdviceMatcherTestChild::class,
+            static fn(string $file): bool => true,
+            static fn(ReflectionClass $class): bool => $class->name !== AdviceMatcherTestParent::class,
+        );
+
+        $this->assertSame(['childMethod', 'parentMethod'], array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []));
+    }
+
+    /**
+     * A trait method overriding the method of a woven parent is a method of the child, intercepted there
+     */
+    public function testTraitMethodOverridingMethodOfWovenParentIsInterceptedInChild(): void
+    {
+        $advices = $this->getInheritanceAdvices(AdviceMatcherTestTraitChild::class, static fn(string $file): bool => true);
+
+        $this->assertSame(['parentMethod'], array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []));
+        $this->assertArrayNotHasKey(AspectContainer::STATIC_METHOD_PREFIX, $advices);
+    }
+
+    /**
+     * Matches the inheritance stubs with a pointcut that matches every method of the classes accepted by $matchesClass
+     *
+     * @param class-string                          $className
+     * @param (\Closure(string): bool)|null         $isWovenFile
+     * @param (\Closure(ReflectionClass<object>): bool)|null $matchesClass
+     *
+     * @return array<string, array<string, array<string, Advice>>>
+     */
+    private function getInheritanceAdvices(string $className, ?\Closure $isWovenFile, ?\Closure $matchesClass = null): array
+    {
+        $matchesClass ??= static fn(ReflectionClass $class): bool => true;
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method('matches')->willReturnCallback(
+            static fn(ReflectionClass $class, ?ReflectionMethod $method = null): bool => $matchesClass($class),
+        );
+        $advisor = new GenericPointcutAdvisor($pointcut, $this->createMock(Advice::class));
+
+        return new AdviceMatcher($isWovenFile)->getAdvicesForClass(new ReflectionClass($className), ['advisor' => $advisor]);
+    }
+
+    /**
      * Verifies that getAdvicesForFunctions() never matches an advisor without a function pointcut:
      * function interception needs no feature flag, the pointcut kind enables it.
      */
@@ -532,4 +623,28 @@ interface AdviceMatcherTestIntroducedInterface {}
 final class AdviceMatcherTestIntroducedTraitConsumer
 {
     use AdviceMatcherTestIntroducedTrait;
+}
+
+class AdviceMatcherTestParent
+{
+    public function parentMethod(): void {}
+
+    public static function parentStaticMethod(): void {}
+}
+
+class AdviceMatcherTestChild extends AdviceMatcherTestParent
+{
+    public function childMethod(): void {}
+}
+
+class AdviceMatcherTestGrandchild extends AdviceMatcherTestChild {}
+
+trait AdviceMatcherTestOverridingTrait
+{
+    public function parentMethod(): void {}
+}
+
+class AdviceMatcherTestTraitChild extends AdviceMatcherTestParent
+{
+    use AdviceMatcherTestOverridingTrait;
 }
