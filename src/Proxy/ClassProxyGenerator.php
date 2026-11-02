@@ -588,6 +588,8 @@ class ClassProxyGenerator
      * getParentClass() and getInterfaceNames(). The proxy still declares it under the name resolved from the source:
      * the original class could not be loaded without it either.
      *
+     * @param ReflectionClass<covariant object> $originalClass
+     *
      * @return array{string|null, list<string>} Name of the missing parent class (null if none), names of the
      *                                          missing interfaces
      */
