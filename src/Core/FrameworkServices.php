@@ -16,6 +16,7 @@ use Go\Aop\Pointcut\PointcutGrammar;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
 use Go\Core\Cache\CachedAspectLoader;
+use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\Transformer\NodeRewriter;
 use Go\Instrument\Transformer\SyntaxTreeRewriter;
 
@@ -36,7 +37,13 @@ final class FrameworkServices
             new PointcutGrammar(),
         ));
 
-        $container->addLazyService(AdviceMatcher::class, fn(): AdviceMatcher => new AdviceMatcher());
+        $container->addLazyService(AdviceMatcher::class, function (AspectContainer $container): AdviceMatcher {
+            $options = $container->getService(AspectKernel::class)->getOptions();
+            // The same filter as the class loader: an ancestor declared in a file it weaves intercepts its own methods
+            $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
+
+            return new AdviceMatcher($enumerator->getPathFilter());
+        });
 
         $container->addLazyService(AttributeAspectLoaderExtension::class, fn(AspectContainer $container): AttributeAspectLoaderExtension => new AttributeAspectLoaderExtension(
             $container->getService(PointcutLexer::class),

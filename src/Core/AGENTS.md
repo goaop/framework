@@ -24,6 +24,12 @@
 - AdviceMatcher — given class reflector, returns applicable advisors keyed by join point
   - Scans IS_PUBLIC|IS_PROTECTED|IS_PRIVATE methods
   - Private methods from parent classes excluded
+  - Inherited methods (`$method->class` is a parent; trait methods name the class itself): skipped per advisor when an
+    ancestor from the parent up to `$method->class` is woven and the pointcut matches it and its method — that ancestor
+    intercepts every execution, the child would run the advice twice through `parent::m(...)` (#781). "Woven" is a
+    static answer (constructor `isWovenFile` = Enumerator path filter of the kernel options, FrameworkServices; a
+    loaded `Proxy` counts as woven), never "is the class loaded": the woven child is cached for other processes.
+    Without the filter (`new AdviceMatcher()`) inherited methods are always intercepted in the child
 
 ## Bridge
 src/Bridge/Doctrine (ORM 3.6+, persistence 4.1+ ClassLocator; no metadata surgery needed under the trait engine):

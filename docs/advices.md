@@ -54,6 +54,14 @@ class ServiceAspect implements Aspect
 The joinpoints declare `@template` types, so PHPStan and IDEs know the types of `getThis()` and `proceed()`, e.g.
 `MethodInvocation<OrderService, Order>`.
 
+### Inherited methods
+
+An advice runs once per method execution, however many classes of the hierarchy are woven. A method that a woven
+class only inherits is intercepted by the nearest woven ancestor the pointcut matches there (up to the class
+declaring the method); the subclass inherits that interceptor and overrides nothing. When no such ancestor exists,
+as for a parent class outside of `includePaths` or one the pointcut does not match, the subclass intercepts the
+inherited method itself.
+
 ### Limitations
 
 - **Returning by reference.** A method or function declared `function &name()` can not be intercepted: joinpoints

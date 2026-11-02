@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Core;
 
 use ArrayObject;
+use Go\Aop\Advice;
 use Go\Aop\Advisor;
 use Go\Aop\Aspect;
 use Go\Aop\Exception\InvalidConfigurationException;
@@ -20,17 +21,22 @@ use Go\Aop\Exception\ServiceNotFoundException;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\PointcutLexer;
 use Go\Aop\Pointcut\PointcutParser;
+use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\Core\Cache\CachedAspectLoader;
+use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\SyntaxTreeRewriter;
 use Go\Stubs\First;
 use Go\Stubs\ReentrantAutoloadAspect;
+use Go\Tests\TestProject\Application\Issue781CardGateway;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use Go\Tests\TestProject\Container\ApplicationContainer;
+use PHPUnit\Framework\MockObject\Runtime\PropertyHook;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use ReflectionClass;
 use stdClass;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -82,6 +88,43 @@ class ContainerTest extends TestCase
             SyntaxTreeRewriter::class  => [SyntaxTreeRewriter::class],
             // [CachePathManager::class], // Need to politely switch to options instead of whole kernel
         ];
+    }
+
+    /**
+     * The advice matcher of the container knows the files the class loader weaves (issue #781): a method inherited
+     * from a parent below the include paths is left to the parent's interceptor
+     */
+    public function testAdviceMatcherUsesPathFilterOfKernelOptions(): void
+    {
+        $appDir = PathResolver::realpath(__DIR__ . '/../Fixtures/project');
+        $this->assertIsString($appDir);
+
+        $container  = new Container();
+        $mockKernel = $this->createMock(AspectKernel::class);
+        $mockKernel->method('getOptions')->willReturn([
+            'debug'          => false,
+            'appDir'         => $appDir,
+            'cacheDir'       => '/tmp',
+            'cacheFileMode'  => 0770,
+            'features'       => 0,
+            'includePaths'   => [$appDir . '/src'],
+            'excludePaths'   => [],
+            'containerClass' => Container::class,
+        ]);
+        $container->add(AspectKernel::class, $mockKernel);
+        FrameworkServices::register($container);
+
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD);
+        $pointcut->method('matches')->willReturn(true);
+        $advisor = new GenericPointcutAdvisor($pointcut, $this->createMock(Advice::class));
+
+        $advices = $container->getService(AdviceMatcher::class)->getAdvicesForClass(
+            new ReflectionClass(Issue781CardGateway::class),
+            ['advisor' => $advisor],
+        );
+
+        $this->assertSame([], $advices);
     }
 
     /**

@@ -12,10 +12,13 @@ declare(strict_types=1);
 
 namespace Go\Core;
 
+use Closure;
 use Go\Aop;
 use Go\Aop\IntroductionInfo;
 use Go\Aop\PointcutAdvisor;
 use Go\Aop\Pointcut;
+use Go\Aop\Proxy;
+use Go\Instrument\PathResolver;
 use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionClass;
 use ReflectionFunction;
@@ -35,6 +38,24 @@ class AdviceMatcher implements AdviceMatcherInterface
      * @var array<non-empty-string, ReflectionFunction>|null
      */
     private static ?array $internalFunctions = null;
+
+    /**
+     * Answers of the woven file filter by class name
+     *
+     * @var array<string, bool>
+     */
+    private array $isWovenClassFile = [];
+
+    public function __construct(
+        /**
+         * Tells whether the class loader weaves a source file (resolved path): below the include paths and outside of
+         * the exclude paths. Without it no class that is not loaded yet counts as woven, so inherited methods are
+         * always intercepted in the child.
+         *
+         * @var (Closure(string): bool)|null
+         */
+        private readonly ?Closure $isWovenFile = null,
+    ) {}
 
     /**
      * Returns list of function advices for namespace
@@ -173,7 +194,7 @@ class AdviceMatcher implements AdviceMatcherInterface
                     continue;
                 }
 
-                if ($pointcut->matches($class, $method)) {
+                if ($pointcut->matches($class, $method) && !$this->isInterceptedByAncestor($class, $method, $pointcut)) {
                     $prefix = $method->isStatic() ? AspectContainer::STATIC_METHOD_PREFIX : AspectContainer::METHOD_PREFIX;
                     $classAdvices[$prefix][$method->name][$advisorId] = $advisor->getAdvice();
                 }
@@ -202,6 +223,66 @@ class AdviceMatcher implements AdviceMatcherInterface
         }
 
         return $classAdvices;
+    }
+
+    /**
+     * Checks whether a woven ancestor already intercepts the method with the same pointcut (issue #781)
+     *
+     * A method inherited from a parent class (`$method->class` names the parent, trait methods name the class itself)
+     * is called through `parent::method()` by the proxy of the child. When an ancestor between the parent and the
+     * class holding the method is woven and the pointcut matches the method there, that ancestor intercepts every
+     * execution, and the child must not run the advice a second time. When none is, as for a parent outside the
+     * include paths or one the pointcut does not match, the child is the only place to intercept it.
+     *
+     * @param ReflectionClass<covariant object> $class
+     */
+    private function isInterceptedByAncestor(ReflectionClass $class, ReflectionMethod $method, Pointcut $pointcut): bool
+    {
+        if ($method->class === $class->name) {
+            return false;
+        }
+
+        for ($ancestor = $class->getParentClass(); $ancestor !== false; $ancestor = $ancestor->getParentClass()) {
+            if (
+                $this->isWovenClass($ancestor)
+                && $ancestor->hasMethod($method->name)
+                && $pointcut->matches($ancestor)
+                && $pointcut->matches($ancestor, $ancestor->getMethod($method->name))
+            ) {
+                return true;
+            }
+            if ($ancestor->name === $method->class) {
+                break;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks whether the class loader weaves the class: it is declared in a file the loader weaves
+     *
+     * The answer depends on the configuration only, never on the classes loaded by the current process, as the woven
+     * child is cached and served to other processes: a parent loaded before the kernel was initialized still counts as
+     * woven. A loaded proxy is woven; its reflection (native one) reports the proxy file in the cache directory.
+     *
+     * @param ReflectionClass<covariant object> $class
+     */
+    private function isWovenClass(ReflectionClass $class): bool
+    {
+        if (isset($this->isWovenClassFile[$class->name])) {
+            return $this->isWovenClassFile[$class->name];
+        }
+        if (class_exists($class->name, false) && is_subclass_of($class->name, Proxy::class)) {
+            return $this->isWovenClassFile[$class->name] = true;
+        }
+        $fileName = $class->getFileName();
+        if ($this->isWovenFile === null || !is_string($fileName)) {
+            return $this->isWovenClassFile[$class->name] = false;
+        }
+        $resolvedFileName = PathResolver::realpath($fileName);
+
+        return $this->isWovenClassFile[$class->name] = ($this->isWovenFile)(is_string($resolvedFileName) ? $resolvedFileName : $fileName);
     }
 
     /**
