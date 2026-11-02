@@ -331,8 +331,8 @@ final class ExceptionMessagesTest extends TestCase
                 ),
                 WeavingException::class,
                 'App\Transformer failed to transform /app/src/Admin/ReportController.php: Class '
-                . 'GeneratedCode\Admin\BaseReportController was not found by locator. The weaver reads the parents, '
-                . 'interfaces and traits of a class from their source files, which it finds through Composer: make '
+                . 'GeneratedCode\Admin\BaseReportController was not found by locator. The weaver reads the classes '
+                . 'a woven class depends on from their source files, which it finds through Composer: make '
                 . 'GeneratedCode\Admin\BaseReportController loadable by Composer (classmap, PSR-4 or '
                 . '$loader->addClassMap() before the aspect kernel is initialized), or exclude the classes that depend '
                 . 'on it from weaving with the excludePaths option.',
@@ -346,8 +346,8 @@ final class ExceptionMessagesTest extends TestCase
                     )),
                 ),
                 WeavingException::class,
-                'App\Transformer failed to transform /app/Foo.php: wrapped. The weaver reads the parents, '
-                . 'interfaces and traits of a class from their source files, which it finds through Composer: make '
+                'App\Transformer failed to transform /app/Foo.php: wrapped. The weaver reads the classes '
+                . 'a woven class depends on from their source files, which it finds through Composer: make '
                 . 'App\Aliased loadable by Composer (classmap, PSR-4 or $loader->addClassMap() before the aspect '
                 . 'kernel is initialized), or exclude the classes that depend on it from weaving with the '
                 . 'excludePaths option.',

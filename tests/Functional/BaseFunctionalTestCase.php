@@ -457,4 +457,36 @@ abstract class BaseFunctionalTestCase extends TestCase
 
         self::assertThat($identifier, $constraint, $message);
     }
+
+    /**
+     * Runs the code in the fixture project, the code fills `$calls`, which is returned
+     *
+     * @return array<string, mixed>
+     */
+    protected function runAndRecordCalls(string $code): array
+    {
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        assert($phpExecutable !== false);
+        $script  = sprintf(
+            'include %s; $calls = []; %s echo json_encode($calls, JSON_THROW_ON_ERROR);',
+            var_export($this->configuration['frontController'], true),
+            $code,
+        );
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
+        );
+        $process->run();
+
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Running the woven classes failed: ' . $process->getOutput() . $process->getErrorOutput(),
+        );
+        $calls = json_decode(trim($process->getOutput()), true, flags: JSON_THROW_ON_ERROR);
+        $this->assertIsArray($calls);
+
+        /** @var array<string, mixed> $calls */
+        return $calls;
+    }
 }

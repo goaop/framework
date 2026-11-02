@@ -112,5 +112,18 @@ WeavingException). Details and workarounds: src/Instrument/Transformer/Weaving/A
 ## Aspects themselves
 Classes implementing \Go\Aop\Aspect: unconditionally skipped by WeavingTransformer. Aspects cannot weave themselves.
 The check (`implementsInterface(Aspect::class)`) runs in WeavingTransformer::weaveClass() only AFTER advices were found: it reflects
-(and parses) every ancestor and throws when one can't be located, so unadvised classes must never pay for it (#748).
+(and parses) every ancestor, so unadvised classes must never pay for it (#748).
+
+## Partial reflection: ancestors that can't be located
+AdviceMatcher::getAdvicesForClass() sets `ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Partial)`
+(goaop/parser-reflection 4.1/5.1) as its first statement: a parent class, interface or trait whose source the locator
+can't find (generated at runtime, `class_alias()`, outside the Composer autoloader) is left out of the reflection instead
+of failing the class. Not in AspectKernel::init() (cache hits never reflect), not in the AdviceMatcher service factory (a
+native lazy proxy initializes on the first property access, after `$pointcut->matches()` may have walked the ancestors).
+Consequences:
+- Matching sees the class's own members and the ones of its available ancestors; members inherited from a missing ancestor
+  are never matched, so never intercepted.
+- The proxy must still declare the missing parent/interfaces: ClassProxyGenerator::getMissingDeclaredAncestors() adds the
+  direct ones (`isPartial()`/`getMissingClassNames()` ∩ names resolved from the class node) to `extends`/`implements`.
+  Ancestors missing further up come with the available ancestor. Missing traits need nothing: the `use` stays in the trait body.
 A matching failure on an aspect is swallowed (aspects used to be skipped before matching); on other classes it is rethrown.

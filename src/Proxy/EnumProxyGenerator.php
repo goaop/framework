@@ -124,8 +124,10 @@ final class EnumProxyGenerator extends ClassProxyGenerator
         // Built-in PHP enum interfaces (UnitEnum, BackedEnum) are excluded: PHP applies them
         // automatically when the `enum` keyword is used, and listing them explicitly in a
         // namespaced file would resolve them as e.g. Ns\UnitEnum instead of the global \UnitEnum.
+        // Interfaces left out of a partial reflection are declared too, see getMissingDeclaredAncestors()
+        [, $missingInterfaceNames] = self::getMissingDeclaredAncestors($originalClass);
         $originalInterfaces = array_filter(
-            $originalClass->getInterfaceNames(),
+            [...$originalClass->getInterfaceNames(), ...$missingInterfaceNames],
             static fn(string $i) => !in_array($i, self::BUILTIN_ENUM_INTERFACES, true),
         );
         $originalInterfaces   = array_map(static fn(string $i) => '\\' . $i, $originalInterfaces);

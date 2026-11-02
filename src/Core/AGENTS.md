@@ -22,6 +22,8 @@
 - Lives in the nested Go\Core\Cache namespace (CachedAspectLoader, AdvisorCacheCompiler, AdvisorCachePrinter, CacheFileWriter — all @internal); format, naming and error-handling rules: see src/Core/Cache/AGENTS.md
 - AttributeAspectLoaderExtension — handles PHP 8 attribute-based aspect definitions; throws AspectException for non-public advice methods (first-class callable advices require public visibility; #[Pointcut]-only methods exempt)
 - AdviceMatcher — given class reflector, returns applicable advisors keyed by join point
+  - getAdvicesForClass() first switches goaop/parser-reflection to `MissingAncestorPolicy::Partial`: ancestors that can't be
+    located are left out instead of failing the class (src/Instrument/AGENTS.md § Partial reflection)
   - Scans IS_PUBLIC|IS_PROTECTED|IS_PRIVATE methods
   - Private methods from parent classes excluded
   - Inherited methods (`$method->class` is a parent; trait methods name the class itself): skipped per advisor when an

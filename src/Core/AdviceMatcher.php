@@ -19,6 +19,8 @@ use Go\Aop\PointcutAdvisor;
 use Go\Aop\Pointcut;
 use Go\Aop\Proxy;
 use Go\Instrument\PathResolver;
+use Go\ParserReflection\MissingAncestorPolicy;
+use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFileNamespace;
 use ReflectionClass;
 use ReflectionFunction;
@@ -98,6 +100,10 @@ class AdviceMatcher implements AdviceMatcherInterface
      */
     public function getAdvicesForClass(ReflectionClass $class, array $advisors): array
     {
+        // Classes are matched, then woven, with partial reflection: an ancestor declared in code generated at runtime,
+        // by a class_alias() or outside the Composer autoloader is left out instead of failing the class. Switched on
+        // here, before any pointcut walks the ancestors, so that requests served from the cache never pay for it
+        ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Partial);
         $classAdvices = [];
 
         foreach ($advisors as $advisorId => $advisor) {

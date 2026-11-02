@@ -51,7 +51,7 @@ class WeavingException extends RuntimeException implements ExceptionInterface
         $missing = self::unlocatableClass($previous);
         if ($missing !== null) {
             $message = sprintf(
-                '%s. The weaver reads the parents, interfaces and traits of a class from their source files, which it '
+                '%s. The weaver reads the classes a woven class depends on from their source files, which it '
                 . 'finds through Composer: make %s loadable by Composer (classmap, PSR-4 or $loader->addClassMap() '
                 . 'before the aspect kernel is initialized), or exclude the classes that depend on it from weaving '
                 . 'with the excludePaths option.',
@@ -196,8 +196,10 @@ class WeavingException extends RuntimeException implements ExceptionInterface
     /**
      * Name of the class that goaop/parser-reflection could not find the source of, found in the exception chain
      *
-     * A class whose ancestor is declared by code generated at runtime, by a class_alias() or in a file Composer
-     * does not know can not be reflected from the source files.
+     * A class declared by code generated at runtime, by a class_alias() or in a file Composer does not know can not be
+     * reflected from the source files. A missing ancestor is left out of the partial reflection the weaver uses, but
+     * a file that does not declare the class it was located for, or a class used in a constant expression, still
+     * fails.
      */
     private static function unlocatableClass(Throwable $exception): ?string
     {

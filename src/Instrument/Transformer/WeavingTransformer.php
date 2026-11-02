@@ -85,7 +85,7 @@ final class WeavingTransformer extends BaseSourceTransformer
                 $this->cachePathManager->registerClassForResource($metadata->uri, $class->getName());
 
                 // Skip interfaces — enums are supported via EnumProxyGenerator. Aspects are skipped
-                // in weaveClass() once advices were found: the check reflects every ancestor
+                // in weaveClass() once advices were found: the check reflects (and parses) every ancestor
                 if ($class->isInterface()) {
                     continue;
                 }
@@ -135,7 +135,7 @@ final class WeavingTransformer extends BaseSourceTransformer
 
         if ($advices === []) {
             // Fast return if there aren't any advices for that class. It comes before the aspect check,
-            // as that one reflects (and parses) every ancestor and fails when one can't be located
+            // as that one reflects (and parses) every ancestor
             return null;
         }
 
