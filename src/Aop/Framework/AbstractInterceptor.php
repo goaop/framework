@@ -14,9 +14,12 @@ namespace Go\Aop\Framework;
 
 use Closure;
 use Go\Aop\Aspect;
+use Go\Aop\Exception\AspectCircularReferenceException;
 use Go\Aop\Exception\NotCompilableException;
 use Go\Aop\Intercept\Interceptor as InterceptorInterface;
+use Go\Aop\Intercept\Joinpoint;
 use Go\Aop\OrderedAdvice;
+use Go\Core\LazyServiceCreation;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ClassConstFetch;
@@ -105,6 +108,30 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
     public function getRawAdvice(): Closure
     {
         return $this->adviceMethod;
+    }
+
+    /**
+     * Reports an advice whose aspect is being created: the advice would run on an aspect that does not exist yet
+     *
+     * Called by invoke() before the advice runs, only while a lazy service is being created
+     * ({@see LazyServiceCreation::$inProgress} is not empty), which keeps the check off the hot path.
+     *
+     * @throws AspectCircularReferenceException
+     */
+    final protected function assertAspectIsCreated(Joinpoint $joinpoint): void
+    {
+        $reflectionAdvice = new ReflectionFunction($this->adviceMethod);
+        $aspect           = $reflectionAdvice->getClosureThis();
+        if ($aspect === null || !LazyServiceCreation::isInProgress($aspect)) {
+            return;
+        }
+        $calls = LazyServiceCreation::callsSinceCreationOf($aspect);
+
+        throw AspectCircularReferenceException::adviceRunsDuringCreation(
+            $aspect::class,
+            (string) $joinpoint,
+            [...$calls, $aspect::class . '->' . $reflectionAdvice->name . '()'],
+        );
     }
 
     /**

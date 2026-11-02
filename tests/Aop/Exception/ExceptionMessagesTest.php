@@ -17,6 +17,7 @@ use Dissect\Lexer\CommonToken;
 use Dissect\Parser\Exception\UnexpectedTokenException;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Core\AspectContainer;
+use InvalidArgumentException;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -322,6 +323,35 @@ final class ExceptionMessagesTest extends TestCase
                 WeavingException::class,
                 'App\Transformer failed to transform /app/Foo.php: boom',
             ],
+            'transformer failed, class not found by locator' => [
+                static fn() => WeavingException::transformerFailed(
+                    'App\Transformer',
+                    '/app/src/Admin/ReportController.php',
+                    new InvalidArgumentException('Class GeneratedCode\Admin\BaseReportController was not found by locator'),
+                ),
+                WeavingException::class,
+                'App\Transformer failed to transform /app/src/Admin/ReportController.php: Class '
+                . 'GeneratedCode\Admin\BaseReportController was not found by locator. The weaver reads the parents, '
+                . 'interfaces and traits of a class from their source files, which it finds through Composer: make '
+                . 'GeneratedCode\Admin\BaseReportController loadable by Composer (classmap, PSR-4 or '
+                . '$loader->addClassMap() before the aspect kernel is initialized), or exclude the classes that depend '
+                . 'on it from weaving with the excludePaths option.',
+            ],
+            'transformer failed, class not found in the file' => [
+                static fn() => WeavingException::transformerFailed(
+                    'App\Transformer',
+                    '/app/Foo.php',
+                    new LogicException('wrapped', previous: new InvalidArgumentException(
+                        "Class 'App\Aliased' was not found in the file '/app/Aliased.php'.",
+                    )),
+                ),
+                WeavingException::class,
+                'App\Transformer failed to transform /app/Foo.php: wrapped. The weaver reads the parents, '
+                . 'interfaces and traits of a class from their source files, which it finds through Composer: make '
+                . 'App\Aliased loadable by Composer (classmap, PSR-4 or $loader->addClassMap() before the aspect '
+                . 'kernel is initialized), or exclude the classes that depend on it from weaving with the '
+                . 'excludePaths option.',
+            ],
             'warmup worker not started'   => [
                 static fn() => WeavingException::warmupWorkerNotStarted('php -r ...'),
                 WeavingException::class,
@@ -461,6 +491,20 @@ final class ExceptionMessagesTest extends TestCase
                 static fn() => InvocationException::closureScopeUnresolvable(),
                 InvocationException::class,
                 'Cannot determine the scope class of the closure',
+            ],
+            'aspect circular reference'   => [
+                static fn() => AspectCircularReferenceException::adviceRunsDuringCreation(
+                    'App\ClockAspect',
+                    'execution(App\Clock->now())',
+                    ['App\Scheduler->__construct()', 'App\Clock->now()', 'App\ClockAspect->beforeNow()'],
+                ),
+                AspectCircularReferenceException::class,
+                'Circular reference detected for the aspect "App\ClockAspect", path: "App\ClockAspect -> '
+                . 'App\Scheduler->__construct() -> App\Clock->now() -> App\ClockAspect->beforeNow()". The aspect is '
+                . 'created when one of its advices runs first, and creating its dependencies ran its advice at '
+                . 'execution(App\Clock->now()), which can not run before the aspect exists. Inject the dependency '
+                . 'lazily (a lazy service, a closure or a service locator), or narrow the pointcut so that the aspect '
+                . 'does not advise the creation of its own dependencies.',
             ],
         ];
     }

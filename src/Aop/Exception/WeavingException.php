@@ -47,7 +47,20 @@ class WeavingException extends RuntimeException implements ExceptionInterface
 
     public static function transformerFailed(string $transformerClass, string $uri, Throwable $previous): self
     {
-        return new self("{$transformerClass} failed to transform {$uri}: {$previous->getMessage()}", previous: $previous);
+        $message = "{$transformerClass} failed to transform {$uri}: {$previous->getMessage()}";
+        $missing = self::unlocatableClass($previous);
+        if ($missing !== null) {
+            $message = sprintf(
+                '%s. The weaver reads the parents, interfaces and traits of a class from their source files, which it '
+                . 'finds through Composer: make %s loadable by Composer (classmap, PSR-4 or $loader->addClassMap() '
+                . 'before the aspect kernel is initialized), or exclude the classes that depend on it from weaving '
+                . 'with the excludePaths option.',
+                rtrim($message, '.'),
+                $missing,
+            );
+        }
+
+        return new self($message, previous: $previous);
     }
 
     public static function warmupWorkerNotStarted(string $commandLine): self
@@ -178,5 +191,22 @@ class WeavingException extends RuntimeException implements ExceptionInterface
             . 'so the reference would be lost. Exclude it from the pointcut with "&& !matchReturningByReference()".',
             $functionName,
         ));
+    }
+
+    /**
+     * Name of the class that goaop/parser-reflection could not find the source of, found in the exception chain
+     *
+     * A class whose ancestor is declared by code generated at runtime, by a class_alias() or in a file Composer
+     * does not know can not be reflected from the source files.
+     */
+    private static function unlocatableClass(Throwable $exception): ?string
+    {
+        for ($cause = $exception; $cause !== null; $cause = $cause->getPrevious()) {
+            if (preg_match("/^Class '?([^\\s']+)'? was not found (?:by locator|in the )/", $cause->getMessage(), $matches) === 1) {
+                return $matches[1];
+            }
+        }
+
+        return null;
     }
 }
