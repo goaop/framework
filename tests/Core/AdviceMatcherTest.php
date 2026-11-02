@@ -512,22 +512,53 @@ class AdviceMatcherTest extends TestCase
     }
 
     /**
+     * A loaded proxy is woven, without a file filter: its native reflection reports the proxy file in the cache
+     */
+    public function testInheritedMethodOfLoadedProxyParentIsNotInterceptedInChild(): void
+    {
+        $advices = $this->getInheritanceAdvices(AdviceMatcherTestProxyChild::class, null);
+
+        $this->assertSame(['childMethod'], array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []));
+    }
+
+    /**
+     * An internal parent has no file and is never woven: the child intercepts the inherited method
+     */
+    public function testInheritedMethodOfInternalParentIsInterceptedInChild(): void
+    {
+        $advices = $this->getInheritanceAdvices(
+            AdviceMatcherTestInternalChild::class,
+            static fn(string $file): bool => true,
+            static fn(ReflectionClass $class): bool => true,
+            'count',
+        );
+
+        $this->assertSame(['count'], array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []));
+    }
+
+    /**
      * Matches the inheritance stubs with a pointcut that matches every method of the classes accepted by $matchesClass
      *
      * @param class-string                          $className
      * @param (\Closure(string): bool)|null         $isWovenFile
      * @param (\Closure(ReflectionClass<object>): bool)|null $matchesClass
+     * @param string|null                                    $methodName   Only this method matches, null for every one
      *
      * @return array<string, array<string, array<string, Advice>>>
      */
-    private function getInheritanceAdvices(string $className, ?\Closure $isWovenFile, ?\Closure $matchesClass = null): array
-    {
+    private function getInheritanceAdvices(
+        string $className,
+        ?\Closure $isWovenFile,
+        ?\Closure $matchesClass = null,
+        ?string $methodName = null,
+    ): array {
         $matchesClass ??= static fn(ReflectionClass $class): bool => true;
 
         $pointcut = $this->createMock(Pointcut::class);
         $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD);
         $pointcut->method('matches')->willReturnCallback(
-            static fn(ReflectionClass $class, ?ReflectionMethod $method = null): bool => $matchesClass($class),
+            static fn(ReflectionClass $class, ?ReflectionMethod $method = null): bool => $matchesClass($class)
+                && ($method === null || $methodName === null || $method->name === $methodName),
         );
         $advisor = new GenericPointcutAdvisor($pointcut, $this->createMock(Advice::class));
 
@@ -648,3 +679,18 @@ class AdviceMatcherTestTraitChild extends AdviceMatcherTestParent
 {
     use AdviceMatcherTestOverridingTrait;
 }
+
+class AdviceMatcherTestProxyParent implements \Go\Aop\Proxy
+{
+    public function parentMethod(): void {}
+}
+
+class AdviceMatcherTestProxyChild extends AdviceMatcherTestProxyParent
+{
+    public function childMethod(): void {}
+}
+
+/**
+ * @extends \ArrayObject<int, mixed>
+ */
+class AdviceMatcherTestInternalChild extends \ArrayObject {}

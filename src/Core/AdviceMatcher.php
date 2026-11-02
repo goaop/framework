@@ -242,8 +242,7 @@ class AdviceMatcher implements AdviceMatcherInterface
             return false;
         }
 
-        $ancestor = $class->getParentClass();
-        while ($ancestor !== false) {
+        for ($ancestor = $class->getParentClass(); $ancestor !== false; $ancestor = $ancestor->getParentClass()) {
             if (
                 $this->isWovenClass($ancestor)
                 && $ancestor->hasMethod($method->name)
@@ -253,9 +252,8 @@ class AdviceMatcher implements AdviceMatcherInterface
                 return true;
             }
             if ($ancestor->name === $method->class) {
-                return false;
+                break;
             }
-            $ancestor = $ancestor->getParentClass();
         }
 
         return false;
