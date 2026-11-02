@@ -121,10 +121,10 @@ final class TypeGenerator
     public static function resolveReflectionNamedTypeName(ReflectionNamedType $type): string
     {
         // PHP 8.5 added isSelf()/isParent() and changed getName() to return the resolved class name.
-        if (method_exists($type, 'isSelf') && $type->isSelf()) {
+        if (method_exists($type, 'isSelf') && $type->isSelf() === true) {
             return 'self';
         }
-        if (method_exists($type, 'isParent') && $type->isParent()) {
+        if (method_exists($type, 'isParent') && $type->isParent() === true) {
             return 'parent';
         }
 
