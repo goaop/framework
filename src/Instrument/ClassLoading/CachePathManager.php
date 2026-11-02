@@ -123,6 +123,14 @@ class CachePathManager
      */
     protected array $newCacheState = [];
 
+    /**
+     * Identity of the include map file as it was loaded or last written by this manager: inode, modification
+     * time and size, or null when the file did not exist. Another writer changes it, see {@see self::flushCacheState()}
+     *
+     * @var array{int, int, int}|null
+     */
+    private ?array $includeMapStamp = null;
+
     public function __construct(
         protected readonly AspectKernel $kernel,
     ) {
@@ -149,7 +157,8 @@ class CachePathManager
         if ($this->cacheDir === null || $this->cacheDir === '') {
             return;
         }
-        $hasIncludeMap = file_exists($this->cacheDir . self::INCLUDE_MAP_FILE_NAME);
+        $this->includeMapStamp = $this->stampIncludeMap();
+        $hasIncludeMap         = $this->includeMapStamp !== null;
         // With a prebuilt cache the directory is guaranteed to exist (built at deploy
         // time), so all directory/writability stat checks are skipped - this also
         // covers read-only file systems (GAE, phar, etc). An existing include map
@@ -209,6 +218,9 @@ class CachePathManager
      * afterwards, with its state untouched. Used by the cache warmer to build the cache of a deployment
      * next to the running one: the kernel keeps serving this process from its own directory.
      *
+     * With the current directory the operation runs in place: the directory is created when it is missing
+     * and the records of the operation are flushed when it ends.
+     *
      * @template T
      *
      * @param Closure(): T $operation
@@ -217,10 +229,16 @@ class CachePathManager
      */
     public function withCacheDir(string $cacheDir, Closure $operation): mixed
     {
-        $resolvedCacheDir = PathResolver::realpath($cacheDir);
-        $cacheDir         = is_string($resolvedCacheDir) ? $resolvedCacheDir : $cacheDir;
-        if ($cacheDir === $this->cacheDir) {
-            return $operation();
+        $cacheDir = self::resolvePath($cacheDir);
+        if ($this->cacheDir !== null && $cacheDir === self::resolvePath($this->cacheDir)) {
+            // The directory of a build is written in any case, also the own one of a kernel that never
+            // created it: with PREBUILT_CACHE the kernel expects the directory to be built at deploy time
+            $this->ensureCacheDirectoryIsWritable($this->cacheDir);
+            try {
+                return $operation();
+            } finally {
+                $this->flushCacheState();
+            }
         }
 
         $this->flushCacheState();
@@ -233,6 +251,7 @@ class CachePathManager
             $this->fileMap,
             $this->pendingClasses,
             $this->newCacheState,
+            $this->includeMapStamp,
         ];
 
         $this->resetCacheState();
@@ -254,8 +273,57 @@ class CachePathManager
                 $this->fileMap,
                 $this->pendingClasses,
                 $this->newCacheState,
+                $this->includeMapStamp,
             ] = $state;
         }
+    }
+
+    /**
+     * Resolves a cache directory path the way the kernel options are resolved, so that the same directory
+     * compares equal whether it exists yet or not
+     */
+    private static function resolvePath(string $path): string
+    {
+        $resolvedPath = PathResolver::realpath($path);
+
+        return is_string($resolvedPath) ? $resolvedPath : $path;
+    }
+
+    /**
+     * Returns the identity of the include map file on disk, or null when there is none
+     *
+     * The file is replaced atomically (written under a temporary name and renamed), so every write changes the inode.
+     *
+     * @return array{int, int, int}|null
+     */
+    private function stampIncludeMap(): ?array
+    {
+        $includeMapFile = $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
+        clearstatcache(true, $includeMapFile);
+        $stat = @stat($includeMapFile);
+
+        return $stat === false ? null : [$stat['ino'], $stat['mtime'], $stat['size']];
+    }
+
+    /**
+     * Picks the records of another writer up, when the cache files were rewritten since this manager loaded them
+     *
+     * A warm-up into this directory, a concurrent request, or a deployment that swapped a warmed-up directory in
+     * (Symfony's `cache:clear` builds the new cache next to the running one and renames it) wrote the files after
+     * this manager loaded them, with a state this manager knows nothing about: possibly woven with other aspects.
+     * Their records win, the pending records of this manager survive only for the sources they do not know,
+     * so that a flush at the end of the process never undoes what was built meanwhile.
+     */
+    private function adoptCacheFilesOfAnotherWriter(): void
+    {
+        if ($this->includeMapStamp === $this->stampIncludeMap()) {
+            return;
+        }
+        $this->cacheState       = [];
+        $this->cacheStateLoaded = false;
+        $this->loadCacheState();
+        $this->newCacheState   = array_diff_key($this->newCacheState, $this->cacheState);
+        $this->includeMapStamp = $this->stampIncludeMap();
     }
 
     /**
@@ -546,6 +614,12 @@ class CachePathManager
     public function flushCacheState(bool $force = false): void
     {
         if ((!empty($this->newCacheState) && $this->cacheDir !== null && is_writable($this->cacheDir)) || $force) {
+            if (!$force) {
+                $this->adoptCacheFilesOfAnotherWriter();
+                if ($this->newCacheState === []) {
+                    return;
+                }
+            }
             // The full metadata must be loaded before merging, otherwise entries that were
             // never queried during this request would be dropped from the written file
             $this->loadCacheState();
@@ -580,11 +654,12 @@ class CachePathManager
                 ['version' => self::FORMAT_VERSION, 'map' => $classMap, 'skip' => $skippedClasses, 'files' => $fileMap],
             );
 
-            $this->cacheState     = $fullCacheMap;
-            $this->classMap       = $classMap;
-            $this->skippedClasses = $skippedClasses;
-            $this->fileMap        = $fileMap;
-            $this->newCacheState  = [];
+            $this->cacheState      = $fullCacheMap;
+            $this->classMap        = $classMap;
+            $this->skippedClasses  = $skippedClasses;
+            $this->fileMap         = $fileMap;
+            $this->newCacheState   = [];
+            $this->includeMapStamp = $this->stampIncludeMap();
         }
     }
 
@@ -638,5 +713,6 @@ class CachePathManager
         $this->fileMap          = [];
         $this->pendingClasses   = [];
         $this->newCacheState    = [];
+        $this->includeMapStamp  = null;
     }
 }

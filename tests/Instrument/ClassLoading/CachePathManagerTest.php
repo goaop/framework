@@ -150,6 +150,57 @@ class CachePathManagerTest extends TestCase
         });
     }
 
+    public function testWithCacheDirOfTheCurrentDirectoryCreatesItForAPrebuiltCache(): void
+    {
+        $cacheDir = self::$cacheDir . '-prebuilt-missing';
+        self::removeTemporaryDirectory($cacheDir);
+        // A kernel with a prebuilt cache never creates the directory at runtime...
+        $manager = $this->createManager(prebuiltCache: true, cacheDir: $cacheDir);
+        $this->assertDirectoryDoesNotExist($cacheDir);
+
+        // ...a build into it does, so that its records can be written
+        $manager->withCacheDir($cacheDir, function () use ($manager): void {
+            $manager->setCacheState(self::$appDir . '/src/Some.php', ['filemtime' => 1, 'cacheUri' => null]);
+            $manager->flushCacheState();
+        });
+
+        $this->assertFileExists($cacheDir . '/_include.cache');
+        self::removeTemporaryDirectory($cacheDir);
+    }
+
+    public function testFlushKeepsTheRecordsOfAnotherWriter(): void
+    {
+        $woven  = self::$appDir . '/src/Woven.php';
+        $other  = self::$appDir . '/src/Other.php';
+        $cached = self::$cacheDir . '/src/Woven.php';
+
+        // A request loads the directory and records a source as untransformed, e.g. before an aspect was registered
+        $request = $this->createManager();
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
+        $request->registerClassForResource($woven, 'App\Woven');
+        $request->setCacheState($woven, ['filemtime' => 1, 'cacheUri' => null]);
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
+        $request->registerClassForResource($other, 'App\Other');
+        $request->setCacheState($other, ['filemtime' => 1, 'cacheUri' => null]);
+
+        // Meanwhile another writer (a warm-up into the directory, a concurrent request, a deployment that swapped
+        // a warmed-up directory in) wove the source and rewrote the cache files
+        $warmer = $this->createManager();
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
+        $warmer->registerClassForResource($woven, 'App\Woven');
+        $warmer->setCacheState($woven, ['filemtime' => 2, 'cacheUri' => $cached]);
+        $warmer->flushCacheState();
+
+        $request->flushCacheState();
+
+        $reader = $this->createManager();
+        // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
+        $this->assertSame(['App\Woven' => $cached], $reader->queryClassMap(), 'The record of the other writer wins');
+        // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
+        $this->assertSame(['App\Other' => true], $reader->querySkippedClasses(), 'Records of sources it does not know are added');
+        $this->assertSame(2, $reader->queryCacheState($woven)['filemtime'] ?? null);
+    }
+
     public function testIncludeMapServesKnownFilesWithoutFullMetadata(): void
     {
         $woven         = self::$appDir . '/src/woven.php';

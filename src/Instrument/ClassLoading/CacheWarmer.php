@@ -78,6 +78,9 @@ class CacheWarmer
      * the other directory are woven again whatever it contains (the workers build it too). That is how a deployment
      * prepares the cache of the next release next to the running one: the cache files are location independent.
      *
+     * The directory being built is created when it is missing, also the directory of the kernel itself: a kernel
+     * with {@see \Go\Aop\Features::PREBUILT_CACHE} never creates it, the deployment does, with this warm-up.
+     *
      * @return int Number of files that failed to process
      */
     public function warmUp(): int
@@ -88,13 +91,11 @@ class CacheWarmer
             throw InvalidConfigurationException::cacheWarmerWithoutCacheDir();
         }
 
-        if ($this->cacheDir !== null && $this->cacheDir !== '') {
-            $cachePathManager = $this->aspectKernel->getContainer()->getService(CachePathManager::class);
+        $cacheDir         = $this->cacheDir !== null && $this->cacheDir !== '' ? $this->cacheDir : $options['cacheDir'];
+        $cachePathManager = $this->aspectKernel->getContainer()->getService(CachePathManager::class);
 
-            return $cachePathManager->withCacheDir($this->cacheDir, $this->weaveApplication(...));
-        }
-
-        return $this->weaveApplication();
+        // Also in place through the manager: the directory is created when the kernel did not (PREBUILT_CACHE)
+        return $cachePathManager->withCacheDir($cacheDir, $this->weaveApplication(...));
     }
 
     /**
