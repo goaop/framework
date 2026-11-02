@@ -9,14 +9,15 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Go\Tests\TestProject\Application;
+namespace Go\Tests\TestProject\Partial;
 
 use Go\Tests\TestProject\Generated\Issue251BaseController;
 use Go\Tests\TestProject\Generated\Issue251Controller;
 
 /**
  * Test fixture (goaop/parser-reflection#251): its parent class and interface are declared at runtime, Composer can't
- * locate their source, so the weaver reflects the class partially
+ * locate their source. Only the 'partial_reflection' configuration weaves this directory, with
+ * Features::PARTIAL_REFLECTION: without the flag the class fails to weave
  */
 class Issue251ReportController extends Issue251BaseController implements Issue251Controller
 {

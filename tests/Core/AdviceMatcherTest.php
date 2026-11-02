@@ -567,19 +567,18 @@ class AdviceMatcherTest extends TestCase
     }
 
     /**
-     * A class whose parent class and interface can't be located is matched with its own methods: the matcher switches
-     * the reflection to the partial policy before a pointcut walks the ancestors (goaop/parser-reflection#251)
+     * With the partial reflection of Features::PARTIAL_REFLECTION, a class whose parent class and interface can't be
+     * located is matched with its own methods, also by a pointcut walking its ancestors (goaop/parser-reflection#251)
      */
     public function testClassWithUnlocatableAncestorsIsMatchedWithItsOwnMethods(): void
     {
         $previousPolicy = ReflectionEngine::getMissingAncestorPolicy();
-        ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Strict);
+        ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Partial);
         try {
             $class = new ReflectionFile(dirname(__DIR__) . '/Instrument/Transformer/_files/class-unknown-parent.php')
                 ->getFileNamespace('Test\ns1')
                 ->getClass('Test\ns1\RuleWithMissingParent');
 
-            // Walks the ancestors before the matcher touches any of its own state
             $pointcut = $this->createMock(Pointcut::class);
             $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD);
             $pointcut->method('matches')->willReturnCallback(
@@ -589,7 +588,6 @@ class AdviceMatcherTest extends TestCase
 
             $advices = new AdviceMatcher()->getAdvicesForClass($class, ['advisor' => $advisor]);
 
-            $this->assertSame(MissingAncestorPolicy::Partial, ReflectionEngine::getMissingAncestorPolicy());
             $this->assertTrue($class->isPartial());
             $this->assertSame(['getNodeType'], array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []));
         } finally {

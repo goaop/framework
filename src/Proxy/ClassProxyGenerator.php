@@ -583,8 +583,8 @@ class ClassProxyGenerator
     /**
      * Parent class and interfaces declared by the original class whose source goaop/parser-reflection could not locate
      *
-     * The weaver reflects classes partially (see AdviceMatcher::getAdvicesForClass()): a parent class or an interface
-     * declared in code generated at runtime, by a class_alias() or outside the Composer autoloader is left out of
+     * With Features::PARTIAL_REFLECTION the weaver reflects classes partially: a parent class or an interface declared
+     * in code generated at runtime, by a class_alias() or outside the Composer autoloader is left out of
      * getParentClass() and getInterfaceNames(). The proxy still declares it under the name resolved from the source:
      * the original class could not be loaded without it either.
      *

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Exception;
 
+use Go\ParserReflection\ClassNotFoundException;
 use RuntimeException;
 use Throwable;
 
@@ -58,6 +59,10 @@ class WeavingException extends RuntimeException implements ExceptionInterface
                 rtrim($message, '.'),
                 $missing,
             );
+            if (self::hasClassNotFoundByLocator($previous)) {
+                $message .= ' With the Features::PARTIAL_REFLECTION flag, a class whose parent class, interface or '
+                    . 'trait can not be located is woven with its own members.';
+            }
         }
 
         return new self($message, previous: $previous);
@@ -197,9 +202,9 @@ class WeavingException extends RuntimeException implements ExceptionInterface
      * Name of the class that goaop/parser-reflection could not find the source of, found in the exception chain
      *
      * A class declared by code generated at runtime, by a class_alias() or in a file Composer does not know can not be
-     * reflected from the source files. A missing ancestor is left out of the partial reflection the weaver uses, but
-     * a file that does not declare the class it was located for, or a class used in a constant expression, still
-     * fails.
+     * reflected from the source files. With Features::PARTIAL_REFLECTION a missing ancestor is left out of the
+     * reflection instead, but a file that does not declare the class it was located for, or a class used in a constant
+     * expression, still fails.
      */
     private static function unlocatableClass(Throwable $exception): ?string
     {
@@ -210,5 +215,19 @@ class WeavingException extends RuntimeException implements ExceptionInterface
         }
 
         return null;
+    }
+
+    /**
+     * Tells whether goaop/parser-reflection failed in the exception chain because its locator found no source file
+     */
+    private static function hasClassNotFoundByLocator(Throwable $exception): bool
+    {
+        for ($cause = $exception; $cause !== null; $cause = $cause->getPrevious()) {
+            if ($cause instanceof ClassNotFoundException) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

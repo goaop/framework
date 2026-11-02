@@ -65,7 +65,8 @@
         "psr-4": {
             "Demo\\": "demos/Demo/",
             "Go\\": "tests/",
-            "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
+            "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/",
+            "Go\\Tests\\TestProject\\Partial\\": "tests/Fixtures/project/partial/"
         },
         "files": [
             "tests/functions.php",

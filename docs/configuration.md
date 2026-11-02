@@ -35,6 +35,7 @@ Combine the flags with `|`, e.g. `'features' => Features::INTERCEPT_INCLUDES | F
 |-----------------------------|--------|
 | `INTERCEPT_INCLUDES`        | Routes `include`/`require` in woven files through the weaver, for legacy code that is not loaded by Composer. |
 | `PREBUILT_CACHE`            | Trusts the cache built at deploy time completely. Skips the cache directory and writability probes, source `filemtime` comparisons, tracked-resource checks and advisor cache freshness checks, and never writes to the cache directory. Rebuilding the cache on every deploy is your responsibility. Works on read-only file systems. |
+| `PARTIAL_REFLECTION`        | Weaves a class whose parent class, interface or trait can not be located: declared by code generated at runtime, by a `class_alias()` or in a file outside the Composer autoloader. The class is matched and woven with its own methods and properties and the ones of its available ancestors; members inherited from a missing ancestor are not intercepted. Without the flag such a class fails to weave. |
 
 Function and initialization pointcuts need no flag: the framework enables their machinery from the registered
 aspects, lazily registered ones included. An `execution(Namespace\function(*))` pointcut weaves function proxies into

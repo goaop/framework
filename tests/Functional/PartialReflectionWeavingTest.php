@@ -12,11 +12,11 @@ declare(strict_types=1);
 
 namespace Go\Functional;
 
-use Go\Tests\TestProject\Application\Issue251ReportController;
+use Go\Tests\TestProject\Partial\Issue251ReportController;
 
 /**
- * A class whose ancestors can't be located is woven with its own methods instead of failing the file
- * (goaop/parser-reflection#251)
+ * With Features::PARTIAL_REFLECTION, a class whose ancestors can't be located is woven with its own methods instead
+ * of failing the file (goaop/parser-reflection#251)
  */
 class PartialReflectionWeavingTest extends BaseFunctionalTestCase
 {
@@ -31,6 +31,11 @@ class PartialReflectionWeavingTest extends BaseFunctionalTestCase
             interface Issue251Controller {}
             abstract class Issue251BaseController { public function handle(): string { return "base"; } }');
         PHP;
+
+    protected function getConfigurationName(): string
+    {
+        return 'partial_reflection';
+    }
 
     /**
      * The cache was warmed up in a process where the ancestors don't exist: the own method is woven, the inherited

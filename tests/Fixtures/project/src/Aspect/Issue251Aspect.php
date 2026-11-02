@@ -26,7 +26,7 @@ class Issue251Aspect implements Aspect
      */
     public static array $calls = [];
 
-    #[Pointcut\Around('execution(public Go\Tests\TestProject\Application\Issue251ReportController->*(*))')]
+    #[Pointcut\Around('execution(public Go\Tests\TestProject\Partial\Issue251ReportController->*(*))')]
     public function aroundControllerMethod(MethodInvocation $invocation): mixed
     {
         self::$calls[] = 'around:' . $invocation->getMethod()->name;

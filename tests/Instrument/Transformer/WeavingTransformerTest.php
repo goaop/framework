@@ -240,8 +240,8 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
-     * With the partial reflection the framework enables, a class whose parent class and interface can't be located is
-     * woven with its own methods, and its proxy still declares them (goaop/parser-reflection#251)
+     * With the partial reflection of Features::PARTIAL_REFLECTION, a class whose parent class and interface can't be
+     * located is woven with its own methods, and its proxy still declares them (goaop/parser-reflection#251)
      */
     public function testClassWithUnlocatableAncestorsIsWovenWithItsOwnMethods(): void
     {
