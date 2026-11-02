@@ -201,6 +201,27 @@ class CachePathManagerTest extends TestCase
         $this->assertSame(2, $reader->queryCacheState($woven)['filemtime'] ?? null);
     }
 
+    public function testFlushWritesNothingWhenAnotherWriterCoveredEveryPendingRecord(): void
+    {
+        $woven  = self::$appDir . '/src/Woven.php';
+        $cached = self::$cacheDir . '/src/Woven.php';
+
+        $request = $this->createManager();
+        $request->setCacheState($woven, ['filemtime' => 1, 'cacheUri' => null]);
+
+        $warmer = $this->createManager();
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
+        $warmer->registerClassForResource($woven, 'App\\Woven');
+        $warmer->setCacheState($woven, ['filemtime' => 2, 'cacheUri' => $cached]);
+        $warmer->flushCacheState();
+        $writtenByWarmer = (string) file_get_contents(self::$cacheDir . '/_include.cache');
+
+        $request->flushCacheState();
+
+        $this->assertStringEqualsFile(self::$cacheDir . '/_include.cache', $writtenByWarmer, 'The files are left as they are');
+        $this->assertSame(2, $this->createManager()->queryCacheState($woven)['filemtime'] ?? null);
+    }
+
     public function testIncludeMapServesKnownFilesWithoutFullMetadata(): void
     {
         $woven         = self::$appDir . '/src/woven.php';
