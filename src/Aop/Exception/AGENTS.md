@@ -25,3 +25,4 @@ Read before throwing, adding or re-grouping an exception anywhere in `src/`.
 | Weave time        | `WeavingException`                           | `RuntimeException`                              | source transformation, stream filter, proxy/code generation, cache writes               |
 |                   | └ `NotCompilableException` (final)           |                                                 | advisor cache item that can not be compiled to PHP; propagates out of the cache writer  |
 | Runtime           | `InvocationException` (final)                | `RuntimeException`                              | joinpoint execution: field access before init, advice lookup, closure scope             |
+|                   | `AspectCircularReferenceException` (final)   | `RuntimeException` + PSR `ContainerExceptionInterface` | advice of an aspect about to run while the aspect is created (interceptors, `LazyServiceCreation`); carries `aspectClass` and `path` |

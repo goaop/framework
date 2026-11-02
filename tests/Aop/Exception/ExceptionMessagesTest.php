@@ -492,6 +492,20 @@ final class ExceptionMessagesTest extends TestCase
                 InvocationException::class,
                 'Cannot determine the scope class of the closure',
             ],
+            'aspect circular reference'   => [
+                static fn() => AspectCircularReferenceException::adviceRunsDuringCreation(
+                    'App\ClockAspect',
+                    'execution(App\Clock->now())',
+                    ['App\Scheduler->__construct()', 'App\Clock->now()', 'App\ClockAspect->beforeNow()'],
+                ),
+                AspectCircularReferenceException::class,
+                'Circular reference detected for the aspect "App\ClockAspect", path: "App\ClockAspect -> '
+                . 'App\Scheduler->__construct() -> App\Clock->now() -> App\ClockAspect->beforeNow()". The aspect is '
+                . 'created when one of its advices runs first, and creating its dependencies ran its advice at '
+                . 'execution(App\Clock->now()), which can not run before the aspect exists. Inject the dependency '
+                . 'lazily (a lazy service, a closure or a service locator), or narrow the pointcut so that the aspect '
+                . 'does not advise the creation of its own dependencies.',
+            ],
         ];
     }
 

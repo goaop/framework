@@ -38,6 +38,7 @@ final class ExceptionHierarchyTest extends TestCase
             'weaving'              => [WeavingException::class, RuntimeException::class],
             'not compilable'       => [NotCompilableException::class, WeavingException::class],
             'invocation'           => [InvocationException::class, RuntimeException::class],
+            'circular reference'   => [AspectCircularReferenceException::class, RuntimeException::class],
         ];
     }
 

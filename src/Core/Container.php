@@ -272,8 +272,10 @@ final class Container implements AspectContainer
             return $factory($this);
         }
 
-        return NativeLazyProxy::tryCreate($id, function () use ($id, $factory): object {
-            $instance = $factory($this);
+        // The proxy is marked while its factory runs: an advice of an aspect that runs while the aspect is created
+        // is reported by the interceptor ({@see LazyServiceCreation})
+        return NativeLazyProxy::tryCreate($id, function (object $proxy) use ($id, $factory): object {
+            $instance = LazyServiceCreation::run($proxy, fn(): object => $factory($this));
             if (!$instance instanceof $id) {
                 throw ContainerException::serviceNotProperlyRegistered($id);
             }

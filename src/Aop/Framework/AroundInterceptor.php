@@ -14,6 +14,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceTypeEnum;
 use Go\Aop\Intercept\Joinpoint;
+use Go\Core\LazyServiceCreation;
 
 /**
  * "Around" interceptor
@@ -24,6 +25,10 @@ final class AroundInterceptor extends AbstractInterceptor
 {
     public function invoke(Joinpoint $joinpoint): mixed
     {
+        if (LazyServiceCreation::$inProgress !== []) {
+            $this->assertAspectIsCreated($joinpoint);
+        }
+
         return ($this->adviceMethod)($joinpoint);
     }
 

@@ -14,6 +14,7 @@ namespace Go\Aop\Framework;
 
 use Go\Aop\AdviceTypeEnum;
 use Go\Aop\Intercept\Joinpoint;
+use Go\Core\LazyServiceCreation;
 
 /**
  * "After" interceptor
@@ -27,6 +28,9 @@ final class AfterInterceptor extends AbstractInterceptor
         try {
             return $joinpoint->proceed();
         } finally {
+            if (LazyServiceCreation::$inProgress !== []) {
+                $this->assertAspectIsCreated($joinpoint);
+            }
             ($this->adviceMethod)($joinpoint);
         }
     }

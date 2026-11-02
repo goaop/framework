@@ -78,6 +78,12 @@ Weaving and the cache warm-up only need the class of the aspect, so they run bef
 - Weaving never creates an aspect: it reads the aspect class, and the advices refer to the aspect by class and
   method name. Every aspect, also one without instance properties (which PHP can not make lazy), is created by its
   factory on the first call of one of its advices, once the application container is attached.
+- Creating an aspect must not run one of its own advices: when the aspect depends on a service whose construction
+  it advises (the constructor of the service, or a method the constructor calls), the advice would run on an aspect
+  that does not exist yet. The interceptor reports it with an `AspectCircularReferenceException` naming the aspect,
+  the joinpoint and the calls from the creation to the advice. Inject the dependency lazily (a lazy service, a
+  closure or a service locator), or narrow the pointcut so that the aspect does not advise the creation of its
+  own dependencies.
 
 ## Extending the transformation pipeline
 
