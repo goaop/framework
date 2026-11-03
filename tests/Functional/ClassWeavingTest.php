@@ -151,6 +151,35 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         $this->assertMethodNotWoven(FinalClass::class, 'someFinalParentMethod');
     }
 
+    /**
+     * Every intercepted method creates its joinpoint once, with the callable of the original method of the first
+     * instance that calls it: that instance must still be released (#796)
+     */
+    public function testInstanceIsReleasedAfterInterceptedCall(): void
+    {
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        assert($phpExecutable !== false);
+        $script = sprintf(
+            'include %s; $object = new %s(); ob_start(); $object->somePublicMethod(); ob_end_clean(); '
+            . '$reference = WeakReference::create($object); unset($object); gc_collect_cycles(); '
+            . 'echo $reference->get() === null ? "released" : "kept";',
+            var_export($this->configuration['frontController'], true),
+            '\\' . FinalClass::class,
+        );
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
+        );
+        $process->run();
+
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Running the woven class failed: ' . $process->getOutput() . $process->getErrorOutput(),
+        );
+        $this->assertSame('released', trim($process->getOutput()));
+    }
+
     public function testItDoesNotWeaveInterfaces(): void
     {
         $this->assertClassIsNotWoven(FooInterface::class);
