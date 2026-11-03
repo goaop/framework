@@ -64,8 +64,13 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    public function __invoke(object $instance, array $arguments = [], array $variadicArguments = []): mixed
-    {
+    public function __invoke(
+        object $instance,
+        #[\SensitiveParameter]
+        array $arguments = [],
+        #[\SensitiveParameter]
+        array $variadicArguments = [],
+    ): mixed {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];
         }

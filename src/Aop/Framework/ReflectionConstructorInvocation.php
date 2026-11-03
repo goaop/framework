@@ -84,8 +84,9 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
         // so the created object is kept locally
         $instance = $this->instance = $this->class->newInstanceWithoutConstructor();
 
-        // Null-safe invocation of constructor with constructor arguments
-        $this->getConstructor()?->invoke($instance, ...$this->arguments);
+        // Null-safe invocation of constructor with constructor arguments. invokeArgs() takes them as an array:
+        // spread into invoke(), every argument was printed in the stack trace, sensitive ones included (#795)
+        $this->getConstructor()?->invokeArgs($instance, $this->arguments);
 
         return $instance;
     }
@@ -115,7 +116,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    public function __invoke(array $arguments = []): object
+    public function __invoke(#[\SensitiveParameter] array $arguments = []): object
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];

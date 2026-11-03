@@ -72,7 +72,7 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
         // forward_static_call_array will use $scope as the late-static-binding class.
         // We cannot rebind $closureToCall directly because first-class callables from static
         // methods have a fixed scope.
-        $shim = static fn(array $argumentsToCall): mixed => forward_static_call_array($closureToCall, $argumentsToCall);
+        $shim = static fn(#[\SensitiveParameter] array $argumentsToCall): mixed => forward_static_call_array($closureToCall, $argumentsToCall);
         parent::__construct($advices, $className, $methodName, $shim);
     }
 
@@ -89,8 +89,13 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    public function __invoke(string $scope, array $arguments = [], array $variadicArguments = []): mixed
-    {
+    public function __invoke(
+        string $scope,
+        #[\SensitiveParameter]
+        array $arguments = [],
+        #[\SensitiveParameter]
+        array $variadicArguments = [],
+    ): mixed {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->scope, $this->current];
         }
