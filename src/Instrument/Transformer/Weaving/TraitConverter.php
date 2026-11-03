@@ -103,11 +103,17 @@ final class TraitConverter
         }
         if ($class->isEnum()) {
             $this->rewriteHeader($classNode, $editor, $traitName);
-            // Cases can not exist in traits, EnumProxyGenerator re-declares them in the proxy enum. The whitespace
-            // after each case is kept: blank lines take the place of the cases, the methods keep their lines
+            // Cases can not exist in traits, EnumProxyGenerator re-declares them with their attributes and doc comment
+            // in the proxy enum. Blanking keeps every newline: blank lines take the place of the cases (an attribute on
+            // its own line included), the methods keep their lines. A doc comment left behind was given to the next
+            // method of the trait by PHP (#794)
             foreach ($classNode->stmts as $statement) {
                 if ($statement instanceof EnumCase) {
-                    $editor->remove(...TokenStreamEditor::range($statement));
+                    $docComment = $statement->getDocComment();
+                    if ($docComment !== null) {
+                        $editor->blank($docComment->getStartTokenPos(), $docComment->getEndTokenPos());
+                    }
+                    $editor->blank(...TokenStreamEditor::range($statement));
                 }
             }
             $this->stripOverrideAttributes($class, $interceptedMethods, $methods, $editor);

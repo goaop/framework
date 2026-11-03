@@ -10,6 +10,11 @@ enum TestStatus : string implements \Go\Aop\Proxy
     use TestStatusOriginalTrait {
         TestStatusOriginalTrait::label as private labelOriginalAlias;
     }
+    /**
+     * The active status
+     */
+    #[\Deprecated('Use Enabled')]
+    #[\Test\ns1\Label('On')]
     case Active = 'active';
     case Inactive = 'inactive';
     public function label(): string

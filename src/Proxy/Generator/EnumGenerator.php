@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use PhpParser\BuilderFactory;
+use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
@@ -49,7 +50,7 @@ final class EnumGenerator implements GeneratorInterface
     /** @var array{trait: string, method: string, alias: string, visibility: Visibility}[] */
     private array $traitAliases = [];
 
-    /** @var array{name: string, value: string|int|Expr|null}[] */
+    /** @var list<array{name: string, value: string|int|Expr|null, attributeGroups: list<AttributeGroup>, docComment: string|null}> */
     private array $enumCases = [];
 
     /**
@@ -81,11 +82,25 @@ final class EnumGenerator implements GeneratorInterface
      * expression such as `1 << 2`, `-1` or `self::SHIFT + 10` taken from the original enum AST)
      * is emitted verbatim, preserving the original constant expression in the proxy enum.
      *
-     * @param string|int|Expr|null $value The case value (null for pure/unit enum cases)
+     * Attributes and the doc comment of the original case are re-declared with it (#794): the proxy enum is the only
+     * declaration of its cases, the woven trait can not hold them.
+     *
+     * @param string|int|Expr|null $value           The case value (null for pure/unit enum cases)
+     * @param list<AttributeGroup> $attributeGroups Attribute groups of the case, names fully qualified
+     * @param string|null          $docComment      Doc comment of the case
      */
-    public function addEnumCase(string $name, string|int|Expr|null $value = null): void
-    {
-        $this->enumCases[] = ['name' => $name, 'value' => $value];
+    public function addEnumCase(
+        string $name,
+        string|int|Expr|null $value = null,
+        array $attributeGroups = [],
+        ?string $docComment = null,
+    ): void {
+        $this->enumCases[] = [
+            'name'            => $name,
+            'value'           => $value,
+            'attributeGroups' => $attributeGroups,
+            'docComment'      => $docComment,
+        ];
     }
 
     /**
@@ -167,6 +182,12 @@ final class EnumGenerator implements GeneratorInterface
             $caseBuilder = self::getFactory()->enumCase($caseInfo['name']);
             if ($caseInfo['value'] !== null) {
                 $caseBuilder->setValue($caseInfo['value']);
+            }
+            foreach ($caseInfo['attributeGroups'] as $attributeGroup) {
+                $caseBuilder->addAttribute($attributeGroup);
+            }
+            if ($caseInfo['docComment'] !== null) {
+                $caseBuilder->setDocComment($caseInfo['docComment']);
             }
             $stmts[] = $caseBuilder->getNode();
         }

@@ -14,8 +14,11 @@ namespace Go\Proxy;
 
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Stubs\Php86OverrideEnumCase;
 use Go\Stubs\StubBackedEnum;
 use Go\Stubs\StubConstExprBackedEnum;
+use Go\Stubs\StubEnumWithCaseAttributes;
+use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -113,6 +116,40 @@ class EnumProxyGeneratorTest extends TestCase
 
         $this->assertStringContainsString("case Active = 'active'", $output);
         $this->assertStringContainsString("case Inactive = 'inactive'", $output);
+    }
+
+    /**
+     * Attributes and doc comments of the cases are re-declared in the proxy enum (#794)
+     */
+    public function testGeneratePreservesCaseAttributesAndDocComments(): void
+    {
+        $generator = new EnumProxyGenerator(
+            new ReflectionClass(StubEnumWithCaseAttributes::class),
+            'Go\\Stubs\\StubEnumWithCaseAttributesOriginalTrait',
+            ['method' => ['label' => [self::testAdvice('advisor')]]],
+        );
+        $output = "<?php\n" . $generator->generate();
+
+        $this->assertStringContainsString(
+            "    /**\n     * The active one\n     */\n    #[\\Go\\Stubs\\StubAttribute('active')]\n    case Active = 'active';\n"
+            . "    case Inactive = 'inactive';\n",
+            $output,
+        );
+    }
+
+    /**
+     * PHP 8.6 allows #[\Override] on an enum case that overrides an interface constant (#794)
+     */
+    #[RequiresPhp('>= 8.6.0-dev')]
+    public function testGeneratePreservesOverrideOnCase(): void
+    {
+        $generator = new EnumProxyGenerator(
+            new ReflectionClass(Php86OverrideEnumCase::class),
+            'Go\\Stubs\\Php86OverrideEnumCaseOriginalTrait',
+            ['method' => ['label' => [self::testAdvice('advisor')]]],
+        );
+
+        $this->assertStringContainsString("    #[\\Override]\n    case DEFAULT = 'none';\n", $generator->generate());
     }
 
     /**

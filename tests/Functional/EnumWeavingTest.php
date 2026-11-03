@@ -12,9 +12,12 @@ declare(strict_types=1);
 
 namespace Go\Functional;
 
+use Go\Tests\TestProject\Annotation\Loggable;
 use Go\Tests\TestProject\Application\BackedEnum;
 use Go\Tests\TestProject\Application\ConstExprBackedEnum;
 use Go\Tests\TestProject\Application\SimpleEnum;
+use Symfony\Component\Process\PhpExecutableFinder;
+use Symfony\Component\Process\Process;
 
 /**
  * Functional tests for PHP 8.1+ enum weaving.
@@ -130,6 +133,39 @@ class EnumWeavingTest extends BaseFunctionalTestCase
         $this->assertStringContainsString('case Negative = -1;', $proxyContent);
         $this->assertStringContainsString('case Shifted = 1 << 2;', $proxyContent);
         $this->assertStringContainsString('case FromConst = self::SHIFT + 10;', $proxyContent);
+    }
+
+    /**
+     * The proxy enum re-declares the cases: their attributes and doc comments must come along (#794)
+     */
+    public function testCaseAttributesAndDocCommentsArePreserved(): void
+    {
+        $this->assertClassIsWoven(BackedEnum::class);
+
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        assert($phpExecutable !== false);
+        $script = sprintf(
+            'include %s; $case = new ReflectionEnumBackedCase(%s::class, "Active"); '
+            . 'echo implode(",", array_map(static fn($a) => $a->getName(), $case->getAttributes())), "|", '
+            . 'json_encode($case->getDocComment()), "|", count(new ReflectionEnumBackedCase(%2$s::class, "Inactive")->getAttributes());',
+            var_export($this->configuration['frontController'], true),
+            '\\' . BackedEnum::class,
+        );
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
+        );
+        $process->run();
+
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Running the woven enum failed: ' . $process->getOutput() . $process->getErrorOutput(),
+        );
+        $this->assertSame(
+            Loggable::class . '|' . json_encode("/**\n     * The status of an active record\n     */") . '|0',
+            trim($process->getOutput()),
+        );
     }
 
     /**

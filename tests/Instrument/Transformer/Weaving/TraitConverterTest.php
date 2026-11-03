@@ -36,6 +36,23 @@ final class TraitConverterTest extends TestCase
         $this->assertSame("<?php\n\ntrait FooOriginalTrait {}", $woven);
     }
 
+    /**
+     * The doc comment of a case moves to the proxy enum with the case: left in the trait, PHP gave it to the next
+     * method (#794)
+     */
+    public function testEnumCaseLeavesNoDocCommentBehind(): void
+    {
+        $woven = self::convert(
+            "<?php\nenum Suit: string\n{\n    /**\n     * Red one\n     */\n    #[\\Foo]\n    case Hearts = 'H';\n"
+            . "    public function label(): string { return ''; }\n}",
+        );
+
+        $this->assertSame(
+            "<?php\ntrait SuitOriginalTrait \n{\n    \n\n\n    \n\n    public function label(): string { return ''; }\n}",
+            $woven,
+        );
+    }
+
     public function testEnumLosesBackedTypeInterfacesAndCases(): void
     {
         $woven = self::convert(
