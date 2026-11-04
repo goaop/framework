@@ -145,17 +145,9 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
     final public function compileToPhp(): Expr
     {
         // An advice given by name is compiled without reading the closure: that would create the aspect
-        if ($this->aspectMethod !== null) {
-            [$aspectClass, $methodName] = $this->aspectMethod;
-        } else {
-            $reflectionAdvice     = new ReflectionFunction($this->adviceMethod);
-            $scopeReflectionClass = $reflectionAdvice->getClosureScopeClass();
-            if (!isset($scopeReflectionClass) || !is_subclass_of($scopeReflectionClass->name, Aspect::class)) {
-                throw NotCompilableException::interceptorWithoutAspect();
-            }
-            $aspectClass = $scopeReflectionClass->name;
-            $methodName  = $reflectionAdvice->name;
-        }
+        [$aspectClass, $methodName] = $this->aspectMethod
+            ?? self::aspectMethodOf($this->adviceMethod)
+            ?? throw NotCompilableException::interceptorWithoutAspect();
 
         $factoryMethod = match ($this::class) {
             BeforeInterceptor::class        => 'before',
@@ -177,5 +169,30 @@ abstract class AbstractInterceptor implements InterceptorInterface, OrderedAdvic
         }
 
         return new StaticCall(new FullyQualified(Interceptor::class), $factoryMethod, $args);
+    }
+
+    /**
+     * Returns the aspect class and the method name of an advice closure that references an aspect method
+     *
+     * Only a named closure is a method reference: `$aspect->advice(...)` or `ReflectionMethod::getClosure()` of a
+     * method of an {@see Aspect}. An anonymous closure scoped to an aspect is not, although its scope class is the
+     * aspect: a closure created inside an aspect method, or a partial application of an aspect method
+     * (`$aspect->advice(?, 300)`, PHP 8.6), which is scoped to the aspect wherever it is created. Its name, like
+     * `{closure:pfa:...}`, can not be called on the aspect (issue #790).
+     *
+     * @return array{class-string<Aspect>, string}|null Null for any other closure
+     *
+     * @internal Shared by the weaver ({@see GeneratedInterceptor::fromAdvice()}) and the advisor cache
+     *           ({@see compileToPhp()})
+     */
+    final public static function aspectMethodOf(Closure $advice): ?array
+    {
+        $reflectionAdvice = new ReflectionFunction($advice);
+        $scopeClass       = $reflectionAdvice->getClosureScopeClass();
+        if ($reflectionAdvice->isAnonymous() || $scopeClass === null || !is_subclass_of($scopeClass->name, Aspect::class)) {
+            return null;
+        }
+
+        return [$scopeClass->name, $reflectionAdvice->name];
     }
 }
