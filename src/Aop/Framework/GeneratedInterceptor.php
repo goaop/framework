@@ -13,9 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Framework;
 
 use Go\Aop\Advice;
-use Go\Aop\Aspect;
 use Go\Aop\Exception\AspectException;
-use ReflectionFunction;
 
 /**
  * Internal descriptor used by proxy generators to render first-class advice callables.
@@ -39,17 +37,11 @@ final readonly class GeneratedInterceptor
             throw AspectException::unsupportedAdvice($advisorId, $advice);
         }
 
-        if ($advice->aspectMethod !== null) {
-            // An advice given by name: reading its closure would create the aspect
-            [$aspectClass, $adviceMethod] = $advice->aspectMethod;
-            $usesContainerAdvice          = false;
-        } else {
-            $reflectionAdvice    = new ReflectionFunction($advice->getRawAdvice());
-            $scopeClass          = $reflectionAdvice->getClosureScopeClass();
-            $usesContainerAdvice = $scopeClass === null || !is_subclass_of($scopeClass->name, Aspect::class);
-            $aspectClass         = $usesContainerAdvice ? null : $scopeClass->name;
-            $adviceMethod        = $usesContainerAdvice ? null : $reflectionAdvice->name;
-        }
+        // An advice given by name is read without its closure: reading it would create the aspect. Any closure that
+        // is not an aspect method is referenced through the container: The::advice('<advisor id>')
+        $aspectMethod = $advice->aspectMethod ?? AbstractInterceptor::aspectMethodOf($advice->getRawAdvice());
+        [$aspectClass, $adviceMethod] = $aspectMethod ?? [null, null];
+        $usesContainerAdvice          = $aspectMethod === null;
 
         return new self(
             $advice->getType()->value,

@@ -10,6 +10,7 @@ use Go\Aop\Framework\AfterThrowingInterceptor;
 use Go\Aop\Framework\AroundInterceptor;
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\Stubs\AnonymousAdviceAspect;
 use Go\Stubs\Collision\A\SameNameAspect as AspectA;
 use Go\Stubs\Collision\B\SameNameAspect as AspectB;
 use PHPUnit\Framework\TestCase;
@@ -30,6 +31,27 @@ final class InterceptorListGeneratorTest extends TestCase
             <<<'PHP'
 [
                 Interceptor::around(The::advice('manual.around'), order: 20),
+            ]
+PHP,
+            $code,
+        );
+    }
+
+    public function testGeneratesContainerAdviceForClosureCreatedInsideAspect(): void
+    {
+        // Used to render `The::aspect(AnonymousAdviceAspect::class)->{closure:...}(...)`, a parse error (issue #790)
+        $descriptor = GeneratedInterceptor::fromAdvice(
+            'manual.inner',
+            new AroundInterceptor(new AnonymousAdviceAspect()->closureAdvice()),
+        );
+
+        $code = (new InterceptorListGenerator([$descriptor]))->generate();
+
+        $this->assertSame([], InterceptorListGenerator::aspectClasses([$descriptor]));
+        $this->assertSame(
+            <<<'PHP'
+[
+                Interceptor::around(The::advice('manual.inner')),
             ]
 PHP,
             $code,
