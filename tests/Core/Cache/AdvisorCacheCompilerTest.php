@@ -16,6 +16,7 @@ use Go\Aop\Advice;
 use Go\Aop\Advisor;
 use Go\Aop\Exception\NotCompilableException;
 use Go\Aop\Framework\AfterInterceptor;
+use Go\Aop\Framework\AroundInterceptor;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Aop\Pointcut;
 use Go\Aop\Pointcut\AndPointcut;
@@ -33,11 +34,14 @@ use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\Aop\Support\LazyPointcutAdvisor;
 use Go\Core\Container;
 use Go\Core\FrameworkServices;
+use Go\Stubs\AnonymousAdviceAspect;
+use Go\Stubs\Php86PartialAdviceAspect;
 use Go\Tests\TestProject\Annotation\Loggable;
 use Go\Tests\TestProject\Application\BehaviorTrait;
 use Go\Tests\TestProject\Application\FooInterface;
 use Go\Tests\TestProject\Aspect\DoSomethingAspect;
 use Go\VirtualFileSystem\FileSystem;
+use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -241,6 +245,18 @@ class AdvisorCacheCompilerTest extends TestCase
         $interceptor->compileToPhp();
     }
 
+    public function testThrowsForAdviceClosureCreatedInsideAspect(): void
+    {
+        // Scoped to the aspect, but not an aspect method: it has no name to compile (issue #790)
+        $this->assertNotCompilable(new AroundInterceptor(new AnonymousAdviceAspect()->closureAdvice()));
+    }
+
+    #[RequiresPhp('>= 8.6.0-dev')]
+    public function testThrowsForPartialApplicationOfAspectMethod(): void
+    {
+        $this->assertNotCompilable(new AroundInterceptor(new Php86PartialAdviceAspect()->partialAdvice()));
+    }
+
     public function testThrowsForUnknownInterceptorSubclass(): void
     {
         $aspect        = new DoSomethingAspect();
@@ -327,4 +343,13 @@ class AdvisorCacheCompilerTest extends TestCase
         }
     }
 
+    private function assertNotCompilable(AroundInterceptor $interceptor): void
+    {
+        try {
+            $interceptor->compileToPhp();
+            $this->fail('An advice closure that is not an aspect method must not be compiled');
+        } catch (NotCompilableException $exception) {
+            $this->assertSame('Could not compile an interceptor without valid aspect', $exception->getMessage());
+        }
+    }
 }
