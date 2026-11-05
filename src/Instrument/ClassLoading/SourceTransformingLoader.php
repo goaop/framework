@@ -22,7 +22,6 @@ use Go\Instrument\Transformer\TransformerResult;
 use Go\Instrument\Transformer\Weaving\ProxyCache;
 use Go\ParserReflection\ReflectionEngine;
 use php_user_filter as PhpStreamFilter;
-use ReflectionException;
 use ReflectionProperty;
 use Throwable;
 
@@ -139,13 +138,8 @@ final class SourceTransformingLoader extends PhpStreamFilter
      */
     private static function limitParsedFiles(): void
     {
-        try {
-            // The engine has no getter, an unset limit is an uninitialized property
-            $isLimited = new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles')->isInitialized();
-        } catch (ReflectionException) {
-            return;
-        }
-        if (!$isLimited) {
+        // The engine has no getter: an unset limit is an uninitialized property (parser-reflection 4.2+ and 5.2+)
+        if (!new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles')->isInitialized()) {
             ReflectionEngine::setMaximumCachedFiles(FileWarmer::DEFAULT_CACHED_FILES);
         }
     }
