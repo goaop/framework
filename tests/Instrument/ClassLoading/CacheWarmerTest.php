@@ -94,6 +94,7 @@ class CacheWarmerTest extends TestCase
             'includePaths'   => $includePaths,
             'excludePaths'   => $excludePaths,
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
         $kernel->method('hasFeature')->willReturnCallback(static fn(int $feature): bool => ($features & $feature) !== 0);
 

@@ -13,7 +13,8 @@
   ErrorException handler) or with Warmup\WorkerPool when `--workers` > 1 (default 1; no worker command line →
   in-process).
 - Memory: the engine keeps every parsed syntax tree (~0.2 MB per file) unless capped: AspectKernel::configureReflection()
-  (init) sets FileWarmer::DEFAULT_CACHED_FILES (100) when no limit is set yet, FileWarmer sets `--cached-files`.
+  (init) applies the `parsedFilesLimit` kernel option (positive int, default AspectKernel::DEFAULT_PARSED_FILES_LIMIT = 100,
+  the one source of truth), FileWarmer sets `--cached-files`, which defaults to that option.
 - Workers: `php -r` WarmupWorker::main() (autoloader + loader file + cached files as arguments, Console\KernelLoader boots like the
   command), SIGINT ignored, stray output swallowed by ob_start. Protocol (Warmup\WorkerProtocol): one line per message,
   marker + base64(serialize()); coordinator → `['file']`, closing stdin stops the worker; worker → ready/failed/result.

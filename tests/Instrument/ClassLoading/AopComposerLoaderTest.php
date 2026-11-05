@@ -57,6 +57,7 @@ class AopComposerLoaderTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [$this->appDir . '/vendor/goaop/dissect'],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
 
         $fileEnumerator = new ReflectionProperty(AopComposerLoader::class, 'fileEnumerator')->getValue($loader);
@@ -275,7 +276,7 @@ class AopComposerLoaderTest extends TestCase
      *
      * @param list<string> $excludePaths
      *
-     * @return array{debug: bool, appDir: string, cacheDir: string|null, cacheFileMode: int, features: int, includePaths: list<string>, excludePaths: list<string>, containerClass: class-string<AspectContainer>}
+     * @return array{debug: bool, appDir: string, cacheDir: string|null, cacheFileMode: int, features: int, includePaths: list<string>, excludePaths: list<string>, containerClass: class-string<AspectContainer>, parsedFilesLimit: positive-int}
      */
     private function createOptions(array $excludePaths): array
     {
@@ -288,6 +289,7 @@ class AopComposerLoaderTest extends TestCase
             'includePaths'   => [$this->appDir . '/src'],
             'excludePaths'   => $excludePaths,
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ];
     }
 

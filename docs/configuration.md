@@ -26,6 +26,7 @@ bit throws `Go\Aop\Exception\InvalidConfigurationException`.
 | `features`       | `int`      | `0`                         | Bitmask of `Go\Aop\Features` flags, see below. |
 | `cacheFileMode`  | `int`      | `0770` minus the umask      | Permissions of cache files. Must be between `0600` and `0777` and give the owner read and write access; directories get matching search bits. |
 | `containerClass` | `class-string` | `Go\Core\Container`     | Aspect container implementation, must implement `Go\Core\AspectContainer` (a PSR-11 `ContainerInterface`). |
+| `parsedFilesLimit` | `int` | `100`                    | Number of parsed source files (syntax trees, ~0.2 MB each) goaop/parser-reflection keeps in memory while weaving. Must be a positive integer (more re-parses less, fewer uses less memory). It replaces a limit set with `ReflectionEngine::setMaximumCachedFiles()` before `init()`. Default of `cache:warmup:aop --cached-files`. |
 
 ## Features
 
@@ -159,7 +160,7 @@ stay in place.
 ### Cache warm-up
 
 `cache:warmup:aop --workers=N` weaves in N parallel worker processes (default 1: in the command process), each keeping
-the last `--cached-files=N` parsed files in memory (default 100). It shows a progress bar, with `-v` every file. How the workers share the files and the cache metadata is described on
+the last `--cached-files=N` parsed files in memory (default: the `parsedFilesLimit` option of the kernel, 100). It shows a progress bar, with `-v` every file. How the workers share the files and the cache metadata is described on
 `Go\Console\Command\CacheWarmupCommand`.
 
 `cache:warmup:aop --cache-dir=DIR` builds the cache in another directory, from scratch, while the kernel (and the

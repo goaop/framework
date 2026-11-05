@@ -194,7 +194,7 @@ initializes the kernel with the same options as production. The command:
   `docker build` stops right there;
 - `--workers=N` weaves in N processes. Use the number of CPUs: a 2,047-file application took 2.2 s with one worker and
   1.1 s with 4 workers on 4 CPUs;
-- `--cached-files=N` (default 100) bounds the syntax trees kept in memory per process;
+- `--cached-files=N` (default: the `parsedFilesLimit` kernel option, 100) bounds the syntax trees kept in memory per process;
 - `--cache-dir=DIR` builds the cache in another directory from scratch while the kernel keeps serving from its own: a
   release is prepared next to the running one and switched in atomically, e.g. with a symlink swap.
 

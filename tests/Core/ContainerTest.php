@@ -57,6 +57,7 @@ class ContainerTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
         $this->container->add(AspectKernel::class, $mockKernel);
         FrameworkServices::register($this->container);
@@ -110,6 +111,7 @@ class ContainerTest extends TestCase
             'includePaths'   => [$appDir . '/src'],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
         $container->add(AspectKernel::class, $mockKernel);
         FrameworkServices::register($container);
