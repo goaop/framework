@@ -143,8 +143,18 @@ final class PathResolver
     {
         $fromParts = self::pathParts($fromDirectory);
         $toParts   = self::pathParts($path);
-        // The root (the first part: '' for `/`, `C:` for a drive, `vfs:/` for a scheme) must match
-        if ($fromParts === null || $toParts === null || $fromParts[0] !== $toParts[0]) {
+        if ($fromParts === null || $toParts === null) {
+            return null;
+        }
+        // On Windows a path rooted without a drive (`\app`, or `/` resolved by PHP itself) lies on the drive of the
+        // other path, as the system resolves it; otherwise the roots ('' for `/`, `C:` for a drive, `vfs://root`
+        // for a stream wrapper) must match
+        if ($fromParts[0] === '' && self::isDrive($toParts[0])) {
+            $fromParts[0] = $toParts[0];
+        } elseif ($toParts[0] === '' && self::isDrive($fromParts[0])) {
+            $toParts[0] = $fromParts[0];
+        }
+        if ($fromParts[0] !== $toParts[0]) {
             return null;
         }
 
@@ -158,6 +168,14 @@ final class PathResolver
         );
 
         return implode('/', $parts);
+    }
+
+    /**
+     * Checks whether a path root is a Windows drive (`C:`)
+     */
+    private static function isDrive(string $root): bool
+    {
+        return preg_match('/^[A-Za-z]:$/', $root) === 1;
     }
 
     /**

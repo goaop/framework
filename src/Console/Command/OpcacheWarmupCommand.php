@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Console\Command;
 
+use Closure;
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Instrument\ClassLoading\ComposerAutoloader;
 use Go\Instrument\ClassLoading\Opcache\FileCachePrimer;
@@ -95,7 +96,7 @@ class OpcacheWarmupCommand extends BaseAspectCommand
             $entryFiles[] = $entryFile;
         }
 
-        $problem = FileCachePrimer::configurationProblem($fileCacheDir);
+        $problem = $this->fileCacheProblem($fileCacheDir);
         if ($problem !== null) {
             // Written as plain lines, not thrown: the command line must stay copyable, the exception renderer wraps it
             $errorOutput = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
@@ -120,9 +121,8 @@ class OpcacheWarmupCommand extends BaseAspectCommand
             count($applicationFiles),
         ));
 
-        $primer = new FileCachePrimer();
-        [$compiledRequired, $failedRequired]       = $this->compile($primer, $requiredFiles, $output);
-        [$compiledApplication, $failedApplication] = $this->compile($primer, $applicationFiles, $output);
+        [$compiledRequired, $failedRequired]       = $this->compile($requiredFiles, $output);
+        [$compiledApplication, $failedApplication] = $this->compile($applicationFiles, $output);
         $compiled = $compiledRequired + $compiledApplication;
 
         $output->writeln(sprintf('Compiled <info>%d</info> files.', $compiled));
@@ -133,16 +133,39 @@ class OpcacheWarmupCommand extends BaseAspectCommand
     }
 
     /**
+     * Tells why compiled scripts would not land in the file cache of this process, null when they do
+     *
+     * A command that primes another way (tests, a wrapper that already checked) overrides this and compileFiles().
+     */
+    protected function fileCacheProblem(?string $fileCacheDir): ?string
+    {
+        return FileCachePrimer::configurationProblem($fileCacheDir);
+    }
+
+    /**
+     * Compiles the files into the file cache of this process, see FileCachePrimer::compile()
+     *
+     * @param list<string>                   $files
+     * @param Closure(string, ?string): void $onFile
+     *
+     * @return int Number of compiled files
+     */
+    protected function compileFiles(array $files, Closure $onFile): int
+    {
+        return new FileCachePrimer()->compile($files, $onFile);
+    }
+
+    /**
      * Compiles a group of files, listing every file with -v
      *
      * @param list<string> $files
      *
      * @return array{int, array<string, string>} Number of compiled files and the reason per file that failed
      */
-    private function compile(FileCachePrimer $primer, array $files, OutputInterface $output): array
+    private function compile(array $files, OutputInterface $output): array
     {
         $failed   = [];
-        $compiled = $primer->compile($files, static function (string $file, ?string $error) use ($output, &$failed): void {
+        $compiled = $this->compileFiles($files, static function (string $file, ?string $error) use ($output, &$failed): void {
             if ($error !== null) {
                 $failed[$file] = $error;
             }

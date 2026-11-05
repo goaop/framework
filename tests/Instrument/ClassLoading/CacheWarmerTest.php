@@ -440,4 +440,55 @@ class CacheWarmerTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('#[/\\\\]Broken\.php: Cannot weave#', $display);
         $this->assertStringContainsString('Total processed 1, 1 errors in ', $display);
     }
+    public function testPreloadScriptIsWrittenIntoTheCacheDirectoryAfterACompleteWarmUp(): void
+    {
+        $output = new BufferedOutput();
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), $output, preloadFile: '');
+
+        $this->assertSame(0, $warmer->warmUp());
+
+        $script = $this->cacheDir . '/_preload.php';
+        $this->assertFileExists($script);
+        $this->assertStringContainsString('Preload script written to ' . $script, $output->fetch());
+        $content = (string) file_get_contents($script);
+        $this->assertStringContainsString("\$loader = require __DIR__ . '", $content);
+        $this->assertStringContainsString("/vendor/autoload.php';", $content);
+        $this->assertStringContainsString("define('AOP_CACHE_DIR', __DIR__)", $content);
+        $this->assertStringContainsString("define('AOP_ROOT_DIR', __DIR__ . '/../" . basename($this->appDir) . "')", $content);
+    }
+
+    public function testPreloadScriptIsWrittenToTheGivenFile(): void
+    {
+        $script = $this->appDir . '/config/preload.php';
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), new BufferedOutput(), preloadFile: $script);
+
+        $this->assertSame(0, $warmer->warmUp());
+
+        $this->assertFileExists($script);
+        $this->assertFileDoesNotExist($this->cacheDir . '/_preload.php');
+        $this->assertStringContainsString(
+            "define('AOP_CACHE_DIR', __DIR__ . '/../../" . basename($this->cacheDir) . "')",
+            (string) file_get_contents($script),
+        );
+    }
+
+    public function testPreloadScriptIsNotWrittenWhenAFileFailed(): void
+    {
+        file_put_contents($this->appDir . '/src/Broken.php', "<?php // broken\n");
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir, [$this->createFailingTransformer()]), new BufferedOutput(), preloadFile: '');
+
+        $this->assertSame(1, $warmer->warmUp());
+
+        $this->assertFileDoesNotExist($this->cacheDir . '/_preload.php', 'An incomplete cache is not preloaded');
+    }
+
+    public function testPreloadScriptIsNotWrittenWhenInterrupted(): void
+    {
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), new BufferedOutput(), preloadFile: '');
+        $warmer->interrupt();
+
+        $this->assertSame(0, $warmer->warmUp());
+
+        $this->assertFileDoesNotExist($this->cacheDir . '/_preload.php');
+    }
 }

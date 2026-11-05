@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\ClassLoading\Opcache;
 
 use Go\VirtualFileSystem\FileSystem;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -27,6 +28,54 @@ class FileCachePrimerTest extends TestCase
 
         $this->assertNotNull($problem);
         $this->assertStringContainsString('opcache', $problem);
+    }
+
+    /**
+     * @return array<string, array{array<string, string|false>, string|null, string|null}>
+     */
+    public static function fileCacheSettings(): array
+    {
+        $dir = sys_get_temp_dir();
+
+        return [
+            'all set'                        => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '1', 'opcache.file_cache_read_only' => '0'], $dir, null],
+            'no read-only setting (PHP 8.4)' => [['opcache.enable_cli' => 'On', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => 'On'], null, null],
+            'cli off'                        => [['opcache.enable_cli' => '0', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '1'], null, 'opcache.enable_cli is off'],
+            'cli unset'                      => [['opcache.file_cache' => $dir], null, 'opcache.enable_cli is off'],
+            'no file cache'                  => [['opcache.enable_cli' => '1', 'opcache.file_cache' => '', 'opcache.file_cache_only' => '1'], null, 'opcache.file_cache is not set'],
+            'missing directory'              => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir . '/goaop-missing-file-cache', 'opcache.file_cache_only' => '1'], null, "the opcache.file_cache directory {$dir}/goaop-missing-file-cache does not exist"],
+            'other directory'                => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '1'], __DIR__, "opcache.file_cache is {$dir}, not " . __DIR__],
+            'not file cache only'            => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '0'], $dir, 'opcache.file_cache_only is off'],
+            'read only (PHP 8.5)'            => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '1', 'opcache.file_cache_read_only' => '1'], null, 'opcache.file_cache_read_only is on'],
+        ];
+    }
+
+    /**
+     * @param array<string, string|false> $settings
+     */
+    #[DataProvider('fileCacheSettings')]
+    public function testConfigurationProblemNamesTheFirstSettingThatKeepsScriptsOutOfTheFileCache(array $settings, ?string $fileCacheDir, ?string $expectedProblem): void
+    {
+        $this->assertSame($expectedProblem, FileCachePrimer::configurationProblem($fileCacheDir, $settings));
+    }
+
+    public function testConfigurationProblemNamesAnUnwritableDirectory(): void
+    {
+        if (function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            $this->markTestSkipped('root writes everywhere');
+        }
+        $fileSystem = FileSystem::mount('primerrovfs');
+        try {
+            $dir = $fileSystem->path('/readonly');
+            mkdir($dir, 0555);
+
+            $this->assertSame(
+                "the opcache.file_cache directory {$dir} is not writable",
+                FileCachePrimer::configurationProblem(null, ['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '1']),
+            );
+        } finally {
+            $fileSystem->unmount();
+        }
     }
 
     public function testCommandLineCarriesTheFileCacheSettingsAndTheArguments(): void
@@ -82,5 +131,29 @@ class FileCachePrimerTest extends TestCase
         $this->assertNull($results[__FILE__]);
         $this->assertNull($results[__DIR__ . '/../../../../vendor/../vendor/autoload.php'], 'Resolved to the included file');
         $this->assertIsString($results[__DIR__ . '/does-not-exist.php']);
+    }
+
+    /**
+     * A syntax error is thrown by opcache_compile_file() (no engine bailout) and reported with the file
+     */
+    public function testSyntaxErrorIsReportedWithTheFile(): void
+    {
+        $fileSystem = FileSystem::mount('primersyntaxvfs');
+        try {
+            $file = $fileSystem->path('/broken.php');
+            file_put_contents($file, "<?php class {\n");
+            $results  = [];
+            $compiled = new FileCachePrimer()->compile([$file], static function (string $file, ?string $error) use (&$results): void {
+                $results[$file] = $error;
+            });
+
+            $this->assertSame(0, $compiled);
+            $this->assertIsString($results[$file]);
+            if (filter_var(ini_get('opcache.enable_cli'), FILTER_VALIDATE_BOOL)) {
+                $this->assertStringStartsWith('ParseError: ', $results[$file]);
+            }
+        } finally {
+            $fileSystem->unmount();
+        }
     }
 }

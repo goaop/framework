@@ -32,6 +32,8 @@ class OpcacheWarmupCommandTest extends BaseFunctionalTestCase
 
     public function setUp(): void
     {
+        // The base tearDown() clears the cache directory of the configuration, also after a skip
+        $this->loadConfiguration();
         if (!function_exists('opcache_get_status')) {
             $this->markTestSkipped('Priming the file cache needs the opcache extension');
         }
@@ -99,19 +101,23 @@ class OpcacheWarmupCommandTest extends BaseFunctionalTestCase
     }
 
     /**
-     * Returns the compiled scripts of the file cache by their path below the fixture project
+     * Returns the compiled scripts of the file cache by their path below the fixture project, with `/` separators
+     *
+     * OPcache stores a script as `<file cache>/<system id>/<absolute path>.bin`; on Windows the drive letter loses
+     * its colon (`C:\app` becomes `C\app`), so the project directory is compared without it.
      *
      * @return list<string>
      */
     private function cachedFiles(): array
     {
-        $projectDir = (string) realpath(__DIR__ . '/../../Fixtures/project');
+        $projectDir = str_replace([':', '\\'], ['', '/'], (string) realpath(__DIR__ . '/../../Fixtures/project'));
         $files      = [];
         foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->fileCacheDir, FilesystemIterator::SKIP_DOTS)) as $file) {
             assert($file instanceof SplFileInfo);
-            $position = strpos($file->getPathname(), $projectDir . '/');
+            $pathname = str_replace('\\', '/', $file->getPathname());
+            $position = strpos($pathname, $projectDir . '/');
             if ($position !== false) {
-                $files[] = substr($file->getPathname(), $position + strlen($projectDir) + 1);
+                $files[] = substr($pathname, $position + strlen($projectDir) + 1);
             }
         }
         sort($files);

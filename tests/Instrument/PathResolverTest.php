@@ -166,6 +166,10 @@ class PathResolverTest extends TestCase
             'other stream wrapper'   => ['vfs://root/cache', 'other://root/vendor/autoload.php', null],
             'other drive'            => ['C:\\app\\cache', 'D:\\vendor\\autoload.php', null],
             'same drive'             => ['C:\\app\\cache', 'C:\\app\\vendor\\autoload.php', '../vendor/autoload.php'],
+            'drive and rooted path'  => ['C:\\app\\cache', '/app/vendor/autoload.php', '../vendor/autoload.php'],
+            'rooted path and drive'  => ['/app/cache', 'C:/app/vendor/autoload.php', '../vendor/autoload.php'],
+            'empty path'             => ['', '/app/vendor/autoload.php', null],
+            'empty directory'        => ['/app/cache', '', null],
         ];
     }
 

@@ -42,17 +42,21 @@ final class FileCachePrimer
     /**
      * Tells why compiled scripts would not land in the file cache of this process, null when they do
      *
-     * @param string|null $fileCacheDir Directory the file cache is expected in, null for whatever is configured
+     * @param string|null                      $fileCacheDir Directory the file cache is expected in, null for whatever is configured
+     * @param array<string, string|false>|null $settings     Ini values to check instead of the ones of this process
+     *                                                       (system settings can not be changed at runtime)
      */
-    public static function configurationProblem(?string $fileCacheDir = null): ?string
+    public static function configurationProblem(?string $fileCacheDir = null, ?array $settings = null): ?string
     {
         if (!function_exists('opcache_compile_file')) {
             return 'the opcache extension is not loaded';
         }
-        if (!self::isEnabled('opcache.enable_cli')) {
+        $setting = static fn(string $name): string|false => $settings === null ? ini_get($name) : ($settings[$name] ?? false);
+
+        if (!self::isEnabled($setting('opcache.enable_cli'))) {
             return 'opcache.enable_cli is off';
         }
-        $configuredDir = (string) ini_get('opcache.file_cache');
+        $configuredDir = (string) $setting('opcache.file_cache');
         if ($configuredDir === '') {
             return 'opcache.file_cache is not set';
         }
@@ -65,11 +69,11 @@ final class FileCachePrimer
         if ($fileCacheDir !== null && realpath($fileCacheDir) !== realpath($configuredDir)) {
             return "opcache.file_cache is {$configuredDir}, not {$fileCacheDir}";
         }
-        if (!self::isEnabled('opcache.file_cache_only')) {
+        if (!self::isEnabled($setting('opcache.file_cache_only'))) {
             return 'opcache.file_cache_only is off';
         }
         // PHP 8.5: a read-only file cache is only read at runtime, nothing is ever written to it
-        if (self::isEnabled('opcache.file_cache_read_only')) {
+        if (self::isEnabled($setting('opcache.file_cache_read_only'))) {
             return 'opcache.file_cache_read_only is on';
         }
 
@@ -108,10 +112,12 @@ final class FileCachePrimer
         if (!is_dir($cacheDir)) {
             return [];
         }
-        $files = [];
+        // The iterator joins with the native separator; a stream wrapper path (`vfs://`, `phar://`) takes `/` only
+        $isStreamPath = str_contains($cacheDir, '://');
+        $files        = [];
         foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($cacheDir, FilesystemIterator::SKIP_DOTS)) as $file) {
             if ($file instanceof SplFileInfo && $file->isFile()) {
-                $files[] = $file->getPathname();
+                $files[] = $isStreamPath ? str_replace('\\', '/', $file->getPathname()) : $file->getPathname();
             }
         }
         sort($files);
@@ -225,10 +231,11 @@ final class FileCachePrimer
         return $warning ?? ($lastError !== null ? $lastError['message'] : 'opcache_compile_file() returned false');
     }
 
-    private static function isEnabled(string $setting): bool
+    /**
+     * Interprets an ini value as PHP does for a boolean setting (`1`, `On`, `true`, `yes`)
+     */
+    private static function isEnabled(string|false $value): bool
     {
-        $value = ini_get($setting);
-
         return $value !== false && filter_var($value, FILTER_VALIDATE_BOOL);
     }
 }

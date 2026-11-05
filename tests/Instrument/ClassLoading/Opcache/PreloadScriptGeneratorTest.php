@@ -89,6 +89,26 @@ class PreloadScriptGeneratorTest extends TestCase
         $this->assertStringContainsString("// Not preloaded, their static initialization advice runs with the kernel of a request:\n//   Go\\Tests\\TestProject\\Application\\Main\n", $script);
     }
 
+    /**
+     * A woven file that is not there (the cache was pruned by hand) can not be inspected: the class is preloaded like
+     * any other and fails at preload time at worst, which the script tolerates
+     */
+    public function testUnreadableWovenFileIsPreloadedNevertheless(): void
+    {
+        $generator = new PreloadScriptGenerator(
+            $this->cacheDir,
+            $this->appDir,
+            [Greeter::class => $this->cacheDir . '/src/Missing/GreeterOriginalTrait.php'],
+            [],
+            $this->appDir . '/vendor/autoload.php',
+        );
+
+        $script = $generator->generate(PreloadScriptGenerator::defaultScriptPath($this->cacheDir));
+
+        $this->assertStringContainsString("\n    'Go\\\\Tests\\\\TestProject\\\\Application\\\\Greeter',\n", $script);
+        $this->assertStringNotContainsString('Not preloaded', $script);
+    }
+
     public function testGeneratedScriptIsValidPhp(): void
     {
         $script = $this->generate(PreloadScriptGenerator::defaultScriptPath($this->cacheDir));

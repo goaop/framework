@@ -32,6 +32,8 @@ class PreloadTest extends BaseFunctionalTestCase
 
     public function setUp(): void
     {
+        // The base tearDown() clears the cache directory of the configuration, also after a skip
+        $this->loadConfiguration();
         if (!function_exists('opcache_get_status')) {
             $this->markTestSkipped('Preloading needs the opcache extension');
         }
