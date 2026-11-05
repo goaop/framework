@@ -592,9 +592,10 @@ class SourceTransformingLoaderTest extends TestCase
                 $this->filterOriginalFile($source);
                 $this->fail('A source missing from a read-only prebuilt cache must fail before it is woven');
             } catch (WeavingException $exception) {
+                // The filter resolves the stream path with native separators (`\` on Windows): compare with `/`
                 $this->assertSame(
-                    WeavingException::sourceMissingFromPrebuiltCache($source, $cacheDir)->getMessage(),
-                    $exception->getMessage(),
+                    str_replace('\\', '/', WeavingException::sourceMissingFromPrebuiltCache($source, $cacheDir)->getMessage()),
+                    str_replace('\\', '/', $exception->getMessage()),
                 );
             }
             $this->cachePathManager->flushCacheState();
