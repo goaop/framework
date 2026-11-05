@@ -19,6 +19,9 @@ use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
+use Go\ParserReflection\LocatorInterface;
+use Go\ParserReflection\MissingAncestorPolicy;
+use Go\ParserReflection\ReflectionEngine;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
@@ -211,6 +214,74 @@ class AopComposerLoaderTest extends TestCase
                 spl_autoload_register($loader);
             }
             $composerLoader->unregister();
+        }
+    }
+
+    public function testProductionLoaderFindsTheSourceOfAWovenClassWithoutTheInjectedClassMap(): void
+    {
+        $cachedFile     = $this->appDir . '/cache/src/Service.php';
+        $composerLoader = new ClassLoader();
+        $composerLoader->addPsr4('App\\', $this->appDir . '/src');
+        // An optimized autoloader knows the class from its own class map, which the injection overwrites
+        $composerLoader->addClassMap(['App\\Optimized' => $this->appDir . '/src/Optimized.php']);
+        $cachePathManager = $this->createStub(CachePathManager::class);
+        $cachePathManager->method('queryClassMap')->willReturn([
+            'App\\Service'   => $cachedFile,
+            'App\\Optimized' => $this->appDir . '/cache/src/Optimized.php',
+        ]);
+        $cachePathManager->method('querySkippedClasses')->willReturn([]);
+
+        $loader = new AopComposerLoader(
+            $composerLoader,
+            $this->createContainer($cachePathManager),
+            ['debug' => false] + $this->createOptions([]),
+        );
+
+        $this->assertSame($cachedFile, $composerLoader->findFile('App\\Service'), 'Composer serves the woven class from the cache');
+        // In one separator form: composer joins a PSR-4 path natively
+        $this->assertSame(self::slashed($this->appDir . '/src/Service.php'), self::slashed($loader->findSourceFile('App\\Service')));
+        $this->assertSame(self::slashed($this->appDir . '/src/Optimized.php'), self::slashed($loader->findSourceFile('App\\Optimized')));
+        $this->assertFalse($loader->findSourceFile('Other\\Unknown'));
+
+        // Rules added after the injection are honoured for the classes the cache does not know
+        $composerLoader->addPsr4('Late\\', $this->appDir . '/src');
+        $this->assertSame(self::slashed($this->appDir . '/src/Service.php'), self::slashed($loader->findSourceFile('Late\\Service')));
+    }
+
+    /**
+     * Returns a path in one separator form, the paths given by composer are joined natively
+     */
+    private static function slashed(string|false $path): string
+    {
+        self::assertIsString($path);
+
+        return str_replace('\\', '/', $path);
+    }
+
+    public function testInitInstallsTheOriginalSourceLocatorAndKeepsTheMissingAncestorPolicy(): void
+    {
+        $composerLoader = new ClassLoader();
+        $composerLoader->register(true);
+        $registeredLoaders = spl_autoload_functions();
+        $locator           = new ReflectionProperty(ReflectionEngine::class, 'locator');
+        $previousLocator   = $locator->getValue();
+        $previousPolicy    = ReflectionEngine::getMissingAncestorPolicy();
+        ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Partial);
+        try {
+            $this->assertTrue(AopComposerLoader::init($this->createOptions([]), $this->createContainer()));
+
+            $this->assertInstanceOf(OriginalSourceLocator::class, $locator->getValue());
+            $this->assertSame(MissingAncestorPolicy::Partial, ReflectionEngine::getMissingAncestorPolicy());
+        } finally {
+            foreach (spl_autoload_functions() as $loader) {
+                spl_autoload_unregister($loader);
+            }
+            foreach ($registeredLoaders as $loader) {
+                spl_autoload_register($loader);
+            }
+            $composerLoader->unregister();
+            assert($previousLocator instanceof LocatorInterface);
+            ReflectionEngine::init($previousLocator, null, $previousPolicy);
         }
     }
 

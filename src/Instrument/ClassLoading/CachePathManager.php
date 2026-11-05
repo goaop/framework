@@ -50,6 +50,11 @@ class CachePathManager
      */
     public const int FORMAT_VERSION = 4;
 
+    /**
+     * Length of the head of the include map that holds its stamp: `<?php return array (`, the version and the stamp
+     */
+    private const int STAMP_HEAD_LENGTH = 128;
+
     /** @phpstan-var KernelOptions */
     protected array $options;
 
@@ -124,12 +129,20 @@ class CachePathManager
     protected array $newCacheState = [];
 
     /**
-     * Identity of the include map file as it was loaded or last written by this manager: inode, modification
-     * time and size, or null when the file did not exist. Another writer changes it, see {@see self::flushCacheState()}
+     * Stamp of the metadata as this manager loaded or last wrote it, see {@see self::flushCacheState()}
      *
-     * @var array{int, int, int}|null
+     * The hash of the transformation metadata, written into the include map: the include map read by every request
+     * carries it, so the identity of the loaded state costs no stat call. Null when there was no include map, false
+     * when its stamp is unknown (an outdated include map, written without one): the files are then taken as
+     * rewritten by another writer.
      */
-    private ?array $includeMapStamp = null;
+    private string|false|null $includeMapStamp = null;
+
+    /**
+     * Whether a cache is being built, {@see self::withCacheDir()}: the build re-checks the freshness of every record,
+     * also of a prebuilt cache, which requests trust as it is
+     */
+    public private(set) bool $isBuildingCache = false;
 
     public function __construct(
         protected readonly AspectKernel $kernel,
@@ -157,8 +170,11 @@ class CachePathManager
         if ($this->cacheDir === null || $this->cacheDir === '') {
             return;
         }
-        $this->includeMapStamp = $this->stampIncludeMap();
-        $hasIncludeMap         = $this->includeMapStamp !== null;
+        // Included without any stat call before: opcache serves a warm include map from memory, the include of a
+        // missing one fails, quietly. The include map carries the stamp of the metadata it was written with
+        $includeData           = @include $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
+        $hasIncludeMap         = $includeData !== false;
+        $this->includeMapStamp = null;
         // With a prebuilt cache the directory is guaranteed to exist (built at deploy
         // time), so all directory/writability stat checks are skipped - this also
         // covers read-only file systems (GAE, phar, etc). An existing include map
@@ -169,18 +185,19 @@ class CachePathManager
         }
 
         if ($hasIncludeMap) {
-            $includeData = include $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
             if (!$this->isCurrentFormat($includeData)) {
                 $this->rejectOutdatedFormat();
                 // Outdated format: everything re-weaves once and both files are rewritten
                 $this->cacheStateLoaded = true;
+                $this->includeMapStamp  = false;
             } else {
                 // A file of the current format is written by flushCacheState() only, so its arrays are used
                 // as they are: checking every entry would cost a loop over the whole map on every request
-                /** @var array{map: array<class-string, string>, skip: array<class-string, true>, files: array<string, string|null>} $includeData */
-                $this->classMap       = $includeData['map'];
-                $this->skippedClasses = $includeData['skip'];
-                $this->fileMap        = $includeData['files'];
+                /** @var array{stamp?: string, map: array<class-string, string>, skip: array<class-string, true>, files: array<string, string|null>} $includeData */
+                $this->includeMapStamp = $includeData['stamp'] ?? false;
+                $this->classMap        = $includeData['map'];
+                $this->skippedClasses  = $includeData['skip'];
+                $this->fileMap         = $includeData['files'];
             }
         } elseif (file_exists($this->cacheDir . self::CACHE_FILE_NAME)) {
             // Legacy cache directory (pre-class-map format): the metadata records carry
@@ -225,6 +242,10 @@ class CachePathManager
      * With the current directory the operation runs in place: the directory is created when it is missing
      * and the records of the operation are flushed when it ends.
      *
+     * Either way the operation builds a cache: every record is checked for freshness like without a prebuilt
+     * cache, and metadata of another format is rebuilt, so that a build over an existing directory refreshes what
+     * changed ({@see self::$isBuildingCache}).
+     *
      * @template T
      *
      * @param Closure(): T $operation
@@ -233,7 +254,24 @@ class CachePathManager
      */
     public function withCacheDir(string $cacheDir, Closure $operation): mixed
     {
-        $cacheDir = self::resolvePath($cacheDir);
+        $wasBuildingCache      = $this->isBuildingCache;
+        $this->isBuildingCache = true;
+        try {
+            return $this->buildCacheDir(self::resolvePath($cacheDir), $operation);
+        } finally {
+            $this->isBuildingCache = $wasBuildingCache;
+        }
+    }
+
+    /**
+     * @template T
+     *
+     * @param Closure(): T $operation
+     *
+     * @return T
+     */
+    private function buildCacheDir(string $cacheDir, Closure $operation): mixed
+    {
         if ($this->cacheDir !== null && $cacheDir === self::resolvePath($this->cacheDir)) {
             // The directory of a build is written in any case, also the own one of a kernel that never
             // created it: with PREBUILT_CACHE the kernel expects the directory to be built at deploy time
@@ -294,19 +332,19 @@ class CachePathManager
     }
 
     /**
-     * Returns the identity of the include map file on disk, or null when there is none
+     * Reads the stamp of the include map file on disk: null when there is none, false when it carries no stamp
      *
-     * The file is replaced atomically (written under a temporary name and renamed), so every write changes the inode.
-     *
-     * @return array{int, int, int}|null
+     * Read from the head of the file, not included: opcache may still hold the version this process loaded. Only a
+     * flush reads it, a request that writes nothing never does.
      */
-    private function stampIncludeMap(): ?array
+    private function readIncludeMapStamp(): string|false|null
     {
-        $includeMapFile = $this->cacheDir . self::INCLUDE_MAP_FILE_NAME;
-        clearstatcache(true, $includeMapFile);
-        $stat = @stat($includeMapFile);
+        $head = @file_get_contents($this->cacheDir . self::INCLUDE_MAP_FILE_NAME, false, null, 0, self::STAMP_HEAD_LENGTH);
+        if ($head === false) {
+            return null;
+        }
 
-        return $stat === false ? null : [$stat['ino'], $stat['mtime'], $stat['size']];
+        return preg_match("/^  'stamp' => '([0-9a-f]+)',$/m", $head, $matches) === 1 ? $matches[1] : false;
     }
 
     /**
@@ -320,14 +358,15 @@ class CachePathManager
      */
     private function adoptCacheFilesOfAnotherWriter(): void
     {
-        if ($this->includeMapStamp === $this->stampIncludeMap()) {
+        $stampOnDisk = $this->readIncludeMapStamp();
+        if ($this->includeMapStamp !== false && $this->includeMapStamp === $stampOnDisk) {
             return;
         }
         $this->cacheState       = [];
         $this->cacheStateLoaded = false;
         $this->loadCacheState();
         $this->newCacheState   = array_diff_key($this->newCacheState, $this->cacheState);
-        $this->includeMapStamp = $this->stampIncludeMap();
+        $this->includeMapStamp = $stampOnDisk;
     }
 
     /**
@@ -361,10 +400,12 @@ class CachePathManager
 
     /**
      * A prebuilt cache is never rebuilt at runtime, so metadata of another format is a deployment error
+     *
+     * A build replaces it.
      */
     private function rejectOutdatedFormat(): void
     {
-        if ($this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
+        if (!$this->isBuildingCache && $this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
             throw WeavingException::prebuiltCacheVersionMismatch((string) $this->cacheDir);
         }
     }
@@ -473,8 +514,9 @@ class CachePathManager
         $cacheState = $this->queryCacheState($resource);
 
         // With a prebuilt cache (built at deploy time) an existing cache record is trusted as-is: no filemtime or
-        // tracked-resource freshness checks - staleness is the deployer's responsibility
-        if ($cacheState === null || ($this->options['features'] & Features::PREBUILT_CACHE) !== 0) {
+        // tracked-resource freshness checks - staleness is the deployer's responsibility. The build of the cache
+        // (cache:warmup:aop, also over an existing directory) checks every record, to rebuild what changed
+        if ($cacheState === null || (($this->options['features'] & Features::PREBUILT_CACHE) !== 0 && !$this->isBuildingCache)) {
             return $cacheState;
         }
 
@@ -652,10 +694,12 @@ class CachePathManager
                 }
             }
 
-            $this->writeCacheFile(self::CACHE_FILE_NAME, ['version' => self::FORMAT_VERSION, 'files' => $fullCacheMap]);
+            $metadata = $this->writeCacheFile(self::CACHE_FILE_NAME, ['version' => self::FORMAT_VERSION, 'files' => $fullCacheMap]);
+            // The stamp identifies the written metadata: other records (also the weaving times) give another one
+            $stamp = hash('xxh128', $metadata);
             $this->writeCacheFile(
                 self::INCLUDE_MAP_FILE_NAME,
-                ['version' => self::FORMAT_VERSION, 'map' => $classMap, 'skip' => $skippedClasses, 'files' => $fileMap],
+                ['version' => self::FORMAT_VERSION, 'stamp' => $stamp, 'map' => $classMap, 'skip' => $skippedClasses, 'files' => $fileMap],
             );
 
             $this->cacheState      = $fullCacheMap;
@@ -663,7 +707,7 @@ class CachePathManager
             $this->skippedClasses  = $skippedClasses;
             $this->fileMap         = $fileMap;
             $this->newCacheState   = [];
-            $this->includeMapStamp = $this->stampIncludeMap();
+            $this->includeMapStamp = $stamp;
         }
     }
 
@@ -674,13 +718,17 @@ class CachePathManager
      * that keeps the whole array constant for opcache and follows the cache directory when it is moved.
      *
      * @param array<string, mixed> $data
+     *
+     * @return string Written content
      */
-    private function writeCacheFile(string $relativeFileName, array $data): void
+    private function writeCacheFile(string $relativeFileName, array $data): string
     {
         $cachePath = substr(var_export($this->cacheDir, true), 1, -1);
         $cacheData = '<?php return ' . var_export($data, true) . ';';
         $cacheData = str_replace('\'' . $cachePath, '__DIR__ . \'', $cacheData);
         $this->getCacheFileWriter()->write($this->cacheDir . $relativeFileName, $cacheData);
+
+        return $cacheData;
     }
 
     /**

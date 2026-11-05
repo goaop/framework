@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading\Warmup;
 
+use Go\Instrument\ClassLoading\CachePathManager;
 use Go\ParserReflection\ReflectionEngine;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -147,6 +148,39 @@ final class WarmupWorkerTest extends TestCase
         $this->assertSame('failed', $messages[0]['type']);
         $this->assertIsString($messages[0]['error']);
         $this->assertStringContainsString('missing-loader.php does not exist or is not readable', $messages[0]['error']);
+    }
+
+    public function testWorkerInPlaceWeavesAgainAFileThatChangedSinceThePrebuiltCacheWasBuilt(): void
+    {
+        $file = $this->appDir . '/src/Some.php';
+        // A prebuilt cache whose record of the file is older than the file
+        $record = ['filemtime' => (int) filemtime($file) - 10, 'filesize' => filesize($file), 'cachedAt' => 0, 'cacheUri' => null, 'classes' => []];
+        $recordKey = DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Some.php';
+        file_put_contents($this->cacheDir . '/_transformation.cache', '<?php return ' . var_export(
+            ['version' => CachePathManager::FORMAT_VERSION, 'files' => [$recordKey => $record]],
+            true,
+        ) . ';');
+        file_put_contents($this->cacheDir . '/_include.cache', '<?php return ' . var_export(
+            ['version' => CachePathManager::FORMAT_VERSION, 'map' => [], 'skip' => [], 'files' => [$recordKey => null]],
+            true,
+        ) . ';');
+        $loader = (string) file_get_contents($this->loader);
+        file_put_contents($this->loader, str_replace("'debug'", "'features' => \Go\Aop\Features::PREBUILT_CACHE,\n    'debug'", $loader));
+        $input  = self::createStream([WorkerProtocol::encode(['file' => $file])]);
+        $output = self::createStream();
+
+        $previousLevel = error_reporting(E_ALL);
+        try {
+            $exitCode = WarmupWorker::main($this->loader, 7, $input, $output);
+        } finally {
+            error_reporting($previousLevel);
+        }
+
+        $this->assertSame(0, $exitCode);
+        $messages = self::readMessages($output);
+        $this->assertCount(2, $messages);
+        $this->assertIsArray($messages[1]['records']);
+        $this->assertSame([$recordKey], array_keys($messages[1]['records']), 'The stale record is replaced');
     }
 
     public function testWorkerBuildsAnotherCacheDirectoryWhenAsked(): void
