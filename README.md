@@ -388,6 +388,8 @@ Documentation
 - [Pointcut syntax](docs/pointcuts.md): every pointcut type, wildcards, modifiers, return types and operators
 - [Advices](docs/advices.md): advice types, joinpoints, property interception, introductions, function and
   object-creation interception
+- [Performance](docs/performance.md): measured costs of the modes, the optimizations behind them, cache warm-up,
+  OPcache tuning, Docker and Kubernetes
 - [PHP 8.4 limitations](docs/php84-limitations.md) and [PHP 8.5 limitations](docs/php85-limitations.md)
 - [Upgrading from 3.x](UPGRADE-4.0.md) and the [changelog](CHANGELOG.md)
 
