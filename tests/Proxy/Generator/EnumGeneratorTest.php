@@ -42,6 +42,19 @@ class EnumGeneratorTest extends TestCase
     }
 
     /**
+     * Rooted and multi-segment interface names are fully qualified, a bare name is an alias of the file imports (#826)
+     */
+    public function testEmitsInterfaceNamesLikeClassGenerator(): void
+    {
+        $generator = new EnumGenerator('Demo', 'App', 'string', ['\\Stringable', 'Lib\\Labelled', 'Proxy']);
+
+        $this->assertStringContainsString(
+            'enum Demo : string implements \\Stringable, \\Lib\\Labelled, Proxy',
+            $generator->generate(),
+        );
+    }
+
+    /**
      * Attributes and the doc comment of a case are re-declared with the case (#794)
      */
     public function testEmitsCaseAttributesAndDocComment(): void

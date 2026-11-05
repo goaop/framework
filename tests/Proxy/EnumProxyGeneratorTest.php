@@ -181,7 +181,9 @@ class EnumProxyGeneratorTest extends TestCase
             ['method' => ['label' => [self::testAdvice('advisor')]]],
         );
 
-        $this->assertStringContainsString("    #[\\Override]\n    case DEFAULT = 'none';\n", $generator->generate());
+        $output = $generator->generate();
+        $this->assertStringContainsString("\nuse Override;\n", $output);
+        $this->assertStringContainsString("    #[Override]\n    case DEFAULT = 'none';\n", $output);
     }
 
     /**

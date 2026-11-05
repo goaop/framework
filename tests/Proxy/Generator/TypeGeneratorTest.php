@@ -201,6 +201,50 @@ class TypeGeneratorTest extends TestCase
 
         $this->assertSame('Product|Exception|null', TypeGenerator::renderAstTypeForPhpDoc($node, $imports));
         $this->assertSame('\Lib\Product|\Exception|null', TypeGenerator::renderAstTypeForPhpDoc($node));
+
+        $intersection = new \PhpParser\Node\IntersectionType([
+            new \PhpParser\Node\Name\FullyQualified('Countable'),
+            new \PhpParser\Node\Name\FullyQualified('Lib\Product'),
+        ]);
+        $this->assertSame('Countable&Product', TypeGenerator::renderAstTypeForPhpDoc($intersection, $imports));
+        $this->assertSame(
+            '?Exception',
+            TypeGenerator::renderAstTypeForPhpDoc(new \PhpParser\Node\NullableType(new \PhpParser\Node\Name\FullyQualified('Exception')), $imports),
+        );
+    }
+
+    /**
+     * @return array<string, array{string, string, string}>
+     */
+    public static function reflectionTypeForPhpDocProvider(): array
+    {
+        $ns = 'Go\Stubs\Generator';
+
+        return [
+            'class'        => [$ns . '\typeGenHelper_namedClass', 'Exception', '\Exception'],
+            'nullable cls' => [$ns . '\typeGenHelper_nullableClass', '?Exception', '?\Exception'],
+            'union'        => [$ns . '\typeGenHelper_union', 'string|int', 'string|int'],
+            'intersection' => [$ns . '\typeGenHelper_intersection', 'Countable&Iterator', '\Countable&\Iterator'],
+        ];
+    }
+
+    #[DataProvider('reflectionTypeForPhpDocProvider')]
+    public function testRenderTypeForPhpDocOfReflectionTypeUsesImports(string $functionName, string $imported, string $qualified): void
+    {
+        $type = new ReflectionFunction($functionName)->getParameters()[0]->getType();
+
+        $this->assertSame($imported, TypeGenerator::renderTypeForPhpDoc($type, new ProxyImports('App')));
+        $this->assertSame($qualified, TypeGenerator::renderTypeForPhpDoc($type));
+    }
+
+    public function testWithImportedNamesKeepsKeywordNamesOfRawAstNodes(): void
+    {
+        $type = TypeGenerator::fromAstNode(new \PhpParser\Node\UnionType([
+            new \PhpParser\Node\Name('static'),
+            new \PhpParser\Node\Name\FullyQualified('App\Domain\Product'),
+        ]));
+
+        $this->assertSame('static|Product', $type->withImportedNames(new ProxyImports('App'))->generate());
     }
 
     public function testFromTypeStringThrowsOnMalformedDnf(): void

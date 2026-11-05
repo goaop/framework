@@ -470,8 +470,9 @@ class WeavingTransformerTest extends TestCase
         $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches));
         $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
 
-        $this->assertStringContainsString("\nuse Go\\Stubs\\Collision\\The as CollisionThe;\n", $proxyContent);
-        $this->assertStringContainsString("\nuse Go\\Stubs\\Collision\\Interceptor as Level;\n", $proxyContent);
+        // normalizeWhitespaces() turns every line break into PHP_EOL ("\r\n" on Windows)
+        $this->assertStringContainsString(PHP_EOL . 'use Go\\Stubs\\Collision\\The as CollisionThe;' . PHP_EOL, $proxyContent);
+        $this->assertStringContainsString(PHP_EOL . 'use Go\\Stubs\\Collision\\Interceptor as Level;' . PHP_EOL, $proxyContent);
         $this->assertStringContainsString(
             'public function log(string $level = CollisionThe::LEVEL, ?CollisionThe $target = null): string',
             $proxyContent,
