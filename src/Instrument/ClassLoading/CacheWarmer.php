@@ -110,6 +110,9 @@ class CacheWarmer
         // One walk of the application tree: the collected list is counted and then processed
         $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
         $files      = iterator_to_array($enumerator->enumerate(), false);
+        // In path order: the file system lists a directory in any order, which differs between machines.
+        // Sorted, every run weaves the files in the same order, and with fail-fast stops on the same file
+        usort($files, static fn(SplFileInfo $left, SplFileInfo $right): int => strcmp($left->getPathname(), $right->getPathname()));
         // No more workers than files; without a command line to start them, the files are woven here
         $workers    = $this->workerCommandLine !== [] ? max(1, min($this->workers, count($files))) : 1;
 
@@ -174,7 +177,8 @@ class CacheWarmer
         // Loads every aspect once, which writes their advisor caches before the workers need them
         $container->getService(AdvisorIndex::class)->getAdvisors();
 
-        // Largest files first: they take longest, and the small ones left for the end even out the workers
+        // Largest files first: they take longest, and the small ones left for the end even out the workers.
+        // The sort is stable: files of the same size stay in path order
         usort($files, static fn(SplFileInfo $left, SplFileInfo $right): int => $right->getSize() <=> $left->getSize());
         $paths = array_map(self::pathOf(...), $files);
 
