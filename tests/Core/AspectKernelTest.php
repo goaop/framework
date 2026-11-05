@@ -23,6 +23,8 @@ use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\SyntaxTreeRewriter;
 use Go\Instrument\Transformer\TransformerResult;
 use Go\Instrument\Transformer\WeavingTransformer;
+use Go\ParserReflection\MissingAncestorPolicy;
+use Go\ParserReflection\ReflectionEngine;
 use PhpParser\Node;
 use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -230,6 +232,37 @@ class AspectKernelTest extends TestCase
         $this->expectExceptionMessage("Unknown feature {$feature}");
 
         $kernel->hasFeature($feature);
+    }
+
+    /**
+     * Features::PARTIAL_REFLECTION switches goaop/parser-reflection to the partial policy, without it the kernel leaves
+     * the policy of the engine as it is (goaop/parser-reflection#251)
+     */
+    #[DataProvider('reflectionFeatures')]
+    public function testInitConfiguresMissingAncestorPolicy(int $features, MissingAncestorPolicy $expectedPolicy): void
+    {
+        $previousPolicy = ReflectionEngine::getMissingAncestorPolicy();
+        ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Strict);
+        try {
+            $kernel = $this->makeKernel();
+            $this->setKernelOptions($kernel, ['features' => $features]);
+
+            new ReflectionMethod($kernel, 'configureReflection')->invoke($kernel);
+
+            $this->assertSame($expectedPolicy, ReflectionEngine::getMissingAncestorPolicy());
+        } finally {
+            ReflectionEngine::setMissingAncestorPolicy($previousPolicy);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{int, MissingAncestorPolicy}>
+     */
+    public static function reflectionFeatures(): iterable
+    {
+        yield 'partial reflection' => [Features::PARTIAL_REFLECTION, MissingAncestorPolicy::Partial];
+        yield 'with other features' => [Features::PARTIAL_REFLECTION | Features::PREBUILT_CACHE, MissingAncestorPolicy::Partial];
+        yield 'not enabled' => [Features::INTERCEPT_INCLUDES, MissingAncestorPolicy::Strict];
     }
 
     public function testGetOptionsReturnsCurrentlyStoredOptions(): void
