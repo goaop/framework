@@ -362,6 +362,30 @@ class CacheWarmerTest extends TestCase
         );
     }
 
+    public function testWarmUpInPlaceOverAPrebuiltCacheWeavesAFileAddedAfterTheBuild(): void
+    {
+        $transformer = new class implements SourceTransformer {
+            public function transform(StreamMetaData $metadata): TransformerResult
+            {
+                $metadata->setTokenStreamFromRawTokens(...PhpToken::tokenize($metadata->source . '// woven'));
+
+                return TransformerResult::Transformed;
+            }
+        };
+        $kernel = $this->createKernel($this->cacheDir, [$transformer], features: Features::PREBUILT_CACHE);
+        $this->assertSame(0, new CacheWarmer($kernel, new BufferedOutput())->warmUp());
+
+        // A request would fail on the new file (#808), the build of the next deployment weaves it
+        $addedFile = $this->appDir . '/src/Added.php';
+        file_put_contents($addedFile, "<?php echo 'added';\n");
+        $this->assertSame(0, new CacheWarmer($kernel, new BufferedOutput())->warmUp());
+
+        $this->assertSame("<?php echo 'added';\n// woven", file_get_contents($this->cacheDir . '/src/Added.php'));
+        $cachePathManager = $kernel->getContainer()->getService(CachePathManager::class);
+        $this->assertNotNull($cachePathManager->findIncludeFile((string) PathResolver::realpath($addedFile)));
+        $this->assertTrue($cachePathManager->servesPrebuiltCache, 'Requests trust the prebuilt cache again');
+    }
+
     public function testInterruptStopsWarmupLoopBeforeNextFile(): void
     {
         $output = new BufferedOutput();

@@ -175,6 +175,12 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
             }
         }
 
+        // A prebuilt cache knows every file it serves: an unknown one goes to the stream filter, which fails a source
+        // of the cache before weaving it and serves any other file as it is (CachePathManager::$servesPrebuiltCache)
+        if (self::$cachePathManager?->servesPrebuiltCache === true) {
+            return (self::$filterUriPrefix ?? self::filterUriPrefix()) . $resource;
+        }
+
         $cachedResource = self::$cachePathManager?->getCachePathForResource($resource);
 
         // If the cache is disabled, resource path not resolvable, or no cache yet, then use on-fly method

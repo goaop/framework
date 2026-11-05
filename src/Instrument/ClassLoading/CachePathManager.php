@@ -19,6 +19,7 @@ use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Cache\CacheFileWriter;
+use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\PathResolver;
 
 /**
@@ -143,6 +144,33 @@ class CachePathManager
      * also of a prebuilt cache, which requests trust as it is
      */
     public private(set) bool $isBuildingCache = false;
+
+    /**
+     * Whether requests are served from a prebuilt cache: Features::PREBUILT_CACHE outside a build (#808)
+     *
+     * Such a request never weaves nor writes, the cache was built at deploy time and is complete by contract. A source
+     * of the cache ({@see self::isSourceOfCache()}) without a record, or a record whose cached file is gone, fails with
+     * a WeavingException naming it before any weaving work (no parser, no transformer, no aspect): the autoloader
+     * checks a class against the include map, the stream filter checks a file it is asked to transform (an include
+     * intercepted with Features::INTERCEPT_INCLUDES, debug mode). A file that is no source of the cache passes the
+     * stream filter as it is. As a last line of defense the cache files are never written then (except by the
+     * explicit {@see self::clearCacheState()}), so a prebuilt directory, possibly on a read-only file system, is never
+     * touched by a request. A build ({@see self::withCacheDir()}) weaves and writes as without the flag.
+     *
+     * Not checked: the cached file of a known class or include in production, included natively without a stat call
+     * (a missing one fails as a plain include does). The kernel booted by `cache:warmup:aop` serves the cache like a
+     * request until the build starts, so its loader file must not load classes of the include paths after init().
+     */
+    public bool $servesPrebuiltCache {
+        get => !$this->isBuildingCache && $this->kernel->hasFeature(Features::PREBUILT_CACHE);
+    }
+
+    /**
+     * Path filter of the sources of the cache, built on first use, {@see self::isSourceOfCache()}
+     *
+     * @var (Closure(string): bool)|null
+     */
+    private ?Closure $isSourceOfCache = null;
 
     public function __construct(
         protected readonly AspectKernel $kernel,
@@ -453,6 +481,24 @@ class CachePathManager
     }
 
     /**
+     * Tells whether a source belongs to the cache: a PHP file below the include paths that is not excluded
+     *
+     * The files the warm-up enumerates and the autoloader weaves, by the same path filter
+     * ({@see Enumerator::getPathFilter()}): a prebuilt cache holds a record of each of them. Other files (outside the
+     * application root or the include paths, excluded, without the `.php` extension) are never woven.
+     */
+    public function isSourceOfCache(string $resource): bool
+    {
+        $this->isSourceOfCache ??= new Enumerator(
+            $this->options['appDir'],
+            $this->options['includePaths'],
+            $this->options['excludePaths'],
+        )->getPathFilter();
+
+        return ($this->isSourceOfCache)($resource);
+    }
+
+    /**
      * Records a class name discovered by the weaver in the given original file
      *
      * The pending names are folded into the file's metadata record by setCacheState()
@@ -656,9 +702,16 @@ class CachePathManager
 
     /**
      * Flushes the cache state into the file
+     *
+     * Never writes a prebuilt cache outside a build ({@see self::$servesPrebuiltCache}): its requests record nothing,
+     * so nothing pending can belong into it. Only a forced flush, the explicit reset of {@see self::clearCacheState()},
+     * writes it.
      */
     public function flushCacheState(bool $force = false): void
     {
+        if (!$force && $this->servesPrebuiltCache) {
+            return;
+        }
         if ((!empty($this->newCacheState) && $this->cacheDir !== null && is_writable($this->cacheDir)) || $force) {
             if (!$force) {
                 $this->adoptCacheFilesOfAnotherWriter();

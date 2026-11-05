@@ -14,6 +14,7 @@ namespace Go\Instrument\ClassLoading;
 
 use Closure;
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\WeavingException;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
@@ -287,6 +288,9 @@ final class AopComposerLoader
      * or gets the appropriate php://filter stream for the given class.
      *
      * @return string|false The path/resource if found, false otherwise.
+     *
+     * @throws WeavingException When a request served by a prebuilt cache meets a class of a file the cache does not
+     *                          know (CachePathManager::$servesPrebuiltCache)
      */
     public function findFile(string $class): false|string
     {
@@ -310,8 +314,18 @@ final class AopComposerLoader
             // Debug mode: a woven class (known from the class map) goes to the filter without a freshness check of its
             // own, the filter checks the record anyway
             $mayBeUntransformed = !$this->isProduction && !isset($this->classMap[$class]);
-            if (($this->isAllowedFilter)($file) && (!$mayBeUntransformed || !$this->isFreshUntransformedFile($file))) {
-                $file = FilterInjectorTransformer::rewrite($file);
+            if (($this->isAllowedFilter)($file)) {
+                // A prebuilt cache holds every allowed file: one it does not know fails, before anything is woven
+                if ($this->cachePathManager->servesPrebuiltCache && $this->cachePathManager->findIncludeFile($file) === null) {
+                    throw WeavingException::sourceMissingFromPrebuiltCache(
+                        $file,
+                        (string) $this->cachePathManager->getCacheDir(),
+                        $class,
+                    );
+                }
+                if (!$mayBeUntransformed || !$this->isFreshUntransformedFile($file)) {
+                    $file = FilterInjectorTransformer::rewrite($file);
+                }
             }
         }
 

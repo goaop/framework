@@ -47,8 +47,17 @@ class CachePathManagerTest extends TestCase
         self::removeTemporaryDirectory(self::$appDir);
     }
 
-    private function createManager(bool $prebuiltCache = false, ?string $cacheDir = null, ?string $appDir = null): CachePathManager
-    {
+    /**
+     * @param list<string> $includePaths
+     * @param list<string> $excludePaths
+     */
+    private function createManager(
+        bool $prebuiltCache = false,
+        ?string $cacheDir = null,
+        ?string $appDir = null,
+        array $includePaths = [],
+        array $excludePaths = [],
+    ): CachePathManager {
         $kernel = $this->createMock(AspectKernel::class);
         $kernel->method('getOptions')->willReturn([
             'debug'          => false,
@@ -56,8 +65,8 @@ class CachePathManagerTest extends TestCase
             'cacheDir'       => $cacheDir ?? self::$cacheDir,
             'cacheFileMode'  => 0770,
             'features'       => $prebuiltCache ? Features::PREBUILT_CACHE : 0,
-            'includePaths'   => [],
-            'excludePaths'   => [],
+            'includePaths'   => $includePaths,
+            'excludePaths'   => $excludePaths,
             'containerClass' => Container::class,
             'parsedFilesLimit' => 100,
         ]);
@@ -168,6 +177,58 @@ class CachePathManagerTest extends TestCase
 
         $this->assertFileExists($cacheDir . '/_include.cache');
         self::removeTemporaryDirectory($cacheDir);
+    }
+
+    public function testPrebuiltCacheIsServedOutsideABuildOnly(): void
+    {
+        $this->assertFalse($this->createManager()->servesPrebuiltCache);
+
+        $manager = $this->createManager(prebuiltCache: true);
+        $this->assertTrue($manager->servesPrebuiltCache);
+        $manager->withCacheDir(self::$cacheDir, function () use ($manager): void {
+            $this->assertFalse($manager->servesPrebuiltCache, 'A build weaves and writes');
+        });
+        $this->assertTrue($manager->servesPrebuiltCache);
+    }
+
+    public function testPrebuiltCacheIsNeverWrittenOutsideABuild(): void
+    {
+        $cacheDir = self::createTemporaryDirectory('cpm-prebuilt-flush');
+        $source   = self::$appDir . '/src/Some.php';
+        try {
+            $manager = $this->createManager(prebuiltCache: true, cacheDir: $cacheDir);
+            $manager->setCacheState($source, ['filemtime' => 1, 'cacheUri' => null]);
+
+            $manager->flushCacheState();
+            $this->assertSame([], array_values(array_diff((array) scandir($cacheDir), ['.', '..'])));
+
+            // A build writes the records, also the pending ones
+            $manager->withCacheDir($cacheDir, static function (): void {});
+            $this->assertFileExists($cacheDir . '/_include.cache');
+            $this->assertNotNull($this->createManager(cacheDir: $cacheDir)->findIncludeFile($source));
+        } finally {
+            self::removeTemporaryDirectory($cacheDir);
+        }
+    }
+
+    public function testSourcesOfTheCacheAreTheFilesTheWeaverTakes(): void
+    {
+        $manager = $this->createManager(
+            includePaths: [self::$appDir . '/src', self::$appDir . '/lib'],
+            excludePaths: [self::$appDir . '/src/Generated'],
+        );
+        // Resolved paths of the loaded files, with native separators
+        $path = static fn(string $relativePath): string => self::$appDir . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+
+        $this->assertTrue($manager->isSourceOfCache($path('/src/Service.php')));
+        $this->assertTrue($manager->isSourceOfCache($path('/lib/Helper.php')));
+        $this->assertFalse($manager->isSourceOfCache($path('/src/Generated/Proxy.php')), 'Excluded');
+        $this->assertFalse($manager->isSourceOfCache($path('/config/routes.php')), 'Outside the include paths');
+        $this->assertFalse($manager->isSourceOfCache($path('/src/page.phtml')), 'No PHP file');
+        $this->assertFalse(
+            $manager->isSourceOfCache(dirname(self::$appDir) . DIRECTORY_SEPARATOR . 'Service.php'),
+            'Outside the application',
+        );
     }
 
     public function testFlushKeepsTheRecordsOfAnotherWriter(): void
