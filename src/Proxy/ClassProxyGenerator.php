@@ -28,7 +28,6 @@ use Go\Aop\Proxy;
 use Go\Aop\StaticInitializationAware;
 use Go\Core\AspectContainer;
 use Go\ParserReflection\ReflectionClass as ParsedReflectionClass;
-use Go\ParserReflection\ReflectionEnum as ParsedReflectionEnum;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\ClassGenerator;
 use Go\Proxy\Generator\ClassModifier;
@@ -53,12 +52,9 @@ use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Name;
-use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt;
-use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\VariadicPlaceholder;
 use ReflectionClass;
@@ -165,13 +161,9 @@ class ClassProxyGenerator
             $generatedProperties[] = $interceptedProperty;
         }
 
-        // Proxy implements the same interfaces as the original class (no longer inherited), the ones a partial
-        // reflection leaves out included
-        [$missingParentName, $missingInterfaceNames] = self::getMissingDeclaredAncestors($originalClass);
-        $originalInterfaces    = array_map(
-            self::rootClassName(...),
-            [...$originalClass->getInterfaceNames(), ...$missingInterfaceNames],
-        );
+        // Proxy implements the same interfaces as the original class (no longer inherited); a partial reflection
+        // (Features::PARTIAL_REFLECTION) names the interfaces it can not locate too
+        $originalInterfaces    = array_map(static fn(string $i) => '\\' . $i, $originalClass->getInterfaceNames());
         $introducedInterfaces  = array_merge($originalInterfaces, $introducedInterfaces);
         $introducedInterfaces[] = '\\' . Proxy::class;
         $introducedInterfaces   = array_values(array_unique($introducedInterfaces));
@@ -193,13 +185,15 @@ class ClassProxyGenerator
         }
         $introducedInterfaces = array_values(array_unique($introducedInterfaces));
 
-        // Proxy parent = original class parent (not the trait — there is no inheritance layer)
-        $parentClass     = $originalClass->getParentClass();
-        $parentClassName = match (true) {
-            $parentClass !== false      => '\\' . $parentClass->getName(),
-            $missingParentName !== null => self::rootClassName($missingParentName),
-            default                     => null,
-        };
+        // Proxy parent = original class parent (not the trait — there is no inheritance layer). The parsed reflection
+        // names it as written in the source, also one it can not locate (Features::PARTIAL_REFLECTION)
+        if ($originalClass instanceof ParsedReflectionClass) {
+            $parentName = $originalClass->getParentClassName();
+        } else {
+            $parentClass = $originalClass->getParentClass();
+            $parentName  = $parentClass !== false ? $parentClass->getName() : false;
+        }
+        $parentClassName = $parentName !== false ? self::rootClassName($parentName) : null;
 
         // Proxy modifiers: preserve final/abstract/readonly from original class.
         $modifiers = [];
@@ -578,54 +572,6 @@ class ClassProxyGenerator
         $lastSeparator = strrpos($className, '\\');
 
         return $lastSeparator === false ? $className : substr($className, $lastSeparator + 1);
-    }
-
-    /**
-     * Parent class and interfaces declared by the original class whose source goaop/parser-reflection could not locate
-     *
-     * With Features::PARTIAL_REFLECTION the weaver reflects classes partially: a parent class or an interface declared
-     * in code generated at runtime, by a class_alias() or outside the Composer autoloader is left out of
-     * getParentClass() and getInterfaceNames(). The proxy still declares it under the name resolved from the source:
-     * the original class could not be loaded without it either.
-     *
-     * @param ReflectionClass<covariant object> $originalClass
-     *
-     * @return array{string|null, list<string>} Name of the missing parent class (null if none), names of the
-     *                                          missing interfaces
-     */
-    protected static function getMissingDeclaredAncestors(ReflectionClass $originalClass): array
-    {
-        if (!$originalClass instanceof ParsedReflectionClass && !$originalClass instanceof ParsedReflectionEnum) {
-            return [null, []];
-        }
-        $missingNames = $originalClass->getMissingClassNames();
-        if ($missingNames === []) {
-            return [null, []];
-        }
-
-        $classNode  = $originalClass->getNode();
-        $parentName = $classNode instanceof Class_ && $classNode->extends !== null
-            ? self::resolvedName($classNode->extends)
-            : null;
-        $interfaceNames = $classNode instanceof Class_ || $classNode instanceof Enum_
-            ? array_map(self::resolvedName(...), $classNode->implements)
-            : [];
-
-        // Missing names include the ancestors missing for an available ancestor, which come with that one
-        return [
-            in_array($parentName, $missingNames, true) ? $parentName : null,
-            array_values(array_intersect($interfaceNames, $missingNames)),
-        ];
-    }
-
-    /**
-     * Fully qualified name of a class referenced in the source
-     */
-    private static function resolvedName(Name $name): string
-    {
-        $resolvedName = $name->getAttribute('resolvedName');
-
-        return $resolvedName instanceof FullyQualified ? $resolvedName->toString() : $name->toString();
     }
 
     /**
