@@ -41,6 +41,23 @@ return [
         ],
     ],
 
+    // Production without weaving the aspects: their classes are always loaded natively, so the aspects register in
+    // the same order whether the cache is warm or empty (issue #807)
+    'production_native_aspects' => [
+        'kernel' => \Go\Tests\TestProject\Kernel\DefaultAspectKernel::class,
+        'console' => __DIR__ . '/../bin/console',
+        'frontController' => __DIR__ . '/../web/index.php',
+        'appDir' => __DIR__ . '/../',
+        'debug' => false,
+        'cacheDir'  => __DIR__ . '/../var/cache/aspect',
+        'includePaths' => [
+            __DIR__ . '/../src/'
+        ],
+        'excludePaths' => [
+            __DIR__ . '/../src/Aspect/'
+        ],
+    ],
+
     // Includes inside woven files are intercepted (issue #746)
     'production_includes' => [
         'kernel' => \Go\Tests\TestProject\Kernel\DefaultAspectKernel::class,

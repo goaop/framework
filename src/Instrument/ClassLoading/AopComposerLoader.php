@@ -18,7 +18,9 @@ use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
+use Go\ParserReflection\ReflectionEngine;
 use Composer\Autoload\ClassLoader;
+use WeakMap;
 
 /**
  * AopComposerLoader class is responsible to use a weaver for classes instead of original one
@@ -59,6 +61,16 @@ final class AopComposerLoader
     private static ?Closure $includeFile = null;
 
     /**
+     * Copies of the composer loaders taken before the woven class map was injected into them: their rules resolve
+     * a woven class to its original source, {@see self::findSourceFile()}
+     *
+     * Kept per composer loader, so that a loader wrapped again (the kernel booted twice) keeps its first copy.
+     *
+     * @var WeakMap<ClassLoader, ClassLoader>|null
+     */
+    private static ?WeakMap $loadersBeforeInjection = null;
+
+    /**
      * Lazy-initialized filter for allowed files
      *
      * @var (Closure(string): bool)|null
@@ -94,6 +106,9 @@ final class AopComposerLoader
         // their cached files. Untransformed classes are deliberately NOT added - composer
         // already resolves them to their original files.
         if (!$options['debug'] && $this->classMap !== []) {
+            // A shallow copy: composer's arrays are shared with the loader until it changes them
+            self::$loadersBeforeInjection ??= new WeakMap();
+            self::$loadersBeforeInjection[$original] ??= clone $original;
             $original->addClassMap($this->classMap);
         }
     }
@@ -131,6 +146,11 @@ final class AopComposerLoader
             spl_autoload_register($loader);
         }
 
+        if ($wasInitialized) {
+            // The weaver must reflect original sources, never the woven files of the injected class map
+            ReflectionEngine::init(new OriginalSourceLocator(), null, ReflectionEngine::getMissingAncestorPolicy());
+        }
+
         return $wasInitialized;
     }
 
@@ -156,7 +176,7 @@ final class AopComposerLoader
     {
         foreach (spl_autoload_functions() as $loader) {
             if (is_array($loader) && $loader[0] instanceof self) {
-                $file = $loader[0]->original->findFile($class);
+                $file = $loader[0]->findSourceFile($class);
                 if ($file !== false) {
                     return $file;
                 }
@@ -164,6 +184,23 @@ final class AopComposerLoader
         }
 
         return null;
+    }
+
+    /**
+     * Finds the original source file of a class by the rules of the wrapped composer loader, without loading the class
+     *
+     * In production composer resolves a woven class to its cached file through the injected class map: such a class
+     * is looked up by the rules the loader had before the injection.
+     *
+     * @return string|false Path given by composer, or false when the loader does not know the class
+     */
+    public function findSourceFile(string $class): false|string
+    {
+        if (isset($this->classMap[$class]) && isset(self::$loadersBeforeInjection[$this->original])) {
+            return self::$loadersBeforeInjection[$this->original]->findFile($class);
+        }
+
+        return $this->original->findFile($class);
     }
 
     /**

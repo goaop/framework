@@ -164,7 +164,9 @@ the last `--cached-files=N` parsed files in memory (default 100). It shows a pro
 
 `cache:warmup:aop --cache-dir=DIR` builds the cache in another directory, from scratch, while the kernel (and the
 workers) keep using their own: how a deployment prepares the cache of the next release next to the running one. A
-cache built this way is complete and location independent.
+cache built this way is complete and location independent, also when a production kernel builds it while its own
+cache is warm: the weaver always reads the original sources of the classes it reflects, never the woven files that
+Composer serves in production.
 
 ## Deployment
 
