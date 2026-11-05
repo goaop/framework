@@ -173,3 +173,4 @@ cache built this way is complete and location independent.
 3. Run with `'debug' => false` and `Features::PREBUILT_CACHE`.
 
 Rebuild the cache whenever the code or the aspects change. When upgrading from 3.x, see the [upgrade guide](../UPGRADE-4.0.md).
+OPcache tuning, preloading and building the cache into a Docker image: [Performance](performance.md).
