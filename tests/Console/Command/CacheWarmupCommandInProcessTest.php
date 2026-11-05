@@ -96,12 +96,23 @@ class CacheWarmupCommandInProcessTest extends TestCase
         $this->assertFalse((new CacheWarmupCommand())->handleSignal(SIGINT));
     }
 
+    private function kernelWithParsedFilesLimit(int $limit): AspectKernel
+    {
+        $kernel = $this->createStub(AspectKernel::class);
+        $kernel->method('getOptions')->willReturn(['parsedFilesLimit' => $limit]);
+
+        return $kernel;
+    }
+
     public function testSuccessfulWarmupReturnsSuccess(): void
     {
         $command = new class extends CacheWarmupCommand {
+            public AspectKernel $kernel;
+
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
-                // No-op: kernel is not needed, warmup below is simulated
+                // No kernel is booted, warmup below is simulated; the options of a kernel provide the defaults
+                $this->aspectKernel = $this->kernel;
             }
 
             protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null, ?string $preloadFile = null): CacheWarmer
@@ -121,7 +132,8 @@ class CacheWarmupCommandInProcessTest extends TestCase
             }
         };
 
-        $tester = new CommandTester($command);
+        $command->kernel = $this->kernelWithParsedFilesLimit(100);
+        $tester          = new CommandTester($command);
 
         $this->assertSame(Command::SUCCESS, $tester->execute(['loader' => 'unused.php']));
     }
@@ -146,9 +158,12 @@ class CacheWarmupCommandInProcessTest extends TestCase
     public function testInterruptedWarmupMapsSignalToExitCode(): void
     {
         $command = new class extends CacheWarmupCommand {
+            public AspectKernel $kernel;
+
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
-                // No-op: kernel is not needed, warmup below is simulated
+                // No kernel is booted, warmup below is simulated; the options of a kernel provide the defaults
+                $this->aspectKernel = $this->kernel;
             }
 
             protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null, ?string $preloadFile = null): CacheWarmer
@@ -170,6 +185,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
             }
         };
 
+        $command->kernel = $this->kernelWithParsedFilesLimit(100);
         $tester   = new CommandTester($command);
         $exitCode = $tester->execute(['loader' => 'unused.php']);
 
@@ -186,9 +202,12 @@ class CacheWarmupCommandInProcessTest extends TestCase
 
             public ?int $cachedFiles = null;
 
+            public AspectKernel $kernel;
+
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
-                // No-op: kernel is not needed, warmup below is simulated
+                // No kernel is booted, warmup below is simulated; the options of a kernel provide the defaults
+                $this->aspectKernel = $this->kernel;
             }
 
             protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null, ?string $preloadFile = null): CacheWarmer
@@ -212,12 +231,13 @@ class CacheWarmupCommandInProcessTest extends TestCase
             }
         };
 
-        $tester = new CommandTester($command);
+        $command->kernel = $this->kernelWithParsedFilesLimit(42);
+        $tester          = new CommandTester($command);
 
         $this->assertSame(Command::FAILURE, $tester->execute(['loader' => 'unused.php', '--fail-fast' => true]));
         $this->assertTrue($command->failFast);
         $this->assertSame(1, $command->workers, 'Weaves in the command process by default');
-        $this->assertSame(100, $command->cachedFiles);
+        $this->assertSame(42, $command->cachedFiles, 'The option of the kernel is the default');
 
         $tester->execute(['loader' => 'unused.php', '--workers' => '6', '--cached-files' => '25']);
         $this->assertSame(6, $command->workers);
@@ -268,7 +288,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
     #[DataProvider('preloadOptions')]
     public function testPreloadOptionIsHandedToTheWarmer(array $options, ?string $expectedPreloadFile): void
     {
-        $command = new class ($this->createStub(AspectKernel::class)) extends CacheWarmupCommand {
+        $command = new class ($this->kernelWithParsedFilesLimit(100)) extends CacheWarmupCommand {
             public ?string $preloadFile = 'not called';
 
             public function __construct(private readonly AspectKernel $kernel)
@@ -278,7 +298,8 @@ class CacheWarmupCommandInProcessTest extends TestCase
 
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
-                // No-op: kernel is not needed, warmup below is simulated
+                // The kernel only provides the default of --cached-files, the warmup below is simulated
+                $this->aspectKernel = $this->kernel;
             }
 
             protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null, ?string $preloadFile = null): CacheWarmer

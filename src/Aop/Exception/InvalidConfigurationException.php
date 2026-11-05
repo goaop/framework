@@ -75,6 +75,14 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
         ));
     }
 
+    public static function invalidParsedFilesLimit(mixed $parsedFilesLimit): self
+    {
+        return new self(sprintf(
+            'Option "parsedFilesLimit" must be a positive integer, got %s.',
+            is_int($parsedFilesLimit) ? (string) $parsedFilesLimit : get_debug_type($parsedFilesLimit),
+        ));
+    }
+
     public static function containerClassNotFound(mixed $containerClass): self
     {
         return new self(sprintf(

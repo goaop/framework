@@ -16,7 +16,6 @@ use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Console\KernelLoader;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CacheWarmer;
-use Go\Instrument\ClassLoading\Warmup\FileWarmer;
 use Go\Instrument\ClassLoading\Warmup\WarmupWorker;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -102,7 +101,7 @@ abstract class BaseAspectCommand extends Command
      *
      * @param bool $failFast Whether the warmer stops after the first file that fails to process
      * @param int  $workers     Number of worker processes, 1 weaves in this process
-     * @param int  $cachedFiles Number of parsed files kept in memory by each weaving process, see FileWarmer
+     * @param int  $cachedFiles Number of parsed files kept in memory by each weaving process, see AspectKernel::DEFAULT_PARSED_FILES_LIMIT
      * @param string|null $cacheDir Directory to build the cache in instead of the one of the kernel
      * @param string|null $preloadFile Path of the opcache.preload script to write, '' for the default one, null for none
      */
@@ -110,7 +109,7 @@ abstract class BaseAspectCommand extends Command
         OutputInterface $output,
         bool $failFast = false,
         int $workers = 1,
-        int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES,
+        int $cachedFiles = AspectKernel::DEFAULT_PARSED_FILES_LIMIT,
         ?string $cacheDir = null,
         ?string $preloadFile = null,
     ): CacheWarmer {
@@ -125,12 +124,12 @@ abstract class BaseAspectCommand extends Command
      * A worker boots the kernel with the loader file, like loadAspectKernel() does. A command that boots the kernel
      * differently returns the command line of its own worker here, or an empty list to weave in this process only.
      *
-     * @param int         $cachedFiles Number of parsed files the worker keeps in memory, see FileWarmer
+     * @param int         $cachedFiles Number of parsed files the worker keeps in memory, see AspectKernel::DEFAULT_PARSED_FILES_LIMIT
      * @param string|null $cacheDir    Directory the worker builds the cache in instead of the one of its kernel
      *
      * @return list<string>
      */
-    protected function getWorkerCommandLine(int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES, ?string $cacheDir = null): array
+    protected function getWorkerCommandLine(int $cachedFiles = AspectKernel::DEFAULT_PARSED_FILES_LIMIT, ?string $cacheDir = null): array
     {
         return $this->loaderPath !== null ? WarmupWorker::commandLine($this->loaderPath, $cachedFiles, $cacheDir) : [];
     }

@@ -20,8 +20,10 @@ use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\Core\AdvisorIndex;
 use Go\Core\AspectLoaderInterface;
 use Go\Core\Container;
+use Go\Instrument\Transformer\Stubs\AbstractConstructedStub;
 use Go\Instrument\Transformer\Stubs\ConstructedStub;
 use Go\Instrument\Transformer\Stubs\InitializationAwareStub;
+use Go\Instrument\Transformer\Stubs\PrivateConstructorStub;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
 use PHPUnit\Framework\TestCase;
@@ -159,6 +161,48 @@ class ConstructorExecutionTransformerTest extends TestCase
         $second = $transformer->{InitializationAwareStub::class};
         $this->assertInstanceOf(InitializationAwareStub::class, $second);
         $this->assertSame([], $second->receivedArguments);
+    }
+
+    /**
+     * Classes without initialization advices are created natively: repeated lookups, named arguments
+     */
+    public function testUnadvisedClassIsCreatedNativelyOnEveryLookup(): void
+    {
+        $transformer = ConstructorExecutionTransformer::getInstance();
+
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            // Named arguments of the rewritten call arrive in __call() as string keys
+            // @phpstan-ignore argument.type
+            $instance = $transformer->__call(ConstructedStub::class, ['size' => 7]);
+            $this->assertInstanceOf(ConstructedStub::class, $instance);
+            $this->assertSame('default', $instance->name);
+            $this->assertSame(7, $instance->size);
+        }
+    }
+
+    /**
+     * A private constructor stays reachable from a static factory, as with a native `new static`
+     */
+    public function testPrivateConstructorIsStillReachableFromStaticFactory(): void
+    {
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $this->assertSame('named', PrivateConstructorStub::create('named')->name);
+        }
+    }
+
+    public function testAbstractClassKeepsFailingOnEveryLookup(): void
+    {
+        $transformer = ConstructorExecutionTransformer::getInstance();
+
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            try {
+                // @phpstan-ignore property.notFound, expr.resultUnused (exercises the __get() magic method directly)
+                $transformer->{AbstractConstructedStub::class};
+                $this->fail('An abstract class can not be instantiated');
+            } catch (\Error $error) {
+                $this->assertStringContainsString('abstract', $error->getMessage());
+            }
+        }
     }
 
     /**

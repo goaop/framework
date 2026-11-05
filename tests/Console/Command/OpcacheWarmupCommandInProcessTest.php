@@ -140,6 +140,7 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
             'includePaths'   => [$appDir . '/src'],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ];
         $kernel->method('getOptions')->willReturn($options);
         $kernel->method('hasFeature')->willReturn(false);

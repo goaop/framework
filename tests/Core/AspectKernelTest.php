@@ -28,6 +28,7 @@ use Go\ParserReflection\ReflectionEngine;
 use PhpParser\Node;
 use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -265,6 +266,67 @@ class AspectKernelTest extends TestCase
         yield 'not enabled' => [Features::INTERCEPT_INCLUDES, MissingAncestorPolicy::Strict];
     }
 
+    /**
+     * Separate process: the limit of the engine is a process-wide state that can not be unset again
+     */
+    #[RunInSeparateProcess]
+    public function testInitAppliesTheDefaultParsedFilesLimit(): void
+    {
+        $limit = new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles');
+        $this->assertFalse($limit->isInitialized(), 'The engine keeps every file until a limit is set');
+
+        $kernel = $this->makeKernel();
+        $this->setKernelOptions($kernel, ['features' => 0]);
+        new ReflectionMethod($kernel, 'configureReflection')->invoke($kernel);
+
+        $this->assertSame(AspectKernel::DEFAULT_PARSED_FILES_LIMIT, $limit->getValue());
+    }
+
+    #[RunInSeparateProcess]
+    public function testInitAppliesTheConfiguredParsedFilesLimit(): void
+    {
+        ReflectionEngine::setMaximumCachedFiles(7);
+
+        $kernel = $this->makeKernel();
+        $this->setKernelOptions($kernel, ['parsedFilesLimit' => 250]);
+        new ReflectionMethod($kernel, 'configureReflection')->invoke($kernel);
+
+        $this->assertSame(250, new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles')->getValue());
+    }
+
+    public function testParsedFilesLimitDefaultsAndIsNormalized(): void
+    {
+        $kernel = $this->makeKernel();
+
+        $this->assertSame(AspectKernel::DEFAULT_PARSED_FILES_LIMIT, $this->invokeProtectedArray($kernel, 'getDefaultOptions')['parsedFilesLimit']);
+        $normalized = new ReflectionMethod($kernel, 'normalizeOptions')->invoke($kernel, ['cacheDir' => '/tmp/cache', 'parsedFilesLimit' => 30]);
+        $this->assertIsArray($normalized);
+        $this->assertSame(30, $normalized['parsedFilesLimit']);
+    }
+
+    #[DataProvider('invalidParsedFilesLimits')]
+    public function testInvalidParsedFilesLimitIsRejected(mixed $value): void
+    {
+        $kernel = $this->makeKernel();
+
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageMatches('/^Option "parsedFilesLimit" must be a positive integer/');
+
+        new ReflectionMethod($kernel, 'normalizeOptions')->invoke($kernel, ['cacheDir' => '/tmp/cache', 'parsedFilesLimit' => $value]);
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function invalidParsedFilesLimits(): iterable
+    {
+        yield 'zero' => [0];
+        yield 'negative' => [-5];
+        yield 'null' => [null];
+        yield 'numeric string' => ['100'];
+        yield 'float' => [1.5];
+    }
+
     public function testGetOptionsReturnsCurrentlyStoredOptions(): void
     {
         $kernel = $this->makeKernel();
@@ -281,7 +343,7 @@ class AspectKernelTest extends TestCase
         $default = $this->invokeProtectedArray($kernel, 'getDefaultOptions');
 
         $this->assertSame(
-            ['debug', 'appDir', 'cacheDir', 'cacheFileMode', 'features', 'includePaths', 'excludePaths', 'containerClass'],
+            ['debug', 'appDir', 'cacheDir', 'cacheFileMode', 'features', 'includePaths', 'excludePaths', 'containerClass', 'parsedFilesLimit'],
             array_keys($default),
         );
         $this->assertFalse($default['debug']);

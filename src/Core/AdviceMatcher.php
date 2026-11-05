@@ -24,6 +24,7 @@ use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionProperty;
+use WeakMap;
 
 /**
  * Advice matcher returns the list of advices for the specific point of code
@@ -38,6 +39,14 @@ class AdviceMatcher implements AdviceMatcherInterface
      * @var array<non-empty-string, ReflectionFunction>|null
      */
     private static ?array $internalFunctions = null;
+
+    /**
+     * Internal functions matched by a function pointcut, by pointcut and namespace name: every woven file of a
+     * namespace asks again, and matching walks all internal functions
+     *
+     * @var WeakMap<Pointcut, array<string, list<string>>>
+     */
+    private WeakMap $matchedFunctions;
 
     /**
      * Answers of the woven file filter by class name
@@ -55,7 +64,9 @@ class AdviceMatcher implements AdviceMatcherInterface
          * @var (Closure(string): bool)|null
          */
         private readonly ?Closure $isWovenFile = null,
-    ) {}
+    ) {
+        $this->matchedFunctions = new WeakMap();
+    }
 
     /**
      * Returns list of function advices for namespace
@@ -102,7 +113,11 @@ class AdviceMatcher implements AdviceMatcherInterface
 
         foreach ($advisors as $advisorId => $advisor) {
             if ($advisor instanceof PointcutAdvisor) {
-                $pointcut     = $advisor->pointcut;
+                $pointcut = $advisor->pointcut;
+                // A function-only pointcut has nothing to do with a class
+                if (($pointcut->kind & ~Pointcut::KIND_FUNCTION) === 0) {
+                    continue;
+                }
                 $matchesClass = $pointcut->matches($class);
                 if ($matchesClass && ($pointcut->kind & Pointcut::KIND_CLASS)) {
                     foreach ($this->getClassAdvicesFromAdvisor($class, $advisor, $advisorId, $pointcut) as $prefix => $prefixAdvices) {
@@ -331,10 +346,22 @@ class AdviceMatcher implements AdviceMatcherInterface
             }
         }
 
-        foreach (self::$internalFunctions as $functionName => $function) {
-            if ($pointcut->matches($namespace, $function)) {
-                $advices[AspectContainer::FUNCTION_PREFIX][$functionName][$advisorId] = $advisor->getAdvice();
+        $namespaceName = $namespace->getName();
+        /** @var array<string, list<string>> $byNamespace */
+        $byNamespace   = $this->matchedFunctions[$pointcut] ?? [];
+        if (!isset($byNamespace[$namespaceName])) {
+            $matched = [];
+            foreach (self::$internalFunctions as $functionName => $function) {
+                if ($pointcut->matches($namespace, $function)) {
+                    $matched[] = $functionName;
+                }
             }
+            $byNamespace[$namespaceName]       = $matched;
+            $this->matchedFunctions[$pointcut] = $byNamespace;
+        }
+
+        foreach ($byNamespace[$namespaceName] as $functionName) {
+            $advices[AspectContainer::FUNCTION_PREFIX][$functionName][$advisorId] = $advisor->getAdvice();
         }
 
         return $advices;

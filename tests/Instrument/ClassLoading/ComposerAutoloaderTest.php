@@ -48,6 +48,7 @@ class ComposerAutoloaderTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
 
         // The array callable AopComposerLoader::init() registers, ahead of Composer's own

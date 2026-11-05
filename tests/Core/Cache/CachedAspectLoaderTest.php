@@ -100,6 +100,7 @@ class CachedAspectLoaderTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
     }
 
