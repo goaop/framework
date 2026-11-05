@@ -21,6 +21,9 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
+use Go\ParserReflection\ClassNotFoundException;
+use Go\ParserReflection\MissingAncestorPolicy;
+use Go\ParserReflection\ReflectionEngine;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\MockObject\MockObject;
 use Go\Instrument\Transformer\Stubs\MultiLinePropertiesClass;
@@ -237,6 +240,49 @@ class WeavingTransformerTest extends TestCase
     }
 
     /**
+     * With the partial reflection of Features::PARTIAL_REFLECTION, a class whose parent class and interface can't be
+     * located is woven with its own methods, and its proxy still declares them (goaop/parser-reflection#251)
+     */
+    public function testClassWithUnlocatableAncestorsIsWovenWithItsOwnMethods(): void
+    {
+        $metadata = $this->loadTestMetadata('class-unknown-parent');
+        $result   = $this->transformWithPolicy(MissingAncestorPolicy::Partial, $metadata);
+
+        $this->assertSame(TransformerResult::Transformed, $result);
+        $this->assertStringContainsString('trait RuleWithMissingParentOriginalTrait', $metadata->source);
+        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches));
+
+        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
+        $this->assertStringContainsString(
+            'class RuleWithMissingParent extends \\Missing\\Optional\\Dependency\\BaseRule'
+            . ' implements \\Missing\\Optional\\Dependency\\Rule, \\Go\\Aop\\Proxy',
+            $proxyContent,
+        );
+        $this->assertStringContainsString('public function getNodeType(): string', $proxyContent);
+    }
+
+    /**
+     * Without the partial reflection, matching the methods of such a class fails on its missing parent class
+     */
+    public function testClassWithUnlocatableAncestorsFailsWithStrictReflection(): void
+    {
+        $this->expectException(ClassNotFoundException::class);
+
+        $this->transformWithPolicy(MissingAncestorPolicy::Strict, $this->loadTestMetadata('class-unknown-parent'));
+    }
+
+    private function transformWithPolicy(MissingAncestorPolicy $policy, StreamMetaData $metadata): TransformerResult
+    {
+        $previousPolicy = ReflectionEngine::getMissingAncestorPolicy();
+        ReflectionEngine::setMissingAncestorPolicy($policy);
+        try {
+            return $this->transformer->transform($metadata);
+        } finally {
+            ReflectionEngine::setMissingAncestorPolicy($previousPolicy);
+        }
+    }
+
+    /**
      * Aspects not loaded yet are loaded before matching: the AdvisorIndex usually loads them earlier, but a kernel
      * overriding registerTransformerServices() may run the weaver without the `new` rewriting rule
      */
@@ -334,7 +380,8 @@ class WeavingTransformerTest extends TestCase
      *
      * TraitConverter must strip T_FINAL, T_ABSTRACT, and T_READONLY
      * before the class keyword because PHP traits do not support these modifiers.
-     * The proxy class is intentionally non-readonly.
+     * The proxy class stays readonly, so the properties of the trait are made readonly explicitly: a readonly class
+     * can not use a trait with a non-readonly property (#792).
      */
     public function testWeaverForFinalReadonlyClass(): void
     {

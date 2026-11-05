@@ -54,7 +54,8 @@
   - renderAstTypeForPhpDoc() (AST node available) / renderTypeForPhpDoc() (fallback) for @var generic on $__joinPoint
 
 ## PHP compat: Readonly classes (8.2+)
-- Generated trait drops `readonly` (traits can't be readonly in PHP)
+- Generated trait drops `readonly` (traits can't be readonly in PHP); TraitConverter puts `readonly` on each property and
+  promoted parameter instead, a readonly class can't use a trait with non-readonly properties (#792)
 - Proxy class preserves `readonly`
 - Per-method function-scoped static $__joinPoint (not class property) — allowed in readonly classes
 - Readonly properties excluded from access() interception (can't have hooks)

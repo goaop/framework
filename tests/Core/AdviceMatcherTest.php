@@ -18,6 +18,7 @@ use Go\Aop\IntroductionInfo;
 use Go\Aop\Pointcut;
 use Go\Aop\Support\GenericPointcutAdvisor;
 use Go\ParserReflection\Locator\ComposerLocator;
+use Go\ParserReflection\MissingAncestorPolicy;
 use Go\ParserReflection\ReflectionEngine;
 use Go\ParserReflection\ReflectionFile;
 use Go\ParserReflection\ReflectionFileNamespace;
@@ -563,6 +564,35 @@ class AdviceMatcherTest extends TestCase
         $advisor = new GenericPointcutAdvisor($pointcut, $this->createMock(Advice::class));
 
         return new AdviceMatcher($isWovenFile)->getAdvicesForClass(new ReflectionClass($className), ['advisor' => $advisor]);
+    }
+
+    /**
+     * With the partial reflection of Features::PARTIAL_REFLECTION, a class whose parent class and interface can't be
+     * located is matched with its own methods, also by a pointcut walking its ancestors (goaop/parser-reflection#251)
+     */
+    public function testClassWithUnlocatableAncestorsIsMatchedWithItsOwnMethods(): void
+    {
+        $previousPolicy = ReflectionEngine::getMissingAncestorPolicy();
+        ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Partial);
+        try {
+            $class = new ReflectionFile(dirname(__DIR__) . '/Instrument/Transformer/_files/class-unknown-parent.php')
+                ->getFileNamespace('Test\ns1')
+                ->getClass('Test\ns1\RuleWithMissingParent');
+
+            $pointcut = $this->createMock(Pointcut::class);
+            $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_METHOD);
+            $pointcut->method('matches')->willReturnCallback(
+                static fn(ReflectionClass $class): bool => !$class->isSubclassOf(\Stringable::class),
+            );
+            $advisor = new GenericPointcutAdvisor($pointcut, $this->createMock(Advice::class));
+
+            $advices = new AdviceMatcher()->getAdvicesForClass($class, ['advisor' => $advisor]);
+
+            $this->assertTrue($class->isPartial());
+            $this->assertSame(['getNodeType'], array_keys($advices[AspectContainer::METHOD_PREFIX] ?? []));
+        } finally {
+            ReflectionEngine::setMissingAncestorPolicy($previousPolicy);
+        }
     }
 
     /**

@@ -121,6 +121,9 @@ final class TraitConverter
             return;
         }
         $this->rewriteHeader($classNode, $editor, $traitName);
+        if ($classNode instanceof Class_ && $classNode->isReadonly()) {
+            $this->makePropertiesReadonly($classNode, $editor);
+        }
         $this->removeInterceptedProperties($class, $interceptedProperties, $editor);
         $this->stripOverrideAttributes($class, $interceptedMethods, $methods, $editor);
         $this->removeAttributes(
@@ -167,6 +170,29 @@ final class TraitConverter
         $lastClause = end($clauses);
         if ($lastClause !== false) {
             $editor->blank($namePosition + 1, TokenStreamEditor::range($lastClause)[1], keepWhitespace: true);
+        }
+    }
+
+    /**
+     * Declares every property of a readonly class readonly itself (issue #792)
+     *
+     * A trait can not be readonly, so {@see rewriteHeader()} drops the modifier that made the properties readonly,
+     * while the proxy class stays readonly: PHP rejects a readonly class using a trait with a non-readonly property.
+     * The keyword goes right before the type of each declared property and promoted constructor parameter, on the
+     * same line, so line numbers are kept. Properties of a readonly class are readonly, so none of them is ever
+     * intercepted ({@see removeInterceptedProperties()}).
+     */
+    private function makePropertiesReadonly(Class_ $classNode, TokenStreamEditor $editor): void
+    {
+        foreach ($classNode->stmts as $statement) {
+            if ($statement instanceof Property && !$statement->isReadonly()) {
+                $editor->prepend(TokenStreamEditor::range($statement->type ?? $statement->props[0])[0], 'readonly ');
+            }
+        }
+        foreach ($classNode->getMethod('__construct')->params ?? [] as $parameter) {
+            if ($parameter->isPromoted() && !$parameter->isReadonly()) {
+                $editor->prepend(TokenStreamEditor::range($parameter->type ?? $parameter->var)[0], 'readonly ');
+            }
         }
     }
 

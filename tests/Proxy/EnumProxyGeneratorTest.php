@@ -14,6 +14,9 @@ namespace Go\Proxy;
 
 use Go\Aop\Framework\BeforeInterceptor;
 use Go\Aop\Framework\GeneratedInterceptor;
+use Go\ParserReflection\MissingAncestorPolicy;
+use Go\ParserReflection\ReflectionEngine;
+use Go\ParserReflection\ReflectionFile;
 use Go\Stubs\Php86OverrideEnumCase;
 use Go\Stubs\StubBackedEnum;
 use Go\Stubs\StubConstExprBackedEnum;
@@ -74,6 +77,32 @@ class EnumProxyGeneratorTest extends TestCase
 
         // Instance method dispatch: $this as the first argument
         $this->assertStringContainsString('__invoke($this', $output);
+    }
+
+    /**
+     * An interface whose source can't be located is left out of the partial reflection the weaver uses, the proxy
+     * still declares it under its name from the source (goaop/parser-reflection#251)
+     */
+    public function testProxyDeclaresInterfaceMissingFromPartialReflection(): void
+    {
+        $previousPolicy = ReflectionEngine::getMissingAncestorPolicy();
+        ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Partial);
+        try {
+            $enum = new ReflectionFile(dirname(__DIR__) . '/Instrument/Transformer/_files/enum-unknown-interface.php')
+                ->getFileNamespace('Test\ns1')
+                ->getClass('Test\ns1\EnumWithMissingInterface');
+            $this->assertSame(['Missing\Optional\Dependency\Labelled'], $enum->getMissingClassNames());
+
+            $classAdvices = ['method' => ['label' => [self::testAdvice('advisor.EnumWithMissingInterface->label')]]];
+            $generator    = new EnumProxyGenerator($enum, 'Test\ns1\EnumWithMissingInterfaceOriginalTrait', $classAdvices);
+
+            $this->assertStringContainsString(
+                'enum EnumWithMissingInterface : string implements \\JsonSerializable, \\Missing\\Optional\\Dependency\\Labelled, \\Go\\Aop\\Proxy',
+                $generator->generate(),
+            );
+        } finally {
+            ReflectionEngine::setMissingAncestorPolicy($previousPolicy);
+        }
     }
 
     /**

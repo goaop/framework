@@ -29,6 +29,53 @@ final class TraitConverterTest extends TestCase
         $this->assertSame("<?php\n#[Foo]\ntrait FooOriginalTrait   \n    \n{\n}", $woven);
     }
 
+    /**
+     * A readonly class with properties uses a trait with non-readonly properties once its `readonly` is gone (#792)
+     */
+    public function testPropertiesOfReadonlyClassStayReadonly(): void
+    {
+        $woven = self::convert(
+            "<?php\nfinal readonly class Point\n{\n"
+            . "    public int \$z = 0;\n"
+            . "    protected string|int \$a, \$b;\n"
+            . "    public readonly int \$already;\n"
+            . "    #[\\Foo] private ?array\n        \$wrapped;\n"
+            . "    public function __construct(\n"
+            . "        public int \$x = 1,\n"
+            . "        #[\\SensitiveParameter] private readonly string \$y = '',\n"
+            . "        public protected(set) float \$w = 0.0,\n"
+            . "        int \$notPromoted = 0,\n"
+            . "    ) {}\n}",
+        );
+
+        $this->assertSame(
+            "<?php\ntrait PointOriginalTrait\n{\n"
+            . "    public readonly int \$z = 0;\n"
+            . "    protected readonly string|int \$a, \$b;\n"
+            . "    public readonly int \$already;\n"
+            . "    #[\\Foo] private readonly ?array\n        \$wrapped;\n"
+            . "    public function __construct(\n"
+            . "        public readonly int \$x = 1,\n"
+            . "        #[\\SensitiveParameter] private readonly string \$y = '',\n"
+            . "        public protected(set) readonly float \$w = 0.0,\n"
+            . "        int \$notPromoted = 0,\n"
+            . "    ) {}\n}",
+            $woven,
+        );
+    }
+
+    public function testPropertiesOfClassWithoutReadonlyAreKept(): void
+    {
+        $source = "<?php\nfinal class Point\n{\n    public int \$z = 0;\n"
+            . "    public function __construct(public int \$x = 1) {}\n}";
+
+        $this->assertSame(
+            "<?php\ntrait PointOriginalTrait\n{\n    public int \$z = 0;\n"
+            . "    public function __construct(public int \$x = 1) {}\n}",
+            self::convert($source),
+        );
+    }
+
     public function testModifierOnOwnLineKeepsLine(): void
     {
         $woven = self::convert("<?php\nabstract\nclass Foo {}");

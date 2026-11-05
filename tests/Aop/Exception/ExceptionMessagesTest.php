@@ -17,6 +17,7 @@ use Dissect\Lexer\CommonToken;
 use Dissect\Parser\Exception\UnexpectedTokenException;
 use Go\Aop\Framework\TraitIntroductionInfo;
 use Go\Core\AspectContainer;
+use Go\ParserReflection\ClassNotFoundException;
 use InvalidArgumentException;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -331,11 +332,26 @@ final class ExceptionMessagesTest extends TestCase
                 ),
                 WeavingException::class,
                 'App\Transformer failed to transform /app/src/Admin/ReportController.php: Class '
-                . 'GeneratedCode\Admin\BaseReportController was not found by locator. The weaver reads the parents, '
-                . 'interfaces and traits of a class from their source files, which it finds through Composer: make '
+                . 'GeneratedCode\Admin\BaseReportController was not found by locator. The weaver reads the classes '
+                . 'a woven class depends on from their source files, which it finds through Composer: make '
                 . 'GeneratedCode\Admin\BaseReportController loadable by Composer (classmap, PSR-4 or '
                 . '$loader->addClassMap() before the aspect kernel is initialized), or exclude the classes that depend '
                 . 'on it from weaving with the excludePaths option.',
+            ],
+            'transformer failed, ancestor not found by locator' => [
+                static fn() => WeavingException::transformerFailed(
+                    'App\Transformer',
+                    '/app/src/Admin/ReportController.php',
+                    new ClassNotFoundException('GeneratedCode\Admin\BaseReportController'),
+                ),
+                WeavingException::class,
+                'App\Transformer failed to transform /app/src/Admin/ReportController.php: Class '
+                . 'GeneratedCode\Admin\BaseReportController was not found by locator. The weaver reads the classes '
+                . 'a woven class depends on from their source files, which it finds through Composer: make '
+                . 'GeneratedCode\Admin\BaseReportController loadable by Composer (classmap, PSR-4 or '
+                . '$loader->addClassMap() before the aspect kernel is initialized), or exclude the classes that depend '
+                . 'on it from weaving with the excludePaths option. With the Features::PARTIAL_REFLECTION flag, a class '
+                . 'whose parent class, interface or trait can not be located is woven with its own members.',
             ],
             'transformer failed, class not found in the file' => [
                 static fn() => WeavingException::transformerFailed(
@@ -346,8 +362,8 @@ final class ExceptionMessagesTest extends TestCase
                     )),
                 ),
                 WeavingException::class,
-                'App\Transformer failed to transform /app/Foo.php: wrapped. The weaver reads the parents, '
-                . 'interfaces and traits of a class from their source files, which it finds through Composer: make '
+                'App\Transformer failed to transform /app/Foo.php: wrapped. The weaver reads the classes '
+                . 'a woven class depends on from their source files, which it finds through Composer: make '
                 . 'App\Aliased loadable by Composer (classmap, PSR-4 or $loader->addClassMap() before the aspect '
                 . 'kernel is initialized), or exclude the classes that depend on it from weaving with the '
                 . 'excludePaths option.',

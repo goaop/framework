@@ -69,6 +69,21 @@ return [
         ],
     ],
 
+    // Weaves a directory with a class whose ancestors can't be located (goaop/parser-reflection#251)
+    'partial_reflection' => [
+        'kernel' => \Go\Tests\TestProject\Kernel\DefaultAspectKernel::class,
+        'console' => __DIR__ . '/../bin/console',
+        'frontController' => __DIR__ . '/../web/index.php',
+        'appDir' => __DIR__ . '/../',
+        'debug' => true,
+        'cacheDir'  => __DIR__ . '/../var/cache/aspect',
+        'features' => \Go\Aop\Features::PARTIAL_REFLECTION,
+        'includePaths' => [
+            __DIR__ . '/../src/',
+            __DIR__ . '/../partial/',
+        ],
+    ],
+
     'inconsistent_weaving' => [
         'kernel' => \Go\Tests\TestProject\Kernel\InconsistentlyWeavingAspectKernel::class,
         'console' => __DIR__ . '/../bin/console',
