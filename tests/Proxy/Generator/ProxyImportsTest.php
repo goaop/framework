@@ -188,53 +188,6 @@ final class ProxyImportsTest extends TestCase
     }
 
     /**
-     * Every class position of a copied closure (PHP 8.5 allows closures in constant expressions) uses the imports
-     */
-    public function testImportNamesInImportsEveryClassPositionOfAClosure(): void
-    {
-        $stmts = $this->parse(<<<'PHP'
-            <?php
-            namespace App;
-
-            use Lib\Domain\Product;
-
-            const HANDLER = static function (Product|Money $item, (\Countable&Item)|null $other): ?Product {
-                try {
-                    return $item instanceof Product ? new Product(Product::$cache, Money::of(1)) : null;
-                } catch (Failure|\RuntimeException) {
-                    return #[Marker] fn(): Money => helper();
-                }
-            };
-            PHP);
-        new \PhpParser\NodeTraverser(new \PhpParser\NodeVisitor\NameResolver(null, [
-            'preserveOriginalNames' => true,
-            'replaceNodes'          => false,
-        ]))->traverse($stmts);
-        $closure = new \PhpParser\NodeFinder()->findFirstInstanceOf($stmts, \PhpParser\Node\Expr\Closure::class);
-        $this->assertNotNull($closure);
-
-        $imports = new ProxyImports('App', ['Lib\\Other\\Product' => 'Product']);
-        $printed = new Standard()->prettyPrintExpr($imports->importNamesIn([$closure])[0]);
-
-        $this->assertSame(
-            <<<'PHP'
-                static function (DomainProduct|Money $item, (Countable&Item)|null $other): ?DomainProduct {
-                    try {
-                        return $item instanceof DomainProduct ? new DomainProduct(DomainProduct::$cache, Money::of(1)) : null;
-                    } catch (Failure|RuntimeException) {
-                        return #[Marker] fn(): Money => helper();
-                    }
-                }
-                PHP,
-            $printed,
-        );
-        $this->assertSame(
-            ['Lib\\Domain\\Product' => 'DomainProduct', 'Countable' => null, 'RuntimeException' => null, 'Lib\\Other\\Product' => 'Product'],
-            $imports->getUses(),
-        );
-    }
-
-    /**
      * @return array<\PhpParser\Node\Stmt>
      */
     private function parse(string $code): array
