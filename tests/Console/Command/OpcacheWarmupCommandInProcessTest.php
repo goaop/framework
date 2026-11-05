@@ -130,14 +130,18 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
      */
     private function createCommand(string $appDir, string $cacheDir, array $failing, array &$compiledFiles): OpcacheWarmupCommand
     {
-        $kernel  = $this->createStub(AspectKernel::class);
+        // The kernel and the cache work with native paths, as normalizeOptions() resolves them: the records of the
+        // cache are keyed relative to appDir, so a `/`-joined appDir would never match the enumerated sources on Windows
+        $appDir   = str_replace('/', DIRECTORY_SEPARATOR, $appDir);
+        $cacheDir = str_replace('/', DIRECTORY_SEPARATOR, $cacheDir);
+        $kernel   = $this->createStub(AspectKernel::class);
         $options = [
             'debug'          => false,
             'appDir'         => $appDir,
             'cacheDir'       => $cacheDir,
             'cacheFileMode'  => 0770,
             'features'       => 0,
-            'includePaths'   => [$appDir . '/src'],
+            'includePaths'   => [$appDir . DIRECTORY_SEPARATOR . 'src'],
             'excludePaths'   => [],
             'containerClass' => Container::class,
             'parsedFilesLimit' => 100,
@@ -146,8 +150,9 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
         $kernel->method('hasFeature')->willReturn(false);
         $cachePathManager = new CachePathManager($kernel);
         // Service.php is known as untransformed, Woven.php as woven: only the former is a file of the application
-        $cachePathManager->setCacheState($appDir . '/src/Service.php', ['filemtime' => 1, 'filesize' => 1, 'cachedAt' => 1, 'cacheUri' => null]);
-        $cachePathManager->setCacheState($appDir . '/src/Woven.php', ['filemtime' => 1, 'filesize' => 1, 'cachedAt' => 1, 'cacheUri' => $cacheDir . '/src/WovenOriginalTrait.php']);
+        $sourceDir = $appDir . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR;
+        $cachePathManager->setCacheState($sourceDir . 'Service.php', ['filemtime' => 1, 'filesize' => 1, 'cachedAt' => 1, 'cacheUri' => null]);
+        $cachePathManager->setCacheState($sourceDir . 'Woven.php', ['filemtime' => 1, 'filesize' => 1, 'cachedAt' => 1, 'cacheUri' => $cacheDir . '/src/WovenOriginalTrait.php']);
         $container = $this->createStub(AspectContainer::class);
         $container->method('getService')->willReturn($cachePathManager);
         $kernel->method('getContainer')->willReturn($container);

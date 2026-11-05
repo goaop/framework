@@ -441,6 +441,7 @@ class CacheWarmerTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('#[/\\\\]Broken\.php: Cannot weave#', $display);
         $this->assertStringContainsString('Total processed 1, 1 errors in ', $display);
     }
+
     public function testPreloadScriptIsWrittenIntoTheCacheDirectoryAfterACompleteWarmUp(): void
     {
         $output = new BufferedOutput();
@@ -450,10 +451,10 @@ class CacheWarmerTest extends TestCase
 
         $script = $this->cacheDir . '/_preload.php';
         $this->assertFileExists($script);
-        // The warmer reports the resolved path, with the native separators of the platform
+        // The warmer reports the resolved path, with the native separators of the platform: both sides use `/`
         $this->assertStringContainsString(
-            'Preload script written to ' . $script,
-            str_replace(DIRECTORY_SEPARATOR, '/', $output->fetch()),
+            'Preload script written to ' . str_replace('\\', '/', $script),
+            str_replace('\\', '/', $output->fetch()),
         );
         $content = (string) file_get_contents($script);
         $this->assertStringContainsString("\$loader = require __DIR__ . '", $content);
