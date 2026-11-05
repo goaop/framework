@@ -240,6 +240,8 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     /**
      * isset() answers without a call for every value except null. A property that can not hold null is initialized
      * exactly when isset() is true, for a nullable one reflection decides between null and uninitialized.
+     * `array_key_exists('<mangled name>', (array) $this)` was measured as the reflection-free alternative and
+     * rejected: the cast copies the whole property table on every access (#819).
      */
     private function createInitializedCondition(): Isset_|BooleanOr
     {

@@ -63,17 +63,8 @@
 ## PHP compat: Property hooks (8.4+)
 - Intercepted properties: moved from trait to proxy, emitted with get/set hooks dispatching through ClassFieldAccess
 - Hooks pass values by value (`read()`/`write()`); array properties get only `&get` → `readByReference()`
-- Get and set hook each hold `static $__joinPoint = InterceptorInjector::forProperty(...)`, which returns ONE
-  ClassFieldAccess per class + property (cached, the second interceptor list is dropped): read and write share it,
-  a read inside a write advice nests on the same joinpoint (stack frames), ~1.6 KB less per property (#819)
-- Typed property without default (built in AbstractInterceptedPropertyGenerator, #819):
-  - non-nullable: `isset($this->p)` alone (can not hold null → isset = initialized), get and set, no reflection
-  - nullable, get: `try { $__value = $this->p; } catch (Error) { return read($this); } return read($this, $__value);`
-    — no extra cost for null/values (null read ~350 → ~275 ns), the exception costs ~+0.5 µs only on a read
-    before initialization (fails without an advice anyway)
-  - nullable, set and `&get`: `isset($this->p) || $__joinPoint->getField()->isInitialized($this)`: the first write
-    of every object hits an uninitialized property, a try block would throw there (+~0.45 µs per object);
-    `array_key_exists('<mangled>', (array) $this)` copies the property table (+290 ns with 30 props), rejected
+- Get and set hooks share one joinpoint per class + property (InterceptorInjector::forProperty())
+- Typed property without default: initialization guard built in AbstractInterceptedPropertyGenerator (see its docBlocks)
 - Woven trait: property declarations neutralized (avoid conflicts, preserve line numbers)
 - Readonly properties and properties with existing hooks: skipped for access() interception
 
