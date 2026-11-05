@@ -237,13 +237,24 @@ class AopComposerLoaderTest extends TestCase
         );
 
         $this->assertSame($cachedFile, $composerLoader->findFile('App\\Service'), 'Composer serves the woven class from the cache');
-        $this->assertSame($this->appDir . '/src/Service.php', $loader->findSourceFile('App\\Service'));
-        $this->assertSame($this->appDir . '/src/Optimized.php', $loader->findSourceFile('App\\Optimized'));
+        // In one separator form: composer joins a PSR-4 path natively
+        $this->assertSame(self::slashed($this->appDir . '/src/Service.php'), self::slashed($loader->findSourceFile('App\\Service')));
+        $this->assertSame(self::slashed($this->appDir . '/src/Optimized.php'), self::slashed($loader->findSourceFile('App\\Optimized')));
         $this->assertFalse($loader->findSourceFile('Other\\Unknown'));
 
         // Rules added after the injection are honoured for the classes the cache does not know
         $composerLoader->addPsr4('Late\\', $this->appDir . '/src');
-        $this->assertSame($this->appDir . '/src/Service.php', $loader->findSourceFile('Late\\Service'));
+        $this->assertSame(self::slashed($this->appDir . '/src/Service.php'), self::slashed($loader->findSourceFile('Late\\Service')));
+    }
+
+    /**
+     * Returns a path in one separator form, the paths given by composer are joined natively
+     */
+    private static function slashed(string|false $path): string
+    {
+        self::assertIsString($path);
+
+        return str_replace('\\', '/', $path);
     }
 
     public function testInitInstallsTheOriginalSourceLocatorAndKeepsTheMissingAncestorPolicy(): void

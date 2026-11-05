@@ -45,6 +45,23 @@ class OriginalSourceLocatorTest extends TestCase
         $this->assertFalse(new OriginalSourceLocator()->locateClass(__NAMESPACE__ . '\\UnknownClass'));
     }
 
+    public function testSkipsAutoloadersThatAreNoComposerLoaders(): void
+    {
+        $closureLoader = static function (string $className): void {};
+        // An object loader that is no Composer loader, never called: the class below is declared already
+        $objectLoader  = [new class {
+            public function load(string $className): void {}
+        }, 'load'];
+        spl_autoload_register($closureLoader, true, true);
+        spl_autoload_register($objectLoader, true, true);
+        try {
+            $this->assertSame(__FILE__, new OriginalSourceLocator()->locateClass(self::class), 'Composer is asked after them');
+        } finally {
+            spl_autoload_unregister($closureLoader);
+            spl_autoload_unregister($objectLoader);
+        }
+    }
+
     public function testLocatesTheSourceOfAWovenClassInsteadOfItsCachedFile(): void
     {
         $composerLoader = new ClassLoader();
@@ -73,7 +90,8 @@ class OriginalSourceLocatorTest extends TestCase
         $autoloader = [$loader, 'loadClass'];
         spl_autoload_register($autoloader, true, true);
         try {
-            $this->assertSame($this->appDir . '/src/Service.php', new OriginalSourceLocator()->locateClass('App\\Service'));
+            // Resolved like realpath() does, with native separators
+            $this->assertSame(realpath($this->appDir . '/src/Service.php'), new OriginalSourceLocator()->locateClass('App\\Service'));
         } finally {
             spl_autoload_unregister($autoloader);
         }

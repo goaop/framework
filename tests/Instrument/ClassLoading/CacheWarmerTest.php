@@ -332,7 +332,8 @@ class CacheWarmerTest extends TestCase
 
             public function transform(StreamMetaData $metadata): TransformerResult
             {
-                $this->wovenFiles[] = $metadata->uri;
+                // In one separator form: the woven files are resolved natively
+                $this->wovenFiles[] = str_replace('\\', '/', $metadata->uri);
                 $metadata->setTokenStreamFromRawTokens(...PhpToken::tokenize($metadata->source . '// woven'));
 
                 return TransformerResult::Transformed;
@@ -340,7 +341,8 @@ class CacheWarmerTest extends TestCase
         };
         $kernel = $this->createKernel($this->cacheDir, [$transformer], features: Features::PREBUILT_CACHE);
         $this->assertSame(0, new CacheWarmer($kernel, new BufferedOutput())->warmUp());
-        $this->assertSame([$otherFile, $this->sourceFile], $transformer->wovenFiles);
+        $sourceFile = str_replace('\\', '/', $this->sourceFile);
+        $this->assertSame([str_replace('\\', '/', $otherFile), $sourceFile], $transformer->wovenFiles);
 
         // The deployment changes one source and warms the prebuilt cache up again, in place
         file_put_contents($this->sourceFile, "<?php echo 'changed';\n");
@@ -348,7 +350,7 @@ class CacheWarmerTest extends TestCase
         $transformer->wovenFiles = [];
         $this->assertSame(0, new CacheWarmer($kernel, new BufferedOutput())->warmUp());
 
-        $this->assertSame([$this->sourceFile], $transformer->wovenFiles, 'Only the changed file is woven again');
+        $this->assertSame([$sourceFile], $transformer->wovenFiles, 'Only the changed file is woven again');
         $this->assertSame("<?php echo 'changed';\n// woven", file_get_contents($this->cacheDir . '/src/Some.php'));
         $this->assertSame("<?php echo 'other';\n// woven", file_get_contents($this->cacheDir . '/src/Other.php'));
         $this->assertFalse(

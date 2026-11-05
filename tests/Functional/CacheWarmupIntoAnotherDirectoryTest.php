@@ -88,7 +88,8 @@ class CacheWarmupIntoAnotherDirectoryTest extends BaseFunctionalTestCase
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($cacheDir, FilesystemIterator::SKIP_DOTS));
         /** @var SplFileInfo $file */
         foreach ($iterator as $file) {
-            $relativePath = substr($file->getPathname(), strlen($cacheDir));
+            // In one separator form: the iterator joins the names below the directory natively
+            $relativePath = str_replace('\\', '/', substr($file->getPathname(), strlen($cacheDir)));
             if ($relativePath !== '/_transformation.cache') {
                 $files[$relativePath] = (string) preg_replace(
                     "/^  'stamp' => '[0-9a-f]+',$/m",
