@@ -14,12 +14,16 @@ namespace Go\Instrument\ClassLoading;
 
 use Go\Aop\Exception\WeavingException;
 use Go\Core\AspectContainer;
+use Go\Instrument\ClassLoading\Warmup\FileWarmer;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
 use Go\Instrument\Transformer\Weaving\ProxyCache;
+use Go\ParserReflection\ReflectionEngine;
 use php_user_filter as PhpStreamFilter;
+use ReflectionException;
+use ReflectionProperty;
 use Throwable;
 
 use function is_string;
@@ -125,6 +129,24 @@ final class SourceTransformingLoader extends PhpStreamFilter
             self::$container        = $container;
             self::$cachePathManager = $container->getService(CachePathManager::class);
             self::$transformers     = null;
+            self::limitParsedFiles();
+        }
+    }
+
+    /**
+     * Caps the syntax trees the reflection engine keeps, unless the application set a limit itself: it keeps every
+     * parsed file otherwise (~0.2 MB each), which a weaving process that meets thousands of sources can not afford
+     */
+    private static function limitParsedFiles(): void
+    {
+        try {
+            // The engine has no getter, an unset limit is an uninitialized property
+            $isLimited = new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles')->isInitialized();
+        } catch (ReflectionException) {
+            return;
+        }
+        if (!$isLimited) {
+            ReflectionEngine::setMaximumCachedFiles(FileWarmer::DEFAULT_CACHED_FILES);
         }
     }
 
