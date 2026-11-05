@@ -62,11 +62,14 @@ final class AttributeGroupsGenerator
      * is used instead.
      *
      * @param ReflectionClass<covariant object>|ReflectionFunctionAbstract|ReflectionParameter|ReflectionProperty $reflection
+     * @param ProxyImports|null $imports Imports of the generated file: class names use their aliases, fully
+     *                                   qualified names are emitted without them
      *
      * @return list<AttributeGroup>
      */
     public static function fromReflector(
         ReflectionClass|ReflectionFunctionAbstract|ReflectionParameter|ReflectionProperty $reflection,
+        ?ProxyImports $imports = null,
     ): array {
         $node = null;
 
@@ -85,10 +88,10 @@ final class AttributeGroupsGenerator
             || $node instanceof Param
             || $node instanceof Property
         ) {
-            return self::fromAttributeGroupNodes($node->attrGroups);
+            return self::fromAttributeGroupNodes($node->attrGroups, $imports);
         }
 
-        return self::fromReflectionAttributes($reflection->getAttributes());
+        return self::fromReflectionAttributes($reflection->getAttributes(), $imports);
     }
 
     /**
@@ -97,22 +100,23 @@ final class AttributeGroupsGenerator
      * Each original attribute produces one AttributeGroup (one #[...] line) with:
      *  - the attribute name resolved to its fully-qualified form (via the resolvedName
      *    attribute set by parser-reflection's NameResolver, falling back to the name
-     *    as written);
+     *    as written), referenced through its alias when the imports are given;
      *  - argument expressions deep-cloned as-is, with any resolved class/function/const
-     *    names inside them fully qualified, so the expressions keep their meaning in
-     *    the generated proxy context and are never constant-folded.
+     *    names inside them fully qualified (classes through their alias with the imports),
+     *    so the expressions keep their meaning in the generated proxy context and are
+     *    never constant-folded.
      *
      * @param AttributeGroup[] $attrGroups
      *
      * @return list<AttributeGroup>
      */
-    public static function fromAttributeGroupNodes(array $attrGroups): array
+    public static function fromAttributeGroupNodes(array $attrGroups, ?ProxyImports $imports = null): array
     {
         $groups = [];
 
         foreach ($attrGroups as $attrGroup) {
             foreach ($attrGroup->attrs as $attr) {
-                $groups[] = new AttributeGroup([self::cloneAttribute($attr)]);
+                $groups[] = new AttributeGroup([self::cloneAttribute($attr, $imports)]);
             }
         }
 
@@ -123,8 +127,9 @@ final class AttributeGroupsGenerator
      * Converts an array of reflection attributes to PhpParser AttributeGroup nodes
      * using their evaluated argument values (native reflection fallback).
      *
-     * Attribute names are always emitted as fully-qualified to avoid namespace
-     * ambiguity inside generated proxy namespaces. Attributes whose argument values
+     * Attribute names are emitted through their alias in the imports, or fully-qualified
+     * without them, to avoid namespace ambiguity inside generated proxy namespaces.
+     * Attributes whose argument values
      * cannot be represented as PHP code (e.g. arbitrary objects from new-in-initializer
      * expressions) are skipped best-effort instead of aborting the whole generation.
      *
@@ -132,7 +137,7 @@ final class AttributeGroupsGenerator
      *
      * @return list<AttributeGroup>
      */
-    public static function fromReflectionAttributes(array $reflectionAttributes): array
+    public static function fromReflectionAttributes(array $reflectionAttributes, ?ProxyImports $imports = null): array
     {
         if (empty($reflectionAttributes)) {
             return [];
@@ -157,17 +162,18 @@ final class AttributeGroupsGenerator
                 continue;
             }
 
-            $groups[] = new AttributeGroup([new Attribute($fqName, $args)]);
+            $attribute = new Attribute($fqName, $args);
+            $groups[]  = new AttributeGroup([$imports !== null ? $imports->importNamesIn([$attribute])[0] : $attribute]);
         }
 
         return $groups;
     }
 
     /**
-     * Clones a single Attribute node with a fully-qualified name and deep-cloned
-     * argument expressions, leaving the original AST untouched.
+     * Clones a single Attribute node with a fully-qualified (or imported) name and
+     * deep-cloned argument expressions, leaving the original AST untouched.
      */
-    private static function cloneAttribute(Attribute $attr): Attribute
+    private static function cloneAttribute(Attribute $attr, ?ProxyImports $imports): Attribute
     {
         // Prefer the fully-resolved class name attached by parser-reflection's
         // NameResolver (preserveOriginalNames + replaceNodes=false mode)
@@ -177,6 +183,12 @@ final class AttributeGroupsGenerator
             ? new Name\FullyQualified($resolved->toString())
             : new Name\FullyQualified(ltrim($nameNode->toString(), '\\'));
 
+        if ($imports !== null) {
+            return new Attribute(
+                new Name($imports->import($fqName->toString())),
+                $attr->args !== [] ? $imports->importNamesIn($attr->args) : [],
+            );
+        }
         if ($attr->args === []) {
             return new Attribute($fqName);
         }

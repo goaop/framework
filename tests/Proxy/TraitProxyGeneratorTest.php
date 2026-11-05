@@ -218,7 +218,7 @@ class TraitProxyGeneratorTest extends TestCase
         $this->assertStringNotContainsString('$__joinPoints[', $output);
     }
 
-    public function testGenerateTraitWithClassTypedPropertyUsesFullyQualifiedTypeInFieldAccessPhpDoc(): void
+    public function testGenerateTraitWithClassTypedPropertyUsesImportedTypeInFieldAccessPhpDoc(): void
     {
         $reflectionTrait = new ReflectionClass(TraitWithClassTypedProperty::class);
         $traitAdvices    = [
@@ -235,8 +235,9 @@ class TraitProxyGeneratorTest extends TestCase
 
         $output = "<?php\n" . $generator->generate();
 
+        $this->assertStringContainsString("\nuse Exception;\n", $output);
         $this->assertStringContainsString(
-            "/** @var FieldAccess<self, \\Exception> \$__joinPoint */",
+            "/** @var FieldAccess<self, Exception> \$__joinPoint */",
             $output,
         );
     }

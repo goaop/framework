@@ -60,7 +60,7 @@ final class EnumGenerator implements GeneratorInterface
         public readonly string $name,
         private readonly ?string $namespace,
         private readonly ?string $backingType,
-        /** @var string[] FQCNs of interfaces to implement */
+        /** @var string[] Interfaces to implement: rooted/multi-segment FQCNs or aliases of the file imports */
         private readonly array $interfaces = [],
         array $methods = [],
     ) {
@@ -197,12 +197,15 @@ final class EnumGenerator implements GeneratorInterface
             $stmts[] = $method->getNode();
         }
 
-        // Build interface list — always use FullyQualified so that unqualified global
-        // interface names (e.g. 'Stringable') are not mis-resolved in namespaced files.
+        // Build interface list: rooted ('\\Stringable') and multi-segment names are fully qualified, a bare name
+        // is an alias of the file imports (EnumProxyGenerator) or resolves in the enum's own namespace
         $implements = [];
         foreach ($this->interfaces as $interface) {
             if ($interface !== '') {
-                $implements[] = new Name\FullyQualified(ltrim($interface, '\\'));
+                $normalized   = ltrim($interface, '\\');
+                $implements[] = str_starts_with($interface, '\\') || str_contains($normalized, '\\')
+                    ? new Name\FullyQualified($normalized)
+                    : new Name($normalized);
             }
         }
 

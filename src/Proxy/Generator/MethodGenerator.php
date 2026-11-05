@@ -110,8 +110,11 @@ final class MethodGenerator
 
     /**
      * Creates a MethodGenerator from a reflection method.
+     *
+     * @param ProxyImports|null $imports Imports of the generated file: class names in the signature and the
+     *                                   attributes use their aliases, fully qualified names are emitted without them
      */
-    public static function fromReflection(ReflectionMethod $method): self
+    public static function fromReflection(ReflectionMethod $method, ?ProxyImports $imports = null): self
     {
         $generator = new self($method->getName());
 
@@ -133,16 +136,17 @@ final class MethodGenerator
                 $astMethod = $method->getNode();
                 $returnTypeNode = $astMethod->returnType;
                 if ($returnTypeNode !== null) {
-                    $generator->returnType = TypeGenerator::fromResolvedAstNode($returnTypeNode);
+                    $generator->returnType = TypeGenerator::fromResolvedAstNode($returnTypeNode)->withImportedNames($imports);
                 }
             } else {
                 $reflectionReturnType = $method->getReturnType();
                 if ($reflectionReturnType instanceof ReflectionNamedType) {
                     $typeName = TypeGenerator::resolveReflectionNamedTypeName($reflectionReturnType);
                     $nullable = $reflectionReturnType->allowsNull() && !in_array($typeName, ['mixed', 'null'], true);
-                    $generator->returnType = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName);
+                    $generator->returnType = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName)
+                        ->withImportedNames($imports);
                 } else {
-                    $generator->returnType = TypeGenerator::fromReflectionType($reflectionReturnType);
+                    $generator->returnType = TypeGenerator::fromReflectionType($reflectionReturnType)->withImportedNames($imports);
                 }
             }
         }
@@ -155,12 +159,12 @@ final class MethodGenerator
 
         // Parameters
         foreach ($method->getParameters() as $reflectionParam) {
-            $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam));
+            $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam, $imports));
         }
 
         // Attributes: cloned from the AST when available (parser-reflection), so that
         // argument expressions are never evaluated at weave time (issues #601, #602)
-        $generator->attributeGroups = AttributeGroupsGenerator::fromReflector($method);
+        $generator->attributeGroups = AttributeGroupsGenerator::fromReflector($method, $imports);
 
         return $generator;
     }

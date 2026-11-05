@@ -6,7 +6,14 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
-class GlobalParentCollection extends \ArrayObject implements \IteratorAggregate, \Traversable, \ArrayAccess, \Serializable, \Countable, \Go\Aop\Proxy
+use ArrayObject;
+use IteratorAggregate;
+use Traversable;
+use ArrayAccess;
+use Serializable;
+use Countable;
+use Go\Aop\Proxy;
+class GlobalParentCollection extends ArrayObject implements IteratorAggregate, Traversable, ArrayAccess, Serializable, Countable, Proxy
 {
     use GlobalParentCollectionOriginalTrait {
         GlobalParentCollectionOriginalTrait::hello as private helloOriginalAlias;

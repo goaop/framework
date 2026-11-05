@@ -48,8 +48,12 @@ final class ParameterGenerator
 
     /**
      * Creates a ParameterGenerator from a reflection parameter.
+     *
+     * With the imports of the generated file, class names in the type, the default value and the attributes use
+     * their aliases. The default value is copied from the AST with its names resolved, so that it keeps its meaning
+     * when the method is declared in another file (an inherited method) with other imports.
      */
-    public static function fromReflection(ReflectionParameter $param): self
+    public static function fromReflection(ReflectionParameter $param, ?ProxyImports $imports = null): self
     {
         $type         = null;
         $defaultValue = null;
@@ -64,16 +68,16 @@ final class ParameterGenerator
                 $astParam = $param->getNode();
                 $typeNode  = $astParam->type;
                 if ($typeNode !== null) {
-                    $type = TypeGenerator::fromResolvedAstNode($typeNode);
+                    $type = TypeGenerator::fromResolvedAstNode($typeNode)->withImportedNames($imports);
                 }
             } else {
                 $reflectionType = $param->getType();
                 if ($reflectionType instanceof ReflectionNamedType) {
                     $typeName = TypeGenerator::resolveReflectionNamedTypeName($reflectionType);
                     $nullable = $reflectionType->allowsNull() && $typeName !== 'mixed' && $typeName !== 'null';
-                    $type     = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName);
+                    $type     = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName)->withImportedNames($imports);
                 } else {
-                    $type = TypeGenerator::fromReflectionType($reflectionType);
+                    $type = TypeGenerator::fromReflectionType($reflectionType)->withImportedNames($imports);
                 }
             }
         }
@@ -88,7 +92,9 @@ final class ParameterGenerator
                     $astNode = $param->getNode();
                     $astDefault = $astNode instanceof Node\Param ? $astNode->default : null;
                     if ($astDefault !== null) {
-                        $defaultValue = ValueGenerator::fromExprNode($astDefault);
+                        $defaultValue = ValueGenerator::fromExprNode(
+                            $imports !== null ? $imports->importNamesIn([$astDefault])[0] : $astDefault,
+                        );
                     }
                 }
 
@@ -114,7 +120,7 @@ final class ParameterGenerator
 
         // Attributes: cloned from the AST when available (parser-reflection), so that
         // argument expressions are never evaluated at weave time (issues #601, #602)
-        $generator->attributeGroups = AttributeGroupsGenerator::fromReflector($param);
+        $generator->attributeGroups = AttributeGroupsGenerator::fromReflector($param, $imports);
 
         return $generator;
     }

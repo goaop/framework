@@ -6,7 +6,8 @@ use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\StaticMethodInvocation;
-class TestClass implements \Go\Aop\Proxy
+use Go\Aop\Proxy;
+class TestClass implements Proxy
 {
     use TestClassOriginalTrait {
         TestClassOriginalTrait::publicMethod as private publicMethodOriginalAlias;

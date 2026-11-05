@@ -69,7 +69,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     {
         $generator = new PropertyGenerator($this->property->getName(), $this->getPropertyModifiers());
         if ($this->property->hasType()) {
-            $generator->type = TypeGenerator::fromReflectionType($this->property->getType());
+            $generator->type = TypeGenerator::fromReflectionType($this->property->getType())->withImportedNames($this->imports);
         }
         // When parser-reflection is loaded, prefer the raw AST default node over
         // getDefaultValue(). This avoids parser-reflection bugs where getDefaultValue()
@@ -82,7 +82,8 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         // the original promoted declaration.
         $astDefault = $this->getAstDefaultNode();
         if ($astDefault !== null) {
-            $generator->defaultExpressionNode = $astDefault;
+            // Names resolved, the property may be declared in another file (a parent class) with other imports
+            $generator->defaultExpressionNode = $this->imports !== null ? $this->imports->importNamesIn([$astDefault])[0] : $astDefault;
         } elseif ($this->property->hasDefaultValue() && !method_exists($this->property, 'getNode')) {
             $rawDefault = $this->property->getDefaultValue();
             if ($rawDefault instanceof \Closure) {
@@ -91,7 +92,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             $generator->defaultValue = $rawDefault;
         }
 
-        $attributeGroups = AttributeGroupsGenerator::fromReflector($this->property);
+        $attributeGroups = AttributeGroupsGenerator::fromReflector($this->property, $this->imports);
         if ($attributeGroups !== []) {
             $generator->attrGroups = $attributeGroups;
         }
@@ -274,7 +275,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             $typeNode = $this->property->getTypeNode();
             // getTypeNode() returns Property for regular properties or Param for constructor-promoted ones.
             if ($typeNode instanceof Property || $typeNode instanceof Param) {
-                return TypeGenerator::renderAstTypeForPhpDoc($typeNode->type);
+                return TypeGenerator::renderAstTypeForPhpDoc($typeNode->type, $this->imports);
             }
         }
 
@@ -315,7 +316,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             return $typeName;
         }
 
-        return str_starts_with($typeName, '\\') ? $typeName : '\\' . $typeName;
+        return TypeGenerator::renderClassNameForPhpDoc($typeName, $this->imports);
     }
 
     /**

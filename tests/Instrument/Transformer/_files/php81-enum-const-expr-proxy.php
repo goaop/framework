@@ -6,7 +6,8 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
-enum ConstExprStatus : int implements \Go\Aop\Proxy
+use Go\Aop\Proxy;
+enum ConstExprStatus : int implements Proxy
 {
     use ConstExprStatusOriginalTrait {
         ConstExprStatusOriginalTrait::describe as private describeOriginalAlias;

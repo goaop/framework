@@ -6,15 +6,17 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
-class TestAttributeArgsClass implements \Go\Aop\Proxy
+use Go\Aop\Proxy;
+use ArrayObject;
+class TestAttributeArgsClass implements Proxy
 {
     use TestAttributeArgsClassOriginalTrait {
         TestAttributeArgsClassOriginalTrait::tagged as private taggedOriginalAlias;
         TestAttributeArgsClassOriginalTrait::collected as private collectedOriginalAlias;
     }
-    #[\Test\ns1\RichValueAttr(\Test\ns1\AttrStatus::Disabled, PHP_INT_MAX)]
+    #[RichValueAttr(AttrStatus::Disabled, PHP_INT_MAX)]
     public function tagged(
-        #[\Test\ns1\RichValueAttr(\Test\ns1\AttrStatus::Active)]
+        #[RichValueAttr(AttrStatus::Active)]
         int $x = 8
     ): int
     {
@@ -29,7 +31,7 @@ class TestAttributeArgsClass implements \Go\Aop\Proxy
         );
         return $__joinPoint->__invoke($this, \array_slice([$x], 0, \func_num_args()));
     }
-    #[\Test\ns1\RichValueAttr(\Test\ns1\AttrStatus::Active, new \ArrayObject([1, 2]))]
+    #[RichValueAttr(AttrStatus::Active, new ArrayObject([1, 2]))]
     public function collected(): array
     {
         /** @var DynamicMethodInvocation<self, array> $__joinPoint */

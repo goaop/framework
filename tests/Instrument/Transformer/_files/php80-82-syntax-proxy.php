@@ -6,19 +6,21 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
+use Go\Aop\Proxy;
+use ArrayObject;
 /**
  * Compact class covering general PHP 8.0-8.3 syntax through the weaver:
  * constructor promotion (non-intercepted property), new-in-initializer parameter
  * default, named arguments, match expression, nullsafe operator, enum usage,
  * readonly property, first-class callable and a typed class constant.
  */
-class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
+class TestPhp80To82SyntaxClass implements Proxy
 {
     use TestPhp80To82SyntaxClassOriginalTrait {
         TestPhp80To82SyntaxClassOriginalTrait::__construct as private __constructOriginalAlias;
         TestPhp80To82SyntaxClassOriginalTrait::describe as private describeOriginalAlias;
     }
-    public function __construct(string $label = 'default', \ArrayObject $items = new \ArrayObject([1, 2, 3]))
+    public function __construct(string $label = 'default', ArrayObject $items = new ArrayObject([1, 2, 3]))
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
         static $__joinPoint = InterceptorInjector::forMethod(
@@ -31,7 +33,7 @@ class TestPhp80To82SyntaxClass implements \Go\Aop\Proxy
         );
         $__joinPoint->__invoke($this, \array_slice([$label, $items], 0, \func_num_args()));
     }
-    public function describe(?\ArrayObject $extra = null): string
+    public function describe(?ArrayObject $extra = null): string
     {
         /** @var DynamicMethodInvocation<self, string> $__joinPoint */
         static $__joinPoint = InterceptorInjector::forMethod(
