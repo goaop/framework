@@ -43,7 +43,7 @@ Bound to one StreamMetaData (`final readonly`, holds the object; edits `$metadat
 - `static rangeAfterAttributes(ClassLike|Param)` — start moved right after the last attribute group: the node start
   includes `#[...]`, scanning from there renamed a T_STRING inside the attribute (#598).
 - `token(pos): ?PhpToken`, `find(text, start, end): ?int` (first token with that exact text in the range).
-- `replace(pos, text)`, `append(pos, text)` — no-ops on removed positions.
+- `replace(pos, text)`, `prepend(pos, text)`, `append(pos, text)` — no-ops on removed positions.
 - `blank(start, end, replacement = '', keepWhitespace = false)` — every token keeps only its newlines;
   `$replacement` goes in front of the first non-removed token (markers, must be newline-free); `keepWhitespace`
   leaves T_WHITESPACE tokens as they are (brace placement in headers).
@@ -64,7 +64,7 @@ Steps per kind (order kept from the former implementation, edits touch disjoint 
 |-------|--------------------------------------------------------------------------------------------------------|
 | trait | intercepted property items → rename → strip #[\Override]                                               |
 | enum  | header → remove EnumCase statements → strip #[\Override]                                               |
-| class | header → intercepted property items + promoted properties → strip #[\Override] → trait-incompatible class attributes |
+| class | header → readonly class: `readonly` on every property (makePropertiesReadonly) → intercepted property items + promoted properties → strip #[\Override] → trait-incompatible class attributes |
 
 ### Header (rewriteHeader)
 - Name: `range($node->name)[0]` → replaced by the trait name (anonymous classes never get here).
@@ -73,6 +73,13 @@ Steps per kind (order kept from the former implementation, edits touch disjoint 
 - Clauses: last node of `[extends, ...implements]` (Class_) or `[scalarType, ...implements]` (Enum_);
   `blank(namePos + 1, range(lastClause)[1], keepWhitespace: true)` — keywords, names, commas and the backed type
   `:` become empty, whitespace (and with it the brace placement and multi-line `implements` lists) stays.
+
+### Readonly class (makePropertiesReadonly, #792)
+The header loses T_READONLY (traits can not be readonly) while the proxy class stays readonly, and PHP rejects a
+readonly class using a trait with a non-readonly property. So for a `readonly class`, `prepend(range(type)[0],
+'readonly ')` on every Property statement and promoted constructor Param without the flag (fallback: first item /
+the variable when untyped): `public int $x` → `public readonly int $x`, same line. Properties of a readonly class are
+readonly for parser-reflection, so AdviceMatcher never intercepts them: no overlap with the property removal step.
 
 ### Enum cases
 Every EnumCase statement: `remove(range(case))`. EnumProxyGenerator re-declares the cases in the proxy enum.

@@ -380,7 +380,8 @@ class WeavingTransformerTest extends TestCase
      *
      * TraitConverter must strip T_FINAL, T_ABSTRACT, and T_READONLY
      * before the class keyword because PHP traits do not support these modifiers.
-     * The proxy class is intentionally non-readonly.
+     * The proxy class stays readonly, so the properties of the trait are made readonly explicitly: a readonly class
+     * can not use a trait with a non-readonly property (#792).
      */
     public function testWeaverForFinalReadonlyClass(): void
     {
