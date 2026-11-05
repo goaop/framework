@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Go\Aop\Features;
 use Go\Core\AdvisorIndex;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
@@ -78,6 +79,7 @@ class CacheWarmerTest extends TestCase
         array $transformers = [],
         array $includePaths = [],
         array $excludePaths = [],
+        int $features = 0,
     ): AspectKernel {
         $aspectLoader = $this->createMock(AspectLoaderInterface::class);
         $aspectLoader->method('getUnloadedAspects')->willReturn([]);
@@ -88,11 +90,12 @@ class CacheWarmerTest extends TestCase
             'appDir'         => $this->appDir,
             'cacheDir'       => $cacheDir,
             'cacheFileMode'  => 0770,
-            'features'       => 0,
+            'features'       => $features,
             'includePaths'   => $includePaths,
             'excludePaths'   => $excludePaths,
             'containerClass' => Container::class,
         ]);
+        $kernel->method('hasFeature')->willReturnCallback(static fn(int $feature): bool => ($features & $feature) !== 0);
 
         $container = $this->createMock(AspectContainer::class);
         $container->method('getService')->willReturnMap([
@@ -304,6 +307,17 @@ class CacheWarmerTest extends TestCase
         $this->assertFileDoesNotExist($this->cacheDir . '/src/Some.php');
         $this->assertFileDoesNotExist($this->cacheDir . '/_include.cache');
         self::removeTemporaryDirectory($otherDir);
+    }
+
+    public function testWarmUpInPlaceCreatesTheDirectoryOfAPrebuiltCache(): void
+    {
+        $cacheDir = $this->cacheDir . '/aop';
+        // A kernel with a prebuilt cache never creates its directory: the deployment builds it, with this warm-up
+        $warmer = new CacheWarmer($this->createKernel($cacheDir, features: Features::PREBUILT_CACHE), new BufferedOutput());
+
+        $this->assertSame(0, $warmer->warmUp());
+
+        $this->assertFileExists($cacheDir . '/_include.cache', 'The files are recorded, also when nothing was woven');
     }
 
     public function testInterruptStopsWarmupLoopBeforeNextFile(): void
