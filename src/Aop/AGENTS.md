@@ -27,8 +27,8 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 ## Implementations (src/Aop/Framework/)
 | Class                             | Implements              | Key behavior                                                                                                           |
 |-----------------------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------|
-| AbstractMethodInvocation          | MethodInvocation        | Base; protected readonly Closure $closureToCall (FCC); TRAIT_ALIAS_SUFFIX='OriginalAlias'; getMethod() reflection created on first use |
-| DynamicTraitAliasMethodInvocation | DynamicMethodInvocation | receives $this->mOriginalAlias(...) or parent::m(...); proceed() via ReflectionMethod::invokeArgs (handles by-ref correctly), resolved on the first call reaching the body |
+| AbstractMethodInvocation          | MethodInvocation        | Base (class + method name, no callable); TRAIT_ALIAS_SUFFIX='OriginalAlias'; getMethod() reflection created on first use |
+| DynamicTraitAliasMethodInvocation | DynamicMethodInvocation | receives $this->mOriginalAlias(...) or parent::m(...) but keeps only its scope class + name, NEVER the callable (it holds the first instance, the joinpoint lives for the request, #796); proceed() via ReflectionMethod::invokeArgs (handles by-ref correctly), resolved on the first call reaching the body |
 | StaticTraitAliasMethodInvocation  | StaticMethodInvocation  | FCC shim: static fn(array $args) => forward_static_call_array(...); bindTo(null, $scope) per call                      |
 | ReflectionConstructorInvocation   | ConstructorInvocation   | newInstanceWithoutConstructor() then call constructor (`new` rewritten while an initialization pointcut is registered); class/constructor reflection built eagerly: nearly every call needs it, and lazy creation measured slower |
 | ReflectionFunctionInvocation      | FunctionInvocation      | receives FCC to global fn (e.g. \strlen(...) with leading \ to avoid recursive proxy call); getFunction() reflection created on first use |

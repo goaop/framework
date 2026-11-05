@@ -58,6 +58,11 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
     private array $boundClosures = [];
 
     /**
+     * Shim forwarding to the original static method body, rebound to each late-static-binding scope
+     */
+    private readonly Closure $closureToCall;
+
+    /**
      * Constructor for static method invocation.
      *
      * @param array<Interceptor> $advices       List of advices for this invocation
@@ -72,8 +77,8 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
         // forward_static_call_array will use $scope as the late-static-binding class.
         // We cannot rebind $closureToCall directly because first-class callables from static
         // methods have a fixed scope.
-        $shim = static fn(#[\SensitiveParameter] array $argumentsToCall): mixed => forward_static_call_array($closureToCall, $argumentsToCall);
-        parent::__construct($advices, $className, $methodName, $shim);
+        parent::__construct($advices, $className, $methodName);
+        $this->closureToCall = static fn(#[\SensitiveParameter] array $argumentsToCall): mixed => forward_static_call_array($closureToCall, $argumentsToCall);
     }
 
     /**

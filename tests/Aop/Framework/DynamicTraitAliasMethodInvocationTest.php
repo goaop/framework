@@ -61,6 +61,42 @@ class DynamicTraitAliasMethodInvocationTest extends TestCase
         $invocation(new TraitAliasProxy());
     }
 
+    /**
+     * The generated proxy creates the joinpoint once per method, with the callable `$this-><method>OriginalAlias(...)`
+     * of the first instance: keeping that callable kept the first instance alive until the end of the request (#796)
+     */
+    public function testJoinpointDoesNotKeepInstanceOfItsCallable(): void
+    {
+        $first      = new TraitAliasProxy();
+        $invocation = new DynamicTraitAliasMethodInvocation([], TraitAliasProxy::class, 'publicMethod', $first->getCallableFor('publicMethod'));
+        $this->assertSame(T_PUBLIC, $invocation($first));
+
+        $firstReference = \WeakReference::create($first);
+        unset($first);
+        gc_collect_cycles();
+
+        $this->assertNull($firstReference->get(), 'The joinpoint must not keep the instance of its callable');
+        $this->assertSame(T_PUBLIC, $invocation(new TraitAliasProxy()));
+    }
+
+    public function testJoinpointDoesNotKeepInstanceOfParentCallable(): void
+    {
+        $first      = new InheritedMethodProxy();
+        $invocation = new DynamicTraitAliasMethodInvocation(
+            [],
+            InheritedMethodProxy::class,
+            'inheritedPublicMethod',
+            $first->getInheritedCallable('inheritedPublicMethod'),
+        );
+
+        $firstReference = \WeakReference::create($first);
+        unset($first);
+        gc_collect_cycles();
+
+        $this->assertNull($firstReference->get(), 'The joinpoint must not keep the instance of its callable');
+        $this->assertSame(T_PUBLIC, $invocation(new InheritedMethodProxy()));
+    }
+
     public function testOriginalMethodIsNotResolvedWhenAdviceDoesNotProceed(): void
     {
         $around     = new AroundInterceptor(static fn(): string => 'cached');
