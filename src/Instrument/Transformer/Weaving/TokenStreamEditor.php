@@ -111,6 +111,17 @@ final readonly class TokenStreamEditor
     }
 
     /**
+     * Puts a text in front of the token at the position
+     */
+    public function prepend(int $position, string $text): void
+    {
+        $token = $this->token($position);
+        if ($token !== null) {
+            $token->text = $text . $token->text;
+        }
+    }
+
+    /**
      * Appends a text to the token at the position
      */
     public function append(int $position, string $text): void

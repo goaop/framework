@@ -9,9 +9,23 @@ use Go\Aop\Intercept\StaticMethodInvocation;
 final readonly class TestReadonlyClass implements \Go\Aop\Proxy
 {
     use TestReadonlyClassOriginalTrait {
+        TestReadonlyClassOriginalTrait::__construct as private __constructOriginalAlias;
         TestReadonlyClassOriginalTrait::publicMethod as private publicMethodOriginalAlias;
         TestReadonlyClassOriginalTrait::anotherMethod as private anotherMethodOriginalAlias;
         TestReadonlyClassOriginalTrait::staticMethod as private staticMethodOriginalAlias;
+    }
+    public function __construct(string $name = 'point', int $limit = 10)
+    {
+        /** @var DynamicMethodInvocation<self> $__joinPoint */
+        static $__joinPoint = InterceptorInjector::forMethod(
+            self::class,
+            '__construct',
+            [
+                Interceptor::before(The::advice('advisor.Test\ns1\TestReadonlyClass->__construct')),
+            ],
+            $this->__constructOriginalAlias(...),
+        );
+        $__joinPoint->__invoke($this, \array_slice([$name, $limit], 0, \func_num_args()));
     }
     public function publicMethod(): string
     {

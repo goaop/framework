@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Aop\Exception;
 
+use Go\ParserReflection\ClassNotFoundException;
 use RuntimeException;
 use Throwable;
 
@@ -51,13 +52,17 @@ class WeavingException extends RuntimeException implements ExceptionInterface
         $missing = self::unlocatableClass($previous);
         if ($missing !== null) {
             $message = sprintf(
-                '%s. The weaver reads the parents, interfaces and traits of a class from their source files, which it '
+                '%s. The weaver reads the classes a woven class depends on from their source files, which it '
                 . 'finds through Composer: make %s loadable by Composer (classmap, PSR-4 or $loader->addClassMap() '
                 . 'before the aspect kernel is initialized), or exclude the classes that depend on it from weaving '
                 . 'with the excludePaths option.',
                 rtrim($message, '.'),
                 $missing,
             );
+            if (self::hasClassNotFoundByLocator($previous)) {
+                $message .= ' With the Features::PARTIAL_REFLECTION flag, a class whose parent class, interface or '
+                    . 'trait can not be located is woven with its own members.';
+            }
         }
 
         return new self($message, previous: $previous);
@@ -196,8 +201,10 @@ class WeavingException extends RuntimeException implements ExceptionInterface
     /**
      * Name of the class that goaop/parser-reflection could not find the source of, found in the exception chain
      *
-     * A class whose ancestor is declared by code generated at runtime, by a class_alias() or in a file Composer
-     * does not know can not be reflected from the source files.
+     * A class declared by code generated at runtime, by a class_alias() or in a file Composer does not know can not be
+     * reflected from the source files. With Features::PARTIAL_REFLECTION a missing ancestor is left out of the
+     * reflection instead, but a file that does not declare the class it was located for, or a class used in a constant
+     * expression, still fails.
      */
     private static function unlocatableClass(Throwable $exception): ?string
     {
@@ -208,5 +215,19 @@ class WeavingException extends RuntimeException implements ExceptionInterface
         }
 
         return null;
+    }
+
+    /**
+     * Tells whether goaop/parser-reflection failed in the exception chain because its locator found no source file
+     */
+    private static function hasClassNotFoundByLocator(Throwable $exception): bool
+    {
+        for ($cause = $exception; $cause !== null; $cause = $cause->getPrevious()) {
+            if ($cause instanceof ClassNotFoundException) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

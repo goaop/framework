@@ -27,6 +27,7 @@ use Go\Aop\Intercept\StaticMethodInvocation;
 use Go\Aop\Proxy;
 use Go\Aop\StaticInitializationAware;
 use Go\Core\AspectContainer;
+use Go\ParserReflection\ReflectionClass as ParsedReflectionClass;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\ClassGenerator;
 use Go\Proxy\Generator\ClassModifier;
@@ -163,7 +164,8 @@ class ClassProxyGenerator
             $generatedProperties[] = $interceptedProperty;
         }
 
-        // Proxy implements the same interfaces as the original class (no longer inherited)
+        // Proxy implements the same interfaces as the original class (no longer inherited); a partial reflection
+        // (Features::PARTIAL_REFLECTION) names the interfaces it can not locate too
         $originalInterfaces    = array_map(static fn(string $i) => '\\' . $i, $originalClass->getInterfaceNames());
         $introducedInterfaces  = array_merge($originalInterfaces, $introducedInterfaces);
         $introducedInterfaces[] = '\\' . Proxy::class;
@@ -186,9 +188,15 @@ class ClassProxyGenerator
         }
         $introducedInterfaces = array_values(array_unique($introducedInterfaces));
 
-        // Proxy parent = original class parent (not the trait — there is no inheritance layer)
-        $parentClass     = $originalClass->getParentClass();
-        $parentClassName = $parentClass !== false ? '\\' . $parentClass->getName() : null;
+        // Proxy parent = original class parent (not the trait — there is no inheritance layer). The parsed reflection
+        // names it as written in the source, also one it can not locate (Features::PARTIAL_REFLECTION)
+        if ($originalClass instanceof ParsedReflectionClass) {
+            $parentName = $originalClass->getParentClassName();
+        } else {
+            $parentClass = $originalClass->getParentClass();
+            $parentName  = $parentClass !== false ? $parentClass->getName() : false;
+        }
+        $parentClassName = $parentName !== false ? self::rootClassName($parentName) : null;
 
         // Proxy modifiers: preserve final/abstract/readonly from original class.
         $modifiers = [];

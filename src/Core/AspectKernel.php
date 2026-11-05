@@ -25,6 +25,8 @@ use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
 use Go\Instrument\Transformer\WeavingTransformer;
+use Go\ParserReflection\MissingAncestorPolicy;
+use Go\ParserReflection\ReflectionEngine;
 use ReflectionClass;
 
 /**
@@ -136,6 +138,7 @@ abstract class AspectKernel
         }
 
         $this->options = $this->normalizeOptions($options);
+        $this->configureReflection();
         if (!defined('AOP_ROOT_DIR')) {
             define('AOP_ROOT_DIR', $this->options['appDir']);
         }
@@ -194,6 +197,19 @@ abstract class AspectKernel
         $this->configureAop($container);
 
         $this->wasInitialized = true;
+    }
+
+    /**
+     * Applies the reflection features to goaop/parser-reflection, which the weaver reflects the sources with
+     *
+     * Without Features::PARTIAL_REFLECTION the policy of the engine stays as it is (strict by default): a class whose
+     * parent class, interface or trait can not be located fails to weave.
+     */
+    private function configureReflection(): void
+    {
+        if ($this->hasFeature(Features::PARTIAL_REFLECTION)) {
+            ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Partial);
+        }
     }
 
     /**

@@ -112,5 +112,20 @@ WeavingException). Details and workarounds: src/Instrument/Transformer/Weaving/A
 ## Aspects themselves
 Classes implementing \Go\Aop\Aspect: unconditionally skipped by WeavingTransformer. Aspects cannot weave themselves.
 The check (`implementsInterface(Aspect::class)`) runs in WeavingTransformer::weaveClass() only AFTER advices were found: it reflects
-(and parses) every ancestor and throws when one can't be located, so unadvised classes must never pay for it (#748).
+(and parses) every ancestor, so unadvised classes must never pay for it (#748).
+
+## Partial reflection: ancestors that can't be located (Features::PARTIAL_REFLECTION)
+Opt-in. AspectKernel::init() → configureReflection() sets
+`ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Partial)` (goaop/parser-reflection 4.2/5.2) when the
+flag is on, and leaves the engine alone otherwise (strict: a missing ancestor fails the class, WeavingException hint
+#782). With the flag, a parent class, interface or trait whose source the locator can't find (generated at runtime,
+`class_alias()`, outside the Composer autoloader) is left out of the reflection instead of failing the class.
+Consequences:
+- Matching sees the class's own members and the ones of its available ancestors; members inherited from a missing ancestor
+  are never matched, so never intercepted.
+- The proxy must still declare the missing parent/interfaces. ClassProxyGenerator takes the parent from
+  `getParentClassName()` of the parsed reflection (the name as written, located or not) and the interfaces from
+  `getInterfaceNames()`, which names the missing ones of a partial reflection; EnumProxyGenerator needs nothing more.
+  Never read the class node for this: names of ancestors are parser-reflection's job. Missing traits need nothing: the
+  `use` stays in the trait body.
 A matching failure on an aspect is swallowed (aspects used to be skipped before matching); on other classes it is rethrown.
