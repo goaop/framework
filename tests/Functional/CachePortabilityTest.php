@@ -34,6 +34,22 @@ class CachePortabilityTest extends BaseFunctionalTestCase
      */
     private const string ADDED_CLASS = 'Go\\Tests\\TestProject\\Application\\AddedAfterTheBuild';
 
+    /**
+     * Source of the added class, woven by DoSomethingAspect
+     */
+    private const string ADDED_CLASS_SOURCE = <<<'PHP'
+        <?php
+        declare(strict_types=1);
+
+        namespace Go\Tests\TestProject\Application;
+
+        class AddedAfterTheBuild
+        {
+            public function doSomething(): void {}
+        }
+
+        PHP;
+
     private string $movedCacheDir;
 
     public function setUp(): void
@@ -45,7 +61,7 @@ class CachePortabilityTest extends BaseFunctionalTestCase
 
     public function tearDown(): void
     {
-        (new Filesystem())->remove([$this->movedCacheDir, self::addedClassFile()]);
+        (new Filesystem())->remove([$this->movedCacheDir, $this->movedCacheDir . '-next', self::addedClassFile()]);
         parent::tearDown();
     }
 
@@ -88,7 +104,7 @@ class CachePortabilityTest extends BaseFunctionalTestCase
         $this->clearCache();
         file_put_contents(
             self::addedClassFile(),
-            "<?php\ndeclare(strict_types=1);\n\nnamespace Go\\Tests\\TestProject\\Application;\n\nclass AddedAfterTheBuild {}\n",
+            self::ADDED_CLASS_SOURCE,
         );
         $cacheFiles = self::snapshotDirectory($this->movedCacheDir);
 
@@ -124,6 +140,74 @@ class CachePortabilityTest extends BaseFunctionalTestCase
         $this->assertSame([], $result['loaded'] ?? null, 'The request fails before any weaving work');
         $this->assertSame($cacheFiles, self::snapshotDirectory($this->movedCacheDir), 'The prebuilt cache is not written');
         $this->assertDirectoryDoesNotExist($this->configuration['cacheDir'], 'Nothing is woven elsewhere either');
+    }
+
+    public function testWarmUpInPlaceWeavesAClassItsLoaderFileLoadsBeforeTheBuild(): void
+    {
+        (new Filesystem())->mirror($this->configuration['cacheDir'], $this->movedCacheDir);
+        $this->clearCache();
+        file_put_contents(self::addedClassFile(), self::ADDED_CLASS_SOURCE);
+
+        // The bootstrap loads the class the prebuilt cache misses before the build starts: a request would fail
+        $warmUp = $this->runConsole(['cache:warmup:aop', __DIR__ . '/../Fixtures/project/bin/bootstrap.php']);
+
+        $this->assertTrue($warmUp->isSuccessful(), $warmUp->getOutput() . $warmUp->getErrorOutput());
+        $this->assertFileExists($this->movedCacheDir . '/src/Application/AddedAfterTheBuildOriginalTrait.php', 'Woven by the build');
+        $this->assertDirectoryDoesNotExist($this->configuration['cacheDir']);
+
+        // The rebuilt cache serves the class to a request
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        assert($phpExecutable !== false);
+        $script  = sprintf(
+            'include %s; var_export(new %s() instanceof \\Go\\Aop\\Proxy);',
+            var_export($this->configuration['frontController'], true),
+            '\\' . self::ADDED_CLASS,
+        );
+        $request = new Process([$phpExecutable, '-r', $script], null, ['GO_AOP_CONFIGURATION' => 'moved_cache']);
+        $request->run();
+        $this->assertTrue($request->isSuccessful(), $request->getOutput() . $request->getErrorOutput());
+        $this->assertSame('true', $request->getOutput());
+    }
+
+    public function testWarmUpIntoAnotherDirectoryWeavesAClassItsLoaderFileLoadsWithoutWritingTheOwnDirectory(): void
+    {
+        (new Filesystem())->mirror($this->configuration['cacheDir'], $this->movedCacheDir);
+        $this->clearCache();
+        file_put_contents(self::addedClassFile(), self::ADDED_CLASS_SOURCE);
+        $nextCacheDir = $this->movedCacheDir . '-next';
+        $cacheFiles   = self::snapshotDirectory($this->movedCacheDir);
+
+        // The workers boot the kernel with the bootstrap too
+        $warmUp = $this->runConsole([
+            'cache:warmup:aop',
+            __DIR__ . '/../Fixtures/project/bin/bootstrap.php',
+            '--cache-dir=' . $nextCacheDir,
+            '--workers=2',
+        ]);
+
+        $this->assertTrue($warmUp->isSuccessful(), $warmUp->getOutput() . $warmUp->getErrorOutput());
+        $this->assertFileExists($nextCacheDir . '/src/Application/AddedAfterTheBuildOriginalTrait.php');
+        $this->assertSame($cacheFiles, self::snapshotDirectory($this->movedCacheDir), 'The cache of the running release is untouched');
+        $this->assertDirectoryDoesNotExist($this->configuration['cacheDir']);
+    }
+
+    /**
+     * Runs the console of the fixture project with the kernel of the moved prebuilt cache
+     *
+     * @param list<string> $arguments
+     */
+    private function runConsole(array $arguments): Process
+    {
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        assert($phpExecutable !== false);
+        $process = new Process(
+            [$phpExecutable, $this->configuration['console'], '--no-ansi', ...$arguments],
+            null,
+            ['GO_AOP_CONFIGURATION' => 'moved_cache'],
+        );
+        $process->run();
+
+        return $process;
     }
 
     /**

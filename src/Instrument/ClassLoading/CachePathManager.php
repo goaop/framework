@@ -146,23 +146,55 @@ class CachePathManager
     public private(set) bool $isBuildingCache = false;
 
     /**
-     * Whether requests are served from a prebuilt cache: Features::PREBUILT_CACHE outside a build (#808)
+     * Whether a prebuilt cache is served: Features::PREBUILT_CACHE outside a build (#808)
      *
-     * Such a request never weaves nor writes, the cache was built at deploy time and is complete by contract. A source
-     * of the cache ({@see self::isSourceOfCache()}) without a record, or a record whose cached file is gone, fails with
-     * a WeavingException naming it before any weaving work (no parser, no transformer, no aspect): the autoloader
-     * checks a class against the include map, the stream filter checks a file it is asked to transform (an include
-     * intercepted with Features::INTERCEPT_INCLUDES, debug mode). A file that is no source of the cache passes the
-     * stream filter as it is. As a last line of defense the cache files are never written then (except by the
-     * explicit {@see self::clearCacheState()}), so a prebuilt directory, possibly on a read-only file system, is never
-     * touched by a request. A build ({@see self::withCacheDir()}) weaves and writes as without the flag.
+     * The cache was built at deploy time and is complete by contract: it is never woven into nor written. A source of
+     * the cache ({@see self::isSourceOfCache()}) without a record, or a record whose cached file is gone, is a miss,
+     * found before any weaving work (no parser, no transformer, no aspect): the autoloader checks a class against the
+     * include map, the stream filter checks a file it is asked to transform (an include intercepted with
+     * Features::INTERCEPT_INCLUDES, debug mode). A request fails on it, {@see self::$failsOnMiss}. A file that is no
+     * source of the cache passes the stream filter as it is. As a last line of defense the cache files are never
+     * written then (except by the explicit {@see self::clearCacheState()}), so a prebuilt directory, possibly on a
+     * read-only file system, is never touched. A build ({@see self::withCacheDir()}) weaves and writes as without the
+     * flag.
      *
      * Not checked: the cached file of a known class or include in production, included natively without a stat call
-     * (a missing one fails as a plain include does). The kernel booted by `cache:warmup:aop` serves the cache like a
-     * request until the build starts, so its loader file must not load classes of the include paths after init().
+     * (a missing one fails as a plain include does).
      */
     public bool $servesPrebuiltCache {
         get => !$this->isBuildingCache && $this->kernel->hasFeature(Features::PREBUILT_CACHE);
+    }
+
+    /**
+     * Whether a miss of the served prebuilt cache fails: always, except in a build process, {@see self::markBuildProcess()}
+     *
+     * A request fails with a WeavingException naming the class or file. The process of `cache:warmup:aop` (and each of
+     * its workers) boots the kernel with its loader file before the build starts: an application bootstrap may load
+     * classes the cache misses (the ones the build is about to weave), so such a miss is served from its original
+     * source there, not woven (a woven source needs its proxy files) and not recorded: the kernel's directory may be
+     * the one of the running release, and the build weaves the file properly.
+     */
+    public bool $failsOnMiss {
+        get => !self::$isBuildProcess && $this->servesPrebuiltCache;
+    }
+
+    /**
+     * Whether this process builds a cache, {@see self::markBuildProcess()}
+     */
+    private static bool $isBuildProcess = false;
+
+    /**
+     * Marks this process as one that builds a cache, before it boots the kernel: misses of a prebuilt cache are then
+     * served from their original source instead of failing ({@see self::$failsOnMiss})
+     *
+     * Called by `cache:warmup:aop` and its workers. A tool that builds the cache with CacheWarmer in a process of its
+     * own calls it before the kernel boots; a request never does.
+     *
+     * @internal For the cache warm-up tooling, false resets the mark in tests
+     */
+    public static function markBuildProcess(bool $isBuildProcess = true): void
+    {
+        self::$isBuildProcess = $isBuildProcess;
     }
 
     /**

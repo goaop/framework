@@ -290,7 +290,7 @@ final class AopComposerLoader
      * @return string|false The path/resource if found, false otherwise.
      *
      * @throws WeavingException When a request served by a prebuilt cache meets a class of a file the cache does not
-     *                          know (CachePathManager::$servesPrebuiltCache)
+     *                          know (CachePathManager::$failsOnMiss)
      */
     public function findFile(string $class): false|string
     {
@@ -315,13 +315,18 @@ final class AopComposerLoader
             // own, the filter checks the record anyway
             $mayBeUntransformed = !$this->isProduction && !isset($this->classMap[$class]);
             if (($this->isAllowedFilter)($file)) {
-                // A prebuilt cache holds every allowed file: one it does not know fails, before anything is woven
+                // A prebuilt cache holds every allowed file: one it does not know fails, before anything is woven, or
+                // is loaded as it is by the process that is about to build the cache
                 if ($this->cachePathManager->servesPrebuiltCache && $this->cachePathManager->findIncludeFile($file) === null) {
-                    throw WeavingException::sourceMissingFromPrebuiltCache(
-                        $file,
-                        (string) $this->cachePathManager->getCacheDir(),
-                        $class,
-                    );
+                    if ($this->cachePathManager->failsOnMiss) {
+                        throw WeavingException::sourceMissingFromPrebuiltCache(
+                            $file,
+                            (string) $this->cachePathManager->getCacheDir(),
+                            $class,
+                        );
+                    }
+
+                    return $file;
                 }
                 if (!$mayBeUntransformed || !$this->isFreshUntransformedFile($file)) {
                     $file = FilterInjectorTransformer::rewrite($file);

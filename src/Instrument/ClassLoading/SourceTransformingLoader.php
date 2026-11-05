@@ -33,8 +33,8 @@ use function strlen;
  * exists for the streamed file, its content is returned as-is - without parsing the
  * source, constructing any transformer or touching the container. Only a cache miss
  * builds the StreamMetaData and runs the transformer chain, persisting the result.
- * A request served by a prebuilt cache never gets there: it fails a source of the cache
- * that the cache misses (CachePathManager::$servesPrebuiltCache).
+ * A prebuilt cache never gets there: a request fails a source of the cache that the
+ * cache misses (CachePathManager::$servesPrebuiltCache, $failsOnMiss).
  *
  * @phpstan-property resource $stream Inherited from php_user_filter; typed here for static analysis
  */
@@ -191,10 +191,11 @@ final class SourceTransformingLoader extends PhpStreamFilter
                 return PSFS_PASS_ON;
             }
 
-            // A request never weaves into a prebuilt cache: a source of the cache it misses fails it, before any
-            // weaving work, any other file (an included template, a file outside the include paths) is served as is
+            // A prebuilt cache is never woven into: a source of the cache it misses fails a request, before any
+            // weaving work. Any other file (an included template, a file outside the include paths), and that source
+            // in the process about to build the cache, is served as it is
             if (self::$cachePathManager?->servesPrebuiltCache === true) {
-                if (self::$cachePathManager->isSourceOfCache($originalUri)) {
+                if (self::$cachePathManager->failsOnMiss && self::$cachePathManager->isSourceOfCache($originalUri)) {
                     throw WeavingException::sourceMissingFromPrebuiltCache(
                         $originalUri,
                         (string) self::$cachePathManager->getCacheDir(),
@@ -315,7 +316,7 @@ final class SourceTransformingLoader extends PhpStreamFilter
             // A cached file that is gone is woven again, without a warning (an error handler would see a silenced
             // one too); a request never weaves a prebuilt cache, it fails
             $cachedContent = is_file($recordedCacheUri) ? file_get_contents($recordedCacheUri) : false;
-            if ($cachedContent === false && self::$cachePathManager->servesPrebuiltCache) {
+            if ($cachedContent === false && self::$cachePathManager->failsOnMiss) {
                 throw WeavingException::cachedFileMissingFromPrebuiltCache(
                     $originalUri,
                     $recordedCacheUri,

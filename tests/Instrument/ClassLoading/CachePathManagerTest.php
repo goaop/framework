@@ -191,6 +191,28 @@ class CachePathManagerTest extends TestCase
         $this->assertTrue($manager->servesPrebuiltCache);
     }
 
+    public function testOnlyARequestFailsOnAMissOfThePrebuiltCache(): void
+    {
+        $this->assertFalse($this->createManager()->failsOnMiss, 'Without a prebuilt cache a miss is woven');
+        $manager = $this->createManager(prebuiltCache: true);
+        $this->assertTrue($manager->failsOnMiss, 'A request fails');
+
+        CachePathManager::markBuildProcess();
+        try {
+            // The warm-up process before its build: the miss is served, the cache is still not written
+            $this->assertFalse($manager->failsOnMiss);
+            $this->assertTrue($manager->servesPrebuiltCache);
+            $manager->withCacheDir(self::$cacheDir, function () use ($manager): void {
+                $this->assertFalse($manager->failsOnMiss);
+                $this->assertFalse($manager->servesPrebuiltCache, 'The build weaves and writes');
+            });
+            $this->assertTrue($manager->servesPrebuiltCache);
+        } finally {
+            CachePathManager::markBuildProcess(false);
+        }
+        $this->assertTrue($manager->failsOnMiss);
+    }
+
     public function testPrebuiltCacheIsNeverWrittenOutsideABuild(): void
     {
         $cacheDir = self::createTemporaryDirectory('cpm-prebuilt-flush');

@@ -41,7 +41,8 @@ final class Features
      * whose cached file is gone, fails the request with a WeavingException naming it, before
      * anything is woven: rebuild the cache with `cache:warmup:aop`. Files the weaver never
      * takes (outside the include paths, excluded, not `.php`) load as they are. The build
-     * itself (`cache:warmup:aop`, also in place) weaves and writes as without the flag.
+     * itself (`cache:warmup:aop`, also in place) weaves and writes as without the flag; a
+     * class its loader file loads before the build starts is loaded unwoven there.
      */
     public const int PREBUILT_CACHE = 64;
 

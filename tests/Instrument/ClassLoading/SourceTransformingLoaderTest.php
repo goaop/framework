@@ -48,6 +48,7 @@ class SourceTransformingLoaderTest extends TestCase
     {
         // The loader holds process-wide static state, which every test configures differently
         SourceTransformingLoader::reset();
+        CachePathManager::markBuildProcess(false);
 
         // Real directories: the stream filter includes woven sources and the loader resolves the
         // streamed path via realpath(), neither of which works on the virtual file system
@@ -62,6 +63,7 @@ class SourceTransformingLoaderTest extends TestCase
     protected function tearDown(): void
     {
         SourceTransformingLoader::reset();
+        CachePathManager::markBuildProcess(false);
         self::removeTemporaryDirectory($this->cacheDir);
         self::removeTemporaryDirectory($this->appDir);
     }
@@ -474,6 +476,29 @@ class SourceTransformingLoaderTest extends TestCase
         $this->assertSame(0, $transformer->callCount, 'Nothing is woven');
         $this->assertSame($cacheFiles, self::snapshotDirectory($this->cacheDir), 'Nothing is written');
         $this->assertNull($this->cachePathManager->queryCacheState($this->originalFile));
+    }
+
+    public function testBuildProcessServesASourceThePrebuiltCacheMissesAsItIsBeforeTheBuild(): void
+    {
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer], Features::PREBUILT_CACHE);
+        $this->buildPrebuiltCache();
+        $cacheFiles = self::snapshotDirectory($this->cacheDir);
+        // The loader file of cache:warmup:aop loads a class the cache misses, before the build
+        CachePathManager::markBuildProcess();
+
+        $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
+        $this->cachePathManager->flushCacheState();
+
+        $this->assertSame(0, $transformer->callCount, 'Woven by the build, not before');
+        $this->assertSame($cacheFiles, self::snapshotDirectory($this->cacheDir), 'Nothing is written before the build');
+
+        // The build weaves it
+        $this->cachePathManager->withCacheDir($this->cacheDir, function (): void {
+            $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
+        });
+        $this->assertSame(1, $transformer->callCount);
+        $this->assertSame(self::WOVEN_SOURCE, file_get_contents($this->cachePath('src/Some.php')));
     }
 
     public function testPrebuiltCacheServesAFileThatIsNoSourceOfTheCacheAsItIs(): void

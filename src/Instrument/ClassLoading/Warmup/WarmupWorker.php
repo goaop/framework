@@ -118,6 +118,8 @@ final class WarmupWorker
         }
 
         try {
+            // The loader file may load classes the cache misses, before the build: they are served, not failed (#808)
+            CachePathManager::markBuildProcess();
             // The kernel refuses to start without a cache directory
             $container = KernelLoader::load($loader)->getContainer();
             SourceTransformingLoader::ensureRegistered($container);

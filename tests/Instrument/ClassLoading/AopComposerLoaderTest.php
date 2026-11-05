@@ -50,6 +50,7 @@ class AopComposerLoaderTest extends TestCase
     protected function tearDown(): void
     {
         FilterInjectorTransformer::reset();
+        CachePathManager::markBuildProcess(false);
         self::removeTemporaryDirectory($this->appDir);
     }
 
@@ -229,6 +230,23 @@ class AopComposerLoaderTest extends TestCase
                 $exception->getMessage(),
             );
         }
+    }
+
+    #[DataProvider('modes')]
+    public function testBuildProcessLoadsAClassThePrebuiltCacheMissesAsItIsBeforeTheBuild(bool $debug): void
+    {
+        $file           = $this->appDir . '/src/Service.php';
+        $composerLoader = new ClassLoader();
+        $composerLoader->addClassMap(['App\\Service' => $file]);
+        $loader = new AopComposerLoader(
+            $composerLoader,
+            $this->createContainer($this->createPrebuiltCachePathManager($debug)),
+            ['debug' => $debug, 'features' => Features::PREBUILT_CACHE] + $this->createOptions([]),
+        );
+        CachePathManager::markBuildProcess();
+
+        // The original file: not woven before the build of the warm-up, which weaves it into the cache
+        $this->assertSame(PathResolver::realpath($file), $loader->findFile('App\\Service'));
     }
 
     #[DataProvider('modes')]

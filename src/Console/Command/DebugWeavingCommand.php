@@ -47,6 +47,8 @@ class DebugWeavingCommand extends BaseAspectCommand
 {
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        // Builds the cache: the loader file may load classes the cache misses (#808)
+        CachePathManager::markBuildProcess();
         $this->loadAspectKernel($input, $output);
 
         $io = new SymfonyStyle($input, $output);

@@ -85,6 +85,10 @@ class CacheWarmer
      * The directory being built is created when it is missing, also the directory of the kernel itself: a kernel
      * with {@see \Go\Aop\Features::PREBUILT_CACHE} never creates it, the deployment does, with this warm-up.
      *
+     * With a prebuilt cache, a class loaded before the build that the cache misses fails like in a request, unless the
+     * process was marked as a build process before the kernel booted ({@see CachePathManager::markBuildProcess()}), as
+     * `cache:warmup:aop` and its workers do.
+     *
      * @return int Number of files that failed to process
      */
     public function warmUp(): int

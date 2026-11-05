@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Console\Command;
 
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\CacheWarmer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -134,6 +135,8 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
         }
         // Without a value the script goes to the cache directory being built, which the warmer knows
         $preloadFile = $preload === false ? null : ($preload ?? '');
+        // The loader file may load classes the cache misses, before the build: they are served, not failed (#808)
+        CachePathManager::markBuildProcess();
         $this->loadAspectKernel($input, $output);
         // The explicit option wins, the kernel option is the default
         $cachedFiles ??= $this->aspectKernel->getOptions()['parsedFilesLimit'];
