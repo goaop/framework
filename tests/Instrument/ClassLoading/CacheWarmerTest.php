@@ -424,7 +424,9 @@ class CacheWarmerTest extends TestCase
 
     public function testFailFastStopsAfterFirstError(): void
     {
-        // Two broken files: whichever comes first, the warmer stops before the second one
+        // Only two broken files: the file system lists them in any order, and a valid file listed before them would
+        // be processed too. Whichever broken file comes first, the warmer stops before the second one
+        unlink($this->sourceFile);
         file_put_contents($this->appDir . '/src/Broken.php', "<?php // broken\n");
         file_put_contents($this->appDir . '/src/AlsoBroken.php', "<?php // broken\n");
 
@@ -435,6 +437,7 @@ class CacheWarmerTest extends TestCase
         $this->assertSame(1, $warmer->warmUp());
         $display = $output->fetch();
         $this->assertStringContainsString('[STOP]: Warmup was interrupted, stopping...', $display);
+        $this->assertSame(1, substr_count($display, 'Cannot weave <broken> file'), 'The second broken file is not processed');
         $this->assertStringContainsString('Total processed 1, 1 errors in ', $display);
     }
 }
