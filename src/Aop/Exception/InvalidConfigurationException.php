@@ -150,6 +150,11 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
         return new self('No Composer class loader is registered in this process: require vendor/autoload.php first');
     }
 
+    public static function entryFileNotFound(string $file): self
+    {
+        return new self("Entry point {$file} does not exist or is not readable");
+    }
+
     public static function kernelNotInitializedWithoutLoader(): self
     {
         return new self(

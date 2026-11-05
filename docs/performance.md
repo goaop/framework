@@ -300,37 +300,22 @@ RUN rm -rf var/cache/aop \
 # 2. The OPcache file cache: a new PHP-FPM master loads compiled scripts instead of compiling them.
 #    Built in the final image, as the file cache belongs to this PHP build and these paths.
 RUN mkdir -p /var/cache/opcache \
- && php -d opcache.enable_cli=1 -d opcache.file_cache_only=1 -d opcache.file_cache_read_only=0 \
-        docker/opcache-prime.php /app /app/var/cache/aop /app/public/index.php \
+ && php -d opcache.enable_cli=1 -d opcache.file_cache_only=1 -d opcache.file_cache=/var/cache/opcache \
+        vendor/bin/aspect cache:warmup:opcache public/index.php --file-cache=/var/cache/opcache --entry=public/index.php \
  && chown -R www-data /var/cache/opcache
 
 USER www-data
 ```
 
-`docker/opcache-prime.php` compiles what the application loads: Composer's class map, Composer's autoloaded files,
-the AOP cache and the entry points:
-
-```php
-<?php
-// Usage: php opcache-prime.php <app dir> <AOP cache dir> [entry point files...]
-[, $appDir, $aopCacheDir] = $argv;
-$files = [
-    ...array_values(require "$appDir/vendor/composer/autoload_classmap.php"),
-    ...(is_file("$appDir/vendor/composer/autoload_files.php") ? array_values(require "$appDir/vendor/composer/autoload_files.php") : []),
-    ...array_slice($argv, 3),
-];
-$cacheFiles = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($aopCacheDir, FilesystemIterator::SKIP_DOTS));
-foreach ($cacheFiles as $file) {
-    if ($file->getExtension() === 'php') {
-        $files[] = $file->getPathname();
-    }
-}
-$compiled = 0;
-foreach (array_unique($files) as $file) {
-    $compiled += (int) opcache_compile_file($file);
-}
-echo "Compiled $compiled files into opcache.file_cache\n";
-```
+`cache:warmup:opcache` compiles what the application loads: the AOP cache (woven files, proxies, advisor caches and
+metadata), Composer's class map and autoloaded files, the sources below the include paths that are not woven, the
+loader file and the entry points given with `--entry`. Compiled scripts are written to disk only by a process started
+with `opcache.enable_cli=1`, `opcache.file_cache_only=1` and `opcache.file_cache=DIR`, which can not be set at runtime:
+the command checks them (and that `--file-cache=DIR` is the configured directory) and prints the exact command to run
+otherwise. The AOP cache, the loader and the entry points must compile; a file of the Composer class map that does not
+(a vendor test stub written for a newer PHP) is listed and skipped, PHP logs the compile error. Run it after
+`cache:warmup:aop`, in the final image, with the PHP binary that serves the requests: the file cache is keyed by the
+PHP build and the absolute paths of the files.
 
 `docker/opcache.ini`:
 

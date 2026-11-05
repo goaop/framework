@@ -17,6 +17,7 @@ use Go\Console\Command\CacheWarmupCommand;
 use Go\Console\Command\DebugAdvisorCommand;
 use Go\Console\Command\DebugAspectCommand;
 use Go\Console\Command\DebugWeavingCommand;
+use Go\Console\Command\OpcacheWarmupCommand;
 use ReflectionClass;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -32,6 +33,7 @@ final class CommandLoader
      */
     public const array COMMANDS = [
         CacheWarmupCommand::class,
+        OpcacheWarmupCommand::class,
         DebugAspectCommand::class,
         DebugAdvisorCommand::class,
         DebugWeavingCommand::class,

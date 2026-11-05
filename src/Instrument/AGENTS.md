@@ -27,6 +27,14 @@
   (the manager's class map / skip set are the ones of the build): Opcache\PreloadScriptGenerator, `__DIR__`-relative
   paths only (PathResolver::relativePath), Composer autoloader located by ComposerAutoloader::ofProcess(); classes whose
   proxy calls `::__staticInitialization();` are listed but not loaded (the advice needs the kernel of a request).
+- cache:warmup:opcache (Console\Command\OpcacheWarmupCommand) → Opcache\FileCachePrimer: checks the ini
+  (enable_cli, file_cache[_only], 8.5 file_cache_read_only; prints the `php -d ...` command line on a problem, no
+  re-exec), compiles cacheFiles() + loader + `--entry` (must compile) and applicationFiles() (Composer class map,
+  autoload_files, untransformed sources via findIncludeFile(); failures listed, skipped). Already included files count
+  as compiled when they fail (file_cache_only stored them at inclusion; recompiling a file that declares functions
+  fails); `opcache.file_update_protection` is set to 0 and display/log_errors off while compiling. PHP quirk: a fatal
+  compile error inside opcache_compile_file() bails out and leaves user stream filters (php://filter) broken for the
+  rest of the process, so never compile such a file in the PHPUnit process.
 - UI (Console\Warmup): FileListReporter with -v, else ProgressBarReporter (Symfony ProgressBar: redrawn in place on a
   decorated output, a line per tenth of the files elsewhere). Progress + errors → stderr, header + summary → stdout.
 

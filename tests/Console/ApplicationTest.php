@@ -65,6 +65,7 @@ class ApplicationTest extends TestCase
 
         $this->assertTrue($process->isSuccessful(), $process->getErrorOutput() ?: $process->getOutput());
         $this->assertStringContainsString('cache:warmup:aop', $process->getOutput());
+        $this->assertStringContainsString('cache:warmup:opcache', $process->getOutput());
         $this->assertStringContainsString('debug:aspect', $process->getOutput());
         $this->assertStringContainsString('debug:advisor', $process->getOutput());
         $this->assertStringContainsString('debug:weaving', $process->getOutput());
@@ -93,7 +94,7 @@ class ApplicationTest extends TestCase
         $application = new Application('Go! AOP');
         $application->setCommandLoader($commandLoader);
 
-        $this->assertSame(['cache:warmup:aop', 'debug:aspect', 'debug:advisor', 'debug:weaving'], $commandLoader->getNames());
+        $this->assertSame(['cache:warmup:aop', 'cache:warmup:opcache', 'debug:aspect', 'debug:advisor', 'debug:weaving'], $commandLoader->getNames());
         $command = $application->find('debug:weaving');
 
         $this->assertSame('debug:weaving', $command->getName());

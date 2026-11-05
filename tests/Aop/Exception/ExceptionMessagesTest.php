@@ -91,6 +91,11 @@ final class ExceptionMessagesTest extends TestCase
                 InvalidConfigurationException::class,
                 'No Composer class loader is registered in this process: require vendor/autoload.php first',
             ],
+            'entry point missing'         => [
+                static fn() => InvalidConfigurationException::entryFileNotFound('public/index.php'),
+                InvalidConfigurationException::class,
+                'Entry point public/index.php does not exist or is not readable',
+            ],
             'cache file mode, int'        => [
                 static fn() => InvalidConfigurationException::invalidCacheFileMode(0444),
                 InvalidConfigurationException::class,
