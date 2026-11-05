@@ -63,9 +63,23 @@ final class Container implements AspectContainer
     private int $registrationVersion = 0;
 
     /**
-     * Cached timestamp for resources, might be uninitialized if {@see self::isFreshSince()} is not called yet
+     * Newest modification time of the resources that were already stat-ed by {@see self::isFreshSince()}
      */
-    private int $cachedMaxTimestamp;
+    private int $cachedMaxTimestamp = 0;
+
+    /**
+     * Resources not stat-ed yet: a new resource only costs its own stat, the known ones are never read again
+     *
+     * @var array<string, string>
+     */
+    private array $unmeasuredResources;
+
+    /**
+     * Classes of the added objects that were queued for resource tracking already
+     *
+     * @var array<class-string, true>
+     */
+    private array $trackedResourceClasses = [];
 
     /**
      * @var array<string, string> Hashmap of resources for application
@@ -86,7 +100,7 @@ final class Container implements AspectContainer
      */
     public function __construct(array $resources = [])
     {
-        $this->resources = array_combine($resources, $resources);
+        $this->resources = $this->unmeasuredResources = array_combine($resources, $resources);
     }
 
     public function onRegistration(string $interfaceName, Closure $listener): void
@@ -106,8 +120,8 @@ final class Container implements AspectContainer
             }
             // The file of the class is tracked on the next freshness check: registration on every
             // request needs neither reflection nor a file system call
-            $this->pendingResourceClasses[$value::class] = true;
-            unset($this->cachedMaxTimestamp);
+            // A class seen before adds nothing new: its file is tracked or stays untrackable
+            $this->trackedResourceClasses[$value::class] ??= $this->pendingResourceClasses[$value::class] = true;
         }
     }
 
@@ -286,7 +300,7 @@ final class Container implements AspectContainer
 
     public function isFreshSince(int $timestamp): bool
     {
-        if (!isset($this->cachedMaxTimestamp)) {
+        if ($this->pendingResourceClasses !== []) {
             foreach (array_keys($this->pendingResourceClasses) as $className) {
                 $fileName = new ReflectionClass($className)->getFileName();
                 if (is_string($fileName)) {
@@ -294,7 +308,12 @@ final class Container implements AspectContainer
                 }
             }
             $this->pendingResourceClasses = [];
-            $this->cachedMaxTimestamp = max(array_filter(array_map(filemtime(...), $this->resources)) + [0]);
+        }
+        if ($this->unmeasuredResources !== []) {
+            $this->cachedMaxTimestamp = max(
+                array_filter(array_map(filemtime(...), $this->unmeasuredResources)) + [$this->cachedMaxTimestamp],
+            );
+            $this->unmeasuredResources = [];
         }
 
         return $this->cachedMaxTimestamp <= $timestamp;
@@ -304,9 +323,7 @@ final class Container implements AspectContainer
     {
         if (!isset($this->resources[$resource]) && is_readable($resource)) {
             $this->resources[$resource] = $resource;
-
-            // Invalidation of calculated timestamp
-            unset($this->cachedMaxTimestamp);
+            $this->unmeasuredResources[$resource] = $resource;
         }
     }
 }

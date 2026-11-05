@@ -217,6 +217,42 @@ class ContainerTest extends TestCase
         $this->assertTrue($isFresh);
     }
 
+    public function testAddOfKnownClassKeepsMeasuredResourceTimestamps(): void
+    {
+        $base = time() + 100000;
+        CountingStatWrapper::reset(['counting://one.php' => $base + 1000, 'counting://two.php' => $base + 2000]);
+        stream_wrapper_register('counting', CountingStatWrapper::class);
+        try {
+            $container = new Container(['counting://one.php']);
+            $container->addResource('counting://two.php');
+            $container->add('first', new First());
+            $container->add('first2', new First());
+
+            $this->assertTrue($container->isFreshSince($base + 2000));
+            $statsAfterFirstCheck = CountingStatWrapper::$statCalls;
+
+            // Known class: nothing new to track
+            $container->add('first3', new First());
+            $this->assertTrue($container->isFreshSince($base + 2000));
+            $this->assertFalse($container->isFreshSince($base + 1999));
+            $this->assertSame($statsAfterFirstCheck, CountingStatWrapper::$statCalls);
+
+            // A new resource is taken into account, the measured ones are not stat-ed again
+            CountingStatWrapper::$mtimes['counting://three.php'] = $base + 3000;
+            $statsBeforeNew = CountingStatWrapper::$statCalls;
+            $container->addResource('counting://three.php');
+            $this->assertFalse($container->isFreshSince($base + 2999));
+            $this->assertTrue($container->isFreshSince($base + 3000));
+            $this->assertSame($statsBeforeNew['counting://one.php'], CountingStatWrapper::$statCalls['counting://one.php']);
+
+            // A new class of an added object is taken into account as well
+            $container->add('std', new stdClass());
+            $this->assertTrue($container->isFreshSince($base + 3000));
+        } finally {
+            stream_wrapper_unregister('counting');
+        }
+    }
+
     public function testNullValueIsStoredAndRetrievable(): void
     {
         $this->container->add('nothing', null);
