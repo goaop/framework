@@ -12,8 +12,10 @@ declare(strict_types=1);
 
 namespace Go\Aop\Framework;
 
+use Closure;
 use Go\Aop\Exception\InvocationException;
 use Go\Aop\Intercept\DynamicMethodInvocation;
+use Go\Aop\Intercept\Interceptor;
 use ReflectionFunction;
 use ReflectionMethod;
 
@@ -24,6 +26,8 @@ use ReflectionMethod;
  *  - For methods declared in the proxied class: `$this-><method>OriginalAlias(...)` — the private
  *    alias created in the proxy's trait-use block.
  *  - For inherited methods (no trait alias): `parent::<method>(...)`.
+ * Only the scope class and the name of the callable are kept: the callable holds the instance it was created on, the
+ * first one calling the intercepted method, and the joinpoint lives until the end of the request (#796).
  *
  * Note: `ReflectionMethod::invokeArgs()` is used in {@see proceed()} because it is faster than
  * `Closure::call()` (see https://3v4l.org/DYj84) and reliably handles pass-by-reference
@@ -58,6 +62,32 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
      *  - For inherited methods without a trait alias: the prototype method from the parent class.
      */
     private ReflectionMethod $originalMethodToCall;
+
+    /**
+     * @var class-string|null Scope class of the original-body callable, null when it has none (rejected on use)
+     */
+    private readonly ?string $originalMethodScope;
+
+    /**
+     * Name of the method behind the original-body callable
+     */
+    private readonly string $originalMethodName;
+
+    /**
+     * @param array<Interceptor> $advices       List of advices for this invocation
+     * @param class-string<T>    $className     Class, containing method to invoke
+     * @param non-empty-string   $methodName    Name of the method to invoke
+     * @param Closure            $closureToCall First-class callable to the original method body, e.g.
+     *                                          `$this->methodOriginalAlias(...)` or `parent::method(...)`; only its
+     *                                          scope class and name are kept, never the callable itself
+     */
+    public function __construct(array $advices, string $className, string $methodName, Closure $closureToCall)
+    {
+        parent::__construct($advices, $className, $methodName);
+        $reflectionClosure         = new ReflectionFunction($closureToCall);
+        $this->originalMethodScope = $reflectionClosure->getClosureScopeClass()?->name;
+        $this->originalMethodName  = $reflectionClosure->name;
+    }
 
     /**
      * Hot path: runs on every intercepted call. The code is inlined on purpose and the frame handling is copied
@@ -133,12 +163,10 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
      */
     private function resolveOriginalMethod(): ReflectionMethod
     {
-        $reflectionClosure = new ReflectionFunction($this->closureToCall);
-        $closureScopeClass = $reflectionClosure->getClosureScopeClass();
-        if ($closureScopeClass === null) {
+        if ($this->originalMethodScope === null) {
             throw InvocationException::closureScopeUnresolvable();
         }
 
-        return new ReflectionMethod($closureScopeClass->getName(), $reflectionClosure->getName());
+        return new ReflectionMethod($this->originalMethodScope, $this->originalMethodName);
     }
 }
