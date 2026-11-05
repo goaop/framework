@@ -66,7 +66,7 @@ final class TraitInterceptedPropertyGenerator extends AbstractInterceptedPropert
     {
         return new PropertyHook('get', [
             ...$this->getFieldAccessInitializationStatements(),
-            $this->createReadStatement($returnsByReference),
+            ...$this->createReadStatements($returnsByReference),
         ], ['byRef' => $returnsByReference]);
     }
 

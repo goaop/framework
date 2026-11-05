@@ -312,8 +312,9 @@ class ClassProxyGeneratorTest extends TestCase
         $childGenerator   = new ClassProxyGenerator($reflectionClass, 'Test', $classAdvices);
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
+        // A property that can not hold null is initialized exactly when isset() is true (#819)
         $this->assertStringContainsString(
-            "if (isset(\$this->uninitialized) || \$__joinPoint->getField()->isInitialized(\$this)) {\n                return \$__joinPoint->read(\$this, \$this->uninitialized);",
+            "if (isset(\$this->uninitialized)) {\n                return \$__joinPoint->read(\$this, \$this->uninitialized);",
             $proxyFileContent,
         );
         $this->assertStringContainsString(
@@ -321,11 +322,45 @@ class ClassProxyGeneratorTest extends TestCase
             $proxyFileContent,
         );
         $this->assertStringContainsString(
-            "if (isset(\$this->uninitialized) || \$__joinPoint->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$__joinPoint->write(\$this, \$value, \$this->uninitialized);",
+            "if (isset(\$this->uninitialized)) {\n                \$this->uninitialized = \$__joinPoint->write(\$this, \$value, \$this->uninitialized);",
             $proxyFileContent,
         );
         $this->assertStringContainsString(
             "} else {\n                \$this->uninitialized = \$__joinPoint->write(\$this, \$value);",
+            $proxyFileContent,
+        );
+        $this->assertStringNotContainsString('isInitialized', $proxyFileContent);
+    }
+
+    /**
+     * A nullable property can hold null: the get hook reads it in a try block, the set hook asks reflection (#819)
+     *
+     * @throws ReflectionException
+     */
+    public function testGenerateWithUninitializedNullablePropertyDistinguishesNullFromUninitialized(): void
+    {
+        $target = new class {
+            public ?string $uninitialized;
+        };
+        $classAdvices = [
+            'prop' => [
+                'uninitialized' => [self::testAdvice()],
+            ],
+        ];
+
+        $proxyFileContent = "<?php" . PHP_EOL . new ClassProxyGenerator(new ReflectionClass($target), 'Test', $classAdvices)->generate();
+
+        $this->assertStringContainsString(
+            "            try {\n"
+            . "                \$__value = \$this->uninitialized;\n"
+            . "            } catch (Error) {\n"
+            . "                return \$__joinPoint->read(\$this);\n"
+            . "            }\n"
+            . "            return \$__joinPoint->read(\$this, \$__value);\n",
+            $proxyFileContent,
+        );
+        $this->assertStringContainsString(
+            "if (isset(\$this->uninitialized) || \$__joinPoint->getField()->isInitialized(\$this)) {\n                \$this->uninitialized = \$__joinPoint->write(\$this, \$value, \$this->uninitialized);",
             $proxyFileContent,
         );
     }

@@ -22,6 +22,7 @@ use Go\Tests\TestProject\Aspect\LoggingAspect;
 use Go\Tests\TestProject\Aspect\NullablePropertyInterceptAspect;
 use Go\Tests\TestProject\Aspect\PromotedPropertyInterceptAspect;
 use Go\Tests\TestProject\Aspect\PropertyInterceptAspect;
+use Go\Tests\TestProject\Aspect\PropertyStateAspect;
 use Go\Tests\TestProject\Aspect\TraitCompositionAspect;
 use Go\Tests\TestProject\Aspect\WeavingAspect;
 use Psr\Log\NullLogger;
@@ -38,6 +39,7 @@ class DefaultAspectKernel extends AspectKernel
         $container->addLazyService(ArrayPropertyInterceptAspect::class, fn(): ArrayPropertyInterceptAspect => new ArrayPropertyInterceptAspect());
         $container->addLazyService(NullablePropertyInterceptAspect::class, fn(): NullablePropertyInterceptAspect => new NullablePropertyInterceptAspect());
         $container->addLazyService(PropertyInterceptAspect::class, fn(): PropertyInterceptAspect => new PropertyInterceptAspect());
+        $container->addLazyService(PropertyStateAspect::class, fn(): PropertyStateAspect => new PropertyStateAspect());
         $container->addLazyService(PromotedPropertyInterceptAspect::class, fn(): PromotedPropertyInterceptAspect => new PromotedPropertyInterceptAspect());
         $container->addLazyService(Issue293Aspect::class, fn(): Issue293Aspect => new Issue293Aspect());
         $container->addLazyService(Issue781Aspect::class, fn(): Issue781Aspect => new Issue781Aspect());

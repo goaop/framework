@@ -24,6 +24,7 @@ use Go\Tests\TestProject\Application\MainFactory;
 use Go\Tests\TestProject\Application\NewInInitializerClass;
 use Go\Tests\TestProject\Application\NullablePropertyDemo;
 use Go\Tests\TestProject\Application\PromotedPropertyClass;
+use Go\Tests\TestProject\Application\PropertyStateDemo;
 use Go\Tests\TestProject\Application\ReadonlyValueObject;
 use Go\Tests\TestProject\Application\SingleLinePromotedClass;
 use Symfony\Component\Process\PhpExecutableFinder;
@@ -387,5 +388,63 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         );
         // Reads of label (twice) and note, writes of note and label: 5 accesses through the advice
         $this->assertSame('NULL,NULL,set|5', trim($process->getOutput()));
+    }
+
+    /**
+     * Advices see the same state of an uninitialized, null or set typed property for reads and writes, and the
+     * get and set hooks share one joinpoint, also for a read inside a write advice (#819)
+     */
+    public function testTypedPropertyStatesReachTheAdvices(): void
+    {
+        foreach (['nullable', 'plain', 'list'] as $propertyName) {
+            $this->assertPropertyWoven(
+                PropertyStateDemo::class,
+                $propertyName,
+                'Go\\Tests\\TestProject\\Aspect\\PropertyStateAspect->aroundPropertyAccess',
+            );
+        }
+
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        $script = sprintf(
+            'include %s; echo json_encode([(new %s())->run(), %s::$log]);',
+            var_export($this->configuration['frontController'], true),
+            '\\' . PropertyStateDemo::class,
+            '\\Go\\Tests\\TestProject\\Aspect\\PropertyStateAspect',
+        );
+        assert($phpExecutable !== false);
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
+        );
+        $process->run();
+
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Running the woven class failed: ' . $process->getOutput() . $process->getErrorOutput(),
+        );
+        $this->assertSame(
+            [
+                ['lazy nullable', null, 'value', 'lazy plain', 'plain', null, [1, 2]],
+                [
+                    'read nullable: uninitialized',
+                    'write nullable: uninitialized -> NULL',
+                    'read nullable: NULL',
+                    'write nullable: NULL -> NULL',
+                    "write nullable: NULL -> 'value'",
+                    "read nullable: 'value'",
+                    "write nullable: 'value' -> 'nested'",
+                    "read nullable: 'value'",
+                    "nested read returned 'value'",
+                    'read plain: uninitialized',
+                    "write plain: uninitialized -> 'plain'",
+                    "read plain: 'plain'",
+                    'read list: NULL',
+                    "read list: array (\n  0 => 1,\n)",
+                    "read list: array (\n  0 => 1,\n  1 => 2,\n)",
+                ],
+            ],
+            json_decode(trim($process->getOutput()), true),
+        );
     }
 }
