@@ -17,6 +17,7 @@ use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\Interceptor;
 use ReflectionException;
 use ReflectionFunction;
+use SensitiveParameter;
 
 use function array_pop;
 
@@ -101,8 +102,10 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    public function __invoke(array $arguments = [], array $variadicArguments = []): mixed
-    {
+    public function __invoke(
+        #[SensitiveParameter] array $arguments = [],
+        #[SensitiveParameter] array $variadicArguments = [],
+    ): mixed {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->current];
         }

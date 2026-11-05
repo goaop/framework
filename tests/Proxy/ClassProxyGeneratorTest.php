@@ -14,6 +14,7 @@ namespace Go\Proxy;
 
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Framework\BeforeInterceptor;
+use Go\Core\AspectContainer;
 use Go\Aop\Framework\GeneratedInterceptor;
 use Go\PhpUnit\AssertsCompilablePhp;
 use Go\Stubs\Collision\A\SameNameAspect as AspectA;
@@ -730,6 +731,38 @@ class ClassProxyGeneratorTest extends TestCase
         $this->assertStringContainsString(', \\GlobalHelperInterface', $output);
         $this->assertStringNotContainsString(' GlobalHelperInterface', $output);
         $this->assertPhpCompiles($output);
+    }
+
+    /**
+     * The constructor arguments pass through the generated __initialization() as an array (#795)
+     */
+    public function testInitializationMethodHidesConstructorArguments(): void
+    {
+        $generator = new ClassProxyGenerator(
+            new ReflectionClass(First::class),
+            'Test',
+            [AspectContainer::INIT_PREFIX => ['root' => [self::testAdvice()]]],
+        );
+        $output = "<?php\n" . $generator->generate();
+
+        $this->assertStringContainsString("\nuse SensitiveParameter;\n", $output);
+        $this->assertStringContainsString(
+            "public static function __initialization(\n        #[SensitiveParameter]\n        array \$arguments = []\n    ): static",
+            $output,
+        );
+        $this->assertPhpCompiles($output);
+
+        $globalGenerator = new ClassProxyGenerator(
+            new ReflectionClass(\ClassWithoutNamespace::class),
+            'Test',
+            [AspectContainer::INIT_PREFIX => ['root' => [self::testAdvice()]]],
+        );
+        $globalOutput = "<?php\n" . $globalGenerator->generate();
+
+        // A global class needs no import in a file without namespace
+        $this->assertStringNotContainsString('use SensitiveParameter;', $globalOutput);
+        $this->assertStringContainsString("__initialization(\n        #[SensitiveParameter]\n", $globalOutput);
+        $this->assertPhpCompiles($globalOutput);
     }
 
     private static function testAdvice(): GeneratedInterceptor

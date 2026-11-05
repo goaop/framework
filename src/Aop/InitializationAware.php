@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Aop;
 
+use SensitiveParameter;
+
 /**
  * Marker interface for proxies that expose initialization interceptor entry point.
  *
@@ -23,5 +25,5 @@ interface InitializationAware
      * @param list<mixed> $arguments
      * @return T
      */
-    public static function __initialization(array $arguments = []): object;
+    public static function __initialization(#[SensitiveParameter] array $arguments = []): object;
 }

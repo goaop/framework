@@ -40,6 +40,8 @@ return (new Config())
         '@PER-CS' => true,
         'declare_strict_types' => true,
         'no_unused_imports' => true,
+        // An attribute stays on the line of its parameter in a multi-line parameter list
+        'method_argument_space' => ['on_multiline' => 'ensure_fully_multiline', 'attribute_placement' => 'same_line'],
     ])
     ->setCacheFile(__DIR__ . '/.php-cs-fixer.cache')
     ->setFinder($finder);

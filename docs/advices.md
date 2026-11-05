@@ -80,6 +80,13 @@ inherited method itself.
   while the caller iterates.
 - **Arguments.** `getArguments()` lists the arguments by position. A by-reference variadic parameter
   (`&...$values`) is passed to the original method by value.
+- **`#[\SensitiveParameter]` in stack traces.** The proxy keeps the attribute, and the framework frames that carry
+  the arguments as an array (the joinpoint `__invoke()`, the generated `__initialization()` and the rewritten
+  `new`) hide them. Two internal functions between the joinpoint and the original method can not:
+  `ReflectionMethod::invokeArgs()` for instance methods and constructors and `forward_static_call_array()` for
+  static methods. Their frames in `Throwable::getTrace()` still hold the argument array, which the text form of the
+  trace prints as `Array`. Error trackers that collect frame arguments see it; with `zend.exception_ignore_args=On`
+  (the production default) no frame has arguments.
 - **`strict_types` of function proxies.** The proxies of intercepted functions are generated with
   `declare(strict_types=1)`, one file per namespace; the arguments are coerced by the calling file's mode before
   the proxy is entered.

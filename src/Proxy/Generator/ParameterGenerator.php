@@ -39,6 +39,14 @@ final class ParameterGenerator
     ) {}
 
     /**
+     * Adds an attribute group to the parameter, e.g. #[SensitiveParameter] on a generated parameter
+     */
+    public function addAttributeGroup(Node\AttributeGroup $attributeGroup): void
+    {
+        $this->attributeGroups[] = $attributeGroup;
+    }
+
+    /**
      * Creates a ParameterGenerator from a reflection parameter.
      */
     public static function fromReflection(ReflectionParameter $param): self

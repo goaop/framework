@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Intercept;
 
 use ReflectionMethod;
+use SensitiveParameter;
 
 /**
  * Description of an invocation to a constructor, given to an interceptor upon constructor-call.
@@ -37,5 +38,5 @@ interface ConstructorInvocation extends Invocation, ClassJoinpoint
      * @param list<mixed> $arguments Arguments for constructor invocation
      * @phpstan-return T
      */
-    public function __invoke(array $arguments = []): object;
+    public function __invoke(#[SensitiveParameter] array $arguments = []): object;
 }
