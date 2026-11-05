@@ -81,6 +81,7 @@ class OriginalSourceLocatorTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
         $this->assertSame($this->appDir . '/cache/ServiceOriginalTrait.php', $composerLoader->findFile('App\\Service'));
 
