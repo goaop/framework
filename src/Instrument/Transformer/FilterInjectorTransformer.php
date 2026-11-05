@@ -37,6 +37,11 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
     protected static ?string $filterName = null;
 
     /**
+     * `php://filter/read=<filter>/resource=`, built once the stream filter is up, see filterUriPrefix()
+     */
+    protected static ?string $filterUriPrefix = null;
+
+    /**
      * Kernel options
      *
      * @phpstan-var KernelOptions
@@ -92,6 +97,7 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
     {
         self::$kernel           = null;
         self::$filterName       = null;
+        self::$filterUriPrefix  = null;
         self::$cachePathManager = null;
     }
 
@@ -109,7 +115,7 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
         }
         $kernel = AspectKernel::getInstance();
         // The stream filter is not registered here: an include served natively from the include map
-        // (the warm production path) never needs it, see ensureFilterName()
+        // (the warm production path) never needs it, see filterUriPrefix()
         self::configure(
             $kernel,
             null,
@@ -118,17 +124,18 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
     }
 
     /**
-     * Brings up the stream filter (and the transformer pipeline) and returns its name, for the php://filter URIs
+     * Brings up the stream filter (and the transformer pipeline) on the first php://filter URI and remembers the URI
+     * prefix: rewrite() reads {@see self::$filterUriPrefix} directly afterwards, without a call or a check
      */
-    protected static function ensureFilterName(): string
+    protected static function filterUriPrefix(): string
     {
-        if (self::$filterName !== null) {
-            return self::$filterName;
+        if (self::$filterName === null) {
+            $kernel = self::$kernel ?? AspectKernel::getInstance();
+            SourceTransformingLoader::ensureRegistered($kernel->getContainer());
+            self::$filterName = SourceTransformingLoader::getId();
         }
-        $kernel = self::$kernel ?? AspectKernel::getInstance();
-        SourceTransformingLoader::ensureRegistered($kernel->getContainer());
 
-        return self::$filterName = SourceTransformingLoader::getId();
+        return self::$filterUriPrefix = self::PHP_FILTER_READ . self::$filterName . '/resource=';
     }
 
     /**
@@ -172,7 +179,7 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
 
         // If the cache is disabled, resource path not resolvable, or no cache yet, then use on-fly method
         if ($cachedResource === null || !$cacheDir || $debug || !file_exists($cachedResource)) {
-            return self::PHP_FILTER_READ . self::ensureFilterName() . '/resource=' . $resource;
+            return (self::$filterUriPrefix ?? self::filterUriPrefix()) . $resource;
         }
 
         return $cachedResource;
