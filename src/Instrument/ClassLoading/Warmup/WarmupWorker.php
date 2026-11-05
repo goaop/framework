@@ -14,6 +14,7 @@ namespace Go\Instrument\ClassLoading\Warmup;
 
 use Composer\Autoload\ClassLoader;
 use Go\Console\KernelLoader;
+use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use ReflectionClass;
@@ -47,7 +48,7 @@ final class WarmupWorker
      *
      * @return list<string> Command line, or an empty list when a worker process can not be started from here
      */
-    public static function commandLine(string $loader, int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES, ?string $cacheDir = null): array
+    public static function commandLine(string $loader, int $cachedFiles = AspectKernel::DEFAULT_PARSED_FILES_LIMIT, ?string $cacheDir = null): array
     {
         $classLoaderFile = class_exists(ClassLoader::class, false) ? new ReflectionClass(ClassLoader::class)->getFileName() : false;
         if ($classLoaderFile === false || !function_exists('proc_open')) {
@@ -87,7 +88,7 @@ final class WarmupWorker
      */
     public static function main(
         string $loader,
-        int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES,
+        int $cachedFiles = AspectKernel::DEFAULT_PARSED_FILES_LIMIT,
         mixed $input = null,
         mixed $output = null,
         ?string $cacheDir = null,
@@ -148,7 +149,11 @@ final class WarmupWorker
             return 0;
         };
 
-        // The records are keyed relative to the application root: the coordinator merges them into the same directory
-        return $cacheDir !== null && $cacheDir !== '' ? $cachePathManager->withCacheDir($cacheDir, $weave) : $weave();
+        // The records are keyed relative to the application root: the coordinator merges them into the same directory.
+        // In place too through the manager, which re-checks every record of the build, also of a prebuilt cache.
+        // Every record is handed over with its result, so the flush at the end of the build writes nothing
+        $buildDir = $cacheDir !== null && $cacheDir !== '' ? $cacheDir : (string) $cachePathManager->getCacheDir();
+
+        return $cachePathManager->withCacheDir($buildDir, $weave);
     }
 }

@@ -79,7 +79,7 @@ as fast as a hot web request:
 | Step                                          | `debug => false` (+ `PREBUILT_CACHE`)               | `debug => true` |
 |-----------------------------------------------|-----------------------------------------------------|-----------------|
 | Kernel `init()`                               | options, container, service factories (nothing is created) | the same, plus the kernel and aspect files tracked for changes |
-| `_include.cache` (class map, skip set)        | one `include`, served from OPcache                  | the same        |
+| `_include.cache` (class map, skip set)        | one `include`, served from OPcache, no `stat()` of the cache directory | the same        |
 | Woven class                                   | Composer's class map → cached file, from OPcache    | freshness check, then the stream filter, so XDebug breakpoints and magic constants point at your original files |
 | Untransformed class below the include paths   | skip set → the original file, from OPcache          | freshness check → the original file, from OPcache |
 | Parser, transformers, stream filter           | never loaded                                        | stream filter registered, no transformer built |
@@ -194,9 +194,11 @@ initializes the kernel with the same options as production. The command:
   `docker build` stops right there;
 - `--workers=N` weaves in N processes. Use the number of CPUs: a 2,047-file application took 2.2 s with one worker and
   1.1 s with 4 workers on 4 CPUs;
-- `--cached-files=N` (default 100) bounds the syntax trees kept in memory per process;
+- `--cached-files=N` (default: the `parsedFilesLimit` kernel option, 100) bounds the syntax trees kept in memory per process;
 - `--cache-dir=DIR` builds the cache in another directory from scratch while the kernel keeps serving from its own: a
   release is prepared next to the running one and switched in atomically, e.g. with a symlink swap.
+- run over an existing directory, the command weaves again every file whose source changed (size or modification
+  time) and keeps the others, also with `PREBUILT_CACHE`: only requests trust the cache as it is.
 
 Rebuild the cache whenever the code, the aspects, the kernel options or `composer.lock` change; in practice, on every
 deployment. Debug mode needs no rebuilds: it re-weaves changed classes, aspects and kernel files by itself.
@@ -387,7 +389,9 @@ Running on Kubernetes or another orchestrator:
   is a fast one. `execution(public App\Service\*->*(*))` also matches constructors; add
   `&& !execution(**->__construct(*))` when you do not need them.
 - **Prefer method pointcuts to `initialization(...)`.** While an `initialization` pointcut is registered, every `new`
-  in the woven files goes through an interceptor.
+  in the woven files goes through the transformer. A class without initialization advices (and with a public
+  constructor) is still created by a native `new`, which costs roughly 130 ns more than a plain `new`; a class with
+  initialization advices goes through the full joinpoint.
 - **Register aspects lazily** with `addLazyService()`: the aspect and its dependencies are created on the first advice
   call, not on every request.
 - **Keep advices cheap.** `getMethod()`/`getField()` create a reflection object on first use per joinpoint; derive

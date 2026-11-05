@@ -94,6 +94,7 @@ class CacheWarmerTest extends TestCase
             'includePaths'   => $includePaths,
             'excludePaths'   => $excludePaths,
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
         $kernel->method('hasFeature')->willReturnCallback(static fn(int $feature): bool => ($features & $feature) !== 0);
 
@@ -105,6 +106,8 @@ class CacheWarmerTest extends TestCase
         ]);
         // Without transformers, streamed files pass through the filter untransformed
         $container->method('getServicesByInterface')->willReturn($transformers);
+        // No tracked resource changes: a record is fresh while its source is unchanged
+        $container->method('isFreshSince')->willReturn(true);
         $kernel->method('getContainer')->willReturn($container);
 
         return $kernel;
@@ -318,6 +321,43 @@ class CacheWarmerTest extends TestCase
         $this->assertSame(0, $warmer->warmUp());
 
         $this->assertFileExists($cacheDir . '/_include.cache', 'The files are recorded, also when nothing was woven');
+    }
+
+    public function testWarmUpInPlaceOverAPrebuiltCacheRefreshesChangedFilesOnly(): void
+    {
+        $otherFile = $this->appDir . '/src/Other.php';
+        file_put_contents($otherFile, "<?php echo 'other';\n");
+        $transformer = new class implements SourceTransformer {
+            /** @var list<string> */
+            public array $wovenFiles = [];
+
+            public function transform(StreamMetaData $metadata): TransformerResult
+            {
+                // In one separator form: the woven files are resolved natively
+                $this->wovenFiles[] = str_replace('\\', '/', $metadata->uri);
+                $metadata->setTokenStreamFromRawTokens(...PhpToken::tokenize($metadata->source . '// woven'));
+
+                return TransformerResult::Transformed;
+            }
+        };
+        $kernel = $this->createKernel($this->cacheDir, [$transformer], features: Features::PREBUILT_CACHE);
+        $this->assertSame(0, new CacheWarmer($kernel, new BufferedOutput())->warmUp());
+        $sourceFile = str_replace('\\', '/', $this->sourceFile);
+        $this->assertSame([str_replace('\\', '/', $otherFile), $sourceFile], $transformer->wovenFiles);
+
+        // The deployment changes one source and warms the prebuilt cache up again, in place
+        file_put_contents($this->sourceFile, "<?php echo 'changed';\n");
+        touch($this->sourceFile, time() + 10);
+        $transformer->wovenFiles = [];
+        $this->assertSame(0, new CacheWarmer($kernel, new BufferedOutput())->warmUp());
+
+        $this->assertSame([$sourceFile], $transformer->wovenFiles, 'Only the changed file is woven again');
+        $this->assertSame("<?php echo 'changed';\n// woven", file_get_contents($this->cacheDir . '/src/Some.php'));
+        $this->assertSame("<?php echo 'other';\n// woven", file_get_contents($this->cacheDir . '/src/Other.php'));
+        $this->assertFalse(
+            $kernel->getContainer()->getService(CachePathManager::class)->isBuildingCache,
+            'Requests trust the prebuilt cache again',
+        );
     }
 
     public function testInterruptStopsWarmupLoopBeforeNextFile(): void

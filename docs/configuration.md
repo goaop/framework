@@ -26,6 +26,7 @@ bit throws `Go\Aop\Exception\InvalidConfigurationException`.
 | `features`       | `int`      | `0`                         | Bitmask of `Go\Aop\Features` flags, see below. |
 | `cacheFileMode`  | `int`      | `0770` minus the umask      | Permissions of cache files. Must be between `0600` and `0777` and give the owner read and write access; directories get matching search bits. |
 | `containerClass` | `class-string` | `Go\Core\Container`     | Aspect container implementation, must implement `Go\Core\AspectContainer` (a PSR-11 `ContainerInterface`). |
+| `parsedFilesLimit` | `int` | `100`                    | Number of parsed source files (syntax trees, ~0.2 MB each) goaop/parser-reflection keeps in memory while weaving. Must be a positive integer (more re-parses less, fewer uses less memory). It replaces a limit set with `ReflectionEngine::setMaximumCachedFiles()` before `init()`. Default of `cache:warmup:aop --cached-files`. |
 
 ## Features
 
@@ -34,7 +35,7 @@ Combine the flags with `|`, e.g. `'features' => Features::INTERCEPT_INCLUDES | F
 | Flag                        | Effect |
 |-----------------------------|--------|
 | `INTERCEPT_INCLUDES`        | Routes `include`/`require` in woven files through the weaver, for legacy code that is not loaded by Composer. |
-| `PREBUILT_CACHE`            | Trusts the cache built at deploy time completely. Skips the cache directory and writability probes, source `filemtime` comparisons, tracked-resource checks and advisor cache freshness checks, and never writes to the cache directory. Rebuilding the cache on every deploy is your responsibility. Works on read-only file systems. |
+| `PREBUILT_CACHE`            | Trusts the cache built at deploy time completely. Skips the cache directory and writability probes, source `filemtime` comparisons, tracked-resource checks and advisor cache freshness checks, and never writes to the cache directory. Rebuilding the cache on every deploy is your responsibility. Works on read-only file systems. `cache:warmup:aop` does not trust the cache it builds: run over an existing directory, it weaves again every file whose source changed (size or modification time). |
 | `PARTIAL_REFLECTION`        | Weaves a class whose parent class, interface or trait can not be located: declared by code generated at runtime, by a `class_alias()` or in a file outside the Composer autoloader. The class is matched and woven with its own methods and properties and the ones of its available ancestors; members inherited from a missing ancestor are not intercepted. Without the flag such a class fails to weave. |
 
 Function and initialization pointcuts need no flag: the framework enables their machinery from the registered
@@ -159,12 +160,14 @@ stay in place.
 ### Cache warm-up
 
 `cache:warmup:aop --workers=N` weaves in N parallel worker processes (default 1: in the command process), each keeping
-the last `--cached-files=N` parsed files in memory (default 100). It shows a progress bar, with `-v` every file. How the workers share the files and the cache metadata is described on
+the last `--cached-files=N` parsed files in memory (default: the `parsedFilesLimit` option of the kernel, 100). It shows a progress bar, with `-v` every file. How the workers share the files and the cache metadata is described on
 `Go\Console\Command\CacheWarmupCommand`.
 
 `cache:warmup:aop --cache-dir=DIR` builds the cache in another directory, from scratch, while the kernel (and the
 workers) keep using their own: how a deployment prepares the cache of the next release next to the running one. A
-cache built this way is complete and location independent.
+cache built this way is complete and location independent, also when a production kernel builds it while its own
+cache is warm: the weaver always reads the original sources of the classes it reflects, never the woven files that
+Composer serves in production.
 
 ## Deployment
 
