@@ -77,7 +77,8 @@ class CacheWarmupIntoAnotherDirectoryTest extends BaseFunctionalTestCase
     /**
      * Returns the content of every file of a cache directory, keyed by its path below the directory
      *
-     * The metadata file is left out: its records carry the time of the build.
+     * The metadata file is left out, and so is the stamp of the include map, its hash: the records carry the time of
+     * the build.
      *
      * @return array<string, string>
      */
@@ -89,7 +90,11 @@ class CacheWarmupIntoAnotherDirectoryTest extends BaseFunctionalTestCase
         foreach ($iterator as $file) {
             $relativePath = substr($file->getPathname(), strlen($cacheDir));
             if ($relativePath !== '/_transformation.cache') {
-                $files[$relativePath] = (string) file_get_contents($file->getPathname());
+                $files[$relativePath] = (string) preg_replace(
+                    "/^  'stamp' => '[0-9a-f]+',$/m",
+                    "  'stamp' => '…',",
+                    (string) file_get_contents($file->getPathname()),
+                );
             }
         }
         ksort($files);

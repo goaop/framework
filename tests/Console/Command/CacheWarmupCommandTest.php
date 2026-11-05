@@ -82,14 +82,15 @@ class CacheWarmupCommandTest extends BaseFunctionalTestCase
     }
 
     /**
-     * Drops the weaving times and sorts the maps: workers record the files in the order they finish them
+     * Drops the weaving times and the stamp of the include map (the hash of the metadata, which carries them), and
+     * sorts the maps: workers record the files in the order they finish them
      */
     private static function withoutWeavingTimes(mixed $data): mixed
     {
         if (!is_array($data)) {
             return $data;
         }
-        unset($data['cachedAt']);
+        unset($data['cachedAt'], $data['stamp']);
         $data = array_map(self::withoutWeavingTimes(...), $data);
         ksort($data);
 

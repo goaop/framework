@@ -79,7 +79,7 @@ as fast as a hot web request:
 | Step                                          | `debug => false` (+ `PREBUILT_CACHE`)               | `debug => true` |
 |-----------------------------------------------|-----------------------------------------------------|-----------------|
 | Kernel `init()`                               | options, container, service factories (nothing is created) | the same, plus the kernel and aspect files tracked for changes |
-| `_include.cache` (class map, skip set)        | one `include`, served from OPcache                  | the same        |
+| `_include.cache` (class map, skip set)        | one `include`, served from OPcache, no `stat()` of the cache directory | the same        |
 | Woven class                                   | Composer's class map → cached file, from OPcache    | freshness check, then the stream filter, so XDebug breakpoints and magic constants point at your original files |
 | Untransformed class below the include paths   | skip set → the original file, from OPcache          | freshness check → the original file, from OPcache |
 | Parser, transformers, stream filter           | never loaded                                        | stream filter registered, no transformer built |

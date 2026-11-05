@@ -18,6 +18,7 @@ use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
+use Go\PhpUnit\StatCountingStreamWrapper;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
@@ -220,6 +221,95 @@ class CachePathManagerTest extends TestCase
 
         $this->assertStringEqualsFile(self::$cacheDir . '/_include.cache', $writtenByWarmer, 'The files are left as they are');
         $this->assertSame(2, $this->createManager()->queryCacheState($woven)['filemtime'] ?? null);
+    }
+
+    public function testFlushKeepsTheRecordsOfAnotherWriterThatRewroteTheFilesBeforeTheFirstRecord(): void
+    {
+        $woven  = self::$appDir . '/src/Early.php';
+        $cached = self::$cacheDir . '/src/Early.php';
+        $this->createManager()->clearCacheState();
+
+        // A request loads the directory and serves from it, nothing is recorded yet
+        $request = $this->createManager();
+
+        // Another writer rewrites the cache files before the request records anything
+        $warmer = $this->createManager();
+        // @phpstan-ignore argument.type (fixture class name that is never loaded)
+        $warmer->registerClassForResource($woven, 'App\Early');
+        $warmer->setCacheState($woven, ['filemtime' => 2, 'cacheUri' => $cached]);
+        $warmer->flushCacheState();
+
+        // The request records the source with the view it loaded, later
+        $request->setCacheState($woven, ['filemtime' => 1, 'cacheUri' => null]);
+        $request->flushCacheState();
+
+        $this->assertSame(2, $this->createManager()->queryCacheState($woven)['filemtime'] ?? null, 'The record of the other writer wins');
+    }
+
+    public function testIncludeMapWithoutStampIsTakenAsRewrittenByAnotherWriter(): void
+    {
+        $first  = self::$appDir . '/src/First.php';
+        $second = self::$appDir . '/src/Second.php';
+        $writer = $this->createManager();
+        $writer->clearCacheState();
+        $writer->setCacheState($first, ['filemtime' => 1, 'cacheUri' => null]);
+        $writer->flushCacheState();
+        $this->removeStampOfIncludeMap();
+
+        // The request loads the full metadata, which knows the first source only
+        $request = $this->createManager();
+        $this->assertNotNull($request->queryCacheState($first));
+
+        // A writer of a version that did not stamp the include map records the second source
+        $writer = $this->createManager();
+        $writer->setCacheState($second, ['filemtime' => 1, 'cacheUri' => null]);
+        $writer->flushCacheState();
+        $this->removeStampOfIncludeMap();
+
+        $request->setCacheState(self::$appDir . '/src/Third.php', ['filemtime' => 1, 'cacheUri' => null]);
+        $request->flushCacheState();
+
+        $this->assertNotNull($this->createManager()->queryCacheState($second), 'The files on disk are adopted');
+    }
+
+    /**
+     * Rewrites the include map as a version that did not stamp it
+     */
+    private function removeStampOfIncludeMap(): void
+    {
+        $includeMap = (string) file_get_contents(self::$cacheDir . '/_include.cache');
+        file_put_contents(self::$cacheDir . '/_include.cache', (string) preg_replace("/^  'stamp' => .*\n/m", '', $includeMap, 1, $count));
+        $this->assertSame(1, $count);
+        if (function_exists('opcache_invalidate')) {
+            opcache_invalidate(self::$cacheDir . '/_include.cache', true);
+        }
+    }
+
+    public function testWarmRequestPerformsNoStatCall(): void
+    {
+        $fileSystem = FileSystem::mount('cpmstat');
+        $appDir     = $fileSystem->path('/app');
+        $cacheDir   = $fileSystem->path('/cache');
+        try {
+            $writer = $this->createManager(cacheDir: $cacheDir, appDir: $appDir);
+            // @phpstan-ignore argument.type (fixture class name that is never loaded)
+            $writer->registerClassForResource($appDir . '/src/Woven.php', 'App\Woven');
+            $writer->setCacheState($appDir . '/src/Woven.php', ['filemtime' => 1, 'cacheUri' => $cacheDir . '/src/Woven.php']);
+            $writer->flushCacheState();
+            StatCountingStreamWrapper::install($fileSystem, 'cpmstat');
+
+            foreach ([false, true] as $prebuiltCache) {
+                $request = $this->createManager(prebuiltCache: $prebuiltCache, cacheDir: $cacheDir, appDir: $appDir);
+                // @phpstan-ignore method.impossibleType (fixture class name that is never loaded)
+                $this->assertSame(['App\Woven' => $cacheDir . '/src/Woven.php'], $request->queryClassMap());
+                $this->assertSame($cacheDir . '/src/Woven.php', $request->findIncludeFile($appDir . '/src/Woven.php'));
+                $request->flushCacheState();
+            }
+
+            $this->assertSame([], StatCountingStreamWrapper::$statPaths, 'A warm request only includes the include map');
+        } finally {
+            $fileSystem->unmount();
+        }
     }
 
     public function testIncludeMapServesKnownFilesWithoutFullMetadata(): void
