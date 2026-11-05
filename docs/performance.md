@@ -274,12 +274,13 @@ code generation and before the warm-up.
 ## Docker and Kubernetes
 
 Build the AOP cache into the image. Every container then starts with a complete, read-only cache, every replica serves
-exactly the same woven code, and no pod ever weaves.
+exactly the same woven code, and no pod ever weaves. The [shop demo](https://github.com/goaop/shop-demo) ships this
+setup as a working image.
 
 ```dockerfile
 FROM php:8.5-fpm
 
-RUN docker-php-ext-install opcache
+# OPcache is part of PHP 8.5 (PHP 8.4 images: RUN docker-php-ext-install opcache)
 COPY docker/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -289,14 +290,17 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 COPY . .
 RUN composer dump-autoload --no-dev --classmap-authoritative
 
-# 1. The AOP cache: woven classes, proxies, advisor caches, metadata
+# 1. The AOP cache: woven classes, proxies, advisor caches, metadata, owned by the user that serves it
+#    (cache files get the `cacheFileMode` kernel option, by default 0770 minus the umask)
 RUN rm -rf var/cache/aop \
- && php vendor/bin/aspect cache:warmup:aop public/index.php --workers="$(nproc)"
+ && php vendor/bin/aspect cache:warmup:aop public/index.php --workers="$(nproc)" \
+ && chown -R www-data:www-data var/cache/aop \
+ && chmod -R a-w var/cache/aop
 
 # 2. The OPcache file cache: a new PHP-FPM master loads compiled scripts instead of compiling them.
 #    Built in the final image, as the file cache belongs to this PHP build and these paths.
 RUN mkdir -p /var/cache/opcache \
- && php -d opcache.enable_cli=1 -d opcache.file_cache=/var/cache/opcache -d opcache.file_cache_only=1 \
+ && php -d opcache.enable_cli=1 -d opcache.file_cache_only=1 -d opcache.file_cache_read_only=0 \
         docker/opcache-prime.php /app /app/var/cache/aop /app/public/index.php \
  && chown -R www-data /var/cache/opcache
 
@@ -338,6 +342,8 @@ opcache.max_accelerated_files=50000
 opcache.validate_timestamps=0
 opcache.file_cache=/var/cache/opcache
 opcache.file_cache_consistency_checks=0
+; PHP 8.5: the primed file cache is only read at runtime, also on a read-only root file system
+opcache.file_cache_read_only=1
 ; required on PHP 8.5.11 / 8.5.12, see "JIT"
 opcache.jit=disable
 ; optional, see "Preloading"
@@ -404,3 +410,5 @@ Running on Kubernetes or another orchestrator:
 - Profiles: Xdebug 3.5 `xdebug.mode=profile` runs of every mode and state, used for call counts and the distribution of
   the time; the times above come from runs without Xdebug.
 - The ratios between the modes are what carries over to other machines.
+- The application, the benchmark scripts and the Docker image are in [goaop/shop-demo](https://github.com/goaop/shop-demo);
+  `bash bench/run-all.sh` reproduces every table of this document.
