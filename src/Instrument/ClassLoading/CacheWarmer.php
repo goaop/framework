@@ -57,7 +57,7 @@ class CacheWarmer
         /** @var list<string> Command line that starts one worker process (WarmupWorker::commandLine()), none weaves in this process */
         protected array $workerCommandLine = [],
         /** Number of parsed files kept in memory when weaving in this process, see FileWarmer */
-        protected int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES,
+        protected int $cachedFiles = AspectKernel::DEFAULT_PARSED_FILES_LIMIT,
         /** Directory to build the cache in instead of the one of the kernel, see warmUp() */
         protected ?string $cacheDir = null,
     ) {}

@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Functional;
 
+use Go\Instrument\ClassLoading\SourceTransformingLoader;
+use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
@@ -54,6 +56,20 @@ class IncludeInterceptionTest extends BaseFunctionalTestCase
         // The cache was warmed up in setUp(): both requests are served from the cache
         $this->assertIncludedNatively($cacheDir, $this->runScript($this->getConfigurationName()));
         $this->assertIncludedNatively($cacheDir, $this->runScript($this->getConfigurationName()));
+    }
+
+    public function testWarmRequestRegistersTheStreamFilterOnlyForUnknownFiles(): void
+    {
+        $output = $this->runScript($this->getConfigurationName());
+
+        $this->assertFalse($output['filterBeforeMiss'] ?? null, 'Known files are served without the stream filter');
+        $this->assertTrue($output['filterAfterMiss'] ?? null, 'An unknown file goes through the stream filter');
+        $unknownRewrite = $output['unknownRewrite'] ?? null;
+        $this->assertIsString($unknownRewrite);
+        $this->assertStringStartsWith(
+            FilterInjectorTransformer::PHP_FILTER_READ . SourceTransformingLoader::FILTER_IDENTIFIER . '/resource=',
+            $unknownRewrite,
+        );
     }
 
     public function testKnownFilesAreIncludedNativelyFromMovedPrebuiltCache(): void

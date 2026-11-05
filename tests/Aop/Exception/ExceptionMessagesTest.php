@@ -103,6 +103,16 @@ final class ExceptionMessagesTest extends TestCase
                 InvalidConfigurationException::class,
                 'Option "features" must be a combination of Go\Aop\Features constants, got array.',
             ],
+            'parsed files limit, int'     => [
+                static fn() => InvalidConfigurationException::invalidParsedFilesLimit(0),
+                InvalidConfigurationException::class,
+                'Option "parsedFilesLimit" must be a positive integer, got 0.',
+            ],
+            'parsed files limit, type'    => [
+                static fn() => InvalidConfigurationException::invalidParsedFilesLimit('100'),
+                InvalidConfigurationException::class,
+                'Option "parsedFilesLimit" must be a positive integer, got string.',
+            ],
             'container class, name'       => [
                 static fn() => InvalidConfigurationException::containerClassNotFound('App\Missing'),
                 InvalidConfigurationException::class,

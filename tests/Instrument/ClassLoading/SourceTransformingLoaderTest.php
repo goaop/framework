@@ -91,6 +91,7 @@ class SourceTransformingLoaderTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
         $kernel->method('hasFeature')->willReturnCallback(
             static fn(int $featureToCheck): bool => ($features & $featureToCheck) !== 0,

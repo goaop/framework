@@ -26,7 +26,10 @@ use function is_resource;
 final class StreamMetaData
 {
     /**
-     * Source code represented by the token stream, rebuilt from {@see self::$tokenStream} on every read.
+     * Source code represented by the token stream, rebuilt from {@see self::$tokenStream} on every read: read it once.
+     *
+     * Not memoized on purpose: transformers edit the public token array and the `text` of its PhpToken objects in
+     * place, so a memo could not be invalidated reliably. The loader reads it once per woven file.
      *
      * The property is read-only: transformers change the token stream, or replace it through
      * {@see self::setTokenStreamFromRawTokens()}.

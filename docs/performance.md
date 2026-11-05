@@ -194,7 +194,7 @@ initializes the kernel with the same options as production. The command:
   `docker build` stops right there;
 - `--workers=N` weaves in N processes. Use the number of CPUs: a 2,047-file application took 2.2 s with one worker and
   1.1 s with 4 workers on 4 CPUs;
-- `--cached-files=N` (default 100) bounds the syntax trees kept in memory per process;
+- `--cached-files=N` (default: the `parsedFilesLimit` kernel option, 100) bounds the syntax trees kept in memory per process;
 - `--cache-dir=DIR` builds the cache in another directory from scratch while the kernel keeps serving from its own: a
   release is prepared next to the running one and switched in atomically, e.g. with a symlink swap.
 - run over an existing directory, the command weaves again every file whose source changed (size or modification
@@ -389,7 +389,9 @@ Running on Kubernetes or another orchestrator:
   is a fast one. `execution(public App\Service\*->*(*))` also matches constructors; add
   `&& !execution(**->__construct(*))` when you do not need them.
 - **Prefer method pointcuts to `initialization(...)`.** While an `initialization` pointcut is registered, every `new`
-  in the woven files goes through an interceptor.
+  in the woven files goes through the transformer. A class without initialization advices (and with a public
+  constructor) is still created by a native `new`, which costs roughly 130 ns more than a plain `new`; a class with
+  initialization advices goes through the full joinpoint.
 - **Register aspects lazily** with `addLazyService()`: the aspect and its dependencies are created on the first advice
   call, not on every request.
 - **Keep advices cheap.** `getMethod()`/`getField()` create a reflection object on first use per joinpoint; derive

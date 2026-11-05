@@ -326,6 +326,7 @@ final class TransformationPerformanceTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => AspectContainer::class,
+            'parsedFilesLimit' => 100,
         ]);
 
         return $kernel;

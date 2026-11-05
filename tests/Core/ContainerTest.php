@@ -57,6 +57,7 @@ class ContainerTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
         $this->container->add(AspectKernel::class, $mockKernel);
         FrameworkServices::register($this->container);
@@ -110,6 +111,7 @@ class ContainerTest extends TestCase
             'includePaths'   => [$appDir . '/src'],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
         $container->add(AspectKernel::class, $mockKernel);
         FrameworkServices::register($container);
@@ -215,6 +217,42 @@ class ContainerTest extends TestCase
 
         $isFresh = $this->container->isFreshSince(time() + 3600);
         $this->assertTrue($isFresh);
+    }
+
+    public function testAddOfKnownClassKeepsMeasuredResourceTimestamps(): void
+    {
+        $base = time() + 100000;
+        CountingStatWrapper::reset(['counting://one.php' => $base + 1000, 'counting://two.php' => $base + 2000]);
+        stream_wrapper_register('counting', CountingStatWrapper::class);
+        try {
+            $container = new Container(['counting://one.php']);
+            $container->addResource('counting://two.php');
+            $container->add('first', new First());
+            $container->add('first2', new First());
+
+            $this->assertTrue($container->isFreshSince($base + 2000));
+            $statsAfterFirstCheck = CountingStatWrapper::$statCalls;
+
+            // Known class: nothing new to track
+            $container->add('first3', new First());
+            $this->assertTrue($container->isFreshSince($base + 2000));
+            $this->assertFalse($container->isFreshSince($base + 1999));
+            $this->assertSame($statsAfterFirstCheck, CountingStatWrapper::$statCalls);
+
+            // A new resource is taken into account, the measured ones are not stat-ed again
+            CountingStatWrapper::$mtimes['counting://three.php'] = $base + 3000;
+            $statsBeforeNew = CountingStatWrapper::$statCalls;
+            $container->addResource('counting://three.php');
+            $this->assertFalse($container->isFreshSince($base + 2999));
+            $this->assertTrue($container->isFreshSince($base + 3000));
+            $this->assertSame($statsBeforeNew['counting://one.php'], CountingStatWrapper::$statCalls['counting://one.php']);
+
+            // A new class of an added object is taken into account as well
+            $container->add('std', new stdClass());
+            $this->assertTrue($container->isFreshSince($base + 3000));
+        } finally {
+            stream_wrapper_unregister('counting');
+        }
     }
 
     public function testNullValueIsStoredAndRetrievable(): void
@@ -495,6 +533,27 @@ class ContainerTest extends TestCase
         );
         $this->assertFalse($constructed, 'Listing the ids must not run any factory');
         $this->assertSame([], $this->container->getServiceIdsByInterface(\Countable::class));
+    }
+
+    public function testServiceIdsByInterfaceSeeRegistrationsAfterAMemoizedLookup(): void
+    {
+        $this->container->addLazyService(StatefulTestAspect::class, static fn(): StatefulTestAspect => new StatefulTestAspect(1));
+        $this->assertSame([StatefulTestAspect::class], $this->container->getServiceIdsByInterface(Aspect::class));
+        // Memoized until the next registration
+        $this->assertSame([StatefulTestAspect::class], $this->container->getServiceIdsByInterface(Aspect::class));
+
+        $this->container->addLazyService(DoSomethingAspect::class, static fn(): DoSomethingAspect => new DoSomethingAspect());
+        $this->assertSame(
+            [StatefulTestAspect::class, DoSomethingAspect::class],
+            $this->container->getServiceIdsByInterface(Aspect::class),
+        );
+
+        // Materialization keeps the ids, in the order of the tagged ones first
+        $this->container->getServicesByInterface(Aspect::class);
+        $this->assertEqualsCanonicalizing(
+            [StatefulTestAspect::class, DoSomethingAspect::class],
+            $this->container->getServiceIdsByInterface(Aspect::class),
+        );
     }
 
     public function testPropertylessServiceFallsBackToEagerConstruction(): void

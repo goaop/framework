@@ -2,7 +2,7 @@
 
 ## Init flow
 1. AspectKernel::init() — singleton, registers deferred transformer services, calls configureAop()
-2. SourceTransformingLoader — PHP stream filter (php://filter/read=go.source.transforming.loader/resource=... protocol); registered lazily on the first cache miss via ensureRegistered()
+2. SourceTransformingLoader — PHP stream filter (php://filter/read=go.source.transforming.loader/resource=... protocol); registered lazily on the first cache miss via ensureRegistered() (autoloader miss, include of a file unknown to the include map or any include in debug mode; a warm request never registers it)
 3. AopComposerLoader::init() — hooks Composer autoloader → redirects through stream filter (production: woven classes via composer's class map; debug: a fresh untransformed record → original path, so opcache caches it; woven/stale/miss → php://filter)
    - Also installs OriginalSourceLocator into ReflectionEngine (keeps the missing-ancestor policy, resets the grammar version to the newest): parser-reflection's ComposerLocator asked the Composer loader that serves the injected woven class map in production → a class reflected by name resolved to `XOriginalTrait.php` of the kernel's cache (#807). The locator asks every Composer loader, a wrapped one through AopComposerLoader::findSourceFile(): a class of the injected map is looked up in a shallow clone of the loader taken before the injection (static WeakMap, kept across re-wraps), everything else in the live loader (rules added later count). findOriginalFile() uses the same lookup.
 4. Caching lives in SourceTransformingLoader::filter() — cache hit → cached content emitted as-is (no parsing, no transformers); miss → StreamMetaData + transformer chain → write cache
@@ -13,8 +13,9 @@
 - CacheWarmer (orchestrator): enumerates the files, weaves them in-process (Warmup\FileWarmer: php://filter read +
   ErrorException handler) or with Warmup\WorkerPool when `--workers` > 1 (default 1; no worker command line →
   in-process).
-- Memory: FileWarmer caps ReflectionEngine::setMaximumCachedFiles() (`--cached-files`, default 100); the engine keeps
-  every parsed syntax tree otherwise (~0.2 MB per file).
+- Memory: the engine keeps every parsed syntax tree (~0.2 MB per file) unless capped: AspectKernel::configureReflection()
+  (init) applies the `parsedFilesLimit` kernel option (positive int, default AspectKernel::DEFAULT_PARSED_FILES_LIMIT = 100,
+  the one source of truth), FileWarmer sets `--cached-files`, which defaults to that option.
 - Workers: `php -r` WarmupWorker::main() (autoloader + loader file + cached files as arguments, Console\KernelLoader boots like the
   command), SIGINT ignored, stray output swallowed by ob_start. Protocol (Warmup\WorkerProtocol): one line per message,
   marker + base64(serialize()); coordinator → `['file']`, closing stdin stops the worker; worker → ready/failed/result.
@@ -31,7 +32,7 @@
 Applied per loaded file. Each returns TransformerResult: Transformed|Abstain|Aborted (skips the rest of the chain, reverts to the original source, recorded as untransformed).
 
 1. SyntaxTreeRewriter — framework service (FrameworkServices, so it survives an overridden registerTransformerServices()); walks the syntax tree once and dispatches every node to the NodeRewriter rules (container tag) declaring its type (`$nodeTypes`), in registration order. Rules are stateless per node (weaving re-enters the loader for other files mid-chain); ancestors are passed to the rules from the dispatcher's stack (no parent attributes on the shared tree, they cost ~3x a walk). PrefilteredNodeRewriter rules declare `$sourceMarkers`: looked up case-insensitively in StreamMetaData::$originalSource before the walk, a rule without a marker in the file is skipped, no rule left → no walk (rules-per-node-class cache keyed by the set of applicable rules). Built-in rules:
-   - ConstructorExecutionTransformer — new expressions outside constant-expression contexts; always registered, `$sourceMarkers` is [] (rule off) while AdvisorIndex reports no KIND_INIT advisor
+   - ConstructorExecutionTransformer — new expressions outside constant-expression contexts; always registered, `$sourceMarkers` is [] (rule off) while AdvisorIndex reports no KIND_INIT advisor; at runtime construct() decides once per class (strategy cache): InitializationAware → its `__initialization()`, instantiable (public/no constructor) → native `new $class(...$args)`, else (private/protected constructor, abstract, enum) a shared advice-less ReflectionConstructorInvocation, which ignores visibility like `new self()` in a factory (#818)
    - FilterInjectorTransformer — include/require (only if INTERCEPT_INCLUDES enabled); at runtime rewrite() serves, in production, a file known to the include map natively (original file if untransformed, recorded cacheUri if woven, no file_exists/freshness check, no _transformation.cache); unknown files and debug mode → php://filter
    - MagicConstantTransformer — `__FILE__`/`__DIR__` → original paths, wraps `getFileName()`; never counts as a transformation (only cache-dir files need it; PHP resolves magic constants of a `php://filter/.../resource=<path>` include to <path>)
 2. WeavingTransformer — main; AdviceMatcher + CachedAspectLoader → proxy generators. Sees the token edits of the rules.
