@@ -394,12 +394,38 @@ class CachePathManagerTest extends TestCase
         $reader->queryCacheState($original);
     }
 
-    public function testCacheDirectoryWithMissingParentIsRejected(): void
+    public function testCacheDirectoryWithMissingParentsIsCreated(): void
     {
-        $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('Can not create the cache directory');
+        $fileSystem = FileSystem::mount('cpmparents');
+        $cacheDir   = $fileSystem->path('/missing/parent/cache');
+        try {
+            $manager = $this->createManager(cacheDir: $cacheDir);
 
-        $this->createManager(cacheDir: self::$appDir . '/missing/parent/cache');
+            $this->assertSame($cacheDir, $manager->getCacheDir());
+            $this->assertDirectoryExists($cacheDir);
+        } finally {
+            $fileSystem->unmount();
+        }
+    }
+
+    public function testCacheDirectoryBelowReadOnlyAncestorIsRejected(): void
+    {
+        $fileSystem = FileSystem::mount('cpmlockedparent');
+        $lockedDir  = $fileSystem->path('/locked');
+        mkdir($lockedDir, 0555, true);
+        $cacheDir = $lockedDir . '/missing/cache';
+        try {
+            $this->createManager(cacheDir: $cacheDir);
+            $this->fail('A cache directory below a read-only ancestor must be rejected');
+        } catch (InvalidConfigurationException $exception) {
+            $this->assertSame(
+                "Can not create the cache directory {$cacheDir}: {$lockedDir} is not a writable directory",
+                $exception->getMessage(),
+            );
+            $this->assertDirectoryDoesNotExist($lockedDir . '/missing');
+        } finally {
+            $fileSystem->unmount();
+        }
     }
 
     public function testReadOnlyCacheDirectoryIsRejected(): void

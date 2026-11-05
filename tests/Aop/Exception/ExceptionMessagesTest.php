@@ -131,7 +131,7 @@ final class ExceptionMessagesTest extends TestCase
             'cache dir not creatable'     => [
                 static fn() => InvalidConfigurationException::cacheDirectoryNotCreatable('/cache/aop', '/cache'),
                 InvalidConfigurationException::class,
-                'Can not create the cache directory /cache/aop: its parent directory /cache does not exist or is not writable',
+                'Can not create the cache directory /cache/aop: /cache is not a writable directory',
             ],
             'cache dir not writable'      => [
                 static fn() => InvalidConfigurationException::cacheDirectoryNotWritable('/cache/aop'),
