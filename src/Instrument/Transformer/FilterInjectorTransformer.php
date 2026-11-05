@@ -72,7 +72,7 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
      * Set-once: the first configuration wins. The transformer can be configured either
      * through its constructor (weaving path) or implicitly by the first rewrite() call.
      */
-    protected static function configure(AspectKernel $kernel, string $filterName, CachePathManager $cacheManager): void
+    protected static function configure(AspectKernel $kernel, ?string $filterName, CachePathManager $cacheManager): void
     {
         if (self::$kernel !== null) {
             return;
@@ -108,14 +108,27 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
             return;
         }
         $kernel = AspectKernel::getInstance();
-        // Bring up the stream filter (and the transformer pipeline) so that the
-        // php://filter fallback URI built below is actually serviceable
-        SourceTransformingLoader::ensureRegistered($kernel->getContainer());
+        // The stream filter is not registered here: an include served natively from the include map
+        // (the warm production path) never needs it, see ensureFilterName()
         self::configure(
             $kernel,
-            SourceTransformingLoader::getId(),
+            null,
             $kernel->getContainer()->getService(CachePathManager::class),
         );
+    }
+
+    /**
+     * Brings up the stream filter (and the transformer pipeline) and returns its name, for the php://filter URIs
+     */
+    protected static function ensureFilterName(): string
+    {
+        if (self::$filterName !== null) {
+            return self::$filterName;
+        }
+        $kernel = self::$kernel ?? AspectKernel::getInstance();
+        SourceTransformingLoader::ensureRegistered($kernel->getContainer());
+
+        return self::$filterName = SourceTransformingLoader::getId();
     }
 
     /**
@@ -159,7 +172,7 @@ final class FilterInjectorTransformer implements PrefilteredNodeRewriter
 
         // If the cache is disabled, resource path not resolvable, or no cache yet, then use on-fly method
         if ($cachedResource === null || !$cacheDir || $debug || !file_exists($cachedResource)) {
-            return self::PHP_FILTER_READ . self::$filterName . '/resource=' . $resource;
+            return self::PHP_FILTER_READ . self::ensureFilterName() . '/resource=' . $resource;
         }
 
         return $cachedResource;
