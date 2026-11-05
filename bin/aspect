@@ -15,7 +15,10 @@ use Composer\InstalledVersions;
 use Go\Console\CommandLoader;
 use Symfony\Component\Console\Application;
 
-if (is_dir($vendor = __DIR__ . '/../vendor')) {
+if (isset($GLOBALS['_composer_autoload_path'])) {
+    // Composer >= 2.2 bin proxy: the application's autoloader, also for path-repository and symlinked installs
+    require $GLOBALS['_composer_autoload_path'];
+} elseif (is_dir($vendor = __DIR__ . '/../vendor')) {
     require $vendor . '/autoload.php';
 } elseif (is_dir($vendor = __DIR__ . '/../../..')) {
     require $vendor . '/autoload.php';

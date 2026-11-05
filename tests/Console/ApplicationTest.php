@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Console;
 
 use Go\Console\Command\DebugWeavingCommand;
+use Go\PhpUnit\UsesTemporaryDirectory;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
@@ -21,11 +22,41 @@ use Symfony\Component\Process\Process;
 
 class ApplicationTest extends TestCase
 {
+    use UsesTemporaryDirectory;
+
     private string $console;
 
     public function setUp(): void
     {
         $this->console = __DIR__ . '/../../bin/aspect';
+    }
+
+    public function testBinaryUsesAutoloaderOfComposerBinProxy(): void
+    {
+        // Real disk: the binary runs in a subprocess, which can not see the virtual file system
+        // Composer >= 2.2 bin proxies publish the application's autoloader in $GLOBALS['_composer_autoload_path']
+        $directory         = self::createTemporaryDirectory('console-proxy');
+        $autoloader        = $directory . '/autoload.php';
+        $proxy             = $directory . '/proxy.php';
+        $frameworkAutoload = __DIR__ . '/../../vendor/autoload.php';
+        try {
+            file_put_contents($autoloader, "<?php\necho 'PROXY-AUTOLOADER-LOADED', PHP_EOL;\nrequire '{$frameworkAutoload}';\n");
+            file_put_contents(
+                $proxy,
+                "<?php\n\$GLOBALS['_composer_autoload_path'] = '{$autoloader}';\n"
+                . "\$_SERVER['argv'] = ['aspect', 'list', '--no-ansi'];\n"
+                . "include '{$this->console}';\n",
+            );
+
+            $process = new Process([PHP_BINARY, $proxy]);
+            $process->run();
+
+            $this->assertTrue($process->isSuccessful(), $process->getOutput() . $process->getErrorOutput());
+            $this->assertStringContainsString('PROXY-AUTOLOADER-LOADED', $process->getOutput());
+            $this->assertStringContainsString('cache:warmup:aop', $process->getOutput());
+        } finally {
+            self::removeTemporaryDirectory($directory);
+        }
     }
 
     public function testListCommandShowsAllRegisteredCommands(): void
