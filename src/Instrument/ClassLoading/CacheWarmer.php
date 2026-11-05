@@ -179,8 +179,13 @@ class CacheWarmer
 
         // Largest files first: they take longest, and the small ones left for the end even out the workers.
         // The sort is stable: files of the same size stay in path order
-        usort($files, static fn(SplFileInfo $left, SplFileInfo $right): int => $right->getSize() <=> $left->getSize());
-        $paths = array_map(self::pathOf(...), $files);
+        // Each size is read once: the comparator would stat both files on every comparison
+        $sizedFiles = array_map(
+            static fn(SplFileInfo $file): array => [$file->getSize(), $file],
+            $files,
+        );
+        usort($sizedFiles, static fn(array $left, array $right): int => $right[0] <=> $left[0]);
+        $paths = array_map(static fn(array $sized): string => self::pathOf($sized[1]), $sizedFiles);
 
         $stopReported = false;
         $isStopped    = function () use ($reporter, &$stopReported): bool {
