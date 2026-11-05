@@ -12,8 +12,8 @@
 - CacheWarmer (orchestrator): enumerates the files, weaves them in-process (Warmup\FileWarmer: php://filter read +
   ErrorException handler) or with Warmup\WorkerPool when `--workers` > 1 (default 1; no worker command line →
   in-process).
-- Memory: FileWarmer caps ReflectionEngine::setMaximumCachedFiles() (`--cached-files`, default 100); the engine keeps
-  every parsed syntax tree otherwise (~0.2 MB per file).
+- Memory: the engine keeps every parsed syntax tree (~0.2 MB per file) unless capped: AspectKernel::configureReflection()
+  (init) sets FileWarmer::DEFAULT_CACHED_FILES (100) when no limit is set yet, FileWarmer sets `--cached-files`.
 - Workers: `php -r` WarmupWorker::main() (autoloader + loader file + cached files as arguments, Console\KernelLoader boots like the
   command), SIGINT ignored, stray output swallowed by ob_start. Protocol (Warmup\WorkerProtocol): one line per message,
   marker + base64(serialize()); coordinator → `['file']`, closing stdin stops the worker; worker → ready/failed/result.

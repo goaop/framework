@@ -14,6 +14,7 @@ namespace Go\Core;
 
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Aop\Features;
+use Go\Instrument\ClassLoading\Warmup\FileWarmer;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\Instrument\Transformer\MagicConstantTransformer;
@@ -28,6 +29,7 @@ use Go\ParserReflection\ReflectionEngine;
 use PhpParser\Node;
 use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -263,6 +265,34 @@ class AspectKernelTest extends TestCase
         yield 'partial reflection' => [Features::PARTIAL_REFLECTION, MissingAncestorPolicy::Partial];
         yield 'with other features' => [Features::PARTIAL_REFLECTION | Features::PREBUILT_CACHE, MissingAncestorPolicy::Partial];
         yield 'not enabled' => [Features::INTERCEPT_INCLUDES, MissingAncestorPolicy::Strict];
+    }
+
+    /**
+     * Separate process: the limit of the engine is a process-wide state that can not be unset again
+     */
+    #[RunInSeparateProcess]
+    public function testInitLimitsParsedFilesOfTheReflectionEngine(): void
+    {
+        $limit = new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles');
+        $this->assertFalse($limit->isInitialized(), 'The engine keeps every file until a limit is set');
+
+        $kernel = $this->makeKernel();
+        $this->setKernelOptions($kernel, ['features' => 0]);
+        new ReflectionMethod($kernel, 'configureReflection')->invoke($kernel);
+
+        $this->assertSame(FileWarmer::DEFAULT_CACHED_FILES, $limit->getValue());
+    }
+
+    #[RunInSeparateProcess]
+    public function testInitKeepsTheParsedFilesLimitOfTheApplication(): void
+    {
+        ReflectionEngine::setMaximumCachedFiles(7);
+
+        $kernel = $this->makeKernel();
+        $this->setKernelOptions($kernel, ['features' => 0]);
+        new ReflectionMethod($kernel, 'configureReflection')->invoke($kernel);
+
+        $this->assertSame(7, new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles')->getValue());
     }
 
     public function testGetOptionsReturnsCurrentlyStoredOptions(): void

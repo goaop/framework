@@ -20,6 +20,7 @@ use Go\Core\Cache\CachedAspectLoader;
 use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
+use Go\Instrument\ClassLoading\Warmup\FileWarmer;
 use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\ConstructorExecutionTransformer;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
@@ -28,6 +29,7 @@ use Go\Instrument\Transformer\WeavingTransformer;
 use Go\ParserReflection\MissingAncestorPolicy;
 use Go\ParserReflection\ReflectionEngine;
 use ReflectionClass;
+use ReflectionProperty;
 
 /**
  * Abstract aspect kernel is used to prepare an application to work with aspects.
@@ -204,11 +206,19 @@ abstract class AspectKernel
      *
      * Without Features::PARTIAL_REFLECTION the policy of the engine stays as it is (strict by default): a class whose
      * parent class, interface or trait can not be located fails to weave.
+     *
+     * The engine keeps the syntax tree of every parsed file (~0.2 MB each) unless it is given a limit: weaving at
+     * runtime gets the default limit of the warm-up ({@see FileWarmer::DEFAULT_CACHED_FILES}), a limit the application
+     * set before init() is kept, and the warm-up sets its own (`--cached-files`).
      */
     private function configureReflection(): void
     {
         if ($this->hasFeature(Features::PARTIAL_REFLECTION)) {
             ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Partial);
+        }
+        // The engine has no getter: an unset limit is an uninitialized property (parser-reflection 4.2+ and 5.2+)
+        if (!new ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles')->isInitialized()) {
+            ReflectionEngine::setMaximumCachedFiles(FileWarmer::DEFAULT_CACHED_FILES);
         }
     }
 

@@ -20,12 +20,9 @@ use Go\Core\Container;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
-use Go\Instrument\ClassLoading\Warmup\FileWarmer;
-use Go\ParserReflection\ReflectionEngine;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use LogicException;
 use PhpToken;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -109,30 +106,6 @@ class SourceTransformingLoaderTest extends TestCase
         $this->container->method('getServicesByInterface')->willReturn($transformers);
 
         SourceTransformingLoader::ensureRegistered($this->container);
-    }
-
-    /**
-     * Separate process: the limit of the engine is a process-wide state that can not be unset again
-     */
-    #[RunInSeparateProcess]
-    public function testRegistrationLimitsParsedFilesOfTheReflectionEngine(): void
-    {
-        $limit = new \ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles');
-        $this->assertFalse($limit->isInitialized(), 'The engine keeps every file until a limit is set');
-
-        $this->registerLoader([]);
-
-        $this->assertSame(FileWarmer::DEFAULT_CACHED_FILES, $limit->getValue());
-    }
-
-    #[RunInSeparateProcess]
-    public function testRegistrationKeepsTheParsedFilesLimitOfTheApplication(): void
-    {
-        ReflectionEngine::setMaximumCachedFiles(7);
-
-        $this->registerLoader([]);
-
-        $this->assertSame(7, new \ReflectionProperty(ReflectionEngine::class, 'maximumCachedFiles')->getValue());
     }
 
     /**
