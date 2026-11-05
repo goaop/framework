@@ -13,11 +13,12 @@ declare(strict_types=1);
 namespace Go\Console\Command;
 
 use Closure;
+use Composer\Autoload\ClassLoader;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\Container;
 use Go\Instrument\ClassLoading\CachePathManager;
-use Go\Instrument\ClassLoading\ComposerAutoloader;
+use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\PhpUnit\UsesTemporaryDirectory;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
@@ -33,6 +34,27 @@ use Symfony\Component\Console\Tester\CommandTester;
 class OpcacheWarmupCommandInProcessTest extends TestCase
 {
     use UsesTemporaryDirectory;
+
+    /**
+     * Autoload callable of the wrapper registered for a test, see createCommand()
+     */
+    private mixed $registeredWrapper = null;
+
+    protected function tearDown(): void
+    {
+        if (is_callable($this->registeredWrapper)) {
+            spl_autoload_unregister($this->registeredWrapper);
+            $this->registeredWrapper = null;
+        }
+    }
+
+    /**
+     * The autoload callable of a wrapper, as AopComposerLoader::init() registers it (Composer's loadClass() returns ?true)
+     */
+    private static function autoloadCallable(AopComposerLoader $wrapper): callable
+    {
+        return [$wrapper, 'loadClass'];
+    }
 
     public function testMetadataIsDefinedByAttribute(): void
     {
@@ -157,6 +179,11 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
         $container->method('getService')->willReturn($cachePathManager);
         $kernel->method('getContainer')->willReturn($container);
 
+        // The command reads the Composer autoloader through the wrapper of the kernel, AopComposerLoader::ofProcess():
+        // a wrapper of a loader created by hand is registered in front, and removed again in tearDown()
+        $this->registeredWrapper = self::autoloadCallable(new AopComposerLoader(new ClassLoader(), $container, $options));
+        spl_autoload_register($this->registeredWrapper, true, true);
+
         // Native separators of the real paths (`\\` on Windows) are normalized, the failing files are given with `/`
         $record = static function (string $file) use (&$compiledFiles): void {
             $compiledFiles[] = self::normalize($file);
@@ -254,7 +281,7 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
             );
             $this->assertContains($appDir . '/src/Service.php', $compiledFiles, 'The untransformed source');
             $this->assertNotContains($appDir . '/src/Woven.php', $compiledFiles, 'A woven source is never loaded in production');
-            $autoloadedFiles = ComposerAutoloader::ofProcess()->autoloadedFiles();
+            $autoloadedFiles = AopComposerLoader::ofProcess()->autoloadedFiles();
             $this->assertContains(self::normalize($autoloadedFiles[0]), $compiledFiles, 'Composer\'s autoloaded files');
             $this->assertStringContainsString('  ' . $appDir . '/web/index.php', $display, '-v lists every file');
         } finally {

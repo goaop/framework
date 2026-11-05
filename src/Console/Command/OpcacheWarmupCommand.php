@@ -14,7 +14,7 @@ namespace Go\Console\Command;
 
 use Closure;
 use Go\Aop\Exception\InvalidConfigurationException;
-use Go\Instrument\ClassLoading\ComposerAutoloader;
+use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\ClassLoading\Opcache\FileCachePrimer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -109,7 +109,7 @@ class OpcacheWarmupCommand extends BaseAspectCommand
         $this->loadAspectKernel($input, $output);
 
         $cacheDir   = $this->aspectKernel->getOptions()['cacheDir'];
-        $autoloader = ComposerAutoloader::ofProcess();
+        $autoloader = AopComposerLoader::ofProcess();
         // The AOP cache, the loader and the entry points must compile, the rest of the application is compiled when it can be
         $requiredFiles    = [...FileCachePrimer::cacheFiles($cacheDir ?? ''), ...($this->loaderPath !== null ? [$this->loaderPath] : []), ...$entryFiles];
         $applicationFiles = array_values(array_diff(FileCachePrimer::applicationFiles($this->aspectKernel, $autoloader), $requiredFiles));

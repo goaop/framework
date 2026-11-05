@@ -29,6 +29,12 @@ use Go\Instrument\Transformer\Weaving\ProxyCache;
  * request. A class that can not be linked while preloading (an optional dependency is missing) is reported to the
  * error log and left to the autoloader of the request, like every class that is not listed.
  *
+ * The cache warmer generates the script inside CachePathManager::withCacheDir() of the directory just built, so the
+ * class map and the skipped classes are the ones of that build (also with `--cache-dir`), and only after a complete
+ * warm-up: an interrupted or failed build gets no script. The Composer autoloader comes from the wrapper of the
+ * kernel, AopComposerLoader::ofProcess(). Constants defined while preloading do not reach the requests, the kernel
+ * defines AOP_ROOT_DIR and AOP_CACHE_DIR again; STDERR is undefined in a preload script, so it reports to error_log().
+ *
  * @internal Used by the cache warmer (`cache:warmup:aop --preload`)
  */
 final class PreloadScriptGenerator

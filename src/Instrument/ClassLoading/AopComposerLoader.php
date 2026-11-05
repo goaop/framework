@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\ClassLoading;
 
 use Closure;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Instrument\FileSystem\Enumerator;
@@ -20,6 +21,7 @@ use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\FilterInjectorTransformer;
 use Go\ParserReflection\ReflectionEngine;
 use Composer\Autoload\ClassLoader;
+use ReflectionClass;
 use WeakMap;
 
 /**
@@ -164,6 +166,63 @@ final class AopComposerLoader
     public function getOriginalLoader(): ClassLoader
     {
         return $this->original;
+    }
+
+    /**
+     * Returns the wrapper the kernel of this process registered, the first one when the kernel booted twice
+     *
+     * Build-time tooling (the opcache.preload script, the opcache file cache primer) reads the Composer autoloader of
+     * the application through it: the class map of the wrapped loader, {@see $vendorDir} and {@see autoloadedFiles()}.
+     *
+     * @throws InvalidConfigurationException When no wrapper is registered: the kernel is not initialized, or
+     *                                       AopComposerLoader::init() found no Composer class loader to wrap
+     */
+    public static function ofProcess(): self
+    {
+        foreach (spl_autoload_functions() as $loader) {
+            if (is_array($loader) && $loader[0] instanceof self) {
+                return $loader[0];
+            }
+        }
+
+        throw InvalidConfigurationException::composerAutoloaderNotFound();
+    }
+
+    /**
+     * Directory holding `autoload.php` and `composer/` of the wrapped loader
+     *
+     * Composer registers every loader under its vendor directory; a loader created by hand has none, then the
+     * installed ClassLoader class itself tells where `vendor/composer/` lies.
+     */
+    public string $vendorDir {
+        get {
+            $vendorDir = array_search($this->original, ClassLoader::getRegisteredLoaders(), true);
+
+            return is_string($vendorDir) ? $vendorDir : dirname((string) new ReflectionClass(ClassLoader::class)->getFileName(), 2);
+        }
+    }
+
+    /**
+     * Path of `autoload.php`, which a generated script requires to register the wrapped loader again
+     */
+    public string $autoloadFile {
+        get => $this->vendorDir . '/autoload.php';
+    }
+
+    /**
+     * Files Composer includes on every request (the `files` autoload type), none when the install has none
+     *
+     * @return list<string>
+     */
+    public function autoloadedFiles(): array
+    {
+        $autoloadFiles = $this->vendorDir . '/composer/autoload_files.php';
+        if (!is_file($autoloadFiles)) {
+            return [];
+        }
+        $files = include $autoloadFiles;
+
+        return is_array($files) ? array_values(array_filter($files, is_string(...))) : [];
     }
 
     /**

@@ -16,7 +16,7 @@ use Closure;
 use FilesystemIterator;
 use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
-use Go\Instrument\ClassLoading\ComposerAutoloader;
+use Go\Instrument\ClassLoading\AopComposerLoader;
 use Go\Instrument\FileSystem\Enumerator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -34,6 +34,11 @@ use Throwable;
  * Compiled scripts land on disk only in a process started with `opcache.enable_cli=1`, `opcache.file_cache_only=1`
  * and `opcache.file_cache=<directory>`: these are system settings, {@see configurationProblem()} checks them and
  * {@see commandLine()} spells out the command to run.
+ *
+ * Layout of the file cache: `<opcache.file_cache>/<system id of the PHP build>/<resolved path of the script>.bin`;
+ * on Windows the drive keeps its letter but loses the colon (`C:\app` becomes `C\app`). Files are compiled by their
+ * resolved path, which is how requests open them. `opcache.file_update_protection` (2 s by default) would keep the
+ * files the warm-up wrote moments ago out of the cache, so it is set to 0 while compiling.
  *
  * @internal Used by the cache:warmup:opcache command
  */
@@ -134,12 +139,12 @@ final class FileCachePrimer
      *
      * @return list<string>
      */
-    public static function applicationFiles(AspectKernel $kernel, ComposerAutoloader $autoloader): array
+    public static function applicationFiles(AspectKernel $kernel, AopComposerLoader $autoloader): array
     {
         $options          = $kernel->getOptions();
         $cachePathManager = $kernel->getContainer()->getService(CachePathManager::class);
 
-        $files      = [...array_values($autoloader->classLoader->getClassMap()), ...$autoloader->autoloadedFiles()];
+        $files      = [...array_values($autoloader->getOriginalLoader()->getClassMap()), ...$autoloader->autoloadedFiles()];
         $enumerator = new Enumerator($options['appDir'], $options['includePaths'], $options['excludePaths']);
         foreach ($enumerator->enumerate() as $source) {
             $path = $source->getRealPath();
@@ -160,6 +165,10 @@ final class FileCachePrimer
      * here, opcache_compile_file() returns false), the failed file is reported to the callback instead. A file this
      * process included already (Composer's autoloaded files, the framework, the loader) went into the file cache when
      * it was included, and compiling it again fails when it declares functions: such a file counts as compiled.
+     *
+     * PHP quirk: a fatal compile error inside opcache_compile_file() (not a ParseError, which is thrown) bails out of
+     * the engine and leaves user stream filters (php://filter) broken for the rest of the process. Harmless in the
+     * dedicated process of the command; never compile such a file in a process that still weaves or runs tests.
      *
      * @param list<string>                 $files
      * @param Closure(string, ?string): void $onFile Called with every file and the reason it failed, null when compiled

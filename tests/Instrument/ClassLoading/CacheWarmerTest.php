@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Composer\Autoload\ClassLoader;
 use Go\Aop\Features;
 use Go\Core\AdvisorIndex;
 use Go\Core\AspectContainer;
@@ -482,12 +483,41 @@ class CacheWarmerTest extends TestCase
         $this->assertStringContainsString('Total processed 1, 1 errors in ', $display);
     }
 
+    /**
+     * Registers a wrapper of a Composer loader created by hand, as a booted kernel would: the preload script is
+     * generated with the autoloader of AopComposerLoader::ofProcess()
+     *
+     * @return callable The registered autoload callable, to unregister
+     */
+    private static function registerWrapperFor(AspectKernel $kernel): callable
+    {
+        $autoload = self::autoloadCallable(new AopComposerLoader(new ClassLoader(), $kernel->getContainer(), $kernel->getOptions()));
+        spl_autoload_register($autoload, true, true);
+
+        return $autoload;
+    }
+
+    /**
+     * The autoload callable of a wrapper, as AopComposerLoader::init() registers it (Composer's loadClass() returns ?true)
+     */
+    private static function autoloadCallable(AopComposerLoader $wrapper): callable
+    {
+        return [$wrapper, 'loadClass'];
+    }
+
     public function testPreloadScriptIsWrittenIntoTheCacheDirectoryAfterACompleteWarmUp(): void
     {
-        $output = new BufferedOutput();
-        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), $output, preloadFile: '');
+        $output   = new BufferedOutput();
+        $kernel   = $this->createKernel($this->cacheDir);
+        $autoload = self::registerWrapperFor($kernel);
+        try {
+            $warmer = new CacheWarmer($kernel, $output, preloadFile: '');
 
-        $this->assertSame(0, $warmer->warmUp());
+            $this->assertSame(0, $warmer->warmUp());
+            $autoloadFile = AopComposerLoader::ofProcess()->autoloadFile;
+        } finally {
+            spl_autoload_unregister($autoload);
+        }
 
         $script = $this->cacheDir . '/_preload.php';
         $this->assertFileExists($script);
@@ -497,7 +527,6 @@ class CacheWarmerTest extends TestCase
             str_replace('\\', '/', $output->fetch()),
         );
         $content = (string) file_get_contents($script);
-        $autoloadFile = ComposerAutoloader::ofProcess()->autoloadFile;
         if (PathResolver::relativePath(dirname($script), $autoloadFile) !== null) {
             $this->assertStringContainsString("\$loader = require __DIR__ . '", $content);
             $this->assertStringContainsString("/vendor/autoload.php';", $content);
@@ -511,10 +540,16 @@ class CacheWarmerTest extends TestCase
 
     public function testPreloadScriptIsWrittenToTheGivenFile(): void
     {
-        $script = $this->appDir . '/config/preload.php';
-        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), new BufferedOutput(), preloadFile: $script);
+        $script   = $this->appDir . '/config/preload.php';
+        $kernel   = $this->createKernel($this->cacheDir);
+        $autoload = self::registerWrapperFor($kernel);
+        try {
+            $warmer = new CacheWarmer($kernel, new BufferedOutput(), preloadFile: $script);
 
-        $this->assertSame(0, $warmer->warmUp());
+            $this->assertSame(0, $warmer->warmUp());
+        } finally {
+            spl_autoload_unregister($autoload);
+        }
 
         $this->assertFileExists($script);
         $this->assertFileDoesNotExist($this->cacheDir . '/_preload.php');

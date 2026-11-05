@@ -127,7 +127,7 @@ class CacheWarmer
             $this->aspectKernel->getOptions()['appDir'],
             $cachePathManager->queryClassMap(),
             $cachePathManager->querySkippedClasses(),
-            ComposerAutoloader::ofProcess()->autoloadFile,
+            AopComposerLoader::ofProcess()->autoloadFile,
         );
         $cachePathManager->getCacheFileWriter()->write($script, $generator->generate($script));
         $this->output->writeln(sprintf('Preload script written to <info>%s</info>.', $script));
