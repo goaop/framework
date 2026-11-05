@@ -18,6 +18,7 @@ use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoaderInterface;
 use Go\Core\Container;
+use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
@@ -496,8 +497,14 @@ class CacheWarmerTest extends TestCase
             str_replace('\\', '/', $output->fetch()),
         );
         $content = (string) file_get_contents($script);
-        $this->assertStringContainsString("\$loader = require __DIR__ . '", $content);
-        $this->assertStringContainsString("/vendor/autoload.php';", $content);
+        $autoloadFile = ComposerAutoloader::ofProcess()->autoloadFile;
+        if (PathResolver::relativePath(dirname($script), $autoloadFile) !== null) {
+            $this->assertStringContainsString("\$loader = require __DIR__ . '", $content);
+            $this->assertStringContainsString("/vendor/autoload.php';", $content);
+        } else {
+            // The temporary directory lies on another drive than the framework (Windows CI): no relative path exists
+            $this->assertStringContainsString('$loader = require ' . var_export($autoloadFile, true) . ';', $content);
+        }
         $this->assertStringContainsString("define('AOP_CACHE_DIR', __DIR__)", $content);
         $this->assertStringContainsString("define('AOP_ROOT_DIR', __DIR__ . '/../" . basename($this->appDir) . "')", $content);
     }
