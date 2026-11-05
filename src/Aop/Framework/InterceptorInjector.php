@@ -29,6 +29,13 @@ use Go\Aop\Intercept\StaticMethodInvocation;
 final class InterceptorInjector
 {
     /**
+     * Joinpoints of the intercepted properties: class name and property name => joinpoint
+     *
+     * @var array<string, FieldAccess<object>>
+     */
+    private static array $fieldAccesses = [];
+
+    /**
      * Static facade, never instantiated
      *
      * @codeCoverageIgnore
@@ -76,6 +83,12 @@ final class InterceptorInjector
     }
 
     /**
+     * Returns the joinpoint of an intercepted property, one per class and property
+     *
+     * The get and set hooks of the property both call it (each from its own `static $__joinPoint`) and share the
+     * instance, which serves both access types with the same advices. A later call reuses the joinpoint, its
+     * interceptors (the same list, generated from the same advices) are dropped.
+     *
      * @template T of object
      * @param class-string<T> $className
      * @param non-empty-string $propertyName
@@ -84,7 +97,8 @@ final class InterceptorInjector
      */
     public static function forProperty(string $className, string $propertyName, array $interceptors): FieldAccess
     {
-        return new ClassFieldAccess(
+        /** @var FieldAccess<T> */
+        return self::$fieldAccesses[$className . '->' . $propertyName] ??= new ClassFieldAccess(
             $interceptors,
             $className,
             $propertyName,

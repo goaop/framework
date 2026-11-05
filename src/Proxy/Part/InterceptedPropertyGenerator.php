@@ -61,8 +61,10 @@ use ReflectionProperty;
  * }
  * </pre>
  *
+ * Both hooks get the joinpoint from InterceptorInjector::forProperty(), which returns the same instance for both.
+ *
  * Hooks of typed properties without a default value check the initialization first, see
- * {@see AbstractInterceptedPropertyGenerator::createReadStatement()}.
+ * {@see AbstractInterceptedPropertyGenerator::createReadStatements()}.
  */
 final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGenerator implements PropertyNodeProvider
 {
@@ -99,7 +101,7 @@ final class InterceptedPropertyGenerator extends AbstractInterceptedPropertyGene
 
         return new PropertyHook('get', [
             ...$this->getFieldAccessInitializationStatements($fieldAccessExpression),
-            $this->createReadStatement($returnsByReference),
+            ...$this->createReadStatements($returnsByReference),
         ], ['byRef' => $returnsByReference]);
     }
 

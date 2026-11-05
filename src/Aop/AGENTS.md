@@ -32,7 +32,7 @@ Proxy generators use TypeGenerator::renderTypeForPhpDoc() to emit V as 2nd gener
 | StaticTraitAliasMethodInvocation  | StaticMethodInvocation  | FCC shim: static fn(array $args) => forward_static_call_array(...); bindTo(null, $scope) per call                      |
 | ReflectionConstructorInvocation   | ConstructorInvocation   | newInstanceWithoutConstructor() then call constructor (`new` rewritten while an initialization pointcut is registered); class/constructor reflection built eagerly: nearly every call needs it, and lazy creation measured slower |
 | ReflectionFunctionInvocation      | FunctionInvocation      | receives FCC to global fn (e.g. \strlen(...) with leading \ to avoid recursive proxy call); getFunction() reflection created on first use |
-| ClassFieldAccess                  | FieldAccess             | Property hooks call read()/write() by value; readByReference() only for the &get hook of arrays (binding released after) |
+| ClassFieldAccess                  | FieldAccess             | Property hooks call read()/write() by value; readByReference() only for the &get hook of arrays (binding released after); one instance per class + property, shared by the get and set hooks (InterceptorInjector::forProperty() caches it, #819) |
 | StaticInitializationJoinpoint     | ClassJoinpoint          | Fired once after proxy class loaded via `Proxy::__staticInitialization()`                                             |
 
 Reflection is created on first use (`$this->x ??= new Reflection...`) where a call can finish without it: joinpoints

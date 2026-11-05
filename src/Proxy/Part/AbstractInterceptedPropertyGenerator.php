@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Error;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
@@ -29,14 +30,17 @@ use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Name;
 use PhpParser\Node\Param;
 use PhpParser\Node\PropertyItem;
 use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Return_;
+use PhpParser\Node\Stmt\TryCatch;
 use PhpParser\NodeFinder;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
@@ -62,6 +66,11 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             // number invariant required for XDebug compatibility and adds disproportionate
             // complexity for a niche use case. See https://github.com/goaop/framework/issues/561
             throw WeavingException::propertyNotHookable($this->property->getDeclaringClass()->getName(), $this->property->getName());
+        }
+        // Registered up front like every import of generated code: the proxy generators read the imports of the
+        // file before the property node is built
+        if ($this->hasPotentiallyUninitializedTypedProperty() && $this->allowsNull()) {
+            $this->imports?->import(Error::class);
         }
     }
 
@@ -117,23 +126,39 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     }
 
     /**
-     * Builds the statement of a `get` hook that dispatches the read to the field access joinpoint
+     * Builds the statements of a `get` hook that dispatch the read to the field access joinpoint
      *
      * Rendered PHP template (`readByReference` for the `&get` hook of array properties):
      * <pre>
      * return $__joinPoint->read($this, $this-><propertyName>);
      * </pre>
      *
-     * Rendered PHP template for potentially uninitialized typed properties:
+     * A potentially uninitialized typed property passes its value only when it is initialized. A nullable one is read
+     * once in a try block (#819): reading the backing value of an uninitialized property throws an Error, every other
+     * value (null included) costs nothing extra. isset() can not tell null from uninitialized and reflection costs a
+     * call per access, the exception only hits a read before initialization, which fails without an advice anyway:
      * <pre>
-     * if (isset($this-><propertyName>) || $__joinPoint->getField()->isInitialized($this)) {
+     * try {
+     *     $__value = $this-><propertyName>;
+     * } catch (Error) {
+     *     return $__joinPoint->read($this);
+     * }
+     * return $__joinPoint->read($this, $__value);
+     * </pre>
+     *
+     * A property that can not hold null (and the `&get` hook, which passes the property by reference) checks with
+     * {@see createInitializedCondition()}:
+     * <pre>
+     * if (isset($this-><propertyName>)) {
      *     return $__joinPoint->read($this, $this-><propertyName>);
      * } else {
      *     return $__joinPoint->read($this);
      * }
      * </pre>
+     *
+     * @return list<Stmt>
      */
-    protected function createReadStatement(bool $returnsByReference): Stmt
+    protected function createReadStatements(bool $returnsByReference): array
     {
         $readMethod    = $returnsByReference ? 'readByReference' : 'read';
         $readWithValue = new MethodCall(new Variable('__joinPoint'), $readMethod, [
@@ -141,16 +166,30 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             new Arg($this->createPropertyFetch()),
         ]);
         if (!$this->hasPotentiallyUninitializedTypedProperty()) {
-            return new Return_($readWithValue);
+            return [new Return_($readWithValue)];
         }
         $readWithoutValue = new MethodCall(new Variable('__joinPoint'), $readMethod, [
             new Arg(new Variable('this')),
         ]);
+        if (!$returnsByReference && $this->allowsNull()) {
+            $valueVariable = new Variable('__value');
 
-        return new If_($this->createInitializedCondition(), [
+            return [
+                new TryCatch(
+                    [new Expression(new Assign($valueVariable, $this->createPropertyFetch()))],
+                    [new Catch_([new Name($this->importedName(Error::class))], null, [new Return_($readWithoutValue)])],
+                ),
+                new Return_(new MethodCall(new Variable('__joinPoint'), $readMethod, [
+                    new Arg(new Variable('this')),
+                    new Arg($valueVariable),
+                ])),
+            ];
+        }
+
+        return [new If_($this->createInitializedCondition(), [
             'stmts' => [new Return_($readWithValue)],
             'else'  => new Else_([new Return_($readWithoutValue)]),
-        ]);
+        ])];
     }
 
     /**
@@ -161,7 +200,8 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
      * $this-><propertyName> = $__joinPoint->write($this, $value, $this-><propertyName>);
      * </pre>
      *
-     * Rendered PHP template for potentially uninitialized typed properties:
+     * Rendered PHP template for potentially uninitialized typed properties, see {@see createInitializedCondition()}
+     * for the condition (no try block here: the first write of every object hits an uninitialized property):
      * <pre>
      * if (isset($this-><propertyName>) || $__joinPoint->getField()->isInitialized($this)) {
      *     $this-><propertyName> = $__joinPoint->write($this, $value, $this-><propertyName>);
@@ -198,19 +238,34 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     }
 
     /**
-     * isset() answers without a call for every value except null, reflection decides only between null and
-     * an uninitialized property
+     * isset() answers without a call for every value except null. A property that can not hold null is initialized
+     * exactly when isset() is true, for a nullable one reflection decides between null and uninitialized.
+     * `array_key_exists('<mangled name>', (array) $this)` was measured as the reflection-free alternative and
+     * rejected: the cast copies the whole property table on every access (#819).
      */
-    private function createInitializedCondition(): BooleanOr
+    private function createInitializedCondition(): Isset_|BooleanOr
     {
+        $isset = new Isset_([$this->createPropertyFetch()]);
+        if (!$this->allowsNull()) {
+            return $isset;
+        }
+
         return new BooleanOr(
-            new Isset_([$this->createPropertyFetch()]),
+            $isset,
             new MethodCall(
                 new MethodCall(new Variable('__joinPoint'), 'getField'),
                 'isInitialized',
                 [new Arg(new Variable('this'))],
             ),
         );
+    }
+
+    /**
+     * The declared type accepts null: nullable, a union with null, mixed or null itself
+     */
+    private function allowsNull(): bool
+    {
+        return $this->property->getType()?->allowsNull() ?? true;
     }
 
     /**

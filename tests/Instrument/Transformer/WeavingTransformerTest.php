@@ -1061,8 +1061,9 @@ class WeavingTransformerTest extends TestCase
         // note the proxy __construct parameter legitimately keeps it (legal in param defaults)
         $this->assertStringNotContainsString('private \ArrayObject $bag =', $proxyContent);
         $this->assertStringContainsString('private \ArrayObject $bag {', $proxyContent);
-        // Uninitialized typed property must be guarded in the hooks
-        $this->assertStringContainsString('isInitialized($this)', $proxyContent);
+        // Uninitialized typed property must be guarded in the hooks: isset() is enough, it can not hold null (#819)
+        $this->assertStringContainsString('if (isset($this->bag)) {', $proxyContent);
+        $this->assertStringNotContainsString('isInitialized($this)', $proxyContent);
 
         // The generated proxy must stay parseable as PHP (guards against emitting
         // constructs that are syntactically invalid in property context)

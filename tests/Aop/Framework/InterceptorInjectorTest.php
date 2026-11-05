@@ -20,6 +20,8 @@ class InterceptorInjectorTest extends TestCase
 {
     protected string $classProperty;
 
+    protected ?string $sharedProperty = null;
+
     /**
      * @return non-empty-list<InterceptorContract>
      */
@@ -57,6 +59,23 @@ class InterceptorInjectorTest extends TestCase
         $this->assertSame('classProperty', $fieldAccess->getField()->name);
 
         $this->assertSame('hello', $fieldAccess->read($this, 'hello'));
+    }
+
+    /**
+     * The get and set hooks of a property share its joinpoint (#819)
+     */
+    public function testForPropertyReturnsOneJoinpointPerClassAndProperty(): void
+    {
+        $getHookJoinpoint = InterceptorInjector::forProperty(self::class, 'sharedProperty', $this->noopInterceptors());
+        $setHookJoinpoint = InterceptorInjector::forProperty(self::class, 'sharedProperty', $this->noopInterceptors());
+
+        $this->assertSame($getHookJoinpoint, $setHookJoinpoint);
+        $this->assertNotSame($getHookJoinpoint, InterceptorInjector::forProperty(self::class, 'classProperty', $this->noopInterceptors()));
+        // Another class with a property of the same name has its own joinpoint
+        $this->assertNotSame(
+            spl_object_id($getHookJoinpoint),
+            spl_object_id(InterceptorInjector::forProperty(TraitAliasProxy::class, 'sharedProperty', $this->noopInterceptors())),
+        );
     }
 
     public function testForFunctionBuildsReflectionFunctionInvocation(): void
