@@ -7,13 +7,11 @@ use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Proxy;
-use ArrayObject;
 /**
  * Class with promoted constructor properties (multi-line constructor) used for
  * testing interception of promoted properties (issue #599).
  */
-class PromotedPropertyClass implements Proxy
+class PromotedPropertyClass implements \Go\Aop\Proxy
 {
     use PromotedPropertyClassOriginalTrait {
         PromotedPropertyClassOriginalTrait::__construct as private __constructOriginalAlias;
@@ -67,7 +65,7 @@ class PromotedPropertyClass implements Proxy
             $this->counter = $__joinPoint->write($this, $value, $this->counter);
         }
     }
-    public function __construct(string $name = 'initial', int $counter = 1, ?ArrayObject $bag = null)
+    public function __construct(string $name = 'initial', int $counter = 1, ?\ArrayObject $bag = null)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
         static $__joinPoint = InterceptorInjector::forMethod(

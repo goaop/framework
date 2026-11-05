@@ -193,7 +193,7 @@ class ClassProxyGeneratorTest extends TestCase
     /**
      * @throws ReflectionException
      */
-    public function testGenerateWithClassTypedPropertyUsesImportedTypeInFieldAccessPhpDoc(): void
+    public function testGenerateWithClassTypedPropertyUsesFullyQualifiedTypeInFieldAccessPhpDoc(): void
     {
         $target = new class {
             // @phpstan-ignore property.unused (declared only to be intercepted by the generated proxy)
@@ -210,7 +210,7 @@ class ClassProxyGeneratorTest extends TestCase
         $proxyFileContent = "<?php" . PHP_EOL . $childGenerator->generate();
 
         $this->assertStringContainsString(
-            "/** @var FieldAccess<self, Exception> \$__joinPoint */",
+            "/** @var FieldAccess<self, \\Exception> \$__joinPoint */",
             $proxyFileContent,
         );
     }
@@ -644,7 +644,7 @@ class ClassProxyGeneratorTest extends TestCase
 
         // Deprecated attribute must be present on the proxied oldMethod
         $this->assertStringContainsString(
-            '#[Deprecated(',
+            '#[\Deprecated(',
             $proxyFileContent,
             'Proxy must preserve #[\Deprecated] attribute on the proxied method',
         );
@@ -655,7 +655,7 @@ class ClassProxyGeneratorTest extends TestCase
         );
 
         // Count occurrences — should appear exactly once (only on oldMethod, not normalMethod)
-        $deprecatedCount = substr_count($proxyFileContent, '#[Deprecated(');
+        $deprecatedCount = substr_count($proxyFileContent, '#[\Deprecated(');
         $this->assertSame(
             1,
             $deprecatedCount,
@@ -717,12 +717,12 @@ class ClassProxyGeneratorTest extends TestCase
 
     /**
      * A namespaced class extending a global class: the parent from reflection has no leading backslash
-     * and must be imported, otherwise it resolves in the proxy namespace (issues #759, #826).
+     * and must be emitted fully qualified, otherwise it resolves in the proxy namespace (issue #759).
      * The original body trait keeps its deliberate short name.
      *
      * @throws ReflectionException
      */
-    public function testParentFromGlobalNamespaceIsImported(): void
+    public function testParentFromGlobalNamespaceIsFullyQualified(): void
     {
         $reflectionClass = new ReflectionClass(GlobalParentCollection::class);
         $classAdvices    = [
@@ -734,8 +734,7 @@ class ClassProxyGeneratorTest extends TestCase
         $generator = new ClassProxyGenerator($reflectionClass, 'Go\\Stubs\\GlobalParentCollectionOriginalTrait', $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
-        $this->assertStringContainsString("\nuse ArrayObject;\n", $output);
-        $this->assertStringContainsString('class GlobalParentCollection extends ArrayObject implements', $output);
+        $this->assertStringContainsString('class GlobalParentCollection extends \\ArrayObject implements', $output);
         $this->assertStringContainsString('use GlobalParentCollectionOriginalTrait {', $output);
         $this->assertStringContainsString(
             'GlobalParentCollectionOriginalTrait::hello as private helloOriginalAlias',
@@ -745,14 +744,14 @@ class ClassProxyGeneratorTest extends TestCase
     }
 
     /**
-     * A trait or interface introduced from the global namespace must be imported, whether the
+     * A trait or interface introduced from the global namespace must stay fully qualified, whether the
      * caller roots the name or not (direct callers may bypass AdviceMatcher, which roots it).
      *
      * @throws ReflectionException
      */
     #[\PHPUnit\Framework\Attributes\TestWith(['GlobalHelperTrait', 'GlobalHelperInterface'])]
     #[\PHPUnit\Framework\Attributes\TestWith(['\\GlobalHelperTrait', '\\GlobalHelperInterface'])]
-    public function testIntroducedNamesFromGlobalNamespaceAreImported(string $trait, string $interface): void
+    public function testIntroducedNamesFromGlobalNamespaceAreFullyQualified(string $trait, string $interface): void
     {
         $reflectionClass = new ReflectionClass(GlobalParentCollection::class);
         $classAdvices    = [
@@ -763,10 +762,9 @@ class ClassProxyGeneratorTest extends TestCase
         $generator = new ClassProxyGenerator($reflectionClass, 'Go\\Stubs\\GlobalParentCollectionOriginalTrait', $classAdvices);
         $output    = "<?php\n" . $generator->generate();
 
-        $this->assertStringContainsString("\nuse GlobalHelperInterface;\n", $output);
-        $this->assertStringContainsString("\nuse GlobalHelperTrait;\n", $output);
-        $this->assertStringContainsString('use GlobalParentCollectionOriginalTrait, GlobalHelperTrait;', $output);
-        $this->assertStringContainsString(', GlobalHelperInterface', $output);
+        $this->assertStringContainsString('use GlobalParentCollectionOriginalTrait, \\GlobalHelperTrait;', $output);
+        $this->assertStringContainsString(', \\GlobalHelperInterface', $output);
+        $this->assertStringNotContainsString(' GlobalHelperInterface', $output);
         $this->assertPhpCompiles($output);
     }
 

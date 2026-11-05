@@ -5,20 +5,18 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
-use Go\Aop\Proxy;
-use Override;
 /**
  * PHP 8.3 — class with #[\Override] on an intercepted method.
  * WeavingTransformer must strip the attribute from the generated trait so that
  * the proxy's overriddenMethodOriginalAlias alias does not trigger a fatal error.
  */
-class TestClassWithOverride implements Proxy
+class TestClassWithOverride implements \Go\Aop\Proxy
 {
     use TestClassWithOverrideOriginalTrait {
         TestClassWithOverrideOriginalTrait::overriddenMethod as private overriddenMethodOriginalAlias;
         TestClassWithOverrideOriginalTrait::normalMethod as private normalMethodOriginalAlias;
     }
-    #[Override]
+    #[\Override]
     public function overriddenMethod(): string
     {
         /** @var DynamicMethodInvocation<self, string> $__joinPoint */

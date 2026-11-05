@@ -73,6 +73,10 @@ final class FunctionProxyGenerator
         foreach ($this->collectAspectClasses($adviceNames) as $aspectClass) {
             $this->imports->import($aspectClass);
         }
+        foreach ($this->imports->getUses() as $className => $alias) {
+            $this->fileGenerator->addUse($className, $alias);
+        }
+
         $functionsContent = [];
         $functionAdvices  = $adviceNames[AspectContainer::FUNCTION_PREFIX] ?? [];
         foreach (array_keys($functionAdvices) as $functionName) {
@@ -80,13 +84,9 @@ final class FunctionProxyGenerator
             if ($functionReflection->returnsReference()) {
                 throw WeavingException::functionReturnsByReference($functionName);
             }
-            $funcGenerator        = FunctionGenerator::fromReflection($functionReflection, $this->imports);
+            $funcGenerator        = FunctionGenerator::fromReflection($functionReflection);
             $funcGenerator->stmts = $this->getJoinpointInvocationStatements($functionReflection);
             $functionsContent[]   = $funcGenerator->generate();
-        }
-        // After the functions: their signatures import classes too
-        foreach ($this->imports->getUses() as $className => $alias) {
-            $this->fileGenerator->addUse($className, $alias);
         }
 
         $this->fileGenerator->body = implode("\n", $functionsContent);
@@ -112,7 +112,7 @@ final class FunctionProxyGenerator
     protected function getJoinpointInvocationStatements(ReflectionFunction $function): array
     {
         $functionAdvices  = $this->adviceNames[AspectContainer::FUNCTION_PREFIX][$function->name];
-        $returnTypeString = $function->hasReturnType() ? '<' . TypeGenerator::renderTypeForPhpDoc($function->getReturnType(), $this->imports) . '>' : '';
+        $returnTypeString = $function->hasReturnType() ? '<' . TypeGenerator::renderTypeForPhpDoc($function->getReturnType()) . '>' : '';
 
         return [
             JoinPointStatementsGenerator::createInitialization(

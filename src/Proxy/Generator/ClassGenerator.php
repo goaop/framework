@@ -18,7 +18,6 @@ use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_ as ClassNode;
-use PhpParser\Node\Stmt\Property as PropertyNode;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Node\Stmt\TraitUseAdaptation;
 use PhpParser\PrettyPrinter\Standard;
@@ -66,9 +65,9 @@ final class ClassGenerator implements GeneratorInterface
         /** @var list<ClassModifier> Class declaration modifiers (final/abstract/readonly) */
         private readonly array $modifiers,
         private readonly ?string $parentClass,
-        /** @var string[] Interfaces to implement: rooted/multi-segment FQCNs or aliases of the file imports */
+        /** @var string[] FQCNs of interfaces to implement */
         private readonly array $interfaces = [],
-        /** @var array<PropertyNodeProvider|PropertyNode> Properties, as generators or already built nodes */
+        /** @var PropertyNodeProvider[] */
         private readonly array $properties = [],
         array $methods = [],
     ) {
@@ -122,9 +121,10 @@ final class ClassGenerator implements GeneratorInterface
      * trait, alias) with a single universal rule: explicitly rooted
      * ("\Stringable") and multi-segment names are fully qualified; a bare
      * short name resolves in the generated class's own namespace (e.g. the
-     * FooOriginalTrait body trait, or an alias of the file imports, which
-     * ClassProxyGenerator passes for every class it references, #826).
-     * Other callers root global-namespace names (#759).
+     * FooOriginalTrait body trait). Global-namespace names coming from
+     * ::class constants are rooted upstream (AdviceMatcher, proxy generators)
+     * before they reach this generator; ClassProxyGenerator also roots the
+     * parent class name it takes from reflection (#759).
      */
     private static function classNameNode(string $name): Name
     {
@@ -194,7 +194,7 @@ final class ClassGenerator implements GeneratorInterface
         }
 
         foreach ($this->properties as $property) {
-            $builder->addStmt($property instanceof PropertyNode ? $property : $property->getNode());
+            $builder->addStmt($property->getNode());
         }
 
         foreach ($this->methods as $method) {

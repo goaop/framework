@@ -5,9 +5,7 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
-use Go\Aop\Proxy;
-use Exception as GlobalException;
-class TestPhp7Class implements Proxy
+class TestPhp7Class implements \Go\Aop\Proxy
 {
     use TestPhp7ClassOriginalTrait {
         TestPhp7ClassOriginalTrait::stringSth as private stringSthOriginalAlias;
@@ -119,7 +117,7 @@ class TestPhp7Class implements Proxy
         );
         return $__joinPoint->__invoke($this, $args);
     }
-    public function exceptionArg(GlobalException $exception, Exception $localException)
+    public function exceptionArg(\Exception $exception, \Test\ns1\Exception $localException)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
         static $__joinPoint = InterceptorInjector::forMethod(
@@ -210,9 +208,9 @@ class TestPhp7Class implements Proxy
         );
         return $__joinPoint->__invoke($this, [$arg]);
     }
-    public function exceptionRth(GlobalException $exception): GlobalException
+    public function exceptionRth(\Exception $exception): \Exception
     {
-        /** @var DynamicMethodInvocation<self, GlobalException> $__joinPoint */
+        /** @var DynamicMethodInvocation<self, \Exception> $__joinPoint */
         static $__joinPoint = InterceptorInjector::forMethod(
             self::class,
             'exceptionRth',
@@ -223,7 +221,7 @@ class TestPhp7Class implements Proxy
         );
         return $__joinPoint->__invoke($this, [$exception]);
     }
-    public function noRth(LocalException $exception)
+    public function noRth(\Test\ns1\LocalException $exception)
     {
         /** @var DynamicMethodInvocation<self> $__joinPoint */
         static $__joinPoint = InterceptorInjector::forMethod(

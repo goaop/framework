@@ -95,17 +95,6 @@ final class TypeGenerator
     }
 
     /**
-     * Returns the type with every class name referenced through the imports of the generated file
-     *
-     * Builtin types and the `self`, `parent` and `static` keywords stay as they are; nullable, union,
-     * intersection and DNF types keep their structure.
-     */
-    public function withImportedNames(?ProxyImports $imports): self
-    {
-        return $imports !== null ? new self(self::importNames($this->typeNode, $imports)) : $this;
-    }
-
-    /**
      * Returns the underlying AST node, ready for injection into a parent node.
      */
     public function getNode(): Identifier|Name|NullableType|UnionType|IntersectionType
@@ -124,48 +113,6 @@ final class TypeGenerator
     // ------------------------------------------------------------------
     // Internal helpers
     // ------------------------------------------------------------------
-
-    private static function importNames(
-        Identifier|Name|NullableType|UnionType|IntersectionType $node,
-        ProxyImports $imports,
-    ): Identifier|Name|NullableType|UnionType|IntersectionType {
-        if ($node instanceof NullableType) {
-            return new NullableType(self::importNamedType($node->type, $imports));
-        }
-        if ($node instanceof UnionType) {
-            return new UnionType(array_map(
-                static fn(Identifier|Name|IntersectionType $type) => $type instanceof IntersectionType
-                    ? self::importIntersectionType($type, $imports)
-                    : self::importNamedType($type, $imports),
-                $node->types,
-            ));
-        }
-        if ($node instanceof IntersectionType) {
-            return self::importIntersectionType($node, $imports);
-        }
-
-        return self::importNamedType($node, $imports);
-    }
-
-    private static function importIntersectionType(IntersectionType $node, ProxyImports $imports): IntersectionType
-    {
-        return new IntersectionType(array_map(
-            static fn(Identifier|Name $type) => self::importNamedType($type, $imports),
-            $node->types,
-        ));
-    }
-
-    /**
-     * Builtin types and the `self`, `parent` and `static` keywords are kept, class names use their alias
-     */
-    private static function importNamedType(Identifier|Name $node, ProxyImports $imports): Identifier|Name
-    {
-        if ($node instanceof Identifier || $node->isSpecialClassName()) {
-            return $node;
-        }
-
-        return new Name($imports->import($node->toString()));
-    }
 
     /**
      * Returns the original type hint name from a ReflectionNamedType, preserving 'self', 'parent', and 'static'
@@ -206,7 +153,6 @@ final class TypeGenerator
      */
     public static function renderAstTypeForPhpDoc(
         Identifier|Name|ComplexType|null $node,
-        ?ProxyImports $imports = null,
     ): string {
         if ($node === null) {
             return 'mixed';
@@ -227,20 +173,19 @@ final class TypeGenerator
                 $name = $resolved->toString();
             }
 
-            return self::renderClassNameForPhpDoc($name, $imports);
+            return '\\' . ltrim($name, '\\');
         }
 
-        $renderInner = static fn(Identifier|Name|ComplexType $type): string => self::renderAstTypeForPhpDoc($type, $imports);
         if ($node instanceof NullableType) {
-            return '?' . $renderInner($node->type);
+            return '?' . self::renderAstTypeForPhpDoc($node->type);
         }
 
         if ($node instanceof UnionType) {
-            return implode('|', array_map($renderInner, $node->types));
+            return implode('|', array_map(self::renderAstTypeForPhpDoc(...), $node->types));
         }
 
         if ($node instanceof IntersectionType) {
-            return implode('&', array_map($renderInner, $node->types));
+            return implode('&', array_map(self::renderAstTypeForPhpDoc(...), $node->types));
         }
 
         return 'mixed';
@@ -256,7 +201,7 @@ final class TypeGenerator
      * - Intersection types are rendered as `Type1&Type2`.
      * - A null $type renders as `mixed`.
      */
-    public static function renderTypeForPhpDoc(?ReflectionType $type, ?ProxyImports $imports = null): string
+    public static function renderTypeForPhpDoc(?ReflectionType $type): string
     {
         if ($type === null) {
             return 'mixed';
@@ -266,7 +211,7 @@ final class TypeGenerator
             $name = self::resolveReflectionNamedTypeName($type);
 
             if (!$type->isBuiltin() && !in_array($name, ['self', 'static', 'parent'], true)) {
-                $name = self::renderClassNameForPhpDoc($name, $imports);
+                $name = str_starts_with($name, '\\') ? $name : '\\' . $name;
             }
 
             if ($type->allowsNull() && $name !== 'mixed' && $name !== 'null') {
@@ -276,24 +221,15 @@ final class TypeGenerator
             return $name;
         }
 
-        $renderInner = static fn(ReflectionType $innerType): string => self::renderTypeForPhpDoc($innerType, $imports);
         if ($type instanceof ReflectionUnionType) {
-            return implode('|', array_map($renderInner, $type->getTypes()));
+            return implode('|', array_map(self::renderTypeForPhpDoc(...), $type->getTypes()));
         }
 
         if ($type instanceof ReflectionIntersectionType) {
-            return implode('&', array_map($renderInner, $type->getTypes()));
+            return implode('&', array_map(self::renderTypeForPhpDoc(...), $type->getTypes()));
         }
 
         return 'mixed';
-    }
-
-    /**
-     * Renders a class name for a phpDoc type: its alias in the imports, fully qualified without them
-     */
-    public static function renderClassNameForPhpDoc(string $className, ?ProxyImports $imports): string
-    {
-        return $imports !== null ? $imports->import($className) : '\\' . ltrim($className, '\\');
     }
 
     private static function buildNodeFromReflection(ReflectionType $type): Identifier|Name|NullableType|UnionType|IntersectionType

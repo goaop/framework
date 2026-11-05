@@ -77,28 +77,6 @@ class FunctionProxyGeneratorTest extends TestCase
         $this->assertStringContainsString('return $__joinPoint->__invoke(', $code);
     }
 
-    /**
-     * Class names in the signatures and attributes of proxied functions are imported (#826)
-     */
-    public function testGenerateImportsClassesOfFunctionSignatures(): void
-    {
-        $advice      = GeneratedInterceptor::fromAdvice('manual.before', new BeforeInterceptor(static fn(): mixed => null));
-        $adviceNames = [
-            AspectContainer::FUNCTION_PREFIX => [
-                'iterator_to_array' => [$advice],
-                'password_hash'     => [$advice],
-            ],
-        ];
-
-        $code = new FunctionProxyGenerator($this->getStubsNamespace(), $adviceNames)->generate();
-
-        $this->assertStringContainsString("\nuse Traversable;\n", $code);
-        $this->assertStringContainsString("\nuse SensitiveParameter;\n", $code);
-        $this->assertStringContainsString('function iterator_to_array(Traversable|array $iterator', $code);
-        $this->assertStringContainsString("function password_hash(\n    #[SensitiveParameter]\n    string \$password,", $code);
-        $this->assertPhpCompiles($code);
-    }
-
     public function testGenerateWrapsVoidFunctionWithoutReturnStatement(): void
     {
         $advice = GeneratedInterceptor::fromAdvice(

@@ -5,9 +5,7 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
-use Go\Aop\Proxy;
-use Deprecated;
-enum TestStatus : string implements Proxy
+enum TestStatus : string implements \Go\Aop\Proxy
 {
     use TestStatusOriginalTrait {
         TestStatusOriginalTrait::label as private labelOriginalAlias;
@@ -15,8 +13,8 @@ enum TestStatus : string implements Proxy
     /**
      * The active status
      */
-    #[Deprecated('Use Enabled')]
-    #[Label('On')]
+    #[\Deprecated('Use Enabled')]
+    #[\Test\ns1\Label('On')]
     case Active = 'active';
     case Inactive = 'inactive';
     public function label(): string

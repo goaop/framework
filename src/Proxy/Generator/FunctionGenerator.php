@@ -87,11 +87,8 @@ final class FunctionGenerator
 
     /**
      * Creates a FunctionGenerator from a reflection function.
-     *
-     * @param ProxyImports|null $imports Imports of the generated file: class names in the signature and the
-     *                                   attributes use their aliases, fully qualified names are emitted without them
      */
-    public static function fromReflection(ReflectionFunction $function, ?ProxyImports $imports = null): self
+    public static function fromReflection(ReflectionFunction $function): self
     {
         $generator = new self($function->getShortName());
 
@@ -103,10 +100,9 @@ final class FunctionGenerator
             if ($reflectionReturnType instanceof ReflectionNamedType) {
                 $typeName = TypeGenerator::resolveReflectionNamedTypeName($reflectionReturnType);
                 $nullable = $reflectionReturnType->allowsNull() && !in_array($typeName, ['mixed', 'null'], true);
-                $generator->returnType = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName)
-                    ->withImportedNames($imports);
+                $generator->returnType = TypeGenerator::fromTypeString(($nullable ? '?' : '') . $typeName);
             } else {
-                $generator->returnType = TypeGenerator::fromReflectionType($reflectionReturnType)->withImportedNames($imports);
+                $generator->returnType = TypeGenerator::fromReflectionType($reflectionReturnType);
             }
         }
 
@@ -118,12 +114,12 @@ final class FunctionGenerator
 
         // Parameters
         foreach ($function->getParameters() as $reflectionParam) {
-            $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam, $imports));
+            $generator->addParameter(ParameterGenerator::fromReflection($reflectionParam));
         }
 
         // Attributes: cloned from the AST when available (parser-reflection), so that
         // argument expressions are never evaluated at weave time (issues #601, #602)
-        $generator->attributeGroups = AttributeGroupsGenerator::fromReflector($function, $imports);
+        $generator->attributeGroups = AttributeGroupsGenerator::fromReflector($function);
 
         return $generator;
     }

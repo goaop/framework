@@ -6,8 +6,7 @@ use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\StaticMethodInvocation;
-use Go\Aop\Proxy;
-final readonly class TestReadonlyClass implements Proxy
+final readonly class TestReadonlyClass implements \Go\Aop\Proxy
 {
     use TestReadonlyClassOriginalTrait {
         TestReadonlyClassOriginalTrait::__construct as private __constructOriginalAlias;

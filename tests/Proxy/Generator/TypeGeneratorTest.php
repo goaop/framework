@@ -149,60 +149,6 @@ class TypeGeneratorTest extends TestCase
         $this->assertInstanceOf(\PhpParser\Node\IntersectionType::class, $node->types[0]);
     }
 
-    /**
-     * @return array<string, array{string, string, array<string, string|null>}>
-     */
-    public static function importedTypeProvider(): array
-    {
-        return [
-            'builtin'      => ['int', 'int', []],
-            'keyword'      => ['?self', '?self', []],
-            'class'        => ['App\Domain\Product', 'Product', ['App\Domain\Product' => null]],
-            'nullable'     => ['?App\Domain\Product', '?Product', ['App\Domain\Product' => null]],
-            'union'        => ['App\Money|Exception|null', 'Money|Exception|null', ['Exception' => null]],
-            'intersection' => ['Countable&Iterator', 'Countable&Iterator', ['Countable' => null, 'Iterator' => null]],
-            'dnf'          => [
-                '(Countable&Iterator)|Other\Money|static',
-                '(Countable&Iterator)|OtherMoney|static',
-                ['Countable' => null, 'Iterator' => null, 'Other\Money' => 'OtherMoney'],
-            ],
-        ];
-    }
-
-    /**
-     * @param array<string, string|null> $expectedUses
-     */
-    #[DataProvider('importedTypeProvider')]
-    public function testWithImportedNamesReferencesClassesThroughImports(string $type, string $expected, array $expectedUses): void
-    {
-        $imports = new ProxyImports('App');
-        $imports->import('App\Money');
-
-        $this->assertSame($expected, TypeGenerator::fromTypeString($type)->withImportedNames($imports)->generate());
-        $this->assertSame($expectedUses, $imports->getUses());
-    }
-
-    public function testWithoutImportsTheTypeStaysFullyQualified(): void
-    {
-        $type = TypeGenerator::fromTypeString('?App\Domain\Product');
-
-        $this->assertSame($type, $type->withImportedNames(null));
-        $this->assertSame('?\App\Domain\Product', $type->generate());
-    }
-
-    public function testRenderTypeForPhpDocUsesImports(): void
-    {
-        $imports = new ProxyImports('App', ['Lib\Product' => 'Product']);
-        $node    = new \PhpParser\Node\UnionType([
-            new \PhpParser\Node\Name('Product', ['resolvedName' => new \PhpParser\Node\Name\FullyQualified('Lib\Product')]),
-            new \PhpParser\Node\Name\FullyQualified('Exception'),
-            new \PhpParser\Node\Identifier('null'),
-        ]);
-
-        $this->assertSame('Product|Exception|null', TypeGenerator::renderAstTypeForPhpDoc($node, $imports));
-        $this->assertSame('\Lib\Product|\Exception|null', TypeGenerator::renderAstTypeForPhpDoc($node));
-    }
-
     public function testFromTypeStringThrowsOnMalformedDnf(): void
     {
         $this->expectException(WeavingException::class);

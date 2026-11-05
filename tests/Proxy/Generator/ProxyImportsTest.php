@@ -18,17 +18,6 @@ use Go\Aop\Framework\The;
 use Go\ParserReflection\ReflectionFile;
 use Go\Stubs\Collision\A\SameNameAspect as AspectA;
 use Go\Stubs\Collision\B\SameNameAspect as AspectB;
-use PhpParser\Node\Expr\ArrowFunction;
-use PhpParser\Node\Expr\BinaryOp;
-use PhpParser\Node\Expr\ClassConstFetch;
-use PhpParser\Node\Expr\ConstFetch;
-use PhpParser\Node\Expr\FuncCall;
-use PhpParser\Node\Expr\Variable;
-use PhpParser\Node\Name;
-use PhpParser\Node\Name\FullyQualified;
-use PhpParser\Node\NullableType;
-use PhpParser\Node\Param;
-use PhpParser\PrettyPrinter\Standard;
 use PHPUnit\Framework\TestCase;
 
 final class ProxyImportsTest extends TestCase
@@ -121,70 +110,6 @@ final class ProxyImportsTest extends TestCase
         // Fully qualified names do not bind short names, qualified ones bind their first segment
         $this->assertSame('InterceptorInjector', $imports->import(InterceptorInjector::class));
         $this->assertSame('AopSub', $imports->import('Go\\Aop\\Intercept\\Sub'));
-        // The proxied class itself is referenced by its own short name
-        $this->assertSame('Interceptor', $imports->import('App\\Interceptor'));
-        $this->assertArrayNotHasKey('App\\Interceptor', $imports->getUses());
-    }
-
-    public function testClassesOfTheFileNamespaceNeedNoImport(): void
-    {
-        $imports = new ProxyImports('App');
-
-        $this->assertSame('Product', $imports->import('App\\Product'));
-        $this->assertSame('Money', $imports->import('App\\Domain\\Money'));
-        $this->assertSame(['App\\Domain\\Money' => null], $imports->getUses());
-    }
-
-    public function testResolvedNamesBindTheirShortNameToTheirClass(): void
-    {
-        $imports = new ProxyImports('App');
-        $imports->reserveNamesUsedIn(
-            new Name('Money', ['resolvedName' => new FullyQualified('App\\Money')]),
-            new Name('Domain\\Product', ['resolvedName' => new FullyQualified('Lib\\Domain\\Product')]),
-        );
-
-        // The very class keeps the short name the original code uses, without an import
-        $this->assertSame('Money', $imports->import('App\\Money'));
-        $this->assertSame('OtherMoney', $imports->import('Other\\Money'));
-        // A qualified name binds its first segment to the namespace it stands for
-        $this->assertSame('AppDomain', $imports->import('App\\Domain'));
-        $this->assertSame(['Other\\Money' => 'OtherMoney', 'App\\Domain' => 'AppDomain'], $imports->getUses());
-    }
-
-    public function testConflictingBindingsMakeTheNameUnusable(): void
-    {
-        $imports = new ProxyImports('App');
-        $imports->reserveNamesUsedIn(
-            new Name('Money', ['resolvedName' => new FullyQualified('App\\Money')]),
-            new Name('Money'),
-        );
-
-        $this->assertSame('AppMoney', $imports->import('App\\Money'));
-        $this->assertSame(['App\\Money' => 'AppMoney'], $imports->getUses());
-    }
-
-    public function testImportNamesInClonesNodesWithImportedClassNames(): void
-    {
-        $imports = new ProxyImports('App', ['Lib\\Other\\Product' => 'Product']);
-        $default = new BinaryOp\Concat(
-            new ClassConstFetch(new Name('Product', ['resolvedName' => new FullyQualified('Lib\\Domain\\Product')]), 'LEVEL'),
-            new FuncCall(new Name('helper', ['resolvedName' => new FullyQualified('Lib\\helper')])),
-        );
-        $closure = new ArrowFunction([
-            'static'     => true,
-            'params'     => [new Param(new Variable('item'), null, new NullableType(new FullyQualified('Lib\\Item')))],
-            'returnType' => new Name('self', ['resolvedName' => new Name('self')]),
-            'expr'       => new ConstFetch(new Name('PHP_INT_MAX')),
-        ]);
-
-        [$importedDefault, $importedClosure] = $imports->importNamesIn([$default, $closure]);
-
-        $printer = new Standard();
-        $this->assertSame('DomainProduct::LEVEL . \\Lib\\helper()', $printer->prettyPrintExpr($importedDefault));
-        $this->assertSame('static fn(?Item $item): self => PHP_INT_MAX', $printer->prettyPrintExpr($importedClosure));
-        // The original nodes are left untouched
-        $this->assertSame('Product::LEVEL . helper()', $printer->prettyPrintExpr($default));
-        $this->assertSame(['Lib\\Domain\\Product' => 'DomainProduct', 'Lib\\Item' => null, 'Lib\\Other\\Product' => 'Product'], $imports->getUses());
     }
 
     /**

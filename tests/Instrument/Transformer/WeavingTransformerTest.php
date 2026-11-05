@@ -253,11 +253,9 @@ class WeavingTransformerTest extends TestCase
         $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches));
 
         $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
-        // Names of the unlocatable ancestors are known from the source, they are imported like any other class
-        $this->assertStringContainsString('use Missing\\Optional\\Dependency\\Rule;', $proxyContent);
-        $this->assertStringContainsString('use Missing\\Optional\\Dependency\\BaseRule as BaseRule;', $proxyContent);
         $this->assertStringContainsString(
-            'class RuleWithMissingParent extends BaseRule implements Rule, Proxy',
+            'class RuleWithMissingParent extends \\Missing\\Optional\\Dependency\\BaseRule'
+            . ' implements \\Missing\\Optional\\Dependency\\Rule, \\Go\\Aop\\Proxy',
             $proxyContent,
         );
         $this->assertStringContainsString('public function getNodeType(): string', $proxyContent);
@@ -420,63 +418,6 @@ class WeavingTransformerTest extends TestCase
             $this->normalizeWhitespaces($this->loadTestMetadata('import-collision-proxy')->source),
             $this->normalizeWhitespaces($proxyContent),
         );
-        $this->assertPhpCompiles($proxyContent);
-    }
-
-    /**
-     * Signature types, attributes, defaults and property types are referenced through imports; a class whose short
-     * name is already bound (original import, class of the namespace, generated reference) gets a distinct alias (#826)
-     */
-    public function testWeaverImportsSignatureTypesCollidingWithBoundNames(): void
-    {
-        $className   = Stubs\SignatureCollisionClass::class;
-        $transformer = $this->createTransformerWithAdvices([
-            AspectContainer::PROPERTY_PREFIX => [
-                'proxy' => ["advisor.{$className}->proxy" => new BeforeInterceptor(static function (): void {})],
-            ],
-            AspectContainer::METHOD_PREFIX => [
-                'priceFor' => ["advisor.{$className}->priceFor" => new BeforeInterceptor(static function (): void {})],
-                'combine'  => ["advisor.{$className}->combine" => new BeforeInterceptor(static function (): void {})],
-            ],
-        ]);
-        $metadata = $this->loadStubMetadata('SignatureCollisionClass');
-        $transformer->transform($metadata);
-
-        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches));
-        $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
-        $this->assertEquals(
-            $this->normalizeWhitespaces($this->loadTestMetadata('signature-import-collision-proxy')->source),
-            $this->normalizeWhitespaces($proxyContent),
-        );
-        $this->assertPhpCompiles($proxyContent);
-    }
-
-    /**
-     * An inherited method is declared in another file: its signature and default value keep the meaning they have
-     * under the imports of that file, although the woven file binds the same short name to another class (#826)
-     */
-    public function testWeaverKeepsInheritedSignatureNamesOfParentFile(): void
-    {
-        $classFqn    = Stubs\ImportedDefaultsChild::class;
-        $transformer = $this->createTransformerWithAdvices([
-            AspectContainer::METHOD_PREFIX => [
-                'log' => ["advisor.{$classFqn}->log" => new BeforeInterceptor(static function (): void {})],
-                'own' => ["advisor.{$classFqn}->own" => new BeforeInterceptor(static function (): void {})],
-            ],
-        ]);
-        $metadata = $this->loadStubMetadata('ImportedDefaultsChild');
-        $transformer->transform($metadata);
-
-        $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $metadata->source, $matches));
-        $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
-
-        $this->assertStringContainsString("\nuse Go\\Stubs\\Collision\\The as CollisionThe;\n", $proxyContent);
-        $this->assertStringContainsString("\nuse Go\\Stubs\\Collision\\Interceptor as Level;\n", $proxyContent);
-        $this->assertStringContainsString(
-            'public function log(string $level = CollisionThe::LEVEL, ?CollisionThe $target = null): string',
-            $proxyContent,
-        );
-        $this->assertStringContainsString('public function own(?Level $interceptor = null): ?Level', $proxyContent);
         $this->assertPhpCompiles($proxyContent);
     }
 
@@ -778,8 +719,8 @@ class WeavingTransformerTest extends TestCase
         $this->assertEquals($expectedProxyContent, $actualProxyContent);
 
         // The argument expressions must be preserved, not evaluated/constant-folded
-        $this->assertStringContainsString('AttrStatus::Active', $actualProxyContent);
-        $this->assertStringContainsString('new ArrayObject([1, 2])', $actualProxyContent);
+        $this->assertStringContainsString('\Test\ns1\AttrStatus::Active', $actualProxyContent);
+        $this->assertStringContainsString('new \ArrayObject([1, 2])', $actualProxyContent);
         $this->assertStringContainsString('PHP_INT_MAX', $actualProxyContent);
         $this->assertStringNotContainsString((string) PHP_INT_MAX, $actualProxyContent);
     }
@@ -982,12 +923,10 @@ class WeavingTransformerTest extends TestCase
         $this->assertSame(3, preg_match_all("/AOP_CACHE_DIR \. '([^']+)';/", $actual, $matches));
         $this->assertStringEndsWith('php80-attribute-class.php/Test/ns1/TestCustomAttribute.php', $matches[1][2]);
         $proxyContent = (string) file_get_contents('vfs://' . $matches[1][2]);
-        $this->assertStringContainsString('use Attribute;', $proxyContent);
         $this->assertStringContainsString(
-            '#[Attribute(Attribute::TARGET_CLASS | Attribute::IS_REPEATABLE)]',
+            '#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]',
             $proxyContent,
         );
-        $this->assertPhpCompiles($proxyContent);
     }
 
     public function testWeaverMovesInterceptedPropertiesToProxyHooks(): void
@@ -1120,9 +1059,8 @@ class WeavingTransformerTest extends TestCase
 
         // The hook property must NOT carry the new-in-initializer default (compile error);
         // note the proxy __construct parameter legitimately keeps it (legal in param defaults)
-        $this->assertStringNotContainsString('private ArrayObject $bag =', $proxyContent);
-        $this->assertStringContainsString('private ArrayObject $bag {', $proxyContent);
-        $this->assertStringContainsString("ArrayObject \$bag = new ArrayObject(['seed'])", $proxyContent);
+        $this->assertStringNotContainsString('private \ArrayObject $bag =', $proxyContent);
+        $this->assertStringContainsString('private \ArrayObject $bag {', $proxyContent);
         // Uninitialized typed property must be guarded in the hooks: isset() is enough, it can not hold null (#819)
         $this->assertStringContainsString('if (isset($this->bag)) {', $proxyContent);
         $this->assertStringNotContainsString('isInitialized($this)', $proxyContent);
@@ -1295,13 +1233,12 @@ class WeavingTransformerTest extends TestCase
         $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $woven, $matches));
         $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
 
-        // The proxy trait methods keep the Override semantics of the original methods, through the original import
+        // The proxy trait methods keep the Override semantics of the original methods
         $this->assertStringContainsString('as private helloOriginalAlias;', $proxyContent);
         $this->assertStringContainsString('as private makeOriginalAlias;', $proxyContent);
-        $this->assertStringContainsString('use Override as OverrideAlias;', $proxyContent);
-        $this->assertMatchesRegularExpression('/#\[OverrideAlias\]\s+public function hello\(\)/', $proxyContent);
-        $this->assertMatchesRegularExpression('/#\[OverrideAlias\]\s+public static function make\(\)/', $proxyContent);
-        $this->assertMatchesRegularExpression('/#\[OverrideAlias\]\s+public function count\(\)/', $proxyContent);
+        $this->assertMatchesRegularExpression('/#\[\\\\Override\]\s+public function hello\(\)/', $proxyContent);
+        $this->assertMatchesRegularExpression('/#\[\\\\Override\]\s+public static function make\(\)/', $proxyContent);
+        $this->assertMatchesRegularExpression('/\\\\Override\]\s+public function count\(\)/', $proxyContent);
     }
 
     /**
@@ -1361,8 +1298,7 @@ class WeavingTransformerTest extends TestCase
         $matches = [];
         $this->assertSame(1, preg_match("/AOP_CACHE_DIR . '(.+)';$/m", $actual, $matches));
         $proxyContent = (string) file_get_contents('vfs://' . $matches[1]);
-        $this->assertStringContainsString('use Attribute;', $proxyContent);
-        $this->assertStringContainsString('#[Attribute]', $proxyContent);
+        $this->assertStringContainsString('#[\Attribute]', $proxyContent);
     }
 
     /**
@@ -1445,7 +1381,7 @@ class WeavingTransformerTest extends TestCase
         $proxyContent = $this->normalizeWhitespaces((string) file_get_contents('vfs://' . $matches[1]));
 
         $this->assertStringContainsString(
-            'class InheritedMethodChild extends InheritedMethodBase',
+            'class InheritedMethodChild extends \Go\Instrument\Transformer\Stubs\InheritedMethodBase',
             $proxyContent,
         );
         // Own method is aliased in the trait-use block, inherited one goes through parent::

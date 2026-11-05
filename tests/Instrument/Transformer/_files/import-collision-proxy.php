@@ -5,7 +5,6 @@ namespace Test\ns1;
 use Go\Aop\Framework\Interceptor as AopInterceptor;
 use Go\Aop\Framework\The as AopThe;
 use Go\Aop\Intercept\DynamicMethodInvocation;
-use Go\Aop\Proxy;
 use Go\Stubs\Collision\Interceptor as Interceptor;
 use Go\Stubs\Collision\The as The;
 use Go\Aop\Framework\InterceptorInjector as Injector;
@@ -13,13 +12,13 @@ use Go\Aop\Framework\InterceptorInjector as Injector;
  * Imports bind the short names used by generated proxies (Interceptor, The) to unrelated
  * classes, and alias a framework class: the proxy must neither redeclare nor rely on them
  */
-class ImportCollisionClass implements Proxy
+class ImportCollisionClass implements \Go\Aop\Proxy
 {
     use ImportCollisionClassOriginalTrait {
         ImportCollisionClassOriginalTrait::log as private logOriginalAlias;
         ImportCollisionClassOriginalTrait::injector as private injectorOriginalAlias;
     }
-    public function log(string $level = Interceptor::LEVEL, ?The $target = null): string
+    public function log(string $level = Interceptor::LEVEL, ?\Go\Stubs\Collision\The $target = null): string
     {
         /** @var DynamicMethodInvocation<self, string> $__joinPoint */
         static $__joinPoint = Injector::forMethod(
@@ -32,9 +31,9 @@ class ImportCollisionClass implements Proxy
         );
         return $__joinPoint->__invoke($this, \array_slice([$level, $target], 0, \func_num_args()));
     }
-    public function injector(): ?Injector
+    public function injector(): ?\Go\Aop\Framework\InterceptorInjector
     {
-        /** @var DynamicMethodInvocation<self, ?Injector> $__joinPoint */
+        /** @var DynamicMethodInvocation<self, ?\Go\Aop\Framework\InterceptorInjector> $__joinPoint */
         static $__joinPoint = Injector::forMethod(
             self::class,
             'injector',

@@ -7,12 +7,11 @@ use Go\Aop\Framework\Interceptor;
 use Go\Aop\Framework\The;
 use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\FieldAccess;
-use Go\Aop\Proxy;
 /**
  * Class with a promoted constructor property in a single-line constructor used for
  * testing interception of promoted properties (issue #599).
  */
-class SingleLinePromotedClass implements Proxy
+class SingleLinePromotedClass implements \Go\Aop\Proxy
 {
     use SingleLinePromotedClassOriginalTrait {
         SingleLinePromotedClassOriginalTrait::__construct as private __constructOriginalAlias;

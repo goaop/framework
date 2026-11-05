@@ -120,19 +120,18 @@ final class EnumProxyGenerator extends ClassProxyGenerator
         }
         $this->importMethodInvocationTypes($originalClass, $interceptedMethods);
 
-        // Proxy implements the same user-defined interfaces as the original enum plus Go\Aop\Proxy.
+        $generatedMethods = $this->interceptMethods($originalClass, $interceptedMethods);
+
+        // Proxy implements the same user-defined interfaces as the original enum plus \Go\Aop\Proxy.
         // Built-in PHP enum interfaces (UnitEnum, BackedEnum) are excluded: PHP applies them
-        // automatically when the `enum` keyword is used, and an explicit listing is an error.
+        // automatically when the `enum` keyword is used, and listing them explicitly in a
+        // namespaced file would resolve them as e.g. Ns\UnitEnum instead of the global \UnitEnum.
         $originalInterfaces = array_filter(
             $originalClass->getInterfaceNames(),
             static fn(string $i) => !in_array($i, self::BUILTIN_ENUM_INTERFACES, true),
         );
-        $introducedInterfaces = array_values(array_unique(array_map(
-            $this->imports->import(...),
-            [...$originalInterfaces, Proxy::class],
-        )));
-
-        $generatedMethods = $this->interceptMethods($originalClass, $interceptedMethods);
+        $originalInterfaces   = array_map(static fn(string $i) => '\\' . $i, $originalInterfaces);
+        $introducedInterfaces = array_values(array_unique(array_merge($originalInterfaces, ['\\' . Proxy::class])));
 
         $methodGenerators = array_map(
             static fn($m) => $m->getGenerator(),
@@ -228,7 +227,7 @@ final class EnumProxyGenerator extends ClassProxyGenerator
      * because class constants stay in the woven trait and trait constants participate in the
      * composing class since PHP 8.2.
      *
-     * The attribute groups (class names through the imports) and the doc comment of every case come along, the proxy enum is the
+     * The attribute groups (names fully qualified) and the doc comment of every case come along, the proxy enum is the
      * only declaration of the cases (#794).
      *
      * @param ReflectionClass<covariant object> $class
@@ -258,7 +257,7 @@ final class EnumProxyGenerator extends ClassProxyGenerator
                     $cases[] = [
                         $stmt->name->toString(),
                         $stmt->expr,
-                        AttributeGroupsGenerator::fromAttributeGroupNodes($stmt->attrGroups, $this->imports),
+                        AttributeGroupsGenerator::fromAttributeGroupNodes($stmt->attrGroups),
                         $stmt->getDocComment()?->getText(),
                     ];
                 }
@@ -280,7 +279,7 @@ final class EnumProxyGenerator extends ClassProxyGenerator
             $cases[]    = [
                 $case->getName(),
                 $caseValue,
-                AttributeGroupsGenerator::fromReflectionAttributes($case->getAttributes(), $this->imports),
+                AttributeGroupsGenerator::fromReflectionAttributes($case->getAttributes()),
                 $docComment !== false ? $docComment : null,
             ];
         }

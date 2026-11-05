@@ -21,7 +21,7 @@ use PhpParser\NodeVisitorAbstract;
  *
  * Copied attribute arguments keep their meaning in the namespace of the generated proxy this way: class
  * constant fetches, enum cases etc. stay unambiguous. Unresolved names (e.g. unqualified global constants
- * like PHP_INT_MAX with namespace fallback semantics) and the `self`/`parent`/`static` keywords are kept as written.
+ * like PHP_INT_MAX with namespace fallback semantics) are kept as written.
  *
  * Stateless, so one instance serves every traversal.
  *
@@ -31,7 +31,7 @@ final class ResolvedNameQualifyingVisitor extends NodeVisitorAbstract
 {
     public function leaveNode(Node $node): ?Node
     {
-        if ($node instanceof Name && !($node instanceof Name\FullyQualified) && !$node->isSpecialClassName()) {
+        if ($node instanceof Name && !($node instanceof Name\FullyQualified)) {
             $resolved = $node->getAttribute('resolvedName');
             if ($resolved instanceof Name) {
                 return new Name\FullyQualified($resolved->toString(), $node->getAttributes());

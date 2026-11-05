@@ -61,9 +61,8 @@ class EnumProxyGeneratorTest extends TestCase
         $this->assertStringNotContainsString('class StubBackedEnum', $output);
         $this->assertStringNotContainsString('trait StubBackedEnum', $output);
 
-        // Must include the Go\Aop\Proxy interface, through its import
-        $this->assertStringContainsString("\nuse Go\\Aop\\Proxy;\n", $output);
-        $this->assertStringContainsString('implements Proxy', $output);
+        // Must include \Go\Aop\Proxy interface
+        $this->assertStringContainsString('\Go\Aop\Proxy', $output);
 
         // Trait use block with alias must be present
         $this->assertStringContainsString('StubBackedEnumOriginalTrait', $output);
@@ -97,11 +96,9 @@ class EnumProxyGeneratorTest extends TestCase
             $classAdvices = ['method' => ['label' => [self::testAdvice('advisor.EnumWithMissingInterface->label')]]];
             $generator    = new EnumProxyGenerator($enum, 'Test\ns1\EnumWithMissingInterfaceOriginalTrait', $classAdvices);
 
-            $output = $generator->generate();
-            $this->assertStringContainsString("\nuse Missing\\Optional\\Dependency\\Labelled;\n", $output);
             $this->assertStringContainsString(
-                'enum EnumWithMissingInterface : string implements JsonSerializable, Labelled, Proxy',
-                $output,
+                'enum EnumWithMissingInterface : string implements \\JsonSerializable, \\Missing\\Optional\\Dependency\\Labelled, \\Go\\Aop\\Proxy',
+                $generator->generate(),
             );
         } finally {
             ReflectionEngine::setMissingAncestorPolicy($previousPolicy);
@@ -163,7 +160,7 @@ class EnumProxyGeneratorTest extends TestCase
         $output = "<?php\n" . $generator->generate();
 
         $this->assertStringContainsString(
-            "    /**\n     * The active one\n     */\n    #[StubAttribute('active')]\n    case Active = 'active';\n"
+            "    /**\n     * The active one\n     */\n    #[\\Go\\Stubs\\StubAttribute('active')]\n    case Active = 'active';\n"
             . "    case Inactive = 'inactive';\n",
             $output,
         );
@@ -276,7 +273,7 @@ class EnumProxyGeneratorTest extends TestCase
 
         $this->assertStringNotContainsString('UnitEnum', $implementsClause);
         $this->assertStringNotContainsString('BackedEnum', $implementsClause);
-        $this->assertStringContainsString('Proxy', $implementsClause);
+        $this->assertStringContainsString('\Go\Aop\Proxy', $implementsClause);
     }
 
     /**

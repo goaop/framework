@@ -123,6 +123,15 @@ class ClassProxyGenerator
         $propertyAdvices       = $classAdviceNames[AspectContainer::PROPERTY_PREFIX] ?? [];
         $interceptedMethods    = array_keys($dynamicMethodAdvices + $staticMethodAdvices);
         $interceptedProperties = array_keys($propertyAdvices);
+        // Introduced names are class names, root them so a global name never resolves in the proxy namespace
+        $introducedInterfaces  = array_map(self::rootClassName(...), array_values(array_filter(
+            $classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [],
+            is_string(...),
+        )));
+        $introducedTraits      = array_map(self::rootClassName(...), array_values(array_filter(
+            $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [],
+            is_string(...),
+        )));
 
         $staticInitializationAdvices = $classAdviceNames[AspectContainer::STATIC_INIT_PREFIX]['root'] ?? [];
         $initializationAdvices       = $classAdviceNames[AspectContainer::INIT_PREFIX]['root'] ?? [];
@@ -149,9 +158,35 @@ class ClassProxyGenerator
             $this->imports->import(FieldAccess::class);
         }
 
-        // Copy PHP 8+ attributes from original class to proxy so that runtime
-        // attribute inspection on proxy objects returns the same attributes
-        $classAttrGroups = AttributeGroupsGenerator::fromReflector($originalClass, $this->imports);
+        $generatedProperties = [];
+        $generatedMethods    = $this->interceptMethods($originalClass, $interceptedMethods);
+        foreach ($this->interceptProperties($originalClass, $propertyAdvices, $interceptedProperties) as $interceptedProperty) {
+            $generatedProperties[] = $interceptedProperty;
+        }
+
+        // Proxy implements the same interfaces as the original class (no longer inherited); a partial reflection
+        // (Features::PARTIAL_REFLECTION) names the interfaces it can not locate too
+        $originalInterfaces    = array_map(static fn(string $i) => '\\' . $i, $originalClass->getInterfaceNames());
+        $introducedInterfaces  = array_merge($originalInterfaces, $introducedInterfaces);
+        $introducedInterfaces[] = '\\' . Proxy::class;
+        $introducedInterfaces   = array_values(array_unique($introducedInterfaces));
+
+        // Extract underlying MethodGenerator instances for ClassGenerator
+        $methodGenerators = array_map(
+            static fn($m) => $m->getGenerator(),
+            array_values($generatedMethods),
+        );
+        foreach ([
+            [$staticInitializationAdvices, StaticInitializationAware::class, $this->createStaticInitializationMethod(...)],
+            [$initializationAdvices, InitializationAware::class, $this->createInitializationMethod(...)],
+        ] as [$advisorNames, $interfaceName, $methodFactory]) {
+            if ($advisorNames === []) {
+                continue;
+            }
+            $introducedInterfaces[] = '\\' . $interfaceName;
+            $methodGenerators[]     = $methodFactory($advisorNames);
+        }
+        $introducedInterfaces = array_values(array_unique($introducedInterfaces));
 
         // Proxy parent = original class parent (not the trait — there is no inheritance layer). The parsed reflection
         // names it as written in the source, also one it can not locate (Features::PARTIAL_REFLECTION)
@@ -161,46 +196,7 @@ class ClassProxyGenerator
             $parentClass = $originalClass->getParentClass();
             $parentName  = $parentClass !== false ? $parentClass->getName() : false;
         }
-        $parentClassName = $parentName !== false ? $this->imports->import($parentName) : null;
-
-        // Proxy implements the same interfaces as the original class (no longer inherited); a partial reflection
-        // (Features::PARTIAL_REFLECTION) names the interfaces it can not locate too. Introduced interfaces and
-        // traits come from the aspects.
-        $interfaceNames = [
-            ...$originalClass->getInterfaceNames(),
-            ...array_filter($classAdviceNames[AspectContainer::INTRODUCTION_INTERFACE_PREFIX]['root'] ?? [], is_string(...)),
-            Proxy::class,
-        ];
-        if ($staticInitializationAdvices !== []) {
-            $interfaceNames[] = StaticInitializationAware::class;
-        }
-        if ($initializationAdvices !== []) {
-            $interfaceNames[] = InitializationAware::class;
-        }
-        $introducedInterfaces = array_values(array_unique(array_map($this->imports->import(...), $interfaceNames)));
-        $introducedTraits     = array_values(array_map($this->imports->import(...), array_filter(
-            $classAdviceNames[AspectContainer::INTRODUCTION_TRAIT_PREFIX]['root'] ?? [],
-            is_string(...),
-        )));
-
-        $generatedProperties = [];
-        foreach ($this->interceptProperties($originalClass, $propertyAdvices, $interceptedProperties) as $interceptedProperty) {
-            // Built now: the property types, defaults and attributes import classes before getUses() below
-            $generatedProperties[] = $interceptedProperty->getNode();
-        }
-        $generatedMethods = $this->interceptMethods($originalClass, $interceptedMethods);
-
-        // Extract underlying MethodGenerator instances for ClassGenerator
-        $methodGenerators = array_map(
-            static fn($m) => $m->getGenerator(),
-            array_values($generatedMethods),
-        );
-        if ($staticInitializationAdvices !== []) {
-            $methodGenerators[] = $this->createStaticInitializationMethod($staticInitializationAdvices);
-        }
-        if ($initializationAdvices !== []) {
-            $methodGenerators[] = $this->createInitializationMethod($initializationAdvices);
-        }
+        $parentClassName = $parentName !== false ? self::rootClassName($parentName) : null;
 
         // Proxy modifiers: preserve final/abstract/readonly from original class.
         $modifiers = [];
@@ -228,6 +224,9 @@ class ClassProxyGenerator
             $classGenerator->docBlock = DocBlockGenerator::fromDocComment($originalClass->getDocComment());
         }
 
+        // Copy PHP 8+ attributes from original class to proxy so that runtime
+        // attribute inspection on proxy objects returns the same attributes
+        $classAttrGroups = AttributeGroupsGenerator::fromReflector($originalClass);
         if (!empty($classAttrGroups)) {
             $classGenerator->attrGroups = $classAttrGroups;
         }
@@ -304,11 +303,10 @@ class ClassProxyGenerator
             if ($reflectionMethod->returnsReference()) {
                 throw WeavingException::methodReturnsByReference($originalClass->name, $methodName);
             }
-            // The signature first: its imports come before the ones of the body
-            $interceptedMethod = new InterceptedMethodGenerator($reflectionMethod, [], $this->imports);
-            $interceptedMethod->getGenerator()->stmts = $this->getJoinpointInvocationStatements($reflectionMethod, $originalClass);
-
-            $interceptedMethods[$methodName] = $interceptedMethod;
+            $interceptedMethods[$methodName] = new InterceptedMethodGenerator(
+                $reflectionMethod,
+                $this->getJoinpointInvocationStatements($reflectionMethod, $originalClass),
+            );
         }
 
         return $interceptedMethods;
@@ -410,7 +408,7 @@ class ClassProxyGenerator
         $invocationType = $this->imports->import($isStatic ? StaticMethodInvocation::class : DynamicMethodInvocation::class);
 
         $initialization = JoinPointStatementsGenerator::createInitialization(
-            $invocationType . '<self' . $this->renderReturnTypeForPhpDoc($method) . '>',
+            $invocationType . '<self' . self::renderReturnTypeForPhpDoc($method) . '>',
             $this->imports->import(InterceptorInjector::class),
             $isStatic ? 'forStaticMethod' : 'forMethod',
             [
@@ -475,7 +473,7 @@ class ClassProxyGenerator
      * AST return-type node is used when available (goaop/parser-reflection) to preserve keywords; the
      * reflection type is only rendered without it.
      */
-    private function renderReturnTypeForPhpDoc(ReflectionMethod $method): string
+    private static function renderReturnTypeForPhpDoc(ReflectionMethod $method): string
     {
         if (!$method->hasReturnType()) {
             return '';
@@ -484,10 +482,10 @@ class ClassProxyGenerator
         if ($node instanceof ClassMethod) {
             $astReturnType = $node->getReturnType();
 
-            return $astReturnType !== null ? ', ' . TypeGenerator::renderAstTypeForPhpDoc($astReturnType, $this->imports) : '';
+            return $astReturnType !== null ? ', ' . TypeGenerator::renderAstTypeForPhpDoc($astReturnType) : '';
         }
 
-        return ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType(), $this->imports);
+        return ', ' . TypeGenerator::renderTypeForPhpDoc($method->getReturnType());
     }
 
     /**
@@ -581,5 +579,13 @@ class ClassProxyGenerator
         $lastSeparator = strrpos($className, '\\');
 
         return $lastSeparator === false ? $className : substr($className, $lastSeparator + 1);
+    }
+
+    /**
+     * Returns the class name rooted with a leading backslash, so that it is emitted fully qualified
+     */
+    private static function rootClassName(string $className): string
+    {
+        return '\\' . ltrim($className, '\\');
     }
 }
