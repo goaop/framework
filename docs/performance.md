@@ -197,6 +197,7 @@ initializes the kernel with the same options as production. The command:
 - `--cached-files=N` (default 100) bounds the syntax trees kept in memory per process;
 - `--cache-dir=DIR` builds the cache in another directory from scratch while the kernel keeps serving from its own: a
   release is prepared next to the running one and switched in atomically, e.g. with a symlink swap.
+- `--preload` writes the `opcache.preload` script of the cache, see [Preloading](#preloading).
 
 Rebuild the cache whenever the code, the aspects, the kernel options or `composer.lock` change; in practice, on every
 deployment. Debug mode needs no rebuilds: it re-weaves changed classes, aspects and kernel files by itself.
@@ -230,31 +231,30 @@ also the default of `opcache.jit=on`) has a bug of its own: use `opcache.jit=dis
 
 ### Preloading
 
-Woven files are ordinary class declarations, so a prebuilt cache can be preloaded. This script links every woven class,
-its proxy and the untransformed application classes into OPcache at server start:
+Woven files are ordinary class declarations, so a prebuilt cache can be preloaded. `cache:warmup:aop --preload` writes
+the `opcache.preload` script of the cache it builds, `_preload.php` in the cache directory (or the file given as
+`--preload=FILE`):
 
-```php
-<?php
-// config/preload.php — opcache.preload=/app/config/preload.php, opcache.preload_user=www-data
-$appDir   = dirname(__DIR__);
-$cacheDir = $appDir . '/var/cache/aop';
-
-$loader = require $appDir . '/vendor/autoload.php';
-define('AOP_CACHE_DIR', $cacheDir);                 // woven files include their proxies through it
-
-$includeMap = include $cacheDir . '/_include.cache';
-$loader->addClassMap($includeMap['map']);           // woven classes resolve to the cache, like in production
-
-foreach ([...array_keys($includeMap['map']), ...array_keys($includeMap['skip'])] as $class) {
-    class_exists($class) || interface_exists($class) || trait_exists($class) || enum_exists($class);
-}
+```bash
+vendor/bin/aspect cache:warmup:aop public/index.php --workers=$(nproc) --preload
 ```
+
+```ini
+opcache.preload=/app/var/cache/aop/_preload.php
+opcache.preload_user=www-data
+```
+
+The script requires Composer's autoloader, hands it the woven class map and links every woven class, its proxy and
+every untransformed class known to the cache into OPcache when PHP-FPM starts. It holds no absolute path (everything is
+located through `__DIR__`, like the metadata files), so a cache moved together with the application stays valid, and
+it lists the classes of exactly the cache it was built with: rebuild it with the cache. A class that can not be linked
+while preloading (an optional dependency is missing) is written to the error log and left to the autoloader of the
+request, like a class whose static initialization is advised: its advice needs the kernel, so the request loads it.
 
 The kernel is initialized on every request as usual; the autoloader simply never has to load the preloaded classes.
 In the benchmark, preloading cut the included files per request from 517 to 174, the hot request from 5.2 ms to
 4.9 ms and the first request after a server start from 71 ms to 24 ms (10 ms together with a primed file cache).
-Preloaded classes change with a restart of PHP-FPM, which is how containers are deployed anyway. The script reads the
-internal format of `_include.cache`, so keep it in step with the framework version you deploy.
+Preloaded classes change with a restart of PHP-FPM, which is how containers are deployed anyway.
 
 ## Composer autoloader
 
@@ -293,7 +293,7 @@ RUN composer dump-autoload --no-dev --classmap-authoritative
 # 1. The AOP cache: woven classes, proxies, advisor caches, metadata, owned by the user that serves it
 #    (cache files get the `cacheFileMode` kernel option, by default 0770 minus the umask)
 RUN rm -rf var/cache/aop \
- && php vendor/bin/aspect cache:warmup:aop public/index.php --workers="$(nproc)" \
+ && php vendor/bin/aspect cache:warmup:aop public/index.php --workers="$(nproc)" --preload \
  && chown -R www-data:www-data var/cache/aop \
  && chmod -R a-w var/cache/aop
 
@@ -346,8 +346,8 @@ opcache.file_cache_consistency_checks=0
 opcache.file_cache_read_only=1
 ; required on PHP 8.5.11 / 8.5.12, see "JIT"
 opcache.jit=disable
-; optional, see "Preloading"
-; opcache.preload=/app/config/preload.php
+; optional, see "Preloading" (written by cache:warmup:aop --preload)
+; opcache.preload=/app/var/cache/aop/_preload.php
 ; opcache.preload_user=www-data
 ```
 

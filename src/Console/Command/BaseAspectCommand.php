@@ -104,6 +104,7 @@ abstract class BaseAspectCommand extends Command
      * @param int  $workers     Number of worker processes, 1 weaves in this process
      * @param int  $cachedFiles Number of parsed files kept in memory by each weaving process, see FileWarmer
      * @param string|null $cacheDir Directory to build the cache in instead of the one of the kernel
+     * @param string|null $preloadFile Path of the opcache.preload script to write, '' for the default one, null for none
      */
     protected function createCacheWarmer(
         OutputInterface $output,
@@ -111,10 +112,11 @@ abstract class BaseAspectCommand extends Command
         int $workers = 1,
         int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES,
         ?string $cacheDir = null,
+        ?string $preloadFile = null,
     ): CacheWarmer {
         $workerCommandLine = $workers > 1 ? $this->getWorkerCommandLine($cachedFiles, $cacheDir) : [];
 
-        return new CacheWarmer($this->aspectKernel, $output, $failFast, $workers, $workerCommandLine, $cachedFiles, $cacheDir);
+        return new CacheWarmer($this->aspectKernel, $output, $failFast, $workers, $workerCommandLine, $cachedFiles, $cacheDir, $preloadFile);
     }
 
     /**

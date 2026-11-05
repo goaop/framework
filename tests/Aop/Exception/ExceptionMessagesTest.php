@@ -81,6 +81,16 @@ final class ExceptionMessagesTest extends TestCase
                 InvalidConfigurationException::class,
                 'Option "cacheDir" is required: provide the path to the cache directory.',
             ],
+            'option not a path'           => [
+                static fn() => InvalidConfigurationException::optionNotPath('preload'),
+                InvalidConfigurationException::class,
+                'The --preload option must be a path',
+            ],
+            'composer loader missing'     => [
+                static fn() => InvalidConfigurationException::composerAutoloaderNotFound(),
+                InvalidConfigurationException::class,
+                'No Composer class loader is registered in this process: require vendor/autoload.php first',
+            ],
             'cache file mode, int'        => [
                 static fn() => InvalidConfigurationException::invalidCacheFileMode(0444),
                 InvalidConfigurationException::class,

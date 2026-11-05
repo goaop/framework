@@ -151,7 +151,7 @@ stay in place.
 
 | Command                                                                    | Purpose |
 |----------------------------------------------------------------------------|---------|
-| `cache:warmup:aop [<loader>] [--fail-fast] [--workers=N] [--cached-files=N] [--cache-dir=DIR]` | Weaves every file below the include paths into the cache, in parallel worker processes. Fails when a file cannot be woven and writes the errors to stderr. |
+| `cache:warmup:aop [<loader>] [--fail-fast] [--workers=N] [--cached-files=N] [--cache-dir=DIR] [--preload[=FILE]]` | Weaves every file below the include paths into the cache, in parallel worker processes. Fails when a file cannot be woven and writes the errors to stderr. `--preload` also writes the `opcache.preload` script of the cache. |
 | `debug:aspect [<loader>] [--aspect=...]`                                   | Lists the registered aspects and their advices. |
 | `debug:advisor [<loader>] [--advisor=...]`                                 | Lists the advisors; with `--advisor` shows the joinpoints that advisor matches. |
 | `debug:weaving [<loader>]`                                                 | Warms up the cache twice and reports proxies that are woven differently, which points to non-deterministic aspects. |
@@ -165,6 +165,13 @@ the last `--cached-files=N` parsed files in memory (default 100). It shows a pro
 `cache:warmup:aop --cache-dir=DIR` builds the cache in another directory, from scratch, while the kernel (and the
 workers) keep using their own: how a deployment prepares the cache of the next release next to the running one. A
 cache built this way is complete and location independent.
+
+`cache:warmup:aop --preload` writes the `opcache.preload` script of the cache, `_preload.php` in the cache directory
+or the file given as `--preload=FILE` (the bare form must come after the loader argument, or it takes it as its value).
+The script links every woven class and every untransformed class known to the cache when PHP starts; classes with a
+static initialization advice are left to the autoloader, their advice needs the kernel of a request. It holds no
+absolute path and lists the classes of exactly this cache, so it is rebuilt with the cache, see
+[Performance](performance.md#preloading).
 
 ## Deployment
 

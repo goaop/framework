@@ -149,4 +149,29 @@ class PathResolverTest extends TestCase
     {
         $this->assertSame($expected, PathResolver::withSuffixBeforeExtension($path, 'OriginalTrait'));
     }
+    /**
+     * @return array<string, array{string, string, string|null}>
+     */
+    public static function relativePathExamples(): array
+    {
+        return [
+            'below'                  => ['/app/var/cache/aop', '/app/var/cache/aop/src/Foo.php', 'src/Foo.php'],
+            'above'                  => ['/app/var/cache/aop', '/app/vendor/autoload.php', '../../../vendor/autoload.php'],
+            'parent'                 => ['/app/var/cache/aop', '/app/var/cache', '..'],
+            'same directory'         => ['/app/var/cache/aop', '/app/var/cache/aop/', ''],
+            'dots are normalized'    => ['/app/var/cache/../cache/aop', '/app/./vendor//autoload.php', '../../../vendor/autoload.php'],
+            'root'                   => ['/', '/app/vendor/autoload.php', 'app/vendor/autoload.php'],
+            'name prefix is no base' => ['/app/var/cache', '/app/var/cache-old/x', '../cache-old/x'],
+            'stream wrapper'         => ['vfs://root/cache', 'vfs://root/vendor/autoload.php', '../vendor/autoload.php'],
+            'other stream wrapper'   => ['vfs://root/cache', 'other://root/vendor/autoload.php', null],
+            'other drive'            => ['C:\\app\\cache', 'D:\\vendor\\autoload.php', null],
+            'same drive'             => ['C:\\app\\cache', 'C:\\app\\vendor\\autoload.php', '../vendor/autoload.php'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('relativePathExamples')]
+    public function testRelativePathLocatesAPathFromADirectory(string $fromDirectory, string $path, ?string $expected): void
+    {
+        $this->assertSame($expected, PathResolver::relativePath($fromDirectory, $path));
+    }
 }
