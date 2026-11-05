@@ -66,6 +66,49 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
         }
     }
 
+    public function testEntryPointsMustBePaths(): void
+    {
+        try {
+            (new CommandTester(new OpcacheWarmupCommand()))->execute([
+                'loader'  => __DIR__ . '/../../../vendor/autoload.php',
+                '--entry' => [['not', 'a', 'path']],
+            ]);
+            $this->fail('An array is no entry point');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString('--entry option must be a path', $exception->getMessage());
+        }
+    }
+
+    /**
+     * The compiler of the command is the primer of this process: a file this process included compiles (or counts as
+     * compiled), a missing one is reported
+     */
+    public function testCompilesWithThePrimerOfTheProcess(): void
+    {
+        $command = new class extends OpcacheWarmupCommand {
+            /**
+             * @param list<string> $files
+             *
+             * @return array{int, array<string, string|null>}
+             */
+            public function exposeCompileFiles(array $files): array
+            {
+                $results  = [];
+                $compiled = $this->compileFiles($files, static function (string $file, ?string $error) use (&$results): void {
+                    $results[$file] = $error;
+                });
+
+                return [$compiled, $results];
+            }
+        };
+
+        [$compiled, $results] = $command->exposeCompileFiles([__FILE__, __DIR__ . '/does-not-exist.php']);
+
+        $this->assertSame(1, $compiled);
+        $this->assertNull($results[__FILE__]);
+        $this->assertIsString($results[__DIR__ . '/does-not-exist.php']);
+    }
+
     public function testEntryPointsMustExist(): void
     {
         try {
@@ -108,8 +151,9 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
         $container->method('getService')->willReturn($cachePathManager);
         $kernel->method('getContainer')->willReturn($container);
 
+        // Native separators of the real paths (`\\` on Windows) are normalized, the failing files are given with `/`
         $record = static function (string $file) use (&$compiledFiles): void {
-            $compiledFiles[] = $file;
+            $compiledFiles[] = self::normalize($file);
         };
 
         return new class ($kernel, $failing, $record) extends OpcacheWarmupCommand {
@@ -128,6 +172,7 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
             protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
             {
                 $this->aspectKernel = $this->kernel;
+                $this->loaderPath   = __FILE__;
             }
 
             protected function fileCacheProblem(?string $fileCacheDir): ?string
@@ -140,7 +185,7 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
                 $compiled = 0;
                 foreach ($files as $file) {
                     ($this->record)($file);
-                    $error = $this->failing[$file] ?? null;
+                    $error = $this->failing[str_replace('\\', '/', $file)] ?? null;
                     $compiled += $error === null ? 1 : 0;
                     $onFile($file, $error);
                 }
@@ -151,13 +196,21 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
     }
 
     /**
-     * Lays out a temporary application with a cache directory, returns [appDir, cacheDir]
+     * Returns a path with `/` separators, so that expectations read the same on every platform
+     */
+    private static function normalize(string $path): string
+    {
+        return str_replace('\\', '/', $path);
+    }
+
+    /**
+     * Lays out a temporary application with a cache directory, returns [appDir, cacheDir] with `/` separators
      *
      * @return array{string, string}
      */
     private function createApplication(): array
     {
-        $appDir   = self::createTemporaryDirectory('opcache-app');
+        $appDir   = self::normalize(self::createTemporaryDirectory('opcache-app'));
         $cacheDir = $appDir . '/var/cache/aop';
         mkdir($appDir . '/src');
         mkdir($appDir . '/web');
@@ -181,21 +234,23 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
 
             $exitCode = $tester->execute(['--entry' => [$appDir . '/web/index.php']], ['verbosity' => OutputInterface::VERBOSITY_VERBOSE]);
 
-            $this->assertSame(Command::SUCCESS, $exitCode, $tester->getDisplay());
-            $this->assertMatchesRegularExpression('/with 4 files of the AOP cache and \d+ files of the application\./', $tester->getDisplay());
-            $this->assertMatchesRegularExpression('/Compiled \d+ files\./', $tester->getDisplay());
-            $this->assertStringNotContainsString('could not be compiled', $tester->getDisplay());
+            $display = self::normalize($tester->getDisplay());
+            $this->assertSame(Command::SUCCESS, $exitCode, $display);
+            $this->assertMatchesRegularExpression('/^Priming the opcache file cache( <info>.*<\/info>)? with 5 files of the AOP cache and \d+ files of the application\./', $display);
+            $this->assertStringNotContainsString('cache  with', $display, 'No empty directory name in the message');
+            $this->assertMatchesRegularExpression('/Compiled \d+ files\./', $display);
+            $this->assertStringNotContainsString('could not be compiled', $display);
 
-            // The cache files and the entry point come first, every one of them
+            // The cache files, the loader and the entry point come first, every one of them
             $this->assertSame(
-                [$cacheDir . '/_include.cache', $cacheDir . '/src/Woven.php', $cacheDir . '/src/WovenOriginalTrait.php', $appDir . '/web/index.php'],
-                array_slice($compiledFiles, 0, 4),
+                [$cacheDir . '/_include.cache', $cacheDir . '/src/Woven.php', $cacheDir . '/src/WovenOriginalTrait.php', self::normalize(__FILE__), $appDir . '/web/index.php'],
+                array_slice($compiledFiles, 0, 5),
             );
             $this->assertContains($appDir . '/src/Service.php', $compiledFiles, 'The untransformed source');
             $this->assertNotContains($appDir . '/src/Woven.php', $compiledFiles, 'A woven source is never loaded in production');
             $autoloadedFiles = ComposerAutoloader::ofProcess()->autoloadedFiles();
-            $this->assertContains($autoloadedFiles[0], $compiledFiles, 'Composer\'s autoloaded files');
-            $this->assertStringContainsString('  ' . $appDir . '/web/index.php', $tester->getDisplay(), '-v lists every file');
+            $this->assertContains(self::normalize($autoloadedFiles[0]), $compiledFiles, 'Composer\'s autoloaded files');
+            $this->assertStringContainsString('  ' . $appDir . '/web/index.php', $display, '-v lists every file');
         } finally {
             self::removeTemporaryDirectory($appDir);
         }
@@ -208,12 +263,14 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
             $compiledFiles = [];
             $tester        = new CommandTester($this->createCommand($appDir, $cacheDir, [$cacheDir . '/src/Woven.php' => 'ParseError: unexpected token'], $compiledFiles));
 
-            $exitCode = $tester->execute([], ['verbosity' => OutputInterface::VERBOSITY_VERBOSE]);
+            $exitCode = $tester->execute(['--file-cache' => '/var/cache/opcache'], ['verbosity' => OutputInterface::VERBOSITY_VERBOSE]);
+            $display  = self::normalize($tester->getDisplay());
 
-            $this->assertSame(Command::FAILURE, $exitCode);
-            $this->assertStringContainsString('Files of the AOP cache or entry points that could not be compiled:', $tester->getDisplay());
-            $this->assertStringContainsString('  ' . $cacheDir . '/src/Woven.php: ParseError: unexpected token', $tester->getDisplay());
-            $this->assertStringNotContainsString('(skipped)', $tester->getDisplay());
+            $this->assertSame(Command::FAILURE, $exitCode, $display);
+            $this->assertStringContainsString('Priming the opcache file cache /var/cache/opcache with ', $display);
+            $this->assertStringContainsString('Files of the AOP cache or entry points that could not be compiled:', $display);
+            $this->assertStringContainsString('  ' . $cacheDir . '/src/Woven.php: ParseError: unexpected token', $display);
+            $this->assertStringNotContainsString('(skipped)', $display);
         } finally {
             self::removeTemporaryDirectory($appDir);
         }
@@ -227,11 +284,12 @@ class OpcacheWarmupCommandInProcessTest extends TestCase
             $tester        = new CommandTester($this->createCommand($appDir, $cacheDir, [$appDir . '/src/Service.php' => 'Zend OPcache could not compile file'], $compiledFiles));
 
             $exitCode = $tester->execute([]);
+            $display  = self::normalize($tester->getDisplay());
 
-            $this->assertSame(Command::SUCCESS, $exitCode);
-            $this->assertStringContainsString('Files of the application that could not be compiled (skipped):', $tester->getDisplay());
-            $this->assertStringContainsString('  ' . $appDir . '/src/Service.php: Zend OPcache could not compile file', $tester->getDisplay());
-            $this->assertStringNotContainsString('  ' . $cacheDir, $tester->getDisplay(), 'Compiled files are listed with -v only');
+            $this->assertSame(Command::SUCCESS, $exitCode, $display);
+            $this->assertStringContainsString('Files of the application that could not be compiled (skipped):', $display);
+            $this->assertStringContainsString('  ' . $appDir . '/src/Service.php: Zend OPcache could not compile file', $display);
+            $this->assertStringNotContainsString('  ' . $cacheDir, $display, 'Compiled files are listed with -v only');
         } finally {
             self::removeTemporaryDirectory($appDir);
         }

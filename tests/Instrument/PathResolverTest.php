@@ -154,23 +154,30 @@ class PathResolverTest extends TestCase
      */
     public static function relativePathExamples(): array
     {
-        return [
+        $examples = [
             'below'                  => ['/app/var/cache/aop', '/app/var/cache/aop/src/Foo.php', 'src/Foo.php'],
             'above'                  => ['/app/var/cache/aop', '/app/vendor/autoload.php', '../../../vendor/autoload.php'],
             'parent'                 => ['/app/var/cache/aop', '/app/var/cache', '..'],
             'same directory'         => ['/app/var/cache/aop', '/app/var/cache/aop/', ''],
             'dots are normalized'    => ['/app/var/cache/../cache/aop', '/app/./vendor//autoload.php', '../../../vendor/autoload.php'],
-            'root'                   => ['/', '/app/vendor/autoload.php', 'app/vendor/autoload.php'],
             'name prefix is no base' => ['/app/var/cache', '/app/var/cache-old/x', '../cache-old/x'],
             'stream wrapper'         => ['vfs://root/cache', 'vfs://root/vendor/autoload.php', '../vendor/autoload.php'],
             'other stream wrapper'   => ['vfs://root/cache', 'other://root/vendor/autoload.php', null],
             'other drive'            => ['C:\\app\\cache', 'D:\\vendor\\autoload.php', null],
             'same drive'             => ['C:\\app\\cache', 'C:\\app\\vendor\\autoload.php', '../vendor/autoload.php'],
+            'same drive, sibling'    => ['C:\\a\\b', 'C:\\a\\c\\d.php', '../c/d.php'],
             'drive and rooted path'  => ['C:\\app\\cache', '/app/vendor/autoload.php', '../vendor/autoload.php'],
             'rooted path and drive'  => ['/app/cache', 'C:/app/vendor/autoload.php', '../vendor/autoload.php'],
             'empty path'             => ['', '/app/vendor/autoload.php', null],
             'empty directory'        => ['/app/cache', '', null],
         ];
+        // A bare POSIX root has no stable meaning on Windows: PHP resolves `/` to the current drive, so the drive
+        // examples above stand for it there
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $examples['root'] = ['/', '/app/vendor/autoload.php', 'app/vendor/autoload.php'];
+        }
+
+        return $examples;
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('relativePathExamples')]

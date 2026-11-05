@@ -114,9 +114,10 @@ class OpcacheWarmupCommand extends BaseAspectCommand
         $requiredFiles    = [...FileCachePrimer::cacheFiles($cacheDir ?? ''), ...($this->loaderPath !== null ? [$this->loaderPath] : []), ...$entryFiles];
         $applicationFiles = array_values(array_diff(FileCachePrimer::applicationFiles($this->aspectKernel, $autoloader), $requiredFiles));
 
+        $directory = $fileCacheDir ?? (string) ini_get('opcache.file_cache');
         $output->writeln(sprintf(
-            'Priming the opcache file cache <info>%s</info> with %d files of the AOP cache and %d files of the application.',
-            (string) ini_get('opcache.file_cache'),
+            'Priming the opcache file cache%s with %d files of the AOP cache and %d files of the application.',
+            $directory !== '' ? sprintf(' <info>%s</info>', $directory) : '',
             count($requiredFiles),
             count($applicationFiles),
         ));

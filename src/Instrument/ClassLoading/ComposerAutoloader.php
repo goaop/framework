@@ -41,14 +41,29 @@ final class ComposerAutoloader
      */
     public static function ofProcess(): self
     {
+        return self::fromLoaders(
+            spl_autoload_functions(),
+            class_exists(ClassLoader::class, false) ? ClassLoader::getRegisteredLoaders() : [],
+        );
+    }
+
+    /**
+     * Picks the autoloader out of the given autoload functions and Composer's registered loaders, see ofProcess()
+     *
+     * @param list<callable>             $autoloadFunctions As spl_autoload_functions() lists them
+     * @param array<string, ClassLoader> $registeredLoaders As ClassLoader::getRegisteredLoaders() lists them, by vendor directory
+     *
+     * @throws InvalidConfigurationException When neither holds a Composer class loader
+     */
+    public static function fromLoaders(array $autoloadFunctions, array $registeredLoaders): self
+    {
         $classLoader = null;
-        foreach (spl_autoload_functions() as $loader) {
+        foreach ($autoloadFunctions as $loader) {
             if (is_array($loader) && $loader[0] instanceof AopComposerLoader) {
                 $classLoader = $loader[0]->getOriginalLoader();
                 break;
             }
         }
-        $registeredLoaders = class_exists(ClassLoader::class, false) ? ClassLoader::getRegisteredLoaders() : [];
         if ($classLoader === null) {
             $classLoader = $registeredLoaders[array_key_first($registeredLoaders) ?? ''] ?? null;
         }

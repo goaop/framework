@@ -15,6 +15,7 @@ namespace Go\Instrument\ClassLoading;
 use Composer\Autoload\ClassLoader;
 use Go\Core\AspectContainer;
 use Go\Core\Container;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -48,26 +49,34 @@ class ComposerAutoloaderTest extends TestCase
             'excludePaths'   => [],
             'containerClass' => Container::class,
         ]);
-        // Registered as the array callable AopComposerLoader::init() registers, which ofProcess() looks for; in front,
-        // a test that booted a kernel in this process may have left its own wrapper registered
-        $autoload = self::autoloadCallable($aopLoader);
-        spl_autoload_register($autoload, true, true);
-        try {
-            $autoloader = ComposerAutoloader::ofProcess();
-        } finally {
-            spl_autoload_unregister($autoload);
-        }
+
+        // The array callable AopComposerLoader::init() registers, ahead of Composer's own
+        $autoloader = ComposerAutoloader::fromLoaders([[$aopLoader, 'loadClass'], ...spl_autoload_functions()], ClassLoader::getRegisteredLoaders());
 
         $this->assertSame($classLoader, $autoloader->classLoader);
         $this->assertSame(realpath(__DIR__ . '/../../../vendor'), realpath($autoloader->vendorDir));
     }
 
-    /**
-     * The autoload callable of a wrapper, as AopComposerLoader::init() registers it (Composer's loadClass() returns ?true)
-     */
-    private static function autoloadCallable(AopComposerLoader $loader): callable
+    public function testFallsBackToTheFirstRegisteredLoader(): void
     {
-        return [$loader, 'loadClass'];
+        $classLoader = new ClassLoader('/app/vendor');
+
+        $autoloader = ComposerAutoloader::fromLoaders([], ['/app/vendor' => $classLoader, '/other/vendor' => new ClassLoader()]);
+
+        $this->assertSame($classLoader, $autoloader->classLoader);
+        $this->assertSame('/app/vendor', $autoloader->vendorDir);
+        $this->assertSame('/app/vendor/autoload.php', $autoloader->autoloadFile);
+        $this->assertSame([], $autoloader->autoloadedFiles(), 'No autoload_files.php there');
+    }
+
+    public function testRequiresAComposerLoader(): void
+    {
+        try {
+            ComposerAutoloader::fromLoaders([static fn(string $class): bool => false], []);
+            $this->fail('Without a Composer loader there is no autoloader to describe');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString('No Composer class loader is registered in this process', $exception->getMessage());
+        }
     }
 
     private function createContainer(): AspectContainer

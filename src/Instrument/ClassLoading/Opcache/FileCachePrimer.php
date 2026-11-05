@@ -48,12 +48,14 @@ final class FileCachePrimer
      */
     public static function configurationProblem(?string $fileCacheDir = null, ?array $settings = null): ?string
     {
-        if (!function_exists('opcache_compile_file')) {
-            return 'the opcache extension is not loaded';
-        }
         $setting = static fn(string $name): string|false => $settings === null ? ini_get($name) : ($settings[$name] ?? false);
 
-        if (!self::isEnabled($setting('opcache.enable_cli'))) {
+        // ini_get() knows no setting of an extension that is not loaded
+        $enableCli = $setting('opcache.enable_cli');
+        if ($enableCli === false) {
+            return 'the opcache extension is not loaded';
+        }
+        if (!self::isEnabled($enableCli)) {
             return 'opcache.enable_cli is off';
         }
         $configuredDir = (string) $setting('opcache.file_cache');

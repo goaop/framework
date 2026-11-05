@@ -449,7 +449,11 @@ class CacheWarmerTest extends TestCase
 
         $script = $this->cacheDir . '/_preload.php';
         $this->assertFileExists($script);
-        $this->assertStringContainsString('Preload script written to ' . $script, $output->fetch());
+        // The warmer reports the resolved path, with the native separators of the platform
+        $this->assertStringContainsString(
+            'Preload script written to ' . $script,
+            str_replace(DIRECTORY_SEPARATOR, '/', $output->fetch()),
+        );
         $content = (string) file_get_contents($script);
         $this->assertStringContainsString("\$loader = require __DIR__ . '", $content);
         $this->assertStringContainsString("/vendor/autoload.php';", $content);
