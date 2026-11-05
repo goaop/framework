@@ -58,6 +58,7 @@ class CachePathManagerTest extends TestCase
             'includePaths'   => [],
             'excludePaths'   => [],
             'containerClass' => Container::class,
+            'parsedFilesLimit' => 100,
         ]);
         $kernel->method('hasFeature')->willReturn($prebuiltCache);
 

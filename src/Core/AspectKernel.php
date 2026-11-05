@@ -40,7 +40,8 @@ use ReflectionClass;
  *   features: int,
  *   includePaths: string[],
  *   excludePaths: string[],
- *   containerClass: class-string<AspectContainer>
+ *   containerClass: class-string<AspectContainer>,
+ *   parsedFilesLimit: positive-int
  * }
  * @phpstan-type UserKernelOptions array{
  *   debug?: bool,
@@ -50,7 +51,8 @@ use ReflectionClass;
  *   features?: int,
  *   includePaths?: string[],
  *   excludePaths?: string[],
- *   containerClass?: class-string<AspectContainer>
+ *   containerClass?: class-string<AspectContainer>,
+ *   parsedFilesLimit?: positive-int
  * }
  */
 abstract class AspectKernel
@@ -67,19 +69,26 @@ abstract class AspectKernel
     ];
 
     /**
+     * Default of the `parsedFilesLimit` option: the number of parsed files the reflection engine keeps in memory.
+     * Also the default of `cache:warmup:aop --cached-files`, when the option is not given.
+     */
+    public const int DEFAULT_PARSED_FILES_LIMIT = 100;
+
+    /**
      * Kernel options
      *
      * @phpstan-var KernelOptions
      */
     protected array $options = [
-        'debug'          => false,
-        'appDir'         => '',
-        'cacheDir'       => null,
-        'cacheFileMode'  => 0,
-        'features'       => 0,
-        'includePaths'   => [],
-        'excludePaths'   => [],
-        'containerClass' => Container::class,
+        'debug'            => false,
+        'appDir'           => '',
+        'cacheDir'         => null,
+        'cacheFileMode'    => 0,
+        'features'         => 0,
+        'includePaths'     => [],
+        'excludePaths'     => [],
+        'containerClass'   => Container::class,
+        'parsedFilesLimit' => self::DEFAULT_PARSED_FILES_LIMIT,
     ];
 
     /**
@@ -204,12 +213,17 @@ abstract class AspectKernel
      *
      * Without Features::PARTIAL_REFLECTION the policy of the engine stays as it is (strict by default): a class whose
      * parent class, interface or trait can not be located fails to weave.
+     *
+     * The engine keeps the syntax tree of every parsed file (~0.2 MB each) unless it is given a limit: the
+     * `parsedFilesLimit` option is applied here, overriding a limit set before init(). The warm-up sets its own
+     * (`--cached-files`, which defaults to the option).
      */
     private function configureReflection(): void
     {
         if ($this->hasFeature(Features::PARTIAL_REFLECTION)) {
             ReflectionEngine::setMissingAncestorPolicy(MissingAncestorPolicy::Partial);
         }
+        ReflectionEngine::setMaximumCachedFiles($this->options['parsedFilesLimit']);
     }
 
     /**
@@ -276,14 +290,15 @@ abstract class AspectKernel
     protected function getDefaultOptions(): array
     {
         return [
-            'debug'           => false,
-            'appDir'          => __DIR__ . '/../../../../../',
-            'cacheDir'        => null,
-            'cacheFileMode'   => 0770 & ~umask(), // Respect user umask() policy
-            'features'        => 0,
-            'includePaths'    => [],
-            'excludePaths'    => [],
-            'containerClass'  => static::$containerClass,
+            'debug'            => false,
+            'appDir'           => __DIR__ . '/../../../../../',
+            'cacheDir'         => null,
+            'cacheFileMode'    => 0770 & ~umask(), // Respect user umask() policy
+            'features'         => 0,
+            'includePaths'     => [],
+            'excludePaths'     => [],
+            'containerClass'   => static::$containerClass,
+            'parsedFilesLimit' => self::DEFAULT_PARSED_FILES_LIMIT,
         ];
     }
 
@@ -342,6 +357,10 @@ abstract class AspectKernel
         $rawIncludePaths = is_array($merged['includePaths'] ?? null) ? $merged['includePaths'] : [];
         $includePaths    = array_values(array_filter($rawIncludePaths, is_string(...)));
         $debug         = is_bool($merged['debug'] ?? null) ? $merged['debug'] : false;
+        $parsedFilesLimit = $merged['parsedFilesLimit'] ?? null;
+        if (!is_int($parsedFilesLimit) || $parsedFilesLimit < 1) {
+            throw InvalidConfigurationException::invalidParsedFilesLimit($parsedFilesLimit);
+        }
 
         $containerClass       = static::$containerClass;
         $containerClassOption = $merged['containerClass'] ?? null;
@@ -365,14 +384,15 @@ abstract class AspectKernel
         $resolvedExcludePaths = PathResolver::realpath($excludePaths);
 
         return [
-            'debug'          => $debug,
-            'appDir'         => $resolvedAppDir,
-            'cacheDir'       => $resolvedCacheDir,
-            'cacheFileMode'  => $cacheFileMode,
-            'features'       => $features,
-            'includePaths'   => array_values(array_filter($resolvedIncludePaths, is_string(...))),
-            'excludePaths'   => array_values(array_filter($resolvedExcludePaths, is_string(...))),
-            'containerClass' => $containerClass,
+            'debug'            => $debug,
+            'appDir'           => $resolvedAppDir,
+            'cacheDir'         => $resolvedCacheDir,
+            'cacheFileMode'    => $cacheFileMode,
+            'features'         => $features,
+            'includePaths'     => array_values(array_filter($resolvedIncludePaths, is_string(...))),
+            'excludePaths'     => array_values(array_filter($resolvedExcludePaths, is_string(...))),
+            'containerClass'   => $containerClass,
+            'parsedFilesLimit' => $parsedFilesLimit,
         ];
     }
 

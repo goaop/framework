@@ -51,9 +51,18 @@ class CachedAspectLoader implements AspectLoaderInterface
      * ({@see CachePathManager::withCacheDir()}), the configured one otherwise
      */
     private ?string $cacheDir {
-        get => $this->container->has(CachePathManager::class)
-            ? $this->container->getService(CachePathManager::class)->getCacheDir()
+        get => $this->cachePathManager !== null
+            ? $this->cachePathManager->getCacheDir()
             : $this->configuredCacheDir;
+    }
+
+    /**
+     * Path manager of the kernel, looked up in the container once it is registered (the kernel adds it eagerly)
+     */
+    private ?CachePathManager $cachePathManager {
+        get => $this->cachePathManager ??= $this->container->has(CachePathManager::class)
+            ? $this->container->getService(CachePathManager::class)
+            : null;
     }
 
     /**

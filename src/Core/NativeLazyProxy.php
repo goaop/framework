@@ -53,6 +53,11 @@ final class NativeLazyProxy
     private static array $rawProperties = [];
 
     /**
+     * @var array<class-string, ReflectionClass<object>> Reflections used by {@see create()}, one per class
+     */
+    private static array $reflections = [];
+
+    /**
      * Creates a lazy proxy of the class, or returns null when PHP cannot make the class
      * lazy - the caller is expected to fall back to eager construction
      *
@@ -107,7 +112,8 @@ final class NativeLazyProxy
      */
     public static function create(string $className, Closure $initializer, array $rawValues = []): object
     {
-        $reflection = new ReflectionClass($className);
+        /** @var ReflectionClass<T> $reflection */
+        $reflection = self::$reflections[$className] ??= new ReflectionClass($className);
         $proxy      = $reflection->newLazyProxy($initializer);
         foreach ($rawValues as $propertyName => $value) {
             // Taken from the declaring class: PHP refuses to set an inherited private(set) property in the scope

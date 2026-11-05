@@ -14,7 +14,6 @@ namespace Go\Console\Command;
 
 use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Instrument\ClassLoading\CacheWarmer;
-use Go\Instrument\ClassLoading\Warmup\FileWarmer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\SignalableCommandInterface;
@@ -62,8 +61,8 @@ writes the cache metadata of all workers at the end:
 
   <info>%command.full_name% web/index.php --workers=8</info>
 
-Each weaving process keeps the last 100 parsed files in memory; set
-<info>--cached-files</info> higher to re-parse less, lower to use less memory.
+Each weaving process keeps the last parsed files in memory (the <info>parsedFilesLimit</info>
+option of the kernel, 100 by default); set <info>--cached-files</info> higher to re-parse less, lower to use less memory.
 
 The progress is shown as a progress bar; <info>-v</info> lists every file.
 
@@ -100,8 +99,8 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
             'cached-files',
             null,
             InputOption::VALUE_REQUIRED,
-            'Number of parsed files each weaving process keeps in memory: more is faster, fewer uses less memory',
-            (string) FileWarmer::DEFAULT_CACHED_FILES,
+            'Number of parsed files each weaving process keeps in memory: more is faster, fewer uses less memory '
+            . '(default: the "parsedFilesLimit" option of the kernel)',
         );
         $this->addOption('cache-dir', null, InputOption::VALUE_REQUIRED, 'Build the cache in this directory instead of the one of the kernel');
     }
@@ -109,12 +108,14 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $workers     = self::parsePositiveInteger($input, 'workers');
-        $cachedFiles = self::parsePositiveInteger($input, 'cached-files');
+        $cachedFiles = $input->getOption('cached-files') === null ? null : self::parsePositiveInteger($input, 'cached-files');
         $cacheDir    = $input->getOption('cache-dir');
         if ($cacheDir !== null && !is_string($cacheDir)) {
             throw InvalidConfigurationException::cacheDirOptionNotString();
         }
         $this->loadAspectKernel($input, $output);
+        // The explicit option wins, the kernel option is the default
+        $cachedFiles ??= $this->aspectKernel->getOptions()['parsedFilesLimit'];
 
         $this->cacheWarmer = $this->createCacheWarmer($output, (bool) $input->getOption('fail-fast'), $workers, $cachedFiles, $cacheDir);
         $errors            = $this->cacheWarmer->warmUp();

@@ -58,14 +58,35 @@ final class Container implements AspectContainer
     private array $servicesByInterface = [];
 
     /**
+     * Results of getServiceIdsByInterface(), valid until the next registration
+     *
+     * @var array<class-string, list<string>>
+     */
+    private array $serviceIdsByInterface = [];
+
+    /**
      * Incremented by every registration, a cached lookup is reused only while it is unchanged
      */
     private int $registrationVersion = 0;
 
     /**
-     * Cached timestamp for resources, might be uninitialized if {@see self::isFreshSince()} is not called yet
+     * Newest modification time of the resources that were already stat-ed by {@see self::isFreshSince()}
      */
-    private int $cachedMaxTimestamp;
+    private int $cachedMaxTimestamp = 0;
+
+    /**
+     * Resources not stat-ed yet: a new resource only costs its own stat, the known ones are never read again
+     *
+     * @var array<string, string>
+     */
+    private array $unmeasuredResources;
+
+    /**
+     * Classes of the added objects that were queued for resource tracking already
+     *
+     * @var array<class-string, true>
+     */
+    private array $trackedResourceClasses = [];
 
     /**
      * @var array<string, string> Hashmap of resources for application
@@ -86,7 +107,7 @@ final class Container implements AspectContainer
      */
     public function __construct(array $resources = [])
     {
-        $this->resources = array_combine($resources, $resources);
+        $this->resources = $this->unmeasuredResources = array_combine($resources, $resources);
     }
 
     public function onRegistration(string $interfaceName, Closure $listener): void
@@ -98,7 +119,7 @@ final class Container implements AspectContainer
     {
         $this->values[$id] = $value;
         $this->registrationVersion++;
-        $this->servicesByInterface = [];
+        $this->servicesByInterface = $this->serviceIdsByInterface = [];
 
         if (is_object($value) && !$value instanceof Closure) {
             foreach (class_implements($value) as $interfaceTagName) {
@@ -106,8 +127,8 @@ final class Container implements AspectContainer
             }
             // The file of the class is tracked on the next freshness check: registration on every
             // request needs neither reflection nor a file system call
-            $this->pendingResourceClasses[$value::class] = true;
-            unset($this->cachedMaxTimestamp);
+            // A class seen before adds nothing new: its file is tracked or stays untrackable
+            $this->trackedResourceClasses[$value::class] ??= $this->pendingResourceClasses[$value::class] = true;
         }
     }
 
@@ -121,7 +142,7 @@ final class Container implements AspectContainer
         }
         $this->factories[$id] = $lazyInitializationClosure;
         $this->registrationVersion++;
-        $this->servicesByInterface = [];
+        $this->servicesByInterface = $this->serviceIdsByInterface = [];
 
         // With no listeners registered (the production configuration) this is a no-op. Nothing
         // below autoloads: only an id of an already loaded class can be matched exactly, an id
@@ -226,12 +247,28 @@ final class Container implements AspectContainer
 
     public function getServiceIdsByInterface(string $interfaceTagClassName): array
     {
-        $ids = $this->tags[$interfaceTagClassName] ?? [];
+        // Asked for every woven file: reuse the last result as long as nothing was registered since
+        if (isset($this->serviceIdsByInterface[$interfaceTagClassName])) {
+            return $this->serviceIdsByInterface[$interfaceTagClassName];
+        }
+
+        $version = $this->registrationVersion;
+        $ids     = $this->tags[$interfaceTagClassName] ?? [];
+        // A class that is still being autoloaded higher up the stack is not a subclass of anything yet: such an
+        // inconclusive probe makes the result unsuitable for caching (see getServicesByInterface())
+        $isConclusive = true;
         // A snapshot of the ids: the is_subclass_of() autoload can re-enter the container (see above)
         foreach (array_keys($this->factories) as $id) {
-            if (is_subclass_of($id, $interfaceTagClassName) && !in_array($id, $ids, true)) {
-                $ids[] = $id;
+            if (is_subclass_of($id, $interfaceTagClassName)) {
+                if (!in_array($id, $ids, true)) {
+                    $ids[] = $id;
+                }
+            } elseif (!class_exists($id, false) && !interface_exists($id, false)) {
+                $isConclusive = false;
             }
+        }
+        if ($isConclusive && $version === $this->registrationVersion) {
+            $this->serviceIdsByInterface[$interfaceTagClassName] = $ids;
         }
 
         return $ids;
@@ -286,7 +323,7 @@ final class Container implements AspectContainer
 
     public function isFreshSince(int $timestamp): bool
     {
-        if (!isset($this->cachedMaxTimestamp)) {
+        if ($this->pendingResourceClasses !== []) {
             foreach (array_keys($this->pendingResourceClasses) as $className) {
                 $fileName = new ReflectionClass($className)->getFileName();
                 if (is_string($fileName)) {
@@ -294,7 +331,12 @@ final class Container implements AspectContainer
                 }
             }
             $this->pendingResourceClasses = [];
-            $this->cachedMaxTimestamp = max(array_filter(array_map(filemtime(...), $this->resources)) + [0]);
+        }
+        if ($this->unmeasuredResources !== []) {
+            $this->cachedMaxTimestamp = max(
+                array_filter(array_map(filemtime(...), $this->unmeasuredResources)) + [$this->cachedMaxTimestamp],
+            );
+            $this->unmeasuredResources = [];
         }
 
         return $this->cachedMaxTimestamp <= $timestamp;
@@ -304,9 +346,7 @@ final class Container implements AspectContainer
     {
         if (!isset($this->resources[$resource]) && is_readable($resource)) {
             $this->resources[$resource] = $resource;
-
-            // Invalidation of calculated timestamp
-            unset($this->cachedMaxTimestamp);
+            $this->unmeasuredResources[$resource] = $resource;
         }
     }
 }

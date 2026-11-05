@@ -14,6 +14,7 @@ namespace Go\Instrument\ClassLoading\Warmup;
 
 use Composer\Autoload\ClassLoader;
 use Go\Console\KernelLoader;
+use Go\Core\AspectKernel;
 use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\SourceTransformingLoader;
 use ReflectionClass;
@@ -47,7 +48,7 @@ final class WarmupWorker
      *
      * @return list<string> Command line, or an empty list when a worker process can not be started from here
      */
-    public static function commandLine(string $loader, int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES, ?string $cacheDir = null): array
+    public static function commandLine(string $loader, int $cachedFiles = AspectKernel::DEFAULT_PARSED_FILES_LIMIT, ?string $cacheDir = null): array
     {
         $classLoaderFile = class_exists(ClassLoader::class, false) ? new ReflectionClass(ClassLoader::class)->getFileName() : false;
         if ($classLoaderFile === false || !function_exists('proc_open')) {
@@ -87,7 +88,7 @@ final class WarmupWorker
      */
     public static function main(
         string $loader,
-        int $cachedFiles = FileWarmer::DEFAULT_CACHED_FILES,
+        int $cachedFiles = AspectKernel::DEFAULT_PARSED_FILES_LIMIT,
         mixed $input = null,
         mixed $output = null,
         ?string $cacheDir = null,

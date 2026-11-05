@@ -668,6 +668,55 @@ class AdviceMatcherTest extends TestCase
 
         $this->assertSame([], $advices);
     }
+
+    /**
+     * Verifies that the internal functions are matched once per pointcut and namespace name, not per woven file.
+     */
+    public function testGetAdvicesForFunctionsMatchesInternalFunctionsOncePerNamespace(): void
+    {
+        $adviceMatcher = new AdviceMatcher();
+        $reflectionFile = new ReflectionFile(__FILE__);
+        $namespace      = $reflectionFile->getFileNamespace(__NAMESPACE__);
+
+        $functionMatches = 0;
+        $pointcut        = $this->createMock(Pointcut::class);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_FUNCTION);
+        $pointcut->method('matches')->willReturnCallback(
+            static function (ReflectionClass|ReflectionFileNamespace $context, ?ReflectionFunction $reflector = null) use (&$functionMatches): bool {
+                if ($reflector === null) {
+                    return true;
+                }
+                ++$functionMatches;
+
+                return $reflector->name === 'strlen';
+            },
+        );
+        $advice  = $this->createMock(Advice::class);
+        $advisor = new GenericPointcutAdvisor($pointcut, $advice);
+
+        $first  = $adviceMatcher->getAdvicesForFunctions($namespace, ['advisor' => $advisor]);
+        $afterFirst = $functionMatches;
+        $second = $adviceMatcher->getAdvicesForFunctions($namespace, ['advisor' => $advisor]);
+
+        $this->assertGreaterThan(0, $afterFirst);
+        $this->assertSame($afterFirst, $functionMatches, 'The second lookup must reuse the matched functions');
+        $this->assertSame($first, $second);
+        $this->assertSame($advice, $second[AspectContainer::FUNCTION_PREFIX]['strlen']['advisor'] ?? null);
+    }
+
+    /**
+     * Verifies that a function-only pointcut is never matched against a class.
+     */
+    public function testGetAdvicesForClassSkipsFunctionOnlyAdvisors(): void
+    {
+        $pointcut = $this->createMock(Pointcut::class);
+        $pointcut->method(PropertyHook::get('kind'))->willReturn(Pointcut::KIND_FUNCTION);
+        $pointcut->expects($this->never())->method('matches');
+
+        $advisor = new GenericPointcutAdvisor($pointcut, $this->createMock(Advice::class));
+
+        $this->assertSame([], $this->adviceMatcher->getAdvicesForClass($this->reflectionClass, ['advisor' => $advisor]));
+    }
 }
 
 abstract class AdviceMatcherTestAbstractClass
