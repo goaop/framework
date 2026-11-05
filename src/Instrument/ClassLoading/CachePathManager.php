@@ -131,6 +131,12 @@ class CachePathManager
      */
     private ?array $includeMapStamp = null;
 
+    /**
+     * Whether a cache is being built, {@see self::withCacheDir()}: the build re-checks the freshness of every record,
+     * also of a prebuilt cache, which requests trust as it is
+     */
+    public private(set) bool $isBuildingCache = false;
+
     public function __construct(
         protected readonly AspectKernel $kernel,
     ) {
@@ -225,6 +231,10 @@ class CachePathManager
      * With the current directory the operation runs in place: the directory is created when it is missing
      * and the records of the operation are flushed when it ends.
      *
+     * Either way the operation builds a cache: every record is checked for freshness like without a prebuilt
+     * cache, and metadata of another format is rebuilt, so that a build over an existing directory refreshes what
+     * changed ({@see self::$isBuildingCache}).
+     *
      * @template T
      *
      * @param Closure(): T $operation
@@ -233,7 +243,24 @@ class CachePathManager
      */
     public function withCacheDir(string $cacheDir, Closure $operation): mixed
     {
-        $cacheDir = self::resolvePath($cacheDir);
+        $wasBuildingCache      = $this->isBuildingCache;
+        $this->isBuildingCache = true;
+        try {
+            return $this->buildCacheDir(self::resolvePath($cacheDir), $operation);
+        } finally {
+            $this->isBuildingCache = $wasBuildingCache;
+        }
+    }
+
+    /**
+     * @template T
+     *
+     * @param Closure(): T $operation
+     *
+     * @return T
+     */
+    private function buildCacheDir(string $cacheDir, Closure $operation): mixed
+    {
         if ($this->cacheDir !== null && $cacheDir === self::resolvePath($this->cacheDir)) {
             // The directory of a build is written in any case, also the own one of a kernel that never
             // created it: with PREBUILT_CACHE the kernel expects the directory to be built at deploy time
@@ -361,10 +388,12 @@ class CachePathManager
 
     /**
      * A prebuilt cache is never rebuilt at runtime, so metadata of another format is a deployment error
+     *
+     * A build replaces it.
      */
     private function rejectOutdatedFormat(): void
     {
-        if ($this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
+        if (!$this->isBuildingCache && $this->kernel->hasFeature(Features::PREBUILT_CACHE)) {
             throw WeavingException::prebuiltCacheVersionMismatch((string) $this->cacheDir);
         }
     }
@@ -473,8 +502,9 @@ class CachePathManager
         $cacheState = $this->queryCacheState($resource);
 
         // With a prebuilt cache (built at deploy time) an existing cache record is trusted as-is: no filemtime or
-        // tracked-resource freshness checks - staleness is the deployer's responsibility
-        if ($cacheState === null || ($this->options['features'] & Features::PREBUILT_CACHE) !== 0) {
+        // tracked-resource freshness checks - staleness is the deployer's responsibility. The build of the cache
+        // (cache:warmup:aop, also over an existing directory) checks every record, to rebuild what changed
+        if ($cacheState === null || (($this->options['features'] & Features::PREBUILT_CACHE) !== 0 && !$this->isBuildingCache)) {
             return $cacheState;
         }
 

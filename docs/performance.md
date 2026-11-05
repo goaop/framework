@@ -197,6 +197,8 @@ initializes the kernel with the same options as production. The command:
 - `--cached-files=N` (default 100) bounds the syntax trees kept in memory per process;
 - `--cache-dir=DIR` builds the cache in another directory from scratch while the kernel keeps serving from its own: a
   release is prepared next to the running one and switched in atomically, e.g. with a symlink swap.
+- run over an existing directory, the command weaves again every file whose source changed (size or modification
+  time) and keeps the others, also with `PREBUILT_CACHE`: only requests trust the cache as it is.
 
 Rebuild the cache whenever the code, the aspects, the kernel options or `composer.lock` change; in practice, on every
 deployment. Debug mode needs no rebuilds: it re-weaves changed classes, aspects and kernel files by itself.

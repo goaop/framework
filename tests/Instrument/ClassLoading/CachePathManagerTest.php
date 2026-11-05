@@ -556,6 +556,43 @@ class CachePathManagerTest extends TestCase
         );
     }
 
+    public function testBuildOfAPrebuiltCacheChecksTheFreshnessOfTheRecords(): void
+    {
+        $source = self::$appDir . '/src/Built.php';
+        if (!is_dir(dirname($source))) {
+            mkdir(dirname($source), 0777, true);
+        }
+        file_put_contents($source, '<?php');
+        $manager = $this->createManager(prebuiltCache: true);
+        $record  = ['filemtime' => (int) filemtime($source) - 1, 'filesize' => filesize($source), 'cacheUri' => null];
+        $manager->setCacheState($source, $record);
+
+        $freshness = $manager->withCacheDir(self::$cacheDir, function () use ($manager, $source): ?array {
+            $this->assertTrue($manager->isBuildingCache);
+
+            return $manager->queryFreshCacheState($source, $this->createContainer(true));
+        });
+
+        $this->assertNull($freshness, 'The source changed since the record was built');
+        $this->assertFalse($manager->isBuildingCache);
+        $this->assertSame([...$record, 'classes' => []], $manager->queryFreshCacheState($source, $this->createContainer(true)), 'Requests trust the record');
+        unlink($source);
+    }
+
+    public function testBuildOfAPrebuiltCacheReplacesMetadataOfAnotherFormatVersion(): void
+    {
+        $manager  = $this->createManager(prebuiltCache: true);
+        $otherDir = self::createTemporaryDirectory('cpm-outdated');
+        file_put_contents($otherDir . '/_include.cache', "<?php return ['map' => [], 'skip' => []];");
+        try {
+            $classMap = $manager->withCacheDir($otherDir, $manager->queryClassMap(...));
+        } finally {
+            self::removeTemporaryDirectory($otherDir);
+        }
+
+        $this->assertSame([], $classMap, 'The outdated metadata is rebuilt instead of rejected');
+    }
+
     private function createContainer(bool $isFresh): AspectContainer
     {
         $container = $this->createStub(AspectContainer::class);
