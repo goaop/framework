@@ -18,6 +18,7 @@ use Go\Aop\Intercept\DynamicMethodInvocation;
 use Go\Aop\Intercept\Interceptor;
 use ReflectionFunction;
 use ReflectionMethod;
+use SensitiveParameter;
 
 /**
  * Dynamic trait-alias method invocation calls instance methods via reflection.
@@ -96,10 +97,8 @@ final class DynamicTraitAliasMethodInvocation extends AbstractMethodInvocation i
      */
     public function __invoke(
         object $instance,
-        #[\SensitiveParameter]
-        array $arguments = [],
-        #[\SensitiveParameter]
-        array $variadicArguments = [],
+        #[SensitiveParameter] array $arguments = [],
+        #[SensitiveParameter] array $variadicArguments = [],
     ): mixed {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];

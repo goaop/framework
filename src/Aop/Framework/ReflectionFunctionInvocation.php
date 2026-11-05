@@ -17,6 +17,7 @@ use Go\Aop\Intercept\FunctionInvocation;
 use Go\Aop\Intercept\Interceptor;
 use ReflectionException;
 use ReflectionFunction;
+use SensitiveParameter;
 
 use function array_pop;
 
@@ -102,10 +103,8 @@ final class ReflectionFunctionInvocation extends AbstractInvocation implements F
      * reflection or extra method calls here.
      */
     public function __invoke(
-        #[\SensitiveParameter]
-        array $arguments = [],
-        #[\SensitiveParameter]
-        array $variadicArguments = [],
+        #[SensitiveParameter] array $arguments = [],
+        #[SensitiveParameter] array $variadicArguments = [],
     ): mixed {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->current];

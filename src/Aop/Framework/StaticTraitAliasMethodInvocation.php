@@ -15,6 +15,7 @@ namespace Go\Aop\Framework;
 use Closure;
 use Go\Aop\Intercept\Interceptor;
 use Go\Aop\Intercept\StaticMethodInvocation;
+use SensitiveParameter;
 
 /**
  * Static trait-alias method invocation calls static methods via a first-class callable
@@ -78,7 +79,7 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
         // We cannot rebind $closureToCall directly because first-class callables from static
         // methods have a fixed scope.
         parent::__construct($advices, $className, $methodName);
-        $this->closureToCall = static fn(#[\SensitiveParameter] array $argumentsToCall): mixed => forward_static_call_array($closureToCall, $argumentsToCall);
+        $this->closureToCall = static fn(#[SensitiveParameter] array $argumentsToCall): mixed => forward_static_call_array($closureToCall, $argumentsToCall);
     }
 
     /**
@@ -96,10 +97,8 @@ final class StaticTraitAliasMethodInvocation extends AbstractMethodInvocation im
      */
     public function __invoke(
         string $scope,
-        #[\SensitiveParameter]
-        array $arguments = [],
-        #[\SensitiveParameter]
-        array $variadicArguments = [],
+        #[SensitiveParameter] array $arguments = [],
+        #[SensitiveParameter] array $variadicArguments = [],
     ): mixed {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->scope, $this->current];

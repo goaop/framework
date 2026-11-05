@@ -16,6 +16,7 @@ use Go\Aop\Intercept\ConstructorInvocation;
 use Go\Aop\Intercept\Interceptor;
 use ReflectionClass;
 use ReflectionMethod;
+use SensitiveParameter;
 
 /**
  * Reflection constructor invocation implementation
@@ -116,7 +117,7 @@ final class ReflectionConstructorInvocation extends AbstractInvocation implement
      * into every joinpoint class: do not extract parts of it into methods, and do not add object allocations,
      * reflection or extra method calls here.
      */
-    public function __invoke(#[\SensitiveParameter] array $arguments = []): object
+    public function __invoke(#[SensitiveParameter] array $arguments = []): object
     {
         if ($this->level > 0) {
             $this->stackFrames[] = [$this->arguments, $this->instance, $this->current];

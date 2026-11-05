@@ -27,6 +27,7 @@ use PhpParser\Node\PropertyItem;
 use PhpParser\Node\StaticVar;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\EnumCase;
+use SensitiveParameter;
 
 /**
  * Transforms the source code to add an ability to intercept new instances creation
@@ -168,7 +169,7 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
      * @param string  $className Name of the class to construct
      * @param list<mixed> $args  Arguments for the constructor
      */
-    public function __call(string $className, #[\SensitiveParameter] array $args): object
+    public function __call(string $className, #[SensitiveParameter] array $args): object
     {
         return static::construct($className, $args);
     }
@@ -178,7 +179,7 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
      *
      * @param list<mixed> $arguments
      */
-    protected static function construct(string $fullClassName, #[\SensitiveParameter] array $arguments = []): object
+    protected static function construct(string $fullClassName, #[SensitiveParameter] array $arguments = []): object
     {
         $fullClassName = ltrim($fullClassName, '\\');
         if (is_subclass_of($fullClassName, InitializationAware::class)) {
