@@ -132,6 +132,75 @@ final class PathResolver
     }
 
     /**
+     * Expresses a path relative to a directory, with `/` as separator, for generated files that locate their
+     * neighbours through `__DIR__`
+     *
+     * Both paths are normalized first, so `..` segments and doubled separators do not matter. The result is `..`
+     * for the parent, the empty string for the directory itself, and null when the paths share no root: another
+     * stream wrapper scheme, or another drive on Windows.
+     */
+    public static function relativePath(string $fromDirectory, string $path): ?string
+    {
+        $fromParts = self::pathParts($fromDirectory);
+        $toParts   = self::pathParts($path);
+        if ($fromParts === null || $toParts === null) {
+            return null;
+        }
+        // On Windows a path rooted without a drive (`\app`, or `/` resolved by PHP itself) lies on the drive of the
+        // other path, as the system resolves it; otherwise the roots ('' for `/`, `C:` for a drive, `vfs://root`
+        // for a stream wrapper) must match
+        if ($fromParts[0] === '' && self::isDrive($toParts[0])) {
+            $fromParts[0] = $toParts[0];
+        } elseif ($toParts[0] === '' && self::isDrive($fromParts[0])) {
+            $toParts[0] = $fromParts[0];
+        }
+        if ($fromParts[0] !== $toParts[0]) {
+            return null;
+        }
+
+        $common = 0;
+        while (isset($fromParts[$common], $toParts[$common]) && $fromParts[$common] === $toParts[$common]) {
+            $common++;
+        }
+        $parts = array_merge(
+            array_fill(0, count($fromParts) - $common, '..'),
+            array_slice($toParts, $common),
+        );
+
+        return implode('/', $parts);
+    }
+
+    /**
+     * Checks whether a path root is a Windows drive (`C:`)
+     */
+    private static function isDrive(string $root): bool
+    {
+        return preg_match('/^[A-Za-z]:$/', $root) === 1;
+    }
+
+    /**
+     * Splits a normalized path into its parts, a trailing separator dropped: the first part is the root
+     * (`''` for `/`, `C:` for a drive, `vfs://root` for a stream wrapper)
+     *
+     * @return non-empty-list<string>|null Null for an empty path
+     */
+    private static function pathParts(string $path): ?array
+    {
+        $normalized = self::realpath($path);
+        if (!is_string($normalized) || $normalized === '') {
+            return null;
+        }
+        $components = explode('://', $normalized, 2);
+        $scheme     = isset($components[1]) ? $components[0] . '://' : '';
+        $localPath  = rtrim(str_replace('\\', '/', $components[1] ?? $components[0]), '/');
+
+        $parts    = explode('/', $localPath);
+        $parts[0] = $scheme . $parts[0];
+
+        return $parts;
+    }
+
+    /**
      * Checks that the path is the directory itself or lies below it
      */
     public static function isBelow(string $path, string $directory): bool

@@ -1,0 +1,200 @@
+<?php
+
+declare(strict_types=1);
+/*
+ * Go! AOP framework
+ *
+ * @copyright Copyright 2026, Lisachenko Alexander <lisachenko.it@gmail.com>
+ *
+ * This source file is subject to the license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
+namespace Go\Instrument\ClassLoading\Opcache;
+
+use Go\Instrument\PathResolver;
+use Go\Instrument\Transformer\Weaving\ProxyCache;
+
+/**
+ * Generates the `opcache.preload` script of a warmed-up cache
+ *
+ * Woven files are plain class declarations, so the whole cache can be linked into opcache when PHP starts: the script
+ * requires Composer's autoloader, hands it the woven class map (as AopComposerLoader does in production) and loads
+ * every woven and every untransformed class the cache knows. Requests then find the classes declared and include
+ * neither the woven files nor the untransformed sources. The kernel still initializes on every request as usual.
+ *
+ * The script holds no absolute path: like the metadata files it locates the cache, the application and the
+ * autoloader through `__DIR__`, so a cache moved together with the application stays valid. Classes whose static
+ * initialization is advised are left out: their advice runs when the class is loaded, which needs the kernel of a
+ * request. A class that can not be linked while preloading (an optional dependency is missing) is reported to the
+ * error log and left to the autoloader of the request, like every class that is not listed.
+ *
+ * The cache warmer generates the script inside CachePathManager::withCacheDir() of the directory just built, so the
+ * class map and the skipped classes are the ones of that build (also with `--cache-dir`), and only after a complete
+ * warm-up: an interrupted or failed build gets no script. The Composer autoloader comes from the wrapper of the
+ * kernel, AopComposerLoader::ofProcess(). Constants defined while preloading do not reach the requests, the kernel
+ * defines AOP_ROOT_DIR and AOP_CACHE_DIR again; STDERR is undefined in a preload script, so it reports to error_log().
+ *
+ * @internal Used by the cache warmer (`cache:warmup:aop --preload`)
+ */
+final class PreloadScriptGenerator
+{
+    /**
+     * Name of the script in the cache directory, when no other path is chosen
+     */
+    public const string DEFAULT_FILE_NAME = '_preload.php';
+
+    /**
+     * Statement the proxy generator appends to a proxy with static initialization advices, see ClassProxyGenerator
+     */
+    private const string STATIC_INITIALIZATION_CALL = '::__staticInitialization();';
+
+    public function __construct(
+        /** Directory of the cache the script preloads */
+        private readonly string $cacheDir,
+        /** Application root directory, the AOP_ROOT_DIR of the kernel */
+        private readonly string $appDir,
+        /** @var array<class-string, string> Woven classes and their cached files, see CachePathManager::queryClassMap() */
+        private readonly array $classMap,
+        /** @var array<class-string, true> Classes known to the cache as untransformed, see CachePathManager::querySkippedClasses() */
+        private readonly array $skippedClasses,
+        /** Path of Composer's `autoload.php` */
+        private readonly string $autoloadFile,
+    ) {}
+
+    /**
+     * Returns the path of the script inside a cache directory
+     */
+    public static function defaultScriptPath(string $cacheDir): string
+    {
+        return $cacheDir . '/' . self::DEFAULT_FILE_NAME;
+    }
+
+    /**
+     * Returns the source of the script, written to the given path
+     */
+    public function generate(string $scriptPath): string
+    {
+        $scriptDir = dirname($scriptPath);
+
+        $classMap = $this->classMap;
+        ksort($classMap);
+        $classMapLines = '';
+        foreach ($classMap as $className => $wovenFile) {
+            $classMapLines .= sprintf("    %s => %s,\n", var_export($className, true), $this->pathExpression($scriptDir, $wovenFile));
+        }
+
+        $notPreloaded = $this->classesWithStaticInitialization();
+        $classes      = array_diff([...array_keys($classMap), ...array_keys($this->skippedClasses)], $notPreloaded);
+        sort($classes);
+        $classLines = implode('', array_map(static fn(string $className): string => '    ' . var_export($className, true) . ",\n", $classes));
+
+        $notPreloadedComment = '';
+        if ($notPreloaded !== []) {
+            sort($notPreloaded);
+            $notPreloadedComment = "// Not preloaded, their static initialization advice runs with the kernel of a request:\n"
+                . implode('', array_map(static fn(string $className): string => "//   {$className}\n", $notPreloaded))
+                . "\n";
+        }
+
+        $autoloadFile = $this->pathExpression($scriptDir, $this->autoloadFile);
+        $appDir       = $this->pathExpression($scriptDir, $this->appDir);
+        $cacheDir     = $this->pathExpression($scriptDir, $this->cacheDir);
+
+        return <<<PHP
+            <?php
+
+            declare(strict_types=1);
+            /*
+             * opcache.preload script of the Go! AOP cache, generated by `cache:warmup:aop --preload`
+             *
+             * Links the woven classes, their proxies and the untransformed classes known to the cache into opcache
+             * when PHP starts: opcache.preload=<this file>, with opcache.preload_user set to the user PHP runs as.
+             * The script lists the classes of exactly this cache, so it is rebuilt with the cache. A class that can
+             * not be linked here (an optional dependency is missing) is left to the autoloader of the request.
+             */
+
+            \$loader = require {$autoloadFile};
+
+            // Woven files include their proxies through this constant, defined as the kernel defines it
+            defined('AOP_ROOT_DIR') || define('AOP_ROOT_DIR', {$appDir});
+            defined('AOP_CACHE_DIR') || define('AOP_CACHE_DIR', {$cacheDir});
+
+            // Woven classes resolve to their cached files, as in production
+            \$loader->addClassMap([
+            {$classMapLines}]);
+
+            \$classes = [
+            {$classLines}];
+
+            {$notPreloadedComment}foreach (\$classes as \$class) {
+                try {
+                    class_exists(\$class) || interface_exists(\$class) || trait_exists(\$class) || enum_exists(\$class);
+                } catch (\\Throwable \$exception) {
+                    error_log("Go! AOP preload: {\$class} is left to the autoloader: {\$exception->getMessage()}");
+                }
+            }
+
+            PHP;
+    }
+
+    /**
+     * Returns the woven classes whose proxy runs static initialization advices when it is loaded
+     *
+     * A woven file declares every class of its source, so all classes of a file with such a proxy are left out.
+     *
+     * @return list<class-string>
+     */
+    private function classesWithStaticInitialization(): array
+    {
+        $classesByWovenFile = [];
+        foreach ($this->classMap as $className => $wovenFile) {
+            $classesByWovenFile[$wovenFile][] = $className;
+        }
+
+        $classes = [];
+        foreach ($classesByWovenFile as $wovenFile => $classNames) {
+            if ($this->hasStaticInitialization($wovenFile)) {
+                $classes = [...$classes, ...$classNames];
+            }
+        }
+
+        return $classes;
+    }
+
+    /**
+     * Checks the proxies included by a woven file for a static initialization call
+     */
+    private function hasStaticInitialization(string $wovenFile): bool
+    {
+        $wovenSource = @file_get_contents($wovenFile);
+        if ($wovenSource === false) {
+            return false;
+        }
+        $includePattern = '/' . preg_quote(ProxyCache::CACHE_DIR_INCLUDE, '/') . "'([^']+)';/";
+        preg_match_all($includePattern, $wovenSource, $matches);
+        foreach ($matches[1] as $proxyPath) {
+            $proxySource = @file_get_contents($this->cacheDir . $proxyPath);
+            if ($proxySource !== false && str_contains($proxySource, self::STATIC_INITIALIZATION_CALL)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns the PHP expression of a path, relative to the directory of the script through `__DIR__`
+     *
+     * A path without a common root (another drive, another stream wrapper) stays absolute.
+     */
+    private function pathExpression(string $scriptDir, string $path): string
+    {
+        $relativePath = PathResolver::relativePath($scriptDir, $path);
+        if ($relativePath === null) {
+            return var_export($path, true);
+        }
+
+        return $relativePath === '' ? '__DIR__' : '__DIR__ . ' . var_export('/' . $relativePath, true);
+    }
+}

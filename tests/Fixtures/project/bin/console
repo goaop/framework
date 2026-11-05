@@ -9,6 +9,7 @@ use Go\Console\Command\CacheWarmupCommand;
 use Go\Console\Command\DebugAdvisorCommand;
 use Go\Console\Command\DebugAspectCommand;
 use Go\Console\Command\DebugWeavingCommand;
+use Go\Console\Command\OpcacheWarmupCommand;
 
 $application = new Application();
 
@@ -17,6 +18,7 @@ $application->addCommands([
     new DebugAdvisorCommand(),
     new DebugAspectCommand(),
     new DebugWeavingCommand(),
+    new OpcacheWarmupCommand(),
 ]);
 
 $application->run();

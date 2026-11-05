@@ -12,12 +12,14 @@ declare(strict_types=1);
 
 namespace Go\Instrument\ClassLoading;
 
+use Composer\Autoload\ClassLoader;
 use Go\Aop\Features;
 use Go\Core\AdvisorIndex;
 use Go\Core\AspectContainer;
 use Go\Core\AspectKernel;
 use Go\Core\AspectLoaderInterface;
 use Go\Core\Container;
+use Go\Instrument\PathResolver;
 use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
@@ -479,5 +481,101 @@ class CacheWarmerTest extends TestCase
         $this->assertStringContainsString('AlsoBroken.php: Cannot weave <broken> file', $display);
         $this->assertDoesNotMatchRegularExpression('#[/\\\\]Broken\.php: Cannot weave#', $display);
         $this->assertStringContainsString('Total processed 1, 1 errors in ', $display);
+    }
+
+    /**
+     * Registers a wrapper of a Composer loader created by hand, as a booted kernel would: the preload script is
+     * generated with the autoloader of AopComposerLoader::ofProcess()
+     *
+     * @return callable The registered autoload callable, to unregister
+     */
+    private static function registerWrapperFor(AspectKernel $kernel): callable
+    {
+        $autoload = self::autoloadCallable(new AopComposerLoader(new ClassLoader(), $kernel->getContainer(), $kernel->getOptions()));
+        spl_autoload_register($autoload, true, true);
+
+        return $autoload;
+    }
+
+    /**
+     * The autoload callable of a wrapper, as AopComposerLoader::init() registers it (Composer's loadClass() returns ?true)
+     */
+    private static function autoloadCallable(AopComposerLoader $wrapper): callable
+    {
+        return [$wrapper, 'loadClass'];
+    }
+
+    public function testPreloadScriptIsWrittenIntoTheCacheDirectoryAfterACompleteWarmUp(): void
+    {
+        $output   = new BufferedOutput();
+        $kernel   = $this->createKernel($this->cacheDir);
+        $autoload = self::registerWrapperFor($kernel);
+        try {
+            $warmer = new CacheWarmer($kernel, $output, preloadFile: '');
+
+            $this->assertSame(0, $warmer->warmUp());
+            $autoloadFile = AopComposerLoader::ofProcess()->autoloadFile;
+        } finally {
+            spl_autoload_unregister($autoload);
+        }
+
+        $script = $this->cacheDir . '/_preload.php';
+        $this->assertFileExists($script);
+        // The warmer reports the resolved path, with the native separators of the platform: both sides use `/`
+        $this->assertStringContainsString(
+            'Preload script written to ' . str_replace('\\', '/', $script),
+            str_replace('\\', '/', $output->fetch()),
+        );
+        $content = (string) file_get_contents($script);
+        if (PathResolver::relativePath(dirname($script), $autoloadFile) !== null) {
+            $this->assertStringContainsString("\$loader = require __DIR__ . '", $content);
+            $this->assertStringContainsString("/vendor/autoload.php';", $content);
+        } else {
+            // The temporary directory lies on another drive than the framework (Windows CI): no relative path exists
+            $this->assertStringContainsString('$loader = require ' . var_export($autoloadFile, true) . ';', $content);
+        }
+        $this->assertStringContainsString("define('AOP_CACHE_DIR', __DIR__)", $content);
+        $this->assertStringContainsString("define('AOP_ROOT_DIR', __DIR__ . '/../" . basename($this->appDir) . "')", $content);
+    }
+
+    public function testPreloadScriptIsWrittenToTheGivenFile(): void
+    {
+        $script   = $this->appDir . '/config/preload.php';
+        $kernel   = $this->createKernel($this->cacheDir);
+        $autoload = self::registerWrapperFor($kernel);
+        try {
+            $warmer = new CacheWarmer($kernel, new BufferedOutput(), preloadFile: $script);
+
+            $this->assertSame(0, $warmer->warmUp());
+        } finally {
+            spl_autoload_unregister($autoload);
+        }
+
+        $this->assertFileExists($script);
+        $this->assertFileDoesNotExist($this->cacheDir . '/_preload.php');
+        $this->assertStringContainsString(
+            "define('AOP_CACHE_DIR', __DIR__ . '/../../" . basename($this->cacheDir) . "')",
+            (string) file_get_contents($script),
+        );
+    }
+
+    public function testPreloadScriptIsNotWrittenWhenAFileFailed(): void
+    {
+        file_put_contents($this->appDir . '/src/Broken.php', "<?php // broken\n");
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir, [$this->createFailingTransformer()]), new BufferedOutput(), preloadFile: '');
+
+        $this->assertSame(1, $warmer->warmUp());
+
+        $this->assertFileDoesNotExist($this->cacheDir . '/_preload.php', 'An incomplete cache is not preloaded');
+    }
+
+    public function testPreloadScriptIsNotWrittenWhenInterrupted(): void
+    {
+        $warmer = new CacheWarmer($this->createKernel($this->cacheDir), new BufferedOutput(), preloadFile: '');
+        $warmer->interrupt();
+
+        $this->assertSame(0, $warmer->warmUp());
+
+        $this->assertFileDoesNotExist($this->cacheDir . '/_preload.php');
     }
 }

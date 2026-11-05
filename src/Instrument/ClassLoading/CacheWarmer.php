@@ -18,9 +18,11 @@ use Go\Console\Warmup\ProgressBarReporter;
 use Go\Console\Warmup\WarmupReporter;
 use Go\Core\AdvisorIndex;
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\Opcache\PreloadScriptGenerator;
 use Go\Instrument\ClassLoading\Warmup\FileWarmer;
 use Go\Instrument\ClassLoading\Warmup\WorkerPool;
 use Go\Instrument\FileSystem\Enumerator;
+use Go\Instrument\PathResolver;
 use SplFileInfo;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -60,6 +62,8 @@ class CacheWarmer
         protected int $cachedFiles = AspectKernel::DEFAULT_PARSED_FILES_LIMIT,
         /** Directory to build the cache in instead of the one of the kernel, see warmUp() */
         protected ?string $cacheDir = null,
+        /** Path of the opcache.preload script to write after a complete warm-up, '' for the default one in the cache directory, null for none */
+        protected ?string $preloadFile = null,
     ) {}
 
     /**
@@ -95,7 +99,38 @@ class CacheWarmer
         $cachePathManager = $this->aspectKernel->getContainer()->getService(CachePathManager::class);
 
         // Also in place through the manager: the directory is created when the kernel did not (PREBUILT_CACHE)
-        return $cachePathManager->withCacheDir($cacheDir, $this->weaveApplication(...));
+        return $cachePathManager->withCacheDir($cacheDir, function () use ($cachePathManager): int {
+            $errors = $this->weaveApplication();
+            // Only a complete cache is worth preloading; the deployment fails on errors anyway
+            if ($this->preloadFile !== null && $errors === 0 && !$this->interrupted) {
+                $this->writePreloadScript($cachePathManager);
+            }
+
+            return $errors;
+        });
+    }
+
+    /**
+     * Writes the opcache.preload script of the cache just built, inside the directory of the build
+     *
+     * The manager still works on that directory here, so its class map and skipped classes are the ones of the build.
+     */
+    private function writePreloadScript(CachePathManager $cachePathManager): void
+    {
+        $cacheDir = (string) $cachePathManager->getCacheDir();
+        $script   = $this->preloadFile === '' ? PreloadScriptGenerator::defaultScriptPath($cacheDir) : (string) $this->preloadFile;
+        $resolved = PathResolver::realpath($script);
+        $script   = is_string($resolved) ? $resolved : $script;
+
+        $generator = new PreloadScriptGenerator(
+            $cacheDir,
+            $this->aspectKernel->getOptions()['appDir'],
+            $cachePathManager->queryClassMap(),
+            $cachePathManager->querySkippedClasses(),
+            AopComposerLoader::ofProcess()->autoloadFile,
+        );
+        $cachePathManager->getCacheFileWriter()->write($script, $generator->generate($script));
+        $this->output->writeln(sprintf('Preload script written to <info>%s</info>.', $script));
     }
 
     /**

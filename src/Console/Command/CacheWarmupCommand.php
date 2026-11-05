@@ -70,6 +70,13 @@ With <info>--cache-dir</info> the cache is built in another directory, next to t
 one the kernel runs on, e.g. to prepare the cache of a deployment: the kernel and
 the workers keep using their own directory, and a cache built this way is
 complete and location independent.
+
+<info>--preload</info> writes the opcache.preload script of the cache, <info>_preload.php</info> in the
+cache directory or the file given as <info>--preload=FILE</info>. Point opcache.preload at
+it (with opcache.preload_user) and every woven class is linked once when PHP
+starts instead of being loaded by each request:
+
+  <info>%command.full_name% web/index.php --preload</info>
 EOT,
 )]
 class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandInterface
@@ -103,6 +110,14 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
             . '(default: the "parsedFilesLimit" option of the kernel)',
         );
         $this->addOption('cache-dir', null, InputOption::VALUE_REQUIRED, 'Build the cache in this directory instead of the one of the kernel');
+        $this->addOption(
+            'preload',
+            null,
+            InputOption::VALUE_OPTIONAL,
+            'Write the opcache.preload script of the cache, to this file or to _preload.php in the cache directory',
+            // Distinguishes the option left out (false) from the option without a value (null)
+            false,
+        );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -113,11 +128,17 @@ class CacheWarmupCommand extends BaseAspectCommand implements SignalableCommandI
         if ($cacheDir !== null && !is_string($cacheDir)) {
             throw InvalidConfigurationException::cacheDirOptionNotString();
         }
+        $preload = $input->getOption('preload');
+        if ($preload !== false && $preload !== null && !is_string($preload)) {
+            throw InvalidConfigurationException::optionNotPath('preload');
+        }
+        // Without a value the script goes to the cache directory being built, which the warmer knows
+        $preloadFile = $preload === false ? null : ($preload ?? '');
         $this->loadAspectKernel($input, $output);
         // The explicit option wins, the kernel option is the default
         $cachedFiles ??= $this->aspectKernel->getOptions()['parsedFilesLimit'];
 
-        $this->cacheWarmer = $this->createCacheWarmer($output, (bool) $input->getOption('fail-fast'), $workers, $cachedFiles, $cacheDir);
+        $this->cacheWarmer = $this->createCacheWarmer($output, (bool) $input->getOption('fail-fast'), $workers, $cachedFiles, $cacheDir, $preloadFile);
         $errors            = $this->cacheWarmer->warmUp();
 
         if ($this->receivedSignal !== null) {

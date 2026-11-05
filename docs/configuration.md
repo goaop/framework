@@ -152,7 +152,8 @@ stay in place.
 
 | Command                                                                    | Purpose |
 |----------------------------------------------------------------------------|---------|
-| `cache:warmup:aop [<loader>] [--fail-fast] [--workers=N] [--cached-files=N] [--cache-dir=DIR]` | Weaves every file below the include paths into the cache, in parallel worker processes. Fails when a file cannot be woven and writes the errors to stderr. |
+| `cache:warmup:aop [<loader>] [--fail-fast] [--workers=N] [--cached-files=N] [--cache-dir=DIR] [--preload[=FILE]]` | Weaves every file below the include paths into the cache, in parallel worker processes. Fails when a file cannot be woven and writes the errors to stderr. `--preload` also writes the `opcache.preload` script of the cache. |
+| `cache:warmup:opcache [<loader>] [--file-cache=DIR] [--entry=FILE ...]`   | Primes the `opcache.file_cache` with the AOP cache, Composer's class map and autoloaded files, the untransformed sources, the loader and the entry points. Runs in a process started with `-d opcache.enable_cli=1 -d opcache.file_cache_only=1 -d opcache.file_cache=DIR`; prints that command otherwise. |
 | `debug:aspect [<loader>] [--aspect=...]`                                   | Lists the registered aspects and their advices. |
 | `debug:advisor [<loader>] [--advisor=...]`                                 | Lists the advisors; with `--advisor` shows the joinpoints that advisor matches. |
 | `debug:weaving [<loader>]`                                                 | Warms up the cache twice and reports proxies that are woven differently, which points to non-deterministic aspects. |
@@ -168,6 +169,21 @@ workers) keep using their own: how a deployment prepares the cache of the next r
 cache built this way is complete and location independent, also when a production kernel builds it while its own
 cache is warm: the weaver always reads the original sources of the classes it reflects, never the woven files that
 Composer serves in production.
+
+`cache:warmup:aop --preload` writes the `opcache.preload` script of the cache, `_preload.php` in the cache directory
+or the file given as `--preload=FILE` (the bare form must come after the loader argument, or it takes it as its value).
+The script links every woven class and every untransformed class known to the cache when PHP starts; classes with a
+static initialization advice are left to the autoloader, their advice needs the kernel of a request. It holds no
+absolute path and lists the classes of exactly this cache, so it is rebuilt with the cache, see
+[Performance](performance.md#preloading).
+
+### OPcache file cache
+
+`cache:warmup:opcache` compiles into `opcache.file_cache` what a production request loads, so a new PHP-FPM master or
+CLI process reads compiled scripts from disk. The file cache belongs to the PHP build and to the absolute paths of the
+files: run the command in the final image, after `cache:warmup:aop`, see
+[Performance](performance.md#docker-and-kubernetes). The AOP cache, the loader and the entry points must compile, the
+command fails otherwise; files of the Composer class map that do not compile are listed and skipped.
 
 ## Deployment
 

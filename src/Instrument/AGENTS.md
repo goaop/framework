@@ -25,6 +25,10 @@
 - Worker death: first pending file fails with the stderr tail, the rest is requeued, a new worker starts; death before
   `ready` aborts (WeavingException::warmupWorkerFailedToStart). Worker stdout/stderr are `['socket']` descriptors:
   stream_select() can wait on sockets on every system, on pipes not on Windows.
+- OPcache tooling: `cache:warmup:aop --preload[=FILE]` writes the opcache.preload script of the cache
+  (Opcache\PreloadScriptGenerator, called by CacheWarmer after a complete warm-up); `cache:warmup:opcache`
+  (Console\Command\OpcacheWarmupCommand) primes opcache.file_cache through Opcache\FileCachePrimer. Both read the
+  Composer autoloader through AopComposerLoader::ofProcess(). Details and quirks live in those docBlocks.
 - UI (Console\Warmup): FileListReporter with -v, else ProgressBarReporter (Symfony ProgressBar: redrawn in place on a
   decorated output, a line per tenth of the files elsewhere). Progress + errors → stderr, header + summary → stdout.
 

@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\ClassLoading;
 
 use Composer\Autoload\ClassLoader;
+use Go\Aop\Exception\InvalidConfigurationException;
 use Go\Core\AspectContainer;
 use Go\Core\Container;
 use Go\Core\AspectKernel;
@@ -318,6 +319,81 @@ class AopComposerLoaderTest extends TestCase
             }
             $composerLoader->unregister();
         }
+    }
+
+    /**
+     * The tooling reads the Composer autoloader of the application through the wrapper the kernel registered
+     */
+    public function testOfProcessReturnsTheWrapperOfTheKernel(): void
+    {
+        $composerLoader = new ClassLoader();
+        $composerLoader->register(true);
+        $registeredLoaders = spl_autoload_functions();
+        try {
+            $this->assertTrue(AopComposerLoader::init($this->createOptions([]), $this->createContainer()));
+
+            $wrapper = AopComposerLoader::ofProcess();
+
+            $this->assertSame($composerLoader, $wrapper->getOriginalLoader(), 'The first registered wrapper');
+            // A loader created by hand is registered under no vendor directory: the installed ClassLoader tells
+            $this->assertSame(realpath(__DIR__ . '/../../../vendor'), realpath($wrapper->vendorDir));
+            $this->assertFileExists($wrapper->autoloadFile);
+            $this->assertNotEmpty($wrapper->autoloadedFiles(), 'The dependencies of this repository have autoloaded files');
+            foreach ($wrapper->autoloadedFiles() as $file) {
+                $this->assertFileExists($file);
+            }
+        } finally {
+            foreach (spl_autoload_functions() as $loader) {
+                spl_autoload_unregister($loader);
+            }
+            foreach ($registeredLoaders as $loader) {
+                spl_autoload_register($loader);
+            }
+            $composerLoader->unregister();
+        }
+    }
+
+    public function testVendorDirIsTheOneComposerRegisteredTheLoaderUnder(): void
+    {
+        $composerLoader = new ClassLoader('/app/vendor');
+        $composerLoader->register();
+        try {
+            $wrapper = $this->createLoader($composerLoader);
+
+            $this->assertSame('/app/vendor', $wrapper->vendorDir);
+            $this->assertSame('/app/vendor/autoload.php', $wrapper->autoloadFile);
+            $this->assertSame([], $wrapper->autoloadedFiles(), 'No autoload_files.php there');
+        } finally {
+            $composerLoader->unregister();
+        }
+    }
+
+    /**
+     * Without a wrapper (no kernel booted, or no Composer loader to wrap) the tooling has no autoloader to describe
+     */
+    public function testOfProcessRequiresAWrapperOfTheKernel(): void
+    {
+        // Loaded before the wrappers go, nothing may autoload meanwhile
+        $this->assertTrue(class_exists(InvalidConfigurationException::class));
+        $wrappers = array_filter(
+            spl_autoload_functions(),
+            static fn(mixed $loader): bool => is_array($loader) && $loader[0] instanceof AopComposerLoader,
+        );
+        foreach ($wrappers as $wrapper) {
+            spl_autoload_unregister($wrapper);
+        }
+        $exception = null;
+        try {
+            AopComposerLoader::ofProcess();
+        } catch (InvalidConfigurationException $exception) {
+        } finally {
+            foreach ($wrappers as $wrapper) {
+                spl_autoload_register($wrapper);
+            }
+        }
+
+        $this->assertNotNull($exception, 'ofProcess() must fail without a registered wrapper');
+        $this->assertStringContainsString('No Composer class loader is registered in this process', $exception->getMessage());
     }
 
     /**

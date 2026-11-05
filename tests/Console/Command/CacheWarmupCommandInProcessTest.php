@@ -115,7 +115,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 $this->aspectKernel = $this->kernel;
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null, ?string $preloadFile = null): CacheWarmer
             {
                 return new class extends CacheWarmer {
                     public function __construct()
@@ -166,7 +166,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 $this->aspectKernel = $this->kernel;
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null, ?string $preloadFile = null): CacheWarmer
             {
                 return new class ($this) extends CacheWarmer {
                     public function __construct(private readonly CacheWarmupCommand $command)
@@ -210,7 +210,7 @@ class CacheWarmupCommandInProcessTest extends TestCase
                 $this->aspectKernel = $this->kernel;
             }
 
-            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null): CacheWarmer
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null, ?string $preloadFile = null): CacheWarmer
             {
                 $this->failFast    = $failFast;
                 $this->workers     = $workers;
@@ -266,5 +266,69 @@ class CacheWarmupCommandInProcessTest extends TestCase
         $this->expectExceptionMessageMatches(sprintf('/^Option --%s must be a positive integer, got "%s"$/', $option, preg_quote($value, '/')));
 
         $tester->execute(['loader' => '/path/to/missing/loader.php', '--' . $option => $value]);
+    }
+    /**
+     * @return array<string, array{array<string, mixed>, string|null}>
+     */
+    public static function preloadOptions(): array
+    {
+        return [
+            'left out'       => [[], null],
+            'without value'  => [['--preload' => null], ''],
+            'with a file'    => [['--preload' => 'config/preload.php'], 'config/preload.php'],
+        ];
+    }
+
+    /**
+     * The option left out, given without a value (the default script in the cache directory) and given with a file
+     * are three different requests to the warmer
+     *
+     * @param array<string, mixed> $options
+     */
+    #[DataProvider('preloadOptions')]
+    public function testPreloadOptionIsHandedToTheWarmer(array $options, ?string $expectedPreloadFile): void
+    {
+        $command = new class ($this->kernelWithParsedFilesLimit(100)) extends CacheWarmupCommand {
+            public ?string $preloadFile = 'not called';
+
+            public function __construct(private readonly AspectKernel $kernel)
+            {
+                parent::__construct();
+            }
+
+            protected function loadAspectKernel(InputInterface $input, OutputInterface $output): void
+            {
+                // The kernel only provides the default of --cached-files, the warmup below is simulated
+                $this->aspectKernel = $this->kernel;
+            }
+
+            protected function createCacheWarmer(OutputInterface $output, bool $failFast = false, int $workers = 1, int $cachedFiles = 100, ?string $cacheDir = null, ?string $preloadFile = null): CacheWarmer
+            {
+                $this->preloadFile = $preloadFile;
+
+                return new class ($this->kernel) extends CacheWarmer {
+                    public function warmUp(): int
+                    {
+                        return 0;
+                    }
+                };
+            }
+        };
+
+        $this->assertSame(Command::SUCCESS, (new CommandTester($command))->execute(['loader' => 'unused.php'] + $options));
+        $this->assertSame($expectedPreloadFile, $command->preloadFile);
+    }
+
+    public function testPreloadOptionMustBeAPath(): void
+    {
+        try {
+            (new CommandTester(new CacheWarmupCommand()))->execute([
+                'loader'    => __DIR__ . '/../../../vendor/autoload.php',
+                '--preload' => ['not', 'a', 'path'],
+            ]);
+            $this->fail('An array is no preload file');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertStringContainsString('--preload option must be a path', $exception->getMessage());
+        }
     }
 }
