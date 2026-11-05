@@ -533,6 +533,27 @@ class ContainerTest extends TestCase
         $this->assertSame([], $this->container->getServiceIdsByInterface(\Countable::class));
     }
 
+    public function testServiceIdsByInterfaceSeeRegistrationsAfterAMemoizedLookup(): void
+    {
+        $this->container->addLazyService(StatefulTestAspect::class, static fn(): StatefulTestAspect => new StatefulTestAspect(1));
+        $this->assertSame([StatefulTestAspect::class], $this->container->getServiceIdsByInterface(Aspect::class));
+        // Memoized until the next registration
+        $this->assertSame([StatefulTestAspect::class], $this->container->getServiceIdsByInterface(Aspect::class));
+
+        $this->container->addLazyService(DoSomethingAspect::class, static fn(): DoSomethingAspect => new DoSomethingAspect());
+        $this->assertSame(
+            [StatefulTestAspect::class, DoSomethingAspect::class],
+            $this->container->getServiceIdsByInterface(Aspect::class),
+        );
+
+        // Materialization keeps the ids, in the order of the tagged ones first
+        $this->container->getServicesByInterface(Aspect::class);
+        $this->assertEqualsCanonicalizing(
+            [StatefulTestAspect::class, DoSomethingAspect::class],
+            $this->container->getServiceIdsByInterface(Aspect::class),
+        );
+    }
+
     public function testPropertylessServiceFallsBackToEagerConstruction(): void
     {
         // PHP creates lazy objects of property-less classes as already initialized,

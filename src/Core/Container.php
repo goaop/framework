@@ -58,6 +58,13 @@ final class Container implements AspectContainer
     private array $servicesByInterface = [];
 
     /**
+     * Results of getServiceIdsByInterface(), valid until the next registration
+     *
+     * @var array<class-string, list<string>>
+     */
+    private array $serviceIdsByInterface = [];
+
+    /**
      * Incremented by every registration, a cached lookup is reused only while it is unchanged
      */
     private int $registrationVersion = 0;
@@ -112,7 +119,7 @@ final class Container implements AspectContainer
     {
         $this->values[$id] = $value;
         $this->registrationVersion++;
-        $this->servicesByInterface = [];
+        $this->servicesByInterface = $this->serviceIdsByInterface = [];
 
         if (is_object($value) && !$value instanceof Closure) {
             foreach (class_implements($value) as $interfaceTagName) {
@@ -135,7 +142,7 @@ final class Container implements AspectContainer
         }
         $this->factories[$id] = $lazyInitializationClosure;
         $this->registrationVersion++;
-        $this->servicesByInterface = [];
+        $this->servicesByInterface = $this->serviceIdsByInterface = [];
 
         // With no listeners registered (the production configuration) this is a no-op. Nothing
         // below autoloads: only an id of an already loaded class can be matched exactly, an id
@@ -240,12 +247,28 @@ final class Container implements AspectContainer
 
     public function getServiceIdsByInterface(string $interfaceTagClassName): array
     {
-        $ids = $this->tags[$interfaceTagClassName] ?? [];
+        // Asked for every woven file: reuse the last result as long as nothing was registered since
+        if (isset($this->serviceIdsByInterface[$interfaceTagClassName])) {
+            return $this->serviceIdsByInterface[$interfaceTagClassName];
+        }
+
+        $version = $this->registrationVersion;
+        $ids     = $this->tags[$interfaceTagClassName] ?? [];
+        // A class that is still being autoloaded higher up the stack is not a subclass of anything yet: such an
+        // inconclusive probe makes the result unsuitable for caching (see getServicesByInterface())
+        $isConclusive = true;
         // A snapshot of the ids: the is_subclass_of() autoload can re-enter the container (see above)
         foreach (array_keys($this->factories) as $id) {
-            if (is_subclass_of($id, $interfaceTagClassName) && !in_array($id, $ids, true)) {
-                $ids[] = $id;
+            if (is_subclass_of($id, $interfaceTagClassName)) {
+                if (!in_array($id, $ids, true)) {
+                    $ids[] = $id;
+                }
+            } elseif (!class_exists($id, false) && !interface_exists($id, false)) {
+                $isConclusive = false;
             }
+        }
+        if ($isConclusive && $version === $this->registrationVersion) {
+            $this->serviceIdsByInterface[$interfaceTagClassName] = $ids;
         }
 
         return $ids;
