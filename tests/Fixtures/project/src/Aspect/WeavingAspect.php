@@ -30,4 +30,13 @@ class WeavingAspect implements Aspect
     {
         echo 'It intercepts methods with complex types';
     }
+
+    /**
+     * Intercepts a method of a readonly class with properties (#792)
+     */
+    #[Pointcut\After("execution(public Go\Tests\TestProject\Application\ReadonlyValueObject->scaled(*))")]
+    public function afterReadonlyValueObjectMethod(): void
+    {
+        echo 'It intercepts methods in the readonly class';
+    }
 }

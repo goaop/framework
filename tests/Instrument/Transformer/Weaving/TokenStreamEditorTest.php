@@ -137,19 +137,21 @@ final class TokenStreamEditorTest extends TestCase
         $this->assertSame("<?php\n\nclass Foo {}\n", $metadata->source);
     }
 
-    public function testReplaceAndAppendChangeTokenTextAndSkipRemovedTokens(): void
+    public function testReplacePrependAndAppendChangeTokenTextAndSkipRemovedTokens(): void
     {
         $metadata = self::createMetadata("<?php echo 1;\n");
         $editor   = new TokenStreamEditor($metadata);
         $echo     = (int) $editor->find('echo', 0, 10);
 
         $editor->replace($echo, 'print');
+        $editor->prepend($echo, '/* b */');
         $editor->append($echo, '/* a */');
         $editor->remove(0, 0);
         $editor->replace(0, 'lost');
+        $editor->prepend(0, 'lost');
         $editor->append(0, 'lost');
 
-        $this->assertSame("print/* a */ 1;\n", $metadata->source);
+        $this->assertSame("/* b */print/* a */ 1;\n", $metadata->source);
     }
 
     public function testFindReturnsNullWithoutMatchInRange(): void

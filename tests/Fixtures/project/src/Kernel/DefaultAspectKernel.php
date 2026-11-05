@@ -15,6 +15,7 @@ use Go\Tests\TestProject\Aspect\EntityFieldAspect;
 use Go\Tests\TestProject\Aspect\EnumMethodAspect;
 use Go\Tests\TestProject\Aspect\GreetingAspect;
 use Go\Tests\TestProject\Aspect\InitializationAspect;
+use Go\Tests\TestProject\Aspect\Issue251Aspect;
 use Go\Tests\TestProject\Aspect\Issue293Aspect;
 use Go\Tests\TestProject\Aspect\Issue781Aspect;
 use Go\Tests\TestProject\Aspect\LoggingAspect;
@@ -40,6 +41,7 @@ class DefaultAspectKernel extends AspectKernel
         $container->addLazyService(PromotedPropertyInterceptAspect::class, fn(): PromotedPropertyInterceptAspect => new PromotedPropertyInterceptAspect());
         $container->addLazyService(Issue293Aspect::class, fn(): Issue293Aspect => new Issue293Aspect());
         $container->addLazyService(Issue781Aspect::class, fn(): Issue781Aspect => new Issue781Aspect());
+        $container->addLazyService(Issue251Aspect::class, fn(): Issue251Aspect => new Issue251Aspect());
         $container->addLazyService(InitializationAspect::class, fn(): InitializationAspect => new InitializationAspect());
         $container->addLazyService(WeavingAspect::class, fn(): WeavingAspect => new WeavingAspect());
         $container->addLazyService(TraitCompositionAspect::class, fn(): TraitCompositionAspect => new TraitCompositionAspect());

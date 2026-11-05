@@ -17,8 +17,6 @@ use Go\Tests\TestProject\Application\Issue781ArchivedRecordGateway;
 use Go\Tests\TestProject\Application\Issue781CardGateway;
 use Go\Tests\TestProject\Application\Issue781PlainRecord;
 use Go\Tests\TestProject\Application\Issue781RecordGateway;
-use Symfony\Component\Process\PhpExecutableFinder;
-use Symfony\Component\Process\Process;
 
 /**
  * An advice of an execution pointcut runs once per method execution, however many classes of the hierarchy are woven
@@ -81,37 +79,5 @@ class InheritedMethodWeavingTest extends BaseFunctionalTestCase
 
         $this->assertSame(['record', ['around:describe']], $calls['record']);
         $this->assertSame(['record', ['around:describe']], $calls['archived']);
-    }
-
-    /**
-     * Runs the code in the fixture project, the code fills `$calls`, which is returned
-     *
-     * @return array<string, mixed>
-     */
-    private function runAndRecordCalls(string $code): array
-    {
-        $phpExecutable = (new PhpExecutableFinder())->find();
-        assert($phpExecutable !== false);
-        $script  = sprintf(
-            'include %s; $calls = []; %s echo json_encode($calls, JSON_THROW_ON_ERROR);',
-            var_export($this->configuration['frontController'], true),
-            $code,
-        );
-        $process = new Process(
-            [$phpExecutable, '-r', $script],
-            null,
-            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
-        );
-        $process->run();
-
-        $this->assertTrue(
-            $process->isSuccessful(),
-            'Running the woven classes failed: ' . $process->getOutput() . $process->getErrorOutput(),
-        );
-        $calls = json_decode(trim($process->getOutput()), true, flags: JSON_THROW_ON_ERROR);
-        $this->assertIsArray($calls);
-
-        /** @var array<string, mixed> $calls */
-        return $calls;
     }
 }

@@ -24,6 +24,7 @@ use Go\Tests\TestProject\Application\MainFactory;
 use Go\Tests\TestProject\Application\NewInInitializerClass;
 use Go\Tests\TestProject\Application\NullablePropertyDemo;
 use Go\Tests\TestProject\Application\PromotedPropertyClass;
+use Go\Tests\TestProject\Application\ReadonlyValueObject;
 use Go\Tests\TestProject\Application\SingleLinePromotedClass;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
@@ -149,6 +150,37 @@ class ClassWeavingTest extends BaseFunctionalTestCase
         /* @see ParentWithFinalMethod::someFinalParentMethod() */
         // it should not match with parent final method in the class
         $this->assertMethodNotWoven(FinalClass::class, 'someFinalParentMethod');
+    }
+
+    /**
+     * A readonly class can not use a trait with non-readonly properties: the woven trait must declare them readonly
+     * itself, once the class-level readonly is gone (#792)
+     */
+    public function testItWeavesReadonlyClassWithProperties(): void
+    {
+        $this->assertClassIsWoven(ReadonlyValueObject::class);
+        $this->assertMethodWoven(ReadonlyValueObject::class, 'scaled');
+
+        $phpExecutable = (new PhpExecutableFinder())->find();
+        assert($phpExecutable !== false);
+        $script = sprintf(
+            'include %s; $object = new %s(21); echo $object->scaled(), "|"; '
+            . 'foreach (["value", "scale"] as $name) { echo (int) new ReflectionProperty($object, $name)->isReadOnly(); }',
+            var_export($this->configuration['frontController'], true),
+            '\\' . ReadonlyValueObject::class,
+        );
+        $process = new Process(
+            [$phpExecutable, '-r', $script],
+            null,
+            ['GO_AOP_CONFIGURATION' => $this->getConfigurationName()],
+        );
+        $process->run();
+
+        $this->assertTrue(
+            $process->isSuccessful(),
+            'Running the woven readonly class failed: ' . $process->getOutput() . $process->getErrorOutput(),
+        );
+        $this->assertSame('It intercepts methods in the readonly class42|11', trim($process->getOutput()));
     }
 
     /**

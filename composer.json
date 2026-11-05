@@ -31,7 +31,7 @@
         "php": "^8.4.0",
         "ext-tokenizer": "*",
         "goaop/dissect": "^4.0",
-        "goaop/parser-reflection": "^4.0.2 || ^5.0.2",
+        "goaop/parser-reflection": "^4.2.0 || ^5.2.0",
         "psr/container": "^1.1 || ^2.0",
         "symfony/finder": "^7.4 || ^8.0"
     },
@@ -65,7 +65,8 @@
         "psr-4": {
             "Demo\\": "demos/Demo/",
             "Go\\": "tests/",
-            "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/"
+            "Go\\Tests\\TestProject\\": "tests/Fixtures/project/src/",
+            "Go\\Tests\\TestProject\\Partial\\": "tests/Fixtures/project/partial/"
         },
         "files": [
             "tests/functions.php",
