@@ -149,7 +149,11 @@ final class WarmupWorker
             return 0;
         };
 
-        // The records are keyed relative to the application root: the coordinator merges them into the same directory
-        return $cacheDir !== null && $cacheDir !== '' ? $cachePathManager->withCacheDir($cacheDir, $weave) : $weave();
+        // The records are keyed relative to the application root: the coordinator merges them into the same directory.
+        // In place too through the manager, which re-checks every record of the build, also of a prebuilt cache.
+        // Every record is handed over with its result, so the flush at the end of the build writes nothing
+        $buildDir = $cacheDir !== null && $cacheDir !== '' ? $cacheDir : (string) $cachePathManager->getCacheDir();
+
+        return $cachePathManager->withCacheDir($buildDir, $weave);
     }
 }

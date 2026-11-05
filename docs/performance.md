@@ -79,7 +79,7 @@ as fast as a hot web request:
 | Step                                          | `debug => false` (+ `PREBUILT_CACHE`)               | `debug => true` |
 |-----------------------------------------------|-----------------------------------------------------|-----------------|
 | Kernel `init()`                               | options, container, service factories (nothing is created) | the same, plus the kernel and aspect files tracked for changes |
-| `_include.cache` (class map, skip set)        | one `include`, served from OPcache                  | the same        |
+| `_include.cache` (class map, skip set)        | one `include`, served from OPcache, no `stat()` of the cache directory | the same        |
 | Woven class                                   | Composer's class map → cached file, from OPcache    | freshness check, then the stream filter, so XDebug breakpoints and magic constants point at your original files |
 | Untransformed class below the include paths   | skip set → the original file, from OPcache          | freshness check → the original file, from OPcache |
 | Parser, transformers, stream filter           | never loaded                                        | stream filter registered, no transformer built |
@@ -197,6 +197,8 @@ initializes the kernel with the same options as production. The command:
 - `--cached-files=N` (default: the `parsedFilesLimit` kernel option, 100) bounds the syntax trees kept in memory per process;
 - `--cache-dir=DIR` builds the cache in another directory from scratch while the kernel keeps serving from its own: a
   release is prepared next to the running one and switched in atomically, e.g. with a symlink swap.
+- run over an existing directory, the command weaves again every file whose source changed (size or modification
+  time) and keeps the others, also with `PREBUILT_CACHE`: only requests trust the cache as it is;
 - `--preload` writes the `opcache.preload` script of the cache, see [Preloading](#preloading).
 
 Rebuild the cache whenever the code, the aspects, the kernel options or `composer.lock` change; in practice, on every
