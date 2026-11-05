@@ -98,11 +98,10 @@ class InvalidConfigurationException extends InvalidArgumentException implements 
         return new self('Container can not be its own delegate');
     }
 
-    public static function cacheDirectoryNotCreatable(string $cacheDir, string $cacheRootDir): self
+    public static function cacheDirectoryNotCreatable(string $cacheDir, string $existingAncestor): self
     {
         return new self(
-            "Can not create the cache directory {$cacheDir}: its parent directory {$cacheRootDir} does not exist "
-            . 'or is not writable',
+            "Can not create the cache directory {$cacheDir}: {$existingAncestor} is not a writable directory",
         );
     }
 

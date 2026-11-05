@@ -193,14 +193,18 @@ class CachePathManager
     }
 
     /**
-     * Creates the cache directory when it is missing and checks that it can be written
+     * Creates the cache directory with its missing parents when it is missing and checks that it can be written
      */
     private function ensureCacheDirectoryIsWritable(string $cacheDir): void
     {
         if (!is_dir($cacheDir)) {
-            $cacheRootDir = dirname($cacheDir);
-            if (!is_writable($cacheRootDir) || !is_dir($cacheRootDir)) {
-                throw InvalidConfigurationException::cacheDirectoryNotCreatable($cacheDir, $cacheRootDir);
+            // mkdir() is recursive: only the nearest existing ancestor has to be a writable directory
+            $existingAncestor = dirname($cacheDir);
+            while (!file_exists($existingAncestor) && dirname($existingAncestor) !== $existingAncestor) {
+                $existingAncestor = dirname($existingAncestor);
+            }
+            if (!is_dir($existingAncestor) || !is_writable($existingAncestor)) {
+                throw InvalidConfigurationException::cacheDirectoryNotCreatable($cacheDir, $existingAncestor);
             }
             mkdir($cacheDir, CacheFileWriter::directoryModeFor($this->fileMode), true);
         }
