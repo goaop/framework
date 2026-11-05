@@ -27,6 +27,7 @@ use PhpParser\Node\PropertyItem;
 use PhpParser\Node\StaticVar;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\EnumCase;
+use ReflectionClass;
 use SensitiveParameter;
 
 /**
@@ -38,11 +39,11 @@ use SensitiveParameter;
 final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
 {
     /**
-     * List of constructor invocations per class
+     * How `new` of a class is carried out, per class name as requested, see resolveStrategy()
      *
-     * @var array<string, ReflectionConstructorInvocation<object>>
+     * @var array<string, bool|ReflectionConstructorInvocation<object>>
      */
-    private static array $constructorInvocationsCache = [];
+    private static array $constructionStrategies = [];
 
     /**
      * Singleton instance
@@ -85,8 +86,8 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
      */
     public static function reset(): void
     {
-        self::$instance                    = null;
-        self::$constructorInvocationsCache = [];
+        self::$instance               = null;
+        self::$constructionStrategies = [];
     }
 
     /**
@@ -181,21 +182,46 @@ final class ConstructorExecutionTransformer implements PrefilteredNodeRewriter
      */
     protected static function construct(string $fullClassName, #[SensitiveParameter] array $arguments = []): object
     {
-        $fullClassName = ltrim($fullClassName, '\\');
-        if (is_subclass_of($fullClassName, InitializationAware::class)) {
+        $entry = self::$constructionStrategies[$fullClassName] ?? self::resolveStrategy($fullClassName);
+        if ($entry === true) {
+            return new $fullClassName(...$arguments);
+        }
+        if ($entry === false) {
             /** @var class-string<InitializationAware<object>> $fullClassName */
             return $fullClassName::__initialization($arguments);
         }
 
-        $invocation = self::$constructorInvocationsCache[$fullClassName] ?? null;
-        if ($invocation === null) {
-            // A missing class is not cached: it may still become loadable later in the request
-            if (!class_exists($fullClassName)) {
-                throw WeavingException::constructorOfMissingClass($fullClassName);
-            }
-            $invocation = self::$constructorInvocationsCache[$fullClassName] = new ReflectionConstructorInvocation([], $fullClassName);
+        return $entry->__invoke($arguments);
+    }
+
+    /**
+     * Decides, once per class, how `new` of the class is carried out and remembers the answer
+     *
+     * - `false`: the class is InitializationAware (woven for an initialization pointcut), it creates itself;
+     * - `true`: no initialization advice can exist and the constructor is public (or absent), so the object is
+     *   created natively. Non-public constructors keep going through the invocation: `new self()` in a static
+     *   factory reaches a private constructor, reflection (unlike a native `new` from here) ignores visibility;
+     * - otherwise a shared constructor invocation without advices.
+     *
+     * A missing class is not remembered: it may still become loadable later in the request
+     *
+     * @return bool|ReflectionConstructorInvocation<object>
+     */
+    private static function resolveStrategy(string $className): bool|ReflectionConstructorInvocation
+    {
+        $fullClassName = ltrim($className, '\\');
+        if (is_subclass_of($fullClassName, InitializationAware::class)) {
+            return self::$constructionStrategies[$className] = false;
+        }
+        if (!class_exists($fullClassName)) {
+            throw WeavingException::constructorOfMissingClass($fullClassName);
         }
 
-        return $invocation->__invoke($arguments);
+        // isInstantiable() is false for abstract classes, enums and non-public constructors: those keep their errors
+        if ((new ReflectionClass($fullClassName))->isInstantiable()) {
+            return self::$constructionStrategies[$className] = true;
+        }
+
+        return self::$constructionStrategies[$className] = new ReflectionConstructorInvocation([], $fullClassName);
     }
 }
