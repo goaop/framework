@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Generator;
 
+use PhpParser\Node\Arg;
+use PhpParser\Node\Attribute;
+use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Expr\BinaryOp\Plus;
 use PhpParser\Node\Expr\BinaryOp\ShiftLeft;
 use PhpParser\Node\Expr\ClassConstFetch;
@@ -19,6 +22,7 @@ use PhpParser\Node\Expr\UnaryMinus;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\Int_;
+use PhpParser\Node\Scalar\String_;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -35,6 +39,26 @@ class EnumGeneratorTest extends TestCase
         $generator->addEnumCase('Active', 'active');
 
         $this->assertStringContainsString("case Active = 'active';", $generator->generate());
+    }
+
+    /**
+     * Attributes and the doc comment of a case are re-declared with the case (#794)
+     */
+    public function testEmitsCaseAttributesAndDocComment(): void
+    {
+        $generator = new EnumGenerator('Demo', null, 'string');
+        $generator->addEnumCase(
+            'Active',
+            'active',
+            [new AttributeGroup([new Attribute(new Name\FullyQualified('Demo\\Label'), [new Arg(new String_('On'))])])],
+            "/**\n * Active one\n */",
+        );
+        $generator->addEnumCase('Inactive', 'inactive');
+
+        $this->assertStringContainsString(
+            "    /**\n     * Active one\n     */\n    #[\\Demo\\Label('On')]\n    case Active = 'active';\n    case Inactive = 'inactive';",
+            $generator->generate(),
+        );
     }
 
     /**

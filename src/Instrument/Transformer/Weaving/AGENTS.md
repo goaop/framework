@@ -63,7 +63,7 @@ Steps per kind (order kept from the former implementation, edits touch disjoint 
 | Kind  | Steps                                                                                                  |
 |-------|--------------------------------------------------------------------------------------------------------|
 | trait | intercepted property items → rename → strip #[\Override]                                               |
-| enum  | header → remove EnumCase statements → strip #[\Override]                                               |
+| enum  | header → blank EnumCase statements + their doc comments → strip #[\Override]                           |
 | class | header → readonly class: `readonly` on every property (makePropertiesReadonly) → intercepted property items + promoted properties → strip #[\Override] → trait-incompatible class attributes |
 
 ### Header (rewriteHeader)
@@ -82,7 +82,9 @@ the variable when untyped): `public int $x` → `public readonly int $x`, same l
 readonly for parser-reflection, so AdviceMatcher never intercepts them: no overlap with the property removal step.
 
 ### Enum cases
-Every EnumCase statement: `remove(range(case))`. EnumProxyGenerator re-declares the cases in the proxy enum.
+Every EnumCase statement: `blank(range(case))` (attributes included, newlines kept: an attribute on its own line keeps
+its line) and `blank()` of its doc comment, which PHP would otherwise give to the next trait method (#794).
+EnumProxyGenerator re-declares the cases in the proxy enum with their attributes and doc comment.
 
 ### Attributes (removeAttributes, shared by #[\Override] and the class attributes)
 Per AttributeGroup, `$shouldRemove` picks attributes:

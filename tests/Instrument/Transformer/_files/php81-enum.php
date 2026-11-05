@@ -7,6 +7,10 @@ namespace Test\ns1;
  */
 enum TestStatus: string
 {
+    /**
+     * The active status
+     */
+    #[\Deprecated('Use Enabled'), Label('On')]
     case Active   = 'active';
     case Inactive = 'inactive';
 

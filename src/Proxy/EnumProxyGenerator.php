@@ -19,9 +19,11 @@ use Go\Aop\Framework\InterceptorInjector;
 use Go\Aop\Framework\The;
 use Go\Aop\Proxy;
 use Go\Core\AspectContainer;
+use Go\Proxy\Generator\AttributeGroupsGenerator;
 use Go\Proxy\Generator\EnumGenerator;
 use Go\Proxy\Generator\ProxyImports;
 use Go\Proxy\Generator\Visibility;
+use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt\EnumCase;
 use PhpParser\Node\Stmt\Enum_ as EnumNode;
@@ -150,8 +152,8 @@ final class EnumProxyGenerator extends ClassProxyGenerator
         );
 
         // Re-declare all enum cases — cases cannot live in traits
-        foreach ($enumCases as [$caseName, $caseValue]) {
-            $enumGenerator->addEnumCase($caseName, $caseValue);
+        foreach ($enumCases as [$caseName, $caseValue, $attributeGroups, $docComment]) {
+            $enumGenerator->addEnumCase($caseName, $caseValue, $attributeGroups, $docComment);
         }
 
         // Use the short (unqualified) trait name only when the trait and proxy
@@ -225,9 +227,12 @@ final class EnumProxyGenerator extends ClassProxyGenerator
      * because class constants stay in the woven trait and trait constants participate in the
      * composing class since PHP 8.2.
      *
+     * The attribute groups (names fully qualified) and the doc comment of every case come along, the proxy enum is the
+     * only declaration of the cases (#794).
+     *
      * @param ReflectionClass<covariant object> $class
-     * @return array{0: string|null, 1: list<array{0: string, 1: string|int|Expr|null}>}
-     *   [backingType, [[caseName, caseValue], ...]]
+     * @return array{0: string|null, 1: list<array{0: string, 1: string|int|Expr|null, 2: list<AttributeGroup>, 3: string|null}>}
+     *   [backingType, [[caseName, caseValue, attributeGroups, docComment], ...]]
      */
     private function resolveEnumData(ReflectionClass $class): array
     {
@@ -249,7 +254,12 @@ final class EnumProxyGenerator extends ClassProxyGenerator
                     // Pass the raw expression node through so that constant-expression case
                     // values (UnaryMinus, BitwiseShift, self::CONST arithmetic, ...) survive.
                     // Emitting a pure case inside a backed enum would be a PHP fatal error.
-                    $cases[] = [$stmt->name->toString(), $stmt->expr];
+                    $cases[] = [
+                        $stmt->name->toString(),
+                        $stmt->expr,
+                        AttributeGroupsGenerator::fromAttributeGroupNodes($stmt->attrGroups),
+                        $stmt->getDocComment()?->getText(),
+                    ];
                 }
             }
 
@@ -264,8 +274,14 @@ final class EnumProxyGenerator extends ClassProxyGenerator
         $backingType    = $backingTypeObj instanceof \ReflectionNamedType ? $backingTypeObj->getName() : null;
         $cases          = [];
         foreach ($enumReflection->getCases() as $case) {
-            $caseValue = $case instanceof ReflectionEnumBackedCase ? $case->getBackingValue() : null;
-            $cases[]   = [$case->getName(), $caseValue];
+            $caseValue  = $case instanceof ReflectionEnumBackedCase ? $case->getBackingValue() : null;
+            $docComment = $case->getDocComment();
+            $cases[]    = [
+                $case->getName(),
+                $caseValue,
+                AttributeGroupsGenerator::fromReflectionAttributes($case->getAttributes()),
+                $docComment !== false ? $docComment : null,
+            ];
         }
 
         return [$backingType, $cases];

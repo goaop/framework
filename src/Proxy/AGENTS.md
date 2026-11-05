@@ -68,6 +68,7 @@
 
 ## PHP compat: Enum proxies
 - Original enum → trait (cases stripped, backed type removed, enum→trait)
-- Proxy enum re-uses trait, re-declares all cases, per-method static $__joinPoint
+- Proxy enum re-uses trait, re-declares all cases with their attributes (AttributeGroupsGenerator, FQ names) and doc
+  comments (#794; includes PHP 8.6 `#[\Override]` on a case), per-method static $__joinPoint
 - Built-in enum methods (cases/from/tryFrom): NEVER intercepted (PHP-synthesised, can't alias via trait use)
 - UnitEnum/BackedEnum: NEVER in proxy implements (PHP auto-applies; explicit listing resolves as Ns\UnitEnum → fatal error)
