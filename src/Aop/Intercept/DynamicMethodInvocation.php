@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Aop\Intercept;
 
+use SensitiveParameter;
+
 /**
  * Dynamic method invocation extends the `MethodInvocation` with type information about dynamic method calls.
  *
@@ -53,5 +55,9 @@ interface DynamicMethodInvocation extends MethodInvocation
      *
      * @return V Templated return type (mixed by default)
      */
-    public function __invoke(object $instance, array $arguments = [], array $variadicArguments = []): mixed;
+    public function __invoke(
+        object $instance,
+        #[SensitiveParameter] array $arguments = [],
+        #[SensitiveParameter] array $variadicArguments = [],
+    ): mixed;
 }

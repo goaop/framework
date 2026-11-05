@@ -40,6 +40,12 @@ are built once per member, and many advices (an around advice that never proceed
 Exception: ReflectionConstructorInvocation builds its reflection eagerly, because creating the object always needs it
 and the lazy version measured 20–25% slower on the first call.
 
+Argument arrays carry `#[\SensitiveParameter]` (#795): `$arguments`/`$variadicArguments` of every joinpoint
+`__invoke()`, the static-method shim closure, ConstructorExecutionTransformer `__call()`/`construct()` and the
+generated `__initialization()`. Never spread intercepted arguments into an internal function (`invoke(...$args)`
+printed each one in the trace): pass the array (`invokeArgs()`). The frames of `invokeArgs()` and
+`forward_static_call_array()` can not be hidden (documented in docs/advices.md, Limitations).
+
 HOT PATH: `__invoke()`/`proceed()` of these classes (`read()`/`readByReference()`/`write()` of ClassFieldAccess) run on every intercepted call. Code there is embedded on purpose:
 never extract parts into methods or a base class, never add object allocations, reflection or extra method calls
 (copy-paste of the frame handling across the classes is intentional). Joinpoint objects are shared by every call of

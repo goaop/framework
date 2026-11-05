@@ -45,6 +45,8 @@ use Go\Proxy\Part\InterceptedMethodGenerator;
 use Go\Proxy\Part\InterceptedPropertyGenerator;
 use Go\Proxy\Part\JoinPointStatementsGenerator;
 use PhpParser\Node\Arg;
+use PhpParser\Node\Attribute;
+use PhpParser\Node\AttributeGroup;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ClassConstFetch;
 use PhpParser\Node\Expr\FuncCall;
@@ -60,6 +62,7 @@ use PhpParser\Node\VariadicPlaceholder;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
+use SensitiveParameter;
 
 /**
  * Class proxy builder that is used to generate a child class from the list of joinpoints
@@ -527,6 +530,10 @@ class ClassProxyGenerator
             false,
             new ValueGenerator([]),
         );
+        // The constructor arguments pass through this frame as an array, sensitive ones included (#795)
+        $argumentsParameter->addAttributeGroup(new AttributeGroup([
+            new Attribute(new Name($this->imports->import(SensitiveParameter::class))),
+        ]));
         $method->addParameter($argumentsParameter);
         $method->stmts = [
             JoinPointStatementsGenerator::createInitialization(
