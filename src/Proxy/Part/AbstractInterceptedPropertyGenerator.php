@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Go\Proxy\Part;
 
+use Error;
 use Go\Aop\Exception\WeavingException;
 use Go\Aop\Intercept\FieldAccess;
 use Go\Proxy\Generator\AttributeGroupsGenerator;
@@ -20,7 +21,6 @@ use Go\Proxy\Generator\PropertyModifier;
 use Go\Proxy\Generator\PropertyNodeProvider;
 use Go\Proxy\Generator\ProxyImports;
 use Go\Proxy\Generator\TypeGenerator;
-use Error;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\Assign;
@@ -30,10 +30,10 @@ use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Name;
 use PhpParser\Node\Param;
 use PhpParser\Node\PropertyItem;
 use PhpParser\Node\Stmt;
-use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\Else_;
 use PhpParser\Node\Stmt\Expression;
@@ -66,6 +66,11 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
             // number invariant required for XDebug compatibility and adds disproportionate
             // complexity for a niche use case. See https://github.com/goaop/framework/issues/561
             throw WeavingException::propertyNotHookable($this->property->getDeclaringClass()->getName(), $this->property->getName());
+        }
+        // Registered up front like every import of generated code: the proxy generators read the imports of the
+        // file before the property node is built
+        if ($this->hasPotentiallyUninitializedTypedProperty() && $this->allowsNull()) {
+            $this->imports?->import(Error::class);
         }
     }
 

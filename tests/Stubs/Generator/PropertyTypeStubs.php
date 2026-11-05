@@ -35,4 +35,7 @@ class PropertyTypeStubs
 
     /** Pure intersection type. */
     public Countable&Iterator $intersectionProp;
+
+    /** Nullable named type without default: may be uninitialized or null. */
+    public ?string $uninitializedNullableProp;
 }
