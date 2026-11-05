@@ -387,7 +387,9 @@ Running on Kubernetes or another orchestrator:
   is a fast one. `execution(public App\Service\*->*(*))` also matches constructors; add
   `&& !execution(**->__construct(*))` when you do not need them.
 - **Prefer method pointcuts to `initialization(...)`.** While an `initialization` pointcut is registered, every `new`
-  in the woven files goes through an interceptor.
+  in the woven files goes through the transformer. A class without initialization advices (and with a public
+  constructor) is still created by a native `new`, which costs roughly 130 ns more than a plain `new`; a class with
+  initialization advices goes through the full joinpoint.
 - **Register aspects lazily** with `addLazyService()`: the aspect and its dependencies are created on the first advice
   call, not on every request.
 - **Keep advices cheap.** `getMethod()`/`getField()` create a reflection object on first use per joinpoint; derive
