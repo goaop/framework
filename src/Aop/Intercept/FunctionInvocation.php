@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Aop\Intercept;
 
 use ReflectionFunction;
+use SensitiveParameter;
 
 /**
  * Description of an invocation to a function, given to an interceptor upon function-call.
@@ -38,5 +39,8 @@ interface FunctionInvocation extends Invocation
      *
      * @phpstan-return V Templated return type (mixed by default)
      */
-    public function __invoke(array $arguments = [], array $variadicArguments = []): mixed;
+    public function __invoke(
+        #[SensitiveParameter] array $arguments = [],
+        #[SensitiveParameter] array $variadicArguments = [],
+    ): mixed;
 }

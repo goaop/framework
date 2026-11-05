@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Go\Aop\Intercept;
 
+use SensitiveParameter;
+
 /**
  * Static method invocation extends MethodInvocation with type information about static method calls.
  *
@@ -42,5 +44,9 @@ interface StaticMethodInvocation extends MethodInvocation
      *
      * @return V Templated return type (mixed by default)
      */
-    public function __invoke(string $scope, array $arguments = [], array $variadicArguments = []): mixed;
+    public function __invoke(
+        string $scope,
+        #[SensitiveParameter] array $arguments = [],
+        #[SensitiveParameter] array $variadicArguments = [],
+    ): mixed;
 }
