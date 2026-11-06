@@ -34,6 +34,15 @@ final class Features
      * checks and advisor cache freshness. Staleness is the deployer's responsibility -
      * rebuild the cache on every deployment. Also usable for read-only file systems
      * (GAE, phar, etc).
+     *
+     * A request never weaves nor writes to the cache directory: the cache must be complete.
+     * A class or an included file below the include paths that the cache has no record of
+     * (added after the build, also one the weaver would leave untransformed), or a record
+     * whose cached file is gone, fails the request with a WeavingException naming it, before
+     * anything is woven: rebuild the cache with `cache:warmup:aop`. Files the weaver never
+     * takes (outside the include paths, excluded, not `.php`) load as they are. The build
+     * itself (`cache:warmup:aop`, also in place) weaves and writes as without the flag; a
+     * class its loader file loads before the build starts is loaded unwoven there.
      */
     public const int PREBUILT_CACHE = 64;
 

@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Go\Console\Command;
 
 use Go\Core\AspectKernel;
+use Go\Instrument\ClassLoading\CachePathManager;
 use Go\Instrument\ClassLoading\CacheWarmer;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -36,6 +37,12 @@ use Symfony\Component\Console\Tester\CommandTester;
  */
 class CacheWarmupCommandInProcessTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        // The command marks the process as a build process, the other tests run as requests
+        CachePathManager::markBuildProcess(false);
+    }
+
     public function testMetadataIsDefinedByAttribute(): void
     {
         $command = new CacheWarmupCommand();

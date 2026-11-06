@@ -14,6 +14,8 @@ namespace Go\Instrument\ClassLoading;
 
 use Composer\Autoload\ClassLoader;
 use Go\Aop\Exception\InvalidConfigurationException;
+use Go\Aop\Exception\WeavingException;
+use Go\Aop\Features;
 use Go\Core\AspectContainer;
 use Go\Core\Container;
 use Go\Core\AspectKernel;
@@ -24,6 +26,7 @@ use Go\ParserReflection\LocatorInterface;
 use Go\ParserReflection\MissingAncestorPolicy;
 use Go\ParserReflection\ReflectionEngine;
 use Go\PhpUnit\UsesTemporaryDirectory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use SplFileInfo;
@@ -47,6 +50,7 @@ class AopComposerLoaderTest extends TestCase
     protected function tearDown(): void
     {
         FilterInjectorTransformer::reset();
+        CachePathManager::markBuildProcess(false);
         self::removeTemporaryDirectory($this->appDir);
     }
 
@@ -190,6 +194,89 @@ class AopComposerLoaderTest extends TestCase
         );
 
         $this->assertStringStartsWith(SourceTransformingLoader::PHP_FILTER_READ, (string) $loader->findFile('App\\Service'));
+    }
+
+    /**
+     * @return array<string, array{bool}>
+     */
+    public static function modes(): array
+    {
+        return ['production' => [false], 'debug' => [true]];
+    }
+
+    #[DataProvider('modes')]
+    public function testPrebuiltCacheFailsAClassOfAFileItDoesNotKnow(bool $debug): void
+    {
+        $file           = $this->appDir . '/src/Service.php';
+        $composerLoader = new ClassLoader();
+        $composerLoader->addClassMap(['App\\Service' => $file]);
+        $cachePathManager = $this->createPrebuiltCachePathManager($debug);
+        $loader = new AopComposerLoader(
+            $composerLoader,
+            $this->createContainer($cachePathManager),
+            ['debug' => $debug, 'features' => Features::PREBUILT_CACHE] + $this->createOptions([]),
+        );
+
+        try {
+            $loader->findFile('App\\Service');
+            $this->fail('A class of a file unknown to a prebuilt cache must fail the request');
+        } catch (WeavingException $exception) {
+            $this->assertSame(
+                WeavingException::sourceMissingFromPrebuiltCache(
+                    (string) PathResolver::realpath($file),
+                    (string) $cachePathManager->getCacheDir(),
+                    'App\\Service',
+                )->getMessage(),
+                $exception->getMessage(),
+            );
+        }
+    }
+
+    #[DataProvider('modes')]
+    public function testBuildProcessLoadsAClassThePrebuiltCacheMissesAsItIsBeforeTheBuild(bool $debug): void
+    {
+        $file           = $this->appDir . '/src/Service.php';
+        $composerLoader = new ClassLoader();
+        $composerLoader->addClassMap(['App\\Service' => $file]);
+        $loader = new AopComposerLoader(
+            $composerLoader,
+            $this->createContainer($this->createPrebuiltCachePathManager($debug)),
+            ['debug' => $debug, 'features' => Features::PREBUILT_CACHE] + $this->createOptions([]),
+        );
+        CachePathManager::markBuildProcess();
+
+        // The original file: not woven before the build of the warm-up, which weaves it into the cache
+        $this->assertSame(PathResolver::realpath($file), $loader->findFile('App\\Service'));
+    }
+
+    #[DataProvider('modes')]
+    public function testPrebuiltCacheServesAClassOfAFileItKnows(bool $debug): void
+    {
+        $file           = (string) PathResolver::realpath($this->appDir . '/src/Service.php');
+        $composerLoader = new ClassLoader();
+        // A class added to a file known to the cache: the record is trusted as it is
+        $composerLoader->addClassMap(['App\\Added' => $file]);
+        $cachePathManager = $this->createPrebuiltCachePathManager($debug, $file);
+        $options          = ['debug' => $debug, 'cacheDir' => $cachePathManager->getCacheDir(), 'features' => Features::PREBUILT_CACHE];
+        $this->configureFilterInjector($cachePathManager, $options);
+        $loader = new AopComposerLoader($composerLoader, $this->createContainer($cachePathManager), $options + $this->createOptions([]));
+
+        $this->assertSame($file, $loader->findFile('App\\Added'));
+    }
+
+    #[DataProvider('modes')]
+    public function testPrebuiltCacheLoadsExcludedClassesAsTheyAre(bool $debug): void
+    {
+        $file           = $this->appDir . '/vendor/goaop/dissect/src/Parser.php';
+        $composerLoader = new ClassLoader();
+        $composerLoader->addClassMap(['Dissect\\Parser' => $file]);
+        $loader = new AopComposerLoader(
+            $composerLoader,
+            $this->createContainer($this->createPrebuiltCachePathManager($debug)),
+            ['debug' => $debug, 'features' => Features::PREBUILT_CACHE] + $this->createOptions([]),
+        );
+
+        $this->assertSame(PathResolver::realpath($file), $loader->findFile('Dissect\\Parser'));
     }
 
     public function testFindOriginalFileResolvesClassThroughWrappedComposerLoaderWithoutLoadingIt(): void
@@ -460,12 +547,36 @@ class AopComposerLoaderTest extends TestCase
     }
 
     /**
+     * Manager of a prebuilt cache in the application directory, built with the given source recorded as untransformed
+     */
+    private function createPrebuiltCachePathManager(bool $debug, ?string $knownFile = null): CachePathManager
+    {
+        $options = ['debug' => $debug, 'cacheDir' => $this->appDir . '/cache', 'features' => Features::PREBUILT_CACHE]
+            + $this->createOptions([]);
+        $kernel = $this->createStub(AspectKernel::class);
+        $kernel->method('getOptions')->willReturn($options);
+        $kernel->method('hasFeature')->willReturnCallback(static fn(int $feature): bool => $feature === Features::PREBUILT_CACHE);
+
+        $cachePathManager = new CachePathManager($kernel);
+        $cachePathManager->withCacheDir($this->appDir . '/cache', static function () use ($cachePathManager, $knownFile): void {
+            if ($knownFile !== null) {
+                $cachePathManager->setCacheState($knownFile, ['filemtime' => 1, 'filesize' => 0, 'cacheUri' => null]);
+            }
+        });
+
+        return $cachePathManager;
+    }
+
+    /**
      * Configures the php://filter rewriting without a booted kernel
      */
-    private function configureFilterInjector(CachePathManager $cachePathManager): void
+    /**
+     * @param array<string, mixed> $options Options replacing the debug options of {@see createOptions()}
+     */
+    private function configureFilterInjector(CachePathManager $cachePathManager, array $options = []): void
     {
         $kernel = $this->createStub(AspectKernel::class);
-        $kernel->method('getOptions')->willReturn($this->createOptions([]));
+        $kernel->method('getOptions')->willReturn($options + $this->createOptions([]));
         new FilterInjectorTransformer($kernel, SourceTransformingLoader::FILTER_IDENTIFIER, $cachePathManager);
     }
 

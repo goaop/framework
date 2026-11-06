@@ -246,5 +246,7 @@ class DebugWeavingCommandInProcessTest extends TestCase
     {
         $this->fileSystem?->unmount();
         $this->fileSystem = null;
+        // The command marks the process as a build process, the other tests run as requests
+        CachePathManager::markBuildProcess(false);
     }
 }

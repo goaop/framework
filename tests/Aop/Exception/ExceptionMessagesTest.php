@@ -409,6 +409,27 @@ final class ExceptionMessagesTest extends TestCase
                 'The AOP cache in /cache was built by another version of the framework, '
                 . 'rebuild it with `bin/aspect cache:warmup:aop` before using Features::PREBUILT_CACHE',
             ],
+            'prebuilt cache, class'       => [
+                static fn() => WeavingException::sourceMissingFromPrebuiltCache('/app/src/Foo.php', '/cache', 'App\Foo'),
+                WeavingException::class,
+                'Class App\Foo (/app/src/Foo.php) is missing from the prebuilt AOP cache in /cache: with '
+                . 'Features::PREBUILT_CACHE a request never weaves, so the cache is incomplete, rebuild it with '
+                . '`bin/aspect cache:warmup:aop`',
+            ],
+            'prebuilt cache, file'        => [
+                static fn() => WeavingException::sourceMissingFromPrebuiltCache('/app/src/file.php', '/cache'),
+                WeavingException::class,
+                'File /app/src/file.php is missing from the prebuilt AOP cache in /cache: with '
+                . 'Features::PREBUILT_CACHE a request never weaves, so the cache is incomplete, rebuild it with '
+                . '`bin/aspect cache:warmup:aop`',
+            ],
+            'prebuilt cache, cached file' => [
+                static fn() => WeavingException::cachedFileMissingFromPrebuiltCache('/app/src/Foo.php', '/cache/src/FooOriginalTrait.php', '/cache'),
+                WeavingException::class,
+                'The cached file /cache/src/FooOriginalTrait.php of /app/src/Foo.php is missing from the prebuilt AOP '
+                . 'cache in /cache: with Features::PREBUILT_CACHE a request never weaves, so the cache is incomplete, '
+                . 'rebuild it with `bin/aspect cache:warmup:aop`',
+            ],
             'cache dir not created'       => [
                 static fn() => WeavingException::cacheDirectoryNotCreated('/cache/aop'),
                 WeavingException::class,

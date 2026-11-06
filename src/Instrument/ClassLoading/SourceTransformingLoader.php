@@ -22,6 +22,7 @@ use Go\Instrument\Transformer\Weaving\ProxyCache;
 use php_user_filter as PhpStreamFilter;
 use Throwable;
 
+use function is_file;
 use function is_string;
 use function strlen;
 
@@ -32,6 +33,8 @@ use function strlen;
  * exists for the streamed file, its content is returned as-is - without parsing the
  * source, constructing any transformer or touching the container. Only a cache miss
  * builds the StreamMetaData and runs the transformer chain, persisting the result.
+ * A prebuilt cache never gets there: a request fails a source of the cache that the
+ * cache misses (CachePathManager::$servesPrebuiltCache, $failsOnMiss).
  *
  * @phpstan-property resource $stream Inherited from php_user_filter; typed here for static analysis
  */
@@ -188,6 +191,21 @@ final class SourceTransformingLoader extends PhpStreamFilter
                 return PSFS_PASS_ON;
             }
 
+            // A prebuilt cache is never woven into: a source of the cache it misses fails a request, before any
+            // weaving work. Any other file (an included template, a file outside the include paths), and that source
+            // in the process about to build the cache, is served as it is
+            if (self::$cachePathManager?->servesPrebuiltCache === true) {
+                if (self::$cachePathManager->failsOnMiss && self::$cachePathManager->isSourceOfCache($originalUri)) {
+                    throw WeavingException::sourceMissingFromPrebuiltCache(
+                        $originalUri,
+                        (string) self::$cachePathManager->getCacheDir(),
+                    );
+                }
+                stream_bucket_append($out, stream_bucket_new($this->stream, $this->data));
+
+                return PSFS_PASS_ON;
+            }
+
             // Cache miss: parse the source, run the transformer chain and persist the result
             $metadata = new StreamMetaData($this->stream, $this->data);
             $result   = self::transformCode($metadata);
@@ -295,7 +313,16 @@ final class SourceTransformingLoader extends PhpStreamFilter
 
         $recordedCacheUri = $cacheState['cacheUri'] ?? null;
         if (is_string($recordedCacheUri)) {
-            $cachedContent = file_get_contents($recordedCacheUri);
+            // A cached file that is gone is woven again, without a warning (an error handler would see a silenced
+            // one too); a request never weaves a prebuilt cache, it fails
+            $cachedContent = is_file($recordedCacheUri) ? file_get_contents($recordedCacheUri) : false;
+            if ($cachedContent === false && self::$cachePathManager->failsOnMiss) {
+                throw WeavingException::cachedFileMissingFromPrebuiltCache(
+                    $originalUri,
+                    $recordedCacheUri,
+                    (string) self::$cachePathManager->getCacheDir(),
+                );
+            }
 
             return $cachedContent === false ? null : $cachedContent;
         }
@@ -314,7 +341,8 @@ final class SourceTransformingLoader extends PhpStreamFilter
         string $transformedSource,
         TransformerResult $result,
     ): void {
-        if (self::$cachePathManager === null) {
+        // A prebuilt cache is never written by a request, the filter fails such a request before weaving anyway
+        if (self::$cachePathManager === null || self::$cachePathManager->servesPrebuiltCache) {
             return;
         }
 

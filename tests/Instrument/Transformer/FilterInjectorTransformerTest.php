@@ -19,6 +19,7 @@ use Go\Instrument\PathResolver;
 use PhpParser\Node\Expr\Include_;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Scalar\String_;
+use PHPUnit\Framework\MockObject\Runtime\PropertyHook;
 use PHPUnit\Framework\TestCase;
 use TypeError;
 
@@ -212,6 +213,21 @@ class FilterInjectorTransformerTest extends TestCase
         $cachePathManager = $this->createStub(CachePathManager::class);
         $cachePathManager->method('findIncludeFile')->willReturn(null);
         $cachePathManager->method('getCachePathForResource')->willReturn('/cache/src/unknown.php');
+        $this->configureWithCache($cachePathManager);
+
+        $this->assertSame(
+            FilterInjectorTransformer::PHP_FILTER_READ . 'unit.test.cache/resource=/app/src/unknown.php',
+            FilterInjectorTransformer::rewrite('/app/src/unknown.php'),
+        );
+    }
+
+    public function testPrebuiltCacheIncludesUnknownSourceThroughTheFilterWithoutLookingForACachedFile(): void
+    {
+        $cachePathManager = $this->createMock(CachePathManager::class);
+        $cachePathManager->method(PropertyHook::get('servesPrebuiltCache'))->willReturn(true);
+        $cachePathManager->method('findIncludeFile')->willReturn(null);
+        // A file at the cache path of an unknown source is no record: the filter fails a source the cache misses
+        $cachePathManager->expects($this->never())->method('getCachePathForResource');
         $this->configureWithCache($cachePathManager);
 
         $this->assertSame(

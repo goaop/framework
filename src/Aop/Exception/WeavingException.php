@@ -91,6 +91,38 @@ class WeavingException extends RuntimeException implements ExceptionInterface
         ));
     }
 
+    /**
+     * A request served by a prebuilt cache met a source of the cache that the cache has no record of (#808)
+     *
+     * With Features::PREBUILT_CACHE a request never weaves nor writes: a source below the include paths that the
+     * cache does not know (added after the build, or a cache built with other include paths) is a failed deployment.
+     *
+     * @param string|null $className Class the source was autoloaded for, null for an included file
+     */
+    public static function sourceMissingFromPrebuiltCache(string $fileName, string $cacheDir, ?string $className = null): self
+    {
+        return new self(sprintf(
+            '%s is missing from the prebuilt AOP cache in %s: with Features::PREBUILT_CACHE a request never weaves, '
+            . 'so the cache is incomplete, rebuild it with `bin/aspect cache:warmup:aop`',
+            $className !== null ? "Class {$className} ({$fileName})" : "File {$fileName}",
+            $cacheDir,
+        ));
+    }
+
+    /**
+     * A request served by a prebuilt cache found the record of a source, but not the cached file it points to (#808)
+     */
+    public static function cachedFileMissingFromPrebuiltCache(string $fileName, string $cachedFileName, string $cacheDir): self
+    {
+        return new self(sprintf(
+            'The cached file %s of %s is missing from the prebuilt AOP cache in %s: with Features::PREBUILT_CACHE '
+            . 'a request never weaves, so the cache is incomplete, rebuild it with `bin/aspect cache:warmup:aop`',
+            $cachedFileName,
+            $fileName,
+            $cacheDir,
+        ));
+    }
+
     public static function cacheDirectoryNotCreated(string $directory): self
     {
         return new self(sprintf('Unable to create cache directory "%s".', $directory));

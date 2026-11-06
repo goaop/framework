@@ -21,6 +21,7 @@ use Go\Instrument\Transformer\SourceTransformer;
 use Go\Instrument\Transformer\StreamMetaData;
 use Go\Instrument\Transformer\TransformerResult;
 use Go\PhpUnit\UsesTemporaryDirectory;
+use Go\VirtualFileSystem\FileSystem;
 use LogicException;
 use PhpToken;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -47,6 +48,7 @@ class SourceTransformingLoaderTest extends TestCase
     {
         // The loader holds process-wide static state, which every test configures differently
         SourceTransformingLoader::reset();
+        CachePathManager::markBuildProcess(false);
 
         // Real directories: the stream filter includes woven sources and the loader resolves the
         // streamed path via realpath(), neither of which works on the virtual file system
@@ -61,6 +63,7 @@ class SourceTransformingLoaderTest extends TestCase
     protected function tearDown(): void
     {
         SourceTransformingLoader::reset();
+        CachePathManager::markBuildProcess(false);
         self::removeTemporaryDirectory($this->cacheDir);
         self::removeTemporaryDirectory($this->appDir);
     }
@@ -79,12 +82,12 @@ class SourceTransformingLoaderTest extends TestCase
      *
      * @param SourceTransformer[] $transformers Chain served by the interface tag query
      */
-    private function registerLoader(array $transformers, int $features = 0, ?string $cacheDir = null): void
+    private function registerLoader(array $transformers, int $features = 0, ?string $cacheDir = null, ?string $appDir = null): void
     {
         $kernel = $this->createMock(AspectKernel::class);
         $kernel->method('getOptions')->willReturn([
             'debug'          => true,
-            'appDir'         => $this->appDir,
+            'appDir'         => $appDir ?? $this->appDir,
             'cacheDir'       => $cacheDir ?? $this->cacheDir,
             'cacheFileMode'  => 0770,
             'features'       => $features,
@@ -113,12 +116,12 @@ class SourceTransformingLoaderTest extends TestCase
      * Streams the original file through the registered filter, exactly like the
      * composer autoloader and the cache warmer do
      */
-    private function filterOriginalFile(): string
+    private function filterOriginalFile(?string $file = null): string
     {
         $content = file_get_contents(
             SourceTransformingLoader::PHP_FILTER_READ
             . SourceTransformingLoader::getId()
-            . '/resource=' . $this->originalFile,
+            . '/resource=' . ($file ?? $this->originalFile),
         );
         $this->assertIsString($content);
 
@@ -413,6 +416,195 @@ class SourceTransformingLoaderTest extends TestCase
         ]);
 
         $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
+    }
+
+    /**
+     * Builds the prebuilt cache of the test: one recorded source, flushed like a warm-up does
+     */
+    private function buildPrebuiltCache(): void
+    {
+        $builtFile = $this->appDir . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Built.php';
+        file_put_contents($builtFile, self::ORIGINAL_SOURCE);
+        $this->cachePathManager->withCacheDir($this->cacheDir, function () use ($builtFile): void {
+            $this->assertFalse($this->cachePathManager->servesPrebuiltCache, 'A build weaves and writes');
+            $this->cachePathManager->setCacheState($builtFile, $this->freshRecord(null));
+        });
+        $this->assertFileExists($this->cacheDir . '/_include.cache');
+        $this->assertFileExists($this->cacheDir . '/_transformation.cache');
+    }
+
+    /**
+     * Content hash and modification time of every file below a directory, keyed by the path in one separator form
+     *
+     * @return array<string, string>
+     */
+    private static function snapshotDirectory(string $directory): array
+    {
+        clearstatcache();
+        $snapshot = [];
+        $files    = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS));
+        foreach ($files as $file) {
+            assert($file instanceof \SplFileInfo);
+            $snapshot[str_replace('\\', '/', $file->getPathname())] = hash_file('xxh128', $file->getPathname()) . '@' . $file->getMTime();
+        }
+        ksort($snapshot);
+
+        return $snapshot;
+    }
+
+    public function testPrebuiltCacheFailsASourceItMissesBeforeWeavingAndWritesNothing(): void
+    {
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer], Features::PREBUILT_CACHE);
+        $this->buildPrebuiltCache();
+        $cacheFiles = self::snapshotDirectory($this->cacheDir);
+        // The source was added after the build
+        $this->container->expects($this->never())->method('getServicesByInterface');
+
+        try {
+            $this->filterOriginalFile();
+            $this->fail('A source missing from a prebuilt cache must fail the request');
+        } catch (WeavingException $exception) {
+            $this->assertSame(
+                WeavingException::sourceMissingFromPrebuiltCache($this->originalFile, $this->cacheDir)->getMessage(),
+                $exception->getMessage(),
+            );
+        }
+        // The shutdown flush of the request
+        $this->cachePathManager->flushCacheState();
+
+        $this->assertSame(0, $transformer->callCount, 'Nothing is woven');
+        $this->assertSame($cacheFiles, self::snapshotDirectory($this->cacheDir), 'Nothing is written');
+        $this->assertNull($this->cachePathManager->queryCacheState($this->originalFile));
+    }
+
+    public function testBuildProcessServesASourceThePrebuiltCacheMissesAsItIsBeforeTheBuild(): void
+    {
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer], Features::PREBUILT_CACHE);
+        $this->buildPrebuiltCache();
+        $cacheFiles = self::snapshotDirectory($this->cacheDir);
+        // The loader file of cache:warmup:aop loads a class the cache misses, before the build
+        CachePathManager::markBuildProcess();
+
+        $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile());
+        $this->cachePathManager->flushCacheState();
+
+        $this->assertSame(0, $transformer->callCount, 'Woven by the build, not before');
+        $this->assertSame($cacheFiles, self::snapshotDirectory($this->cacheDir), 'Nothing is written before the build');
+
+        // The build weaves it
+        $this->cachePathManager->withCacheDir($this->cacheDir, function (): void {
+            $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
+        });
+        $this->assertSame(1, $transformer->callCount);
+        $this->assertSame(self::WOVEN_SOURCE, file_get_contents($this->cachePath('src/Some.php')));
+    }
+
+    public function testPrebuiltCacheServesAFileThatIsNoSourceOfTheCacheAsItIs(): void
+    {
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer], Features::PREBUILT_CACHE);
+        $this->buildPrebuiltCache();
+        $cacheFiles = self::snapshotDirectory($this->cacheDir);
+        // A template included by a woven class: the path filter of the weaver takes `.php` files only
+        $template = $this->appDir . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'page.phtml';
+        file_put_contents($template, self::ORIGINAL_SOURCE);
+
+        $this->assertSame(self::ORIGINAL_SOURCE, $this->filterOriginalFile($template));
+        $this->cachePathManager->flushCacheState();
+
+        $this->assertSame(0, $transformer->callCount);
+        $this->assertSame($cacheFiles, self::snapshotDirectory($this->cacheDir));
+    }
+
+    public function testPrebuiltCacheFailsARecordWhoseCachedFileIsGoneWithoutAWarning(): void
+    {
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer], Features::PREBUILT_CACHE);
+        $cacheFile = $this->cachePath('src/Some.php');
+        $this->cachePathManager->setCacheState($this->originalFile, $this->freshRecord($cacheFile));
+        $warnings = [];
+        set_error_handler(static function (int $errno, string $errstr) use (&$warnings): bool {
+            $warnings[] = $errstr;
+
+            return true;
+        });
+
+        try {
+            $this->filterOriginalFile();
+            $this->fail('A cached file missing from a prebuilt cache must fail the request');
+        } catch (WeavingException $exception) {
+            $this->assertSame(
+                WeavingException::cachedFileMissingFromPrebuiltCache($this->originalFile, $cacheFile, $this->cacheDir)->getMessage(),
+                $exception->getMessage(),
+            );
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $warnings);
+        $this->assertSame(0, $transformer->callCount);
+        $this->assertFileDoesNotExist($cacheFile);
+    }
+
+    public function testRecordWhoseCachedFileIsGoneIsWovenAgainWithoutAWarning(): void
+    {
+        $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+        $this->registerLoader([$transformer]);
+        $this->container->method('isFreshSince')->willReturn(true);
+        $cacheFile = $this->cachePath('src/Some.php');
+        $this->cachePathManager->setCacheState($this->originalFile, $this->freshRecord($cacheFile));
+        $warnings = [];
+        set_error_handler(static function (int $errno, string $errstr) use (&$warnings): bool {
+            $warnings[] = $errstr;
+
+            return true;
+        });
+
+        try {
+            $this->assertSame(self::WOVEN_SOURCE, $this->filterOriginalFile());
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $warnings);
+        $this->assertSame(1, $transformer->callCount);
+        $this->assertSame(self::WOVEN_SOURCE, file_get_contents($cacheFile));
+    }
+
+    public function testPrebuiltCacheOnAReadOnlyFileSystemFailsASourceItMissesWithoutWriting(): void
+    {
+        $fileSystem = FileSystem::mount('stlreadonly');
+        try {
+            $fileSystem->createDirectory('/app/src', recursive: true);
+            $fileSystem->createDirectory('/cache');
+            $appDir   = $fileSystem->path('/app');
+            $cacheDir = $fileSystem->path('/cache');
+            $source   = $fileSystem->path('/app/src/Added.php');
+            file_put_contents($source, self::ORIGINAL_SOURCE);
+            $transformer = $this->createTransformerStub(TransformerResult::Transformed, self::WOVEN_SOURCE);
+            $this->registerLoader([$transformer], Features::PREBUILT_CACHE, $cacheDir, $appDir);
+            $fileSystem->find('/cache')?->chmod(0o555);
+            $this->assertDirectoryIsNotWritable($cacheDir);
+
+            try {
+                $this->filterOriginalFile($source);
+                $this->fail('A source missing from a read-only prebuilt cache must fail before it is woven');
+            } catch (WeavingException $exception) {
+                // The filter resolves the stream path with native separators (`\` on Windows): compare with `/`
+                $this->assertSame(
+                    str_replace('\\', '/', WeavingException::sourceMissingFromPrebuiltCache($source, $cacheDir)->getMessage()),
+                    str_replace('\\', '/', $exception->getMessage()),
+                );
+            }
+            $this->cachePathManager->flushCacheState();
+
+            $this->assertSame(0, $transformer->callCount);
+            $this->assertSame([], array_values(array_diff((array) scandir($cacheDir), ['.', '..'])), 'Nothing is written');
+        } finally {
+            $fileSystem->unmount();
+        }
     }
 
     public function testSourcePassesThroughUntouchedWhenCachePathEqualsOriginal(): void
