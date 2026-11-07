@@ -1,9 +1,9 @@
 # Go! AOP Framework
-goaop/framework | NS: Go\ | PHP: ^8.4.0
+goaop/framework | NS: Go\ | PHP: ^8.5.0
 AOP via source transformation at load time (stream filter, no PECL, no eval).
 
 ## Agent gate
-- PHP 8.4+ required. If PHP 8.3 or less → STOP, report can't run tests/phpstan.
+- PHP 8.5+ required. If PHP 8.4 or less → STOP, report can't run tests/phpstan.
 - Gate: `composer analyze` before commit (phpstan level 10).
 - Remote session (Claude Code on the web): `composer install` is source-only/slow and dies on phpstan/phpstan → packagist-mirror recipe in `tests/AGENTS.md` § Remote sessions.
 

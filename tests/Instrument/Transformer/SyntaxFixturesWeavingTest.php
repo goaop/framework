@@ -118,11 +118,6 @@ class SyntaxFixturesWeavingTest extends TestCase
     #[DataProvider('fixtureNames')]
     public function testWovenTraitAndProxyCompile(string $name): void
     {
-        // 8.5-only syntax cannot compile (nor natively reflect) on older runtimes
-        if (str_starts_with($name, 'Php85') && PHP_VERSION_ID < 80500) {
-            $this->markTestSkipped('Fixture uses PHP 8.5 syntax');
-        }
-
         $metadata = $this->loadFixtureMetadata($name);
         $this->transformer->transform($metadata);
 
