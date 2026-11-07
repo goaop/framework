@@ -469,7 +469,7 @@ class ClassProxyGenerator
     /**
      * Renders the return type of the method for the joinpoint `@var` docblock: `, <type>` or an empty string
      *
-     * On PHP 8.5+, ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN, so the raw
+     * ReflectionNamedType::getName() resolves 'self'/'parent' to the actual FQCN, so the raw
      * AST return-type node is used when available (goaop/parser-reflection) to preserve keywords; the
      * reflection type is only rendered without it.
      */

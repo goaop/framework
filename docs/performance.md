@@ -282,7 +282,7 @@ setup as a working image.
 ```dockerfile
 FROM php:8.5-fpm
 
-# OPcache is part of PHP 8.5 (PHP 8.4 images: RUN docker-php-ext-install opcache)
+# OPcache is part of PHP 8.5, no docker-php-ext-install needed
 COPY docker/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

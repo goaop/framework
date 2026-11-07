@@ -70,9 +70,8 @@ class NativeLazyProxyTest extends TestCase
 
     public function testReadonlyClassSupportFollowsEngineCapabilities(): void
     {
-        // Current engines (PHP 8.4.19+, 8.5) can make readonly classes lazy; the probe
-        // asks the engine instead of hardcoding a version cutoff, so an engine without
-        // that support would simply get the eager fallback (null) here
+        // PHP 8.5 can make readonly classes lazy; the probe asks the engine instead of
+        // hardcoding which classes are supported
         $proxy = NativeLazyProxy::tryCreate(ReadonlyLazyFixture::class, fn(): ReadonlyLazyFixture => new ReadonlyLazyFixture(1));
 
         $this->assertInstanceOf(ReadonlyLazyFixture::class, $proxy);

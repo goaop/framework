@@ -1105,7 +1105,6 @@ class WeavingTransformerTest extends TestCase
      * drops both `final` and the visibility modifier, while the proxy re-declares the
      * property as final with the original default value (issue #599).
      */
-    #[\PHPUnit\Framework\Attributes\RequiresPhp('>= 8.5.0')]
     public function testWeaverDemotesFinalPromotedProperty(): void
     {
         $transformer = $this->createTransformerWithAdvices([

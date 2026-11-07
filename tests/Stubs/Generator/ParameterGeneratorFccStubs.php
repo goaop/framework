@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Stubs\Generator;
 
 /**
- * This file uses PHP 8.5+ first-class callable default syntax and must only
- * be loaded on PHP >= 8.5. Tests that reference it are gated with #[RequiresPhp('8.5')].
+ * Uses the PHP 8.5 first-class callable default syntax
  */
 function paramGenHelper_fcc($callback = \strlen(...)): void {}

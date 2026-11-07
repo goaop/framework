@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Go\Proxy\Generator;
 
 use Go\ParserReflection\ReflectionFunction as ParserReflectionFunction;
-use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Function_;
@@ -149,10 +148,8 @@ class ParameterGeneratorTest extends TestCase
         $this->assertSame('int $count = 0', $output);
     }
 
-    #[RequiresPhp('>= 8.5.0')]
     public function testFromReflectionWithFccDefault(): void
     {
-        require_once __DIR__ . '/../../Stubs/Generator/ParameterGeneratorFccStubs.php';
         $refFunc = $this->getParserReflectionFunction(
             __DIR__ . '/../../Stubs/Generator/ParameterGeneratorFccStubs.php',
             'paramGenHelper_fcc',

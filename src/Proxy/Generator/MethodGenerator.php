@@ -126,7 +126,7 @@ final class MethodGenerator
         if ($method->hasReturnType()) {
             // If the method exposes its AST node (Go\ParserReflection\ReflectionMethod), the
             // type is built from the raw type node, so that 'self' and 'parent' keywords are
-            // preserved without PHP 8.5+ name resolution, while regular class names are still
+            // preserved without the name resolution, while regular class names are still
             // fully qualified via resolvedName attributes.
             if (method_exists($method, 'getNode')) {
                 /** @var ClassMethod $astMethod */

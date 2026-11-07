@@ -34,9 +34,6 @@ class PreloadTest extends BaseFunctionalTestCase
     {
         // The base tearDown() clears the cache directory of the configuration, also after a skip
         $this->loadConfiguration();
-        if (!function_exists('opcache_get_status')) {
-            $this->markTestSkipped('Preloading needs the opcache extension');
-        }
         if (PHP_OS_FAMILY === 'Windows') {
             $this->markTestSkipped('PHP does not support opcache.preload on Windows');
         }

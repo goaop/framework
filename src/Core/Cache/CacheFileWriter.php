@@ -14,8 +14,6 @@ namespace Go\Core\Cache;
 
 use Go\Aop\Exception\WeavingException;
 
-use function function_exists;
-
 /**
  * Writes cache files to the file system in a safe and uniform way.
  *
@@ -76,8 +74,6 @@ final readonly class CacheFileWriter
             throw WeavingException::cacheFileNotWritten($fileName);
         }
 
-        if (function_exists('opcache_invalidate')) {
-            opcache_invalidate($fileName, true);
-        }
+        opcache_invalidate($fileName, true);
     }
 }
