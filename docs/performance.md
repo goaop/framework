@@ -247,7 +247,9 @@ opcache.preload_user=www-data
 ```
 
 The script requires Composer's autoloader, hands it the woven class map and links every woven class, its proxy and
-every untransformed class known to the cache into OPcache when PHP-FPM starts. It holds no absolute path (everything is
+every untransformed class known to the cache into OPcache when PHP-FPM starts. Composer's `files` autoloads (helper
+functions, polyfill bootstraps) are not preloaded: the requests include them as before, and OPcache would warn about
+an anonymous class of a helper function it can not link while preloading. It holds no absolute path (everything is
 located through `__DIR__`, like the metadata files), so a cache moved together with the application stays valid, and
 it lists the classes of exactly the cache it was built with: rebuild it with the cache. A class that can not be linked
 while preloading (an optional dependency is missing) is written to the error log and left to the autoloader of the

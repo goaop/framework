@@ -17,6 +17,8 @@ use Go\Tests\TestProject\Application\Greeter;
 use Go\Tests\TestProject\Application\Main;
 use Go\VirtualFileSystem\FileSystem;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
+use Symfony\Component\Process\Process;
 
 /**
  * The generated script is read as text here; that PHP preloads it is covered by the functional PreloadTest
@@ -51,6 +53,7 @@ class PreloadScriptGeneratorTest extends TestCase
         $script = $this->generate(PreloadScriptGenerator::defaultScriptPath($this->cacheDir));
 
         $this->assertStringContainsString("\$loader = require __DIR__ . '/../../../vendor/autoload.php';", $script);
+        $this->assertStringContainsString("})(__DIR__ . '/../../../vendor/composer/autoload_files.php');", $script);
         $this->assertStringContainsString("define('AOP_ROOT_DIR', __DIR__ . '/../../..')", $script);
         $this->assertStringContainsString("define('AOP_CACHE_DIR', __DIR__)", $script);
         $this->assertStringContainsString("'Go\\\\Tests\\\\TestProject\\\\Application\\\\EdgeCaseDemo' => __DIR__ . '/src/Service/OrderOriginalTrait.php',", $script);
@@ -118,6 +121,49 @@ class PreloadScriptGeneratorTest extends TestCase
         $this->assertGreaterThan(100, count(token_get_all($script, TOKEN_PARSE)));
     }
 
+    /**
+     * Composer's `files` autoloads are marked as included before the autoloader is required: opcache can not link an
+     * anonymous class of a helper function while preloading and warns about it on every start (Laravel's helpers)
+     */
+    public function testScriptDoesNotIncludeTheFilesAutoloadsOfComposer(): void
+    {
+        $projectDir = sys_get_temp_dir() . '/go-aop-preload-' . getmypid();
+        mkdir($projectDir . '/vendor/composer', 0777, true);
+        try {
+            // Requires the `files` autoloads the way the autoload_real.php of Composer does
+            file_put_contents($projectDir . '/vendor/autoload.php', <<<'PHP'
+                <?php
+                foreach (require __DIR__ . '/composer/autoload_files.php' as $fileIdentifier => $file) {
+                    if (empty($GLOBALS['__composer_autoload_files'][$fileIdentifier])) {
+                        $GLOBALS['__composer_autoload_files'][$fileIdentifier] = true;
+                        require $file;
+                    }
+                }
+                echo "class loader registered\n";
+                return new class {
+                    public function addClassMap(array $classMap): void {}
+                };
+                PHP);
+            file_put_contents($projectDir . '/vendor/composer/autoload_files.php', <<<'PHP'
+                <?php
+                $vendorDir = dirname(__DIR__);
+                return ['8825ede83f2f289127722d4e842cf7e8' => $vendorDir . '/helpers.php'];
+                PHP);
+            file_put_contents($projectDir . '/vendor/helpers.php', "<?php\necho \"helpers included\\n\";\n");
+            $scriptPath = $projectDir . '/preload.php';
+            $generator  = new PreloadScriptGenerator($projectDir . '/cache', $projectDir, [], [], $projectDir . '/vendor/autoload.php');
+            file_put_contents($scriptPath, $generator->generate($scriptPath));
+
+            $process = new Process([PHP_BINARY, $scriptPath]);
+            $process->run();
+
+            $this->assertTrue($process->isSuccessful(), $process->getOutput() . $process->getErrorOutput());
+            $this->assertSame("class loader registered\n", $process->getOutput());
+        } finally {
+            (new SymfonyFilesystem())->remove($projectDir);
+        }
+    }
+
     public function testPathWithoutCommonRootStaysAbsolute(): void
     {
         $generator = new PreloadScriptGenerator(
@@ -131,6 +177,7 @@ class PreloadScriptGeneratorTest extends TestCase
         $script = $generator->generate(PreloadScriptGenerator::defaultScriptPath($this->cacheDir));
 
         $this->assertStringContainsString("\$loader = require 'other://vendor/autoload.php';", $script);
+        $this->assertStringContainsString("})('other://vendor/composer/autoload_files.php');", $script);
     }
 
     private function generate(string $scriptPath): string
