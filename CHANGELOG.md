@@ -5,7 +5,7 @@ Changelog
 **Requirements**
 * [BC BREAK] Requires PHP 8.5+
 
-4.0.0 (unreleased)
+4.0.0 (November 7, 2026)
 
 See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 
