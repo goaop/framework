@@ -1,11 +1,6 @@
 Changelog
 ======
-4.0.1 (unreleased)
-
-**Fixed**
-* **opcache.preload script without Composer's `files` autoloads** — the script written by `cache:warmup:aop --preload` marks Composer's `files` autoloads (helper functions, polyfill bootstraps) as included before it requires the autoloader, as Composer does for a file it has included, so PHP no longer preloads them. Opcache tries to link every class of a preloaded file, also an anonymous class in the body of a helper function: with Laravel, `Illuminate/Reflection/helpers.php` printed `Can't preload unlinked class class@anonymous: Unknown trait Illuminate\Support\Traits\ReflectsClosures` on every start of PHP. Linking the classes of the cache needs only the class loader, and the requests include the files as before (goaop/goaop-laravel-bridge#42).
-
-4.0.0
+4.0.0 (unreleased)
 
 See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
 
