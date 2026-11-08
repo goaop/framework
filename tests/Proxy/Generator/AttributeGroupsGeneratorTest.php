@@ -15,7 +15,6 @@ namespace Go\Proxy\Generator;
 use Go\ParserReflection\ReflectionFileNamespace;
 use Go\Stubs\Generator\AttrGenHelperClass;
 use Go\Stubs\Generator\AttrGenRichHelperClass;
-use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Attribute;
@@ -226,10 +225,8 @@ class AttributeGroupsGeneratorTest extends TestCase
     /**
      * AST path: PHP 8.5 first-class callable syntax in attribute arguments (issue #601).
      */
-    #[RequiresPhp('>= 8.5.0')]
     public function testAstPathPreservesFccArgument(): void
     {
-        require_once __DIR__ . '/../../Stubs/Generator/AttributeGroupsGenerator85Stubs.php';
         $func   = $this->getParserReflectionNamespace(__DIR__ . '/../../Stubs/Generator/AttributeGroupsGenerator85Stubs.php')
             ->getFunction('attrGenHelper85_fccArg');
         $groups = AttributeGroupsGenerator::fromReflector($func);
@@ -241,10 +238,8 @@ class AttributeGroupsGeneratorTest extends TestCase
     /**
      * AST path: PHP 8.5 closures in attribute arguments (issue #601).
      */
-    #[RequiresPhp('>= 8.5.0')]
     public function testAstPathPreservesClosureArgument(): void
     {
-        require_once __DIR__ . '/../../Stubs/Generator/AttributeGroupsGenerator85Stubs.php';
         $func   = $this->getParserReflectionNamespace(__DIR__ . '/../../Stubs/Generator/AttributeGroupsGenerator85Stubs.php')
             ->getFunction('attrGenHelper85_closureArg');
         $groups = AttributeGroupsGenerator::fromReflector($func);

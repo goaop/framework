@@ -55,12 +55,7 @@ final class FileCachePrimer
     {
         $setting = static fn(string $name): string|false => $settings === null ? ini_get($name) : ($settings[$name] ?? false);
 
-        // ini_get() knows no setting of an extension that is not loaded
-        $enableCli = $setting('opcache.enable_cli');
-        if ($enableCli === false) {
-            return 'the opcache extension is not loaded';
-        }
-        if (!self::isEnabled($enableCli)) {
+        if (!self::isEnabled($setting('opcache.enable_cli'))) {
             return 'opcache.enable_cli is off';
         }
         $configuredDir = (string) $setting('opcache.file_cache');
@@ -79,7 +74,7 @@ final class FileCachePrimer
         if (!self::isEnabled($setting('opcache.file_cache_only'))) {
             return 'opcache.file_cache_only is off';
         }
-        // PHP 8.5: a read-only file cache is only read at runtime, nothing is ever written to it
+        // A read-only file cache is only read at runtime, nothing is ever written to it
         if (self::isEnabled($setting('opcache.file_cache_read_only'))) {
             return 'opcache.file_cache_read_only is on';
         }
@@ -100,10 +95,8 @@ final class FileCachePrimer
             'opcache.enable_cli=1',
             'opcache.file_cache_only=1',
             'opcache.file_cache=' . $fileCacheDir,
+            'opcache.file_cache_read_only=0',
         ];
-        if (ini_get('opcache.file_cache_read_only') !== false) {
-            $settings[] = 'opcache.file_cache_read_only=0';
-        }
         $options = implode(' ', array_map(static fn(string $setting): string => '-d ' . $setting, $settings));
 
         return sprintf('mkdir -p %s && %s %s %s', $fileCacheDir, PHP_BINARY, $options, implode(' ', $arguments));

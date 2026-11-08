@@ -6,7 +6,7 @@ see [SECURITY.md](SECURITY.md).
 
 ## Requirements
 
-- PHP 8.4 or newer with `ext-tokenizer`
+- PHP 8.5 or newer with `ext-tokenizer`
 - Composer
 
 ## Setup

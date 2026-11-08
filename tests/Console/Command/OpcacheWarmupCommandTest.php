@@ -34,9 +34,6 @@ class OpcacheWarmupCommandTest extends BaseFunctionalTestCase
     {
         // The base tearDown() clears the cache directory of the configuration, also after a skip
         $this->loadConfiguration();
-        if (!function_exists('opcache_get_status')) {
-            $this->markTestSkipped('Priming the file cache needs the opcache extension');
-        }
         parent::setUp();
         $this->fileCacheDir = self::createTemporaryDirectory('opcache-file-cache');
     }

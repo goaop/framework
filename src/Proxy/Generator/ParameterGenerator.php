@@ -57,7 +57,7 @@ final class ParameterGenerator
         if ($param->hasType()) {
             // If the parameter exposes its AST node (Go\ParserReflection\ReflectionParameter),
             // the type is built from the raw type node, so that 'self' and 'parent' keywords
-            // are preserved without PHP 8.5+ name resolution, while regular class names are
+            // are preserved without the name resolution, while regular class names are
             // still fully qualified via resolvedName attributes.
             if (method_exists($param, 'getNode')) {
                 /** @var Node\Param $astParam */

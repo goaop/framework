@@ -364,9 +364,7 @@ class CachePathManagerTest extends TestCase
         $includeMap = (string) file_get_contents(self::$cacheDir . '/_include.cache');
         file_put_contents(self::$cacheDir . '/_include.cache', (string) preg_replace("/^  'stamp' => .*\n/m", '', $includeMap, 1, $count));
         $this->assertSame(1, $count);
-        if (function_exists('opcache_invalidate')) {
-            opcache_invalidate(self::$cacheDir . '/_include.cache', true);
-        }
+        opcache_invalidate(self::$cacheDir . '/_include.cache', true);
     }
 
     public function testWarmRequestPerformsNoStatCall(): void

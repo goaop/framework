@@ -58,7 +58,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
         if ($this->property->isStatic() || $this->property->isReadOnly() || $this->property->hasHooks()) {
             // Properties with existing hooks cannot be intercepted. The framework converts
             // the original class to a trait and redeclares intercepted properties with
-            // get/set hooks in the proxy class. PHP 8.4 does not support conflict resolution
+            // get/set hooks in the proxy class. PHP does not support conflict resolution
             // for hooked properties in traits (Fatal error: "Conflict resolution between
             // hooked properties is currently not supported"), so we cannot keep the original
             // hooks in the trait and override them in the proxy. Extracting hook bodies into
@@ -324,7 +324,7 @@ abstract class AbstractInterceptedPropertyGenerator implements PropertyNodeProvi
     private function getPropertyTypeForPhpDoc(): string
     {
         // Use the raw AST type node when available (goaop/parser-reflection) to preserve keyword
-        // types like 'self' and 'parent' as declared — bypassing PHP 8.5+ FQCN resolution.
+        // types like 'self' and 'parent' as declared — bypassing the FQCN resolution of reflection.
         if (method_exists($this->property, 'getTypeNode')) {
             $typeNode = $this->property->getTypeNode();
             // getTypeNode() returns Property for regular properties or Param for constructor-promoted ones.

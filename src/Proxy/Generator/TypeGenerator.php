@@ -73,7 +73,7 @@ final class TypeGenerator
      *
      * Use this when you have direct access to the AST (e.g. from parser-reflection's getNode()),
      * which preserves keyword type hints such as 'self', 'parent', and 'static' exactly as
-     * declared in the source — without PHP 8.5+ name resolution applied by reflection APIs.
+     * declared in the source — without the name resolution applied by reflection APIs.
      */
     public static function fromAstNode(Identifier|Name|NullableType|UnionType|IntersectionType $node): self
     {
@@ -116,11 +116,11 @@ final class TypeGenerator
 
     /**
      * Returns the original type hint name from a ReflectionNamedType, preserving 'self', 'parent', and 'static'
-     * even on PHP 8.5+ where ReflectionNamedType::getName() resolves them to the actual class name.
+     * where ReflectionNamedType::getName() resolves them to the actual class name.
      */
     public static function resolveReflectionNamedTypeName(ReflectionNamedType $type): string
     {
-        // PHP 8.5 added isSelf()/isParent() and changed getName() to return the resolved class name.
+        // ReflectionNamedType of PHP 8.5 has no isSelf()/isParent() yet, they are used where the engine provides them
         if (method_exists($type, 'isSelf') && $type->isSelf() === true) {
             return 'self';
         }
@@ -135,7 +135,7 @@ final class TypeGenerator
      * Renders a PhpParser AST type node as a phpDoc type string.
      *
      * Use this instead of renderTypeForPhpDoc() whenever the raw AST node is available
-     * (e.g. via ReflectionMethod::getNode()->getReturnType()). This avoids the PHP 8.5+
+     * (e.g. via ReflectionMethod::getNode()->getReturnType()). This avoids the
      * behaviour where ReflectionNamedType::getName() resolves 'self'/'parent' to the
      * actual FQCN, and instead preserves the type exactly as declared in the source.
      *

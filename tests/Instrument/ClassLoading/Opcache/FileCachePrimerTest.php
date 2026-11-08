@@ -39,14 +39,12 @@ class FileCachePrimerTest extends TestCase
 
         return [
             'all set'                        => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '1', 'opcache.file_cache_read_only' => '0'], $dir, null],
-            'no read-only setting (PHP 8.4)' => [['opcache.enable_cli' => 'On', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => 'On'], null, null],
             'cli off'                        => [['opcache.enable_cli' => '0', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '1'], null, 'opcache.enable_cli is off'],
-            'extension not loaded'           => [[], null, 'the opcache extension is not loaded'],
             'no file cache'                  => [['opcache.enable_cli' => '1', 'opcache.file_cache' => '', 'opcache.file_cache_only' => '1'], null, 'opcache.file_cache is not set'],
             'missing directory'              => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir . '/goaop-missing-file-cache', 'opcache.file_cache_only' => '1'], null, "the opcache.file_cache directory {$dir}/goaop-missing-file-cache does not exist"],
             'other directory'                => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '1'], __DIR__, "opcache.file_cache is {$dir}, not " . __DIR__],
             'not file cache only'            => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '0'], $dir, 'opcache.file_cache_only is off'],
-            'read only (PHP 8.5)'            => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '1', 'opcache.file_cache_read_only' => '1'], null, 'opcache.file_cache_read_only is on'],
+            'read only'                      => [['opcache.enable_cli' => '1', 'opcache.file_cache' => $dir, 'opcache.file_cache_only' => '1', 'opcache.file_cache_read_only' => '1'], null, 'opcache.file_cache_read_only is on'],
         ];
     }
 

@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - master
+      - 4.x
 
 jobs:
   phpunit:
@@ -30,7 +31,6 @@ jobs:
           - "lowest"
           - "highest"
         php-version:
-          - "8.4"
           - "8.5"
         operating-system:
           - "ubuntu-latest"
@@ -45,7 +45,7 @@ jobs:
             dependencies: "highest"
             operating-system: "ubuntu-latest"
             experimental: true
-          - php-version: "8.4"
+          - php-version: "8.5"
             dependencies: "highest"
             operating-system: "windows-latest"
             experimental: false
@@ -84,7 +84,7 @@ jobs:
 
   coverage:
     # Coverage is measured on the oldest supported PHP version
-    name: "Code coverage (highest, 8.4, ubuntu-latest)"
+    name: "Code coverage (highest, 8.5, ubuntu-latest)"
 
     runs-on: "ubuntu-latest"
 
@@ -98,7 +98,7 @@ jobs:
         uses: "shivammathur/setup-php@v2"
         with:
           coverage: "xdebug"
-          php-version: "8.4"
+          php-version: "8.5"
           ini-values: memory_limit=-1
           tools: composer:v2
 
@@ -108,8 +108,8 @@ jobs:
           path: |
             ~/.composer/cache
             vendor
-          key: "composer-${{ runner.os }}-php-8.4-highest-${{ hashFiles('composer.json') }}"
-          restore-keys: "composer-${{ runner.os }}-php-8.4-highest-"
+          key: "composer-${{ runner.os }}-php-8.5-highest-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-8.5-highest-"
 
       - name: "Install highest dependencies"
         run: "composer update --no-interaction --no-progress"
@@ -151,7 +151,7 @@ jobs:
         uses: "shivammathur/setup-php@v2"
         with:
           coverage: "none"
-          php-version: "8.4"
+          php-version: "8.5"
           ini-values: memory_limit=-1, error_reporting=-1, display_errors=1
           tools: composer:v2
 
@@ -161,8 +161,8 @@ jobs:
           path: |
             ~/.composer/cache
             vendor
-          key: "composer-${{ runner.os }}-php-8.4-highest-${{ hashFiles('composer.json') }}"
-          restore-keys: "composer-${{ runner.os }}-php-8.4-highest-"
+          key: "composer-${{ runner.os }}-php-8.5-highest-${{ hashFiles('composer.json') }}"
+          restore-keys: "composer-${{ runner.os }}-php-8.5-highest-"
 
       - name: "Install highest dependencies"
         run: "composer update --no-interaction --no-progress"

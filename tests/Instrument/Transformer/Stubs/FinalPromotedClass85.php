@@ -13,8 +13,7 @@ declare(strict_types=1);
 namespace Go\Instrument\Transformer\Stubs;
 
 /**
- * This file uses the PHP 8.5+ `final` promoted constructor property syntax and must
- * only be loaded on PHP >= 8.5. Tests referencing it are gated with #[RequiresPhp].
+ * Uses the PHP 8.5 `final` promoted constructor property syntax.
  *
  * Used for testing demotion of intercepted promoted properties (issue #599).
  */

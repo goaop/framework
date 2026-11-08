@@ -10,9 +10,7 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-// PHP 8.5-only syntax (closures and first-class callables in constant expressions).
-// This file is intentionally NOT autoloaded/eagerly loaded — it must only be
-// require_once'd from tests gated with #[RequiresPhp('>= 8.5.0')].
+// PHP 8.5 syntax: closures and first-class callables in constant expressions.
 
 namespace Go\Stubs\Generator;
 
