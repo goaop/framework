@@ -71,11 +71,9 @@
         "files": [
             "tests/functions.php",
             "tests/Stubs/ClassWithoutNamespace.php",
-            "tests/Stubs/Generator/AttributeGroupsGenerator85Stubs.php",
             "tests/Stubs/Generator/AttributeGroupsGeneratorStubs.php",
             "tests/Stubs/Generator/FunctionGeneratorStubs.php",
             "tests/Stubs/Generator/TypeGeneratorStubs.php",
-            "tests/Stubs/Generator/ParameterGeneratorFccStubs.php",
             "tests/Stubs/Generator/ParameterGeneratorStubs.php"
         ]
     },
