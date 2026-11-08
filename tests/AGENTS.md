@@ -12,6 +12,9 @@
 - Any test touching the file system uses goaop/virtual-file-system (`Go\VirtualFileSystem\FileSystem`), NEVER sys_get_temp_dir()/tempnam()/real disk — no /tmp pollution, no manual cleanup.
 - Pattern: `$fs = FileSystem::mount('<scheme>')` in setUp (or a try/finally), build paths via `$fs->path('/...')`, `$fs->unmount()` in tearDown — unmounting drops the whole tree.
 - The wrapper supports include/require, mkdir, rename, touch/chmod (stream_metadata), filemtime (url_stat), scandir — but NOT glob(); list directories with scandir().
+- Generated PHP (a preload script, a cache file) is run by `include`-ing it from the vfs in the test, not by a PHP
+  subprocess on real disk: a subprocess is no reason to leave the vfs. When the code defines constants or globals, give
+  the test `#[RunInSeparateProcess]` so they do not leak into other tests.
 - Production code needs no special casing: CacheFileWriter's atomic tmp+rename is one universal path that runs identically on vfs and real disk.
 - Exception, real disk: only when the code under test needs what the wrapper can not provide (realpath() of the
   streamed file, includes through the php://filter stream filter, `__DIR__` of included cache files and the
