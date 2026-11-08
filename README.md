@@ -10,7 +10,7 @@ This framework brings **Aspect-Oriented Programming** to PHP — a powerful para
 [![GitHub release](https://img.shields.io/github/release/goaop/framework.svg)](https://github.com/goaop/framework/releases/latest)
 [![Total Downloads](https://img.shields.io/packagist/dt/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![Daily Downloads](https://img.shields.io/packagist/dd/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
-[![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%208.5-8892BF.svg)](https://www.php.net/supported-versions.php)
+[![Minimum PHP Version](http://img.shields.io/badge/php-%3E%3D%208.5-8892BF.svg?logo=php&logoColor=white)](https://www.php.net/supported-versions.php)
 [![License](https://img.shields.io/packagist/l/goaop/framework.svg)](https://packagist.org/packages/goaop/framework)
 [![Sponsor](https://img.shields.io/badge/Sponsor-❤️-lightgray?style=flat&logo=github)](https://github.com/sponsors/lisachenko)
 
