@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - master
+      - 4.x
 
 jobs:
   build:

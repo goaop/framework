@@ -1,0 +1,61 @@
+name: "Merge up"
+
+# Cascades every change of the 4.x maintenance branch into master: a push to 4.x opens a pull request
+# "Merge 4.x into master" (or updates the open one), so fixes are carried forward without being forgotten.
+# The workflow is triggered from the 4.x branch, so this file must be present on 4.x.
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - 4.x
+  workflow_dispatch:
+
+env:
+  SOURCE_BRANCH: "4.x"
+  TARGET_BRANCH: "master"
+
+jobs:
+  merge-up:
+    name: "Merge ${{ github.ref_name }} into master"
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: "Open the merge-up pull request"
+        env:
+          # A pull request opened with the default GITHUB_TOKEN does not trigger the CI workflows, a PAT does
+          GH_TOKEN: ${{ secrets.GH_PAT_TOKEN || github.token }}
+        run: |
+          git fetch origin "${TARGET_BRANCH}"
+          if git merge-base --is-ancestor "origin/${SOURCE_BRANCH}" "origin/${TARGET_BRANCH}"; then
+            echo "${TARGET_BRANCH} already contains every commit of ${SOURCE_BRANCH}"
+            exit 0
+          fi
+          existing=$(gh pr list --head "${SOURCE_BRANCH}" --base "${TARGET_BRANCH}" --state open --json url --jq '.[0].url')
+          if [ -n "${existing}" ]; then
+            echo "The merge-up pull request is already open, it now carries the pushed commits: ${existing}"
+            exit 0
+          fi
+          gh pr create \
+            --head "${SOURCE_BRANCH}" \
+            --base "${TARGET_BRANCH}" \
+            --title "chore: merge ${SOURCE_BRANCH} into ${TARGET_BRANCH}" \
+            --body "Automatic merge-up of \`${SOURCE_BRANCH}\` into \`${TARGET_BRANCH}\`. Merge it with a merge commit (not squash or rebase), so \`${SOURCE_BRANCH}\` stays an ancestor of \`${TARGET_BRANCH}\`; resolve conflicts on a separate branch."
