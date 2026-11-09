@@ -260,6 +260,22 @@ In the benchmark, preloading cut the included files per request from 517 to 174,
 4.9 ms and the first request after a server start from 71 ms to 24 ms (10 ms together with a primed file cache).
 Preloaded classes change with a restart of PHP-FPM, which is how containers are deployed anyway.
 
+#### Typical errors while preloading
+
+PHP reports preloading problems once, when the PHP-FPM master (or `php -S`) starts, in its error log:
+
+| Message | Meaning and what to do |
+|---|---|
+| `Fatal Error "opcache.preload" requires "opcache.preload_user" when running under uid 0` | The master runs as root: set `opcache.preload_user` to the user the workers run as (`www-data`). |
+| `Failed opening required '.../_preload.php'` | The script is missing: the cache was built without `--preload`, or `opcache.preload` points at another cache directory. Rebuild with `cache:warmup:aop --preload`. |
+| `Go! AOP preload: <class> is left to the autoloader: ...` | The script could not load a class of the cache, mostly because an optional dependency is not installed (a `--no-dev` image). Harmless: the class is not preloaded, and a request that needs it autoloads it as usual. |
+| `Can't preload unlinked class <class>: Unknown parent/trait/interface <name> in <file>` | OPcache could not link a class of a file the preload included, for the same reason; it comes together with the line above for a class of the cache. Harmless, the class is simply not preloaded. |
+| `Can't preload unlinked class class@anonymous: Unknown trait ...` in a vendor helper file | An anonymous class of a Composer `files` autoload, e.g. Laravel's `Illuminate/Reflection/helpers.php`. The script of the cache leaves these files out; the warning comes from another script that requires `vendor/autoload.php` before it. Require the script of the cache first: Composer then returns its loader without including the files again. |
+
+Nothing is preloaded in the CLI unless `opcache.enable_cli=1` is set, and a script built for another cache, or not
+rebuilt with the cache, preloads stale classes until PHP-FPM restarts: rebuild the script with every cache and restart
+the master after a deployment.
+
 ## Composer autoloader
 
 Classes that are not woven are found by Composer as usual. With an optimized class map every lookup is an array access
