@@ -54,4 +54,5 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 - Throwing or adding an exception â†’ read `src/Aop/Exception/AGENTS.md` first.
 - No anonymous classes in `src/`: extract a named `final` class (`@internal` for machinery); anonymous classes are for tests and mocks.
 - Commit messages and PR titles must follow Conventional Commits (`type(scope): summary`, e.g. `fix(proxy): ...`).
+- CHANGELOG.md lists the features and changes of major and minor releases and every BC break; patch releases (bug fixes) get no entry and no section, so never start an `x.y.Z` section for a fix.
 - Generated code (proxies, woven traits, advisor caches) must stay clean and readable: reference classes through short `use` aliases, never replace them with fully-qualified names. Name collisions are detected and resolved by adjusting the imports automatically (`Go\Proxy\Generator\ProxyImports`, see `src/Proxy/AGENTS.md`).

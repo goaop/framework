@@ -7,4 +7,4 @@
 - [ ] The title follows Conventional Commits (`type(scope): summary`)
 - [ ] Tests cover the change
 - [ ] `composer check` passes
-- [ ] User-facing or breaking changes are in CHANGELOG.md (and the upgrade guide for breaking changes)
+- [ ] Features of a major or minor release and breaking changes are in CHANGELOG.md, not patch fixes (and the upgrade guide for breaking changes)

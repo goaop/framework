@@ -16,6 +16,7 @@ use Go\Tests\TestProject\Application\EdgeCaseDemo;
 use Go\Tests\TestProject\Application\Greeter;
 use Go\Tests\TestProject\Application\Main;
 use Go\VirtualFileSystem\FileSystem;
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -51,6 +52,7 @@ class PreloadScriptGeneratorTest extends TestCase
         $script = $this->generate(PreloadScriptGenerator::defaultScriptPath($this->cacheDir));
 
         $this->assertStringContainsString("\$loader = require __DIR__ . '/../../../vendor/autoload.php';", $script);
+        $this->assertStringContainsString("})(__DIR__ . '/../../../vendor/composer/autoload_files.php');", $script);
         $this->assertStringContainsString("define('AOP_ROOT_DIR', __DIR__ . '/../../..')", $script);
         $this->assertStringContainsString("define('AOP_CACHE_DIR', __DIR__)", $script);
         $this->assertStringContainsString("'Go\\\\Tests\\\\TestProject\\\\Application\\\\EdgeCaseDemo' => __DIR__ . '/src/Service/OrderOriginalTrait.php',", $script);
@@ -118,6 +120,47 @@ class PreloadScriptGeneratorTest extends TestCase
         $this->assertGreaterThan(100, count(token_get_all($script, TOKEN_PARSE)));
     }
 
+    /**
+     * Composer's `files` autoloads are marked as included before the autoloader is required: opcache can not link an
+     * anonymous class of a helper function while preloading and warns about it on every start (Laravel's helpers)
+     *
+     * The script runs in a process of its own: it defines AOP_ROOT_DIR and AOP_CACHE_DIR and marks the files in
+     * $GLOBALS['__composer_autoload_files'], which must not leak into other tests.
+     */
+    #[RunInSeparateProcess]
+    public function testScriptDoesNotIncludeTheFilesAutoloadsOfComposer(): void
+    {
+        mkdir($this->appDir . '/vendor/composer');
+        // Requires the `files` autoloads the way the autoload_real.php of Composer does
+        file_put_contents($this->appDir . '/vendor/autoload.php', <<<'PHP'
+            <?php
+            foreach (require __DIR__ . '/composer/autoload_files.php' as $fileIdentifier => $file) {
+                if (empty($GLOBALS['__composer_autoload_files'][$fileIdentifier])) {
+                    $GLOBALS['__composer_autoload_files'][$fileIdentifier] = true;
+                    require $file;
+                }
+            }
+            echo "class loader registered\n";
+            return new class {
+                public function addClassMap(array $classMap): void {}
+            };
+            PHP);
+        file_put_contents($this->appDir . '/vendor/composer/autoload_files.php', <<<'PHP'
+            <?php
+            // An identifier of its own: the autoloader of this process has marked the real ones as included already
+            $vendorDir = dirname(__DIR__);
+            return ['go-aop-preload-test-helpers' => $vendorDir . '/helpers.php'];
+            PHP);
+        file_put_contents($this->appDir . '/vendor/helpers.php', "<?php\necho \"helpers included\\n\";\n");
+        $scriptPath = PreloadScriptGenerator::defaultScriptPath($this->cacheDir);
+        $generator  = new PreloadScriptGenerator($this->cacheDir, $this->appDir, [], [], $this->appDir . '/vendor/autoload.php');
+        file_put_contents($scriptPath, $generator->generate($scriptPath));
+
+        $this->expectOutputString("class loader registered\n");
+
+        include $scriptPath;
+    }
+
     public function testPathWithoutCommonRootStaysAbsolute(): void
     {
         $generator = new PreloadScriptGenerator(
@@ -131,6 +174,7 @@ class PreloadScriptGeneratorTest extends TestCase
         $script = $generator->generate(PreloadScriptGenerator::defaultScriptPath($this->cacheDir));
 
         $this->assertStringContainsString("\$loader = require 'other://vendor/autoload.php';", $script);
+        $this->assertStringContainsString("})('other://vendor/composer/autoload_files.php');", $script);
     }
 
     private function generate(string $scriptPath): string
