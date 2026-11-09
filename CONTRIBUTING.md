@@ -42,6 +42,7 @@ A single test file or test:
 - Use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages and pull request titles,
   e.g. `fix(proxy): keep short imports in generated proxies`.
 - Add tests for every bug fix and feature.
-- Mention user-facing and breaking changes in [CHANGELOG.md](CHANGELOG.md); breaking changes also need an entry in
-  the upgrade guide.
+- Mention the features and changes of a major or minor release and every breaking change in
+  [CHANGELOG.md](CHANGELOG.md); bug fixes of patch releases are not listed there. Breaking changes also need an entry
+  in the upgrade guide.
 - Keep generated code (proxies, woven traits, advisor caches) clean and readable.

@@ -23,6 +23,13 @@ use Go\Instrument\Transformer\Weaving\ProxyCache;
  * every woven and every untransformed class the cache knows. Requests then find the classes declared and include
  * neither the woven files nor the untransformed sources. The kernel still initializes on every request as usual.
  *
+ * Composer's `files` autoloads (helper functions, polyfill bootstraps) are not included by the script: it marks them
+ * as included before it requires the autoloader, as Composer itself does for a file it has included. Linking the
+ * classes needs only the class loader, every request includes these files anyway, and opcache tries to link every
+ * class a preloaded file declares, also an anonymous class in the body of a helper function: one that uses a trait
+ * or extends a class not loaded yet (Laravel's `Illuminate/Reflection/helpers.php`) would be reported with a
+ * warning on every start of PHP.
+ *
  * The script holds no absolute path: like the metadata files it locates the cache, the application and the
  * autoloader through `__DIR__`, so a cache moved together with the application stays valid. Classes whose static
  * initialization is advised are left out: their advice runs when the class is loaded, which needs the kernel of a
@@ -97,9 +104,10 @@ final class PreloadScriptGenerator
                 . "\n";
         }
 
-        $autoloadFile = $this->pathExpression($scriptDir, $this->autoloadFile);
-        $appDir       = $this->pathExpression($scriptDir, $this->appDir);
-        $cacheDir     = $this->pathExpression($scriptDir, $this->cacheDir);
+        $autoloadFile      = $this->pathExpression($scriptDir, $this->autoloadFile);
+        $autoloadFilesFile = $this->pathExpression($scriptDir, dirname($this->autoloadFile) . '/composer/autoload_files.php');
+        $appDir            = $this->pathExpression($scriptDir, $this->appDir);
+        $cacheDir          = $this->pathExpression($scriptDir, $this->cacheDir);
 
         return <<<PHP
             <?php
@@ -113,6 +121,16 @@ final class PreloadScriptGenerator
              * The script lists the classes of exactly this cache, so it is rebuilt with the cache. A class that can
              * not be linked here (an optional dependency is missing) is left to the autoloader of the request.
              */
+
+            // Composer's `files` autoloads are left to the requests: only the class loader is needed to link the
+            // classes, and opcache warns about the anonymous classes of a helper function it can not link
+            (static function (string \$autoloadFiles): void {
+                if (is_file(\$autoloadFiles)) {
+                    foreach (array_keys(require \$autoloadFiles) as \$fileIdentifier) {
+                        \$GLOBALS['__composer_autoload_files'][\$fileIdentifier] = true;
+                    }
+                }
+            })({$autoloadFilesFile});
 
             \$loader = require {$autoloadFile};
 
