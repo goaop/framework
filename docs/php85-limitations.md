@@ -57,19 +57,6 @@ parameter, a static variable initializer, an attribute argument) is evaluated by
 expressions as they are, so the code works, but an `initialization(...)` advice does not run for the objects they
 create. Only `new` expressions in executable code are intercepted.
 
-In addition, a class that is created by `new` in the default value of a parameter of an *intercepted* method is
-loaded while that method is woven and stays unwoven in that process, so none of its advices apply there (debug mode,
-or a production request that weaves on demand). A cache built by `cache:warmup:aop` is not affected. Tracked in
-[goaop/parser-reflection#261](https://github.com/goaop/parser-reflection/issues/261).
-
-### Unqualified constants in method attribute arguments, with attribute pointcuts — tracked in [goaop/parser-reflection#259](https://github.com/goaop/parser-reflection/issues/259)
-
-Attributes are copied to the proxy from the source, constants included. But while an attribute pointcut
-(`@execution(...)`) is registered, the weaver reads the attributes of every method it matches, and a method attribute
-with `true`, `false`, `null` or an unqualified global constant (`PHP_INT_MAX`) as argument makes that fail with a
-`WeavingException` ("Namespace  was not found in the file ..."). Class-level attributes are not affected. Until the
-fix is released, write such an argument fully qualified (`\true`, `\PHP_INT_MAX`).
-
 ### Static properties are never interceptable
 
 Static properties — including PHP 8.5 `static` properties with asymmetric visibility — cannot be
@@ -88,6 +75,5 @@ properties from property join points. This is a PHP engine constraint, not a bug
 | Closures / FCC as parameter defaults | ✅ Works | |
 | Static asymmetric visibility (non-intercepted) | ✅ Preserved | Static properties are never interceptable via `access()` |
 | `self`/`parent` reflection resolution | ✅ Handled | Raw AST type nodes used in proxy generation |
-| `new` in initializers | ❌ Not intercepted | Evaluated by the engine; see also [goaop/parser-reflection#261](https://github.com/goaop/parser-reflection/issues/261) |
-| Unqualified constants in method attribute arguments + attribute pointcut | ❌ Limited | Tracked in [goaop/parser-reflection#259](https://github.com/goaop/parser-reflection/issues/259) |
+| `new` in initializers | ❌ Not intercepted | Evaluated by the engine, `initialization(...)` advices do not run for it |
 | Static property interception via `access()` | ❌ Never | No property hooks for static properties (PHP engine constraint) |
