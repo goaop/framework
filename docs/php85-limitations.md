@@ -50,31 +50,12 @@ so `self`/`parent` keywords are preserved in generated proxies.
 
 ## Known limitations
 
-### Closures / first-class callables in attribute arguments — tracked in [#601](https://github.com/goaop/framework/issues/601)
+### `new` in initializers is not intercepted
 
-Attribute arguments containing closures or first-class callable syntax (allowed since PHP 8.5)
-are not yet correctly copied to generated proxies.
-
-### Enum constant-expression case values — tracked in [#600](https://github.com/goaop/framework/issues/600)
-
-Backed enum cases declared with constant expressions (e.g. `case Negative = -1;`,
-`case Shifted = 1 << 2;`, `case FromConst = self::SHIFT + 10;`) previously lost their values in
-the generated proxy enum, producing a fatal error at load time. Fixed by re-emitting the original
-case expression verbatim in the proxy enum.
-
-### `new` in initializers with an `initialization(...)` pointcut — tracked in [#603](https://github.com/goaop/framework/issues/603)
-
-`new` expressions in property/parameter initializers do not work correctly while an
-`initialization(...)` pointcut is registered.
-
-### Global constants in attribute arguments — tracked in [#602](https://github.com/goaop/framework/issues/602)
-
-Unqualified global constants used in attribute arguments may be mis-resolved when the attribute
-is copied into the generated proxy file.
-
-### Class-level attributes on woven classes — tracked in [#598](https://github.com/goaop/framework/issues/598)
-
-Class-level attributes are not correctly carried over to woven classes in all cases.
+A `new` expression in a constant expression (the default value of a parameter or of a promoted constructor
+parameter, a static variable initializer, an attribute argument) is evaluated by the engine. The weaver leaves these
+expressions as they are, so the code works, but an `initialization(...)` advice does not run for the objects they
+create. Only `new` expressions in executable code are intercepted.
 
 ### Static properties are never interceptable
 
@@ -94,9 +75,5 @@ properties from property join points. This is a PHP engine constraint, not a bug
 | Closures / FCC as parameter defaults | ✅ Works | |
 | Static asymmetric visibility (non-intercepted) | ✅ Preserved | Static properties are never interceptable via `access()` |
 | `self`/`parent` reflection resolution | ✅ Handled | Raw AST type nodes used in proxy generation |
-| Closures / FCC in attribute arguments | ❌ Limited | Tracked in [#601](https://github.com/goaop/framework/issues/601) |
-| Enum constant-expression case values | ❌→✅ Fixed | Tracked in [#600](https://github.com/goaop/framework/issues/600) |
-| `new` in initializers + `initialization(...)` pointcut | ❌ Limited | Tracked in [#603](https://github.com/goaop/framework/issues/603) |
-| Global constants in attribute arguments | ❌ Limited | Tracked in [#602](https://github.com/goaop/framework/issues/602) |
-| Class-level attributes on woven classes | ❌ Limited | Tracked in [#598](https://github.com/goaop/framework/issues/598) |
+| `new` in initializers | ❌ Not intercepted | Evaluated by the engine, `initialization(...)` advices do not run for it |
 | Static property interception via `access()` | ❌ Never | No property hooks for static properties (PHP engine constraint) |
