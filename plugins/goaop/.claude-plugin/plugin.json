@@ -1,0 +1,17 @@
+{
+  "name": "goaop",
+  "description": "Teaches coding agents aspect-oriented programming with the Go! AOP framework: aspects, pointcuts, advices, framework bridges, kernel setup, deployment, performance and troubleshooting.",
+  "author": {
+    "name": "Go! AOP",
+    "url": "https://github.com/goaop"
+  },
+  "homepage": "https://github.com/goaop/framework/tree/master/plugins/goaop",
+  "repository": "https://github.com/goaop/framework",
+  "license": "MIT",
+  "keywords": [
+    "php",
+    "aop",
+    "aspect",
+    "goaop"
+  ]
+}
