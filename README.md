@@ -43,7 +43,8 @@ The framework provides powerful core interception capabilities that can be used 
 Go! AOP intercepts field access via native PHP 8.4 property hooks on generated proxy classes.
 
 - Supported targets:
-  - properties declared in the woven class itself
+  - properties declared in the woven class itself, including constructor-promoted properties (also `final` ones,
+    PHP 8.5): the assignment made by the constructor is intercepted as a write
   - inherited **public/protected** properties from parent classes
 - Not supported (intentionally skipped):
   - `static`, `readonly`, and already-hooked properties
