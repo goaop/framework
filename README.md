@@ -78,6 +78,8 @@ if (isset($this->property) || $__joinPoint->getField()->isInitialized($this)) {
 
  - **Readable weaved code** — No magic methods, no `__call()` indirection or runtime proxies. The transformed source is plain PHP that you can read, understand, and audit. What you see in the cache is what gets executed.
 
+ - **Attributes are kept** — Attributes of a woven class and of its methods, parameters, constants and properties are copied to the generated code from your source, with their original arguments: enum cases, `new` expressions, closures and first-class callables included. Reading attributes at runtime works on woven classes exactly as before.
+
  - **Framework-agnostic** — integrates with popular frameworks and vanilla PHP. Works equally well in legacy applications or greenfield projects — no architectural changes required.
 
 ### ⚡ Production Ready
