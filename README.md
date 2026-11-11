@@ -43,7 +43,8 @@ The framework provides powerful core interception capabilities that can be used 
 Go! AOP intercepts field access via native PHP 8.4 property hooks on generated proxy classes.
 
 - Supported targets:
-  - properties declared in the woven class itself
+  - properties declared in the woven class itself, including constructor-promoted properties (also `final` ones,
+    PHP 8.5): the assignment made by the constructor is intercepted as a write
   - inherited **public/protected** properties from parent classes
 - Not supported (intentionally skipped):
   - `static`, `readonly`, and already-hooked properties
@@ -392,6 +393,20 @@ Documentation
   OPcache tuning, Docker and Kubernetes
 - [PHP 8.4 limitations](docs/php84-limitations.md) and [PHP 8.5 limitations](docs/php85-limitations.md)
 - [Upgrading from 3.x](UPGRADE-4.0.md) and the [changelog](CHANGELOG.md)
+
+### AI coding agents
+
+The repository is a plugin marketplace for coding agents. The `goaop` plugin holds an
+[Agent Skill](plugins/goaop/skills/aspect-oriented-development/SKILL.md) that teaches an agent to write aspects,
+pointcuts and advices, to integrate the framework into an application, to deploy the cache, to reason about
+performance and to find out why an advice does not run:
+
+```
+/plugin marketplace add goaop/framework
+/plugin install goaop@goaop
+```
+
+Other agents and the copy that ships with the composer package: [plugins/goaop](plugins/goaop/README.md).
 
 ### Contribution
 
