@@ -37,11 +37,19 @@ attributes.
 [Closures in constant expressions](https://wiki.php.net/rfc/closures_in_const_expr) used as
 parameter default values survive weaving in proxy method signatures.
 
-### Final promoted properties and static asymmetric visibility (non-intercepted)
+### Promoted-property interception
 
-`final` promoted constructor properties and `static` properties with asymmetric visibility
-(`public static private(set)`) work on classes that are woven, as long as the properties
-themselves are not targeted by `access(...)` pointcuts (see the static-property note below).
+Constructor-promoted properties are intercepted by `access(...)` pointcuts like declared ones, including `final`
+promoted properties (new in PHP 8.5) and promoted properties with asymmetric visibility. The proxy re-declares the
+property with hooks and keeps its modifiers, the woven constructor takes a plain parameter and assigns it, so the
+assignment made by the constructor goes through the advice as a write. A `readonly` promoted property is not
+intercepted, like every readonly property (see [PHP 8.4 limitations](php84-limitations.md)). Fixed in
+[#599](https://github.com/goaop/framework/issues/599).
+
+### Static asymmetric visibility (non-intercepted)
+
+`static` properties with asymmetric visibility (`public static private(set)`) work on classes that are woven; they
+are never targeted by `access(...)` pointcuts (see the static-property note below).
 
 ### `self`/`parent` reflection resolution
 
@@ -55,11 +63,6 @@ so `self`/`parent` keywords are preserved in generated proxies.
 
 Attribute arguments containing closures or first-class callable syntax (allowed since PHP 8.5)
 are not yet correctly copied to generated proxies.
-
-### Promoted-property interception — tracked in [#599](https://github.com/goaop/framework/issues/599)
-
-Constructor-promoted properties (including `final` promoted properties, new in PHP 8.5) cannot be
-intercepted via `access(...)` pointcuts.
 
 ### Enum constant-expression case values — tracked in [#600](https://github.com/goaop/framework/issues/600)
 
@@ -98,11 +101,10 @@ properties from property join points. This is a PHP engine constraint, not a bug
 | `#[\NoDiscard]` | ✅ Propagated | Copied to proxy; join-point dispatch returns the value |
 | Attributes on class constants (incl. `#[\Deprecated]`) | ✅ Preserved | Constants stay in the woven trait |
 | Closures / FCC as parameter defaults | ✅ Works | |
-| Final promoted properties (non-intercepted) | ✅ Works | Interception of promoted properties tracked in [#599](https://github.com/goaop/framework/issues/599) |
+| Promoted-property interception (incl. `final` promoted properties) | ✅ Works | Readonly promoted properties are skipped, like every readonly property |
 | Static asymmetric visibility (non-intercepted) | ✅ Preserved | Static properties are never interceptable via `access()` |
 | `self`/`parent` reflection resolution | ✅ Handled | Raw AST type nodes used in proxy generation |
 | Closures / FCC in attribute arguments | ❌ Limited | Tracked in [#601](https://github.com/goaop/framework/issues/601) |
-| Promoted-property interception | ❌ Limited | Tracked in [#599](https://github.com/goaop/framework/issues/599) |
 | Enum constant-expression case values | ❌→✅ Fixed | Tracked in [#600](https://github.com/goaop/framework/issues/600) |
 | `new` in initializers + `initialization(...)` pointcut | ❌ Limited | Tracked in [#603](https://github.com/goaop/framework/issues/603) |
 | Global constants in attribute arguments | ❌ Limited | Tracked in [#602](https://github.com/goaop/framework/issues/602) |
