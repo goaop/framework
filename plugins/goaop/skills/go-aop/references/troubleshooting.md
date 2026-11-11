@@ -14,7 +14,12 @@ Limitations of the installed version: `vendor/goaop/framework/docs/php84-limitat
 ## The advice does not run
 
 Nothing reports a pointcut without matches or a class that was not woven, so go through the chain in this order. Each
-step has a check that takes seconds.
+step has a check that takes seconds. Several causes often hide behind each other: after every fix, delete the cache
+directory, run again and restart the chain.
+
+Steps 1 and 2 use the console (`symfony/console`). Without it, read `configureAop()` for step 1 and go on with
+step 3, which needs no tooling; then look at the woven class as described in
+[Looking at the woven code](#looking-at-the-woven-code).
 
 1. **Is the aspect registered?**
 
@@ -49,12 +54,14 @@ step has a check that takes seconds.
    - The file is outside `includePaths` or below `excludePaths`, or outside `appDir`.
    - The class is not loaded by Composer: a manual `require`, another autoloader, an `autoload.files` entry, or
      OPcache preloading of the original file. For includes use `Features::INTERCEPT_INCLUDES`.
-   - The cache is stale, see the next section.
+   - The cache is stale, see the next section. The cache also remembers the files that needed no weaving, so with
+     `'debug' => false` a class can stay unwoven after an aspect for it was added, while classes the cache has never
+     seen are woven. Aspects that work for some classes and not for others point to the cache.
 
 4. **Is the call one that can be intercepted?** See [What cannot be intercepted](#what-cannot-be-intercepted).
 
 5. **Does the advice run but have no visible effect?** A `#[Before]` or `#[After]` advice cannot change the result;
-   an `#[Around]` advice without `return` yields `null`; an advice that throws inside a `try` of the caller may be
+   an `#[Around]` advice without `return` yields `null` (or a `TypeError`, see below); an advice that throws inside a `try` of the caller may be
    swallowed there. An `#[After]` or `#[AfterThrowing]` advice is skipped when a `#[Before]` advice of the same
    joinpoint threw.
 
@@ -67,7 +74,8 @@ step has a check that takes seconds.
 | The advice body was edited, and the old one still runs | OPcache with `validate_timestamps=0` serves the old aspect file | Reset OPcache (restart PHP-FPM) |
 | Works in the browser, not on the command line (or the reverse) | The entry points pass different options or one has no `init()` | Share one `config/aop.php` |
 
-When in doubt, delete the cache directory: it is always safe, the cache is rebuilt.
+When in doubt, delete the cache directory: it is always safe, the cache is rebuilt. Do it as well when switching an
+existing cache between `debug` modes.
 
 ## Exceptions
 
@@ -75,6 +83,7 @@ When in doubt, delete the cache directory: it is always safe, the cache is rebui
 |-----------------|-------|-----|
 | `Advice method X::m() must be public` (`AspectException`) | Protected or private advice | Make it public |
 | `UnexpectedTokenException: Unexpected ... at line 1`, `PointcutSyntaxException` | Invalid pointcut expression: empty `()`, missing visibility, unbalanced parentheses | Fix the expression; the message names the position and the expected tokens |
+| `TypeError: X::advice(): Return value must be of type mixed, none returned` | An `#[Around]` advice without `return` | `return $invocation->proceed();` |
 | `Unknown kernel option "x"` (`InvalidConfigurationException`) | Typo or a 3.x option | Use the options listed in `setup.md` |
 | `WeavingException: ... failed to transform <file>` | Wraps the real error for that file: read the previous exception | Fix the cause; common ones are below |
 | `WeavingException` about a method returning by reference | `function &name()` matched by a pointcut | Add `&& !matchReturningByReference()` |
@@ -98,6 +107,7 @@ The cache mirrors the source tree below `cacheDir`. For `src/Service/OrderServic
 | `<cacheDir>/src/Service/OrderServiceOriginalTrait.php` | The original class body as a trait |
 | `<cacheDir>/src/Aspect/LoggingAspect.cache.php` | The compiled advisors of the aspect |
 | `<cacheDir>/_functions/<Namespace>.php` | Function proxies of a namespace |
+| `<cacheDir>/_include.cache`, `_transformation.cache` | Metadata: which source file maps to which cached file, and which files were left untransformed |
 
 Reading the generated class answers "which advices apply to this method, in which order" directly:
 
@@ -113,7 +123,8 @@ static $__joinPoint = InterceptorInjector::forMethod(
 );
 ```
 
-A method that is not re-declared there is not advised. Never edit files in the cache: they are regenerated.
+A method that is not re-declared there is not advised. A class without an `...OriginalTrait.php` file in the cache
+was not woven at all: no pointcut matched it when the cache was built. Never edit files in the cache: they are regenerated.
 
 Breakpoints work in aspects, in the original source files and in the generated code. Stack traces show the generated
 method, the joinpoint and the `...OriginalAlias` call between the caller and the original method.

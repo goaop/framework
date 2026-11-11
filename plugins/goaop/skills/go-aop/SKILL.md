@@ -81,7 +81,9 @@ keep that manageable:
    ```
 
    The argument is the file that initializes the kernel. The command lists every member the advisor matches; the
-   advisor id is `<aspect class>-><advice method>`. The console needs `symfony/console`.
+   advisor id is `<aspect class>-><advice method>`. The console needs `symfony/console`. Without it, run the code
+   once with `'debug' => true` and check the woven class instead: `references/troubleshooting.md`, "Looking at the
+   woven code".
 6. **Run the code** and check the behaviour. With `'debug' => false`, rebuild the cache first.
 
 ### Minimal example
@@ -146,7 +148,8 @@ These come from the framework, each with its reason. Breaking one either throws 
   only; `App\**->*(*)` matches every class below it.
 - **Write pointcuts in single-quoted strings**: backslashes need no escaping and `$this->name` is not interpolated.
 - **An `#[Around]` advice returns the result.** Return `$invocation->proceed()` unless you replace the result on
-  purpose; a missing `return` turns every result into `null`. Calling `proceed()` twice runs the method twice
+  purpose. Without the `return` the caller gets `null`, or PHP throws a `TypeError` ("none returned") when the
+  advice declares a return type. Calling `proceed()` twice runs the method twice
   (wanted for a retry, a bug elsewhere).
 - **`#[After]` and `#[Before]` cannot change the result.** `#[After]` runs like `finally`, also after an exception.
   `#[AfterThrowing]` gets the exception as the second parameter and cannot swallow it. To change a result or to

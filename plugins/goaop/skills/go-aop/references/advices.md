@@ -69,7 +69,8 @@ Before (order 1) → Before (order 2)
 ## Joinpoint API
 
 Interfaces live in `Go\Aop\Intercept`. Every joinpoint is `Stringable`: `(string) $invocation` gives
-`execution(App\Service\OrderService->place())`, handy for log messages and cache keys.
+`execution(App\Service\OrderService->place())`, handy for log messages and cache keys. That text is a description,
+not a valid pointcut expression.
 
 | Joinpoint | Methods |
 |-----------|---------|
