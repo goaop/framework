@@ -37,15 +37,6 @@ attributes.
 [Closures in constant expressions](https://wiki.php.net/rfc/closures_in_const_expr) used as
 parameter default values survive weaving in proxy method signatures.
 
-### Promoted-property interception
-
-Constructor-promoted properties are intercepted by `access(...)` pointcuts like declared ones, including `final`
-promoted properties (new in PHP 8.5) and promoted properties with asymmetric visibility. The proxy re-declares the
-property with hooks and keeps its modifiers, the woven constructor takes a plain parameter and assigns it, so the
-assignment made by the constructor goes through the advice as a write. A `readonly` promoted property is not
-intercepted, like every readonly property (see [PHP 8.4 limitations](php84-limitations.md)). Fixed in
-[#599](https://github.com/goaop/framework/issues/599).
-
 ### Static asymmetric visibility (non-intercepted)
 
 `static` properties with asymmetric visibility (`public static private(set)`) work on classes that are woven; they
@@ -101,7 +92,6 @@ properties from property join points. This is a PHP engine constraint, not a bug
 | `#[\NoDiscard]` | ✅ Propagated | Copied to proxy; join-point dispatch returns the value |
 | Attributes on class constants (incl. `#[\Deprecated]`) | ✅ Preserved | Constants stay in the woven trait |
 | Closures / FCC as parameter defaults | ✅ Works | |
-| Promoted-property interception (incl. `final` promoted properties) | ✅ Works | Readonly promoted properties are skipped, like every readonly property |
 | Static asymmetric visibility (non-intercepted) | ✅ Preserved | Static properties are never interceptable via `access()` |
 | `self`/`parent` reflection resolution | ✅ Handled | Raw AST type nodes used in proxy generation |
 | Closures / FCC in attribute arguments | ❌ Limited | Tracked in [#601](https://github.com/goaop/framework/issues/601) |
