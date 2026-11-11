@@ -1,7 +1,13 @@
-# Setup, configuration and deployment
+# Setup, configuration and deployment without a framework bridge
 
-Source of truth for the installed version: `vendor/goaop/framework/docs/configuration.md` and
-`docs/performance.md`.
+**Check first whether this file applies.** An application on Symfony, Laravel or Yii3 uses the bridge of its
+framework, which does everything in "The aspect kernel", "Initializing the kernel" and "Registering aspects" below:
+read `frameworks.md` instead. This file is for plain PHP applications, legacy code, libraries and frameworks that have
+no bridge yet. The kernel options, features and the deployment principle are the same under a bridge, only spelled in
+its configuration.
+
+Full reference: `docs/configuration.md` of the framework (where to find it: `SKILL.md`, "Documentation of the
+framework").
 
 ## Contents
 
@@ -22,7 +28,7 @@ Source of truth for the installed version: `vendor/goaop/framework/docs/configur
 composer require goaop/framework
 ```
 
-Requirements of 4.x: PHP 8.4+, `ext-tokenizer`. The console tool `vendor/bin/aspect` also needs `symfony/console`
+Requirements: the PHP version of the package's `composer.json` and `ext-tokenizer`. The console tool `vendor/bin/aspect` also needs `symfony/console`
 (`^7.4 || ^8.0`); add it when the project does not have it.
 
 The application classes must be loaded by the Composer autoloader: the framework hooks into it.
@@ -94,15 +100,35 @@ Unknown keys throw `InvalidConfigurationException`.
 | `cacheDir`         | required | Directory for the woven code. Must be writable unless the cache is prebuilt. Keep it out of version control. |
 | `appDir`           | directory containing `vendor/` | Application root; only files below it are woven. |
 | `debug`            | `false` | `true`: changes of sources, aspects and the kernel are picked up; use it in development. `false`: woven classes come from the cache through Composer's class map and edits need a cache rebuild; use it in production. |
-| `includePaths`     | `[]` = everything below `appDir` | Directories that are woven. Set it, normally to `src/`: weaving `vendor/` is slow and rarely wanted. |
+| `includePaths`     | `[]` = everything below `appDir` | Directories that are woven. Set it, normally to `src/`: weaving all of `vendor/` is slow and rarely wanted. |
 | `excludePaths`     | `[]` | Directories that are never woven. |
 | `features`         | `0` | Bitmask of `Go\Aop\Features` flags. |
 | `cacheFileMode`    | `0770` minus the umask | Permissions of cache files. |
 | `containerClass`   | `Go\Core\Container` | Custom aspect container. |
 | `parsedFilesLimit` | `100` | Parsed files kept in memory while weaving. |
 
-To intercept a class of a dependency, add exactly its directory to `includePaths` instead of opening all of
-`vendor/`.
+### Vendor packages
+
+Keep `vendor/` out of the include paths, with one exception: a dependency that requires `goaop/framework` itself is
+written for AOP. It ships aspects, or classes with marker attributes that expect to be advised, and those classes are
+only woven when their directory is an include path. Such packages can be found from Composer's metadata, so they are
+enabled without listing them by hand:
+
+```php
+$includePaths = [__DIR__ . '/../src'];
+$vendorDir    = __DIR__ . '/../vendor';
+$installed    = json_decode((string) file_get_contents($vendorDir . '/composer/installed.json'), true);
+foreach ($installed['packages'] as $package) {
+    if (isset($package['require']['goaop/framework']) && !str_starts_with($package['name'], 'goaop/')) {
+        $includePaths[] = realpath($vendorDir . '/composer/' . $package['install-path']);
+    }
+}
+```
+
+The `goaop/*` packages themselves (the framework bridges) are skipped: they integrate the framework and contain
+nothing to advise. The aspects of an included package still have to be registered in the kernel.
+
+To intercept a class of any other dependency, add exactly its directory instead of opening all of `vendor/`.
 
 ## Features
 
@@ -110,7 +136,7 @@ Combine with `|`: `'features' => Features::PREBUILT_CACHE | Features::INTERCEPT_
 
 | Flag                 | Effect |
 |----------------------|--------|
-| `PREBUILT_CACHE`     | Production: trust the cache built at deploy time, never weave or write at runtime. A class missing from the cache fails the request with a `WeavingException`. Works on read-only file systems. |
+| `PREBUILT_CACHE`     | Production: trust the cache built at deploy time, never weave or write at runtime. This is the fastest mode: a request checks no file at all (`performance.md`). A class missing from the cache fails the request with a `WeavingException`. Works on read-only file systems. |
 | `INTERCEPT_INCLUDES` | Also weave files loaded with `include`/`require` from woven files (legacy code without autoloading). |
 | `PARTIAL_REFLECTION` | Weave classes whose parent, interface or trait cannot be located (generated at runtime, `class_alias()`). |
 
@@ -184,6 +210,10 @@ ApplicationAspectKernel::getInstance()->getContainer()->setDelegate($psrContaine
 
 ## Tests
 
+In a framework application the bridge starts the kernel when the application boots, so tests that boot the
+application are woven without a bootstrap of your own (`frameworks.md`, "What is the same everywhere"). The rest of
+this section is for a kernel of your own.
+
 - **Unit tests of an advice** need no kernel: mock the joinpoint interface (`advices.md`, "Unit-testing an advice").
 - **Tests of woven behaviour**: require the same `config/aop.php` from the PHPUnit bootstrap file, after the
   autoloader, with `'debug' => true` and a cache directory of its own (e.g. `var/cache/aop-test`). Without it the
@@ -212,11 +242,13 @@ The loader argument is a file that initializes the kernel; it is executed. Give 
 (the `config/aop.php` above works when it also requires the autoloader) if the front controller would handle a
 request.
 
-OPcache preloading, `cache:warmup:opcache`, Docker and Kubernetes: `vendor/goaop/framework/docs/performance.md`.
+What production mode costs, OPcache settings, preloading, `cache:warmup:opcache` and containers: `performance.md`.
 
 ## Console commands
 
-All take the loader file as first argument.
+`vendor/bin/aspect` takes the loader file, the file that initializes the kernel, as first argument. In an
+application whose own console registers these commands (every bridge does), the kernel is already initialized and
+the argument is left out: `bin/console debug:aspect`.
 
 | Command | Purpose |
 |---------|---------|

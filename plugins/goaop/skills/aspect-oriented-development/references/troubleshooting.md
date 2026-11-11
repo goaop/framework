@@ -1,7 +1,7 @@
 # Troubleshooting
 
-Limitations of the installed version: `vendor/goaop/framework/docs/php84-limitations.md`,
-`docs/php85-limitations.md` and the "Limitations" section of `docs/advices.md`.
+Limitations in full: `docs/php84-limitations.md`, `docs/php85-limitations.md` and the "Limitations" section of
+`docs/advices.md` of the framework (where to find them: `SKILL.md`, "Documentation of the framework").
 
 ## Contents
 
@@ -17,9 +17,19 @@ Nothing reports a pointcut without matches or a class that was not woven, so go 
 step has a check that takes seconds. Several causes often hide behind each other: after every fix, delete the cache
 directory, run again and restart the chain.
 
-Steps 1 and 2 use the console (`symfony/console`). Without it, read `configureAop()` for step 1 and go on with
-step 3, which needs no tooling; then look at the woven class as described in
-[Looking at the woven code](#looking-at-the-woven-code).
+Steps 1 and 2 use the debug commands. How they are called depends on the integration:
+
+| Integration | Command | Loader argument |
+|-------------|---------|-----------------|
+| Symfony bundle | `bin/console debug:aspect`, `bin/console debug:advisor` | none: the commands run on the kernel of the application |
+| Yii3 bridge | `./yii aop:debug:aspect`, `./yii aop:debug:advisor` | none |
+| Laravel bridge | no debug commands | — |
+| Kernel of your own | `vendor/bin/aspect debug:aspect <loader>`, `vendor/bin/aspect debug:advisor <loader>` | the file that initializes the kernel, e.g. `public/index.php`; needs `symfony/console` |
+
+Without the commands, read the registration of the aspects for step 1 and go on with step 3, which needs no
+tooling; then look at the woven class as described in [Looking at the woven code](#looking-at-the-woven-code). In a
+Symfony application the Go! AOP panel of the web profiler shows the aspects, the woven classes of the request and the
+classes that were loaded before weaving was possible.
 
 1. **Is the aspect registered?**
 
@@ -27,7 +37,8 @@ step 3, which needs no tooling; then look at the woven class as described in
    vendor/bin/aspect debug:aspect public/index.php
    ```
 
-   The aspect and its advisors must be listed. If not: add it to `configureAop()` of the kernel, and make sure the
+   The aspect and its advisors must be listed. If not: register it the way the integration expects (a tagged or
+   autoconfigured service, the config list of the bridge, or `configureAop()` of your own kernel), and make sure the
    class implements `Go\Aop\Aspect` and the method has an advice attribute from `Go\Lang\Attribute` (check the `use`
    statements: an attribute class that does not exist is ignored by PHP without an error).
 
@@ -49,8 +60,10 @@ step 3, which needs no tooling; then look at the woven class as described in
    ```
 
    `false` although step 2 matched means the class was loaded without weaving:
-   - `init()` is not called in this entry point (console script, worker, test bootstrap), or is called after the
-     class was already loaded. Move it directly behind `vendor/autoload.php`.
+   - The kernel is not started in this entry point (console script, worker, test bootstrap), or is started after the
+     class was already loaded. With a kernel of your own, move `init()` directly behind `vendor/autoload.php`. With
+     a bridge, check its requirement: first bundle in `config/bundles.php` (Symfony), the `AopBootstrap::init()` line
+     in every entry script (Yii3); classes the framework loads before the bridge boots stay unwoven.
    - The file is outside `includePaths` or below `excludePaths`, or outside `appDir`.
    - The class is not loaded by Composer: a manual `require`, another autoloader, an `autoload.files` entry, or
      OPcache preloading of the original file. For includes use `Features::INTERCEPT_INCLUDES`.

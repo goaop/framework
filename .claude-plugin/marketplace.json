@@ -11,9 +11,14 @@
     {
       "name": "goaop",
       "source": "./plugins/goaop",
-      "description": "Teaches coding agents aspect-oriented programming with goaop/framework 4.x: aspects, pointcuts, advices, kernel setup, deployment and troubleshooting.",
+      "description": "Teaches coding agents aspect-oriented programming with the Go! AOP framework: aspects, pointcuts, advices, framework bridges, kernel setup, deployment, performance and troubleshooting.",
       "category": "development",
-      "keywords": ["php", "aop", "aspect", "goaop"]
+      "keywords": [
+        "php",
+        "aop",
+        "aspect",
+        "goaop"
+      ]
     }
   ]
 }

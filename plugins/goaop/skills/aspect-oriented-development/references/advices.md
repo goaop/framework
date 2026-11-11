@@ -1,6 +1,6 @@
 # Advices and joinpoints
 
-Source of truth for the installed version: `vendor/goaop/framework/docs/advices.md`.
+Full reference: `docs/advices.md` of the framework (where to find it: `SKILL.md`, "Documentation of the framework").
 
 ## Contents
 
@@ -253,4 +253,4 @@ public function testReturnsCachedValueWithoutProceeding(): void
 ```
 
 Whether the pointcut matches the right methods is a separate question, answered by `debug:advisor` or by an
-integration test that runs with an initialized kernel (`setup.md`, "Tests").
+integration test that runs with an initialized kernel (`setup.md`, "Tests", or `frameworks.md`).

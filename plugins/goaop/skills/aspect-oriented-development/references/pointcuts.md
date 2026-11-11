@@ -3,7 +3,7 @@
 A pointcut selects joinpoints by their declaration. It is the first argument of an advice attribute:
 `#[Before('execution(public App\Service\OrderService->place(*))')]`.
 
-Source of truth for the installed version: `vendor/goaop/framework/docs/pointcuts.md`.
+Full reference: `docs/pointcuts.md` of the framework (where to find it: `SKILL.md`, "Documentation of the framework").
 
 ## Contents
 
@@ -142,6 +142,5 @@ In a PHP string write `|` and `||` plainly; the backslash before `|` above only 
 | `within(App\Service\**)` to log method calls | Also matches properties and constructors | Add `&& execution(public **->*(*))` |
 | `execution(public **->*(*))` | Weaves every class below the include paths, constructors included | Narrow by namespace, type or attribute |
 
-Check a pointcut with `vendor/bin/aspect debug:advisor <loader> --advisor='<Aspect>-><method>'`: it prints the
-members that match. An invalid expression fails with an "Unexpected token" parser exception or
+Check a pointcut with the `debug:advisor` command (`SKILL.md`, workflow step 4): it prints the members that match. An invalid expression fails with an "Unexpected token" parser exception or
 `PointcutSyntaxException`, naming the position.

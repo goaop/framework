@@ -396,12 +396,13 @@ Documentation
 ### AI coding agents
 
 The repository is a plugin marketplace for coding agents. The `goaop` plugin holds an
-[Agent Skill](plugins/goaop/skills/go-aop/SKILL.md) that teaches an agent to write aspects, pointcuts and advices,
-to set up the aspect kernel, to deploy the cache and to find out why an advice does not run:
+[Agent Skill](plugins/goaop/skills/aspect-oriented-development/SKILL.md) that teaches an agent to write aspects,
+pointcuts and advices, to integrate the framework into an application, to deploy the cache, to reason about
+performance and to find out why an advice does not run:
 
-```bash
-claude plugin marketplace add goaop/framework
-claude plugin install goaop@goaop
+```
+/plugin marketplace add goaop/framework
+/plugin install goaop@goaop
 ```
 
 Other agents and the copy that ships with the composer package: [plugins/goaop](plugins/goaop/README.md).
