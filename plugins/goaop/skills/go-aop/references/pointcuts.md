@@ -109,6 +109,7 @@ public function onError(MethodInvocation $invocation, \Throwable $exception): vo
 | Public methods of the classes directly in a namespace | `execution(public App\Service\*->*(*))` |
 | Public methods of every class below a namespace | `execution(public App\Service\**->*(*))` |
 | Getters and issers | `execution(public App\Model\**->get*\|is*(*))` |
+| Two methods by name, in every class of a namespace | `execution(public App\Repository\**->save\|delete(*))` |
 | Every implementation of an interface | `execution(public App\Contract\Handler+->handle(*))` |
 | Every repository class by name | `execution(public **\*Repository->*(*))` |
 | Methods marked with an attribute | `@execution(App\Attribute\Transactional)` |

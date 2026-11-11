@@ -8,9 +8,11 @@ description: Aspect-oriented programming in PHP with goaop/framework (Go! AOP) 4
 Go! AOP weaves aspects into PHP classes while they are loaded. It needs no PHP extension and never calls `eval()`:
 the woven code is plain PHP in a cache directory.
 
-This skill covers `goaop/framework` **4.x** (PHP 8.4+). Check the installed version first
-(`composer show goaop/framework`). On 3.x the API differs (`registerAspect()`, protected advices, `dynamic()`
-pointcuts): follow `vendor/goaop/framework/UPGRADE-4.0.md` instead of guessing.
+This skill covers `goaop/framework` **4.x** and newer; the required PHP version is in its `composer.json` (8.4+
+for 4.x). Check the installed version first: `composer show goaop/framework`, or for a dev install look for
+`vendor/goaop/framework/UPGRADE-4.0.md`, which exists from 4.0 on. On 3.x the API differs (`registerAspect()`,
+protected advices, `dynamic()` pointcuts): do not apply this skill to 3.x code, and follow that upgrade guide when
+the user wants to migrate.
 
 The package ships its documentation in `vendor/goaop/framework/docs/`. It matches the installed version exactly, so
 read it when a detail here is not enough or seems to disagree with what you observe.
@@ -131,7 +133,8 @@ protected function configureAop(AspectContainer $container): void
 ```
 
 `getService(LoggerInterface::class)` is answered by the PSR-11 container of the application once it is attached with
-`setDelegate()`, see `references/setup.md`.
+`setDelegate()`. In an application without a container, build the dependency in the factory or register it as a
+service of the aspect container. Both are shown in `references/setup.md`.
 
 ## Rules that are easy to get wrong
 

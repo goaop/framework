@@ -132,6 +132,25 @@ protected function configureAop(AspectContainer $container): void
 Register every aspect under its class name. Weaving reads only the class of an aspect and never creates it, so cache
 warm-up works without any service of the application.
 
+Aspect classes can live below `includePaths` (e.g. `src/Aspect`): the weaver skips them, no `excludePaths` entry is
+needed.
+
+### Dependencies without an application container
+
+The aspect container holds any service, not only aspects. Build a dependency inside the factory, or register it
+once and share it between aspects:
+
+```php
+protected function configureAop(AspectContainer $container): void
+{
+    $container->addLazyService(LoggerInterface::class, static fn(): LoggerInterface => new FileLogger('var/log/app.log'));
+    $container->addLazyService(
+        LoggingAspect::class,
+        static fn(AspectContainer $c): LoggingAspect => new LoggingAspect($c->getService(LoggerInterface::class)),
+    );
+}
+```
+
 ### Dependencies from the application container
 
 The aspect container is a PSR-11 container that falls back to a delegate for ids it does not know. Attach the

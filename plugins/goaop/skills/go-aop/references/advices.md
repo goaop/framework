@@ -74,7 +74,7 @@ not a valid pointcut expression.
 
 | Joinpoint | Methods |
 |-----------|---------|
-| `MethodInvocation` | `proceed()`, `getArguments()`, `setArguments(array)`, `getMethod(): ReflectionMethod`, `getThis(): ?object` (`null` for a static method), `getScope(): string` (class name, the called class for static calls), `isDynamic(): bool` |
+| `MethodInvocation` | `proceed()`, `getArguments()`, `setArguments(array)`, `getMethod(): ReflectionMethod`, `getThis(): ?object` (`null` for a static method), `getScope(): string` (the class of the object or of the static call, a subclass for an inherited method; the declaring class is `getMethod()->class`), `isDynamic(): bool` |
 | `FunctionInvocation` | `proceed()`, `getArguments()`, `setArguments(array)`, `getFunction(): ReflectionFunction` |
 | `FieldAccess` | `proceed()`, `getAccessType(): FieldAccessType` (`Read` or `Write`), `getValue()` (current value), `getValueToSet()` (new value of a write), `getField(): ReflectionProperty`, `getThis(): object`, `getScope()` |
 | `ConstructorInvocation` | `proceed()`, `getArguments()`, `setArguments(array)`, `getConstructor(): ?ReflectionMethod`, `getThis(): ?object` (`null` before the object exists), `getScope()` |

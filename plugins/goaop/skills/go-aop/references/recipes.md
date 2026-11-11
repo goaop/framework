@@ -125,6 +125,64 @@ final class CachingAspect implements Aspect
 Usage: `#[Cacheable(ttl: 300)] public function find(int $id): ?Product`. The key ignores the state of the object, so
 cache only methods whose result depends on the arguments alone, with serializable arguments and results.
 
+### In memory, for one request
+
+Without a cache service: results are kept per object in a `WeakMap`, so they disappear with the object, and a second
+advice drops them when the object is written to.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Aspect;
+
+use Go\Aop\Aspect;
+use Go\Aop\Intercept\MethodInvocation;
+use Go\Lang\Attribute\After;
+use Go\Lang\Attribute\Around;
+use WeakMap;
+
+final class MemoizeAspect implements Aspect
+{
+    /** @var WeakMap<object, array<string, mixed>> */
+    private WeakMap $results;
+
+    public function __construct()
+    {
+        $this->results = new WeakMap();
+    }
+
+    #[Around('execution(public App\Repository\**->find*(*))')]
+    public function memoize(MethodInvocation $invocation): mixed
+    {
+        $object = $invocation->getThis();
+        if ($object === null) {
+            return $invocation->proceed();
+        }
+
+        $key     = $invocation->getMethod()->name . serialize($invocation->getArguments());
+        $results = $this->results[$object] ?? [];
+        // array_key_exists(): a null result is cached too
+        if (!array_key_exists($key, $results)) {
+            $results[$key]           = $invocation->proceed();
+            $this->results[$object] = $results;
+        }
+
+        return $results[$key];
+    }
+
+    #[After('execution(public App\Repository\**->save|delete(*))')]
+    public function forget(MethodInvocation $invocation): void
+    {
+        $object = $invocation->getThis();
+        if ($object !== null) {
+            unset($this->results[$object]);
+        }
+    }
+}
+```
+
 ## Database transactions
 
 ```php
@@ -244,7 +302,7 @@ final class RetryAspect implements Aspect
 }
 ```
 
-Retry only idempotent operations.
+Retry only idempotent operations. `attempts` counts all calls: "retry up to 4 times" is `attempts: 5`.
 
 ## Authorization
 
