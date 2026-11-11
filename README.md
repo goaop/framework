@@ -393,6 +393,19 @@ Documentation
 - [PHP 8.4 limitations](docs/php84-limitations.md) and [PHP 8.5 limitations](docs/php85-limitations.md)
 - [Upgrading from 3.x](UPGRADE-4.0.md) and the [changelog](CHANGELOG.md)
 
+### AI coding agents
+
+The repository is a plugin marketplace for coding agents. The `goaop` plugin holds an
+[Agent Skill](plugins/goaop/skills/go-aop/SKILL.md) that teaches an agent to write aspects, pointcuts and advices,
+to set up the aspect kernel, to deploy the cache and to find out why an advice does not run:
+
+```bash
+claude plugin marketplace add goaop/framework
+claude plugin install goaop@goaop
+```
+
+Other agents and the copy that ships with the composer package: [plugins/goaop](plugins/goaop/README.md).
+
 ### Contribution
 
 To contribute changes, see the [contributing guide](CONTRIBUTING.md)

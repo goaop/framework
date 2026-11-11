@@ -1,0 +1,19 @@
+{
+  "name": "goaop",
+  "owner": {
+    "name": "Go! AOP",
+    "url": "https://github.com/goaop"
+  },
+  "metadata": {
+    "description": "Agent plugins for the Go! AOP framework (aspect-oriented programming in PHP)."
+  },
+  "plugins": [
+    {
+      "name": "goaop",
+      "source": "./plugins/goaop",
+      "description": "Teaches coding agents aspect-oriented programming with goaop/framework 4.x: aspects, pointcuts, advices, kernel setup, deployment and troubleshooting.",
+      "category": "development",
+      "keywords": ["php", "aop", "aspect", "goaop"]
+    }
+  ]
+}
