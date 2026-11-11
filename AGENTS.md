@@ -38,6 +38,17 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 | `src/Core/Cache/` | `src/Core/Cache/AGENTS.md` | Compiled advisor cache: compiler, printer, writer, loader     |
 | `tests/`          | `tests/AGENTS.md`          | Test conventions, fixtures, PHPUnit, PHPStan                  |
 
+## Agent plugin for users of the framework
+`.claude-plugin/marketplace.json` + `plugins/goaop/` (skill `aspect-oriented-development`: SKILL.md + references/)
+teach agents the user-facing API; they are not instructions for working on this repository.
+- A change of user-facing behaviour or of `docs/` (pointcut grammar, advice semantics, kernel options, console,
+  exceptions, limitations, performance numbers) â†’ update the skill in the same PR.
+- Statements and code in the skill must be verified by running them against the framework, never written from memory.
+- No framework version numbers in the skill, the manifests or the plugin README (branches are cascade-merged), and no
+  agent product names: commands are written as `/plugin ...`.
+- Bugs of the framework or its dependencies are reported and fixed, not documented as workarounds in the skill.
+- Check: `claude plugin validate .` and `claude plugin validate plugins/goaop`.
+
 ## Rules
 - Skip explanations unless asked. Show changes, not commentary.
 - Use targeted edits (Edit tool) over full-file rewrites.
