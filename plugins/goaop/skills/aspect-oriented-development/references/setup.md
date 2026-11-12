@@ -177,6 +177,13 @@ protected function configureAop(AspectContainer $container): void
 }
 ```
 
+A service the application creates itself, after the kernel was initialized, can be handed over at that point. The
+aspects are built on their first advice call, so it only has to be there before the advised code runs:
+
+```php
+ApplicationAspectKernel::getInstance()->getContainer()->add(LoggerInterface::class, $logger);
+```
+
 ### Dependencies from the application container
 
 The aspect container is a PSR-11 container that falls back to a delegate for ids it does not know. Attach the
@@ -238,9 +245,9 @@ Rebuild the cache on every deployment. With `debug` off the framework serves wov
 not notice an edited source file, aspect or pointcut. Without `PREBUILT_CACHE` it still weaves classes the cache does
 not know yet on demand, which needs a writable cache directory; with `PREBUILT_CACHE` such a class is an error.
 
-The loader argument is a file that initializes the kernel; it is executed. Give the command a file that only boots
-(the `config/aop.php` above works when it also requires the autoloader) if the front controller would handle a
-request.
+The loader argument is a file that initializes the kernel; it is executed, after Composer's autoloader was loaded
+by the command. Give the command a file that only boots (the `config/aop.php` above) if the front controller would
+handle a request.
 
 What production mode costs, OPcache settings, preloading, `cache:warmup:opcache` and containers: `performance.md`.
 

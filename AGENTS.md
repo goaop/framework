@@ -39,14 +39,19 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 | `tests/`          | `tests/AGENTS.md`          | Test conventions, fixtures, PHPUnit, PHPStan                  |
 
 ## Agent plugin for users of the framework
-`.claude-plugin/marketplace.json` + `plugins/goaop/` (skill `aspect-oriented-development`: SKILL.md + references/)
-teach agents the user-facing API; they are not instructions for working on this repository.
+`.claude-plugin/marketplace.json` + `plugins/goaop/skills/` teach agents the user-facing API; they are not
+instructions for working on this repository. Skills: `aspect-oriented-development` (writing aspects, integration,
+deployment, troubleshooting) and `aspect-oriented-refactoring` (extracting aspects from existing code; refers to the
+first one for framework details).
 - A change of user-facing behaviour or of `docs/` (pointcut grammar, advice semantics, kernel options, console,
   exceptions, limitations, performance numbers) â†’ update the skill in the same PR.
 - Statements and code in the skill must be verified by running them against the framework, never written from memory.
 - No framework version numbers in the skill, the manifests or the plugin README (branches are cascade-merged), and no
   agent product names: commands are written as `/plugin ...`.
 - Bugs of the framework or its dependencies are reported and fixed, not documented as workarounds in the skill.
+- Skills describe what to look for and what to do, not how to search: no bundled programs and no shell pipelines
+  for analysing code. An agent picks its own tools for that, and long commands get blocked or misfire on real code.
+  Commands of the framework itself (`vendor/bin/aspect ...`, `composer ...`) are fine.
 - Check: `claude plugin validate .` and `claude plugin validate plugins/goaop`.
 
 ## Rules
