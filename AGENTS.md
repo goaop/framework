@@ -42,15 +42,15 @@ Intercepts PHP class loading pipeline: source stream filter transforms source â†
 `.claude-plugin/marketplace.json` + `plugins/goaop/skills/` teach agents the user-facing API; they are not
 instructions for working on this repository. Skills: `aspect-oriented-development` (writing aspects, integration,
 deployment, troubleshooting) and `aspect-oriented-refactoring` (extracting aspects from existing code; refers to the
-first one for framework details, and bundles `scripts/scan-crosscutting.php`).
+first one for framework details).
 - A change of user-facing behaviour or of `docs/` (pointcut grammar, advice semantics, kernel options, console,
   exceptions, limitations, performance numbers) â†’ update the skill in the same PR.
 - Statements and code in the skill must be verified by running them against the framework, never written from memory.
 - No framework version numbers in the skill, the manifests or the plugin README (branches are cascade-merged), and no
   agent product names: commands are written as `/plugin ...`.
 - Bugs of the framework or its dependencies are reported and fixed, not documented as workarounds in the skill.
-- A skill script must run with the dependencies of a project that has the framework installed (nikic/php-parser 5),
-  nothing else, and is tested on real code before it is changed.
+- Skills hold descriptions, patterns and short shell commands, no bundled programs: an agent searches code with
+  ordinary tools (`grep`, `sed`, a throwaway script).
 - Check: `claude plugin validate .` and `claude plugin validate plugins/goaop`.
 
 ## Rules

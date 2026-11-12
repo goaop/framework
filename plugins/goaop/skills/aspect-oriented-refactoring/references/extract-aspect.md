@@ -20,7 +20,7 @@ mark the methods, and delete the code from them.
 - The framework is installed and its kernel starts before the affected classes are loaded, in every entry point,
   tests included. The classes lie below the include paths, and the kernel runs in debug mode. If one of these is
   missing, set it up with the `aspect-oriented-development` skill first.
-- You know every occurrence of the concern, from the scanner and from reading (`SKILL.md`, steps 2 and 3).
+- You know every occurrence of the concern, from the scan and from reading (`SKILL.md`, steps 2 and 3).
 
 ## Mechanics
 
@@ -71,7 +71,7 @@ mark the methods, and delete the code from them.
 8. **Clean up the classes.** Remove the constructor parameters, properties and imports that only the extracted code
    used, and update whatever constructs these classes: container configuration, factories, tests.
 
-9. **Run everything once more, and scan again.** The candidate is gone from the scanner's report.
+9. **Run everything once more, and scan again.** The extracted lines no longer show up.
 
 ## Example
 
@@ -115,10 +115,10 @@ class OrderService
 }
 ```
 
-The scanner reports the log call (5 methods), the permission check (3), `beginTransaction()` (3) and the handler of
-the `try` (3), the last three "together". Reading shows three concerns: the check is a guard before the work; the
-transaction wraps the work; the logging has two parts, the call and the failure, and only the transactional methods
-log the failure.
+The scan shows the log call in five methods, and the permission check, `beginTransaction()`, `rollBack()` and the
+error record in the same three. Reading shows three concerns: the check is a guard before the work; the transaction
+wraps the work; the logging has two parts, the call and the failure, and only the transactional methods log the
+failure.
 
 After, the same two methods:
 
@@ -245,7 +245,7 @@ statements and the log records were identical.
 
 ## Several concerns on the same methods
 
-When the scanner reports candidates "together", decide first whether they are one concern or several:
+When several candidates occur in the same methods, decide first whether they are one concern or several:
 
 - One concern, two halves (`beginTransaction()` and `commit()`/`rollBack()`; a start time and the log line that uses
   it): one `#[Around]` advice.
@@ -271,4 +271,4 @@ guard that was still in the method body, where the original `try` did not cover 
 - [ ] `order` set where concerns meet, matching the original sequence
 - [ ] Matches of the advisor equal the list of occurrences
 - [ ] Unused dependencies removed from the classes, constructions updated
-- [ ] Same test results as before; scanner no longer reports the candidate
+- [ ] Same test results as before; a new scan no longer shows the extracted lines

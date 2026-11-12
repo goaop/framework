@@ -52,8 +52,7 @@ agent, e.g. `.agents/skills/`. Copy both: the refactoring skill refers to the de
 
 | File | Covers |
 |------|--------|
-| `SKILL.md` | The smells, the workflow from scan to proposal to extraction, marker attributes, rules for preserving behaviour, when not to extract |
-| `scripts/scan-crosscutting.php` | Scanner that reports statements repeated across methods, with position, concern and advice type |
+| `SKILL.md` | The smells, the workflow from scan to proposal to extraction, how to find repeated code with `grep`, marker attributes, rules for preserving behaviour, when not to extract |
 | `references/extract-aspect.md` | "Extract an aspect": mechanics, a complete before/after example, checklist |
 | `references/extract-advice.md` | "Extract an advice": fragment position to advice type, what an advice can reach, fragments in the middle of a method |
 | `references/catalog.md` | Concerns and their code shapes, related refactorings, lessons from AspectJ and Spring |
