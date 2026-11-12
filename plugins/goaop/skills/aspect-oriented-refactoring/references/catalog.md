@@ -136,7 +136,7 @@ try {
 }
 ```
 
-- **Search for**: `catch` blocks with identical bodies (`grep -A4 'catch ('`).
+- **Search for**: `catch` blocks with identical bodies.
 - **Advice**: `#[AfterThrowing]` when the handler reports and rethrows the same exception; `#[Around]` when it
   converts, wraps or swallows.
 - **Attribute**: `#[TranslatesExceptions]`, `#[ReportsFailures]`, or by layer when the rule is "every repository".

@@ -49,8 +49,9 @@ first one for framework details).
 - No framework version numbers in the skill, the manifests or the plugin README (branches are cascade-merged), and no
   agent product names: commands are written as `/plugin ...`.
 - Bugs of the framework or its dependencies are reported and fixed, not documented as workarounds in the skill.
-- Skills hold descriptions, patterns and short shell commands, no bundled programs: an agent searches code with
-  ordinary tools (`grep`, `sed`, a throwaway script).
+- Skills describe what to look for and what to do, not how to search: no bundled programs and no shell pipelines
+  for analysing code. An agent picks its own tools for that, and long commands get blocked or misfire on real code.
+  Commands of the framework itself (`vendor/bin/aspect ...`, `composer ...`) are fine.
 - Check: `claude plugin validate .` and `claude plugin validate plugins/goaop`.
 
 ## Rules

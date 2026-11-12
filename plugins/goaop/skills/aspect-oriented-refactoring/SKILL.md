@@ -48,77 +48,34 @@ extracted code is mostly side effects, so a test that only checks return values 
 
 ### 2. Scan
 
-Look for code that repeats across methods. Ordinary tools are enough: `grep`, `sed`, `sort`, a short script in any
-language. Do three passes over the source directories, and write down for each hit the file, the method and where in
-the method it sits.
+Search the source directories for code that repeats across methods, with whatever search and analysis tools you
+have. Leave the aspect classes of the project out: their advices repeat joinpoint calls by design. For every hit
+note the file, the method and where in the method it sits.
 
-**Pass 1: lines that repeat.** Scattered code is copied code, so the same line, apart from its strings and numbers,
-shows up many times. This pipeline replaces string and number literals, then counts identical lines:
+Look for three kinds of evidence:
 
-```bash
-grep -rhE --include='*.php' '^\s+[^/*[:space:]]' src \
-  | sed -E "s/'[^']*'/'S'/g; s/\"[^\"]*\"/\"S\"/g; s/[0-9]+/0/g; s/^\s+//" \
-  | grep -vE '^(\}|\{|return|public|private|protected|use |namespace|declare|\)|\]|class |try \{)' \
-  | sort | uniq -c | sort -rn | head -40
-```
-
-On a codebase with scattered concerns the top of the list reads like this:
-
-```
-5 $this->logger->info('S' . __METHOD__, ['S' => func_get_args()]);
-3 if (!$this->security->isGranted('S')) {
-3 $this->db->beginTransaction();
-3 $this->db->rollBack();
-3 $start = microtime(true);
-```
-
-Lines that call a logger, a connection, a cache, a security service or a clock are candidates. Lines that differ
-only in a literal the pipeline replaced (`$this->db->exec("S")` with a different query each time) look repeated and
-are business code.
-
-**Pass 2: the vocabulary of each concern.** Search for the calls a concern is made of, to find occurrences that are
-written differently in each place and to get the list of files. `references/catalog.md` has the search terms per
-concern. Count per file first, then read the hits:
-
-```bash
-grep -rcE --include='*.php' 'beginTransaction|->commit\(|rollBack' src | grep -v ':0$'
-```
-
-```bash
-grep -rnE --include='*.php' 'isGranted|denyAccessUnless|->can\(' src
-```
-
-Always search for what the user named, even when pass 1 did not show it: a concern can live in two methods only, or
-in one (a single retry loop).
-
-**Pass 3: structure.** Some concerns are shapes, not words: identical `catch` handlers, a `try`/`finally` around a
-whole body, a loop that contains a `try`, the same first or last statement in many methods. Search for the keyword
-with context, and compare the bodies:
-
-```bash
-grep -rnE --include='*.php' -A4 'catch \(' src
-```
-
-```bash
-grep -rnE --include='*.php' -B1 -A8 '(while|for) \(' src | grep -E -B3 -A6 'try \{'
-```
+- **Lines that repeat.** Scattered code is copied code: the same statement shows up in many methods, apart from a
+  string or a number (the message, the role, the TTL). Statements that call a logger, a connection, a cache, a
+  security service or a clock are candidates. Statements that differ in what they are about (the same `exec()` call
+  with a different query each time) only look alike and are business code.
+- **The vocabulary of a concern.** Each concern is made of a few calls: `beginTransaction`, `commit`, `rollBack`;
+  `isGranted`; `microtime`. Searching for them finds the occurrences that are written differently in each place, and
+  gives the list of files. `references/catalog.md` has the search terms per concern. Always search for what the user
+  named, even when nothing else pointed at it: a concern can live in two methods only, or in one, such as a single
+  retry loop.
+- **Shapes.** Some concerns are structure, not words: identical `catch` handlers, a `try`/`finally` around a whole
+  method body, a loop that contains a `try`, the same first or last statement in many methods.
 
 Then read the methods that came up most often from top to bottom. Tangling shows there: how many of their lines
 belong to the business logic, and how many to the candidates.
 
-What these passes do not see:
+A list of hits does not answer two questions, so answer them by reading:
 
-- Fragments that are formatted differently or spread over several lines in one place and not in another. Pass 2
-  catches most of them; reading catches the rest.
-- Whether two hits are one concern. `beginTransaction()` and the `catch` with `rollBack()` in the same methods are
-  two halves of one concern; a permission check in those same methods is another concern that happens to guard them.
-- Position. A hit list does not say whether a line is the first statement of a method or in the middle. Read the
-  method. A position is also relative to the code as it is: a timer that starts after a cache lookup sits in the
-  middle today, and at the boundary once the cache is an advice around it. Judge positions concern by concern, from
-  the outside in.
-
-Leave the aspect classes of the project out of the search (`--exclude-dir=Aspect`): their advices repeat joinpoint
-calls by design.
+- **Are two hits one concern?** `beginTransaction()` and the `catch` with `rollBack()` in the same methods are two
+  halves of one concern. A permission check in those same methods is another concern that happens to guard them.
+- **Where does the code sit?** At the start of the method, at its end, around the work, or in the middle. A position
+  is relative to the code as it is: a timer that starts after a cache lookup sits in the middle today, and at the
+  boundary once the cache is an advice around it. Judge positions concern by concern, from the outside in.
 
 ### 3. Judge each candidate
 
