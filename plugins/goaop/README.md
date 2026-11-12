@@ -1,9 +1,12 @@
 # Go! AOP agent plugin
 
-A plugin for coding agents that read [Agent Skills](https://agentskills.io). It teaches aspect-oriented programming
-with `goaop/framework`: when an aspect is the right tool, how to write pointcuts and advices, how to integrate the
-framework (through the Symfony, Laravel and Yii3 bridges or a kernel of your own), how to deploy the cache, what
-aspects cost and how to find out why an advice does not run.
+A plugin for coding agents that read [Agent Skills](https://agentskills.io). It holds two skills for
+`goaop/framework`:
+
+| Skill | Use it to |
+|-------|-----------|
+| `aspect-oriented-development` | Write aspects, pointcuts and advices, integrate the framework (through the Symfony, Laravel and Yii3 bridges or a kernel of your own), deploy the cache, reason about performance and find out why an advice does not run |
+| `aspect-oriented-refactoring` | Convert existing object-oriented code: find scattered and tangled cross-cutting code, decide what belongs in an aspect, and extract it without changing behaviour |
 
 ## Install
 
@@ -17,7 +20,8 @@ In an agent with plugin marketplaces, add the marketplace of this repository and
 /plugin install goaop@goaop
 ```
 
-The skill is then loaded automatically for AOP tasks, or on demand with `/goaop:aspect-oriented-development`.
+The skills are then loaded automatically for matching tasks, or on demand with
+`/goaop:aspect-oriented-development` and `/goaop:aspect-oriented-refactoring`.
 
 The plugin is part of the composer package, so a project can also use the copy that matches its installed
 framework version:
@@ -26,12 +30,12 @@ framework version:
 /plugin marketplace add ./vendor/goaop/framework
 ```
 
-Agents without marketplaces: copy or symlink `skills/aspect-oriented-development` into the skills directory of the
-agent, e.g. `.agents/skills/aspect-oriented-development`.
+Agents without marketplaces: copy or symlink the directories below `skills/` into the skills directory of the
+agent, e.g. `.agents/skills/`. Copy both: the refactoring skill refers to the development skill.
 
 ## Contents
 
-All paths are below `skills/aspect-oriented-development/`.
+`skills/aspect-oriented-development/`
 
 | File | Covers |
 |------|--------|
@@ -44,4 +48,14 @@ All paths are below `skills/aspect-oriented-development/`.
 | `references/performance.md` | Measured costs, production checklist, OPcache, preloading, containers, fast aspects |
 | `references/troubleshooting.md` | Symptom → cause → fix, error messages, limitations |
 
-The skill describes the user-facing API. It follows `docs/` of the framework: change both together.
+`skills/aspect-oriented-refactoring/`
+
+| File | Covers |
+|------|--------|
+| `SKILL.md` | The smells, the workflow from scan to proposal to extraction, marker attributes, rules for preserving behaviour, when not to extract |
+| `scripts/scan-crosscutting.php` | Scanner that reports statements repeated across methods, with position, concern and advice type |
+| `references/extract-aspect.md` | "Extract an aspect": mechanics, a complete before/after example, checklist |
+| `references/extract-advice.md` | "Extract an advice": fragment position to advice type, what an advice can reach, fragments in the middle of a method |
+| `references/catalog.md` | Concerns and their code shapes, related refactorings, lessons from AspectJ and Spring |
+
+The skills describe the user-facing API. They follow `docs/` of the framework: change both together.
