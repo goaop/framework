@@ -108,7 +108,7 @@ final class CrosscuttingScanner
         }
         $resolver = new NodeTraverser(new PhpParser\NodeVisitor\NameResolver());
         foreach ($this->finder->findInstanceOf($resolver->traverse($statements ?? []), Node\Stmt\ClassLike::class) as $class) {
-            if ($class instanceof Node\Stmt\Interface_ || $class->name === null) {
+            if ($class instanceof Node\Stmt\Interface_ || $class->name === null || $this->isAspect($class)) {
                 continue;
             }
             $className = isset($class->namespacedName) ? $class->namespacedName->toString() : $class->name->toString();
@@ -118,6 +118,14 @@ final class CrosscuttingScanner
                 }
             }
         }
+    }
+
+    /** Aspects are the result of the refactoring: their advices repeat joinpoint calls by design */
+    private function isAspect(Node\Stmt\ClassLike $class): bool
+    {
+        $interfaces = $class instanceof Node\Stmt\Class_ || $class instanceof Node\Stmt\Enum_ ? $class->implements : [];
+
+        return array_any($interfaces, static fn(Node\Name $name): bool => ltrim($name->toString(), '\\') === 'Go\\Aop\\Aspect');
     }
 
     /** @param list<Node\Stmt> $statements Top-level statements of one method */
@@ -282,7 +290,7 @@ final class CrosscuttingScanner
         return match ($position) {
             'start', 'near start' => 'Before, when it only needs the arguments and the object; Around when a value it computes is used later',
             'end'                 => 'After when it must run on failure too; Around when it needs the result or a value from the start',
-            default               => 'Extract the surrounding steps into a method first, then advise that method',
+            default               => 'In the middle now. If what precedes it is another concern, it reaches the boundary once that one is extracted; otherwise extract the surrounding steps into a method and advise that method',
         };
     }
 }
@@ -321,7 +329,7 @@ foreach ($candidates as $number => $candidate) {
         $candidate['classes'],
         $positions,
         $candidate['advice'],
-        $candidate['together'] === [] ? '' : '    together: in exactly the same methods as #' . implode(', #', $candidate['together']) . ": one concern? Then one Around advice\n",
+        $candidate['together'] === [] ? '' : '    together: in exactly the same methods as #' . implode(', #', $candidate['together']) . ": two halves of one concern (then one Around advice), or separate concerns of the same methods\n",
     );
     echo '    | ', str_replace("\n", "\n    | ", $candidate['code']), "\n";
     foreach ($candidate['occurrences'] as $occurrence) {

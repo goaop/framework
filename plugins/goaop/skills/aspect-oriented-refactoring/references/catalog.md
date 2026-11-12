@@ -2,8 +2,9 @@
 
 How each concern looks when it is scattered through object-oriented code, which advice it becomes, and what goes
 wrong when extracting it. Complete aspects for most of them are in `references/recipes.md` of the
-`aspect-oriented-development` skill: start from those instead of writing an aspect from nothing, then adapt them to
-what the existing code did.
+`aspect-oriented-development` skill: start from those instead of writing an aspect from nothing. A recipe shows a good
+default; the existing code decides. Compare the recipe with the original line by line (keys, messages, delays, which
+results are cached, which exceptions count) and change the recipe wherever they differ.
 
 ## Contents
 
@@ -120,7 +121,8 @@ while (true) {
 - **Search for**: loops containing `try`, `attempt`, `retries`, `usleep(`, `sleep(`.
 - **Advice**: `#[Around]`, calling `proceed()` again.
 - **Attribute**: `#[Retry(attempts: 3, delayMs: 100, on: TransientException::class)]`.
-- **Pitfalls**: Count the same way as the original (attempts or retries). Put the attribute on the method that makes
+- **Pitfalls**: Count the same way as the original (attempts or retries), and wait the same way: a constant delay,
+  a growing one, or none. Put the attribute on the method that makes
   the one call, not on a method that does other work before it, or that work is repeated too. A retry inside a
   transaction repeats queries in the same transaction: the retry aspect usually has to be outside (lower `order`).
 

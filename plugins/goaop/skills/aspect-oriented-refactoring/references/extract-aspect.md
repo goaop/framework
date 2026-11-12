@@ -18,8 +18,8 @@ mark the methods, and delete the code from them.
 
 - The behaviour of the affected methods is pinned down by tests or a characterization script (`SKILL.md`, step 1).
 - The framework is installed and its kernel starts before the affected classes are loaded, in every entry point,
-  tests included. The classes lie below the include paths. If one of these is missing, set it up with the
-  `aspect-oriented-development` skill first, and prove it with a trivial advice before moving real code.
+  tests included. The classes lie below the include paths, and the kernel runs in debug mode. If one of these is
+  missing, set it up with the `aspect-oriented-development` skill first.
 - You know every occurrence of the concern, from the scanner and from reading (`SKILL.md`, steps 2 and 3).
 
 ## Mechanics
@@ -59,8 +59,8 @@ mark the methods, and delete the code from them.
    Choose the advice type by the table in `SKILL.md`, step 3.
 
 5. **Migrate one method.** Add the attribute to it and delete the extracted code from its body. Run the tests. This
-   first method proves the advice; if the result differs, the difference is in the advice, not in the other
-   methods.
+   first method proves the advice: if the result differs, look at the advice first, then at what the step changed
+   for the other concerns of the same method (see "Several concerns on the same methods").
 
 6. **Migrate the remaining methods one by one**, or in small groups of the same class, running the tests in between.
    Set the attribute arguments from what each copy did.
@@ -254,6 +254,12 @@ When the scanner reports candidates "together", decide first whether they are on
   still a complete, working body for the next step.
 
 To find the nesting, read one method top to bottom: code that runs earlier and ends later is further out.
+
+A concern can have parts at different depths. In the example the logging has an outer part (the record of the call,
+first statement) and an inner part (the record of the failure, inside the `catch`). Extract it in parts, each when
+its turn comes: the call record first, then the guard, then the transaction together with the failure record. Had
+the whole logging aspect gone first, its `#[AfterThrowing]` advice would have reported the "access denied" of the
+guard that was still in the method body, where the original `try` did not cover the guard.
 
 ## Checklist
 

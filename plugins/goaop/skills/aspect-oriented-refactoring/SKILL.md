@@ -38,7 +38,10 @@ editing before they agreed to it.
 
 ### 1. Pin down the behaviour
 
-A refactoring is only safe when a change of behaviour would be noticed. Run the test suite and note the result. Where
+A refactoring is only safe when a change of behaviour would be noticed. Run the framework in debug mode while you
+refactor: in production mode woven classes come from a cache, and your edits would have no effect until it is rebuilt.
+
+Run the test suite and note the result. Where
 the methods you are going to touch have no tests, write characterization tests first, or at least a script that calls
 them and records everything observable: return values, exceptions, log records, queries, cache entries. The
 extracted code is mostly side effects, so a test that only checks return values proves little.
@@ -53,7 +56,8 @@ php <skill directory>/scripts/scan-crosscutting.php --min=3 src
 ```
 
 `--min` is the number of methods a statement has to appear in (default 3); `--format=json` gives the same data for
-further processing. The scanner needs `nikic/php-parser` 5 in the `vendor/` of the project, which comes with
+further processing. Run it a second time with `--min=2`: a concern the user named may live in two methods only, and a
+concern that occurs once (a single retry loop) is not reported at all, so also search for what they asked about. The scanner needs `nikic/php-parser` 5 in the `vendor/` of the project, which comes with
 `goaop/framework`; `--autoload=FILE` points it at another autoloader.
 
 What it does and does not see:
@@ -65,6 +69,10 @@ What it does and does not see:
 - "together: in exactly the same methods as #n" marks candidates that may be two halves of one concern, such as
   `beginTransaction()` and the `try`/`catch` with `rollBack()`. It can also be coincidence: two different concerns
   that happen to guard the same methods.
+- A "middle" position is relative to the code as it is. A timer that starts after a cache lookup sits in the middle
+  today and at the boundary once the cache is an advice around it: judge positions concern by concern, from the
+  outside in.
+- Classes that implement `Go\Aop\Aspect` are skipped, so a second run after the refactoring shows what is left.
 - It also reports repeated business statements (`$this->db->exec(...)` with a different query each time). The
   normalized form looks identical, the meaning is not. Those are not concerns.
 
@@ -78,7 +86,7 @@ Open the reported places and read them. For each candidate decide:
 | Is it independent of the business logic around it? Would the method still be correct, only less observable, guarded or fast, without it? | It is business logic: leave it, or use Extract Method |
 | Does it sit at a method boundary: before the work, after it, or around it? | "Extract an advice" has a preparatory step for fragments in the middle |
 | Does it only need what a joinpoint offers: the arguments, the object, the result, the exception? | See "What an advice can reach" in `references/extract-advice.md` |
-| Is it in three or more places, or certain to spread? | For one or two places an aspect costs more than it saves |
+| Is it in three or more places, or certain to spread? | For one or two places an aspect costs more than it saves. Say so, but extract it when the user asked for that concern |
 
 Then name the concern and choose the advice type from where the code sits:
 
@@ -99,8 +107,7 @@ Prefer the weakest type that does the job: a `#[Before]` advice cannot forget to
 
 Tell the user what you found before changing code: the concerns, where each one occurs (count and files), the aspect
 and marker attribute you would create for each, the advice type, what stays in the methods, and anything that would
-change behaviour (see "Quirks" below). Recommend an order: the most scattered, least risky concern first, usually
-logging or timing; transactions and caching later, since they change control flow.
+change behaviour (see "Keep the quirks" below). Recommend an order of extraction, as described in step 5.
 
 ### 5. Refactor, one concern at a time
 
@@ -112,8 +119,15 @@ Use the two refactorings. Each has its mechanics in a reference file; follow the
   existing or new aspect. This is the smaller step, and the building block of the first one. Read
   `references/extract-advice.md`.
 
-After every concern: run the tests or the characterization script, compare with step 1, and commit. Never extract two
-concerns in one step: when the output differs, you want one suspect.
+**Order.** Among concerns that never meet on a method, start with the most scattered and least risky one, usually
+logging or timing. Where several concerns share methods, their order is given by the code: go from the outside in,
+and extract a guard (code that throws before the work starts) before any concern that reacts to exceptions. Otherwise
+the intermediate state differs from the original: an `#[AfterThrowing]` advice for failures would report the
+exception of a guard that is still in the method body, which the original `try` never saw. When such an intermediate
+difference cannot be avoided, predict it before the step and check that the diff is exactly that.
+
+After every concern: run the tests or the characterization script, compare with step 1, and commit or otherwise
+checkpoint. Never extract two concerns in one step: when the output differs, you want one suspect.
 
 ### 6. Finish
 
@@ -168,7 +182,9 @@ aspects in theirs (`App\Aspect`), one aspect per concern.
   private one: every method can be advised, and calls through `$this` are intercepted.
 - **Clean up afterwards.** Remove constructor parameters, properties and `use` statements the class needed only for
   the extracted concern, and update the places that construct the class (container configuration, factories, tests).
-  A service that loses its logger and its security dependency is the visible benefit of the refactoring.
+  PHP ignores surplus arguments of a `new` call without any error, and a removed parameter in the middle shifts the
+  following ones: find every construction, do not wait for a failure. A service that loses its logger and its
+  security dependency is the visible benefit of the refactoring.
 
 ## When not to extract
 
