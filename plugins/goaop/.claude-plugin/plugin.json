@@ -1,6 +1,6 @@
 {
   "name": "goaop",
-  "description": "Teaches coding agents aspect-oriented programming with the Go! AOP framework: aspects, pointcuts, advices, framework bridges, kernel setup, deployment, performance and troubleshooting.",
+  "description": "Teaches coding agents aspect-oriented programming with the Go! AOP framework: writing aspects, pointcuts and advices, framework bridges, deployment, performance, troubleshooting, and refactoring existing object-oriented code into aspects.",
   "author": {
     "name": "Go! AOP",
     "url": "https://github.com/goaop"
