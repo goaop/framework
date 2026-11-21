@@ -5,6 +5,9 @@ Changelog
 **Requirements**
 * [BC BREAK] Requires PHP 8.5+
 
+**Added**
+* [Feature] **PHP 8.6 support** — the framework is tested on PHP 8.5 and 8.6; PHP 8.6 is a regular, required CI job.
+
 4.0.0 (November 7, 2026)
 
 See [UPGRADE-4.0.md](UPGRADE-4.0.md) for the migration guide.
