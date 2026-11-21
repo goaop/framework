@@ -22,8 +22,6 @@ jobs:
 
     timeout-minutes: 20
 
-    continue-on-error: ${{ matrix.experimental }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -32,23 +30,13 @@ jobs:
           - "highest"
         php-version:
           - "8.5"
+          - "8.6"
         operating-system:
           - "ubuntu-latest"
-        experimental:
-          - false
         include:
-          - php-version: "8.6"
-            dependencies: "lowest"
-            operating-system: "ubuntu-latest"
-            experimental: true
-          - php-version: "8.6"
-            dependencies: "highest"
-            operating-system: "ubuntu-latest"
-            experimental: true
           - php-version: "8.5"
             dependencies: "highest"
             operating-system: "windows-latest"
-            experimental: false
 
     steps:
       - name: "Checkout"
@@ -73,11 +61,11 @@ jobs:
 
       - name: "Install lowest dependencies"
         if: ${{ matrix.dependencies == 'lowest' }}
-        run: "composer update --prefer-lowest --no-interaction --no-progress${{ matrix.experimental && ' --ignore-platform-req=php+' || '' }}"
+        run: "composer update --prefer-lowest --no-interaction --no-progress"
 
       - name: "Install highest dependencies"
         if: ${{ matrix.dependencies == 'highest' }}
-        run: "composer update --no-interaction --no-progress${{ matrix.experimental && ' --ignore-platform-req=php+' || '' }}"
+        run: "composer update --no-interaction --no-progress"
 
       - name: "Tests"
         run: "vendor/bin/phpunit"
